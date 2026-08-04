@@ -148,6 +148,10 @@ dependencies {
     // task; it is intentionally not bundled into the mod jar.
     implementation 'net.java.dev.jna:jna:5.10.0'
 
+    // SQLite driver for reading BabelCDB card databases (cards.cdb).
+    // Will need jarJar bundling once the engine ships in the mod jar.
+    implementation 'org.xerial:sqlite-jdbc:3.42.0.0'
+
     // Real mod deobf dependency examples - these get remapped to your current mappings
     // compileOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_version}:api") // Adds JEI API as a compile dependency
     // runtimeOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_version}") // Adds the full JEI mod as a runtime dependency
