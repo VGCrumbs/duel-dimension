@@ -70,7 +70,7 @@ import java.util.function.Supplier;
 @Mod(YDM.MOD_ID)
 public class YDM
 {
-    public static final String MOD_ID = "ydm";
+    public static final String MOD_ID = "duelmonsters";
     public static final String MOD_ID_UP = YDM.MOD_ID.toUpperCase();
     public static final String PROTOCOL_VERSION = "1";
     

@@ -1,0 +1,6 @@
+{
+  "parent": "duelmonsters:item/sleeves_duelist_academy_network",
+  "textures": {
+    "layer0": "duelmonsters:item/64/sleeves_duelist_academy_network"
+  }
+}

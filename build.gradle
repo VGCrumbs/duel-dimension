@@ -7,7 +7,7 @@ plugins {
 
 version = '1.19.2-2.14.5.55'
 group = 'de.cas_ual_ty.ydm' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = 'ydm'
+archivesBaseName = 'duelmonsters'
 
 // Mojang ships Java 17 to end users in 1.18+, so your mod should target Java 17.
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
@@ -50,10 +50,10 @@ minecraft {
             property 'forge.logging.console.level', 'debug'
 
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
-            property 'forge.enabledGameTestNamespaces', 'ydm'
+            property 'forge.enabledGameTestNamespaces', 'duelmonsters'
 
             mods {
-                ydm {
+                duelmonsters {
                     source sourceSets.main
                 }
             }
@@ -76,10 +76,10 @@ minecraft {
 
             property 'forge.logging.console.level', 'debug'
 
-            property 'forge.enabledGameTestNamespaces', 'ydm'
+            property 'forge.enabledGameTestNamespaces', 'duelmonsters'
 
             mods {
-                ydm {
+                duelmonsters {
                     source sourceSets.main
                 }
             }
@@ -95,10 +95,10 @@ minecraft {
 
             property 'forge.logging.console.level', 'debug'
 
-            property 'forge.enabledGameTestNamespaces', 'ydm'
+            property 'forge.enabledGameTestNamespaces', 'duelmonsters'
 
             mods {
-                ydm {
+                duelmonsters {
                     source sourceSets.main
                 }
             }
@@ -112,10 +112,10 @@ minecraft {
             property 'forge.logging.console.level', 'debug'
 
             // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
-            args '--mod', 'ydm', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+            args '--mod', 'duelmonsters', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
 
             mods {
-                ydm {
+                duelmonsters {
                     source sourceSets.main
                 }
             }
@@ -168,7 +168,7 @@ dependencies {
 // Standalone smoke test of the ocgcore JNA binding, no Minecraft involved.
 // Usage: gradlew ocgSpike -PocgLib=native/ocgcore.dll [-PocgScripts=path/to/CardScripts]
 tasks.register('ocgSpike', JavaExec) {
-    group = 'ydm'
+    group = 'duelmonsters'
     description = 'Runs the ocgcore binding smoke test against a native ocgcore library.'
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'de.cas_ual_ty.ydm.ocg.OcgSpike'

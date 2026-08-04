@@ -1,0 +1,6 @@
+{
+  "parent": "duelmonsters:item/sleeves_master_peace",
+  "textures": {
+    "layer0": "duelmonsters:item/128/sleeves_master_peace"
+  }
+}

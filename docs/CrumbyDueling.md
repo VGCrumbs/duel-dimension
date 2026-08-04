@@ -41,10 +41,11 @@ Fork of [YgoDuelingMod](https://github.com/CAS-ual-TY/YgoDuelingMod) (Forge 1.19
 | 2026-08-04 | Ruled-duel decks are **collection-bound** (+ creative/dev bypass) |
 | 2026-08-04 | **Rebrand now**, before worlds exist (mod id change breaks saves — do it while cheap) |
 | 2026-08-04 | Bots must **observe all messages** (not just prompts) and see only a **filtered, non-omniscient board state** — cheating is an explicit profile knob, never an accident |
+| 2026-08-04 | Renamed: mod id `duelmonsters`, display "Duel Monsters" (provisional); packages unchanged |
 
 ## Open decisions
 
-- [ ] **Name**: mod id `crumbydueling`, display "Crumby Dueling"? Rename Java packages too, or keep `de.cas_ual_ty.ydm`? (packages are save-safe either way; GPL attribution to CAS-ual-TY preserved regardless)
+- [x] **Name**: mod id `duelmonsters`, display "Duel Monsters" *(provisional — it's the in-universe Konami name, so it must change before any public release; mod-id changes break saves, so settle it before serious worlds exist)*. Java packages stay `de.cas_ual_ty.ydm` until the name is final.
 - [ ] **Division of labor**: engine/GUI machinery vs. content authoring (duelist JSONs, dialogue, decks, ruleset presets) — who does what?
 - [ ] *(Parked)* Long-term hosting for the card-DB fork (`db.json` auto-update source). Dev rides upstream's 2023 snapshot — covers the Goat pool completely.
 
@@ -61,7 +62,7 @@ Fork of [YgoDuelingMod](https://github.com/CAS-ual-TY/YgoDuelingMod) (Forge 1.19
 - [x] x64 `ocgcore.dll` built from pinned ygopro-core source (`ocgcore-build/`, CMake + MSVC)
 - [x] Spike: create duel → load scripts → pump messages → reach `AWAITING` (verified 2026-08-04)
 - [x] `CdbCardProvider` — BabelCDB `.cdb` → card-reader callback (compiled; not yet exercised in a duel)
-- [ ] **Rebrand commit** (mod id, `mods.toml`, `assets/` namespace, registry constants) — blocked on name
+- [x] **Rebrand commit** — mod id `duelmonsters`, `mods.toml`, `assets/`+`data/` namespaces, lang keys, translation-key literals, Gradle refs (2026-08-04)
 - [ ] Extract spike → `HeadlessDuelRunner` + `ResponseSource` interface (with `observe()`, lifecycle callbacks, `BotMemory`)
 - [ ] JUnit wired up; `gradlew17` wrapper script committed
 - **Gate:** `test` runs green, incremental, in seconds

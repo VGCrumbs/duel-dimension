@@ -69,8 +69,8 @@ public class CardBinderScreen extends AbstractContainerScreen<CardBinderContaine
             }
         }
         
-        addRenderableWidget(prevButton = new ImprovedButton(leftPos + imageWidth - 24 - 8 - 27, topPos + 4, 12, 12, Component.translatable("generic.ydm.left_arrow"), this::onButtonClicked));
-        addRenderableWidget(nextButton = new ImprovedButton(leftPos + imageWidth - 12 - 8 - 27, topPos + 4, 12, 12, Component.translatable("generic.ydm.right_arrow"), this::onButtonClicked));
+        addRenderableWidget(prevButton = new ImprovedButton(leftPos + imageWidth - 24 - 8 - 27, topPos + 4, 12, 12, Component.translatable("generic.duelmonsters.left_arrow"), this::onButtonClicked));
+        addRenderableWidget(nextButton = new ImprovedButton(leftPos + imageWidth - 12 - 8 - 27, topPos + 4, 12, 12, Component.translatable("generic.duelmonsters.right_arrow"), this::onButtonClicked));
         
         addRenderableWidget(reloadButton = new TextureButton(leftPos + imageWidth - 12 - 8 - 27, topPos + imageHeight - 96, 12, 12, Component.empty(), this::onButtonClicked)
                 .setTexture(new ResourceLocation(YDM.MOD_ID, "textures/gui/duel_widgets.png"), 64, 0, 16, 16));
@@ -117,7 +117,7 @@ public class CardBinderScreen extends AbstractContainerScreen<CardBinderContaine
         
         if(!getMenu().loaded)
         {
-            title = title.append(" ").append(Component.translatable("container.ydm.card_binder.loading"));
+            title = title.append(" ").append(Component.translatable("container.duelmonsters.card_binder.loading"));
         }
         else
         {

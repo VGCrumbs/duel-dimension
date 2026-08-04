@@ -1,0 +1,6 @@
+{
+  "parent": "duelmonsters:item/sleeves_magenta",
+  "textures": {
+    "layer0": "duelmonsters:item/128/sleeves_magenta"
+  }
+}

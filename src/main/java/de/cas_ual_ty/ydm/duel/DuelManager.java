@@ -696,7 +696,7 @@ public class DuelManager
     
     protected void startDuel()
     {
-        sendInfoMessageToAll(Component.translatable("container.ydm.duel.info_start"));
+        sendInfoMessageToAll(Component.translatable("container.duelmonsters.duel.info_start"));
         populatePlayField();
         setDuelStateAndUpdate(DuelState.DUELING);
     }
@@ -912,7 +912,7 @@ public class DuelManager
     
     public MutableComponent getInfoNameBold()
     {
-        return Component.translatable("container.ydm.duel.info_name")
+        return Component.translatable("container.duelmonsters.duel.info_name")
                 .withStyle((s) -> s.applyFormat(ChatFormatting.BOLD));
     }
     

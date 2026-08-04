@@ -4,9 +4,9 @@ license="GNU General Public License v3.0"
 issueTrackerURL="https://github.com/CAS-ual-TY/YgoDuelingMod/issues"
 
 [[mods]]
-    modId="ydm"
+    modId="duelmonsters"
     version="${file.jarVersion}"
-    displayName="Ygo Dueling Mod"
+    displayName="Duel Monsters"
     displayURL="https://github.com/CAS-ual-TY/YgoDuelingMod"
     logoFile="logo.png"
     credits="Mojang and the Minecraft Forge Team"

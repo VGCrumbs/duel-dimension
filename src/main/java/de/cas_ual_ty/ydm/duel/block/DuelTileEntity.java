@@ -53,6 +53,6 @@ public class DuelTileEntity extends BlockEntity implements MenuProvider
     @Override
     public Component getDisplayName()
     {
-        return Component.translatable("container.ydm.duel");
+        return Component.translatable("container.duelmonsters.duel");
     }
 }

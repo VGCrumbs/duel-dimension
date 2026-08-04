@@ -152,15 +152,15 @@ public class DuelScreenPreparing<E extends DuelContainer> extends DuelContainerS
                 
                 // main deck
                 //drawString
-                font.draw(ms, Component.translatable("container.ydm.deck_box.main").append(" " + d.getMainDeckSize() + "/" + DeckHolder.MAIN_DECK_SIZE), guiLeft + 8F, guiTop + 6F, 0x404040);
+                font.draw(ms, Component.translatable("container.duelmonsters.deck_box.main").append(" " + d.getMainDeckSize() + "/" + DeckHolder.MAIN_DECK_SIZE), guiLeft + 8F, guiTop + 6F, 0x404040);
                 
                 // extra deck
                 //drawString
-                font.draw(ms, Component.translatable("container.ydm.deck_box.extra").append(" " + d.getExtraDeckSize() + "/" + DeckHolder.EXTRA_DECK_SIZE), guiLeft + 8F, guiTop + 92F, 0x404040);
+                font.draw(ms, Component.translatable("container.duelmonsters.deck_box.extra").append(" " + d.getExtraDeckSize() + "/" + DeckHolder.EXTRA_DECK_SIZE), guiLeft + 8F, guiTop + 92F, 0x404040);
                 
                 // side deck
                 //drawString
-                font.draw(ms, Component.translatable("container.ydm.deck_box.side").append(" " + d.getSideDeckSize() + "/" + DeckHolder.SIDE_DECK_SIZE), guiLeft + 8F, guiTop + 124F, 0x404040);
+                font.draw(ms, Component.translatable("container.duelmonsters.deck_box.side").append(" " + d.getSideDeckSize() + "/" + DeckHolder.SIDE_DECK_SIZE), guiLeft + 8F, guiTop + 124F, 0x404040);
                 
                 int size = 18;
                 CardHolder c;
@@ -411,7 +411,7 @@ public class DuelScreenPreparing<E extends DuelContainer> extends DuelContainerS
     
     protected void chooseDeckTooltip(AbstractWidget w, PoseStack ms, int mouseX, int mouseY)
     {
-        renderTooltip(ms, Component.translatable("container.ydm.duel.choose_deck"), mouseX, mouseY);
+        renderTooltip(ms, Component.translatable("container.duelmonsters.duel.choose_deck"), mouseX, mouseY);
     }
     
     public DeckWrapper getActiveDeckWrapper()

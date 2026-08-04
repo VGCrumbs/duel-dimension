@@ -69,8 +69,8 @@ public class CardSupplyScreen extends AbstractContainerScreen<CardSupplyContaine
             }
         }
         
-        addRenderableWidget(prevButton = new ImprovedButton(leftPos + imageWidth - 80 - 8, topPos + imageHeight - 96, 40, 12, Component.translatable("container.ydm.card_supply.prev"), this::onButtonClicked));
-        addRenderableWidget(nextButton = new ImprovedButton(leftPos + imageWidth - 40 - 8, topPos + imageHeight - 96, 40, 12, Component.translatable("container.ydm.card_supply.next"), this::onButtonClicked));
+        addRenderableWidget(prevButton = new ImprovedButton(leftPos + imageWidth - 80 - 8, topPos + imageHeight - 96, 40, 12, Component.translatable("container.duelmonsters.card_supply.prev"), this::onButtonClicked));
+        addRenderableWidget(nextButton = new ImprovedButton(leftPos + imageWidth - 40 - 8, topPos + imageHeight - 96, 40, 12, Component.translatable("container.duelmonsters.card_supply.next"), this::onButtonClicked));
         
         applyName();
         updateCards();

@@ -16,7 +16,7 @@ Project documentation for this fork of the Ygo Dueling Mod.
 | Minecraft | 1.19.2 |
 | Forge | 43.2.8 |
 | Mappings | Parchment `2022.11.27-1.19.2` |
-| Mod id | `ydm` |
+| Mod id | `duelmonsters` (display "Duel Monsters", provisional) |
 | Group | `de.cas_ual_ty.ydm` |
 | License | GPL-3.0 |
 

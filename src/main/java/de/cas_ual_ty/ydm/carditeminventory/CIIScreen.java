@@ -38,8 +38,8 @@ public class CIIScreen<T extends CIIContainer> extends AbstractContainerScreen<T
     {
         super.init();
         
-        addRenderableWidget(prevButton = new ImprovedButton(leftPos + imageWidth - 24 - 8, topPos + 4, 12, 12, Component.translatable("generic.ydm.left_arrow"), this::onButtonClicked));
-        addRenderableWidget(nextButton = new ImprovedButton(leftPos + imageWidth - 12 - 8, topPos + 4, 12, 12, Component.translatable("generic.ydm.right_arrow"), this::onButtonClicked));
+        addRenderableWidget(prevButton = new ImprovedButton(leftPos + imageWidth - 24 - 8, topPos + 4, 12, 12, Component.translatable("generic.duelmonsters.left_arrow"), this::onButtonClicked));
+        addRenderableWidget(nextButton = new ImprovedButton(leftPos + imageWidth - 12 - 8, topPos + 4, 12, 12, Component.translatable("generic.duelmonsters.right_arrow"), this::onButtonClicked));
     }
     
     @Override

@@ -1,0 +1,6 @@
+{
+  "parent": "duelmonsters:item/sleeves_ruby",
+  "textures": {
+    "layer0": "duelmonsters:item/512/sleeves_ruby"
+  }
+}

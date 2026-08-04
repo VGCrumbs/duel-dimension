@@ -1,0 +1,8 @@
+{
+    "variants": {
+        "facing=north": { "model": "duelmonsters:block/duel_table" },
+        "facing=south": { "model": "duelmonsters:block/duel_table", "y": 180 },
+        "facing=west":  { "model": "duelmonsters:block/duel_table", "y": 270 },
+        "facing=east":  { "model": "duelmonsters:block/duel_table", "y": 90 }
+    }
+}

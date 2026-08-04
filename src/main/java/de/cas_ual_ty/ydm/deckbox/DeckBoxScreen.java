@@ -57,7 +57,7 @@ public class DeckBoxScreen extends AbstractContainerScreen<DeckBoxContainer>
         }
         
         //drawString
-        font.draw(ms, Component.translatable("container.ydm.deck_box.main").append(" " + amount + "/" + DeckHolder.MAIN_DECK_SIZE), 8F, 6F, 0x404040);
+        font.draw(ms, Component.translatable("container.duelmonsters.deck_box.main").append(" " + amount + "/" + DeckHolder.MAIN_DECK_SIZE), 8F, 6F, 0x404040);
         
         // extra deck
         
@@ -73,7 +73,7 @@ public class DeckBoxScreen extends AbstractContainerScreen<DeckBoxContainer>
         }
         
         //drawString
-        font.draw(ms, Component.translatable("container.ydm.deck_box.extra").append(" " + amount + "/" + DeckHolder.EXTRA_DECK_SIZE), 8F, 92F, 0x404040);
+        font.draw(ms, Component.translatable("container.duelmonsters.deck_box.extra").append(" " + amount + "/" + DeckHolder.EXTRA_DECK_SIZE), 8F, 92F, 0x404040);
         
         // side deck
         
@@ -89,9 +89,9 @@ public class DeckBoxScreen extends AbstractContainerScreen<DeckBoxContainer>
         }
         
         //drawString
-        font.draw(ms, Component.translatable("container.ydm.deck_box.side").append(" " + amount + "/" + DeckHolder.SIDE_DECK_SIZE), 8F, 124F, 0x404040);
+        font.draw(ms, Component.translatable("container.duelmonsters.deck_box.side").append(" " + amount + "/" + DeckHolder.SIDE_DECK_SIZE), 8F, 124F, 0x404040);
         
-        font.draw(ms, Component.translatable("container.ydm.deck_box.sleeves"), 224F, (float) (imageHeight - 96 + 2), 0x404040);
+        font.draw(ms, Component.translatable("container.duelmonsters.deck_box.sleeves"), 224F, (float) (imageHeight - 96 + 2), 0x404040);
         
         font.draw(ms, playerInventoryTitle.getVisualOrderText(), 8F, (float) (imageHeight - 96 + 2), 0x404040);
     }

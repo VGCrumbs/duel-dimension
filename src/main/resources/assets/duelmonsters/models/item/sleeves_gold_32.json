@@ -1,0 +1,6 @@
+{
+  "parent": "duelmonsters:item/sleeves_gold",
+  "textures": {
+    "layer0": "duelmonsters:item/32/sleeves_gold"
+  }
+}

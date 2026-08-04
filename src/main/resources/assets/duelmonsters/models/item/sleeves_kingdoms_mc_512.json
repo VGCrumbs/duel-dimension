@@ -1,0 +1,6 @@
+{
+  "parent": "duelmonsters:item/sleeves_kingdoms_mc",
+  "textures": {
+    "layer0": "duelmonsters:item/512/sleeves_kingdoms_mc"
+  }
+}
