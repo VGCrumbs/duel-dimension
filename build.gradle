@@ -142,6 +142,12 @@ dependencies {
     // The userdev artifact is a special name and will get all sorts of transformations applied to it.
     minecraft 'net.minecraftforge:forge:1.19.2-43.2.8'
 
+    // JNA for the ocgcore (EDOPro-core) rules engine binding.
+    // Minecraft 1.19.2 already ships JNA 5.10.0 as a library (via oshi), so this
+    // is only pinned explicitly for compilation and for the standalone ocgSpike
+    // task; it is intentionally not bundled into the mod jar.
+    implementation 'net.java.dev.jna:jna:5.10.0'
+
     // Real mod deobf dependency examples - these get remapped to your current mappings
     // compileOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_version}:api") // Adds JEI API as a compile dependency
     // runtimeOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_version}") // Adds the full JEI mod as a runtime dependency
@@ -153,6 +159,17 @@ dependencies {
     // For more info...
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
+}
+
+// Standalone smoke test of the ocgcore JNA binding, no Minecraft involved.
+// Usage: gradlew ocgSpike -PocgLib=native/ocgcore.dll [-PocgScripts=path/to/CardScripts]
+tasks.register('ocgSpike', JavaExec) {
+    group = 'ydm'
+    description = 'Runs the ocgcore binding smoke test against a native ocgcore library.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'de.cas_ual_ty.ydm.ocg.OcgSpike'
+    args = [project.findProperty('ocgLib') ?: 'native/ocgcore.dll'] +
+        (project.findProperty('ocgScripts') ? [project.findProperty('ocgScripts')] : [])
 }
 
 // Example for how to get properties into the manifest for reading at runtime.
