@@ -4,6 +4,7 @@ Project documentation for this fork of the Ygo Dueling Mod.
 
 ## Contents
 
+- [CrumbyDueling.md](CrumbyDueling.md) — **project hub** (Obsidian-flavored): goals, decision log, phase checklists with gates, and how every feature works. Start here.
 - [ocgcore-integration.md](ocgcore-integration.md) — how the EDOPro-core rules engine is embedded (JNA binding, duel loop, licensing, toolchain).
 - [ydm2-db-wiki/](ydm2-db-wiki/README.md) — mirror of the [YDM2-DB wiki](https://github.com/CAS-ual-TY/YDM2-DB/wiki), which documents the JSON format of the card database (cards, sets, distributions, `db.json`).
 
