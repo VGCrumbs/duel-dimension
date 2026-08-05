@@ -226,8 +226,17 @@ public class DuelSession
                         ? (message.payload()[0] & 0xFF) | ((message.payload()[1] & 0xFF) << 8) : phase;
                     snapshot();
                 }
+                // Anything that changes what a card looks like has to produce a
+                // checkpoint, not just anything that moves one. A flip summon
+                // and a battle-position change alter only the card's position,
+                // so with these missing the client was never told: the card sat
+                // face down until some later, unrelated snapshot corrected it.
                 case OcgConstants.MSG_MOVE, OcgConstants.MSG_DAMAGE, OcgConstants.MSG_RECOVER,
-                    OcgConstants.MSG_DRAW, OcgConstants.MSG_WIN -> snapshot();
+                    OcgConstants.MSG_DRAW, OcgConstants.MSG_WIN,
+                    OcgConstants.MSG_POS_CHANGE, OcgConstants.MSG_FLIPSUMMONING,
+                    OcgConstants.MSG_SET, OcgConstants.MSG_SUMMONING,
+                    OcgConstants.MSG_SPSUMMONING, OcgConstants.MSG_SWAP,
+                    OcgConstants.MSG_CHAINING -> snapshot();
                 default ->
                 {
                 }

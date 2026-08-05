@@ -61,6 +61,7 @@ public class DuelAnimations
     private static final long CHAIN_MS = frames(30);
     private static final long TARGET_MS = frames(30);
     private static final long SHUFFLE_MS = frames(10);
+    private static final long POSITION_MS = frames(11);
     private static final long WIN_MS = frames(120);
     /**
      * A destroyed card breaks apart. EDOPro has no such effect -- destruction
@@ -182,6 +183,8 @@ public class DuelAnimations
         {
             case MOVE -> MOVE_MS;
             case SET -> SET_MS;
+            // MSG_POS_CHANGE holds 11 frames in duelclient.cpp.
+            case POSITION -> POSITION_MS;
             case SUMMON, SPECIAL_SUMMON, FLIP -> SUMMON_MS;
             case DESTROY -> SHATTER_MS;
             case DRAW -> DRAW_MS;
@@ -241,7 +244,7 @@ public class DuelAnimations
         switch(event.kind())
         {
             case DESTROY -> shatters.add(new Playing(event, now, duration));
-            case MOVE, SUMMON, SPECIAL_SUMMON, SET, ACTIVATE, DRAW ->
+            case MOVE, SUMMON, SPECIAL_SUMMON, SET, ACTIVATE, DRAW, FLIP, POSITION ->
                 playing.add(new Playing(event, now, duration));
             case DAMAGE, RECOVER -> flashes.add(new Playing(event, now, duration));
             case ATTACK -> attacks.add(new Playing(event, now, duration));
@@ -273,7 +276,7 @@ public class DuelAnimations
             case RECOVER -> DdSounds.GAIN_LP.get();
             case DESTROY -> DdSounds.DESTROYED.get();
             case DRAW -> DdSounds.DRAW.get();
-            case FLIP -> DdSounds.FLIP.get();
+            case FLIP, POSITION -> DdSounds.FLIP.get();
             case CHAINING -> DdSounds.ACTIVATE.get();
             case BECOME_TARGET -> DdSounds.EQUIP.get();
             case SHUFFLE -> DdSounds.SHUFFLE.get();

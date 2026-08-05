@@ -34,7 +34,10 @@ class SessionOrderingTest
     private static final int[] SNAPSHOT_AFTER = {
         OcgConstants.MSG_MOVE, OcgConstants.MSG_DAMAGE, OcgConstants.MSG_RECOVER,
         OcgConstants.MSG_DRAW, OcgConstants.MSG_WIN,
-        OcgConstants.MSG_NEW_TURN, OcgConstants.MSG_NEW_PHASE
+        OcgConstants.MSG_NEW_TURN, OcgConstants.MSG_NEW_PHASE,
+        OcgConstants.MSG_POS_CHANGE, OcgConstants.MSG_FLIPSUMMONING,
+        OcgConstants.MSG_SET, OcgConstants.MSG_SUMMONING,
+        OcgConstants.MSG_SPSUMMONING, OcgConstants.MSG_SWAP, OcgConstants.MSG_CHAINING
     };
 
     private static Path lib()

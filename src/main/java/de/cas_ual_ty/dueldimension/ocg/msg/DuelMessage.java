@@ -241,6 +241,16 @@ public sealed interface DuelMessage
     {
     }
 
+    /**
+     * A card turned to a different battle position. operations.cpp:5278 writes
+     * code, controller, location, sequence, the previous position and the new
+     * one -- all single bytes after the code, NOT a loc_info.
+     */
+    record PositionChange(int code, int controller, int location, int sequence,
+        int previousPosition, int position) implements DuelMessage
+    {
+    }
+
     /** A card was set; code is 0 when hidden. Sound only in the reference. */
     record SetCard(int code, CardLocation card) implements DuelMessage
     {
@@ -436,6 +446,8 @@ public sealed interface DuelMessage
             case OcgConstants.MSG_SUMMONING -> new Summoning(in.u32(), in.loc());
             case OcgConstants.MSG_SPSUMMONING -> new SpSummoning(in.u32(), in.loc());
             case OcgConstants.MSG_SET -> new SetCard(in.u32(), in.loc());
+            case OcgConstants.MSG_POS_CHANGE -> new PositionChange(in.u32(), in.u8(), in.u8(),
+                in.u8(), in.u8(), in.u8());
             case OcgConstants.MSG_DRAW ->
             {
                 int player = in.u8();

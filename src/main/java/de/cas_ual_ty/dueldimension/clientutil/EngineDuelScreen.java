@@ -871,8 +871,17 @@ public class EngineDuelScreen extends Screen
      * marked, and a phase you may jump to is a live button - which is exactly
      * the idle/battle command the core offered.
      */
-    private static final int PHASE_CELL_W = 26;
-    private static final int PHASE_CELL_H = 12;
+    /**
+     * The phase row, in the reference's own proportions. game.cpp:314 builds
+     * {@code wPhase} at {@code Scale(480, 310, 855, 330)} -- 375 by 20 against
+     * its 1024-wide base -- holding buttons of {@code Scale(0, 0, 50, 20)}. So
+     * a phase button is 50 wide and 20 tall, and the row spans 375. Ours was
+     * 26 by 12, both too small and the wrong shape (2.17:1 against 2.5:1).
+     */
+    private static final int PHASE_CELL_W = 50;
+    private static final int PHASE_CELL_H = 20;
+    /** The reference's row width, for the gap either side of the buttons. */
+    private static final int PHASE_BAR_W = 375;
     /**
      * The phase row sits below the life bars, tucked up under the turn badge:
      * the "your turn" label that used to occupy this space is gone (the badge's

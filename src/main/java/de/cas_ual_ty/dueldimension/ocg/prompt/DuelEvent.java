@@ -30,6 +30,8 @@ public record DuelEvent(Kind kind, int code, int fromZone, int toZone, int amoun
         SPECIAL_SUMMON,
         SET,
         FLIP,
+        /** A battle-position change: to defence, to attack, or flipped up. */
+        POSITION,
         ACTIVATE,
         ATTACK,
         DAMAGE,

@@ -82,6 +82,8 @@ public class BoardRenderer extends GuiComponent
     /** Stats are drawn small so they sit on a card without covering the art. */
     private static final float STAT_SCALE = 0.5F;
     private static final int COLOUR_ACTIONABLE = 0xE0FFD700;
+    /** custom_skin_enum.inl: DECLR(DUELFIELD_STACK, 0xffffff00). */
+    private static final int COLOUR_STACK = 0xFFFFFF00;
 
     /** A drawn slot; piles use sequence -1. */
     public record Hit(FieldQuad.Corners corners, int code, int controller, int location, int sequence,
@@ -289,6 +291,35 @@ public class BoardRenderer extends GuiComponent
         }
     }
 
+    /**
+     * The pile count, ported from {@code Game::DrawStackIndicator}
+     * (drawing.cpp:753), whose own comment reads "Draws the text in the middle
+     * of the bottom side of the zone".
+     * <pre>
+     * x0 = (v[0].Pos.X + v[1].Pos.X) / 2      // the zone's middle
+     * y0 = opponent ? v[0].Pos.Y : v[2].Pos.Y // the zone's bottom edge
+     * DrawShadowText(numFont, text, rect centred on that point, ...,
+     *                skin::DUELFIELD_STACK_VAL /* 0xffffff00 *&#47;, 0xff000000)
+     * </pre>
+     * So it sits centred on the edge of the zone nearest the viewer, in yellow
+     * with a black shadow -- not boxed in the middle of the zone, which is
+     * where ours was.
+     */
+    private void drawStackIndicator(PoseStack poseStack, Font font, FieldQuad.Corners corners,
+        int controller, int count)
+    {
+        String text = Integer.toString(count);
+        // v[0]/v[1] are the far corners and v[2]/v[3] the near ones, so the
+        // "bottom" edge is the far one for the opponent and the near one for us.
+        float edgeY = controller == 1 ? (corners.y0() + corners.y1()) / 2F
+            : (corners.y2() + corners.y3()) / 2F;
+        int x = Math.round(centreX(corners)) - font.width(text) / 2;
+        int y = Math.round(edgeY) - 4;
+        // DrawShadowText's offset is Resize(0, 1, 0, 1): one pixel down-right.
+        font.draw(poseStack, text, x + 1, y + 1, 0xFF000000);
+        font.draw(poseStack, text, x, y, COLOUR_STACK);
+    }
+
     /** A zone shrunk to its grid box, so neighbouring slots stay separate. */
     private static FieldLayout.Rect inset(FieldLayout.Rect rect)
     {
@@ -408,13 +439,7 @@ public class BoardRenderer extends GuiComponent
                 top = textureFor(topCard, false, controller);
             }
             drawCardArt(poseStack, top, pileCard, turns);
-            // Centred on the slot itself. The quad is a trapezoid, so its
-            // bounding box is not its middle: average the corners instead.
-            String text = Integer.toString(count);
-            int textX = Math.round(centreX(corners)) - font.width(text) / 2;
-            int textY = Math.round(centreY(corners)) - 4;
-            fill(poseStack, textX - 2, textY - 1, textX + font.width(text) + 2, textY + 9, 0xC0000000);
-            font.draw(poseStack, text, textX, textY, 0xFFFFFF);
+            drawStackIndicator(poseStack, font, corners, controller, count);
         }
         if(canActivateFromHere)
         {

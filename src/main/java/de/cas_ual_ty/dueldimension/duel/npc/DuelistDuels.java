@@ -501,6 +501,12 @@ public final class DuelistDuels
             return List.of(new DuelEvent(DuelEvent.Kind.SPECIAL_SUMMON, spSummoning.code(),
                 -1, -1, 0, spSummoning.card().controller()));
         }
+        if(message instanceof DuelMessage.PositionChange position)
+        {
+            return List.of(new DuelEvent(DuelEvent.Kind.POSITION, position.code(), -1,
+                DuelEvent.zoneOf(position.controller(), position.location(), position.sequence(), 0),
+                0, position.controller()));
+        }
         if(message instanceof DuelMessage.SetCard set)
         {
             return List.of(new DuelEvent(DuelEvent.Kind.SET, set.code(),
