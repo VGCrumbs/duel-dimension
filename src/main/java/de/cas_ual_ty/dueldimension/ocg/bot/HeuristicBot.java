@@ -135,6 +135,13 @@ public class HeuristicBot implements ResponseSource
         for(int i = 0; i < idle.summonable().size(); i++)
         {
             OcgCard card = cards.get(idle.summonable().get(i).code());
+            // A flip monster's whole point is its flip effect: summoning it
+            // face up throws that away. It appears in the settable list too,
+            // where it gets the boost this branch is skipping it for.
+            if(card != null && (card.type() & OcgConstants.TYPE_FLIP) != 0)
+            {
+                continue;
+            }
             double score = 250 + attackOf(card) / 100.0 + (attackOf(card) > threat ? 150 : -100);
             if(score > bestScore)
             {
@@ -154,7 +161,9 @@ public class HeuristicBot implements ResponseSource
                 continue;
             }
             boolean wall = threat > 0 && defenseOf(card) > threat && defenseOf(card) > attackOf(card);
-            double score = 120 + defenseOf(card) / 100.0 + (wall ? 120 : 0);
+            boolean flip = (card.type() & OcgConstants.TYPE_FLIP) != 0;
+            // A flip monster set is a summon-grade play, not a reluctant wall.
+            double score = 120 + defenseOf(card) / 100.0 + (wall ? 120 : 0) + (flip ? 180 : 0);
             if(score > bestScore)
             {
                 bestScore = score;
@@ -162,12 +171,13 @@ public class HeuristicBot implements ResponseSource
             }
         }
 
-        // Activating beats setting a wall: a spell/effect is card advantage
-        // now, and it is how a deck reaches its win conditions at all (a
-        // Ritual Spell that never gets activated is a dead 3000-ATK body).
+        // Activation is scored by what the card is FOR against this board,
+        // via the curated CardRoles table. The flat score this replaces fired
+        // any legal spell immediately -- including a board wipe whose only
+        // victims were the bot's own monsters.
         for(int i = 0; i < idle.activatable().size(); i++)
         {
-            double score = 280;
+            double score = activationScore(state, idle.activatable().get(i).code());
             if(score > bestScore)
             {
                 bestScore = score;
@@ -231,6 +241,83 @@ public class HeuristicBot implements ResponseSource
     }
 
     /** True if any of our face-up attackers beats something (or the opponent is open). */
+    /**
+     * How much this board wants this card activated; negative means "keep it".
+     * Legality is the engine's business — this is the judgement the engine
+     * cannot supply, because effects are opaque scripts to the host.
+     */
+    private double activationScore(BoardState state, int code)
+    {
+        int ownCount = state.self().monsterCount();
+        int oppCount = state.opponent().monsterCount();
+        int ownBest = state.self().strongestFaceUpAttack();
+        int oppBest = state.opponent().strongestFaceUpAttack();
+
+        return switch(CardRoles.of(code))
+        {
+            case WIPES_ALL_MONSTERS ->
+            {
+                // Both boards die, so its value is the exchange. Firing it
+                // while ahead -- or with only our own monsters out, the play
+                // that prompted this method -- reads as negative and never
+                // beats doing anything else.
+                double exchange = (oppCount * 120 + oppBest / 8.0) - (ownCount * 120 + ownBest / 8.0);
+                yield exchange > 100 ? 200 + exchange : -1;
+            }
+            case HITS_OPPONENT_MONSTER ->
+                oppCount == 0 ? -1 : 260 + oppBest / 10.0;
+            case HITS_BACKROW ->
+                backrow(state.opponent()) == 0 ? -1 : 220 + backrow(state.opponent()) * 15;
+            case BUFFS_OWN_MONSTER ->
+                hasFaceUpMonster(state) ? 210 : -1;
+            case REVIVES_FROM_GRAVE ->
+            {
+                int best = Math.max(bestGraveAttack(state.self()), bestGraveAttack(state.opponent()));
+                yield best >= 1200 ? 240 + best / 10.0 : -1;
+            }
+            case UTILITY -> 170;
+        };
+    }
+
+    private static int backrow(BoardState.PlayerBoard side)
+    {
+        int count = 0;
+        for(CardView card : side.spells())
+        {
+            if(card != null)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private boolean hasFaceUpMonster(BoardState state)
+    {
+        for(CardView card : state.self().monsters())
+        {
+            if(card != null && card.isFaceUp())
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private int bestGraveAttack(BoardState.PlayerBoard side)
+    {
+        int best = 0;
+        for(CardView card : side.grave())
+        {
+            OcgCard data = card == null ? null : cards.get(card.code());
+            if(data != null && (data.type() & OcgConstants.TYPE_MONSTER) != 0)
+            {
+                best = Math.max(best, attackOf(data));
+            }
+        }
+        return best;
+    }
+
     private boolean hasWinningAttack(BoardState state)
     {
         int ours = state.self().strongestAttacker();
@@ -336,6 +423,12 @@ public class HeuristicBot implements ResponseSource
     private byte[] position(DuelMessage.SelectPosition position)
     {
         OcgCard card = cards.get(position.code());
+        // A flip monster wants to be face down whenever the core allows it.
+        if(card != null && (card.type() & OcgConstants.TYPE_FLIP) != 0
+            && (position.positions() & OcgConstants.POS_FACEDOWN_DEFENSE) != 0)
+        {
+            return Responses.position(OcgConstants.POS_FACEDOWN_DEFENSE);
+        }
         boolean preferDefense = card != null && defenseOf(card) > attackOf(card);
         int wanted = preferDefense ? OcgConstants.POS_FACEUP_DEFENSE : OcgConstants.POS_FACEUP_ATTACK;
         if((position.positions() & wanted) != 0)
