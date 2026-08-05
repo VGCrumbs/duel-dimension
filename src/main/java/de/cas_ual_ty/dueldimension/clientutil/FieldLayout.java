@@ -225,6 +225,14 @@ public final class FieldLayout
      */
     public static Projection fit(int left, int top, int width, int height)
     {
-        return new Projection(left + width / 2F, top + height / 2F, width / 2F, height / 2F);
+        float scaleX = width / 2F;
+        float scaleY = height / 2F;
+        // The frustum puts the table's centre at NDC +1/3, which in EDOPro
+        // leaves room for its card panel. Our sidebar has its own width, so
+        // undo that offset and centre the table in the box we were handed.
+        float centreNdcX = Projection.ndcX((FIELD_MIN_X + FIELD_MAX_X) / 2F, 0F);
+        float centreNdcY = Projection.ndcY(0F);
+        return new Projection(left + width / 2F - centreNdcX * scaleX,
+            top + height / 2F + centreNdcY * scaleY, scaleX, scaleY);
     }
 }

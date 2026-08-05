@@ -74,10 +74,11 @@ class FieldLayoutTest
         assertEquals(expected, farWidth / nearWidth, 0.01F,
             "far/near width ratio should equal the camera's depth ratio");
 
-        // Table centre (field x 4.0) sits right of the box centre.
-        float centre = projection.x(4.0F, 0F);
-        assertTrue(centre > LEFT + WIDTH / 2F,
-            "the off-centre frustum should push the table right, leaving room for the sidebar");
+        // EDOPro's frustum pushes the table right to clear its own panel; we
+        // take that offset out so the table is centred in the space our
+        // sidebar leaves. The perspective is unchanged, only the origin.
+        float centre = projection.x((FieldLayout.FIELD_MIN_X + FieldLayout.FIELD_MAX_X) / 2F, 0F);
+        assertEquals(LEFT + WIDTH / 2F, centre, 2F, "table should be centred in its box");
     }
 
     /**

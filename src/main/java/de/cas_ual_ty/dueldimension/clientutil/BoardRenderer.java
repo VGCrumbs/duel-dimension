@@ -41,6 +41,8 @@ public class BoardRenderer extends GuiComponent
     private static final int COLOUR_ZONE = 0x50FFFFFF;
     private static final int COLOUR_HIGHLIGHT = 0xC000FF66;
     private static final int COLOUR_HIGHLIGHT_FILL = 0x4000FF66;
+    /** Faint zone outline, so the grid is always legible. */
+    private static final int COLOUR_GRID = 0x50B0B8C0;
     private static final int COLOUR_ACTIONABLE = 0xE0FFD700;
 
     /** A drawn slot; piles use sequence -1. */
@@ -250,8 +252,8 @@ public class BoardRenderer extends GuiComponent
         boolean zoneLit = hit.zoneRef() >= 0 && zoneHighlights.contains(hit.zoneRef());
         boolean canAct = actionable.test(hit);
 
-        // The mat already prints the grid; only mark a zone when it is
-        // selectable or holds something the player can act on.
+        // Every zone keeps a faint outline so the grid reads even where the
+        // mat's own print is dark, and gains a stronger one when it matters.
         if(zoneLit)
         {
             FieldQuad.fill(poseStack, hit.corners(), COLOUR_HIGHLIGHT_FILL);
@@ -260,6 +262,10 @@ public class BoardRenderer extends GuiComponent
         else if(canAct)
         {
             FieldQuad.outline(poseStack, hit.corners(), COLOUR_ACTIONABLE);
+        }
+        else
+        {
+            FieldQuad.outline(poseStack, hit.corners(), COLOUR_GRID);
         }
         hits.add(hit);
 

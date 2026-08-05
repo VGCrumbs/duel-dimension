@@ -322,7 +322,7 @@ public class EngineDuelScreen extends Screen
         }
         // Above the card, centred on it: the card stays visible while you
         // choose what to do with it.
-        int menuHeight = actions.size() * MENU_ROW;
+        int menuHeight = (actions.size() + 1) * MENU_ROW; // + the Cancel row
         int menuX = Math.max(SIDEBAR_W + 4,
             Math.min(hit.x() + hit.w() / 2 - widest / 2, width - widest - 4));
         int menuY = hit.y() - menuHeight - 4;
@@ -340,6 +340,11 @@ public class EngineDuelScreen extends Screen
             menuButtons.add(button);
             addRenderableWidget(button);
         }
+        // Always offer a way out of the menu itself.
+        CommandButton close = new CommandButton(menuX, menuY + actions.size() * MENU_ROW, widest,
+            MENU_ROW - 2, Component.literal("Cancel"), 0, hit, pressed -> closeMenu());
+        menuButtons.add(close);
+        addRenderableWidget(close);
     }
 
     private static boolean sameSlot(BoardRenderer.Hit a, BoardRenderer.Hit b)
@@ -472,8 +477,54 @@ public class EngineDuelScreen extends Screen
     // ---- input ----
 
     @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers)
+    {
+        // Escape backs out of whatever is open, in that order.
+        if(keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE)
+        {
+            if(pileView != null)
+            {
+                pileView = null;
+                return true;
+            }
+            if(!menuButtons.isEmpty())
+            {
+                closeMenu();
+                return true;
+            }
+            EnginePrompt prompt = shownPrompt;
+            if(prompt != null && prompt.cancelable() && !answered)
+            {
+                answer(new int[0], 0);
+                return true;
+            }
+            if(!selected.isEmpty() || !sortOrder.isEmpty())
+            {
+                selected.clear();
+                sortOrder.clear();
+                return true;
+            }
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button)
     {
+        // Right-click closes the command menu, as it does in the reference.
+        if(button == 1)
+        {
+            if(pileView != null)
+            {
+                pileView = null;
+                return true;
+            }
+            if(!menuButtons.isEmpty())
+            {
+                closeMenu();
+                return true;
+            }
+        }
         if(button == 0 && pileView != null)
         {
             pileView = null;
@@ -805,20 +856,15 @@ public class EngineDuelScreen extends Screen
         int badgeW = 34;
         int left = SIDEBAR_W + 10;
         int right = width - 10;
-        float centre = boardRenderer.tableCentreX();
-        if(centre <= left + 80 || centre >= right - 80)
-        {
-            centre = (left + right) / 2F;
-        }
-
-        int badgeLeft = Math.round(centre) - badgeW / 2;
-        int leftBarW = Math.max(60, badgeLeft - 6 - left);
-        int rightBarW = Math.max(60, right - (badgeLeft + badgeW + 6));
+        // Both players get the same bar: a wider one for you would misread as
+        // an advantage at a glance.
+        int barW = Math.max(60, (right - left - badgeW - 12) / 2);
+        int badgeLeft = left + barW + 6;
 
         long now = System.currentTimeMillis();
-        drawLifeBar(poseStack, left, 6, leftBarW, "You", board.self().lifePoints(), 0xFF3FA34D,
+        drawLifeBar(poseStack, left, 6, barW, "You", board.self().lifePoints(), 0xFF3FA34D,
             animations.damageFlash(0, now));
-        drawLifeBar(poseStack, right - rightBarW, 6, rightBarW, "Opponent",
+        drawLifeBar(poseStack, right - barW, 6, barW, "Opponent",
             board.opponent().lifePoints(), 0xFFC1362F, animations.damageFlash(1, now));
 
         int badgeTop = 4;
@@ -924,18 +970,22 @@ public class EngineDuelScreen extends Screen
         poseStack.popPose();
     }
 
+    /**
+     * The duel log lives in the sidebar, where EDOPro keeps its Log tab.
+     * Drawing it over the field put text across the cards.
+     */
     private void renderLog(PoseStack poseStack)
     {
-        int x = width - LOG_W - 4;
-        int y = height - 30;
+        int x = SIDEBAR_PAD;
+        int y = height - 52;
         int shown = 0;
         synchronized(DuelClientState.class)
         {
             var iterator = DuelClientState.log.descendingIterator();
-            while(iterator.hasNext() && shown < 3)
+            while(iterator.hasNext() && shown < 4)
             {
                 String line = iterator.next();
-                while(font.width(line) > LOG_W && line.length() > 4)
+                while(font.width(line) > SIDEBAR_W - SIDEBAR_PAD * 2 && line.length() > 4)
                 {
                     line = line.substring(0, line.length() - 2);
                 }
