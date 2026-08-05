@@ -328,6 +328,11 @@ public class ClientProxy implements ISidedProxy
             DuelClientState.board = update.board();
         }
         update.log().forEach(DuelClientState::addLog);
+        DuelClientState.warmUpArt(update.warmUp());
+        if(update.board() != null)
+        {
+            DuelClientState.warmUpBoard(update.board());
+        }
         if(update.over())
         {
             DuelClientState.over = true;

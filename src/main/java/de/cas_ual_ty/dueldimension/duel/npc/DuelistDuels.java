@@ -148,6 +148,14 @@ public final class DuelistDuels
         serverPlayer.sendSystemMessage(Component.literal("You are playing; prompts will open as the duel needs them.")
             .withStyle(ChatFormatting.DARK_GRAY));
 
+        // Tell the client which cards it will need art for. Only the player's
+        // own deck: the opponent's list is hidden information, and their cards
+        // are fetched as they hit the field.
+        int[] warmUp = deck0.main().stream().mapToInt(Integer::intValue).distinct().toArray();
+        de.cas_ual_ty.dueldimension.DuelDimension.channel.send(
+            net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> serverPlayer),
+            new PromptMessages.DuelUpdate(null, List.of(), false, "", warmUp));
+
         session.start();
     }
 

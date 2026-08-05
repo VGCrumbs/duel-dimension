@@ -6,6 +6,7 @@ import de.cas_ual_ty.dueldimension.DuelDimension;
 import de.cas_ual_ty.dueldimension.card.properties.Properties;
 import de.cas_ual_ty.dueldimension.ocg.OcgConstants;
 import de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot;
+import de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands;
 import de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt;
 import de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages;
 import net.minecraft.client.gui.components.Button;
@@ -14,26 +15,28 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 /**
- * The duel screen, laid out the way duel sims are: a card preview and info
- * column on the left, the field in the middle, and actions where the action
- * is — hovering a card highlights it and lists what it can do, clicking it
- * opens those actions right at the card. Only choices with no card to point at
- * (phases, effect options, yes/no) get buttons, in a strip along the bottom.
+ * The duel screen, arranged like EDOPro's: a card-image and card-info column
+ * down the left, life-point bars across the top, the field in the middle with
+ * the hands along its edges, the message log in the lower right, and a
+ * contextual command menu that opens at the card you point at.
  * <p>
- * All rules knowledge is server-side; this screen renders what it is given and
- * reports clicks.
+ * The menu is built from the engine-derived {@link CardCommands} bitmask and
+ * stacked in ShowMenu's order; choices with no card to point at (phase
+ * changes, effect options, yes/no) get buttons in the bottom strip.
  */
 public class EngineDuelScreen extends Screen
 {
-    private static final int PREVIEW_W = 116;
-    private static final int MENU_W = 104;
-    /** ShowMenu stacks entries at Scale(21); we keep the same step. */
-    private static final int MENU_ROW = de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.MENU_ROW_HEIGHT;
+    private static final int SIDEBAR_W = 168;
+    private static final int SIDEBAR_PAD = 6;
+    private static final int TOP_BAR_H = 32;
+    private static final int MENU_ROW = CardCommands.MENU_ROW_HEIGHT;
+    private static final int LOG_W = 150;
 
     private final BoardRenderer boardRenderer = new BoardRenderer();
 
@@ -44,19 +47,14 @@ public class EngineDuelScreen extends Screen
     private EnginePrompt shownPrompt;
     private EditBox searchBox;
     private final List<Integer> searchResults = new ArrayList<>();
+    private final List<Button> searchButtons = new ArrayList<>();
 
-    /** Card shown in the left panel: hovered, else the last one hovered. */
     private int previewCode;
-    /** Open per-card action menu, or null. */
-    private CardMenu menu;
-    /** Pile contents being viewed, or null. */
+    private BoardRenderer.Hit menuAnchor;
+    private final List<Button> menuButtons = new ArrayList<>();
     private List<BoardSnapshot.Slot> pileView;
     private String pileViewLabel = "";
     private boolean answered;
-
-    private record CardMenu(int x, int y, List<Integer> optionIndices)
-    {
-    }
 
     public EngineDuelScreen()
     {
@@ -87,11 +85,13 @@ public class EngineDuelScreen extends Screen
     private void rebuild()
     {
         clearWidgets();
+        menuButtons.clear();
+        searchButtons.clear();
         if(DuelClientState.prompt != shownPrompt)
         {
             selected.clear();
             sortOrder.clear();
-            menu = null;
+            menuAnchor = null;
             answered = false;
         }
         shownPrompt = DuelClientState.prompt;
@@ -103,8 +103,7 @@ public class EngineDuelScreen extends Screen
             counterAmounts = new int[prompt.options().size()];
         }
 
-        // Surrender/close sits in the top-right corner, clear of the field.
-        addRenderableWidget(new Button(width - 74, 6, 68, 16,
+        addRenderableWidget(new Button(SIDEBAR_PAD, height - 24, SIDEBAR_W - SIDEBAR_PAD * 2, 18,
             Component.literal(DuelClientState.over ? "Close" : "Surrender"), pressed ->
         {
             if(DuelClientState.over)
@@ -124,40 +123,34 @@ public class EngineDuelScreen extends Screen
         }
         if(prompt.kind() == EnginePrompt.Kind.DECLARE_CARD)
         {
-            buildDeclareControls(prompt);
+            buildDeclareControls();
             return;
         }
         buildBottomStrip(prompt);
     }
 
-    /** Buttons for choices that aren't attached to a card on the field. */
+    /** Choices with no card to point at: phases, effect options, yes/no. */
     private void buildBottomStrip(EnginePrompt prompt)
     {
-        List<Integer> loose = new ArrayList<>();
+        int y = height - 24;
+        int x = SIDEBAR_W + 8;
         for(int i = 0; i < prompt.options().size(); i++)
         {
             EnginePrompt.Option option = prompt.options().get(i);
-            boolean onField = option.hasSlot() || option.zone() >= 0;
-            if(!onField)
+            if(option.hasSlot() || option.zone() >= 0)
             {
-                loose.add(i);
+                continue; // this one belongs on the field
             }
-        }
-
-        int y = height - 26;
-        int x = PREVIEW_W + 8;
-        for(int index : loose)
-        {
-            String label = prompt.options().get(index).label();
-            int buttonWidth = Math.max(60, font.width(label) + 12);
-            if(x + buttonWidth > width - 80)
+            String label = option.label();
+            int buttonWidth = Math.max(56, font.width(label) + 12);
+            if(x + buttonWidth > width - LOG_W - 12)
             {
-                x = PREVIEW_W + 8;
+                x = SIDEBAR_W + 8;
                 y -= 20;
             }
-            int optionIndex = index;
+            int index = i;
             addRenderableWidget(new Button(x, y, buttonWidth, 18, Component.literal(label),
-                pressed -> choose(optionIndex)));
+                pressed -> choose(index)));
             x += buttonWidth + 4;
         }
 
@@ -168,50 +161,45 @@ public class EngineDuelScreen extends Screen
             case PLACES -> prompt.minSelect() > 1;
             default -> false;
         };
+        int rightX = width - LOG_W - 12;
         if(needsConfirm)
         {
-            addRenderableWidget(new Button(width - 160, height - 26, 74, 18,
+            addRenderableWidget(new Button(rightX - 76, height - 24, 74, 18,
                 Component.literal("Confirm"), pressed -> confirm()));
         }
         if(prompt.cancelable())
         {
-            addRenderableWidget(new Button(width - 82, height - 26, 74, 18,
+            addRenderableWidget(new Button(rightX - 76, height - 44, 74, 18,
                 Component.literal(prompt.kind() == EnginePrompt.Kind.SORT ? "Keep order" : "Cancel"),
                 pressed -> answer(new int[0], 0)));
         }
         if(prompt.kind() == EnginePrompt.Kind.COUNTERS)
         {
-            int rowY = height - 52;
             for(int i = 0; i < prompt.options().size(); i++)
             {
                 int index = i;
-                addRenderableWidget(new Button(PREVIEW_W + 8 + i * 92, rowY, 20, 18,
-                    Component.literal("-"), pressed ->
-                {
-                    counterAmounts[index] = Math.max(0, counterAmounts[index] - 1);
-                }));
-                addRenderableWidget(new Button(PREVIEW_W + 8 + i * 92 + 52, rowY, 20, 18,
-                    Component.literal("+"), pressed ->
-                {
-                    counterAmounts[index] = Math.min(prompt.options().get(index).max(),
-                        counterAmounts[index] + 1);
-                }));
+                int rowX = SIDEBAR_W + 8 + i * 96;
+                addRenderableWidget(new Button(rowX, height - 46, 18, 18, Component.literal("-"),
+                    pressed -> counterAmounts[index] = Math.max(0, counterAmounts[index] - 1)));
+                addRenderableWidget(new Button(rowX + 52, height - 46, 18, 18, Component.literal("+"),
+                    pressed -> counterAmounts[index] = Math.min(
+                        prompt.options().get(index).max(), counterAmounts[index] + 1)));
             }
         }
     }
 
-    private void buildDeclareControls(EnginePrompt prompt)
+    private void buildDeclareControls()
     {
-        int x = PREVIEW_W + 8;
-        searchBox = new EditBox(font, x, height - 48, 180, 16, Component.literal("search"));
+        int x = SIDEBAR_W + 8;
+        searchBox = new EditBox(font, x, height - 46, 170, 16, Component.literal("card name"));
         searchBox.setResponder(this::updateSearch);
         addRenderableWidget(searchBox);
         setInitialFocus(searchBox);
 
-        for(int i = 0; i < 5; i++)
+        for(int i = 0; i < 4; i++)
         {
             int row = i;
-            Button button = new Button(x + 186 + (i % 3) * 110, height - 48 + (i / 3) * 19, 106, 17,
+            Button button = new Button(x + 176 + (i % 2) * 130, height - 46 + (i / 2) * 19, 126, 17,
                 Component.empty(), pressed ->
             {
                 if(row < searchResults.size())
@@ -220,6 +208,7 @@ public class EngineDuelScreen extends Screen
                 }
             });
             button.visible = false;
+            searchButtons.add(button);
             addRenderableWidget(button);
         }
     }
@@ -235,43 +224,34 @@ public class EngineDuelScreen extends Screen
                 if(properties.getName().toLowerCase().contains(needle))
                 {
                     searchResults.add((int)properties.getId());
-                    if(searchResults.size() >= 5)
+                    if(searchResults.size() >= searchButtons.size())
                     {
                         break;
                     }
                 }
             }
         }
-        int at = 0;
-        for(var child : children())
+        for(int i = 0; i < searchButtons.size(); i++)
         {
-            if(child instanceof Button button && button.getMessage().getString().isEmpty() || child instanceof Button
-                && ((Button)child).y >= height - 50 && ((Button)child).getWidth() == 106)
+            Button button = searchButtons.get(i);
+            boolean has = i < searchResults.size();
+            button.visible = has;
+            if(has)
             {
-                Button button = (Button)child;
-                if(at < searchResults.size())
-                {
-                    Properties properties = DdDatabase.PROPERTIES_LIST.get((long)searchResults.get(at));
-                    button.setMessage(Component.literal(properties == null ? "?" : properties.getName()));
-                    button.visible = true;
-                }
-                else
-                {
-                    button.visible = false;
-                }
-                at++;
+                Properties card = DdDatabase.PROPERTIES_LIST.get((long)searchResults.get(i));
+                button.setMessage(Component.literal(card == null ? "?" : card.getName()));
             }
         }
     }
 
-    // ---- choosing ----
+    // ---- contextual command menu ----
 
-    /** Option indices that act on this exact slot. */
+    /** Option indices acting on this exact slot, in ShowMenu's order. */
     private List<Integer> optionsFor(BoardRenderer.Hit hit)
     {
         List<Integer> found = new ArrayList<>();
         EnginePrompt prompt = shownPrompt;
-        if(prompt == null || answered || hit.isPile())
+        if(prompt == null || answered || hit == null)
         {
             return found;
         }
@@ -289,28 +269,78 @@ public class EngineDuelScreen extends Screen
             {
                 found.add(i);
             }
-            else if(!option.hasSlot() && option.cardCode() != 0 && option.cardCode() == hit.code())
+            else if(!option.hasSlot() && option.cardCode() != 0 && option.cardCode() == hit.code()
+                && !hit.isPile())
             {
-                found.add(i); // e.g. position choices, which name a card not a zone
+                found.add(i);
             }
         }
+        found.sort(java.util.Comparator.comparingInt(index ->
+            CardCommands.menuIndex(prompt.options().get(index).command())));
         return found;
     }
 
-    /** ShowMenu's fixed button order: Activate, Summon, SpSummon, MSet, SSet, Repos, Attack, ... */
-    private List<Integer> inMenuOrder(List<Integer> optionIndices)
+    /** Opens the command menu at a card, as EDOPro's wCmdMenu does. */
+    private void openMenu(BoardRenderer.Hit hit)
     {
-        EnginePrompt prompt = shownPrompt;
-        if(prompt == null)
+        if(menuAnchor != null && sameSlot(menuAnchor, hit))
         {
-            return optionIndices;
+            return;
         }
-        List<Integer> ordered = new ArrayList<>(optionIndices);
-        ordered.sort(java.util.Comparator.comparingInt(index ->
-            de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.menuIndex(
-                prompt.options().get(index).command())));
-        return ordered;
+        closeMenu();
+        List<Integer> actions = optionsFor(hit);
+        if(actions.isEmpty())
+        {
+            return;
+        }
+        menuAnchor = hit;
+        EnginePrompt prompt = shownPrompt;
+
+        int widest = 60;
+        for(int index : actions)
+        {
+            widest = Math.max(widest, font.width(prompt.options().get(index).label()) + 14);
+        }
+        int menuX = Math.min(hit.x() + hit.w() + 2, width - widest - 4);
+        int menuY = Math.max(TOP_BAR_H, Math.min(hit.y(), height - actions.size() * MENU_ROW - 6));
+
+        for(int row = 0; row < actions.size(); row++)
+        {
+            int index = actions.get(row);
+            Button button = new Button(menuX, menuY + row * MENU_ROW, widest, MENU_ROW - 2,
+                Component.literal(prompt.options().get(index).label()), pressed -> choose(index));
+            menuButtons.add(button);
+            addRenderableWidget(button);
+        }
     }
+
+    private static boolean sameSlot(BoardRenderer.Hit a, BoardRenderer.Hit b)
+    {
+        return b != null && a.controller() == b.controller() && a.location() == b.location()
+            && a.sequence() == b.sequence();
+    }
+
+    private void closeMenu()
+    {
+        menuButtons.forEach(this::removeWidget);
+        menuButtons.clear();
+        menuAnchor = null;
+    }
+
+    private boolean overMenu(double mouseX, double mouseY)
+    {
+        for(Button button : menuButtons)
+        {
+            if(mouseX >= button.x && mouseX < button.x + button.getWidth()
+                && mouseY >= button.y && mouseY < button.y + button.getHeight())
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // ---- choosing ----
 
     private void choose(int index)
     {
@@ -319,7 +349,7 @@ public class EngineDuelScreen extends Screen
         {
             return;
         }
-        menu = null;
+        closeMenu();
         switch(prompt.kind())
         {
             case CHOOSE -> answer(new int[] {index}, 0);
@@ -405,7 +435,7 @@ public class EngineDuelScreen extends Screen
             return;
         }
         answered = true;
-        menu = null;
+        closeMenu();
         DuelClientState.prompt = null;
         DuelDimension.channel.sendToServer(new PromptMessages.AnswerPrompt(chosen, declaredCode));
         rebuild();
@@ -416,26 +446,15 @@ public class EngineDuelScreen extends Screen
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button)
     {
-        if(button == 0 && menu != null)
-        {
-            for(int row = 0; row < menu.optionIndices().size(); row++)
-            {
-                int rowY = menu.y() + row * MENU_ROW;
-                if(mouseX >= menu.x() && mouseX < menu.x() + MENU_W && mouseY >= rowY && mouseY < rowY + MENU_ROW)
-                {
-                    choose(menu.optionIndices().get(row));
-                    return true;
-                }
-            }
-            menu = null; // clicked away
-        }
-
         if(button == 0 && pileView != null)
         {
             pileView = null;
             return true;
         }
-
+        if(super.mouseClicked(mouseX, mouseY, button))
+        {
+            return true; // a widget (including a menu entry) took it
+        }
         if(button == 0)
         {
             for(BoardRenderer.Hit hit : boardRenderer.hits())
@@ -444,29 +463,26 @@ public class EngineDuelScreen extends Screen
                 {
                     continue;
                 }
-                if(hit.isPile())
+                if(hit.isPile() && hit.count() > 0)
                 {
                     openPile(hit);
                     return true;
                 }
                 List<Integer> actions = optionsFor(hit);
-                if(actions.isEmpty())
-                {
-                    continue;
-                }
-                actions = inMenuOrder(actions);
                 if(actions.size() == 1)
                 {
-                    choose(actions.get(0)); // one action: no menu needed
+                    choose(actions.get(0));
+                    return true;
                 }
-                else
+                if(!actions.isEmpty())
                 {
-                    menu = new CardMenu(Math.min((int)mouseX, width - MENU_W - 4), (int)mouseY, actions);
+                    openMenu(hit);
+                    return true;
                 }
-                return true;
             }
+            closeMenu();
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return false;
     }
 
     private void openPile(BoardRenderer.Hit hit)
@@ -502,161 +518,182 @@ public class EngineDuelScreen extends Screen
         BoardSnapshot board = currentBoard();
         EnginePrompt prompt = shownPrompt;
 
-        Set<Integer> highlights = new java.util.HashSet<>();
+        Set<Integer> highlights = new HashSet<>();
         if(prompt != null && prompt.kind() == EnginePrompt.Kind.PLACES)
         {
             prompt.options().forEach(option -> highlights.add(option.zone()));
         }
         boardRenderer.setActionable(hit -> !optionsFor(hit).isEmpty());
 
-        // The field fills everything right of the preview column, leaving room
-        // for the header and the bottom button strip.
-        int fieldLeft = PREVIEW_W + 6;
-        int fieldTop = 32;
-        int fieldWidth = width - fieldLeft - 6;
-        int fieldHeight = height - fieldTop - 34;
-        int fieldCentre = fieldLeft + fieldWidth / 2;
+        int fieldLeft = SIDEBAR_W + 4;
+        int fieldTop = TOP_BAR_H;
+        int fieldWidth = width - fieldLeft - 4;
+        int fieldHeight = height - fieldTop - 52;
         boardRenderer.render(poseStack, font, board, fieldLeft, fieldTop, fieldWidth, fieldHeight, highlights);
 
-        // Header: turn / phase / prompt title.
-        drawCenteredString(poseStack, font, "Turn " + board.turn() + " — " + phaseName(board.phase())
-            + " — " + (board.turnPlayer() == 0 ? "your turn" : "opponent's turn"), fieldCentre, 8, 0xFFD700);
-        String subtitle = prompt != null ? prompt.title()
-            : DuelClientState.over ? DuelClientState.result : "Waiting for the opponent…";
-        drawCenteredString(poseStack, font, subtitle, fieldCentre, 20,
-            prompt != null ? 0xFFFFFF : 0xA0A0A0);
-
-        // Hover: preview + action hint.
+        // Hover picks the preview card and opens that card's command menu.
         BoardRenderer.Hit hovered = null;
         for(BoardRenderer.Hit hit : boardRenderer.hits())
         {
             if(hit.contains(mouseX, mouseY))
             {
                 hovered = hit;
-                if(hit.code() != 0)
-                {
-                    previewCode = hit.code();
-                }
                 break;
             }
         }
+        if(hovered != null && hovered.code() != 0)
+        {
+            previewCode = hovered.code();
+        }
+        if(hovered != null && !hovered.isPile() && !optionsFor(hovered).isEmpty())
+        {
+            openMenu(hovered);
+        }
+        else if(menuAnchor != null && hovered == null && !overMenu(mouseX, mouseY))
+        {
+            closeMenu();
+        }
 
-        renderPreviewPanel(poseStack);
+        renderTopBar(poseStack, board);
+        renderSidebar(poseStack);
         renderLog(poseStack);
-        super.render(poseStack, mouseX, mouseY, partialTick);
 
         if(prompt != null && prompt.kind() != EnginePrompt.Kind.CHOOSE)
         {
-            renderSelectionMarks(poseStack, prompt);
+            renderSelectionMarks(poseStack);
         }
-        if(hovered != null)
+        if(!menuButtons.isEmpty())
         {
-            renderHoverTooltip(poseStack, hovered, mouseX, mouseY);
+            Button first = menuButtons.get(0);
+            fill(poseStack, first.x - 2, first.y - 2, first.x + first.getWidth() + 2,
+                first.y + menuButtons.size() * MENU_ROW, 0xC0000000);
         }
-        if(menu != null)
-        {
-            renderMenu(poseStack, mouseX, mouseY);
-        }
+
+        super.render(poseStack, mouseX, mouseY, partialTick);
+
         if(pileView != null)
         {
             renderPileView(poseStack);
         }
+        if(hovered != null && hovered.isPile())
+        {
+            renderTooltip(poseStack, Component.literal(hovered.label()), mouseX, mouseY);
+        }
     }
 
-    /** Left column: big card image, name, stats, effect text. */
-    private void renderPreviewPanel(PoseStack poseStack)
+    /** Life-point bars across the top, as EDOPro shows them. */
+    private void renderTopBar(PoseStack poseStack, BoardSnapshot board)
     {
-        fill(poseStack, 0, 0, PREVIEW_W, height, 0xC0000000);
-        if(previewCode == 0)
-        {
-            drawCenteredString(poseStack, font, "Hover a card", PREVIEW_W / 2, height / 2, 0x808080);
-            return;
-        }
-        Properties card = DdDatabase.PROPERTIES_LIST.get((long)previewCode);
+        int barW = Math.max(80, (width - SIDEBAR_W - 60) / 2);
+        drawLifeBar(poseStack, SIDEBAR_W + 8, 6, barW, "You", board.self().lifePoints(), 0xFF4CAF50);
+        drawLifeBar(poseStack, width - barW - 8, 6, barW, "Opponent", board.opponent().lifePoints(), 0xFFE53935);
+
+        drawCenteredString(poseStack, font, "Turn " + board.turn() + " — " + phaseName(board.phase()),
+            SIDEBAR_W + (width - SIDEBAR_W) / 2, 20, 0xFFD700);
+    }
+
+    private void drawLifeBar(PoseStack poseStack, int x, int y, int barW, String name, int lifePoints, int colour)
+    {
+        int filled = Math.max(0, Math.min(barW, Math.round(barW * lifePoints / 8000F)));
+        fill(poseStack, x, y, x + barW, y + 11, 0xFF202020);
+        fill(poseStack, x, y, x + filled, y + 11, colour);
+        font.draw(poseStack, name, x + 3, y + 2, 0xFFFFFF);
+        String value = Integer.toString(lifePoints);
+        font.draw(poseStack, value, x + barW - font.width(value) - 3, y + 2, 0xFFFFFF);
+    }
+
+    /** Left column: card image, then card info — EDOPro's Card info tab. */
+    private void renderSidebar(PoseStack poseStack)
+    {
+        fill(poseStack, 0, 0, SIDEBAR_W, height, 0xD0101010);
+
+        Properties card = previewCode == 0 ? null : DdDatabase.PROPERTIES_LIST.get((long)previewCode);
         if(card == null)
         {
+            drawCenteredString(poseStack, font, "Point at a card", SIDEBAR_W / 2, height / 2, 0x707070);
             return;
         }
-        // Cards are 480x700; drawing a square would squash the art.
-        int imageW = PREVIEW_W - 16;
+
+        int imageW = SIDEBAR_W - SIDEBAR_PAD * 2;
         int imageH = Math.round(imageW / DuelTextures.CARD_ASPECT);
         ScreenUtil.white();
         CardRenderUtil.bindMainResourceLocation(
             DuelTextures.card(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE));
-        DdBlitUtil.fullBlit(poseStack, 8, 8, imageW, imageH);
+        DdBlitUtil.fullBlit(poseStack, SIDEBAR_PAD, SIDEBAR_PAD, imageW, imageH);
 
-        int y = imageH + 14;
-        for(var line : font.split(Component.literal(card.getName()), PREVIEW_W - 12))
+        int y = SIDEBAR_PAD + imageH + 4;
+        for(var line : font.split(Component.literal(card.getName()), imageW))
         {
-            font.draw(poseStack, line, 6, y, 0xFFD700);
+            font.draw(poseStack, line, SIDEBAR_PAD, y, 0xFFD700);
             y += 9;
         }
 
-        List<Component> info = new ArrayList<>();
-        card.addHeader(info);
+        // Type line and effect text at 3/4 scale, so a full card fits above
+        // the Surrender button instead of spilling over it.
+        List<Component> header = new ArrayList<>();
+        card.addHeader(header);
         poseStack.pushPose();
         poseStack.scale(0.75F, 0.75F, 1F);
-        int scaledY = (int)(y / 0.75F) + 2;
-        for(Component component : info)
+        int scaledX = Math.round(SIDEBAR_PAD / 0.75F);
+        int scaledY = Math.round(y / 0.75F) + 2;
+        int scaledW = Math.round(imageW / 0.75F);
+        int limit = Math.round((height - 30) / 0.75F);
+
+        for(Component component : header)
         {
-            for(var line : font.split(component, (int)((PREVIEW_W - 12) / 0.75F)))
+            for(var line : font.split(component, scaledW))
             {
-                font.draw(poseStack, line, 8, scaledY, 0xC0C0C0);
+                if(scaledY > limit)
+                {
+                    break;
+                }
+                font.draw(poseStack, line, scaledX, scaledY, 0xB0B0B0);
                 scaledY += 8;
             }
         }
         scaledY += 4;
-        for(var line : font.split(Component.literal(card.getText()), (int)((PREVIEW_W - 12) / 0.75F)))
+        for(var line : font.split(Component.literal(card.getText()), scaledW))
         {
-            if(scaledY * 0.75F > height - 12)
+            if(scaledY > limit)
             {
                 break;
             }
-            font.draw(poseStack, line, 8, scaledY, 0x9F9F9F);
+            font.draw(poseStack, line, scaledX, scaledY, 0x909090);
             scaledY += 8;
         }
         poseStack.popPose();
     }
 
-    /** Log runs up the right edge, clear of the field and the button strip. */
     private void renderLog(PoseStack poseStack)
     {
-        int x = width - 132;
-        int y = height - 60;
+        int x = width - LOG_W - 4;
+        int y = height - 62;
         int shown = 0;
         synchronized(DuelClientState.class)
         {
             var iterator = DuelClientState.log.descendingIterator();
-            while(iterator.hasNext() && shown < 5)
+            while(iterator.hasNext() && shown < 6)
             {
                 String line = iterator.next();
-                while(font.width(line) > 126 && line.length() > 4)
+                while(font.width(line) > LOG_W && line.length() > 4)
                 {
                     line = line.substring(0, line.length() - 2);
                 }
-                font.draw(poseStack, line, x, y, 0x808080);
+                font.draw(poseStack, line, x, y, 0x8A8A8A);
                 y -= 9;
                 shown++;
             }
         }
     }
 
-    /** Ticks/numbers on cards already picked for a multi-select or sort. */
-    private void renderSelectionMarks(PoseStack poseStack, EnginePrompt prompt)
+    private void renderSelectionMarks(PoseStack poseStack)
     {
         for(BoardRenderer.Hit hit : boardRenderer.hits())
         {
             for(int index : optionsFor(hit))
             {
-                String mark = null;
-                if(selected.contains(index))
-                {
-                    mark = "✔";
-                }
-                else if(sortOrder.contains(index))
-                {
-                    mark = Integer.toString(sortOrder.indexOf(index) + 1);
-                }
+                String mark = selected.contains(index) ? "✔"
+                    : sortOrder.contains(index) ? Integer.toString(sortOrder.indexOf(index) + 1) : null;
                 if(mark != null)
                 {
                     fill(poseStack, hit.x(), hit.y(), hit.x() + 10, hit.y() + 10, 0xC0000000);
@@ -666,77 +703,20 @@ public class EngineDuelScreen extends Screen
         }
     }
 
-    private void renderHoverTooltip(PoseStack poseStack, BoardRenderer.Hit hit, int mouseX, int mouseY)
-    {
-        List<Component> lines = new ArrayList<>();
-        if(hit.isPile())
-        {
-            lines.add(Component.literal(hit.label()));
-            if(hit.count() > 0)
-            {
-                lines.add(Component.literal("Click to view").withStyle(net.minecraft.ChatFormatting.GRAY));
-            }
-        }
-        else
-        {
-            Properties card = hit.code() == 0 ? null : DdDatabase.PROPERTIES_LIST.get((long)hit.code());
-            lines.add(Component.literal(card != null ? card.getName()
-                : hit.code() != 0 ? "Card " + hit.code() : hit.label()));
-            if(card != null)
-            {
-                lines.add(Component.literal(hit.label()).withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
-            }
-            List<Integer> actions = inMenuOrder(optionsFor(hit));
-            EnginePrompt prompt = shownPrompt;
-            for(int index : actions)
-            {
-                EnginePrompt.Option option = prompt.options().get(index);
-                String detail = option.detail().isEmpty() ? "" : " — " + option.detail();
-                lines.add(Component.literal("• " + option.label() + detail)
-                    .withStyle(net.minecraft.ChatFormatting.GREEN));
-            }
-        }
-        renderComponentTooltip(poseStack, lines, mouseX, mouseY);
-    }
-
-    private void renderMenu(PoseStack poseStack, int mouseX, int mouseY)
-    {
-        EnginePrompt prompt = shownPrompt;
-        if(prompt == null)
-        {
-            return;
-        }
-        int rows = menu.optionIndices().size();
-        fill(poseStack, menu.x() - 2, menu.y() - 2, menu.x() + MENU_W + 2, menu.y() + rows * MENU_ROW + 2,
-            0xF0100010);
-        for(int row = 0; row < rows; row++)
-        {
-            int index = menu.optionIndices().get(row);
-            int rowY = menu.y() + row * MENU_ROW;
-            boolean hovered = mouseX >= menu.x() && mouseX < menu.x() + MENU_W
-                && mouseY >= rowY && mouseY < rowY + MENU_ROW;
-            if(hovered)
-            {
-                fill(poseStack, menu.x(), rowY, menu.x() + MENU_W, rowY + MENU_ROW, 0x60FFFFFF);
-            }
-            font.draw(poseStack, prompt.options().get(index).label(), menu.x() + 4, rowY + 4,
-                hovered ? 0xFFFFA0 : 0xFFFFFF);
-        }
-    }
-
     private void renderPileView(PoseStack poseStack)
     {
-        int columns = 8;
-        int cardW = 30;
-        int cardH = 33;
+        int cardW = 34;
+        int cardH = Math.round(cardW / DuelTextures.CARD_ASPECT);
+        int columns = Math.max(1, Math.min(10, (width - SIDEBAR_W - 40) / (cardW + 4)));
         int rows = (pileView.size() + columns - 1) / columns;
         int panelW = columns * (cardW + 4) + 8;
         int panelH = rows * (cardH + 4) + 26;
-        int left = (width - panelW) / 2;
-        int top = (height - panelH) / 2;
+        int left = SIDEBAR_W + (width - SIDEBAR_W - panelW) / 2;
+        int top = Math.max(TOP_BAR_H, (height - panelH) / 2);
 
         fill(poseStack, left, top, left + panelW, top + panelH, 0xF0100010);
-        drawCenteredString(poseStack, font, pileViewLabel + " — click to close", width / 2, top + 6, 0xFFD700);
+        drawCenteredString(poseStack, font, pileViewLabel + " — click to close",
+            left + panelW / 2, top + 6, 0xFFD700);
 
         for(int i = 0; i < pileView.size(); i++)
         {
@@ -745,8 +725,8 @@ public class EngineDuelScreen extends Screen
             int y = top + 20 + (i / columns) * (cardH + 4);
             Properties card = slot.code() == 0 ? null : DdDatabase.PROPERTIES_LIST.get((long)slot.code());
             ScreenUtil.white();
-            CardRenderUtil.bindMainResourceLocation(card == null ? CardRenderUtil.getMainCardBack()
-                : card.getMainImageResourceLocation((byte)0));
+            CardRenderUtil.bindMainResourceLocation(card == null ? DuelTextures.COVER
+                : DuelTextures.card(card, (byte)0, DuelTextures.FIELD_CARD_SIZE));
             DdBlitUtil.fullBlit(poseStack, x, y, cardW, cardH);
         }
     }

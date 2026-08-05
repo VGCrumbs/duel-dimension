@@ -34,6 +34,44 @@ public final class DuelClientState
         }
     }
 
+    /**
+     * Asks the card-image pipeline for these cards now, rather than the first
+     * time each is drawn. Requesting an image is what queues its download, so
+     * without this a duel spends its first minutes showing placeholders.
+     */
+    public static void warmUpArt(int[] codes)
+    {
+        for(int code : codes)
+        {
+            de.cas_ual_ty.dueldimension.card.properties.Properties card =
+                de.cas_ual_ty.dueldimension.DdDatabase.PROPERTIES_LIST.get((long)code);
+            if(card != null)
+            {
+                DuelTextures.card(card, (byte)0, DuelTextures.FIELD_CARD_SIZE);
+                DuelTextures.card(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE);
+            }
+        }
+    }
+
+    /** Everything visible on the board, so opponent cards are fetched on sight. */
+    public static void warmUpBoard(BoardSnapshot snapshot)
+    {
+        java.util.List<java.util.List<BoardSnapshot.Slot>> groups = java.util.List.of(
+            snapshot.self().monsters(), snapshot.self().spells(), snapshot.self().hand(),
+            snapshot.self().grave(), snapshot.self().banished(), snapshot.self().extra(),
+            snapshot.opponent().monsters(), snapshot.opponent().spells(),
+            snapshot.opponent().grave(), snapshot.opponent().banished());
+        java.util.List<Integer> codes = new java.util.ArrayList<>();
+        groups.forEach(group -> group.forEach(slot ->
+        {
+            if(slot.present() && slot.code() != 0)
+            {
+                codes.add(slot.code());
+            }
+        }));
+        warmUpArt(codes.stream().mapToInt(Integer::intValue).distinct().toArray());
+    }
+
     public static synchronized void reset()
     {
         prompt = null;
