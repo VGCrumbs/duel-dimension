@@ -310,6 +310,12 @@ public class ClientProxy implements ISidedProxy
     }
     
     @Override
+    public void openEnginePromptScreen(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt)
+    {
+        Minecraft.getInstance().setScreen(new EnginePromptScreen(prompt));
+    }
+
+    @Override
     public void openCardInspectScreen(CardHolder card)
     {
         Minecraft.getInstance().setScreen(new InspectCardScreen(card));

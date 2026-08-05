@@ -5,6 +5,9 @@ import de.cas_ual_ty.dueldimension.ocg.RawMessage;
 import de.cas_ual_ty.dueldimension.ocg.bot.HeuristicBot;
 import de.cas_ual_ty.dueldimension.ocg.deck.StarterDecks;
 import de.cas_ual_ty.dueldimension.ocg.msg.DuelMessage;
+import de.cas_ual_ty.dueldimension.ocg.prompt.HumanResponseSource;
+import de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages;
+import de.cas_ual_ty.dueldimension.ocg.prompt.PromptTranslator;
 import de.cas_ual_ty.dueldimension.ocg.session.DuelSession;
 import de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime;
 import de.cas_ual_ty.dueldimension.ocg.text.DescriptionTable;
@@ -69,6 +72,9 @@ public final class DuelistDuels
      */
     private static volatile boolean selfTestMode;
 
+    /** The seat each player is currently answering prompts for. */
+    private static final Map<UUID, HumanResponseSource> SEATS = new ConcurrentHashMap<>();
+
     private DuelistDuels()
     {
     }
@@ -116,11 +122,19 @@ public final class DuelistDuels
         HeadlessDuelRunner.Deck deck0 = playerDeck.load().toRunnerDeck();
         HeadlessDuelRunner.Deck deck1 = npcDeck.load().toRunnerDeck();
 
+        // The challenger plays seat 0 themselves; the NPC plays seat 1.
+        PromptTranslator translator = new PromptTranslator(engine.cards(), engine.descriptions());
+        HumanResponseSource human = new HumanResponseSource(translator, (prompt, seat) ->
+            de.cas_ual_ty.dueldimension.DuelDimension.channel.send(
+                net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> serverPlayer),
+                new PromptMessages.ShowPrompt(prompt)));
+        SEATS.put(serverPlayer.getUUID(), human);
+
         DuelSession session = DuelSession.create(
             "npc-" + serverPlayer.getGameProfile().getName(),
             engine.api(), engine.defaultFlags(), seeds,
             engine.cards(), engine.scripts(), deck0, deck1,
-            new HeuristicBot(seed, engine.cards(), engine.cards().all()),
+            human,
             new HeuristicBot(seed * 2 + 1, engine.cards(), engine.cards().all()));
 
         ACTIVE.put(Watcher.of(serverPlayer), session);
@@ -130,10 +144,20 @@ public final class DuelistDuels
             .append(Component.literal(playerDeck.displayName()).withStyle(ChatFormatting.AQUA))
             .append(Component.literal(" vs "))
             .append(Component.literal(npcDeck.displayName()).withStyle(ChatFormatting.LIGHT_PURPLE)));
-        serverPlayer.sendSystemMessage(Component.literal("(both sides are played by the AI for now)")
+        serverPlayer.sendSystemMessage(Component.literal("You are playing; prompts will open as the duel needs them.")
             .withStyle(ChatFormatting.DARK_GRAY));
 
         session.start();
+    }
+
+    /** Routes a client's answer to the seat that is waiting for it. */
+    public static void submitAnswer(ServerPlayer player, int[] chosen)
+    {
+        HumanResponseSource seat = SEATS.get(player.getUUID());
+        if(seat != null)
+        {
+            seat.submit(chosen);
+        }
     }
 
     /**
@@ -228,6 +252,7 @@ public final class DuelistDuels
             if(!session.isRunning())
             {
                 finished.add(watcher);
+                SEATS.remove(watcher.playerId());
                 if(selfTestMode && watcher.console())
                 {
                     org.apache.logging.log4j.LogManager.getLogger()
