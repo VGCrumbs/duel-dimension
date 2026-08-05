@@ -1,6 +1,0 @@
-{
-  "parent": "duelmonsters:item/sleeves_lime",
-  "textures": {
-    "layer0": "duelmonsters:item/64/sleeves_lime"
-  }
-}

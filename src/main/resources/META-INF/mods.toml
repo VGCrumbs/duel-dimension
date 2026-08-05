@@ -4,15 +4,15 @@ license="GNU General Public License v3.0"
 issueTrackerURL="https://github.com/CAS-ual-TY/YgoDuelingMod/issues"
 
 [[mods]]
-    modId="duelmonsters"
+    modId="dueldimension"
     version="${file.jarVersion}"
-    displayName="Duel Monsters"
+    displayName="Duel Dimension"
     displayURL="https://github.com/CAS-ual-TY/YgoDuelingMod"
     logoFile="logo.png"
     credits="Mojang and the Minecraft Forge Team"
     authors="CAS_ual_TY"
     description='''
-The Ygo Dueling Mod for Minecraft aims to reflect the real life TCG experience in a 3D open world game by not only adding the cards but also the packs and their pull ratios to the game.
+Duel Dimension brings the real life TCG experience to Minecraft: the cards, the packs and their pull ratios, and fully automated card effects powered by an embedded rules engine.
 Work in progress features:
 - All cards and their different variants are available
 - Collect them by opening packs, each representing a real life counter part, with accurate rarities and pull ratios

@@ -1,12 +1,12 @@
 # ocgcore integration (automated card effects)
 
-CrumbyDueling embeds the **EDOPro-core** rules engine ([edo9300/ygopro-core](https://github.com/edo9300/ygopro-core)) in-process via JNA to get real, automated card-effect resolution — the same engine EDOPro uses, covering effectively every card. This replaces nothing: the upstream mod's manual duel simulator stays as-is; the engine is a second, "ruled" duel mode.
+Duel Dimension embeds the **EDOPro-core** rules engine ([edo9300/ygopro-core](https://github.com/edo9300/ygopro-core)) in-process via JNA to get real, automated card-effect resolution — the same engine EDOPro uses, covering effectively every card. This replaces nothing: the upstream mod's manual duel simulator stays as-is; the engine is a second, "ruled" duel mode.
 
 ## Architecture (path A: in-process)
 
 ```
 Minecraft server (JVM)
- └─ de.cas_ual_ty.ydm.ocg          Java binding layer (no MC dependencies)
+ └─ de.cas_ual_ty.dueldimension.ocg          Java binding layer (no MC dependencies)
      ├─ OcgApi                     JNA mapping of ocgapi.h (API v11.0)
      ├─ OcgStructs                 structs + callbacks of ocgapi_types.h
      ├─ OcgConstants               ocgapi_constants.h (MSG_*, LOCATION_*, DUEL_MODE_*, ...)

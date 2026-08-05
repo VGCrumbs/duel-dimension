@@ -6,8 +6,8 @@ plugins {
 }
 
 version = '1.19.2-2.14.5.55'
-group = 'de.cas_ual_ty.ydm' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = 'duelmonsters'
+group = 'de.cas_ual_ty.dueldimension' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = 'dueldimension'
 
 // Mojang ships Java 17 to end users in 1.18+, so your mod should target Java 17.
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
@@ -50,10 +50,10 @@ minecraft {
             property 'forge.logging.console.level', 'debug'
 
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
-            property 'forge.enabledGameTestNamespaces', 'duelmonsters'
+            property 'forge.enabledGameTestNamespaces', 'dueldimension'
 
             mods {
-                duelmonsters {
+                dueldimension {
                     source sourceSets.main
                 }
             }
@@ -76,10 +76,10 @@ minecraft {
 
             property 'forge.logging.console.level', 'debug'
 
-            property 'forge.enabledGameTestNamespaces', 'duelmonsters'
+            property 'forge.enabledGameTestNamespaces', 'dueldimension'
 
             mods {
-                duelmonsters {
+                dueldimension {
                     source sourceSets.main
                 }
             }
@@ -95,10 +95,10 @@ minecraft {
 
             property 'forge.logging.console.level', 'debug'
 
-            property 'forge.enabledGameTestNamespaces', 'duelmonsters'
+            property 'forge.enabledGameTestNamespaces', 'dueldimension'
 
             mods {
-                duelmonsters {
+                dueldimension {
                     source sourceSets.main
                 }
             }
@@ -112,10 +112,10 @@ minecraft {
             property 'forge.logging.console.level', 'debug'
 
             // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
-            args '--mod', 'duelmonsters', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+            args '--mod', 'dueldimension', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
 
             mods {
-                duelmonsters {
+                dueldimension {
                     source sourceSets.main
                 }
             }
@@ -182,10 +182,10 @@ test {
 // Standalone smoke test of the ocgcore JNA binding, no Minecraft involved.
 // Usage: gradlew ocgSpike -PocgLib=native/ocgcore.dll [-PocgScripts=path/to/CardScripts]
 tasks.register('ocgSpike', JavaExec) {
-    group = 'duelmonsters'
+    group = 'dueldimension'
     description = 'Runs the ocgcore binding smoke test against a native ocgcore library.'
     classpath = sourceSets.main.runtimeClasspath
-    mainClass = 'de.cas_ual_ty.ydm.ocg.OcgSpike'
+    mainClass = 'de.cas_ual_ty.dueldimension.ocg.OcgSpike'
     args = [project.findProperty('ocgLib') ?: 'native/ocgcore.dll'] +
         (project.findProperty('ocgScripts') ? [project.findProperty('ocgScripts')] : [])
 }
@@ -193,10 +193,10 @@ tasks.register('ocgSpike', JavaExec) {
 // Bot-vs-bot fuzzing: many duels, failures dumped as reproducible replays.
 // Usage: gradlew17 duelFuzz [-Pcount=500] [-Pthreads=4] [-Pseed=1]
 tasks.register('duelFuzz', JavaExec) {
-    group = 'duelmonsters'
+    group = 'dueldimension'
     description = 'Runs randomised bot-vs-bot duels and reports/records any failures.'
     classpath = sourceSets.main.runtimeClasspath
-    mainClass = 'de.cas_ual_ty.ydm.ocg.bot.DuelFuzzer'
+    mainClass = 'de.cas_ual_ty.dueldimension.ocg.bot.DuelFuzzer'
     args = ['--lib', project.findProperty('ocgLib') ?: 'native/ocgcore.dll',
             '--scripts', project.findProperty('ocgScripts') ?: 'C:/ProjectIgnis/script',
             '--cdb', project.findProperty('ocgCdb') ?: 'C:/ProjectIgnis/expansions/cards.cdb',
@@ -209,10 +209,10 @@ tasks.register('duelFuzz', JavaExec) {
 // Head-to-head bot evaluation: the regression metric for AI changes.
 // Usage: gradlew17 botArena [-Pduels=500] [-Pseed=1]
 tasks.register('botArena', JavaExec) {
-    group = 'duelmonsters'
+    group = 'dueldimension'
     description = 'Plays bots against each other and reports win rates.'
     classpath = sourceSets.main.runtimeClasspath
-    mainClass = 'de.cas_ual_ty.ydm.ocg.bot.BotArena'
+    mainClass = 'de.cas_ual_ty.dueldimension.ocg.bot.BotArena'
     args = ['--lib', project.findProperty('ocgLib') ?: 'native/ocgcore.dll',
             '--scripts', project.findProperty('ocgScripts') ?: 'C:/ProjectIgnis/script',
             '--cdb', project.findProperty('ocgCdb') ?: 'C:/ProjectIgnis/expansions/cards.cdb',
