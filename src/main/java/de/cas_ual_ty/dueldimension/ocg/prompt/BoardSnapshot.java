@@ -31,25 +31,29 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
     {
         public static final Slot EMPTY = new Slot(false, 0, false, false, 0, 0, 0, 0, 0);
 
-        /** True if an effect has moved this stat off its printed value. */
+        /**
+         * True if an effect has moved this stat off its printed value. An
+         * unknown value (-1 from the core) counts as unchanged rather than as
+         * a huge drop.
+         */
         public boolean attackBoosted()
         {
-            return attack > baseAttack;
+            return attack >= 0 && baseAttack >= 0 && attack > baseAttack;
         }
 
         public boolean attackWeakened()
         {
-            return attack < baseAttack;
+            return attack >= 0 && baseAttack >= 0 && attack < baseAttack;
         }
 
         public boolean defenseBoosted()
         {
-            return defense > baseDefense;
+            return defense >= 0 && baseDefense >= 0 && defense > baseDefense;
         }
 
         public boolean defenseWeakened()
         {
-            return defense < baseDefense;
+            return defense >= 0 && baseDefense >= 0 && defense < baseDefense;
         }
 
         public static Slot of(CardView card)
@@ -58,9 +62,10 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
             {
                 return EMPTY;
             }
+            // -1 is the core's "you may not know this", and it is kept:
+            // flattening it to 0 turned "unknown" into a stated 0 ATK.
             return new Slot(true, card.code(), !card.isFaceUp(), !card.isAttackPosition(),
-                Math.max(card.attack(), 0), Math.max(card.defense(), 0),
-                Math.max(card.baseAttack(), 0), Math.max(card.baseDefense(), 0), 0);
+                card.attack(), card.defense(), card.baseAttack(), card.baseDefense(), 0);
         }
 
         public void write(FriendlyByteBuf buffer)
@@ -71,10 +76,11 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
                 buffer.writeVarInt(code);
                 buffer.writeBoolean(faceDown);
                 buffer.writeBoolean(defence);
-                buffer.writeVarInt(attack);
-                buffer.writeVarInt(defense);
-                buffer.writeVarInt(baseAttack);
-                buffer.writeVarInt(baseDefense);
+                // Shifted by one so the -1 sentinel survives a VarInt.
+                buffer.writeVarInt(attack + 1);
+                buffer.writeVarInt(defense + 1);
+                buffer.writeVarInt(baseAttack + 1);
+                buffer.writeVarInt(baseDefense + 1);
                 buffer.writeVarInt(overlays);
             }
         }
@@ -86,8 +92,8 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
                 return EMPTY;
             }
             return new Slot(true, buffer.readVarInt(), buffer.readBoolean(), buffer.readBoolean(),
-                buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(),
-                buffer.readVarInt());
+                buffer.readVarInt() - 1, buffer.readVarInt() - 1, buffer.readVarInt() - 1,
+                buffer.readVarInt() - 1, buffer.readVarInt());
         }
     }
 

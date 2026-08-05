@@ -319,11 +319,12 @@ public class BoardRenderer extends GuiComponent
      */
     private void drawStats(PoseStack poseStack, BoardSnapshot.Slot slot, Hit hit, boolean inHand)
     {
-        // A concealed card (code 0) has no stats we are allowed to know: the
-        // board state sends -1, which clamps to 0, so drawing them anyway
-        // printed a misleading "0/0" under every card whose identity is hidden.
+        // Stats are only drawn when we actually have them. The core reports -1
+        // for a value the viewer is not entitled to; that used to be clamped to
+        // 0 on the way out, so hidden cards were captioned a confident "0/0".
         if(font == null || inHand || hit.location() != OcgConstants.LOCATION_MZONE
-            || !slot.present() || slot.faceDown() || slot.code() == 0)
+            || !slot.present() || slot.faceDown() || slot.code() == 0
+            || slot.attack() < 0 || slot.defense() < 0)
         {
             return;
         }
@@ -564,7 +565,13 @@ public class BoardRenderer extends GuiComponent
             return controller == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT;
         }
         Properties properties = DdDatabase.PROPERTIES_LIST.get((long)slot.code());
-        return properties == null ? DuelTextures.COVER
+        // A face-up card we have no art for is NOT a face-down card. Falling
+        // back to the card back made every engine card missing from the mod's
+        // own database look like a set monster -- and the engine plays from
+        // EDOPro's cards.cdb, which is far larger than that database, so this
+        // hit a good share of the opponent's field. The reference's "unknown
+        // card" art says "no picture" without lying about the game state.
+        return properties == null ? DuelTextures.UNKNOWN
             : DuelTextures.card(properties, (byte)0, DuelTextures.FIELD_CARD_SIZE);
     }
 }
