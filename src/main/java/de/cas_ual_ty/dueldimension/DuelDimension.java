@@ -219,6 +219,16 @@ public class DuelDimension
                 de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.AnswerPrompt::encode,
                 de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.AnswerPrompt::decode,
                 de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.AnswerPrompt::handle);
+        DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate.class,
+                de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate::encode,
+                de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate::decode,
+                de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate::handle);
+        DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.Surrender.class,
+                de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.Surrender::encode,
+                de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.Surrender::decode,
+                de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.Surrender::handle);
         DuelDimension.channel.registerMessage(index++, CIIMessages.SetPage.class, CIIMessages.SetPage::encode, CIIMessages.SetPage::decode, CIIMessages.SetPage::handle);
         DuelDimension.channel.registerMessage(index++, CIIMessages.ChangePage.class, CIIMessages.ChangePage::encode, CIIMessages.ChangePage::decode, CIIMessages.ChangePage::handle);
         

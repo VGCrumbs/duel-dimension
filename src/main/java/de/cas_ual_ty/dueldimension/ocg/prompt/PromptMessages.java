@@ -5,12 +5,15 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Supplier;
 
 /**
- * The two packets a duel needs: a prompt going out, and the chosen option
- * indices coming back. Deliberately minimal — the client is told what it may
- * pick and replies with which of those it picked, nothing more.
+ * The duel's network surface: a prompt going out, the choice coming back, a
+ * stream of board/log updates, and surrender. Deliberately minimal — the
+ * client is told what it may pick and replies with which of those it picked
+ * (plus a card code for the announce search, which the server re-validates).
  */
 public final class PromptMessages
 {
@@ -33,22 +36,23 @@ public final class PromptMessages
 
         public static void handle(ShowPrompt message, Supplier<NetworkEvent.Context> context)
         {
-            context.get().enqueueWork(() -> DuelDimension.proxy.openEnginePromptScreen(message.prompt()));
+            context.get().enqueueWork(() -> DuelDimension.proxy.showEnginePrompt(message.prompt()));
             context.get().setPacketHandled(true);
         }
     }
 
-    /** Client -> server: I picked these. */
-    public record AnswerPrompt(int[] chosen)
+    /** Client -> server: I picked these (indices; declaredCode for name declares). */
+    public record AnswerPrompt(int[] chosen, int declaredCode)
     {
         public static void encode(AnswerPrompt message, FriendlyByteBuf buffer)
         {
             buffer.writeVarIntArray(message.chosen());
+            buffer.writeVarInt(message.declaredCode());
         }
 
         public static AnswerPrompt decode(FriendlyByteBuf buffer)
         {
-            return new AnswerPrompt(buffer.readVarIntArray());
+            return new AnswerPrompt(buffer.readVarIntArray(), buffer.readVarInt());
         }
 
         public static void handle(AnswerPrompt message, Supplier<NetworkEvent.Context> context)
@@ -59,7 +63,73 @@ public final class PromptMessages
                 ServerPlayer sender = ctx.getSender();
                 if(sender != null)
                 {
-                    de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.submitAnswer(sender, message.chosen());
+                    de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.submitAnswer(sender,
+                        new HumanResponseSource.Answer(message.chosen(), message.declaredCode()));
+                }
+            });
+            ctx.setPacketHandled(true);
+        }
+    }
+
+    /**
+     * Server -> client: the duel moved. Board is optional (log-only updates
+     * skip it); {@code over} closes out the duel with a result line.
+     */
+    public record DuelUpdate(BoardSnapshot board, List<String> log, boolean over, String result)
+    {
+        public static void encode(DuelUpdate message, FriendlyByteBuf buffer)
+        {
+            buffer.writeBoolean(message.board() != null);
+            if(message.board() != null)
+            {
+                message.board().write(buffer);
+            }
+            buffer.writeVarInt(message.log().size());
+            message.log().forEach(line -> buffer.writeUtf(line, 256));
+            buffer.writeBoolean(message.over());
+            buffer.writeUtf(message.result(), 128);
+        }
+
+        public static DuelUpdate decode(FriendlyByteBuf buffer)
+        {
+            BoardSnapshot board = buffer.readBoolean() ? BoardSnapshot.read(buffer) : null;
+            int count = buffer.readVarInt();
+            List<String> log = new ArrayList<>(count);
+            for(int i = 0; i < count; i++)
+            {
+                log.add(buffer.readUtf(256));
+            }
+            return new DuelUpdate(board, log, buffer.readBoolean(), buffer.readUtf(128));
+        }
+
+        public static void handle(DuelUpdate message, Supplier<NetworkEvent.Context> context)
+        {
+            context.get().enqueueWork(() -> DuelDimension.proxy.updateEngineDuel(message));
+            context.get().setPacketHandled(true);
+        }
+    }
+
+    /** Client -> server: I give up. */
+    public record Surrender()
+    {
+        public static void encode(Surrender message, FriendlyByteBuf buffer)
+        {
+        }
+
+        public static Surrender decode(FriendlyByteBuf buffer)
+        {
+            return new Surrender();
+        }
+
+        public static void handle(Surrender message, Supplier<NetworkEvent.Context> context)
+        {
+            NetworkEvent.Context ctx = context.get();
+            ctx.enqueueWork(() ->
+            {
+                ServerPlayer sender = ctx.getSender();
+                if(sender != null)
+                {
+                    de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.surrender(sender);
                 }
             });
             ctx.setPacketHandled(true);

@@ -40,6 +40,11 @@ public class DuelSession
         record Failed(String reason) implements Event
         {
         }
+
+        /** A fresh view of the field for seat 0, captured on the duel thread. */
+        record Board(de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot snapshot) implements Event
+        {
+        }
     }
 
     private final String id;
@@ -74,7 +79,9 @@ public class DuelSession
             .scripts(scripts)
             .deck(0, deck0)
             .deck(1, deck1)
-            .responder(0, new Relay(player0, message -> holder[0].events.add(new Event.Message(message))))
+            .responder(0, new Relay(player0,
+                message -> holder[0].events.add(new Event.Message(message)),
+                snapshot -> holder[0].events.add(new Event.Board(snapshot))))
             .responder(1, player1)
             .build();
 
@@ -144,12 +151,35 @@ public class DuelSession
         }
     }
 
-    /** Passes a responder through untouched while copying its message stream out. */
-    private record Relay(ResponseSource inner, Consumer<RawMessage> tap) implements ResponseSource
+    /**
+     * Passes a responder through untouched while copying its message stream
+     * out, and captures board snapshots after state-changing messages — on
+     * the duel thread, the only thread allowed to query the core.
+     */
+    private static final class Relay implements ResponseSource
     {
+        private final ResponseSource inner;
+        private final Consumer<RawMessage> tap;
+        private final Consumer<de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot> boardTap;
+        private BoardObserver board;
+        private int turn;
+        private int phase;
+        private int turnPlayer;
+        private int seat;
+
+        private Relay(ResponseSource inner, Consumer<RawMessage> tap,
+            Consumer<de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot> boardTap)
+        {
+            this.inner = inner;
+            this.tap = tap;
+            this.boardTap = boardTap;
+        }
+
         @Override
         public void onDuelStart(int playerIndex, BoardObserver board)
         {
+            seat = playerIndex;
+            this.board = board;
             inner.onDuelStart(playerIndex, board);
         }
 
@@ -158,6 +188,36 @@ public class DuelSession
         {
             tap.accept(message);
             inner.observe(message);
+
+            switch(message.type())
+            {
+                case OcgConstants.MSG_NEW_TURN ->
+                {
+                    turn++;
+                    turnPlayer = (message.payload().length > 0 && (message.payload()[0] & 0xFF) == seat) ? 0 : 1;
+                    snapshot();
+                }
+                case OcgConstants.MSG_NEW_PHASE ->
+                {
+                    phase = message.payload().length >= 2
+                        ? (message.payload()[0] & 0xFF) | ((message.payload()[1] & 0xFF) << 8) : phase;
+                    snapshot();
+                }
+                case OcgConstants.MSG_MOVE, OcgConstants.MSG_DAMAGE, OcgConstants.MSG_RECOVER,
+                    OcgConstants.MSG_DRAW, OcgConstants.MSG_WIN -> snapshot();
+                default ->
+                {
+                }
+            }
+        }
+
+        private void snapshot()
+        {
+            if(board != null && boardTap != null)
+            {
+                boardTap.accept(de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot.of(
+                    board.observe(), turn, phase, turnPlayer));
+            }
         }
 
         @Override

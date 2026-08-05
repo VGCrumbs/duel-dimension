@@ -12,8 +12,13 @@ import javax.annotation.Nullable;
 
 public interface ISidedProxy
 {
-    /** Opens the duel prompt screen; server side does nothing. */
-    default void openEnginePromptScreen(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt)
+    /** Shows a duel prompt; server side does nothing. */
+    default void showEnginePrompt(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt)
+    {
+    }
+
+    /** Applies a duel board/log update; server side does nothing. */
+    default void updateEngineDuel(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate update)
     {
     }
 

@@ -310,9 +310,30 @@ public class ClientProxy implements ISidedProxy
     }
     
     @Override
-    public void openEnginePromptScreen(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt)
+    public void showEnginePrompt(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt)
     {
-        Minecraft.getInstance().setScreen(new EnginePromptScreen(prompt));
+        DuelClientState.prompt = prompt;
+        DuelClientState.over = false;
+        if(!(Minecraft.getInstance().screen instanceof EngineDuelScreen))
+        {
+            Minecraft.getInstance().setScreen(new EngineDuelScreen());
+        }
+    }
+
+    @Override
+    public void updateEngineDuel(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate update)
+    {
+        if(update.board() != null)
+        {
+            DuelClientState.board = update.board();
+        }
+        update.log().forEach(DuelClientState::addLog);
+        if(update.over())
+        {
+            DuelClientState.over = true;
+            DuelClientState.result = update.result();
+            DuelClientState.prompt = null;
+        }
     }
 
     @Override

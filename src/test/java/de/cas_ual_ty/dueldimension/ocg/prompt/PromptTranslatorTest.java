@@ -57,16 +57,19 @@ class PromptTranslatorTest
     {
         private final PromptTranslator translator;
         private final Random random;
+        private final java.util.Collection<de.cas_ual_ty.dueldimension.ocg.OcgCard> allCards;
         final Map<String, Integer> promptsSeen = new LinkedHashMap<>();
         final Map<String, Integer> unpresentable = new LinkedHashMap<>();
         final Map<String, Integer> autoAnswered = new LinkedHashMap<>();
         int answered;
         private BoardObserver board;
 
-        ClickingPlayer(PromptTranslator translator, long seed)
+        ClickingPlayer(PromptTranslator translator, long seed,
+            java.util.Collection<de.cas_ual_ty.dueldimension.ocg.OcgCard> allCards)
         {
             this.translator = translator;
             random = new Random(seed);
+            this.allCards = allCards;
         }
 
         @Override
@@ -79,8 +82,9 @@ class PromptTranslatorTest
         public byte[] respond(RawMessage raw)
         {
             DuelMessage decoded = DuelMessage.decode(raw);
-            EnginePrompt prompt = translator.toPrompt(decoded, board.observe());
-            if(prompt == null || prompt.options().isEmpty())
+            EnginePrompt prompt = translator.toPrompt(decoded, BoardSnapshot.of(board.observe()));
+            if(prompt == null
+                || (prompt.options().isEmpty() && prompt.kind() != EnginePrompt.Kind.DECLARE_CARD))
             {
                 byte[] automatic = translator.autoAnswer(decoded);
                 if(automatic != null)
@@ -94,29 +98,69 @@ class PromptTranslatorTest
             promptsSeen.merge(raw.name(), 1, Integer::sum);
 
             int[] chosen;
-            if(prompt.isSingleChoice())
+            int declared = 0;
+            switch(prompt.kind())
             {
-                chosen = new int[] {random.nextInt(prompt.options().size())};
-            }
-            else
-            {
-                int count = Math.max(prompt.minSelect(), 1);
-                count = Math.min(count, prompt.options().size());
-                chosen = new int[count];
-                // distinct indices, as the screen enforces
-                List<Integer> pool = new java.util.ArrayList<>();
-                for(int i = 0; i < prompt.options().size(); i++)
+                case DECLARE_CARD ->
                 {
-                    pool.add(i);
+                    // As the search box would: find any card the filter allows.
+                    chosen = new int[] {0};
+                    DuelMessage.AnnounceCard announce = (DuelMessage.AnnounceCard)decoded;
+                    for(de.cas_ual_ty.dueldimension.ocg.OcgCard card : allCards)
+                    {
+                        if(de.cas_ual_ty.dueldimension.ocg.msg.DeclarableFilter
+                            .isDeclarable(card, announce.filter()))
+                        {
+                            declared = card.code();
+                            break;
+                        }
+                    }
                 }
-                java.util.Collections.shuffle(pool, random);
-                for(int i = 0; i < count; i++)
+                case COUNTERS ->
                 {
-                    chosen[i] = pool.get(i);
+                    // Distribute the requested total greedily, as +/- would.
+                    chosen = new int[prompt.options().size()];
+                    int remaining = prompt.minSelect();
+                    for(int i = 0; i < chosen.length && remaining > 0; i++)
+                    {
+                        chosen[i] = Math.min(remaining, prompt.options().get(i).max());
+                        remaining -= chosen[i];
+                    }
+                }
+                case SORT ->
+                {
+                    chosen = new int[prompt.options().size()];
+                    for(int i = 0; i < chosen.length; i++)
+                    {
+                        chosen[i] = i; // keep order — any permutation is legal
+                    }
+                }
+                default ->
+                {
+                    if(prompt.isSingleChoice())
+                    {
+                        chosen = new int[] {random.nextInt(prompt.options().size())};
+                    }
+                    else
+                    {
+                        int count = Math.max(prompt.minSelect(), 1);
+                        count = Math.min(count, prompt.options().size());
+                        chosen = new int[count];
+                        List<Integer> pool = new java.util.ArrayList<>();
+                        for(int i = 0; i < prompt.options().size(); i++)
+                        {
+                            pool.add(i);
+                        }
+                        java.util.Collections.shuffle(pool, random);
+                        for(int i = 0; i < count; i++)
+                        {
+                            chosen[i] = pool.get(i);
+                        }
+                    }
                 }
             }
             answered++;
-            return translator.toResponse(decoded, chosen);
+            return translator.toResponse(decoded, chosen, declared);
         }
     }
 
@@ -141,7 +185,7 @@ class PromptTranslatorTest
 
         for(int seed = 1; seed <= 8; seed++)
         {
-            ClickingPlayer human = new ClickingPlayer(translator, seed * 977L);
+            ClickingPlayer human = new ClickingPlayer(translator, seed * 977L, cards.all());
             HeadlessDuelRunner.DuelTrace trace = HeadlessDuelRunner.builder(api)
                 .seed(new long[] {seed, seed * 31 + 5, seed * 131 + 9, ~seed})
                 .cards(cards)

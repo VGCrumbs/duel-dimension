@@ -5,140 +5,207 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import de.cas_ual_ty.dueldimension.DdDatabase;
 import de.cas_ual_ty.dueldimension.card.properties.Properties;
 import de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot;
+import de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
- * Draws a duel field: both players' monster and spell rows, hand, life points
- * and pile counts, with real card art.
+ * Draws the full duel field, mirroring EDOPro's table layout in miniature:
+ * per side a backrow of [field spell][5 spell/trap][2 pendulum], a monster
+ * row of 5, the two shared extra monster zones between the players, hands
+ * (opponent's as backs), and pile counts. Zones eligible for a pending place
+ * selection are highlighted and clickable.
  * <p>
- * Card images come from the mod's existing card database and texture pipeline,
- * looked up by passcode — the engine and the collection use the same ids, so a
- * card on the field renders with the same art as the card in your binder.
- * Anything the snapshot marks face-down draws as a card back, because that is
- * all the client was told.
+ * Card art comes from the mod's own image pipeline by passcode — the same art
+ * as the card in your binder. A slot the snapshot marks face-down draws as a
+ * card back, because that is all the client was told.
  */
 public class BoardRenderer extends GuiComponent
 {
-    public static final int CARD_WIDTH = 24;
-    public static final int CARD_HEIGHT = 35;
-    private static final int GAP = 3;
+    public static final int CARD_W = 20;
+    public static final int CARD_H = 29;
+    private static final int GAP = 2;
+    private static final int HIGHLIGHT = 0x8000FF00;
 
-    /** A drawn card and what it belongs to, so clicks can be mapped back. */
-    public record Hit(int x, int y, int width, int height, int code, boolean opponent, String zone, int sequence)
+    /** A drawn slot and what it maps to. {@code zoneRef} matches {@link EnginePrompt#zoneRef}. */
+    public record Hit(int x, int y, int code, String zone, int sequence, boolean opponent, int zoneRef)
     {
         public boolean contains(double mouseX, double mouseY)
         {
-            return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
+            return mouseX >= x && mouseX < x + CARD_W && mouseY >= y && mouseY < y + CARD_H;
         }
     }
 
     private final List<Hit> hits = new ArrayList<>();
 
-    /** @return the areas drawn this frame, for hover and click handling */
     public List<Hit> hits()
     {
         return hits;
     }
 
-    /**
-     * Draws the whole field centred on {@code centreX}, opponent on top.
-     *
-     * @return the vertical space consumed
-     */
-    public int render(PoseStack poseStack, Font font, BoardSnapshot board, int centreX, int top)
+    /** Total height the board occupies. */
+    public static int height(BoardSnapshot board)
     {
-        hits.clear();
-        int y = top;
-
-        // Opponent, mirrored: spells above monsters so the two fields face
-        // each other the way they would across a table.
-        y = renderRow(poseStack, board.opponent().spells(), centreX, y, true, "spell");
-        y = renderRow(poseStack, board.opponent().monsters(), centreX, y, true, "monster");
-
-        y += 4;
-        drawCenteredString(poseStack, font,
-            board.opponent().lifePoints() + " LP   hand " + board.opponent().hand().size()
-                + "   deck " + board.opponent().deckCount() + "   grave " + board.opponent().graveCount(),
-            centreX, y, 0xFF8080);
-        y += 12;
-        drawCenteredString(poseStack, font,
-            board.self().lifePoints() + " LP   hand " + board.self().hand().size()
-                + "   deck " + board.self().deckCount() + "   grave " + board.self().graveCount(),
-            centreX, y, 0x80FF80);
-        y += 12;
-
-        y = renderRow(poseStack, board.self().monsters(), centreX, y, false, "monster");
-        y = renderRow(poseStack, board.self().spells(), centreX, y, false, "spell");
-
-        if(!board.self().hand().isEmpty())
-        {
-            y += 4;
-            drawCenteredString(poseStack, font, "Hand", centreX, y, 0xC0C0C0);
-            y += 10;
-            y = renderRow(poseStack, board.self().hand(), centreX, y, false, "hand");
-        }
-        return y - top;
+        // opp hand, opp backrow, opp monsters, EMZ, own monsters, own backrow,
+        // own hand, plus two pile-count text lines.
+        return 7 * (CARD_H + GAP) + 24;
     }
 
-    private int renderRow(PoseStack poseStack, List<BoardSnapshot.Slot> slots, int centreX, int y,
-        boolean opponent, String zone)
+    /**
+     * @param highlights zoneRefs eligible for the current place selection
+     */
+    public void render(PoseStack poseStack, Font font, BoardSnapshot board, int centreX, int top,
+        Set<Integer> highlights)
+    {
+        hits.clear();
+        currentHighlights = highlights;
+        int y = top;
+
+        y = row(poseStack, board.opponent().hand(), centreX, y, true, "hand", null, true);
+        y = backrow(poseStack, board.opponent().spells(), centreX, y, true, highlights);
+        y = monsterRow(poseStack, board.opponent().monsters(), centreX, y, true, highlights);
+        y = extraMonsterRow(poseStack, board, centreX, y, highlights);
+        y = monsterRow(poseStack, board.self().monsters(), centreX, y, false, highlights);
+        y = backrow(poseStack, board.self().spells(), centreX, y, false, highlights);
+        y = row(poseStack, board.self().hand(), centreX, y, false, "hand", null, false);
+
+        drawCenteredString(poseStack, font, "Them: deck " + board.opponent().deckCount()
+            + "  extra " + board.opponent().extra().size()
+            + "  grave " + board.opponent().grave().size()
+            + "  banished " + board.opponent().banished().size(), centreX, y, 0xFF9090);
+        y += 11;
+        drawCenteredString(poseStack, font, "You: deck " + board.self().deckCount()
+            + "  extra " + board.self().extra().size()
+            + "  grave " + board.self().grave().size()
+            + "  banished " + board.self().banished().size(), centreX, y, 0x90FF90);
+    }
+
+    /** Backrow order: field spell (5), spells 0-4, pendulum zones (6, 7). */
+    private int backrow(PoseStack poseStack, List<BoardSnapshot.Slot> spells, int centreX, int y,
+        boolean opponent, Set<Integer> highlights)
+    {
+        List<BoardSnapshot.Slot> ordered = new ArrayList<>(8);
+        List<Integer> sequences = new ArrayList<>(8);
+        int[] order = {5, 0, 1, 2, 3, 4, 6, 7};
+        for(int sequence : order)
+        {
+            ordered.add(sequence < spells.size() ? spells.get(sequence) : BoardSnapshot.Slot.EMPTY);
+            sequences.add(sequence);
+        }
+        return row(poseStack, ordered, centreX, y, opponent, "spell", refs(sequences, opponent, false, highlights),
+            false);
+    }
+
+    private int monsterRow(PoseStack poseStack, List<BoardSnapshot.Slot> monsters, int centreX, int y,
+        boolean opponent, Set<Integer> highlights)
+    {
+        List<BoardSnapshot.Slot> main = monsters.subList(0, Math.min(5, monsters.size()));
+        List<Integer> sequences = List.of(0, 1, 2, 3, 4);
+        return row(poseStack, main, centreX, y, opponent, "monster",
+            refs(sequences, opponent, true, highlights), false);
+    }
+
+    /** The two shared extra monster zones: whoever controls one, its card shows there. */
+    private int extraMonsterRow(PoseStack poseStack, BoardSnapshot board, int centreX, int y,
+        Set<Integer> highlights)
+    {
+        int x = centreX - CARD_W - GAP;
+        for(int sequence = 5; sequence <= 6; sequence++)
+        {
+            BoardSnapshot.Slot own = slotAt(board.self().monsters(), sequence);
+            BoardSnapshot.Slot theirs = slotAt(board.opponent().monsters(), sequence);
+            boolean opponentOwns = !own.present() && theirs.present();
+            BoardSnapshot.Slot shown = own.present() ? own : theirs;
+
+            int ownRef = EnginePrompt.zoneRef(false, true, sequence);
+            boolean lit = highlights != null && highlights.contains(ownRef);
+            drawSlot(poseStack, shown, x, y, lit);
+            hits.add(new Hit(x, y, shown.code(), "monster", sequence, opponentOwns, ownRef));
+            x += CARD_W + GAP * 2;
+        }
+        return y + CARD_H + GAP;
+    }
+
+    private static BoardSnapshot.Slot slotAt(List<BoardSnapshot.Slot> slots, int index)
+    {
+        return index < slots.size() ? slots.get(index) : BoardSnapshot.Slot.EMPTY;
+    }
+
+    private List<Integer> refs(List<Integer> sequences, boolean opponent, boolean monsterZone,
+        Set<Integer> highlights)
+    {
+        List<Integer> result = new ArrayList<>(sequences.size());
+        for(int sequence : sequences)
+        {
+            result.add(EnginePrompt.zoneRef(opponent, monsterZone, sequence));
+        }
+        return result;
+    }
+
+    private int row(PoseStack poseStack, List<BoardSnapshot.Slot> slots, int centreX, int y, boolean opponent,
+        String zone, List<Integer> zoneRefs, boolean hideAll)
     {
         if(slots.isEmpty())
         {
             return y;
         }
-        int totalWidth = slots.size() * CARD_WIDTH + (slots.size() - 1) * GAP;
+        int totalWidth = slots.size() * CARD_W + (slots.size() - 1) * GAP;
         int x = centreX - totalWidth / 2;
 
         for(int i = 0; i < slots.size(); i++)
         {
-            BoardSnapshot.Slot slot = slots.get(i);
-            int slotX = x + i * (CARD_WIDTH + GAP);
-            drawSlot(poseStack, slot, slotX, y);
-            if(slot.present())
-            {
-                hits.add(new Hit(slotX, y, CARD_WIDTH, CARD_HEIGHT, slot.code(), opponent, zone, i));
-            }
+            BoardSnapshot.Slot slot = hideAll && slots.get(i).present()
+                ? new BoardSnapshot.Slot(true, 0, true, false, 0, 0, 0)
+                : slots.get(i);
+            int slotX = x + i * (CARD_W + GAP);
+            int zoneRef = zoneRefs != null ? zoneRefs.get(i) : -1;
+            drawSlot(poseStack, slot, slotX, y, zoneRef >= 0 && currentHighlights != null
+                && currentHighlights.contains(zoneRef));
+            hits.add(new Hit(slotX, y, slot.code(), zone, zoneRefs != null ? (zoneRef & 7) : i, opponent, zoneRef));
         }
-        return y + CARD_HEIGHT + GAP;
+        return y + CARD_H + GAP;
     }
 
-    private void drawSlot(PoseStack poseStack, BoardSnapshot.Slot slot, int x, int y)
+    private Set<Integer> currentHighlights;
+
+    public void setHighlights(Set<Integer> highlights)
     {
-        // Empty zones stay as outlines so the field's shape is always legible.
-        fill(poseStack, x - 1, y - 1, x + CARD_WIDTH + 1, y + CARD_HEIGHT + 1, 0x40FFFFFF);
-        fill(poseStack, x, y, x + CARD_WIDTH, y + CARD_HEIGHT, 0x80000000);
+        currentHighlights = highlights;
+    }
+
+    private void drawSlot(PoseStack poseStack, BoardSnapshot.Slot slot, int x, int y, boolean highlighted)
+    {
+        fill(poseStack, x - 1, y - 1, x + CARD_W + 1, y + CARD_H + 1,
+            highlighted ? HIGHLIGHT : 0x30FFFFFF);
+        fill(poseStack, x, y, x + CARD_W, y + CARD_H, 0x80000000);
 
         if(!slot.present())
         {
             return;
         }
-
         RenderSystem.setShaderColor(1, 1, 1, 1);
-        ResourceLocation texture = textureFor(slot);
-        if(texture != null)
+        RenderSystem.setShaderTexture(0, textureFor(slot));
+        if(slot.defence())
         {
-            RenderSystem.setShaderTexture(0, texture);
-            if(slot.defence())
-            {
-                // Defence position: the card lies on its side. Rotating about
-                // the card's centre keeps it inside its own zone.
-                poseStack.pushPose();
-                poseStack.translate(x + CARD_WIDTH / 2.0, y + CARD_HEIGHT / 2.0, 0);
-                poseStack.mulPose(com.mojang.math.Vector3f.ZP.rotationDegrees(90));
-                poseStack.translate(-CARD_HEIGHT / 2.0, -CARD_WIDTH / 2.0, 0);
-                blit(poseStack, 0, 0, 0, 0, CARD_HEIGHT, CARD_WIDTH, CARD_HEIGHT, CARD_WIDTH);
-                poseStack.popPose();
-            }
-            else
-            {
-                blit(poseStack, x, y, 0, 0, CARD_WIDTH, CARD_HEIGHT, CARD_WIDTH, CARD_HEIGHT);
-            }
+            poseStack.pushPose();
+            poseStack.translate(x + CARD_W / 2.0, y + CARD_H / 2.0, 0);
+            poseStack.mulPose(com.mojang.math.Vector3f.ZP.rotationDegrees(90));
+            poseStack.translate(-CARD_H / 2.0, -CARD_W / 2.0, 0);
+            blit(poseStack, 0, 0, 0, 0, CARD_H, CARD_W, CARD_H, CARD_W);
+            poseStack.popPose();
+        }
+        else
+        {
+            blit(poseStack, x, y, 0, 0, CARD_W, CARD_H, CARD_W, CARD_H);
+        }
+        if(slot.overlays() > 0)
+        {
+            fill(poseStack, x, y, x + 8, y + 8, 0xC0000000);
         }
     }
 
@@ -149,10 +216,7 @@ public class BoardRenderer extends GuiComponent
             return CardRenderUtil.getMainCardBack();
         }
         Properties properties = DdDatabase.PROPERTIES_LIST.get((long)slot.code());
-        if(properties == null)
-        {
-            return CardRenderUtil.getMainCardBack();
-        }
-        return properties.getMainImageResourceLocation((byte)0);
+        return properties == null ? CardRenderUtil.getMainCardBack()
+            : properties.getMainImageResourceLocation((byte)0);
     }
 }

@@ -38,7 +38,7 @@ public record BoardState(int viewer, boolean omniscient, PlayerBoard self, Playe
      * @param extraCount cards left in the extra deck
      */
     public record PlayerBoard(int lifePoints, List<CardView> monsters, List<CardView> spells, List<CardView> hand,
-        List<CardView> grave, int deckCount, int extraCount)
+        List<CardView> grave, List<CardView> banished, List<CardView> extra, int deckCount, int extraCount)
     {
         public int monsterCount()
         {
@@ -119,6 +119,10 @@ public record BoardState(int viewer, boolean omniscient, PlayerBoard self, Playe
             // known only for cards the core marks public.
             zone(duel, player, OcgConstants.LOCATION_HAND, own, omniscient, -1),
             zone(duel, player, OcgConstants.LOCATION_GRAVE, true, omniscient, -1),
+            // Banished face-up is public; face-down banished stays hidden.
+            zone(duel, player, OcgConstants.LOCATION_REMOVED, own, omniscient, -1),
+            // Your own extra deck is known to you; the opponent's is not.
+            zone(duel, player, OcgConstants.LOCATION_EXTRA, own, omniscient, -1),
             counts[player * 3 + 1], counts[player * 3 + 2]);
     }
 

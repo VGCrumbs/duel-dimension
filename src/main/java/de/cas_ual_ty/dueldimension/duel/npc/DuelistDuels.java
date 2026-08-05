@@ -5,6 +5,7 @@ import de.cas_ual_ty.dueldimension.ocg.RawMessage;
 import de.cas_ual_ty.dueldimension.ocg.bot.HeuristicBot;
 import de.cas_ual_ty.dueldimension.ocg.deck.StarterDecks;
 import de.cas_ual_ty.dueldimension.ocg.msg.DuelMessage;
+import de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot;
 import de.cas_ual_ty.dueldimension.ocg.prompt.HumanResponseSource;
 import de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages;
 import de.cas_ual_ty.dueldimension.ocg.prompt.PromptTranslator;
@@ -151,12 +152,23 @@ public final class DuelistDuels
     }
 
     /** Routes a client's answer to the seat that is waiting for it. */
-    public static void submitAnswer(ServerPlayer player, int[] chosen)
+    public static void submitAnswer(ServerPlayer player, HumanResponseSource.Answer answer)
     {
         HumanResponseSource seat = SEATS.get(player.getUUID());
         if(seat != null)
         {
-            seat.submit(chosen);
+            seat.submit(answer);
+        }
+    }
+
+    /** Concedes the player's running duel. */
+    public static void surrender(ServerPlayer player)
+    {
+        DuelSession session = ACTIVE.get(Watcher.of(player));
+        if(session != null && session.isRunning())
+        {
+            session.stop();
+            player.sendSystemMessage(Component.literal("You surrendered.").withStyle(ChatFormatting.RED));
         }
     }
 
@@ -225,6 +237,11 @@ public final class DuelistDuels
         List<Watcher> finished = new ArrayList<>();
         ACTIVE.forEach((watcher, session) ->
         {
+            List<String> log = new ArrayList<>();
+            BoardSnapshot[] latestBoard = {null};
+            boolean[] over = {false};
+            String[] result = {""};
+
             session.drainEvents(event ->
             {
                 if(event instanceof DuelSession.Event.Message message)
@@ -232,23 +249,50 @@ public final class DuelistDuels
                     Component line = narrate(message.message(), descriptions);
                     if(line != null)
                     {
-                        watcher.send(server, line);
+                        if(watcher.console())
+                        {
+                            watcher.send(server, line);
+                        }
+                        else
+                        {
+                            log.add(line.getString());
+                        }
                     }
+                }
+                else if(event instanceof DuelSession.Event.Board board)
+                {
+                    latestBoard[0] = board.snapshot();
                 }
                 else if(event instanceof DuelSession.Event.Finished done)
                 {
-                    watcher.send(server, Component.literal(done.completed()
-                        ? "Duel over - winner: player " + (done.result() == null ? "?" : done.result().winner())
-                            + " (" + done.steps() + " engine steps)"
-                        : "Duel ended without a result after " + done.steps() + " steps")
+                    over[0] = true;
+                    result[0] = done.completed()
+                        ? "Winner: " + (done.result() == null ? "?"
+                            : done.result().winner() == 0 ? "you" : done.result().winner() == 1 ? "opponent" : "draw")
+                        : "Duel ended without a result";
+                    watcher.send(server, Component.literal("Duel over - " + result[0])
                         .withStyle(ChatFormatting.GOLD));
                 }
                 else if(event instanceof DuelSession.Event.Failed failed)
                 {
-                    watcher.send(server, Component.literal("Duel failed: " + failed.reason())
-                        .withStyle(ChatFormatting.RED));
+                    over[0] = true;
+                    result[0] = "Duel failed: " + failed.reason();
+                    watcher.send(server, Component.literal(result[0]).withStyle(ChatFormatting.RED));
                 }
             });
+
+            if(!watcher.console() && (latestBoard[0] != null || !log.isEmpty() || over[0]))
+            {
+                ServerPlayer player = server.getPlayerList().getPlayer(watcher.playerId());
+                if(player != null)
+                {
+                    de.cas_ual_ty.dueldimension.DuelDimension.channel.send(
+                        net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
+                        new de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate(
+                            latestBoard[0], log, over[0], result[0]));
+                }
+            }
+
             if(!session.isRunning())
             {
                 finished.add(watcher);
@@ -293,7 +337,29 @@ public final class DuelistDuels
             return Component.literal("  " + descriptions.describeHint(hint.hintType(), hint.description()))
                 .withStyle(ChatFormatting.GRAY);
         }
-        return null; // moves, phases and chain bookkeeping would drown the chat
+        if(message instanceof DuelMessage.NewPhase phase)
+        {
+            return Component.literal(phaseName(phase.phase())).withStyle(ChatFormatting.YELLOW);
+        }
+        if(message instanceof DuelMessage.Draw draw)
+        {
+            return Component.literal("Player " + draw.player() + " draws " + draw.cards().size())
+                .withStyle(ChatFormatting.GRAY);
+        }
+        return null; // per-card moves and chain bookkeeping would drown the log
+    }
+
+    private static String phaseName(int phase)
+    {
+        return switch(phase)
+        {
+            case de.cas_ual_ty.dueldimension.ocg.OcgConstants.PHASE_DRAW -> "Draw Phase";
+            case de.cas_ual_ty.dueldimension.ocg.OcgConstants.PHASE_STANDBY -> "Standby Phase";
+            case de.cas_ual_ty.dueldimension.ocg.OcgConstants.PHASE_MAIN1 -> "Main Phase 1";
+            case de.cas_ual_ty.dueldimension.ocg.OcgConstants.PHASE_MAIN2 -> "Main Phase 2";
+            case de.cas_ual_ty.dueldimension.ocg.OcgConstants.PHASE_END -> "End Phase";
+            default -> (phase & 0xF8) != 0 ? "Battle Phase" : "Phase " + phase;
+        };
     }
 
     public static void stopAll()

@@ -9,33 +9,50 @@ import java.util.List;
  * A decision, described in terms a screen can draw and a player can click.
  * <p>
  * All engine semantics are resolved server-side: by the time a prompt reaches
- * the client it is a title, a list of labelled options, and how many of them
- * must be picked. The client never sees passcodes, response encodings or
- * hidden information, and answers with nothing but option indices — so a
- * modified client cannot forge an illegal play, only pick from what it was
- * legitimately offered.
- *
- * @param title       what is being asked
- * @param options     the choices, in the order the engine listed them
- * @param minSelect   how many must be chosen
- * @param maxSelect   how many may be chosen
- * @param cancelable  whether the player may decline entirely
- * @param board       a few lines summarising the field, for context
- * @param field       the same field, structured, for the playfield renderer
+ * the client it is a title, a list of labelled options, and a {@link Kind}
+ * saying how they are answered. The client never sees passcodes it isn't
+ * entitled to, response encodings or hidden information, and answers with
+ * option indices (plus a card code for the announce search, which the server
+ * re-validates) — a modified client can pick among what it was offered, not
+ * forge an illegal play.
  */
-public record EnginePrompt(String title, List<Option> options, int minSelect, int maxSelect,
-    boolean cancelable, List<String> board, BoardSnapshot field)
+public record EnginePrompt(Kind kind, String title, List<Option> options, int minSelect, int maxSelect,
+    boolean cancelable, BoardSnapshot field)
 {
+    public enum Kind
+    {
+        /** Pick exactly one option. */
+        CHOOSE,
+        /** Pick min..max distinct options, then confirm. */
+        MULTI,
+        /** Options are zones; pick count of them by clicking the board. */
+        PLACES,
+        /** Click all options in the order they should end up, or decline. */
+        SORT,
+        /** Distribute a total over the options; each has a stock (option max). */
+        COUNTERS,
+        /** Type/search a card name; the answer is a card code. */
+        DECLARE_CARD
+    }
+
     /**
-     * @param label   what the player reads
-     * @param detail  optional second line (zone, stats, effect text)
+     * @param label    what the player reads
+     * @param detail   optional second line (zone, stats, effect text)
      * @param cardCode passcode for art lookup, 0 when the option isn't a card
+     * @param zone     board-highlight metadata: -1 none, else packed
+     *                 (opponent?16:0) | (monsterZone?8:0) | sequence
+     * @param max      per-option limit (counter stock); 0 when unused
      */
-    public record Option(String label, String detail, int cardCode)
+    public record Option(String label, String detail, int cardCode, int zone, int max)
     {
         public Option(String label)
         {
-            this(label, "", 0);
+            this(label, "", 0, -1, 0);
+        }
+
+        public Option(String label, String detail, int cardCode)
+        {
+            this(label, detail, cardCode, -1, 0);
         }
 
         public void write(FriendlyByteBuf buffer)
@@ -43,29 +60,32 @@ public record EnginePrompt(String title, List<Option> options, int minSelect, in
             buffer.writeUtf(label, 256);
             buffer.writeUtf(detail, 256);
             buffer.writeVarInt(cardCode);
+            buffer.writeVarInt(zone);
+            buffer.writeVarInt(max);
         }
 
         public static Option read(FriendlyByteBuf buffer)
         {
-            return new Option(buffer.readUtf(256), buffer.readUtf(256), buffer.readVarInt());
+            return new Option(buffer.readUtf(256), buffer.readUtf(256),
+                buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt());
         }
     }
 
     public void write(FriendlyByteBuf buffer)
     {
+        buffer.writeEnum(kind);
         buffer.writeUtf(title, 256);
         buffer.writeVarInt(options.size());
         options.forEach(option -> option.write(buffer));
         buffer.writeVarInt(minSelect);
         buffer.writeVarInt(maxSelect);
         buffer.writeBoolean(cancelable);
-        buffer.writeVarInt(board.size());
-        board.forEach(line -> buffer.writeUtf(line, 256));
         field.write(buffer);
     }
 
     public static EnginePrompt read(FriendlyByteBuf buffer)
     {
+        Kind kind = buffer.readEnum(Kind.class);
         String title = buffer.readUtf(256);
         int optionCount = buffer.readVarInt();
         List<Option> options = new ArrayList<>(optionCount);
@@ -73,21 +93,19 @@ public record EnginePrompt(String title, List<Option> options, int minSelect, in
         {
             options.add(Option.read(buffer));
         }
-        int min = buffer.readVarInt();
-        int max = buffer.readVarInt();
-        boolean cancelable = buffer.readBoolean();
-        int boardLines = buffer.readVarInt();
-        List<String> board = new ArrayList<>(boardLines);
-        for(int i = 0; i < boardLines; i++)
-        {
-            board.add(buffer.readUtf(256));
-        }
-        return new EnginePrompt(title, options, min, max, cancelable, board, BoardSnapshot.read(buffer));
+        return new EnginePrompt(kind, title, options, buffer.readVarInt(), buffer.readVarInt(),
+            buffer.readBoolean(), BoardSnapshot.read(buffer));
     }
 
     /** True when exactly one option is expected — the common case, one click. */
     public boolean isSingleChoice()
     {
-        return maxSelect <= 1;
+        return kind == Kind.CHOOSE || (kind == Kind.MULTI && maxSelect <= 1);
+    }
+
+    /** Packs the zone-highlight metadata for {@link Option#zone()}. */
+    public static int zoneRef(boolean opponent, boolean monsterZone, int sequence)
+    {
+        return (opponent ? 16 : 0) | (monsterZone ? 8 : 0) | sequence;
     }
 }
