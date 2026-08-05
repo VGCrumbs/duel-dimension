@@ -61,15 +61,15 @@ public class PromptTranslator
                 card.controller(), card.location(), card.sequence(), CardCommands.COMMAND_ACTIVATE)));
             if(idle.toBattle())
             {
-                options.add(new EnginePrompt.Option("Go to Battle Phase"));
+                options.add(phaseOption("Battle Phase", CardCommands.PHASE_TO_BATTLE));
             }
             if(idle.toEnd())
             {
-                options.add(new EnginePrompt.Option("End Turn"));
+                options.add(phaseOption("End Turn", CardCommands.PHASE_END_TURN));
             }
             if(idle.canShuffle())
             {
-                options.add(new EnginePrompt.Option("Shuffle hand"));
+                options.add(phaseOption("Shuffle hand", CardCommands.PHASE_SHUFFLE));
             }
             return new EnginePrompt(EnginePrompt.Kind.CHOOSE, "Main Phase", options, 1, 1, false, field);
         }
@@ -87,11 +87,11 @@ public class PromptTranslator
                 card.controller(), card.location(), card.sequence(), CardCommands.COMMAND_ATTACK)));
             if(battle.toMain2())
             {
-                options.add(new EnginePrompt.Option("Go to Main Phase 2"));
+                options.add(phaseOption("Main Phase 2", CardCommands.PHASE_TO_MAIN2));
             }
             if(battle.toEnd())
             {
-                options.add(new EnginePrompt.Option("End Turn"));
+                options.add(phaseOption("End Turn", CardCommands.PHASE_END_TURN));
             }
             return new EnginePrompt(EnginePrompt.Kind.CHOOSE, "Battle Phase", options, 1, 1, false, field);
         }
@@ -605,6 +605,11 @@ public class PromptTranslator
             CardCommands.label(command, card == null ? 0 : card.type(), position, text),
             detail, idle.code(), -1, 0,
             idle.controller(), idle.location(), idle.sequence(), command);
+    }
+
+    private static EnginePrompt.Option phaseOption(String label, int command)
+    {
+        return new EnginePrompt.Option(label, "", 0, -1, 0, -1, 0, -1, command);
     }
 
     private int typeOf(int code)

@@ -33,6 +33,22 @@ public final class CardCommands
     public static final int COMMAND_OPERATION = 0x0100;
     public static final int COMMAND_RESET = 0x0200;
 
+    /**
+     * Phase transitions. EDOPro shows these as its own row of buttons
+     * (btnBP / btnM2 / btnEP in the wPhase window), each visible only while
+     * the core offers it, so they are ids rather than card-command bits.
+     */
+    public static final int PHASE_TO_BATTLE = 0x1000;
+    public static final int PHASE_TO_MAIN2 = 0x2000;
+    public static final int PHASE_END_TURN = 0x4000;
+    public static final int PHASE_SHUFFLE = 0x8000;
+
+    /** True for the ids above, which belong on the phase bar. */
+    public static boolean isPhaseAction(int command)
+    {
+        return command >= PHASE_TO_BATTLE;
+    }
+
     /** The order ShowMenu stacks the buttons in, top to bottom. */
     public static final int[] MENU_ORDER = {
         COMMAND_ACTIVATE, COMMAND_SUMMON, COMMAND_SPSUMMON, COMMAND_MSET, COMMAND_SSET,

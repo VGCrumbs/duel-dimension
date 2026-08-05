@@ -174,9 +174,8 @@ public class BoardRenderer extends GuiComponent
         {
             FieldLayout.Rect pileCard = new FieldLayout.Rect(
                 rect.x() + (rect.w() - CARD_W) / 2F, rect.y() + (rect.h() - CARD_H) / 2F, CARD_W, CARD_H);
-            FieldQuad.drawProjected(poseStack,
-                controller == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT,
-                projection, pileCard, CARD_STEPS);
+            drawCardArt(poseStack, controller == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT,
+                pileCard, false);
             String text = Integer.toString(count);
             int textX = corners.minX() + (corners.maxX() - corners.minX() - font.width(text)) / 2;
             int textY = corners.maxY() - 10;
@@ -252,8 +251,7 @@ public class BoardRenderer extends GuiComponent
         float drawH = lying ? CARD_W : CARD_H;
         FieldLayout.Rect cardRect = new FieldLayout.Rect(
             rect.x() + (rect.w() - drawW) / 2F, rect.y() + (rect.h() - drawH) / 2F, drawW, drawH);
-        FieldQuad.drawProjected(poseStack, textureFor(slot, inHand, hit.controller()),
-            projection, cardRect, CARD_STEPS, lying);
+        drawCardArt(poseStack, textureFor(slot, inHand, hit.controller()), cardRect, lying);
         if(!inHand && canAttack.test(hit))
         {
             // drawing.cpp bobs tAttack over any card that may attack.
@@ -267,6 +265,27 @@ public class BoardRenderer extends GuiComponent
      * for cards set on the field. A code of 0 means the snapshot withheld the
      * identity, which is the real test for hiding.
      */
+    /**
+     * Draws one card. The mod's card images are letterboxed inside a square,
+     * so they are sampled through their own window; EDOPro's textures are
+     * already card-shaped and use the full range.
+     */
+    private void drawCardArt(PoseStack poseStack, ResourceLocation texture, FieldLayout.Rect rect,
+        boolean lying)
+    {
+        boolean edoproArt = texture.equals(DuelTextures.COVER) || texture.equals(DuelTextures.COVER_OPPONENT)
+            || texture.equals(DuelTextures.UNKNOWN);
+        if(edoproArt)
+        {
+            FieldQuad.drawProjected(poseStack, texture, projection, rect, CARD_STEPS, lying);
+        }
+        else
+        {
+            FieldQuad.drawProjected(poseStack, texture, projection, rect, CARD_STEPS, lying,
+                DuelTextures.CARD_U0, DuelTextures.CARD_V0, DuelTextures.CARD_U1, DuelTextures.CARD_V1);
+        }
+    }
+
     private ResourceLocation textureFor(BoardSnapshot.Slot slot, boolean inHand, int controller)
     {
         if(slot.code() == 0 || (slot.faceDown() && !inHand))

@@ -65,6 +65,19 @@ public final class DuelTextures
     /** EDOPro's cover.png is 480x700; keep that ratio wherever we draw a card. */
     public static final float CARD_ASPECT = 480F / 700F;
 
+    /**
+     * The mod stores card images letterboxed inside a square: measured across
+     * every cached image, the card occupies u 0.199..0.801 and v 0.0625..0.9375
+     * (aspect 0.6875, matching the printed card). Drawing the whole square into
+     * a card-shaped quad squeezes the art; sampling this window instead keeps
+     * it true. EDOPro's own textures (cover, unknown) are already card-shaped
+     * and use the full range.
+     */
+    public static final float CARD_U0 = 0.19922F;
+    public static final float CARD_U1 = 0.80078F;
+    public static final float CARD_V0 = 0.0625F;
+    public static final float CARD_V1 = 0.9375F;
+
     private DuelTextures()
     {
     }

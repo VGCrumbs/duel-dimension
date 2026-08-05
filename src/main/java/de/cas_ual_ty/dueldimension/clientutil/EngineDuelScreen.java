@@ -137,6 +137,7 @@ public class EngineDuelScreen extends Screen
             return;
         }
         buildBottomStrip(prompt);
+        buildPhaseBar(prompt);
     }
 
     /** Choices with no card to point at: phases, effect options, yes/no. */
@@ -147,9 +148,9 @@ public class EngineDuelScreen extends Screen
         for(int i = 0; i < prompt.options().size(); i++)
         {
             EnginePrompt.Option option = prompt.options().get(i);
-            if(option.hasSlot() || option.zone() >= 0)
+            if(option.hasSlot() || option.zone() >= 0 || CardCommands.isPhaseAction(option.command()))
             {
-                continue; // this one belongs on the field
+                continue; // belongs on the field or on the phase bar
             }
             String label = option.label();
             int buttonWidth = Math.max(56, font.width(label) + 12);
@@ -572,16 +573,11 @@ public class EngineDuelScreen extends Screen
         {
             previewCode = hovered.code();
         }
-        if(hovered != null && !optionsFor(hovered).isEmpty())
-        {
-            openMenu(hovered);
-        }
-        else if(menuAnchor != null && hovered == null && !overMenu(mouseX, mouseY))
-        {
-            closeMenu();
-        }
+        // EDOPro opens the command menu on click, not on hover; hovering only
+        // drives the card preview.
 
         renderTopBar(poseStack, board);
+        renderPhaseBar(poseStack, board);
         renderSidebar(poseStack);
         renderLog(poseStack);
 
@@ -605,6 +601,93 @@ public class EngineDuelScreen extends Screen
         if(hovered != null && hovered.isPile())
         {
             renderTooltip(poseStack, Component.literal(hovered.label()), mouseX, mouseY);
+        }
+    }
+
+    /** The six phases EDOPro lists, in order. */
+    private static final String[] PHASE_NAMES = {"DP", "SP", "M1", "BP", "M2", "EP"};
+    private static final int[] PHASE_VALUES = {OcgConstants.PHASE_DRAW, OcgConstants.PHASE_STANDBY,
+        OcgConstants.PHASE_MAIN1, OcgConstants.PHASE_BATTLE, OcgConstants.PHASE_MAIN2, OcgConstants.PHASE_END};
+
+    /**
+     * EDOPro's phase row (wPhase): every phase is listed, the current one is
+     * marked, and a phase you may jump to is a live button - which is exactly
+     * the idle/battle command the core offered.
+     */
+    private void buildPhaseBar(EnginePrompt prompt)
+    {
+        int cellW = 42;
+        int barW = PHASE_NAMES.length * (cellW + 2);
+        int x = width - barW - 8;
+        int y = TOP_BAR_H + 4;
+
+        for(int i = 0; i < PHASE_NAMES.length; i++)
+        {
+            int target = PHASE_VALUES[i];
+            int option = phaseOptionFor(prompt, target);
+            if(option < 0)
+            {
+                continue; // not reachable now; drawn as a plain label instead
+            }
+            int index = option;
+            addRenderableWidget(new Button(x + i * (cellW + 2), y, cellW, 16,
+                Component.literal(PHASE_NAMES[i]), pressed -> choose(index)));
+        }
+    }
+
+    /** The option that moves to this phase, or -1. */
+    private int phaseOptionFor(EnginePrompt prompt, int phase)
+    {
+        if(prompt == null)
+        {
+            return -1;
+        }
+        int wanted = switch(phase)
+        {
+            case OcgConstants.PHASE_BATTLE -> CardCommands.PHASE_TO_BATTLE;
+            case OcgConstants.PHASE_MAIN2 -> CardCommands.PHASE_TO_MAIN2;
+            case OcgConstants.PHASE_END -> CardCommands.PHASE_END_TURN;
+            default -> 0;
+        };
+        if(wanted == 0)
+        {
+            return -1;
+        }
+        for(int i = 0; i < prompt.options().size(); i++)
+        {
+            if(prompt.options().get(i).command() == wanted)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /** Draws the phase row's labels and marks the current phase. */
+    private void renderPhaseBar(PoseStack poseStack, BoardSnapshot board)
+    {
+        int cellW = 42;
+        int barW = PHASE_NAMES.length * (cellW + 2);
+        int x = width - barW - 8;
+        int y = TOP_BAR_H + 4;
+
+        for(int i = 0; i < PHASE_NAMES.length; i++)
+        {
+            boolean current = board.phase() == PHASE_VALUES[i]
+                || (PHASE_VALUES[i] == OcgConstants.PHASE_BATTLE && board.phase() > OcgConstants.PHASE_MAIN1
+                    && board.phase() < OcgConstants.PHASE_MAIN2);
+            int cellX = x + i * (cellW + 2);
+            if(current)
+            {
+                fill(poseStack, cellX, y, cellX + cellW, y + 16, 0x80FFD700);
+            }
+            if(phaseOptionFor(shownPrompt, PHASE_VALUES[i]) < 0)
+            {
+                // Not reachable: no button was made, so draw the label here.
+                fill(poseStack, cellX, y, cellX + cellW, y + 16, current ? 0x60FFD700 : 0x60202020);
+                drawCenteredString(poseStack, font, PHASE_NAMES[i], cellX + cellW / 2, y + 4,
+                    current ? 0xFFFFAA : 0x808080);
+            }
         }
     }
 
@@ -656,7 +739,11 @@ public class EngineDuelScreen extends Screen
         ScreenUtil.white();
         CardRenderUtil.bindMainResourceLocation(
             DuelTextures.card(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE));
-        DdBlitUtil.fullBlit(poseStack, SIDEBAR_PAD, SIDEBAR_PAD, imageW, imageH);
+        // Sample the card out of its letterboxed square, or it stretches.
+        DdBlitUtil.blit(poseStack, SIDEBAR_PAD, SIDEBAR_PAD, imageW, imageH,
+            DuelTextures.CARD_U0, DuelTextures.CARD_V0,
+            DuelTextures.CARD_U1 - DuelTextures.CARD_U0, DuelTextures.CARD_V1 - DuelTextures.CARD_V0,
+            1, 1);
 
         int y = SIDEBAR_PAD + imageH + 4;
         for(var line : font.split(Component.literal(card.getName()), imageW))
@@ -762,9 +849,20 @@ public class EngineDuelScreen extends Screen
             int y = top + 20 + (i / columns) * (cardH + 4);
             Properties card = slot.code() == 0 ? null : DdDatabase.PROPERTIES_LIST.get((long)slot.code());
             ScreenUtil.white();
-            CardRenderUtil.bindMainResourceLocation(card == null ? DuelTextures.COVER
-                : DuelTextures.card(card, (byte)0, DuelTextures.FIELD_CARD_SIZE));
-            DdBlitUtil.fullBlit(poseStack, x, y, cardW, cardH);
+            if(card == null)
+            {
+                CardRenderUtil.bindMainResourceLocation(DuelTextures.COVER);
+                DdBlitUtil.fullBlit(poseStack, x, y, cardW, cardH);
+            }
+            else
+            {
+                CardRenderUtil.bindMainResourceLocation(
+                    DuelTextures.card(card, (byte)0, DuelTextures.FIELD_CARD_SIZE));
+                DdBlitUtil.blit(poseStack, x, y, cardW, cardH,
+                    DuelTextures.CARD_U0, DuelTextures.CARD_V0,
+                    DuelTextures.CARD_U1 - DuelTextures.CARD_U0,
+                    DuelTextures.CARD_V1 - DuelTextures.CARD_V0, 1, 1);
+            }
         }
     }
 

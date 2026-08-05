@@ -216,40 +216,15 @@ public final class FieldLayout
     }
 
     /**
-     * Fits EDOPro's projection into a screen box.
-     * <p>
-     * EDOPro stretches its fixed frustum to whatever window it has
-     * (keep_aspect_ratio defaults to false), so we do the same, then scale
-     * uniformly so nothing falls off the edge of a Minecraft GUI whose aspect
-     * differs from the reference client's assumed 1.607.
+     * Maps EDOPro's projection onto a screen box the way the reference client
+     * does: {@code keep_aspect_ratio} defaults to false, so the fixed frustum
+     * is simply stretched to whatever window it has, NDC x and y each spanning
+     * the full extent. Scaling both axes by one factor instead (to "preserve
+     * shape") makes the table far too tall on a wide window, because the
+     * frustum is much wider than it is high.
      */
     public static Projection fit(int left, int top, int width, int height)
     {
-        // Projected extent of the mat in NDC, from its four corners.
-        float minX = Float.MAX_VALUE;
-        float maxX = -Float.MAX_VALUE;
-        float minY = Float.MAX_VALUE;
-        float maxY = -Float.MAX_VALUE;
-        for(float fx : new float[] {FIELD_MIN_X, FIELD_MAX_X})
-        {
-            for(float fy : new float[] {FIELD_MIN_Y, FIELD_MAX_Y})
-            {
-                float ndcX = Projection.ndcX(fx, fy);
-                float ndcY = Projection.ndcY(fy);
-                minX = Math.min(minX, ndcX);
-                maxX = Math.max(maxX, ndcX);
-                minY = Math.min(minY, ndcY);
-                maxY = Math.max(maxY, ndcY);
-            }
-        }
-        // One scale for both axes: the perspective is already in the numbers,
-        // and scaling them differently would shear the table.
-        float scale = Math.min(width / (maxX - minX), height / (maxY - minY));
-        float centreNdcX = (minX + maxX) / 2F;
-        float centreNdcY = (minY + maxY) / 2F;
-        return new Projection(
-            left + width / 2F - centreNdcX * scale,
-            top + height / 2F + centreNdcY * scale,
-            scale, scale);
+        return new Projection(left + width / 2F, top + height / 2F, width / 2F, height / 2F);
     }
 }

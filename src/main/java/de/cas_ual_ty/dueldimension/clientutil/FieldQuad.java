@@ -93,6 +93,20 @@ public final class FieldQuad
     public static void drawProjected(PoseStack poseStack, ResourceLocation texture,
         FieldLayout.Projection projection, FieldLayout.Rect rect, int steps, boolean quarterTurn)
     {
+        drawProjected(poseStack, texture, projection, rect, steps, quarterTurn, 0F, 0F, 1F, 1F);
+    }
+
+    /**
+     * @param su0 su1 sv0 sv1 the part of the texture to sample. The mod stores
+     *                        card images letterboxed inside a square, so a card
+     *                        drawn with the full 0..1 range would be squashed
+     *                        into the padding; sampling just the card's own
+     *                        window restores its proportions.
+     */
+    public static void drawProjected(PoseStack poseStack, ResourceLocation texture,
+        FieldLayout.Projection projection, FieldLayout.Rect rect, int steps, boolean quarterTurn,
+        float su0, float sv0, float su1, float sv1)
+    {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
         RenderSystem.setShaderTexture(0, texture);
@@ -128,6 +142,16 @@ public final class FieldQuad
                 float cv = quarterTurn ? 1F - u1 : v1;
                 float du = quarterTurn ? v0 : u1;
                 float dv = quarterTurn ? 1F - u1 : v0;
+
+                // Map the unit square onto the requested texture window.
+                au = su0 + au * (su1 - su0);
+                bu = su0 + bu * (su1 - su0);
+                cu = su0 + cu * (su1 - su0);
+                du = su0 + du * (su1 - su0);
+                av = sv0 + av * (sv1 - sv0);
+                bv = sv0 + bv * (sv1 - sv0);
+                cv = sv0 + cv * (sv1 - sv0);
+                dv = sv0 + dv * (sv1 - sv0);
 
                 buffer.vertex(matrix, projection.x(x0, y0), projection.y(y0), 0).uv(au, av).endVertex();
                 buffer.vertex(matrix, projection.x(x0, y1), projection.y(y1), 0).uv(bu, bv).endVertex();

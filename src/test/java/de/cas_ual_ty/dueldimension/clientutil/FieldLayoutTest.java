@@ -20,17 +20,36 @@ class FieldLayoutTest
 
     private final FieldLayout.Projection projection = FieldLayout.fit(LEFT, TOP, WIDTH, HEIGHT);
 
+    /**
+     * The mat's near corners run off the edge in the reference client too -
+     * the frustum is wider than the table - but every zone a player has to
+     * interact with must be fully on screen.
+     */
     @Test
-    void wholeTableLandsInsideTheBox()
+    void everyPlayableZoneLandsOnScreen()
     {
-        for(float fx : new float[] {FieldLayout.FIELD_MIN_X, FieldLayout.FIELD_MAX_X})
+        int[] locations = {OcgConstants.LOCATION_MZONE, OcgConstants.LOCATION_SZONE,
+            OcgConstants.LOCATION_DECK, OcgConstants.LOCATION_EXTRA,
+            OcgConstants.LOCATION_GRAVE, OcgConstants.LOCATION_REMOVED};
+        for(int controller = 0; controller <= 1; controller++)
         {
-            for(float fy : new float[] {FieldLayout.FIELD_MIN_Y, FieldLayout.FIELD_MAX_Y})
+            for(int location : locations)
             {
-                float x = projection.x(fx, fy);
-                float y = projection.y(fy);
-                assertTrue(x >= LEFT - 1 && x <= LEFT + WIDTH + 1, "corner x off screen: " + x);
-                assertTrue(y >= TOP - 1 && y <= TOP + HEIGHT + 1, "corner y off screen: " + y);
+                int slots = location == OcgConstants.LOCATION_MZONE ? 7
+                    : location == OcgConstants.LOCATION_SZONE ? 6 : 1;
+                for(int sequence = 0; sequence < slots; sequence++)
+                {
+                    FieldLayout.Rect rect = FieldLayout.zone(controller, location, sequence);
+                    if(rect == null)
+                    {
+                        continue;
+                    }
+                    FieldQuad.Corners corners = projection.quad(rect);
+                    assertTrue(corners.minX() >= LEFT - 1 && corners.maxX() <= LEFT + WIDTH + 1,
+                        "zone " + location + "/" + sequence + " runs off horizontally");
+                    assertTrue(corners.minY() >= TOP - 1 && corners.maxY() <= TOP + HEIGHT + 1,
+                        "zone " + location + "/" + sequence + " runs off vertically");
+                }
             }
         }
     }
