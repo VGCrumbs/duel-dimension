@@ -926,7 +926,7 @@ public class EngineDuelScreen extends Screen
             }
             int index = option;
             addRenderableWidget(new SlimPhaseButton(x + i * PHASE_CELL_W, PHASE_BAR_Y,
-                PHASE_CELL_W - 1, PHASE_CELL_H, Component.literal(PHASE_NAMES[i]),
+                PHASE_CELL_W, PHASE_CELL_H, Component.literal(PHASE_NAMES[i]), i,
                 pressed -> choose(index)));
         }
     }
@@ -983,24 +983,26 @@ public class EngineDuelScreen extends Screen
     }
 
     /** A flat, compact button so the phase row reads as one strip. */
+    /**
+     * A phase the core is offering, drawn as the same cased button as the
+     * labels so the row reads as one piece of hardware.
+     */
     private class SlimPhaseButton extends Button
     {
-        SlimPhaseButton(int x, int y, int w, int h, Component label, OnPress onPress)
+        private final int index;
+
+        SlimPhaseButton(int x, int y, int w, int h, Component label, int index, OnPress onPress)
         {
             super(x, y, w, h, label, onPress);
+            this.index = index;
         }
 
         @Override
         public void renderButton(PoseStack poseStack, int mouseX, int mouseY, float partialTick)
         {
-            // The reference's phase buttons are not textures: game.cpp:316
-            // builds them with env->addButton, so Irrlicht's GUI skin draws
-            // them -- a flat face with a one-pixel bevel, nothing of
-            // Minecraft's stone-slab button art. Reproduced here by hand.
-            boolean hovered = isHoveredOrFocused();
-            drawPhaseCell(poseStack, x, y, width, height, hovered, false);
-            drawCenteredString(poseStack, font, getMessage(), x + width / 2,
-                y + (height - 8) / 2, hovered ? 0xFFE066 : 0xE8E8E8);
+            BoardSnapshot board = currentBoard();
+            drawPhaseCell(poseStack, x, y, width, height, index,
+                isCurrentPhase(board, index) || isHoveredOrFocused(), board.turnPlayer() == 0);
         }
     }
 
@@ -1108,95 +1110,25 @@ public class EngineDuelScreen extends Screen
     }
 
     /**
-     * One cell of the phase row, in the reference's skin-button style: a flat
-     * dark face with a one-pixel bevel, pressed-in for the current phase.
+     * One bay of the phase indicator, drawn from the PNG atlases: the button
+     * for this phase in blue (your turn) or red (theirs), taking the lit row
+     * -- glowing letters -- when it is the phase the duel is in.
      */
-    private void drawPhaseCell(PoseStack poseStack, int x, int y, int w, int h,
-        boolean hovered, boolean pressed)
+    private void drawPhaseCell(PoseStack poseStack, int x, int y, int w, int h, int index,
+        boolean lit, boolean yourTurn)
     {
-        int face = pressed ? 0xFF17171B : hovered ? 0xFF35353C : 0xFF26262C;
-        int light = 0xFF5C5C66;
-        int dark = 0xFF0E0E12;
-        fill(poseStack, x, y, x + w, y + h, face);
-        // Bevel: light top and left, dark bottom and right; inverted when
-        // pressed, which is how a flat skin shows the active state.
-        fill(poseStack, x, y, x + w, y + 1, pressed ? dark : light);
-        fill(poseStack, x, y, x + 1, y + h, pressed ? dark : light);
-        fill(poseStack, x, y + h - 1, x + w, y + h, pressed ? light : dark);
-        fill(poseStack, x + w - 1, y, x + w, y + h, pressed ? light : dark);
-    }
-
-    /** Draws the phase row's labels and marks the current phase. */
-    private void renderPhaseBar(PoseStack poseStack, BoardSnapshot board)
-    {
-        int x = phaseBarLeft();
-        for(int i = 0; i < PHASE_NAMES.length; i++)
-        {
-            boolean current = board.phase() == PHASE_VALUES[i]
-                || (PHASE_VALUES[i] == OcgConstants.PHASE_BATTLE && board.phase() > OcgConstants.PHASE_MAIN1
-                    && board.phase() < OcgConstants.PHASE_MAIN2);
-            int cellX = x + i * PHASE_CELL_W;
-
-            if(phaseOptionFor(shownPrompt, PHASE_VALUES[i]) < 0)
-            if(phaseOptionFor(shownPrompt, PHASE_VALUES[i]) < 0)
-            {
-                // Not reachable: no button exists, so this cell is a label.
-                drawPhaseCell(poseStack, cellX, PHASE_BAR_Y, PHASE_CELL_W - 1, PHASE_CELL_H,
-                    false, current);
-                drawCenteredString(poseStack, font, PHASE_NAMES[i],
-                    cellX + (PHASE_CELL_W - 1) / 2, PHASE_BAR_Y + (PHASE_CELL_H - 8) / 2,
-                    current ? 0xFFE066 : 0x6A6A6A);
-            }
-            if(current)
-            {
-                // A gold underline marks where the duel actually is.
-                fill(poseStack, cellX, PHASE_BAR_Y + PHASE_CELL_H - 1, cellX + PHASE_CELL_W - 1,
-                    PHASE_BAR_Y + PHASE_CELL_H, 0xFFFFD700);
-            }
-        }
-    }
-
-    /**
-     * Life points across the top with the turn count between them, as the
-     * reference client shows it. Centred on the table rather than the window:
-     * the frustum is off-centre by design, so window-centred headers sit
-     * visibly left of the board.
-     */
-    /**
-     * Life displays as corner plates, arranged the way Master Duel arranges
-     * them -- your plate at the lower left of the board, the opponent's at the
-     * upper right -- but drawn entirely by hand here; nothing is copied from
-     * that game. Each plate carries the duelist's name, an LP readout with the
-     * number at display size, and a thin accent line that depletes with their
-     * life. The turn badge stays centred above the field.
-     */
-    private void renderTopBar(PoseStack poseStack, BoardSnapshot board)
-    {
-        long now = System.currentTimeMillis();
-        boolean yourTurn = board.turnPlayer() == 0;
-
-        drawLifePlate(poseStack, SIDEBAR_W + 8, height - PLATE_H - 6, "You",
-            board.self().lifePoints(), 0xFF3FA34D, animations.damageFlash(0, now), yourTurn, now);
-        drawLifePlate(poseStack, width - PLATE_W - 8, 4, "Opponent",
-            board.opponent().lifePoints(), 0xFFC1362F, animations.damageFlash(1, now), !yourTurn, now);
-
-        // Whose turn it is, said with colour instead of words.
-        int badgeW = 34;
-        int badgeLeft = Math.round(boardRenderer.tableCentreX()) - badgeW / 2;
-        int badgeTop = 4;
-        int turnColour = yourTurn ? TURN_YOURS : TURN_THEIRS;
-        fill(poseStack, badgeLeft, badgeTop, badgeLeft + badgeW, badgeTop + 17, 0xC0101014);
-        fill(poseStack, badgeLeft, badgeTop, badgeLeft + badgeW, badgeTop + 1, 0xC0000000 | turnColour);
-        fill(poseStack, badgeLeft, badgeTop + 16, badgeLeft + badgeW, badgeTop + 17, 0xC0000000 | turnColour);
-        drawCenteredString(poseStack, font, Integer.toString(Math.max(1, board.turn())),
-            badgeLeft + badgeW / 2, badgeTop + 5, turnColour);
+        ScreenUtil.white();
+        DuelTextures.bindSmooth(yourTurn ? DuelTextures.PHASE_BLUE : DuelTextures.PHASE_RED);
+        DdBlitUtil.blit(poseStack, x, y, w, h,
+            index / (float)PHASE_NAMES.length, lit ? 0.5F : 0F,
+            1F / PHASE_NAMES.length, 0.5F, 1, 1);
     }
 
     /**
      * True only for a prompt that asks the player to pick a card on the board
-     * -- slot options with no command. The aim pointer must not outlive its
-     * question: a direct attack produces no target selection at all, and the
-     * sword used to linger over whatever prompt came next.
+     * -- slot options carrying no command. The aim pointer must not outlive
+     * its question: a direct attack produces no target selection at all, so
+     * the sword used to linger over whatever prompt came next.
      */
     private static boolean isTargetSelection(EnginePrompt prompt)
     {
@@ -1212,53 +1144,115 @@ public class EngineDuelScreen extends Screen
         return anySlot;
     }
 
-    private static final int PLATE_W = 118;
-    private static final int PLATE_H = 34;
-
-    private void drawLifePlate(PoseStack poseStack, int x, int y, String name, int lifePoints,
-        int accent, float flash, boolean active, long now)
+    /** True for the phase the duel is actually in. */
+    private static boolean isCurrentPhase(BoardSnapshot board, int index)
     {
-        if(active)
+        return board.phase() == PHASE_VALUES[index]
+            || (PHASE_VALUES[index] == OcgConstants.PHASE_BATTLE
+                && board.phase() > OcgConstants.PHASE_MAIN1
+                && board.phase() < OcgConstants.PHASE_MAIN2);
+    }
+
+    /**
+     * The phase indicator: a chrome case with six colour-coded bays. Blue while
+     * you hold the turn, red while the opponent does; the current phase lights
+     * up. Every part of it is a PNG under textures/duel, so the look can be
+     * changed without touching this code.
+     */
+    private void renderPhaseBar(PoseStack poseStack, BoardSnapshot board)
+    {
+        int x = phaseBarLeft();
+        boolean yourTurn = board.turnPlayer() == 0;
+
+        // The housing first, sitting a little proud of the bays.
+        ScreenUtil.white();
+        DuelTextures.bindSmooth(DuelTextures.PHASE_CASE);
+        DdBlitUtil.fullBlit(poseStack, x - 3, PHASE_BAR_Y - 4,
+            PHASE_NAMES.length * PHASE_CELL_W + 6, PHASE_CELL_H + 8);
+
+        for(int i = 0; i < PHASE_NAMES.length; i++)
         {
-            // The active duelist's plate breathes, softly and feathered.
-            float pulse = 0.18F + 0.10F * (float)Math.sin(now / 420D);
-            float[] spread = {1.5F, 3F, 4.5F};
-            float[] fade = {1F, 0.55F, 0.28F};
-            for(int shell = 0; shell < spread.length; shell++)
+            // A phase the core is offering gets a real button, added in
+            // buildPhaseBar; this draws the ones that are only labels.
+            if(phaseOptionFor(shownPrompt, PHASE_VALUES[i]) < 0)
             {
-                int e = Math.round(spread[shell]);
-                int alpha = Math.round(pulse * fade[shell] * 255) << 24;
-                fill(poseStack, x - e, y - e, x + PLATE_W + e, y + PLATE_H + e, alpha | 0xFFFFFF);
+                drawPhaseCell(poseStack, x + i * PHASE_CELL_W, PHASE_BAR_Y, PHASE_CELL_W,
+                    PHASE_CELL_H, i, isCurrentPhase(board, i), yourTurn);
             }
         }
+    }
 
-        fill(poseStack, x, y, x + PLATE_W, y + PLATE_H, 0xE60F1216);
-        // The accent runs down the plate's outer edge and under its name.
-        fill(poseStack, x, y, x + 2, y + PLATE_H, 0xFF000000 | (accent & 0xFFFFFF));
-        fill(poseStack, x + 4, y + 12, x + PLATE_W - 4, y + 13, 0x50FFFFFF);
+    /**
+     * Life points across the top with the turn count between them, as the
+     * reference client shows it. Centred on the table rather than the window:
+     * the frustum is off-centre by design, so window-centred headers sit
+     * visibly left of the board.
+     */
+    private void renderTopBar(PoseStack poseStack, BoardSnapshot board)
+    {
+        int badgeW = 34;
+        int left = SIDEBAR_W + 10;
+        int right = width - 10;
+        // Both players get the same bar: a wider one for you would misread as
+        // an advantage at a glance.
+        int barW = Math.max(60, (right - left - badgeW - 12) / 2);
+        int badgeLeft = left + barW + 6;
 
-        font.draw(poseStack, name, x + 6, y + 3, 0xE8E8E8);
+        long now = System.currentTimeMillis();
+        boolean yourTurn = board.turnPlayer() == 0;
+        drawLifeBar(poseStack, left, 6, barW, "You", board.self().lifePoints(), 0xFF3FA34D,
+            animations.damageFlash(0, now), yourTurn, now);
+        drawLifeBar(poseStack, right - barW, 6, barW, "Opponent",
+            board.opponent().lifePoints(), 0xFFC1362F, animations.damageFlash(1, now), !yourTurn, now);
 
-        // "LP" small, the number at display size, as the reference layout has it.
-        font.draw(poseStack, "LP", x + 6, y + 19, 0x9AA0A8);
-        String value = Integer.toString(Math.max(0, lifePoints));
-        poseStack.pushPose();
-        poseStack.scale(1.5F, 1.5F, 1F);
-        font.draw(poseStack, value,
-            (x + PLATE_W - 6 - font.width(value) * 1.5F) / 1.5F, (y + 15) / 1.5F, 0xFFFFFF);
-        poseStack.popPose();
+        // Whose turn it is, said with colour instead of words: the badge and
+        // the active player's bar carry it, so the label underneath (which the
+        // phase row kept colliding with) is gone.
+        int badgeTop = 4;
+        int turnColour = yourTurn ? TURN_YOURS : TURN_THEIRS;
+        fill(poseStack, badgeLeft, badgeTop, badgeLeft + badgeW, badgeTop + 17, 0xC0101014);
+        fill(poseStack, badgeLeft, badgeTop, badgeLeft + badgeW, badgeTop + 1, 0xC0000000 | turnColour);
+        fill(poseStack, badgeLeft, badgeTop + 16, badgeLeft + badgeW, badgeTop + 17, 0xC0000000 | turnColour);
+        drawCenteredString(poseStack, font, Integer.toString(Math.max(1, board.turn())),
+            badgeLeft + badgeW / 2, badgeTop + 5, turnColour);
+    }
 
-        // The depletion line: full at 8000, gone at 0.
-        int lineW = Math.max(0, Math.min(PLATE_W - 8, Math.round((PLATE_W - 8) * lifePoints / 8000F)));
-        fill(poseStack, x + 4, y + PLATE_H - 3, x + 4 + PLATE_W - 8, y + PLATE_H - 2, 0xFF23262B);
-        fill(poseStack, x + 4, y + PLATE_H - 3, x + 4 + lineW, y + PLATE_H - 2,
-            0xFF000000 | (accent & 0xFFFFFF));
-
+    /**
+     * EDOPro draws a frame texture (lpf.png, a fixed 200x20 source) and fills
+     * it procedurally; lp.png is never drawn. Same here.
+     */
+    private void drawLifeBar(PoseStack poseStack, int x, int y, int barW, String name, int lifePoints,
+        int colour, float flash, boolean active, long now)
+    {
+        int barH = 13;
+        if(active)
+        {
+            // A slow breath around the bar of whoever is playing. Subtle enough
+            // to ignore, bright enough to answer "whose turn is it" at a glance.
+            float pulse = 0.35F + 0.25F * (float)Math.sin(now / 420D);
+            int glow = (Math.round(pulse * 255) << 24) | 0xFFFFFF;
+            fill(poseStack, x - 2, y - 2, x + barW + 2, y, glow);
+            fill(poseStack, x - 2, y + barH, x + barW + 2, y + barH + 2, glow);
+            fill(poseStack, x - 2, y, x, y + barH, glow);
+            fill(poseStack, x + barW, y, x + barW + 2, y + barH, glow);
+        }
         if(flash > 0)
         {
-            int alpha = (int)(flash * 150) << 24;
-            fill(poseStack, x, y, x + PLATE_W, y + PLATE_H, alpha | 0xFFFFFF);
+            // A white wash over the bar the moment life points change.
+            int alpha = (int)(flash * 160) << 24;
+            fill(poseStack, x - 2, y - 2, x + barW + 2, y + barH + 2, alpha | 0xFFFFFF);
         }
+        int filled = Math.max(0, Math.min(barW - 4, Math.round((barW - 4) * lifePoints / 8000F)));
+        fill(poseStack, x + 2, y + 2, x + barW - 2, y + barH - 2, 0xFF101010);
+        fill(poseStack, x + 2, y + 2, x + 2 + filled, y + barH - 2, colour);
+
+        ScreenUtil.white();
+        CardRenderUtil.bindMainResourceLocation(DuelTextures.LP_FRAME);
+        DdBlitUtil.fullBlit(poseStack, x, y, barW, barH);
+
+        font.draw(poseStack, name, x + 5, y + 3, 0xFFFFFF);
+        String value = Integer.toString(lifePoints);
+        font.draw(poseStack, value, x + barW - font.width(value) - 5, y + 3, 0xFFFFFF);
     }
 
 

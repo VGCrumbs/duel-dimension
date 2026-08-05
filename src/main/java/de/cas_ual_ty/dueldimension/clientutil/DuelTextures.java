@@ -65,6 +65,19 @@ public final class DuelTextures
      */
     public static final ResourceLocation WHITE =
         new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/white.png");
+    /**
+     * The phase indicator, as plain PNGs so the art can be repainted without
+     * touching code. The case is a slim chrome housing with six bays; each
+     * atlas is six columns by two rows -- the top row idle, the bottom row lit
+     * with glowing letters for the current phase. Blue is used on your turn,
+     * red on the opponent's.
+     */
+    public static final ResourceLocation PHASE_CASE =
+        new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/phase_case.png");
+    public static final ResourceLocation PHASE_BLUE =
+        new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/phase_blue.png");
+    public static final ResourceLocation PHASE_RED =
+        new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/phase_red.png");
     public static final ResourceLocation ACT =
         new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/act.png");
     public static final ResourceLocation ATTACK =

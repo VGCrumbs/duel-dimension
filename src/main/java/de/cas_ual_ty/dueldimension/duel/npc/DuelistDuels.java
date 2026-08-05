@@ -513,7 +513,12 @@ public final class DuelistDuels
         }
         if(message instanceof DuelMessage.PositionChange position)
         {
-            return List.of(new DuelEvent(DuelEvent.Kind.POSITION, position.code(), -1,
+            // Turning a card face down hides it again, so the same rule as a
+            // set applies: the core names it to every seat, we do not.
+            boolean nowHidden = (position.position()
+                & de.cas_ual_ty.dueldimension.ocg.OcgConstants.POS_FACEDOWN) != 0;
+            int shown = nowHidden && position.controller() != 0 ? 0 : position.code();
+            return List.of(new DuelEvent(DuelEvent.Kind.POSITION, shown, -1,
                 DuelEvent.zoneOf(position.controller(), position.location(), position.sequence(), 0),
                 0, position.controller()));
         }
