@@ -181,6 +181,25 @@ public final class DuelistDuels
         }
     }
 
+    /** Each player's chosen mat id, so a duel can report it to the other seat. */
+    private static final Map<UUID, String> MATS = new ConcurrentHashMap<>();
+
+    /**
+     * Remembers the mat this player brought. In a duel against an NPC there is
+     * nobody to tell; against another player this is what their client draws on
+     * the far half of the table.
+     */
+    public static void setPlayMat(ServerPlayer player, String matId)
+    {
+        MATS.put(player.getUUID(), matId);
+    }
+
+    /** The mat a player brought, defaulting to the classic one. */
+    public static String playMatOf(UUID playerId)
+    {
+        return MATS.getOrDefault(playerId, "classic");
+    }
+
     /** Applies a chain-response policy to the player's seat. */
     public static void setChainPreference(ServerPlayer player,
         de.cas_ual_ty.dueldimension.ocg.prompt.ChainPreference preference)

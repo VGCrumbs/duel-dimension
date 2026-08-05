@@ -152,6 +152,59 @@ public final class PromptMessages
         }
     }
 
+    /**
+     * Client -> server: the mat I brought. The server keeps it against the
+     * player so the other duelist's client can draw it on their far half.
+     */
+    public record SetPlayMat(String matId)
+    {
+        public static void encode(SetPlayMat message, FriendlyByteBuf buffer)
+        {
+            buffer.writeUtf(message.matId(), 64);
+        }
+
+        public static SetPlayMat decode(FriendlyByteBuf buffer)
+        {
+            return new SetPlayMat(buffer.readUtf(64));
+        }
+
+        public static void handle(SetPlayMat message, Supplier<NetworkEvent.Context> context)
+        {
+            NetworkEvent.Context ctx = context.get();
+            ctx.enqueueWork(() ->
+            {
+                ServerPlayer sender = ctx.getSender();
+                if(sender != null)
+                {
+                    de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.setPlayMat(sender,
+                        message.matId());
+                }
+            });
+            ctx.setPacketHandled(true);
+        }
+    }
+
+    /** Server -> client: the mat the opponent is playing on. */
+    public record OpponentPlayMat(String matId)
+    {
+        public static void encode(OpponentPlayMat message, FriendlyByteBuf buffer)
+        {
+            buffer.writeUtf(message.matId(), 64);
+        }
+
+        public static OpponentPlayMat decode(FriendlyByteBuf buffer)
+        {
+            return new OpponentPlayMat(buffer.readUtf(64));
+        }
+
+        public static void handle(OpponentPlayMat message, Supplier<NetworkEvent.Context> context)
+        {
+            NetworkEvent.Context ctx = context.get();
+            ctx.enqueueWork(() -> DuelDimension.proxy.setOpponentPlayMat(message.matId()));
+            ctx.setPacketHandled(true);
+        }
+    }
+
     /** Client -> server: I give up. */
     public record Surrender()
     {

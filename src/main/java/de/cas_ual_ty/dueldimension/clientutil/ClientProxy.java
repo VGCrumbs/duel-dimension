@@ -325,6 +325,12 @@ public class ClientProxy implements ISidedProxy
     }
     
     @Override
+    public void setOpponentPlayMat(String matId)
+    {
+        DuelClientState.opponentMat = PlayMats.byId(matId);
+    }
+
+    @Override
     public void showEnginePrompt(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt)
     {
         DuelClientState.prompt = prompt;
@@ -365,6 +371,11 @@ public class ClientProxy implements ISidedProxy
         if(update.over())
         {
             DuelClientState.over = true;
+            DuelClientState.overSince = System.currentTimeMillis();
+            // The server phrases it as "Winner: you"; anything else is a loss
+            // or a draw, both of which show the defeat card.
+            DuelClientState.won = update.result() != null
+                && update.result().toLowerCase(java.util.Locale.ROOT).contains("winner: you");
             DuelClientState.result = update.result();
             DuelClientState.prompt = null;
         }

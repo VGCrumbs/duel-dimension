@@ -38,6 +38,11 @@ public class BoardRenderer extends GuiComponent
     private static final float CARD_W = 0.7F;
     private static final float CARD_H = 1.0F;
 
+    /** Cards of a pile drawn stacked, past which the lift stops reading. */
+    private static final int MAX_STACK = 10;
+    /** Per-card lift, standing in for client_field.cpp's 0.01 of Z. */
+    private static final float STACK_LIFT = 0.012F;
+
     private static final int COLOUR_ZONE = 0x50FFFFFF;
     private static final int COLOUR_HIGHLIGHT = 0xC000FF66;
     private static final int COLOUR_HIGHLIGHT_FILL = 0x4000FF66;
@@ -121,6 +126,34 @@ public class BoardRenderer extends GuiComponent
     private FieldLayout.Projection projection;
     /** Set for the duration of a render, so zone drawing can label stats. */
     private Font font;
+    /** The board being drawn, so piles can reach their own contents. */
+    private BoardSnapshot currentBoard;
+    /** Each side's chosen playmat: index 0 is you, 1 the opponent. */
+    private PlayMats[] mats = {PlayMats.CLASSIC, PlayMats.CLASSIC};
+
+    /** The mat this seat brought to the table. */
+    public void setMats(PlayMats self, PlayMats opponent)
+    {
+        mats = new PlayMats[] {self == null ? PlayMats.CLASSIC : self,
+            opponent == null ? PlayMats.CLASSIC : opponent};
+    }
+
+    private ResourceLocation mat(int controller)
+    {
+        return mats[controller].texture();
+    }
+
+    /**
+     * How many quarter turns a card of this controller's is drawn at.
+     * client_field.cpp: {@code selfATK {0,0,0}} against {@code oppoATK
+     * {0,0,PI}} — the opponent's cards face the opponent. A defending monster
+     * adds the quarter turn on top of that ({@code selfDEF -HALF_PI},
+     * {@code oppoDEF +HALF_PI}).
+     */
+    private static int turnsFor(int controller, boolean lying)
+    {
+        return (controller == 1 ? 2 : 0) + (lying ? 1 : 0);
+    }
 
     public List<Hit> hits()
     {
@@ -172,15 +205,24 @@ public class BoardRenderer extends GuiComponent
     {
         hits.clear();
         this.font = font;
+        this.currentBoard = board;
         zoneHighlights = highlights == null ? Set.of() : highlights;
         projection = FieldLayout.fit(left, top, width, height);
 
-        // The mat spans the whole table, so it needs the most subdivision:
-        // drawn as one quad its printed zones drift far from the drawn ones.
-        FieldQuad.drawProjected(poseStack, DuelTextures.FIELD, projection, new FieldLayout.Rect(
-            FieldLayout.FIELD_MIN_X, FieldLayout.FIELD_MIN_Y,
-            FieldLayout.FIELD_MAX_X - FieldLayout.FIELD_MIN_X,
-            FieldLayout.FIELD_MAX_Y - FieldLayout.FIELD_MIN_Y), 24);
+        // Two mats laid end to end, each the right way up for its owner, so
+        // the opponent's reads upside down from here. Both sample the near half
+        // of their own texture (v 0.5..1), which is the half a playmat's owner
+        // sits behind; the far half is drawn from the other player's mat.
+        // The mat needs the most subdivision: drawn as one quad its printed
+        // zones drift far from the drawn ones.
+        float matWidth = FieldLayout.FIELD_MAX_X - FieldLayout.FIELD_MIN_X;
+        FieldQuad.drawProjected(poseStack, mat(0), projection,
+            new FieldLayout.Rect(FieldLayout.FIELD_MIN_X, 0F, matWidth, FieldLayout.FIELD_MAX_Y),
+            12, 0, 0F, 0.5F, 1F, 1F);
+        FieldQuad.drawProjected(poseStack, mat(1), projection,
+            new FieldLayout.Rect(FieldLayout.FIELD_MIN_X, FieldLayout.FIELD_MIN_Y, matWidth,
+                -FieldLayout.FIELD_MIN_Y),
+            12, 2, 0F, 0.5F, 1F, 1F);
 
         // The slot grid, drawn as its own pass over the bare mat and under
         // everything else, so no card, pile or overlay can paint across it.
@@ -334,10 +376,34 @@ public class BoardRenderer extends GuiComponent
 
         if(count > 0)
         {
+            // Depth. client_field.cpp raises each card in a pile by
+            // t->Z += 0.01f * sequence, so a full deck stands visibly proud of
+            // an empty zone. With no Z here, the same lift is drawn as a small
+            // offset per card towards the viewer.
             FieldLayout.Rect pileCard = new FieldLayout.Rect(
                 rect.x() + (rect.w() - CARD_W) / 2F, rect.y() + (rect.h() - CARD_H) / 2F, CARD_W, CARD_H);
-            drawCardArt(poseStack, controller == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT,
-                pileCard, false);
+            int stack = Math.min(count, MAX_STACK);
+            int turns = turnsFor(controller, false);
+            for(int depth = stack - 1; depth > 0; depth--)
+            {
+                float lift = depth * STACK_LIFT;
+                drawCardArt(poseStack, controller == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT,
+                    new FieldLayout.Rect(pileCard.x() + lift, pileCard.y() - lift,
+                        pileCard.w(), pileCard.h()), turns);
+            }
+            // The top card. A graveyard is always face up in the reference
+            // (client_field.cpp excludes LOCATION_GRAVE from the face-down
+            // rotation); banished follows suit unless the engine set it face
+            // down, which is a real and distinct game state.
+            ResourceLocation top = controller == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT;
+            BoardSnapshot.Slot topCard = topOf(location, controller);
+            if(topCard != null && topCard.code() != 0 && !topCard.faceDown()
+                && (location == OcgConstants.LOCATION_GRAVE
+                    || location == OcgConstants.LOCATION_REMOVED))
+            {
+                top = textureFor(topCard, false, controller);
+            }
+            drawCardArt(poseStack, top, pileCard, turns);
             // Centred on the slot itself. The quad is a trapezoid, so its
             // bounding box is not its middle: average the corners instead.
             String text = Integer.toString(count);
@@ -429,7 +495,8 @@ public class BoardRenderer extends GuiComponent
         float drawH = lying ? CARD_W : CARD_H;
         FieldLayout.Rect cardRect = new FieldLayout.Rect(
             rect.x() + (rect.w() - drawW) / 2F, rect.y() + (rect.h() - drawH) / 2F, drawW, drawH);
-        drawCardArt(poseStack, textureFor(slot, inHand, hit.controller()), cardRect, lying);
+        drawCardArt(poseStack, textureFor(slot, inHand, hit.controller()), cardRect,
+            turnsFor(hit.controller(), lying));
         if(!inHand && canAttack.test(hit))
         {
             // drawing.cpp bobs tAttack over any card that may attack.
@@ -449,20 +516,40 @@ public class BoardRenderer extends GuiComponent
      * so they are sampled through their own window; EDOPro's textures are
      * already card-shaped and use the full range.
      */
+    /** @param turns quarter turns of the card; see {@link #turnsFor}. */
     private void drawCardArt(PoseStack poseStack, ResourceLocation texture, FieldLayout.Rect rect,
-        boolean lying)
+        int turns)
     {
         boolean edoproArt = texture.equals(DuelTextures.COVER) || texture.equals(DuelTextures.COVER_OPPONENT)
             || texture.equals(DuelTextures.UNKNOWN);
         if(edoproArt)
         {
-            FieldQuad.drawProjected(poseStack, texture, projection, rect, CARD_STEPS, lying);
+            FieldQuad.drawProjected(poseStack, texture, projection, rect, CARD_STEPS, turns,
+                0F, 0F, 1F, 1F);
         }
         else
         {
-            FieldQuad.drawProjected(poseStack, texture, projection, rect, CARD_STEPS, lying,
+            FieldQuad.drawProjected(poseStack, texture, projection, rect, CARD_STEPS, turns,
                 DuelTextures.CARD_U0, DuelTextures.CARD_V0, DuelTextures.CARD_U1, DuelTextures.CARD_V1);
         }
+    }
+
+    /** The card on top of a pile, or null when it is not one we track. */
+    private BoardSnapshot.Slot topOf(int location, int controller)
+    {
+        if(currentBoard == null)
+        {
+            return null;
+        }
+        BoardSnapshot.Side side = controller == 0 ? currentBoard.self() : currentBoard.opponent();
+        List<BoardSnapshot.Slot> pile = switch(location)
+        {
+            case OcgConstants.LOCATION_GRAVE -> side.grave();
+            case OcgConstants.LOCATION_REMOVED -> side.banished();
+            case OcgConstants.LOCATION_EXTRA -> side.extra();
+            default -> List.of();
+        };
+        return pile.isEmpty() ? null : pile.get(pile.size() - 1);
     }
 
     private ResourceLocation textureFor(BoardSnapshot.Slot slot, boolean inHand, int controller)

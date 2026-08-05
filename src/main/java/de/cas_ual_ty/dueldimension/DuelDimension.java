@@ -226,6 +226,16 @@ public class DuelDimension
                 de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate::decode,
                 de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate::handle);
         DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.SetPlayMat.class,
+                de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.SetPlayMat::encode,
+                de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.SetPlayMat::decode,
+                de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.SetPlayMat::handle);
+        DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OpponentPlayMat.class,
+                de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OpponentPlayMat::encode,
+                de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OpponentPlayMat::decode,
+                de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OpponentPlayMat::handle);
+        DuelDimension.channel.registerMessage(index++,
                 de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.Surrender.class,
                 de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.Surrender::encode,
                 de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.Surrender::decode,

@@ -18,6 +18,17 @@ public final class DuelClientState
     public static volatile EnginePrompt prompt;
     public static volatile BoardSnapshot board = BoardSnapshot.EMPTY;
     public static volatile boolean over;
+    /**
+     * When the duel ended, so the result screen can hold for its five seconds
+     * and then hand the player back to the world. 0 while a duel is running.
+     */
+    public static volatile long overSince;
+    /** True when the viewer won; only meaningful once {@link #over}. */
+    public static volatile boolean won;
+    /** This player's chosen mat; kept between duels so a choice sticks. */
+    public static volatile PlayMats selfMat = PlayMats.CLASSIC;
+    /** The mat the other duelist brought, as the server reported it. */
+    public static volatile PlayMats opponentMat = PlayMats.CLASSIC;
     public static volatile String result = "";
     public static final Deque<String> log = new ArrayDeque<>();
     /**
@@ -129,6 +140,10 @@ public final class DuelClientState
         prompt = null;
         board = BoardSnapshot.EMPTY;
         over = false;
+        overSince = 0;
+        won = false;
+        // selfMat is the player's own preference and outlives a duel.
+        opponentMat = PlayMats.CLASSIC;
         result = "";
         log.clear();
         pending.clear();

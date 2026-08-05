@@ -12,6 +12,11 @@ import javax.annotation.Nullable;
 
 public interface ISidedProxy
 {
+    /** Client only: remember which mat the other duelist brought. */
+    default void setOpponentPlayMat(String matId)
+    {
+    }
+
     /** Shows a duel prompt; server side does nothing. */
     default void showEnginePrompt(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt)
     {

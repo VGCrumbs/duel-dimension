@@ -107,6 +107,24 @@ public final class FieldQuad
         FieldLayout.Projection projection, FieldLayout.Rect rect, int steps, boolean quarterTurn,
         float su0, float sv0, float su1, float sv1)
     {
+        drawProjected(poseStack, texture, projection, rect, steps, quarterTurn ? 1 : 0,
+            su0, sv0, su1, sv1);
+    }
+
+    /**
+     * As above, but with the turn given in quarter turns anticlockwise.
+     * <p>
+     * Two turns (180 degrees) is what the opponent's half of the table needs:
+     * client_field.cpp gives every card of theirs {@code oppoATK = {0,0,PI}},
+     * and a real playmat faces its owner, so theirs reads upside down to you.
+     *
+     * @param turns 0 upright, 1 a quarter turn (a defending monster), 2 upside
+     *              down (the opponent's side), 3 the other quarter turn
+     */
+    public static void drawProjected(PoseStack poseStack, ResourceLocation texture,
+        FieldLayout.Projection projection, FieldLayout.Rect rect, int steps, int turns,
+        float su0, float sv0, float su1, float sv1)
+    {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
         DuelTextures.bindSmooth(texture);
@@ -132,16 +150,32 @@ public final class FieldQuad
                 float x0 = rect.x() + rect.w() * u0;
                 float x1 = rect.x() + rect.w() * u1;
 
-                // (u,v) -> (v, 1-u) turns the art a quarter turn inside the
-                // same rectangle, which is how a defending monster lies.
-                float au = quarterTurn ? v0 : u0;
-                float av = quarterTurn ? 1F - u0 : v0;
-                float bu = quarterTurn ? v1 : u0;
-                float bv = quarterTurn ? 1F - u0 : v1;
-                float cu = quarterTurn ? v1 : u1;
-                float cv = quarterTurn ? 1F - u1 : v1;
-                float du = quarterTurn ? v0 : u1;
-                float dv = quarterTurn ? 1F - u1 : v0;
+                // Each quarter turn is (u,v) -> (v, 1-u) inside the same
+                // rectangle: once is how a defending monster lies, twice is the
+                // opponent's side of the table.
+                float au = u0;
+                float av = v0;
+                float bu = u0;
+                float bv = v1;
+                float cu = u1;
+                float cv = v1;
+                float du = u1;
+                float dv = v0;
+                for(int turn = 0; turn < (turns & 3); turn++)
+                {
+                    float ta = au;
+                    au = av;
+                    av = 1F - ta;
+                    float tb = bu;
+                    bu = bv;
+                    bv = 1F - tb;
+                    float tc = cu;
+                    cu = cv;
+                    cv = 1F - tc;
+                    float td = du;
+                    du = dv;
+                    dv = 1F - td;
+                }
 
                 // Map the unit square onto the requested texture window.
                 au = su0 + au * (su1 - su0);

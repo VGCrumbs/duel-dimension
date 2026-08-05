@@ -46,6 +46,10 @@ public class EngineDuelScreen extends Screen
     private static final float PREVIEW_SCALE = 0.7F;
     /** However backed up playback is, a prompt waits no longer than this. */
     private static final long PROMPT_WAIT_CAP_MS = 6000;
+    /** How long the victory or defeat card holds before the world returns. */
+    private static final long RESULT_HOLD_MS = 5000;
+    /** The play space starts this far below the header. */
+    private static final int FIELD_DROP = 14;
     private static final int TOP_BAR_H = 48;
     private static final int MENU_ROW = CardCommands.MENU_ROW_HEIGHT;
     private static final int LOG_W = 150;
@@ -72,8 +76,11 @@ public class EngineDuelScreen extends Screen
     private List<BoardSnapshot.Slot> pileView;
     private String pileViewLabel = "";
     private boolean answered;
-    /** The duel history is hidden until asked for. */
-    private boolean showHistory;
+    /**
+     * The duel history is off for now — see {@link #renderLog}. Kept as a field
+     * so the band arithmetic still has something to read.
+     */
+    private final boolean showHistory = false;
     private de.cas_ual_ty.dueldimension.ocg.prompt.ChainPreference chainPreference =
         de.cas_ual_ty.dueldimension.ocg.prompt.ChainPreference.DEFAULT;
 
@@ -116,6 +123,15 @@ public class EngineDuelScreen extends Screen
     @Override
     public void tick()
     {
+        // The duel is over: show the result, then give the player the world
+        // back on its own rather than making them dismiss it.
+        if(DuelClientState.over && DuelClientState.overSince > 0
+            && System.currentTimeMillis() - DuelClientState.overSince >= RESULT_HOLD_MS)
+        {
+            DuelClientState.reset();
+            onClose();
+            return;
+        }
         if(DuelClientState.prompt != shownPrompt)
         {
             if(promptSeenAt == 0)
@@ -163,13 +179,14 @@ public class EngineDuelScreen extends Screen
             DuelDimension.channel.sendToServer(new PromptMessages.SetChainPreference(chainPreference));
             rebuild();
         }));
-        // Surrender and Close now live on the deck's own menu; this row toggles
-        // the duel history, which is off by default so the card description gets
-        // the room instead.
+        // Surrender and Close live on the deck's own menu. This row picks your
+        // playmat, which the other duelist sees on your half of the table.
         addRenderableWidget(new Button(SIDEBAR_PAD, height - 24, SIDEBAR_W - SIDEBAR_PAD * 2, 18,
-            Component.literal(showHistory ? "History: on" : "History: off"), pressed ->
+            Component.literal("Mat: " + DuelClientState.selfMat.displayName()), pressed ->
         {
-            showHistory = !showHistory;
+            DuelClientState.selfMat = DuelClientState.selfMat.next();
+            DuelDimension.channel.sendToServer(
+                new PromptMessages.SetPlayMat(DuelClientState.selfMat.id()));
             rebuild();
         }));
 
@@ -765,6 +782,7 @@ public class EngineDuelScreen extends Screen
         {
             prompt.options().forEach(option -> highlights.add(option.zone()));
         }
+        boardRenderer.setMats(DuelClientState.selfMat, DuelClientState.opponentMat);
         boardRenderer.setActionable(hit -> !optionsFor(hit).isEmpty());
         boardRenderer.setCanAttack(hit -> optionsFor(hit).stream().anyMatch(index ->
             prompt != null && prompt.options().get(index).command() == CardCommands.COMMAND_ATTACK));
@@ -781,7 +799,9 @@ public class EngineDuelScreen extends Screen
         // whole window instead centres the table behind the sidebar, which is
         // what made the mat look shoved off to one side.
         int fieldLeft = SIDEBAR_W;
-        int fieldTop = TOP_BAR_H;
+        // The table sits a little below the header. Only the play space moves:
+        // the life bars, turn badge and phase row keep their own positions.
+        int fieldTop = TOP_BAR_H + FIELD_DROP;
         int fieldWidth = width - SIDEBAR_W;
         int fieldHeight = height - fieldTop - 30;
         boardRenderer.render(poseStack, font, board, fieldLeft, fieldTop, fieldWidth, fieldHeight, highlights);
@@ -829,6 +849,7 @@ public class EngineDuelScreen extends Screen
         }
 
         super.render(poseStack, mouseX, mouseY, partialTick);
+        renderResult(poseStack);
 
         if(pileView != null)
         {
@@ -1019,6 +1040,44 @@ public class EngineDuelScreen extends Screen
         fill(poseStack, left, top, right, top + 1, 0x80FFD700);
         fill(poseStack, left, top + 13, right, top + 14, 0x80FFD700);
         drawCenteredString(poseStack, font, text, (left + right) / 2, top + 3, 0xFFE066);
+    }
+
+    /**
+     * The victory or defeat card. Fills the screen over the settled board for
+     * {@link #RESULT_HOLD_MS}, then tick() closes the duel.
+     */
+    private void renderResult(PoseStack poseStack)
+    {
+        if(!DuelClientState.over)
+        {
+            return;
+        }
+        fill(poseStack, 0, 0, width, height, 0xC0000000);
+
+        boolean won = DuelClientState.won;
+        String headline = won ? "VICTORY" : "DEFEAT";
+        int colour = won ? 0xFFD700 : 0xFF4C4C;
+        int bandTop = height / 2 - 30;
+
+        fill(poseStack, 0, bandTop, width, bandTop + 60, 0xB0101014);
+        fill(poseStack, 0, bandTop, width, bandTop + 1, 0xC0000000 | colour);
+        fill(poseStack, 0, bandTop + 59, width, bandTop + 60, 0xC0000000 | colour);
+
+        poseStack.pushPose();
+        poseStack.scale(3F, 3F, 1F);
+        drawCenteredString(poseStack, font, headline, Math.round(width / 2F / 3F),
+            Math.round((bandTop + 12) / 3F), colour);
+        poseStack.popPose();
+
+        if(DuelClientState.result != null && !DuelClientState.result.isBlank())
+        {
+            drawCenteredString(poseStack, font, DuelClientState.result, width / 2, bandTop + 44, 0xB0B0B0);
+        }
+
+        long left = Math.max(0, RESULT_HOLD_MS
+            - (System.currentTimeMillis() - DuelClientState.overSince));
+        drawCenteredString(poseStack, font, "Returning in " + (left / 1000 + 1) + "...",
+            width / 2, bandTop + 70, 0x7A7A7A);
     }
 
     /** Draws the phase row's labels and marks the current phase. */
@@ -1252,6 +1311,13 @@ public class EngineDuelScreen extends Screen
      */
     private void renderLog(PoseStack poseStack)
     {
+        // The duel history is switched off for now. Everything below is left
+        // intact, and logLines()/logTop() already collapse the band to nothing,
+        // so turning it back on is a matter of restoring the toggle button.
+        if(true)
+        {
+            return;
+        }
         int x = SIDEBAR_PAD;
         int top = logTop();
         fill(poseStack, SIDEBAR_PAD, top, SIDEBAR_W - SIDEBAR_PAD, top + 1, 0x40FFFFFF);
