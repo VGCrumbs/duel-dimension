@@ -24,7 +24,8 @@ public final class QueryParser
     /** Flags worth asking for when building a board snapshot. */
     public static final int BOARD_FLAGS = OcgConstants.QUERY_CODE | OcgConstants.QUERY_POSITION
         | OcgConstants.QUERY_TYPE | OcgConstants.QUERY_LEVEL | OcgConstants.QUERY_ATTACK
-        | OcgConstants.QUERY_DEFENSE | OcgConstants.QUERY_IS_PUBLIC;
+        | OcgConstants.QUERY_DEFENSE | OcgConstants.QUERY_BASE_ATTACK
+        | OcgConstants.QUERY_BASE_DEFENSE | OcgConstants.QUERY_IS_PUBLIC;
 
     private QueryParser()
     {
@@ -74,6 +75,10 @@ public final class QueryParser
         int level = 0;
         int attack = -1;
         int defense = -1;
+        // Base values, so the board can tell a boosted or weakened stat from a
+        // printed one the way EDOPro's card info does.
+        int baseAttack = -1;
+        int baseDefense = -1;
         boolean isPublic = false;
 
         while(true)
@@ -103,10 +108,13 @@ public final class QueryParser
                 case OcgConstants.QUERY_LEVEL -> level = buffer.getInt();
                 case OcgConstants.QUERY_ATTACK -> attack = buffer.getInt();
                 case OcgConstants.QUERY_DEFENSE -> defense = buffer.getInt();
+                case OcgConstants.QUERY_BASE_ATTACK -> baseAttack = buffer.getInt();
+                case OcgConstants.QUERY_BASE_DEFENSE -> baseDefense = buffer.getInt();
                 case OcgConstants.QUERY_IS_PUBLIC -> isPublic = buffer.get() != 0;
                 case OcgConstants.QUERY_END ->
                 {
-                    return new CardView(code, position, type, level, attack, defense, isPublic, false);
+                    return new CardView(code, position, type, level, attack, defense,
+                        baseAttack, baseDefense, isPublic, false);
                 }
                 default ->
                 {

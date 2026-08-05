@@ -68,6 +68,14 @@ public class BoardRenderer extends GuiComponent
      */
     private static final int COLOUR_GRID = 0xC0C8D0DC;
     private static final float GRID_INSET = 0.06F;
+
+    /** On-field ATK/DEF: raised reads blue, lowered red, printed white. */
+    private static final int COLOUR_STAT_PLAIN = 0xFFFFFF;
+    private static final int COLOUR_STAT_HIGHER = 0x66B2FF;
+    private static final int COLOUR_STAT_LOWER = 0xFF4C4C;
+    private static final int COLOUR_STAT_SLASH = 0x9A9A9A;
+    /** Stats are drawn small so they sit on a card without covering the art. */
+    private static final float STAT_SCALE = 0.5F;
     private static final int COLOUR_ACTIONABLE = 0xE0FFD700;
 
     /** A drawn slot; piles use sequence -1. */
@@ -110,6 +118,8 @@ public class BoardRenderer extends GuiComponent
     private java.util.function.Predicate<Hit> actionable = hit -> false;
     private java.util.function.Predicate<Hit> canAttack = hit -> false;
     private FieldLayout.Projection projection;
+    /** Set for the duration of a render, so zone drawing can label stats. */
+    private Font font;
 
     public List<Hit> hits()
     {
@@ -154,6 +164,7 @@ public class BoardRenderer extends GuiComponent
         int width, int height, Set<Integer> highlights)
     {
         hits.clear();
+        this.font = font;
         zoneHighlights = highlights == null ? Set.of() : highlights;
         projection = FieldLayout.fit(left, top, width, height);
 
@@ -204,6 +215,68 @@ public class BoardRenderer extends GuiComponent
         drawSlot(poseStack, slot, hit, rect, false);
     }
 
+    /** A zone shrunk to its grid box, so neighbouring slots stay separate. */
+    private static FieldLayout.Rect inset(FieldLayout.Rect rect)
+    {
+        return new FieldLayout.Rect(rect.x() + GRID_INSET, rect.y() + GRID_INSET,
+            rect.w() - GRID_INSET * 2F, rect.h() - GRID_INSET * 2F);
+    }
+
+    private static float centreX(FieldQuad.Corners corners)
+    {
+        return (corners.x0() + corners.x1() + corners.x2() + corners.x3()) / 4F;
+    }
+
+    private static float centreY(FieldQuad.Corners corners)
+    {
+        return (corners.y0() + corners.y1() + corners.y2() + corners.y3()) / 4F;
+    }
+
+    /**
+     * ATK/DEF under a face-up monster, as drawing.cpp's {@code DrawStatus} does.
+     * <p>
+     * The reference compares each stat against the card's base value and
+     * recolours it — {@code GetAtkColor} / {@code GetDefColor}. EDOPro's own
+     * palette is yellow for higher and pink for lower
+     * ({@code DUELFIELD_HIGHER_CARD_ATK} 0xffffff00,
+     * {@code DUELFIELD_LOWER_CARD_ATK} 0xffff2090); these are blue and red
+     * instead, which is what this project asked for. Unchanged stays white,
+     * as it is there.
+     */
+    private void drawStats(PoseStack poseStack, BoardSnapshot.Slot slot, Hit hit, boolean inHand)
+    {
+        if(font == null || inHand || hit.location() != OcgConstants.LOCATION_MZONE
+            || !slot.present() || slot.faceDown())
+        {
+            return;
+        }
+        String attack = Integer.toString(slot.attack());
+        String defense = Integer.toString(slot.defense());
+        int attackColour = slot.attackBoosted() ? COLOUR_STAT_HIGHER
+            : slot.attackWeakened() ? COLOUR_STAT_LOWER : COLOUR_STAT_PLAIN;
+        int defenseColour = slot.defenseBoosted() ? COLOUR_STAT_HIGHER
+            : slot.defenseWeakened() ? COLOUR_STAT_LOWER : COLOUR_STAT_PLAIN;
+
+        // Centred on the card's lower edge, small enough to sit on the art.
+        FieldQuad.Corners corners = hit.corners();
+        float centreX = (corners.x2() + corners.x3()) / 2F;
+        float bottomY = (corners.y2() + corners.y3()) / 2F;
+
+        poseStack.pushPose();
+        poseStack.scale(STAT_SCALE, STAT_SCALE, 1F);
+        int width = font.width(attack) + font.width("/") + font.width(defense);
+        int x = Math.round(centreX / STAT_SCALE) - width / 2;
+        int y = Math.round(bottomY / STAT_SCALE) - 9;
+
+        fill(poseStack, x - 2, y - 1, x + width + 2, y + 8, 0xB0000000);
+        font.draw(poseStack, attack, x, y, attackColour);
+        x += font.width(attack);
+        font.draw(poseStack, "/", x, y, COLOUR_STAT_SLASH);
+        x += font.width("/");
+        font.draw(poseStack, defense, x, y, defenseColour);
+        poseStack.popPose();
+    }
+
     private void drawPile(PoseStack poseStack, Font font, int controller, int location, String label, int count)
     {
         FieldLayout.Rect rect = FieldLayout.zone(controller, location, 0);
@@ -213,6 +286,12 @@ public class BoardRenderer extends GuiComponent
         }
         FieldQuad.Corners corners = projection.quad(rect);
         Hit hit = new Hit(corners, 0, controller, location, -1, -1, label + " (" + count + ")", count);
+
+        // Piles are slots too: a playmat outlines the deck, grave, banished and
+        // extra boxes just like the monster and spell rows. Only outlining them
+        // when they happened to be activatable left those corners of the mat
+        // blank, which read as a missing grid.
+        FieldQuad.outline(poseStack, projection.quad(inset(rect)), COLOUR_GRID);
 
         boolean canActivateFromHere = actionable.test(hit);
         if(canActivateFromHere)
@@ -226,9 +305,11 @@ public class BoardRenderer extends GuiComponent
                 rect.x() + (rect.w() - CARD_W) / 2F, rect.y() + (rect.h() - CARD_H) / 2F, CARD_W, CARD_H);
             drawCardArt(poseStack, controller == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT,
                 pileCard, false);
+            // Centred on the slot itself. The quad is a trapezoid, so its
+            // bounding box is not its middle: average the corners instead.
             String text = Integer.toString(count);
-            int textX = corners.minX() + (corners.maxX() - corners.minX() - font.width(text)) / 2;
-            int textY = corners.maxY() - 10;
+            int textX = Math.round(centreX(corners)) - font.width(text) / 2;
+            int textY = Math.round(centreY(corners)) - 4;
             fill(poseStack, textX - 2, textY - 1, textX + font.width(text) + 2, textY + 9, 0xC0000000);
             font.draw(poseStack, text, textX, textY, 0xFFFFFF);
         }
@@ -261,7 +342,7 @@ public class BoardRenderer extends GuiComponent
         for(int i = 0; i < hand.size(); i++)
         {
             BoardSnapshot.Slot slot = hide
-                ? new BoardSnapshot.Slot(true, 0, true, false, 0, 0, 0)
+                ? new BoardSnapshot.Slot(true, 0, true, false, 0, 0, 0, 0, 0)
                 : hand.get(i);
             FieldLayout.Rect rect = new FieldLayout.Rect(x - cardW / 2F, fieldY - cardH / 2F, cardW, cardH);
             Hit hit = new Hit(projection.quad(rect), slot.code(), controller,
@@ -291,9 +372,7 @@ public class BoardRenderer extends GuiComponent
         else if(!inHand)
         {
             // Hand cards are not zones and get no slot box.
-            FieldQuad.outline(poseStack, projection.quad(new FieldLayout.Rect(
-                rect.x() + GRID_INSET, rect.y() + GRID_INSET,
-                rect.w() - GRID_INSET * 2F, rect.h() - GRID_INSET * 2F)), COLOUR_GRID);
+            FieldQuad.outline(poseStack, projection.quad(inset(rect)), COLOUR_GRID);
         }
         hits.add(hit);
 
@@ -314,6 +393,7 @@ public class BoardRenderer extends GuiComponent
             // drawing.cpp bobs tAttack over any card that may attack.
             FieldQuad.drawProjected(poseStack, DuelTextures.ATTACK, projection, rect, 2);
         }
+        drawStats(poseStack, slot, hit, inHand);
     }
 
     /**

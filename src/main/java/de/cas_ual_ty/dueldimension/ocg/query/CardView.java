@@ -15,9 +15,9 @@ package de.cas_ual_ty.dueldimension.ocg.query;
  * @param hidden   whether this view had its identity stripped for the viewer
  */
 public record CardView(int code, int position, int type, int level, int attack, int defense,
-    boolean isPublic, boolean hidden)
+    int baseAttack, int baseDefense, boolean isPublic, boolean hidden)
 {
-    public static final CardView HIDDEN = new CardView(0, 0, 0, 0, -1, -1, false, true);
+    public static final CardView HIDDEN = new CardView(0, 0, 0, 0, -1, -1, -1, -1, false, true);
 
     public boolean isFaceUp()
     {

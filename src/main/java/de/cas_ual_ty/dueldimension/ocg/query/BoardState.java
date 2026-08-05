@@ -155,8 +155,9 @@ public record BoardState(int viewer, boolean omniscient, PlayerBoard self, Playe
         {
             return card;
         }
-        // Keep the position (that a card is set there is public) but strip identity.
-        return new CardView(0, card.position(), 0, 0, -1, -1, false, true);
+        // Keep the position (that a card is set there is public) but strip
+        // identity, including the base stats a set card must not reveal.
+        return new CardView(0, card.position(), 0, 0, -1, -1, -1, -1, false, true);
     }
 
     /** Life points and pile sizes, from OCG_DuelQueryField. Layout: ocgapi.cpp. */

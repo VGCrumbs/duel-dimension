@@ -27,9 +27,30 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
 
     /** A card in a zone, or an empty zone when {@code present} is false. */
     public record Slot(boolean present, int code, boolean faceDown, boolean defence, int attack, int defense,
-        int overlays)
+        int baseAttack, int baseDefense, int overlays)
     {
-        public static final Slot EMPTY = new Slot(false, 0, false, false, 0, 0, 0);
+        public static final Slot EMPTY = new Slot(false, 0, false, false, 0, 0, 0, 0, 0);
+
+        /** True if an effect has moved this stat off its printed value. */
+        public boolean attackBoosted()
+        {
+            return attack > baseAttack;
+        }
+
+        public boolean attackWeakened()
+        {
+            return attack < baseAttack;
+        }
+
+        public boolean defenseBoosted()
+        {
+            return defense > baseDefense;
+        }
+
+        public boolean defenseWeakened()
+        {
+            return defense < baseDefense;
+        }
 
         public static Slot of(CardView card)
         {
@@ -38,7 +59,8 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
                 return EMPTY;
             }
             return new Slot(true, card.code(), !card.isFaceUp(), !card.isAttackPosition(),
-                Math.max(card.attack(), 0), Math.max(card.defense(), 0), 0);
+                Math.max(card.attack(), 0), Math.max(card.defense(), 0),
+                Math.max(card.baseAttack(), 0), Math.max(card.baseDefense(), 0), 0);
         }
 
         public void write(FriendlyByteBuf buffer)
@@ -51,6 +73,8 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
                 buffer.writeBoolean(defence);
                 buffer.writeVarInt(attack);
                 buffer.writeVarInt(defense);
+                buffer.writeVarInt(baseAttack);
+                buffer.writeVarInt(baseDefense);
                 buffer.writeVarInt(overlays);
             }
         }
@@ -62,7 +86,8 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
                 return EMPTY;
             }
             return new Slot(true, buffer.readVarInt(), buffer.readBoolean(), buffer.readBoolean(),
-                buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt());
+                buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(),
+                buffer.readVarInt());
         }
     }
 

@@ -25,11 +25,17 @@ import java.util.List;
  */
 public class DuelAnimations
 {
-    /** How long each kind of animation lasts, in milliseconds. */
-    private static final long MOVE_MS = 320;
-    private static final long FLASH_MS = 420;
+    /**
+     * How long each kind of animation lasts, in milliseconds. These are paced
+     * for following a duel rather than for speed: events play one after another
+     * (see {@link #tick}), so each of these is also the wait before the next.
+     */
+    private static final long MOVE_MS = 520;
+    private static final long FLASH_MS = 600;
     /** An attack arrow holds long enough to read before the damage lands. */
-    private static final long ATTACK_MS = 700;
+    private static final long ATTACK_MS = 900;
+    /** Events with no visual still get a beat, so their sounds stay distinct. */
+    private static final long BEAT_MS = 220;
 
     /** custom_skin_enum.inl: DECLR(DUELFIELD_ATTACK_ARROW, 0x8000ff00). */
     private static final int ATTACK_ARROW = 0x8000FF00;
@@ -67,26 +73,79 @@ public class DuelAnimations
     /** Attack arrows, which are drawn as arrows rather than moving cards. */
     private final List<Playing> attacks = new ArrayList<>();
 
+    /** Events waiting their turn to be played. */
+    private final java.util.ArrayDeque<DuelEvent> queue = new java.util.ArrayDeque<>();
+    /** When the next queued event may start. */
+    private long nextStart;
+
     /**
-     * Accepts what the server reported. Sounds fire immediately; visuals are
-     * queued and drawn until they expire.
+     * Accepts what the server reported.
+     * <p>
+     * Events are queued rather than started, because a whole turn of them
+     * arrives in one update: starting them all at the same instant played an
+     * entire turn's summons, attacks and damage on top of each other inside a
+     * third of a second, which is unreadable. {@link #tick} releases them one
+     * at a time so a sequence can be followed.
      */
     public void accept(List<DuelEvent> events, long now)
     {
-        for(DuelEvent event : events)
+        queue.addAll(events);
+    }
+
+    /**
+     * How long one event's visual runs. A long backlog compresses these, so a
+     * turn full of effects catches up instead of falling further behind — the
+     * same idea as the reference client's own catching-up mode.
+     */
+    private long duration(DuelEvent event)
+    {
+        long base = switch(event.kind())
         {
-            playSound(event);
-            switch(event.kind())
+            case MOVE, SUMMON, SPECIAL_SUMMON, SET, ACTIVATE, DESTROY, DRAW -> MOVE_MS;
+            case ATTACK -> ATTACK_MS;
+            case DAMAGE, RECOVER -> FLASH_MS;
+            // No visual of their own: just enough of a beat to hear the sound.
+            default -> BEAT_MS;
+        };
+        return Math.round(base * backlogScale());
+    }
+
+    private float backlogScale()
+    {
+        int waiting = queue.size();
+        if(waiting > 12)
+        {
+            return 0.3F;
+        }
+        if(waiting > 6)
+        {
+            return 0.6F;
+        }
+        return 1F;
+    }
+
+    /** Starts one event: its sound, then its visual. */
+    private void start(DuelEvent event, long now)
+    {
+        playSound(event);
+        long duration = duration(event);
+        switch(event.kind())
+        {
+            case MOVE, SUMMON, SPECIAL_SUMMON, SET, ACTIVATE, DESTROY, DRAW ->
+                playing.add(new Playing(event, now, duration));
+            case DAMAGE, RECOVER -> flashes.add(new Playing(event, now, duration));
+            case ATTACK -> attacks.add(new Playing(event, now, duration));
+            default ->
             {
-                case MOVE, SUMMON, SPECIAL_SUMMON, SET, ACTIVATE, DESTROY, DRAW ->
-                    playing.add(new Playing(event, now, MOVE_MS));
-                case DAMAGE, RECOVER -> flashes.add(new Playing(event, now, FLASH_MS));
-                case ATTACK -> attacks.add(new Playing(event, now, ATTACK_MS));
-                default ->
-                {
-                }
             }
         }
+        // A damage flash sits on the life bar and need not hold up the board.
+        long hold = switch(event.kind())
+        {
+            case DAMAGE, RECOVER -> duration / 2;
+            default -> duration;
+        };
+        nextStart = now + hold;
     }
 
     private void playSound(DuelEvent event)
@@ -116,12 +175,17 @@ public class DuelAnimations
         }
     }
 
-    /** Drops finished animations. Call once per frame. */
+    /** Drops finished animations and releases the next queued event. */
     public void tick(long now)
     {
         playing.removeIf(animation -> animation.done(now));
         flashes.removeIf(animation -> animation.done(now));
         attacks.removeIf(animation -> animation.done(now));
+
+        if(!queue.isEmpty() && now >= nextStart)
+        {
+            start(queue.poll(), now);
+        }
     }
 
     /**
@@ -285,7 +349,7 @@ public class DuelAnimations
     /** True while anything is still playing, for callers that want to wait. */
     public boolean isBusy()
     {
-        return !playing.isEmpty() || !attacks.isEmpty();
+        return !playing.isEmpty() || !attacks.isEmpty() || !queue.isEmpty();
     }
 
     private static ResourceLocation artFor(int code)

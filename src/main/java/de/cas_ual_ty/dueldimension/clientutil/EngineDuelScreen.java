@@ -36,7 +36,13 @@ public class EngineDuelScreen extends Screen
     private static final int SIDEBAR_PAD = 6;
     /** Log lines kept in the sidebar's log band. */
     private static final int LOG_LINES = 4;
-    private static final int TOP_BAR_H = 32;
+    /** One line for the card name, under the preview. */
+    private static final int NAME_H = 10;
+    /** The description band never gets squeezed below this. */
+    private static final int MIN_DESCRIPTION_H = 30;
+    /** However short the window, the preview stays recognisable. */
+    private static final int MIN_PREVIEW_H = 40;
+    private static final int TOP_BAR_H = 48;
     private static final int MENU_ROW = CardCommands.MENU_ROW_HEIGHT;
     private static final int LOG_W = 150;
 
@@ -696,7 +702,12 @@ public class EngineDuelScreen extends Screen
      */
     private static final int PHASE_CELL_W = 26;
     private static final int PHASE_CELL_H = 12;
-    private static final int PHASE_BAR_Y = 23;
+    /**
+     * The phase row sits below the life bars and the turn badge. It used to be
+     * at 23, which is exactly where the badge's "your turn" label draws, so the
+     * two printed on top of each other.
+     */
+    private static final int PHASE_BAR_Y = 34;
 
     private int phaseBarLeft()
     {
@@ -922,10 +933,21 @@ public class EngineDuelScreen extends Screen
         return height - 48;
     }
 
+    /**
+     * How many log lines fit. The log gives way first: on a short window it is
+     * better to see fewer log lines than to lose the card text entirely.
+     */
+    private int logLines()
+    {
+        int quarter = (footerTop() - SIDEBAR_PAD) / 4;
+        return Math.max(0, Math.min(LOG_LINES, (quarter - 12) / 9));
+    }
+
     /** Top of the log band; the card description must stop above this. */
     private int logTop()
     {
-        return footerTop() - (LOG_LINES * 9 + 12);
+        int lines = logLines();
+        return lines == 0 ? footerTop() : footerTop() - (lines * 9 + 12);
     }
 
     /** Left column: card image, then card info — EDOPro's Card info tab. */
@@ -940,19 +962,32 @@ public class EngineDuelScreen extends Screen
             return;
         }
 
-        int imageW = SIDEBAR_W - SIDEBAR_PAD * 2;
+        // The preview is capped so the name, description and log always fit.
+        // At full sidebar width a card is 175px tall, which is most of a short
+        // window on a high GUI scale — that is what pushed the description off
+        // the bottom and left the log printing over the card and its name.
+        int textWidth = SIDEBAR_W - SIDEBAR_PAD * 2;
+        int imageW = textWidth;
         int imageH = Math.round(imageW / DuelTextures.CARD_ASPECT);
+        int maxImageH = logTop() - SIDEBAR_PAD - NAME_H - MIN_DESCRIPTION_H;
+        if(imageH > maxImageH)
+        {
+            imageH = Math.max(MIN_PREVIEW_H, maxImageH);
+            imageW = Math.round(imageH * DuelTextures.CARD_ASPECT);
+        }
+        int imageX = (SIDEBAR_W - imageW) / 2;
+
         ScreenUtil.white();
         DuelTextures.bindSmooth(
             DuelTextures.card(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE));
         // Sample the card out of its letterboxed square, or it stretches.
-        DdBlitUtil.blit(poseStack, SIDEBAR_PAD, SIDEBAR_PAD, imageW, imageH,
+        DdBlitUtil.blit(poseStack, imageX, SIDEBAR_PAD, imageW, imageH,
             DuelTextures.CARD_U0, DuelTextures.CARD_V0,
             DuelTextures.CARD_U1 - DuelTextures.CARD_U0, DuelTextures.CARD_V1 - DuelTextures.CARD_V0,
             1, 1);
 
         int y = SIDEBAR_PAD + imageH + 4;
-        for(var line : font.split(Component.literal(card.getName()), imageW))
+        for(var line : font.split(Component.literal(card.getName()), textWidth))
         {
             font.draw(poseStack, line, SIDEBAR_PAD, y, 0xFFD700);
             y += 9;
@@ -966,6 +1001,12 @@ public class EngineDuelScreen extends Screen
 
         List<Component> header = new ArrayList<>();
         card.addHeader(header);
+        // addHeader leads with the card's name, which is already drawn above
+        // in gold; keeping it printed the name twice.
+        if(!header.isEmpty())
+        {
+            header.remove(0);
+        }
         poseStack.pushPose();
         poseStack.scale(0.75F, 0.75F, 1F);
         int scaledX = Math.round(SIDEBAR_PAD / 0.75F);
