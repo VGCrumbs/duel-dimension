@@ -114,13 +114,16 @@ Fork of [YgoDuelingMod](https://github.com/CAS-ual-TY/YgoDuelingMod) (Forge 1.19
 
 ## Phase 5 — Minecraft integration
 
-- [ ] Engine thread + `DuelSession` manager (server side)
-- [ ] `DuelistEntity` NPC: profile id, right-click challenge, loaner-deck offer
-- [ ] Human `ResponseSource` over existing `duel/network` packets
-- [ ] Prompt GUI for the interactive `MSG_SELECT_*` set (shares playfield rendering with casual mode)
-- [ ] Challenge screen: Casual vs Ruled (+ ruleset picker for PvP later)
+- [x] Engine thread + `DuelSession` manager (server side) — one thread per duel, events drained on the tick thread
+- [x] `EngineRuntime` — lazy load of core/cdb/scripts/text; a server without them still runs and says what's missing
+- [x] `DuelistEntity` NPC + renderer: profile id, right-click challenge, Joey/Kaiba skins
+- [x] `DescriptionTable` — prompts read as English, not numbers
+- [x] Human `ResponseSource` + two packets; challenger is seated as player 0
+- [x] Prompt GUI (`EnginePromptScreen`) covering **all 12 player-facing prompt types**
+- [ ] Playfield rendering for ruled duels (reuse `duel/screen` widgets; the option list works meanwhile)
+- [ ] Challenge screen: Casual vs Ruled, deck picker (+ ruleset picker for PvP later)
 - [ ] Rewards hook: win → packs (existing distribution system)
-- **Gate:** you beat (or lose to) a Goat-deck NPC in-game, start to finish, no manual intervention
+- **Gate:** ✅ *partially* — a full duel runs in a live server and a human seat can play every prompt (8/8 duels, 509 choices, zero RETRY). Remaining: play one start-to-finish from the client GUI by hand.
 
 ---
 
@@ -166,6 +169,16 @@ JAVA_HOME=<jdk17> ./gradlew ocgSpike -PocgLib=native/ocgcore.dll -PocgScripts=C:
 Verified end-to-end 2026-08-04 (empty decks → instant deck-out `MSG_WIN`, then `MSG_SELECT_IDLECMD` await — exactly right). Grows into `HeadlessDuelRunner` in Phase 0.
 
 ## Designed — not yet built
+
+### Duel GUI *(built — Phase 5)*
+
+The engine asks; a screen shows it; the click comes back as bytes the engine accepts.
+
+`EnginePrompt` describes a decision as a title, labelled options and how many to pick. Every bit of engine semantics is resolved **server-side**, so the client never sees passcodes, response encodings or hidden information — it answers with option indices only, which means a modified client can pick among what it was legitimately offered but cannot forge an illegal play. `PromptTranslator` holds both directions deliberately in one class, so the option shown at index N and the response encoded for index N cannot drift apart.
+
+`HumanResponseSource` is a seat played by a person: to the engine it is just another `ResponseSource`, except answering takes a network round trip, so the duel thread blocks on it — precisely why duels never run on the server tick thread. A ten-minute timeout stops a disconnected player pinning a thread.
+
+`EnginePromptScreen` is deliberately an option list rather than a rendered playfield: it can present *every* prompt type the engine emits, so the game is fully playable while board rendering catches up, and it holds no rules knowledge at all. Prompts with nothing to decide — empty chain windows, 1,510 of them across 8 test duels — are answered automatically instead of opening a screen with no buttons.
 
 ### Starter decks *(built)*
 
