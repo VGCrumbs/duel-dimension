@@ -1,0 +1,235 @@
+package de.cas_ual_ty.dueldimension.ocg.bot.executor;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BooleanSupplier;
+
+/**
+ * The base every duelist AI extends — WindBot's {@code Executor}.
+ * <p>
+ * This is the seam the whole design turns on. A duelist does not describe what
+ * its cards <em>mean</em>; it registers, in order, the actions it is willing to
+ * take and the condition for each:
+ * <pre>
+ * AddExecutor(ExecutorType.Activate, CardId.DarkHole, DefaultDarkHole);
+ * AddExecutor(ExecutorType.SpellSet, DefaultSpellSet);
+ * AddExecutor(ExecutorType.Activate, CardId.Fissure);
+ * AddExecutor(ExecutorType.Repos, DefaultMonsterRepos);
+ * </pre>
+ * That is {@code OldSchoolExecutor}, WindBot's own deck for cards of exactly
+ * our era, and it is the template our duelists follow.
+ * <p>
+ * <b>Registration order is priority.</b> {@code GameAI} loops over executors on
+ * the outside and candidate cards on the inside, returning the first match as
+ * the single action for that decision point. There is no scoring anywhere in
+ * WindBot; a rule earlier in the constructor simply wins.
+ * <p>
+ * A card with no registered executor is never activated. That is not a policy
+ * choice bolted on top — it falls out of the gate in
+ * {@link ExecutorBot#shouldExecute}, which requires a matching entry to exist.
+ */
+public abstract class Executor
+{
+    private final List<CardExecutor> executors = new ArrayList<>();
+
+    /** {@code Duel.Fields[0]} and {@code [1]}: our side and theirs. */
+    private BotField bot;
+    private BotField enemy;
+
+    /** {@code Executor.SetCard} state: what the gate is currently asking about. */
+    private ExecutorType type;
+    private BotCard card;
+
+    /** Duel-wide facts the ported predicates read. */
+    private int turn;
+    private int phase;
+    private int turnPlayer = -1;
+    private int player;
+    private int lastChainPlayer = -1;
+    private int lastSummonPlayer = -1;
+
+    protected final AIUtil util = new AIUtil(this);
+
+    // ---- the registration API ----
+
+    /**
+     * {@code public void AddExecutor(ExecutorType type, int cardId, Func<bool> func)}
+     * — do this action for this card when the condition holds.
+     */
+    protected final void addExecutor(ExecutorType type, int cardId, BooleanSupplier func)
+    {
+        executors.add(new CardExecutor(type, cardId, func));
+    }
+
+    /**
+     * {@code public void AddExecutor(ExecutorType type, int cardId)} — do this
+     * action for this card whenever it is available. A null condition is
+     * WindBot's own idiom for "this card is always worth playing".
+     */
+    protected final void addExecutor(ExecutorType type, int cardId)
+    {
+        executors.add(new CardExecutor(type, cardId, null));
+    }
+
+    /**
+     * {@code public void AddExecutor(ExecutorType type, Func<bool> func)} — do
+     * this action for EVERY card when the condition holds. This is the
+     * id-wildcard enabler, and it is how the generic rules are hung on:
+     * {@code AddExecutor(ExecutorType.Repos, DefaultMonsterRepos)}.
+     */
+    protected final void addExecutor(ExecutorType type, BooleanSupplier func)
+    {
+        executors.add(new CardExecutor(type, CardExecutor.ANY, func));
+    }
+
+    /**
+     * {@code public void AddExecutor(ExecutorType type)} — do this action for
+     * every card that has no rule of its own:
+     * <pre>
+     * private bool DefaultNoExecutor()
+     * {
+     *     return Executors.All(exec =&gt; exec.Type != Type || exec.CardId != Card.Id);
+     * }
+     * </pre>
+     */
+    protected final void addExecutor(ExecutorType type)
+    {
+        executors.add(new CardExecutor(type, CardExecutor.ANY, this::defaultNoExecutor));
+    }
+
+    private boolean defaultNoExecutor()
+    {
+        for(CardExecutor exec : executors)
+        {
+            if(exec.type() == type && card != null && exec.cardId() == card.code())
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public final List<CardExecutor> executors()
+    {
+        return executors;
+    }
+
+    // ---- state the gate maintains ----
+
+    final void setCard(ExecutorType type, BotCard card)
+    {
+        this.type = type;
+        this.card = card;
+    }
+
+    final void setFields(BotField bot, BotField enemy)
+    {
+        this.bot = bot;
+        this.enemy = enemy;
+    }
+
+    final void setDuelState(int turn, int phase, int turnPlayer, int player,
+        int lastChainPlayer, int lastSummonPlayer)
+    {
+        this.turn = turn;
+        this.phase = phase;
+        this.turnPlayer = turnPlayer;
+        this.player = player;
+        this.lastChainPlayer = lastChainPlayer;
+        this.lastSummonPlayer = lastSummonPlayer;
+    }
+
+    /** {@code Card}: the card the current rule is being asked about. */
+    protected final BotCard card()
+    {
+        return card;
+    }
+
+    /** {@code Type}: the action the current rule is being asked about. */
+    protected final ExecutorType type()
+    {
+        return type;
+    }
+
+    /** {@code Bot}: our side of the table. */
+    public final BotField bot()
+    {
+        return bot;
+    }
+
+    /** {@code Enemy}: theirs. */
+    public final BotField enemy()
+    {
+        return enemy;
+    }
+
+    protected final int turn()
+    {
+        return turn;
+    }
+
+    protected final int phase()
+    {
+        return phase;
+    }
+
+    /**
+     * {@code Duel.Player}: 0 when it is OUR turn, 1 when it is theirs. WindBot
+     * writes rules as {@code if (Duel.Player == 0) return false;}, so this is
+     * normalised to that numbering rather than to the core's seat numbers.
+     */
+    protected final int duelPlayer()
+    {
+        return turnPlayer < 0 ? 0 : turnPlayer == player ? 0 : 1;
+    }
+
+    /** {@code Duel.LastChainPlayer}, in the same 0=us/1=them numbering, -1 when none. */
+    protected final int lastChainPlayer()
+    {
+        return lastChainPlayer < 0 ? -1 : lastChainPlayer == player ? 0 : 1;
+    }
+
+    /** {@code Duel.LastSummonPlayer}, same numbering, -1 when none. */
+    protected final int lastSummonPlayer()
+    {
+        return lastSummonPlayer < 0 ? -1 : lastSummonPlayer == player ? 0 : 1;
+    }
+
+    // ---- overridable hooks, matching Executor.cs's virtuals ----
+
+    /** Which of their monsters this attacker should hit, or null to decline. */
+    public BotCard onSelectAttackTarget(BotCard attacker, List<BotCard> defenders)
+    {
+        return null;
+    }
+
+    /** {@code OnPreBattleBetween}: false if this attack should not be made. */
+    public boolean onPreBattleBetween(BotCard attacker, BotCard defender)
+    {
+        return true;
+    }
+
+    /** {@code OnPreActivate}: a veto pass that runs before the per-card rule. */
+    public boolean onPreActivate(BotCard card)
+    {
+        return true;
+    }
+
+    /** {@code OnSelectPosition}: 0 to let the engine's own default stand. */
+    public int onSelectPosition(int cardId, int available)
+    {
+        return 0;
+    }
+
+    /** {@code OnSelectMonsterSummonOrSet}: true to set the monster face down. */
+    public boolean onSelectMonsterSummonOrSet(BotCard card)
+    {
+        return false;
+    }
+
+    /** {@code OnSelectYesNo}: base returns true. */
+    public boolean onSelectYesNo(long description)
+    {
+        return true;
+    }
+}

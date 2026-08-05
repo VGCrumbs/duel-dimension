@@ -2,7 +2,8 @@ package de.cas_ual_ty.dueldimension.duel.npc;
 
 import de.cas_ual_ty.dueldimension.ocg.HeadlessDuelRunner;
 import de.cas_ual_ty.dueldimension.ocg.RawMessage;
-import de.cas_ual_ty.dueldimension.ocg.bot.HeuristicBot;
+import de.cas_ual_ty.dueldimension.ocg.bot.executor.Duelists;
+import de.cas_ual_ty.dueldimension.ocg.bot.executor.ExecutorBot;
 import de.cas_ual_ty.dueldimension.ocg.deck.StarterDecks;
 import de.cas_ual_ty.dueldimension.ocg.msg.DuelMessage;
 import de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot;
@@ -147,7 +148,10 @@ public final class DuelistDuels
             engine.api(), engine.defaultFlags(), seeds,
             engine.cards(), engine.scripts(), deck0, deck1,
             human,
-            new HeuristicBot(seed * 2 + 1, engine.cards(), engine.cards().all()));
+            // The NPC plays with its OWN duelist executor, chosen by profile,
+            // so Joey and Kaiba differ in what they will do and in what order.
+            new ExecutorBot(seed * 2 + 1, Duelists.forProfile(duelist.getProfileId()),
+                engine.cards(), engine.cards().all()));
 
         sessionHolder[0] = session;
         ACTIVE.put(Watcher.of(serverPlayer), session);
@@ -246,8 +250,8 @@ public final class DuelistDuels
             engine.cards(), engine.scripts(),
             StarterDecks.byId(deckA).load().toRunnerDeck(),
             StarterDecks.byId(deckB).load().toRunnerDeck(),
-            new HeuristicBot(seed, engine.cards(), engine.cards().all()),
-            new HeuristicBot(seed * 2 + 1, engine.cards(), engine.cards().all()));
+            new ExecutorBot(seed, Duelists.forProfile(deckA), engine.cards(), engine.cards().all()),
+            new ExecutorBot(seed * 2 + 1, Duelists.forProfile(deckB), engine.cards(), engine.cards().all()));
         ACTIVE.put(Watcher.forConsole(), session);
         session.start();
         return null;
