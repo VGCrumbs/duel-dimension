@@ -174,6 +174,8 @@ test {
     useJUnitPlatform()
     systemProperty 'ocg.lib', project.findProperty('ocgLib') ?: 'native/ocgcore.dll'
     systemProperty 'ocg.scripts', project.findProperty('ocgScripts') ?: 'C:/ProjectIgnis/script'
+    systemProperty 'ocg.cdb', project.findProperty('ocgCdb') ?: 'C:/ProjectIgnis/expansions/cards.cdb'
+    systemProperty 'ocg.strings', project.findProperty('ocgStrings') ?: 'C:/ProjectIgnis/config/strings.conf'
     testLogging {
         events 'passed', 'skipped', 'failed'
     }
