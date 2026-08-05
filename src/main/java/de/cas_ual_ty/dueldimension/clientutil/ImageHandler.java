@@ -415,6 +415,10 @@ public class ImageHandler
             }
             
             newImg.flush();
+            // Only the three configured sizes get their folders created at
+            // startup; writing a size the duel screen asked for would
+            // otherwise throw and mark the image permanently failed.
+            adjusted.getParentFile().mkdirs();
             ImageIO.write(newImg, "PNG", adjusted);
         }
     }

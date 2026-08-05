@@ -6,6 +6,8 @@ Inventory extracted from the EDOPro client source (`gframe/`: `game.cpp` widget 
 
 | EDOPro element (source) | What it is | Status |
 | --- | --- | --- |
+| Field mat (`matManager.vField`) | One quad, x −1..9, y −4..4, u=(x+1)/10, v=(y+4)/8, drawn once for both halves | ✅ **1:1** — rectangle and UVs verified against the shipped PNG by inverse-mapping its printed slots |
+| Duel camera (`game.h` FIELD_*/CAMERA_*, `game.cpp` getPosition/getTarget) | Off-centre LH perspective, eye (4.2,8,7.8) | ✅ **1:1 port** |
 | Field zones (`materials.cpp` vertex table) | 5 monster + 2 extra monster zones, 5 spell/trap, field spell, pendulum zones, side columns | ✅ **1:1 port** — `FieldLayout` keeps EDOPro's own field-unit coordinates (1.1 pitch, side columns, EMZ on the centre line); only the 3D→2D projection is ours |
 | Deck/extra/grave/banished piles | Pile stacks with counts | ✅ counts, viewers, and **activation from a pile** (grave/banished/deck/extra), which the option list previously made unreachable |
 | `act.png` on piles (`deck_act`/`grave_act`/`remove_act`/`extra_act`) | Indicator that something in that pile can be activated | ✅ EDOPro's own texture, same trigger |
@@ -58,7 +60,7 @@ Inventory extracted from the EDOPro client source (`gframe/`: `game.cpp` widget 
 
 Three places where byte-for-byte copying is impossible or unwise, and what we do instead:
 
-1. **3D perspective → 2D GUI.** EDOPro renders the field as textured quads in an Irrlicht 3D scene. The *coordinates* port exactly (`FieldLayout`), the perspective projection does not; we fit the same table orthographically into the Minecraft screen.
+1. **3D perspective → 2D GUI.** ~~Not portable.~~ **Now ported.** EDOPro's duel camera (eye `(4.2, 8, 7.8)`, target `(4.2, 0, 0)`, up `+Z`, frustum `l=-0.90 r=0.45 b=-0.42 t=0.42 n=1`) reduces to a closed form for points on the table plane, so `FieldLayout.Projection` reproduces the exact perspective — including the asymmetric frustum whose `M[8] = 1/3` shifts the table right and creates the space EDOPro puts its card-info column in. Only the final fit to a Minecraft-shaped window is ours.
 2. **Client-side rules state.** EDOPro's client keeps a full `ClientField` mirror and computes `cmdFlag` locally from the raw message stream. We compute the identical bitmask **server-side** and send only the resulting legal commands, because a Minecraft client is untrusted — see the note below.
 3. **UI assets.** EDOPro's textures and skins are its own project's assets under its own licence; the mod already ships a card-image pipeline for the same cards. We match layout and behaviour, not texture files.
 

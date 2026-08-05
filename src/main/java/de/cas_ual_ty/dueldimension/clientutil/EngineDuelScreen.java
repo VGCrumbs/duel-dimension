@@ -546,12 +546,14 @@ public class EngineDuelScreen extends Screen
         }
         boardRenderer.setActionable(hit -> !optionsFor(hit).isEmpty());
 
-        // The hand rows are drawn just outside the table, so leave a card's
-        // worth of room above and below the projected trapezoid.
-        int fieldLeft = SIDEBAR_W + 4;
-        int fieldTop = TOP_BAR_H + 22;
-        int fieldWidth = width - fieldLeft - 8;
-        int fieldHeight = height - fieldTop - 66;
+        // EDOPro's frustum is off-centre by design: it pushes the table into
+        // the right two thirds and leaves the left for the card-info column.
+        // So the camera gets the whole screen, and the sidebar is drawn over
+        // the space the projection already reserved.
+        int fieldLeft = 0;
+        int fieldTop = TOP_BAR_H;
+        int fieldWidth = width;
+        int fieldHeight = height - fieldTop - 30;
         boardRenderer.render(poseStack, font, board, fieldLeft, fieldTop, fieldWidth, fieldHeight, highlights);
 
         // Hover picks the preview card and opens that card's command menu.

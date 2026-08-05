@@ -48,11 +48,15 @@ public final class FieldLayout
     /** Reflection axis for the opponent's side, from the mirrored table entries. */
     private static final float MIRROR_X = 7.9F;
 
-    /** Extent of the whole table, used to fit it on screen. */
-    public static final float FIELD_MIN_X = -0.8F;
-    public static final float FIELD_MAX_X = 8.7F;
-    public static final float FIELD_MIN_Y = -3.9F;
-    public static final float FIELD_MAX_Y = 3.9F;
+    /**
+     * The mat quad from materials.cpp: matManager.vField spans x -1..9 and
+     * y -4..4 as ONE quad covering both halves, with u = (x+1)/10 and
+     * v = (y+4)/8. Zone rectangles live inside it.
+     */
+    public static final float FIELD_MIN_X = -1.0F;
+    public static final float FIELD_MAX_X = 9.0F;
+    public static final float FIELD_MIN_Y = -4.0F;
+    public static final float FIELD_MAX_Y = 4.0F;
 
     public static final float CARD_ASPECT = CELL_W / CELL_H;
 
@@ -120,46 +124,76 @@ public final class FieldLayout
     }
 
     /**
-     * A pinhole camera looking down at the table, which is what makes the
-     * board look tilted.
+     * EDOPro's own duel camera, ported from {@code gframe/game.h} and
+     * {@code gframe/game.cpp}.
      * <p>
-     * The previous attempt scaled horizontal and vertical distances by
-     * different laws, so cards stretched and sheared instead of simply
-     * receding. Here a single depth divisor drives both axes, exactly as a
-     * real camera does: a point at table depth {@code d} from the lens
-     * projects to {@code f/d} times its size, so a card keeps its shape and
-     * rows bunch towards the horizon on their own.
-     *
-     * @param centreX    screen x of the table's centre line
-     * @param horizonY   screen y the table converges to at infinite depth
-     * @param focal      focal length in pixels
-     * @param cameraDist distance from lens to the table's near edge, field units
-     * @param cameraHigh height of the lens above the table plane, field units
+     * The reference client puts the table on the world XY plane (Z is the
+     * table's normal) and views it with one camera:
+     * <pre>
+     * FIELD_X = 4.2, FIELD_Y = 8.0, FIELD_Z = 7.8          (game.h:831-834)
+     * eye    = (FIELD_X, FIELD_Y, FIELD_Z) = (4.2, 8, 7.8)
+     * target = (FIELD_X, 0, 0)
+     * up     = (0, 0, 1)                                    (game.cpp:1942-1954)
+     * frustum l=-0.90 r=0.45 b=-0.42 t=0.42 near=1 far=100  (game.h:836-839)
+     * </pre>
+     * The frustum is deliberately asymmetric horizontally: the projection
+     * matrix element M[8] = (l+r)/(l-r) = 1/3 shifts the whole table a sixth
+     * of the screen to the right, which is what leaves room for the card-info
+     * column on the left. We keep that, so our sidebar sits where EDOPro's
+     * does for the same reason.
+     * <p>
+     * Because the view matrix works out to a pure function of the table's y
+     * coordinate, the whole projection reduces to the closed forms below —
+     * no matrices needed at draw time.
      */
-    public record Projection(float centreX, float horizonY, float focal, float cameraDist, float cameraHigh)
+    public record Projection(float originX, float originY, float scaleX, float scaleY)
     {
-        private static final float FIELD_CENTRE_X = (FIELD_MIN_X + FIELD_MAX_X) / 2F;
+        // gframe/game.h:831-834
+        private static final float FIELD_X = 4.2F;
+        private static final float FIELD_Y = 8.0F;
+        private static final float FIELD_Z = 7.8F;
+        // gframe/game.h:836-839
+        private static final float CAMERA_LEFT = -0.90F;
+        private static final float CAMERA_RIGHT = 0.45F;
+        private static final float CAMERA_BOTTOM = -0.42F;
+        private static final float CAMERA_TOP = 0.42F;
+        private static final float NEAR = 1.0F;
 
-        /** Distance from the lens to a row of the table. */
-        private float depth(float fieldY)
+        /** Eye-to-target distance; the view axes fall out of it. */
+        private static final float LENS = (float)Math.sqrt(FIELD_Y * FIELD_Y + FIELD_Z * FIELD_Z);
+
+        // buildProjectionMatrixPerspectiveLH(width, height, near, far)
+        private static final float M0 = 2F * NEAR / ((CAMERA_RIGHT - CAMERA_LEFT));
+        private static final float M5 = 2F * NEAR / (CAMERA_TOP - CAMERA_BOTTOM);
+        /** The off-centre shift: (l + r) / (l - r) = +1/3. */
+        private static final float M8 = (CAMERA_LEFT + CAMERA_RIGHT) / (CAMERA_LEFT - CAMERA_RIGHT);
+
+        /** Camera-space depth of a point on the table. */
+        private static float viewDepth(float fieldY)
         {
-            return cameraDist + (FIELD_MAX_Y - fieldY);
+            return (FIELD_Y * FIELD_Y + FIELD_Z * FIELD_Z - FIELD_Y * fieldY) / LENS;
         }
 
-        public float y(float fieldY)
+        /** Normalised device x in [-1, 1]. */
+        private static float ndcX(float fieldX, float fieldY)
         {
-            return horizonY + cameraHigh * focal / depth(fieldY);
+            return M0 * (fieldX - FIELD_X) / viewDepth(fieldY) + M8;
+        }
+
+        /** Normalised device y in [-1, 1]; +1 is the top of the screen. */
+        private static float ndcY(float fieldY)
+        {
+            return M5 * (-FIELD_Z * fieldY / LENS) / viewDepth(fieldY);
         }
 
         public float x(float fieldX, float fieldY)
         {
-            return centreX + (fieldX - FIELD_CENTRE_X) * focal / depth(fieldY);
+            return originX + ndcX(fieldX, fieldY) * scaleX;
         }
 
-        /** On-screen height of one field unit at this depth, for card sizing. */
-        public float scaleAt(float fieldY)
+        public float y(float fieldY)
         {
-            return focal / depth(fieldY);
+            return originY - ndcY(fieldY) * scaleY;
         }
 
         /** The four projected corners of a zone rectangle. */
@@ -182,28 +216,40 @@ public final class FieldLayout
     }
 
     /**
-     * Fits the tilted table into a screen box.
+     * Fits EDOPro's projection into a screen box.
      * <p>
-     * {@code farNearRatio} is how wide the far edge appears relative to the
-     * near edge; it fixes the camera distance, and the remaining parameters
-     * follow from making the table exactly fill the box.
+     * EDOPro stretches its fixed frustum to whatever window it has
+     * (keep_aspect_ratio defaults to false), so we do the same, then scale
+     * uniformly so nothing falls off the edge of a Minecraft GUI whose aspect
+     * differs from the reference client's assumed 1.607.
      */
     public static Projection fit(int left, int top, int width, int height)
     {
-        final float farNearRatio = 0.62F;
-        float fieldDepth = FIELD_MAX_Y - FIELD_MIN_Y;
-        float fieldWidth = FIELD_MAX_X - FIELD_MIN_X;
-
-        // near width : far width = (dist + depth) : dist
-        float cameraDist = farNearRatio * fieldDepth / (1F - farNearRatio);
-        // Near edge spans the full box width.
-        float focal = cameraDist * width / fieldWidth;
-        // Choose the lens height that makes the table exactly as tall as the box.
-        float spread = 1F / cameraDist - 1F / (cameraDist + fieldDepth);
-        float cameraHigh = height / (focal * spread);
-        // Far edge lands on the top of the box.
-        float horizonY = top - cameraHigh * focal / (cameraDist + fieldDepth);
-
-        return new Projection(left + width / 2F, horizonY, focal, cameraDist, cameraHigh);
+        // Projected extent of the mat in NDC, from its four corners.
+        float minX = Float.MAX_VALUE;
+        float maxX = -Float.MAX_VALUE;
+        float minY = Float.MAX_VALUE;
+        float maxY = -Float.MAX_VALUE;
+        for(float fx : new float[] {FIELD_MIN_X, FIELD_MAX_X})
+        {
+            for(float fy : new float[] {FIELD_MIN_Y, FIELD_MAX_Y})
+            {
+                float ndcX = Projection.ndcX(fx, fy);
+                float ndcY = Projection.ndcY(fy);
+                minX = Math.min(minX, ndcX);
+                maxX = Math.max(maxX, ndcX);
+                minY = Math.min(minY, ndcY);
+                maxY = Math.max(maxY, ndcY);
+            }
+        }
+        // One scale for both axes: the perspective is already in the numbers,
+        // and scaling them differently would shear the table.
+        float scale = Math.min(width / (maxX - minX), height / (maxY - minY));
+        float centreNdcX = (minX + maxX) / 2F;
+        float centreNdcY = (minY + maxY) / 2F;
+        return new Projection(
+            left + width / 2F - centreNdcX * scale,
+            top + height / 2F + centreNdcY * scale,
+            scale, scale);
     }
 }

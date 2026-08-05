@@ -21,28 +21,44 @@ class FieldLayoutTest
     private final FieldLayout.Projection projection = FieldLayout.fit(LEFT, TOP, WIDTH, HEIGHT);
 
     @Test
-    void tableFillsTheBoxItWasFittedTo()
+    void wholeTableLandsInsideTheBox()
     {
-        float nearY = projection.y(FieldLayout.FIELD_MAX_Y);
-        float farY = projection.y(FieldLayout.FIELD_MIN_Y);
-        assertEquals(TOP, farY, 1.5F, "far edge should sit at the top of the box");
-        assertEquals(TOP + HEIGHT, nearY, 1.5F, "near edge should sit at the bottom");
-
-        float nearLeft = projection.x(FieldLayout.FIELD_MIN_X, FieldLayout.FIELD_MAX_Y);
-        float nearRight = projection.x(FieldLayout.FIELD_MAX_X, FieldLayout.FIELD_MAX_Y);
-        assertEquals(LEFT, nearLeft, 1.5F);
-        assertEquals(LEFT + WIDTH, nearRight, 1.5F);
+        for(float fx : new float[] {FieldLayout.FIELD_MIN_X, FieldLayout.FIELD_MAX_X})
+        {
+            for(float fy : new float[] {FieldLayout.FIELD_MIN_Y, FieldLayout.FIELD_MAX_Y})
+            {
+                float x = projection.x(fx, fy);
+                float y = projection.y(fy);
+                assertTrue(x >= LEFT - 1 && x <= LEFT + WIDTH + 1, "corner x off screen: " + x);
+                assertTrue(y >= TOP - 1 && y <= TOP + HEIGHT + 1, "corner y off screen: " + y);
+            }
+        }
     }
 
+    /**
+     * EDOPro's frustum is asymmetric (l=-0.90, r=+0.45) so the table sits
+     * right of centre, leaving the left of the screen for the card-info
+     * column. The near edge must also be wider than the far edge.
+     */
     @Test
-    void farEdgeIsNarrowerThanNearEdge()
+    void perspectiveMatchesTheReferenceFrustum()
     {
         float nearWidth = projection.x(FieldLayout.FIELD_MAX_X, FieldLayout.FIELD_MAX_Y)
             - projection.x(FieldLayout.FIELD_MIN_X, FieldLayout.FIELD_MAX_Y);
         float farWidth = projection.x(FieldLayout.FIELD_MAX_X, FieldLayout.FIELD_MIN_Y)
             - projection.x(FieldLayout.FIELD_MIN_X, FieldLayout.FIELD_MIN_Y);
         assertTrue(farWidth < nearWidth, "the table must recede");
-        assertEquals(0.62F, farWidth / nearWidth, 0.02F, "far/near ratio should be the configured tilt");
+
+        // Ratio follows from the camera: depth at the far edge over the near.
+        float expected = (float)((8.0 * 8.0 + 7.8 * 7.8 - 8.0 * 4.0)
+            / (8.0 * 8.0 + 7.8 * 7.8 - 8.0 * -4.0));
+        assertEquals(expected, farWidth / nearWidth, 0.01F,
+            "far/near width ratio should equal the camera's depth ratio");
+
+        // Table centre (field x 4.0) sits right of the box centre.
+        float centre = projection.x(4.0F, 0F);
+        assertTrue(centre > LEFT + WIDTH / 2F,
+            "the off-centre frustum should push the table right, leaving room for the sidebar");
     }
 
     /**
