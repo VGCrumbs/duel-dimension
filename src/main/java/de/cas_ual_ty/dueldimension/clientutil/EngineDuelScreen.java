@@ -1010,8 +1010,9 @@ public class EngineDuelScreen extends Screen
         public void renderButton(PoseStack poseStack, int mouseX, int mouseY, float partialTick)
         {
             BoardSnapshot board = currentBoard();
-            drawPhaseCell(poseStack, x, y, width, height, index,
-                isCurrentPhase(board, index) || isHoveredOrFocused(), board.turnPlayer() == 0);
+            // Pointing at a reachable phase previews it as lit.
+            int state = isHoveredOrFocused() ? PHASE_LIT : phaseState(board, index);
+            drawPhaseCell(poseStack, x, y, width, height, index, state, board.turnPlayer() == 0);
         }
     }
 
@@ -1118,19 +1119,40 @@ public class EngineDuelScreen extends Screen
             width / 2, bandTop + 70, 0x7A7A7A);
     }
 
+    /** Idle: the phase can be reached from here. */
+    private static final int PHASE_IDLE = 0;
+    /** Lit: the phase the duel is in, letters glowing. */
+    private static final int PHASE_LIT = 1;
+    /** Disabled: unreachable, greyed and dimmed back into the case. */
+    private static final int PHASE_DISABLED = 2;
+
     /**
-     * One bay of the phase indicator, drawn from the PNG atlases: the button
-     * for this phase in blue (your turn) or red (theirs), taking the lit row
-     * -- glowing letters -- when it is the phase the duel is in.
+     * One key of the phase indicator, taken from the PNG atlas: six columns by
+     * three rows, the row chosen by state. Blue while you hold the turn, red
+     * while the opponent does.
      */
     private void drawPhaseCell(PoseStack poseStack, int x, int y, int w, int h, int index,
-        boolean lit, boolean yourTurn)
+        int state, boolean yourTurn)
     {
         ScreenUtil.white();
         DuelTextures.bindSmooth(yourTurn ? DuelTextures.PHASE_BLUE : DuelTextures.PHASE_RED);
         DdBlitUtil.blit(poseStack, x, y, w, h,
-            index / (float)PHASE_NAMES.length, lit ? 0.5F : 0F,
-            1F / PHASE_NAMES.length, 0.5F, 1, 1);
+            index / (float)PHASE_NAMES.length, state / 3F,
+            1F / PHASE_NAMES.length, 1F / 3F, 1, 1);
+    }
+
+    /**
+     * Which row a phase key takes. Being the current phase wins over being
+     * offered: the core never offers a jump to the phase you are already in,
+     * so reading "no button" as unreachable would grey out the live phase.
+     */
+    private int phaseState(BoardSnapshot board, int index)
+    {
+        if(isCurrentPhase(board, index))
+        {
+            return PHASE_LIT;
+        }
+        return phaseOptionFor(shownPrompt, PHASE_VALUES[index]) >= 0 ? PHASE_IDLE : PHASE_DISABLED;
     }
 
     /**
@@ -1182,11 +1204,12 @@ public class EngineDuelScreen extends Screen
         for(int i = 0; i < PHASE_NAMES.length; i++)
         {
             // A phase the core is offering gets a real button, added in
-            // buildPhaseBar; this draws the ones that are only labels.
+            // buildPhaseBar; this draws the ones that are only labels, which
+            // is where an unreachable phase greys out.
             if(phaseOptionFor(shownPrompt, PHASE_VALUES[i]) < 0)
             {
                 drawPhaseCell(poseStack, x + i * PHASE_CELL_W, PHASE_BAR_Y, PHASE_CELL_W,
-                    PHASE_CELL_H, i, isCurrentPhase(board, i), yourTurn);
+                    PHASE_CELL_H, i, phaseState(board, i), yourTurn);
             }
         }
     }
