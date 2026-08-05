@@ -204,6 +204,7 @@ class DuelMessageTest
             .scripts(HeadlessDuelRunner.cardScriptsDirectory(scripts()))
             .responder(0, endTurner)
             .responder(1, endTurner)
+            .stopOnWin(false) // empty decks: WIN fires immediately, zombie turns are the prompt source
             .build()
             .run(64);
 

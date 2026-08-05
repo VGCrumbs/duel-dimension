@@ -34,7 +34,12 @@ public class HeadlessDuelRunner
         public final List<RawMessage> messages = new ArrayList<>();
         public final List<byte[]> responses = new ArrayList<>();
         public DuelResult result;
-        /** True if the core reported DUEL_STATUS_END; false if the run aborted (no response, step cap). */
+        /**
+         * True if the duel reached a decisive end: MSG_WIN observed (the core
+         * does NOT return DUEL_STATUS_END after a win — it keeps processing
+         * zombie turns; stopping is the host's job) or the core reported END.
+         * False if the run aborted (no response, step cap).
+         */
         public boolean completed;
         public int steps;
 
@@ -56,6 +61,7 @@ public class HeadlessDuelRunner
         private OcgDuel.LogSink log = (message, type) -> {};
         private final Deck[] decks = {Deck.EMPTY, Deck.EMPTY};
         private final ResponseSource[] responders = new ResponseSource[2];
+        private boolean stopOnWin = true;
 
         private Builder(OcgApi api)
         {
@@ -108,6 +114,16 @@ public class HeadlessDuelRunner
         public Builder responder(int player, ResponseSource source)
         {
             responders[player] = source;
+            return this;
+        }
+
+        /**
+         * When false, keep pumping after MSG_WIN (the core happily plays
+         * zombie turns) — useful as a prompt generator in tests.
+         */
+        public Builder stopOnWin(boolean stopOnWin)
+        {
+            this.stopOnWin = stopOnWin;
             return this;
         }
 
@@ -243,6 +259,12 @@ public class HeadlessDuelRunner
                 {
                     responder.observe(message);
                 }
+            }
+
+            if(config.stopOnWin && trace.result != null)
+            {
+                trace.completed = true;
+                return;
             }
 
             if(status == OcgConstants.DUEL_STATUS_END)
