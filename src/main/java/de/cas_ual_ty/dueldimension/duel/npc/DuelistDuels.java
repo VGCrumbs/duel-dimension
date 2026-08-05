@@ -258,8 +258,16 @@ public final class DuelistDuels
         ACTIVE.forEach((watcher, session) ->
         {
             List<String> log = new ArrayList<>();
+            // One checkpoint per board the duel produced, each carrying the
+            // events that happened since the previous one. Collapsing a whole
+            // drain into "all the events plus the last board" reordered the
+            // duel: boards are captured interleaved with messages (after
+            // MSG_MOVE, MSG_DAMAGE, MSG_RECOVER, MSG_DRAW, MSG_WIN), so when a
+            // batch ended on a message the board sent with it predated the
+            // events sent with it, and the field jumped backwards until the
+            // next batch corrected it.
+            List<PromptMessages.DuelUpdate> updates = new ArrayList<>();
             List<DuelEvent> events = new ArrayList<>();
-            BoardSnapshot[] latestBoard = {null};
             boolean[] over = {false};
             String[] result = {""};
 
@@ -283,7 +291,10 @@ public final class DuelistDuels
                 }
                 else if(event instanceof DuelSession.Event.Board board)
                 {
-                    latestBoard[0] = board.snapshot();
+                    // Checkpoint: everything up to here, then this board.
+                    updates.add(new PromptMessages.DuelUpdate(board.snapshot(), List.of(), false, "",
+                        new int[0], new ArrayList<>(events)));
+                    events.clear();
                 }
                 else if(event instanceof DuelSession.Event.Finished done)
                 {
@@ -303,15 +314,32 @@ public final class DuelistDuels
                 }
             });
 
-            if(!watcher.console() && (latestBoard[0] != null || !log.isEmpty() || over[0] || !events.isEmpty()))
+            // Anything after the last board checkpoint still has to be played;
+            // it commits no board of its own.
+            if(!events.isEmpty() || !log.isEmpty() || over[0])
+            {
+                updates.add(new PromptMessages.DuelUpdate(null, List.of(), false, "", new int[0],
+                    new ArrayList<>(events)));
+                events.clear();
+            }
+
+            if(!watcher.console() && !updates.isEmpty())
             {
                 ServerPlayer player = server.getPlayerList().getPlayer(watcher.playerId());
                 if(player != null)
                 {
-                    de.cas_ual_ty.dueldimension.DuelDimension.channel.send(
-                        net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
-                        new de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate(
-                            latestBoard[0], log, over[0], result[0], new int[0], events));
+                    for(int i = 0; i < updates.size(); i++)
+                    {
+                        PromptMessages.DuelUpdate update = updates.get(i);
+                        boolean last = i == updates.size() - 1;
+                        // The log and the result belong to the batch, so they
+                        // ride on its final update.
+                        de.cas_ual_ty.dueldimension.DuelDimension.channel.send(
+                            net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
+                            new PromptMessages.DuelUpdate(update.board(),
+                                last ? log : List.of(), last && over[0], last ? result[0] : "",
+                                new int[0], update.events()));
+                    }
                 }
             }
 
