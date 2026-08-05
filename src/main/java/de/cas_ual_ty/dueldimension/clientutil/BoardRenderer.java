@@ -29,9 +29,18 @@ public class BoardRenderer extends GuiComponent
     /** Cards are small, so a light subdivision removes the affine smear. */
     private static final int CARD_STEPS = 4;
 
+    /**
+     * A card's own size on the table, from materials.cpp:28
+     * {@code SetS3DVertex(vCardFront, -0.35f, -0.5f, 0.35f, 0.5f, ...)} - so
+     * 0.7 x 1.0 field units, drawn centred in its 1.1 x 1.2 zone. Filling the
+     * whole zone instead is what made every card look stretched wide.
+     */
+    private static final float CARD_W = 0.7F;
+    private static final float CARD_H = 1.0F;
+
     private static final int COLOUR_ZONE = 0x50FFFFFF;
-    private static final int COLOUR_ZONE_FILL = 0x40000000;
     private static final int COLOUR_HIGHLIGHT = 0xC000FF66;
+    private static final int COLOUR_HIGHLIGHT_FILL = 0x4000FF66;
     private static final int COLOUR_ACTIONABLE = 0xE0FFD700;
 
     /** A drawn slot; piles use sequence -1. */
@@ -156,14 +165,18 @@ public class BoardRenderer extends GuiComponent
         Hit hit = new Hit(corners, 0, controller, location, -1, -1, label + " (" + count + ")", count);
 
         boolean canActivateFromHere = actionable.test(hit);
-        FieldQuad.fill(poseStack, corners, COLOUR_ZONE_FILL);
-        FieldQuad.outline(poseStack, corners, canActivateFromHere ? COLOUR_ACTIONABLE : COLOUR_ZONE);
+        if(canActivateFromHere)
+        {
+            FieldQuad.outline(poseStack, corners, COLOUR_ACTIONABLE);
+        }
 
         if(count > 0)
         {
+            FieldLayout.Rect pileCard = new FieldLayout.Rect(
+                rect.x() + (rect.w() - CARD_W) / 2F, rect.y() + (rect.h() - CARD_H) / 2F, CARD_W, CARD_H);
             FieldQuad.drawProjected(poseStack,
                 controller == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT,
-                projection, rect, CARD_STEPS);
+                projection, pileCard, CARD_STEPS);
             String text = Integer.toString(count);
             int textX = corners.minX() + (corners.maxX() - corners.minX() - font.width(text)) / 2;
             int textY = corners.maxY() - 10;
@@ -185,8 +198,8 @@ public class BoardRenderer extends GuiComponent
         {
             return;
         }
-        float cardW = 1.1F;
-        float cardH = 1.2F;
+        float cardW = CARD_W;
+        float cardH = CARD_H;
         float fieldY = controller == 0 ? FieldLayout.FIELD_MAX_Y + cardH * 0.5F
             : FieldLayout.FIELD_MIN_Y - cardH * 0.5F;
 
@@ -215,29 +228,32 @@ public class BoardRenderer extends GuiComponent
         boolean zoneLit = hit.zoneRef() >= 0 && zoneHighlights.contains(hit.zoneRef());
         boolean canAct = actionable.test(hit);
 
-        FieldQuad.fill(poseStack, hit.corners(), COLOUR_ZONE_FILL);
-        FieldQuad.outline(poseStack, hit.corners(),
-            zoneLit ? COLOUR_HIGHLIGHT : canAct ? COLOUR_ACTIONABLE : COLOUR_ZONE);
+        // The mat already prints the grid; only mark a zone when it is
+        // selectable or holds something the player can act on.
+        if(zoneLit)
+        {
+            FieldQuad.fill(poseStack, hit.corners(), COLOUR_HIGHLIGHT_FILL);
+            FieldQuad.outline(poseStack, hit.corners(), COLOUR_HIGHLIGHT);
+        }
+        else if(canAct)
+        {
+            FieldQuad.outline(poseStack, hit.corners(), COLOUR_ACTIONABLE);
+        }
         hits.add(hit);
 
         if(!slot.present())
         {
             return;
         }
-        if(slot.defence() && !inHand)
-        {
-            // A defence-position monster lies on its side within its zone.
-            FieldLayout.Rect turned = new FieldLayout.Rect(
-                rect.x() + (rect.w() - rect.h()) / 2F, rect.y() + (rect.h() - rect.w()) / 2F,
-                rect.h(), rect.w());
-            FieldQuad.drawProjected(poseStack, textureFor(slot, inHand, hit.controller()),
-                projection, turned, CARD_STEPS, true);
-        }
-        else
-        {
-            FieldQuad.drawProjected(poseStack, textureFor(slot, inHand, hit.controller()),
-                projection, rect, CARD_STEPS);
-        }
+        // Draw the card at its own proportions, centred in the zone, rather
+        // than stretched to fill it.
+        boolean lying = slot.defence() && !inHand;
+        float drawW = lying ? CARD_H : CARD_W;
+        float drawH = lying ? CARD_W : CARD_H;
+        FieldLayout.Rect cardRect = new FieldLayout.Rect(
+            rect.x() + (rect.w() - drawW) / 2F, rect.y() + (rect.h() - drawH) / 2F, drawW, drawH);
+        FieldQuad.drawProjected(poseStack, textureFor(slot, inHand, hit.controller()),
+            projection, cardRect, CARD_STEPS, lying);
         if(!inHand && canAttack.test(hit))
         {
             // drawing.cpp bobs tAttack over any card that may attack.
