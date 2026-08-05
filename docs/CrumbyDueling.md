@@ -78,7 +78,7 @@ Fork of [YgoDuelingMod](https://github.com/CAS-ual-TY/YgoDuelingMod) (Forge 1.19
 ## Phase 2 — Legality + fuzzing
 
 - [ ] `LegalMoveEnumerator` — every legal response per prompt, **including the hard ones**: `SELECT_SUM` (subset-sum: rituals/synchros), `SELECT_UNSELECT_CARD` loops, `SELECT_TRIBUTE`, `ANNOUNCE_CARD`
-- [ ] `RandomBot` (seeded)
+- [x] `RandomBot` (seeded) — random legal answers to all 9 decoded prompt types, aborts loudly on unknown prompts. **First full real-deck bot-vs-bot duel passed 2026-08-04**: vanilla decks from the real cdb via `CdbCardProvider`, decisive `MSG_WIN`, zero RETRY. Discovery: the core never returns `DUEL_STATUS_END` after a win — it plays zombie turns; stopping at `MSG_WIN` is the host's job (`stopOnWin`)
 - [ ] `gradlew duelFuzz -Pcount=N` — forked-JVM batches (native segfault gets attributed, not fatal), failures dump `(seed, decks, response trace)` for exact replay
 - [ ] Replay format frozen (the fuzz-repro triple *is* the replay format)
 - [ ] Parallel-duels stress mode → decides threading model before MC integration bakes it in
