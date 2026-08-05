@@ -97,7 +97,7 @@ class HeadlessDuelRunnerTest
             boolean ended;
 
             @Override
-            public void onDuelStart(int playerIndex)
+            public void onDuelStart(int playerIndex, de.cas_ual_ty.ydm.ocg.query.BoardObserver board)
             {
                 started = true;
             }

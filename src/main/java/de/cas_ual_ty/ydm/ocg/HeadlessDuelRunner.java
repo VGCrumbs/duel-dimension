@@ -194,7 +194,7 @@ public class HeadlessDuelRunner
 
             for(int player = 0; player < 2; player++)
             {
-                config.responders[player].onDuelStart(player);
+                config.responders[player].onDuelStart(player, observerFor(duel, player));
             }
 
             duel.start();
@@ -206,6 +206,24 @@ public class HeadlessDuelRunner
             responder.onDuelEnd(trace.result);
         }
         return trace;
+    }
+
+    private static de.cas_ual_ty.ydm.ocg.query.BoardObserver observerFor(OcgDuel duel, int player)
+    {
+        return new de.cas_ual_ty.ydm.ocg.query.BoardObserver()
+        {
+            @Override
+            public de.cas_ual_ty.ydm.ocg.query.BoardState observe()
+            {
+                return de.cas_ual_ty.ydm.ocg.query.BoardState.observe(duel, player);
+            }
+
+            @Override
+            public de.cas_ual_ty.ydm.ocg.query.BoardState observeOmnisciently()
+            {
+                return de.cas_ual_ty.ydm.ocg.query.BoardState.observeOmnisciently(duel, player);
+            }
+        };
     }
 
     private void loadBaseScripts(OcgDuel duel)

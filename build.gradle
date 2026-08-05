@@ -206,6 +206,20 @@ tasks.register('duelFuzz', JavaExec) {
             '--out', (project.findProperty('fuzzOut') ?: 'build/fuzz').toString()]
 }
 
+// Head-to-head bot evaluation: the regression metric for AI changes.
+// Usage: gradlew17 botArena [-Pduels=500] [-Pseed=1]
+tasks.register('botArena', JavaExec) {
+    group = 'duelmonsters'
+    description = 'Plays bots against each other and reports win rates.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'de.cas_ual_ty.ydm.ocg.bot.BotArena'
+    args = ['--lib', project.findProperty('ocgLib') ?: 'native/ocgcore.dll',
+            '--scripts', project.findProperty('ocgScripts') ?: 'C:/ProjectIgnis/script',
+            '--cdb', project.findProperty('ocgCdb') ?: 'C:/ProjectIgnis/expansions/cards.cdb',
+            '--duels', (project.findProperty('duels') ?: '200').toString(),
+            '--seed', (project.findProperty('seed') ?: '1').toString()]
+}
+
 // Example for how to get properties into the manifest for reading at runtime.
 jar {
     manifest {

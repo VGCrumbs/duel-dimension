@@ -15,8 +15,12 @@ package de.cas_ual_ty.ydm.ocg;
  */
 public interface ResponseSource
 {
-    /** Called once before the first {@link OcgDuel#process()} call. */
-    default void onDuelStart(int playerIndex)
+    /**
+     * Called once before the first {@link OcgDuel#process()} call.
+     *
+     * @param board a window onto the field for this player; honest by default
+     */
+    default void onDuelStart(int playerIndex, de.cas_ual_ty.ydm.ocg.query.BoardObserver board)
     {
     }
 
