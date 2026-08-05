@@ -66,7 +66,37 @@ public final class DuelistDuels
     }
 
     /** Sessions keyed by watcher, so one watcher runs one duel at a time. */
-    private static final Map<Watcher, DuelSession> ACTIVE = new ConcurrentHashMap<>();
+    /**
+     * One running duel and who is sitting at it.
+     * <p>
+     * A duel used to be keyed by its single watcher, which worked while the
+     * only human was always seat 0. With two players the SESSION is the thing
+     * that exists once and the watchers are two views onto it, so the drain
+     * has to happen once and then be told twice, differently.
+     */
+    static final class RunningDuel
+    {
+        final DuelSession session;
+        /** Indexed by the core's seat number; null where a bot sits. */
+        final Watcher[] seats;
+
+        RunningDuel(DuelSession session, Watcher seat0, Watcher seat1)
+        {
+            this.session = session;
+            this.seats = new Watcher[] {seat0, seat1};
+        }
+
+        boolean isTwoPlayer()
+        {
+            return seats[0] != null && seats[1] != null;
+        }
+    }
+
+    /**
+     * Every watcher's duel. Both seats of a two-player duel map to the SAME
+     * RunningDuel, so the tick must de-duplicate by identity before draining.
+     */
+    private static final Map<Watcher, RunningDuel> ACTIVE = new ConcurrentHashMap<>();
 
     /**
      * Set by the -Pselftest run flag: play one duel on a freshly started
@@ -89,7 +119,8 @@ public final class DuelistDuels
             return;
         }
 
-        DuelSession existing = ACTIVE.get(Watcher.of(serverPlayer));
+        RunningDuel existingDuel = ACTIVE.get(Watcher.of(serverPlayer));
+        DuelSession existing = existingDuel == null ? null : existingDuel.session;
         if(existing != null && existing.isRunning())
         {
             serverPlayer.sendSystemMessage(Component.literal("A duel is already running.")
@@ -154,7 +185,7 @@ public final class DuelistDuels
                 engine.cards(), engine.cards().all()));
 
         sessionHolder[0] = session;
-        ACTIVE.put(Watcher.of(serverPlayer), session);
+        ACTIVE.put(Watcher.of(serverPlayer), new RunningDuel(session, Watcher.of(serverPlayer), null));
 
         serverPlayer.sendSystemMessage(Component.literal("Duel started: ")
             .withStyle(ChatFormatting.GOLD)
@@ -218,11 +249,25 @@ public final class DuelistDuels
     /** Concedes the player's running duel. */
     public static void surrender(ServerPlayer player)
     {
-        DuelSession session = ACTIVE.get(Watcher.of(player));
-        if(session != null && session.isRunning())
+        RunningDuel duel = ACTIVE.get(Watcher.of(player));
+        if(duel != null && duel.session.isRunning())
         {
-            session.stop();
+            duel.session.stop();
             player.sendSystemMessage(Component.literal("You surrendered.").withStyle(ChatFormatting.RED));
+            // The other seat is told, because a duel that simply stops looks
+            // like a crash from the far side of the table.
+            for(Watcher other : duel.seats)
+            {
+                if(other != null && !other.equals(Watcher.of(player)) && !other.console())
+                {
+                    ServerPlayer opponent = player.server.getPlayerList().getPlayer(other.playerId());
+                    if(opponent != null)
+                    {
+                        opponent.sendSystemMessage(Component.literal("Your opponent surrendered.")
+                            .withStyle(ChatFormatting.GOLD));
+                    }
+                }
+            }
         }
     }
 
@@ -252,7 +297,7 @@ public final class DuelistDuels
             StarterDecks.byId(deckB).load().toRunnerDeck(),
             new ExecutorBot(seed, Duelists.forProfile(deckA), engine.cards(), engine.cards().all()),
             new ExecutorBot(seed * 2 + 1, Duelists.forProfile(deckB), engine.cards(), engine.cards().all()));
-        ACTIVE.put(Watcher.forConsole(), session);
+        ACTIVE.put(Watcher.forConsole(), new RunningDuel(session, Watcher.forConsole(), null));
         session.start();
         return null;
     }
@@ -288,139 +333,181 @@ public final class DuelistDuels
             ? EngineRuntime.get(EngineRuntime.Paths.defaults()).descriptions()
             : new DescriptionTable();
 
+        // Both seats of a two-player duel map to the same RunningDuel, and the
+        // event queue may be drained exactly once, so de-duplicate by identity
+        // before touching any of them.
+        java.util.Set<RunningDuel> duels =
+            java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        duels.addAll(ACTIVE.values());
+
         List<Watcher> finished = new ArrayList<>();
-        ACTIVE.forEach((watcher, session) ->
+        for(RunningDuel duel : duels)
         {
+            DuelSession session = duel.session;
+
+            // Everything below is accumulated PER SEAT. The events differ
+            // between seats because identity and side are both relative, so a
+            // single shared list would be either a leak or a mirrored board.
+            @SuppressWarnings("unchecked")
+            List<Object>[] outbound = new List[] {new ArrayList<>(), new ArrayList<>()};
+            @SuppressWarnings("unchecked")
+            List<DuelEvent>[] pending = new List[] {new ArrayList<>(), new ArrayList<>()};
             List<String> log = new ArrayList<>();
-            // One checkpoint per board the duel produced, each carrying the
-            // events that happened since the previous one. Collapsing a whole
-            // drain into "all the events plus the last board" reordered the
-            // duel: boards are captured interleaved with messages (after
-            // MSG_MOVE, MSG_DAMAGE, MSG_RECOVER, MSG_DRAW, MSG_WIN), so when a
-            // batch ended on a message the board sent with it predated the
-            // events sent with it, and the field jumped backwards until the
-            // next batch corrected it.
-            // Outbound packets in stream order: DuelUpdates and ShowPrompts
-            // interleaved exactly as the duel produced them. All are sent from
-            // this thread on one channel, so they arrive in this order too.
-            List<Object> outbound = new ArrayList<>();
-            List<DuelEvent> events = new ArrayList<>();
             boolean[] over = {false};
-            String[] result = {""};
+            int[] winner = {-2};
+            String[] failure = {null};
 
             session.drainEvents(event ->
             {
                 if(event instanceof DuelSession.Event.Message message)
                 {
-                    events.addAll(toDuelEvents(message.message()));
+                    for(int seat = 0; seat < 2; seat++)
+                    {
+                        if(duel.seats[seat] != null)
+                        {
+                            pending[seat].addAll(toDuelEvents(message.message(), seat));
+                        }
+                    }
                     Component line = narrate(message.message(), descriptions);
                     if(line != null)
                     {
-                        if(watcher.console())
+                        log.add(line.getString());
+                        for(Watcher watcher : duel.seats)
                         {
-                            watcher.send(server, line);
-                        }
-                        else
-                        {
-                            log.add(line.getString());
+                            if(watcher != null && watcher.console())
+                            {
+                                watcher.send(server, line);
+                            }
                         }
                     }
                 }
                 else if(event instanceof DuelSession.Event.Board board)
                 {
-                    // Checkpoint: everything up to here, then this board.
-                    outbound.add(new PromptMessages.DuelUpdate(board.forSeat(0), List.of(), false, "",
-                        new int[0], new ArrayList<>(events)));
-                    events.clear();
+                    for(int seat = 0; seat < 2; seat++)
+                    {
+                        if(duel.seats[seat] == null)
+                        {
+                            continue;
+                        }
+                        outbound[seat].add(new PromptMessages.DuelUpdate(board.forSeat(seat),
+                            List.of(), false, "", new int[0], new ArrayList<>(pending[seat])));
+                        pending[seat].clear();
+                    }
                 }
                 else if(event instanceof DuelSession.Event.Prompt prompt)
                 {
-                    // The question the duel stopped on, in its place in the
-                    // stream: whatever led up to it is flushed first so the
-                    // client animates it before the prompt appears.
-                    if(!events.isEmpty())
+                    // A question belongs to one seat. Flush that seat's events
+                    // first so the client animates what led up to it, then ask.
+                    int seat = prompt.seat();
+                    if(seat >= 0 && seat < 2 && duel.seats[seat] != null)
                     {
-                        outbound.add(new PromptMessages.DuelUpdate(null, List.of(), false, "",
-                            new int[0], new ArrayList<>(events)));
-                        events.clear();
+                        if(!pending[seat].isEmpty())
+                        {
+                            outbound[seat].add(new PromptMessages.DuelUpdate(null, List.of(), false, "",
+                                new int[0], new ArrayList<>(pending[seat])));
+                            pending[seat].clear();
+                        }
+                        outbound[seat].add(prompt);
                     }
-                    outbound.add(prompt);
                 }
                 else if(event instanceof DuelSession.Event.Finished done)
                 {
                     over[0] = true;
-                    result[0] = done.completed()
-                        ? "Winner: " + (done.result() == null ? "?"
-                            : done.result().winner() == 0 ? "you" : done.result().winner() == 1 ? "opponent" : "draw")
-                        : "Duel ended without a result";
-                    watcher.send(server, Component.literal("Duel over - " + result[0])
-                        .withStyle(ChatFormatting.GOLD));
+                    winner[0] = done.completed() && done.result() != null ? done.result().winner() : -1;
                 }
                 else if(event instanceof DuelSession.Event.Failed failed)
                 {
                     over[0] = true;
-                    result[0] = "Duel failed: " + failed.reason();
-                    watcher.send(server, Component.literal(result[0]).withStyle(ChatFormatting.RED));
+                    failure[0] = "Duel failed: " + failed.reason();
                 }
             });
 
-            // Anything after the last checkpoint still has to be played; it
-            // commits no board of its own.
-            if(!events.isEmpty() || !log.isEmpty() || over[0])
+            for(int seat = 0; seat < 2; seat++)
             {
-                outbound.add(new PromptMessages.DuelUpdate(null, List.of(), false, "", new int[0],
-                    new ArrayList<>(events)));
-                events.clear();
-            }
-
-            if(!watcher.console() && !outbound.isEmpty())
-            {
-                ServerPlayer player = server.getPlayerList().getPlayer(watcher.playerId());
-                if(player != null)
+                Watcher watcher = duel.seats[seat];
+                if(watcher == null)
                 {
-                    int lastUpdate = -1;
-                    for(int i = 0; i < outbound.size(); i++)
+                    continue;
+                }
+                // Anything after the last checkpoint still has to be played.
+                if(!pending[seat].isEmpty() || !log.isEmpty() || over[0])
+                {
+                    outbound[seat].add(new PromptMessages.DuelUpdate(null, List.of(), false, "",
+                        new int[0], new ArrayList<>(pending[seat])));
+                    pending[seat].clear();
+                }
+
+                // The result is stated from this seat's point of view: the same
+                // duel is a win to one player and a loss to the other.
+                String result = "";
+                if(over[0])
+                {
+                    result = failure[0] != null ? failure[0]
+                        : winner[0] == -1 ? "Duel ended without a result"
+                        : winner[0] == seat ? "Winner: you"
+                        : winner[0] == (1 - seat) ? "Winner: opponent" : "Winner: draw";
+                }
+                if(watcher.console())
+                {
+                    if(over[0])
                     {
-                        if(outbound.get(i) instanceof PromptMessages.DuelUpdate)
-                        {
-                            lastUpdate = i;
-                        }
+                        watcher.send(server, Component.literal("Duel over - " + result)
+                            .withStyle(ChatFormatting.GOLD));
                     }
-                    for(int i = 0; i < outbound.size(); i++)
+                    continue;
+                }
+                ServerPlayer player = server.getPlayerList().getPlayer(watcher.playerId());
+                if(player == null || outbound[seat].isEmpty())
+                {
+                    continue;
+                }
+                int lastUpdate = -1;
+                for(int i = 0; i < outbound[seat].size(); i++)
+                {
+                    if(outbound[seat].get(i) instanceof PromptMessages.DuelUpdate)
                     {
-                        if(outbound.get(i) instanceof PromptMessages.DuelUpdate update)
-                        {
-                            // The log and the result belong to the batch, so
-                            // they ride on its final update.
-                            boolean last = i == lastUpdate;
-                            de.cas_ual_ty.dueldimension.DuelDimension.channel.send(
-                                net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
-                                new PromptMessages.DuelUpdate(update.board(),
-                                    last ? log : List.of(), last && over[0], last ? result[0] : "",
-                                    new int[0], update.events()));
-                        }
-                        else if(outbound.get(i) instanceof DuelSession.Event.Prompt prompt)
-                        {
-                            de.cas_ual_ty.dueldimension.DuelDimension.channel.send(
-                                net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
-                                new PromptMessages.ShowPrompt(prompt.prompt(), prompt.serial()));
-                        }
+                        lastUpdate = i;
+                    }
+                }
+                for(int i = 0; i < outbound[seat].size(); i++)
+                {
+                    Object packet = outbound[seat].get(i);
+                    if(packet instanceof PromptMessages.DuelUpdate update)
+                    {
+                        boolean last = i == lastUpdate;
+                        de.cas_ual_ty.dueldimension.DuelDimension.channel.send(
+                            net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
+                            new PromptMessages.DuelUpdate(update.board(),
+                                last ? log : List.of(), last && over[0], last ? result : "",
+                                new int[0], update.events()));
+                    }
+                    else if(packet instanceof DuelSession.Event.Prompt prompt)
+                    {
+                        de.cas_ual_ty.dueldimension.DuelDimension.channel.send(
+                            net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
+                            new PromptMessages.ShowPrompt(prompt.prompt(), prompt.serial()));
                     }
                 }
             }
 
             if(!session.isRunning())
             {
-                finished.add(watcher);
-                SEATS.remove(watcher.playerId());
-                if(selfTestMode && watcher.console())
+                for(Watcher watcher : duel.seats)
                 {
-                    org.apache.logging.log4j.LogManager.getLogger()
-                        .info("[selftest] duel finished, stopping server");
-                    server.halt(false);
+                    if(watcher != null)
+                    {
+                        finished.add(watcher);
+                        SEATS.remove(watcher.playerId());
+                        if(selfTestMode && watcher.console())
+                        {
+                            org.apache.logging.log4j.LogManager.getLogger()
+                                .info("[selftest] duel finished, stopping server");
+                            server.halt(false);
+                        }
+                    }
                 }
             }
-        });
+        }
         finished.forEach(ACTIVE::remove);
     }
 
@@ -492,7 +579,19 @@ public final class DuelistDuels
      * Turns an engine message into something the client can animate and play a
      * sound for. Seat 0 is the watching player, so controller 0 is "you".
      */
-    private static List<DuelEvent> toDuelEvents(RawMessage raw)
+    /**
+     * Turns an engine message into animation events AS ONE SEAT MAY SEE THEM.
+     * <p>
+     * Two things have to be made relative, not just the board. Identity,
+     * because the tap reads the core's unfiltered stream and
+     * {@code generic_duel.cpp} would have rewritten it per player. And the
+     * controller byte, because the client draws controller 0 on the near side
+     * of the table -- sending seat 1 the absolute numbering would play every
+     * animation on the wrong half of the field.
+     *
+     * @param viewer the seat this stream is for, in the core's numbering
+     */
+    private static List<DuelEvent> toDuelEvents(RawMessage raw, int viewer)
     {
         DuelMessage message = DuelMessage.decode(raw);
 
@@ -503,7 +602,7 @@ public final class DuelistDuels
         if(message instanceof DuelMessage.Chaining chaining)
         {
             return List.of(new DuelEvent(DuelEvent.Kind.CHAINING, chaining.code(),
-                -1, zoneOf(chaining.card()), 0, chaining.card().controller()));
+                -1, zoneOf(chaining.card(), viewer), 0, side(chaining.card().controller(), viewer)));
         }
         if(message instanceof DuelMessage.BecomeTarget target)
         {
@@ -511,7 +610,7 @@ public final class DuelistDuels
             for(de.cas_ual_ty.dueldimension.ocg.msg.CardLocation location : target.targets())
             {
                 events.add(new DuelEvent(DuelEvent.Kind.BECOME_TARGET, 0,
-                    -1, zoneOf(location), 0, location.controller()));
+                    -1, zoneOf(location, viewer), 0, side(location.controller(), viewer)));
             }
             return events;
         }
@@ -519,7 +618,7 @@ public final class DuelistDuels
         {
             // A flip summon always ends face up.
             return List.of(new DuelEvent(DuelEvent.Kind.FLIP, flip.code(),
-                -1, zoneOf(flip.card()), 1, flip.card().controller()));
+                -1, zoneOf(flip.card(), viewer), 1, side(flip.card().controller(), viewer)));
         }
         // The announce messages carry the pause a summon has in the reference:
         // duelclient.cpp:3281 holds a card splash for 30 then 11 frames before
@@ -527,12 +626,12 @@ public final class DuelistDuels
         if(message instanceof DuelMessage.Summoning summoning)
         {
             return List.of(new DuelEvent(DuelEvent.Kind.SUMMON, summoning.code(),
-                -1, -1, 0, summoning.card().controller()));
+                -1, -1, 0, side(summoning.card().controller(), viewer)));
         }
         if(message instanceof DuelMessage.SpSummoning spSummoning)
         {
             return List.of(new DuelEvent(DuelEvent.Kind.SPECIAL_SUMMON, spSummoning.code(),
-                -1, -1, 0, spSummoning.card().controller()));
+                -1, -1, 0, side(spSummoning.card().controller(), viewer)));
         }
         if(message instanceof DuelMessage.PositionChange position)
         {
@@ -540,19 +639,20 @@ public final class DuelistDuels
             // set applies: the core names it to every seat, we do not.
             boolean nowHidden = (position.position()
                 & de.cas_ual_ty.dueldimension.ocg.OcgConstants.POS_FACEDOWN) != 0;
-            int shown = nowHidden && position.controller() != 0 ? 0 : position.code();
+            int shown = nowHidden && position.controller() != viewer ? 0 : position.code();
             // `amount` carries which way the card is turning, so the animation
             // knows whether it ends on the face or the back.
             return List.of(new DuelEvent(DuelEvent.Kind.POSITION, shown, -1,
-                DuelEvent.zoneOf(position.controller(), position.location(), position.sequence(), 0),
-                nowHidden ? 0 : 1, position.controller()));
+                DuelEvent.zoneOf(side(position.controller(), viewer), position.location(),
+                    position.sequence(), 0),
+                nowHidden ? 0 : 1, side(position.controller(), viewer)));
         }
         if(message instanceof DuelMessage.PayLpCost cost)
         {
             // duelclient.cpp:3690 plays the damage sound for a paid cost, so
             // it rides the same event as battle damage.
             return List.of(new DuelEvent(DuelEvent.Kind.DAMAGE, 0, -1, -1, cost.amount(),
-                cost.player()));
+                side(cost.player(), viewer)));
         }
         if(message instanceof DuelMessage.TossCoin coin)
         {
@@ -564,7 +664,7 @@ public final class DuelistDuels
                 packed |= (coin.results().get(i) & 1) << i;
             }
             return List.of(new DuelEvent(DuelEvent.Kind.COIN, coin.results().size(), -1, -1,
-                packed, coin.player()));
+                packed, side(coin.player(), viewer)));
         }
         if(message instanceof DuelMessage.TossDice dice)
         {
@@ -575,36 +675,43 @@ public final class DuelistDuels
                 packed |= (dice.results().get(i) & 0x3F) << (i * 6);
             }
             return List.of(new DuelEvent(DuelEvent.Kind.DICE, dice.results().size(), -1, -1,
-                packed, dice.player()));
+                packed, side(dice.player(), viewer)));
         }
         if(message instanceof DuelMessage.SetCard set)
         {
             // A set card's identity is hidden information; only its owner's
             // client may hear the code.
             return List.of(new DuelEvent(DuelEvent.Kind.SET,
-                set.card().controller() == 0 ? set.code() : 0,
-                -1, zoneOf(set.card()), 0, set.card().controller()));
+                set.card().controller() == viewer ? set.code() : 0,
+                -1, zoneOf(set.card(), viewer), 0, side(set.card().controller(), viewer)));
         }
 
-        DuelEvent single = toDuelEvent(message);
+        DuelEvent single = toDuelEvent(message, viewer);
         return single == null ? List.of() : List.of(single);
     }
 
-    /** Packs a decoded location the way the animation layer expects. */
-    private static int zoneOf(de.cas_ual_ty.dueldimension.ocg.msg.CardLocation location)
+    /** The core's controller byte as this viewer sees it: 0 is always their own side. */
+    private static int side(int controller, int viewer)
     {
-        return DuelEvent.zoneOf(location.controller(), location.location(), location.sequence(), 0);
+        return controller == viewer ? 0 : 1;
     }
 
-    private static DuelEvent toDuelEvent(DuelMessage message)
+    /** Packs a decoded location the way the animation layer expects, for one viewer. */
+    private static int zoneOf(de.cas_ual_ty.dueldimension.ocg.msg.CardLocation location, int viewer)
+    {
+        return DuelEvent.zoneOf(side(location.controller(), viewer), location.location(),
+            location.sequence(), 0);
+    }
+
+    private static DuelEvent toDuelEvent(DuelMessage message, int viewer)
     {
 
         if(message instanceof DuelMessage.Move move)
         {
-            int from = DuelEvent.zoneOf(move.from().controller(), move.from().location(),
-                move.from().sequence(), 0);
-            int to = DuelEvent.zoneOf(move.to().controller(), move.to().location(),
-                move.to().sequence(), 0);
+            int from = DuelEvent.zoneOf(side(move.from().controller(), viewer),
+                move.from().location(), move.from().sequence(), 0);
+            int to = DuelEvent.zoneOf(side(move.to().controller(), viewer),
+                move.to().location(), move.to().sequence(), 0);
             // A move is just the slide, as in the reference: the pageantry of a
             // summon or activation arrives separately (MSG_SUMMONING splash,
             // MSG_CHAINING marker), so classifying moves as summons here both
@@ -619,42 +726,42 @@ public final class DuelistDuels
             // briefly wore its true art -- the settled board was honest, the
             // animation was not.
             int shownCode = move.code();
-            if(move.to().controller() != 0
+            if(move.to().controller() != viewer
                 && ((move.to().position() & de.cas_ual_ty.dueldimension.ocg.OcgConstants.POS_FACEDOWN) != 0
                     || move.to().location() == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_HAND
                     || move.to().location() == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_DECK))
             {
                 shownCode = 0;
             }
-            return new DuelEvent(kind, shownCode, from, to, 0, move.to().controller());
+            return new DuelEvent(kind, shownCode, from, to, 0, side(move.to().controller(), viewer));
         }
         if(message instanceof DuelMessage.Attack attack)
         {
             // A direct attack has no target zone; the animation lunges at the
             // defending player's side of the table instead.
-            int from = DuelEvent.zoneOf(attack.attacker().controller(), attack.attacker().location(),
-                attack.attacker().sequence(), 0);
+            int from = DuelEvent.zoneOf(side(attack.attacker().controller(), viewer),
+                attack.attacker().location(), attack.attacker().sequence(), 0);
             int to = attack.isDirect() ? -1
-                : DuelEvent.zoneOf(attack.target().controller(), attack.target().location(),
-                    attack.target().sequence(), 0);
+                : DuelEvent.zoneOf(side(attack.target().controller(), viewer),
+                    attack.target().location(), attack.target().sequence(), 0);
             return new DuelEvent(DuelEvent.Kind.ATTACK, 0, from, to, 0,
-                attack.attacker().controller());
+                side(attack.attacker().controller(), viewer));
         }
         if(message instanceof DuelMessage.Damage damage)
         {
-            return new DuelEvent(DuelEvent.Kind.DAMAGE, 0, -1, -1, damage.amount(), damage.player());
+            return new DuelEvent(DuelEvent.Kind.DAMAGE, 0, -1, -1, damage.amount(), side(damage.player(), viewer));
         }
         if(message instanceof DuelMessage.Recover recover)
         {
-            return new DuelEvent(DuelEvent.Kind.RECOVER, 0, -1, -1, recover.amount(), recover.player());
+            return new DuelEvent(DuelEvent.Kind.RECOVER, 0, -1, -1, recover.amount(), side(recover.player(), viewer));
         }
         if(message instanceof DuelMessage.Draw draw)
         {
-            return new DuelEvent(DuelEvent.Kind.DRAW, 0, -1, -1, draw.cards().size(), draw.player());
+            return new DuelEvent(DuelEvent.Kind.DRAW, 0, -1, -1, draw.cards().size(), side(draw.player(), viewer));
         }
         if(message instanceof DuelMessage.ShuffleDeck shuffle)
         {
-            return new DuelEvent(DuelEvent.Kind.SHUFFLE, 0, -1, -1, 0, shuffle.player());
+            return new DuelEvent(DuelEvent.Kind.SHUFFLE, 0, -1, -1, 0, side(shuffle.player(), viewer));
         }
         if(message instanceof DuelMessage.NewPhase phase)
         {
@@ -662,7 +769,7 @@ public final class DuelistDuels
         }
         if(message instanceof DuelMessage.NewTurn turn)
         {
-            return new DuelEvent(DuelEvent.Kind.NEW_TURN, 0, -1, -1, 0, turn.player());
+            return new DuelEvent(DuelEvent.Kind.NEW_TURN, 0, -1, -1, 0, side(turn.player(), viewer));
         }
         if(message instanceof DuelMessage.Win win)
         {
@@ -686,7 +793,7 @@ public final class DuelistDuels
 
     public static void stopAll()
     {
-        ACTIVE.values().forEach(DuelSession::stop);
+        ACTIVE.values().forEach(duel -> duel.session.stop());
         ACTIVE.clear();
     }
 }
