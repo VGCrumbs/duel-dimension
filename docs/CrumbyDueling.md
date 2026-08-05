@@ -64,9 +64,9 @@ Fork of [YgoDuelingMod](https://github.com/CAS-ual-TY/YgoDuelingMod) (Forge 1.19
 - [x] Spike: create duel → load scripts → pump messages → reach `AWAITING` (verified 2026-08-04)
 - [x] `CdbCardProvider` — BabelCDB `.cdb` → card-reader callback (compiled; not yet exercised in a duel)
 - [x] **Rebrand commit** — mod id `duelmonsters`, `mods.toml`, `assets/`+`data/` namespaces, lang keys, translation-key literals, Gradle refs (2026-08-04)
-- [ ] Extract spike → `HeadlessDuelRunner` + `ResponseSource` interface (with `observe()`, lifecycle callbacks, `BotMemory`)
-- [ ] JUnit wired up; `gradlew17` wrapper script committed
-- **Gate:** `test` runs green, incremental, in seconds
+- [x] Extract spike → `HeadlessDuelRunner` + `ResponseSource` interface (`observe()` + lifecycle; per-bot memory arrives with the bots in Phase 3)
+- [x] JUnit wired up (5 green; engine tests skip when native/scripts absent); `gradlew17` wrapper committed
+- **Gate:** ✅ `test` green in ~18s cold, incremental faster (2026-08-04)
 
 ## Phase 1 — Protocol precision layer
 
