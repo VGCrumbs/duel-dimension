@@ -610,13 +610,16 @@ public class EngineDuelScreen extends Screen
         boardRenderer.setCanAttack(hit -> optionsFor(hit).stream().anyMatch(index ->
             prompt != null && prompt.options().get(index).command() == CardCommands.COMMAND_ATTACK));
 
-        // EDOPro's frustum is off-centre by design: it pushes the table into
-        // the right two thirds and leaves the left for the card-info column.
-        // So the camera gets the whole screen, and the sidebar is drawn over
-        // the space the projection already reserved.
-        int fieldLeft = 0;
+        // EDOPro's frustum is off-centre by design (M[8] = 1/3) so the table
+        // sits right of screen centre and leaves room for the card-info column.
+        // FieldLayout.fit already cancels that bias and centres the table in
+        // whatever box it is handed, so the box is the space actually left over:
+        // between the card preview and the right window edge. Handing it the
+        // whole window instead centres the table behind the sidebar, which is
+        // what made the mat look shoved off to one side.
+        int fieldLeft = SIDEBAR_W;
         int fieldTop = TOP_BAR_H;
-        int fieldWidth = width;
+        int fieldWidth = width - SIDEBAR_W;
         int fieldHeight = height - fieldTop - 30;
         boardRenderer.render(poseStack, font, board, fieldLeft, fieldTop, fieldWidth, fieldHeight, highlights);
 
@@ -919,7 +922,7 @@ public class EngineDuelScreen extends Screen
         int imageW = SIDEBAR_W - SIDEBAR_PAD * 2;
         int imageH = Math.round(imageW / DuelTextures.CARD_ASPECT);
         ScreenUtil.white();
-        CardRenderUtil.bindMainResourceLocation(
+        DuelTextures.bindSmooth(
             DuelTextures.card(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE));
         // Sample the card out of its letterboxed square, or it stretches.
         DdBlitUtil.blit(poseStack, SIDEBAR_PAD, SIDEBAR_PAD, imageW, imageH,
@@ -1037,12 +1040,12 @@ public class EngineDuelScreen extends Screen
             ScreenUtil.white();
             if(card == null)
             {
-                CardRenderUtil.bindMainResourceLocation(DuelTextures.COVER);
+                DuelTextures.bindSmooth(DuelTextures.COVER);
                 DdBlitUtil.fullBlit(poseStack, x, y, cardW, cardH);
             }
             else
             {
-                CardRenderUtil.bindMainResourceLocation(
+                DuelTextures.bindSmooth(
                     DuelTextures.card(card, (byte)0, DuelTextures.FIELD_CARD_SIZE));
                 DdBlitUtil.blit(poseStack, x, y, cardW, cardH,
                     DuelTextures.CARD_U0, DuelTextures.CARD_V0,

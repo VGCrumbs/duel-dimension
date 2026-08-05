@@ -17,7 +17,11 @@ import java.util.List;
  */
 public class HeadlessDuelRunner
 {
-    /** Cards of one player, as passcodes. Order is pre-shuffle (the core shuffles by seed). */
+    /**
+     * Cards of one player, as passcodes, in deck-list order. {@link #registerDecks}
+     * shuffles {@code main} before handing it to the core — the core itself never
+     * shuffles a deck at duel start.
+     */
     public record Deck(List<Integer> main, List<Integer> extra)
     {
         public static final Deck EMPTY = new Deck(List.of(), List.of());
@@ -238,20 +242,68 @@ public class HeadlessDuelRunner
         }
     }
 
+    /**
+     * Shuffles and registers both decks, following the reference host in
+     * {@code gframe/generic_duel.cpp}.
+     * <p>
+     * The core does <em>not</em> shuffle at duel start — {@code processor.cpp}
+     * only shuffles a deck when {@code core.shuffle_deck_check[p]} is raised by
+     * a card effect. Shuffling the opening deck is the host's job, and skipping
+     * it is why every duel dealt an identical hand.
+     * <p>
+     * Ported verbatim from the reference, twice over:
+     * <ul>
+     * <li>only {@code main} is shuffled; the extra deck keeps its order, since
+     * it is chosen from rather than drawn;</li>
+     * <li>the shuffle is skipped when {@link OcgConstants#DUEL_PSEUDO_SHUFFLE}
+     * is set, which is how hand-testing and replays keep a fixed order;</li>
+     * <li>cards are registered back to front ({@code for i = size-1; i >= 0})
+     * so element 0 of the list ends up on top of the deck.</li>
+     * </ul>
+     * The one deliberate difference: the reference seeds its shuffle from
+     * {@code Utils::GetRandomNumberGenerator()}, a fresh random_device-backed
+     * Xoshiro256**, and records the resulting order in the replay file. We have
+     * no replay file to lean on, so the shuffle is derived from the duel seed
+     * instead — that keeps (seed, decks, responses) a complete description of a
+     * duel, which the fuzzer and {@link Replay} both rely on.
+     */
     private void registerDecks(OcgDuel duel)
     {
+        boolean pseudoShuffle = (config.flags & OcgConstants.DUEL_PSEUDO_SHUFFLE) != 0;
+
         for(int player = 0; player < 2; player++)
         {
             Deck deck = config.decks[player];
-            for(int code : deck.main())
+
+            List<Integer> main = new ArrayList<>(deck.main());
+            if(!pseudoShuffle)
             {
-                duel.newCard(player, 0, code, player, OcgConstants.LOCATION_DECK, 0, OcgConstants.POS_FACEDOWN_DEFENSE);
+                // A per-player stream so one player's deck size cannot shift the other's order.
+                java.util.Collections.shuffle(main, shuffleRandom(config.seed, player));
             }
-            for(int code : deck.extra())
+
+            for(int i = main.size() - 1; i >= 0; i--)
             {
-                duel.newCard(player, 0, code, player, OcgConstants.LOCATION_EXTRA, 0, OcgConstants.POS_FACEDOWN_DEFENSE);
+                duel.newCard(player, 0, main.get(i), player, OcgConstants.LOCATION_DECK, 0, OcgConstants.POS_FACEDOWN_DEFENSE);
+            }
+
+            List<Integer> extra = deck.extra();
+            for(int i = extra.size() - 1; i >= 0; i--)
+            {
+                duel.newCard(player, 0, extra.get(i), player, OcgConstants.LOCATION_EXTRA, 0, OcgConstants.POS_FACEDOWN_DEFENSE);
             }
         }
+    }
+
+    /** Mixes the four seed words and the seat into one shuffle stream. */
+    private static java.util.Random shuffleRandom(long[] seed, int player)
+    {
+        long mixed = 0x9E3779B97F4A7C15L * (player + 1);
+        for(long word : seed)
+        {
+            mixed = mixed * 0x100000001B3L ^ word;
+        }
+        return new java.util.Random(mixed);
     }
 
     private void pump(OcgDuel duel, DuelTrace trace, int maxSteps)

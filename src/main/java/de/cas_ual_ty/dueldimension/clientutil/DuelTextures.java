@@ -54,13 +54,20 @@ public final class DuelTextures
         new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/target.png");
 
     /**
-     * Cards drawn on the field. 256 rather than something smaller because the
-     * mod's own card info panels already generate that size, so field art
-     * appears immediately instead of waiting on a fresh render pass.
+     * Cards drawn on the field.
+     * <p>
+     * A card on the table is perhaps 70 screen pixels wide, but Minecraft's GUI
+     * scale multiplies that by up to 4 on a large display, and the perspective
+     * enlarges the near row further. 512 keeps the art sharp at those sizes and
+     * costs one 1&nbsp;MB texture per distinct card in the duel.
+     * <p>
+     * The preview deliberately requests the same size: the pipeline caches one
+     * file per (card, size), so sharing the number means the field and the
+     * preview share a single texture instead of generating two.
      */
-    public static final int FIELD_CARD_SIZE = 256;
+    public static final int FIELD_CARD_SIZE = 512;
     /** The preview panel draws a card several hundred pixels tall. */
-    public static final int PREVIEW_CARD_SIZE = 256;
+    public static final int PREVIEW_CARD_SIZE = 512;
 
     /** EDOPro's cover.png is 480x700; keep that ratio wherever we draw a card. */
     public static final float CARD_ASPECT = 480F / 700F;
@@ -105,6 +112,32 @@ public final class DuelTextures
 
     private DuelTextures()
     {
+    }
+
+    /**
+     * Binds a texture with bilinear filtering.
+     * <p>
+     * Card art reaches the game through a resource pack, so Minecraft loads it
+     * as a {@link net.minecraft.client.renderer.texture.SimpleTexture}, which
+     * defaults to {@code blur = false} — GL_NEAREST. That is the right default
+     * for block and item art, where the pixels are the art, but a photographic
+     * card image minified into a field zone under a perspective transform then
+     * samples one texel per pixel and comes out crawling and aliased.
+     * <p>
+     * Irrlicht gives EDOPro bilinear filtering on card quads by default
+     * ({@code EMF_BILINEAR_FILTER} is on in every material it builds), so this
+     * matches the reference as well as looking better.
+     * <p>
+     * {@code setFilter} binds the texture and sets the GL parameters, which is
+     * exactly what {@code setShaderTexture} would have done, so this replaces
+     * that call rather than adding to it. The setting sticks on the texture
+     * object but is reset whenever resources reload, so it is applied per draw.
+     */
+    public static void bindSmooth(ResourceLocation texture)
+    {
+        net.minecraft.client.Minecraft.getInstance().getTextureManager()
+            .getTexture(texture).setFilter(true, false);
+        com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, texture);
     }
 
     /**

@@ -109,7 +109,7 @@ public final class FieldQuad
     {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
-        RenderSystem.setShaderTexture(0, texture);
+        DuelTextures.bindSmooth(texture);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
 
@@ -174,7 +174,7 @@ public final class FieldQuad
     {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(red, green, blue, alpha);
-        RenderSystem.setShaderTexture(0, texture);
+        DuelTextures.bindSmooth(texture);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
 

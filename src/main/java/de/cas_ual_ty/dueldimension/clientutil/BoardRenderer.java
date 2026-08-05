@@ -41,8 +41,22 @@ public class BoardRenderer extends GuiComponent
     private static final int COLOUR_ZONE = 0x50FFFFFF;
     private static final int COLOUR_HIGHLIGHT = 0xC000FF66;
     private static final int COLOUR_HIGHLIGHT_FILL = 0x4000FF66;
-    /** Faint zone outline, so the grid is always legible. */
-    private static final int COLOUR_GRID = 0x50B0B8C0;
+    /**
+     * The persistent zone grid.
+     * <p>
+     * EDOPro's mat carries no slot dividers of its own — field4.png prints one
+     * open panel per player plus the two extra monster zones, and nothing
+     * between the five columns (verified against the texture: the panel is a
+     * flat #000 at alpha 207 from border to border). EDOPro gets away with that
+     * because it only outlines zones while the core is asking you to pick one,
+     * via DrawSelectionLine at width 2. Standing still, its board shows no
+     * slots at all.
+     * <p>
+     * A mat with no visible rows or columns reads as broken, so every zone
+     * keeps a box: a dim fill and a 2px outline in EDOPro's own line width.
+     */
+    private static final int COLOUR_GRID = 0xB0C8D0DC;
+    private static final int COLOUR_GRID_FILL = 0x26FFFFFF;
     private static final int COLOUR_ACTIONABLE = 0xE0FFD700;
 
     /** A drawn slot; piles use sequence -1. */
@@ -252,8 +266,8 @@ public class BoardRenderer extends GuiComponent
         boolean zoneLit = hit.zoneRef() >= 0 && zoneHighlights.contains(hit.zoneRef());
         boolean canAct = actionable.test(hit);
 
-        // Every zone keeps a faint outline so the grid reads even where the
-        // mat's own print is dark, and gains a stronger one when it matters.
+        // Every zone keeps a box so the rows and columns read at a glance, and
+        // gains a stronger one when the core is actually offering it.
         if(zoneLit)
         {
             FieldQuad.fill(poseStack, hit.corners(), COLOUR_HIGHLIGHT_FILL);
@@ -263,8 +277,13 @@ public class BoardRenderer extends GuiComponent
         {
             FieldQuad.outline(poseStack, hit.corners(), COLOUR_ACTIONABLE);
         }
-        else
+        else if(!inHand)
         {
+            // Hand cards are not zones and get no slot box.
+            if(!slot.present())
+            {
+                FieldQuad.fill(poseStack, hit.corners(), COLOUR_GRID_FILL);
+            }
             FieldQuad.outline(poseStack, hit.corners(), COLOUR_GRID);
         }
         hits.add(hit);
