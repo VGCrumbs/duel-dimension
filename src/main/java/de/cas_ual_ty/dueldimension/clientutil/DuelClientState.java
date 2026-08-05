@@ -37,9 +37,38 @@ public final class DuelClientState
      * events have been animated, so the field never shows a card that has not
      * finished moving.
      */
+    /**
+     * One item of the duel's playback stream: an update (events plus the board
+     * they produced), a prompt, or the result. All three ride the SAME queue
+     * because the reference has exactly one: EDOPro's select messages are
+     * cases inside ClientAnalyze, consumed from a single deque, so a prompt
+     * cannot be examined before everything preceding it has been animated.
+     * Setting the visible prompt straight from the packet handler let it jump
+     * this queue -- the screen would ask about an attack the player had not
+     * seen yet, because Screen.tick runs before ClientTickEvent.END drains
+     * pending into the animator, so the "is playback busy" gate read an
+     * animator that had not ingested the same batch's events.
+     */
     public record PendingUpdate(java.util.List<de.cas_ual_ty.dueldimension.ocg.prompt.DuelEvent> events,
-        BoardSnapshot board)
+        BoardSnapshot board, de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt promptToShow,
+        int promptSerial, boolean over, boolean won, String result)
     {
+        public static PendingUpdate ofUpdate(
+            java.util.List<de.cas_ual_ty.dueldimension.ocg.prompt.DuelEvent> events, BoardSnapshot board)
+        {
+            return new PendingUpdate(events, board, null, 0, false, false, "");
+        }
+
+        public static PendingUpdate ofPrompt(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt,
+            int serial)
+        {
+            return new PendingUpdate(java.util.List.of(), null, prompt, serial, false, false, "");
+        }
+
+        public static PendingUpdate ofOver(boolean won, String result)
+        {
+            return new PendingUpdate(java.util.List.of(), null, null, 0, true, won, result);
+        }
     }
 
     public static final Deque<PendingUpdate> pending = new ArrayDeque<>();
@@ -70,18 +99,86 @@ public final class DuelClientState
         {
             while(!pending.isEmpty())
             {
-                PendingUpdate update = pending.poll();
-                BoardSnapshot settled = update.board();
-                animations.accept(update.events(), () ->
-                {
-                    if(settled != null)
-                    {
-                        board = settled;
-                    }
-                });
+                PendingUpdate item = pending.poll();
+                animations.accept(item.events(), () -> apply(item));
             }
         }
         animations.tick(now);
+    }
+
+    /**
+     * Applies one stream item, in its place in the stream: the board first,
+     * then a prompt or the result. Runs as a zero-length step in the playback
+     * queue, so nothing here can be seen before its predecessors have played.
+     */
+    private static void apply(PendingUpdate item)
+    {
+        if(item.board() != null)
+        {
+            board = item.board();
+        }
+        if(item.promptToShow() != null)
+        {
+            promptSerial = item.promptSerial();
+            prompt = item.promptToShow();
+            over = false;
+            openScreen();
+        }
+        if(item.over())
+        {
+            over = true;
+            won = item.won();
+            result = item.result();
+            overSince = System.currentTimeMillis();
+            prompt = null;
+        }
+    }
+
+    /** Brings the duel screen up if the player closed it. */
+    public static void openScreen()
+    {
+        net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+        if(!(minecraft.screen instanceof EngineDuelScreen))
+        {
+            minecraft.setScreen(new EngineDuelScreen());
+        }
+    }
+
+    /** Serial of the prompt on screen, quoted back with its answer. */
+    public static volatile int promptSerial;
+
+    /** Where the mat choice survives restarts. */
+    private static java.nio.file.Path playMatFile()
+    {
+        return net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get()
+            .resolve("dueldimension-playmat.txt");
+    }
+
+    public static void savePlayMat()
+    {
+        try
+        {
+            java.nio.file.Files.writeString(playMatFile(), selfMat.id());
+        }
+        catch(java.io.IOException e)
+        {
+            // A cosmetic preference is not worth crashing over.
+        }
+    }
+
+    static
+    {
+        try
+        {
+            java.nio.file.Path file = playMatFile();
+            if(java.nio.file.Files.isRegularFile(file))
+            {
+                selfMat = PlayMats.byId(java.nio.file.Files.readString(file).strip());
+            }
+        }
+        catch(java.io.IOException e)
+        {
+        }
     }
 
     private DuelClientState()

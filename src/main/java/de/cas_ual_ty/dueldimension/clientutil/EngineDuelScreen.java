@@ -44,8 +44,6 @@ public class EngineDuelScreen extends Screen
     private static final int MIN_PREVIEW_H = 40;
     /** The preview card, as a fraction of the sidebar's text column. */
     private static final float PREVIEW_SCALE = 0.7F;
-    /** However backed up playback is, a prompt waits no longer than this. */
-    private static final long PROMPT_WAIT_CAP_MS = 6000;
     /** How long the victory or defeat card holds before the world returns. */
     private static final long RESULT_HOLD_MS = 5000;
     /** The play space starts this far below the header. */
@@ -76,6 +74,14 @@ public class EngineDuelScreen extends Screen
     private List<BoardSnapshot.Slot> pileView;
     private String pileViewLabel = "";
     private boolean answered;
+    /** Attacker zone noted when Attack is clicked; aims on the next prompt. */
+    private int pendingAimZone = -1;
+    /** The zone the aiming sword is drawn from, -1 when not aiming. */
+    private int aimZone = -1;
+    /** Where the aim points, sampled from the mouse six times a second. */
+    private float aimX;
+    private float aimY;
+    private long aimBucket = -1;
     /**
      * The duel history is off for now — see {@link #renderLog}. Kept as a field
      * so the band arithmetic still has something to read.
@@ -94,30 +100,10 @@ public class EngineDuelScreen extends Screen
     @Override
     protected void init()
     {
+        // The saved mat choice, told to the server so the opponent sees it.
+        DuelDimension.channel.sendToServer(
+            new PromptMessages.SetPlayMat(DuelClientState.selfMat.id()));
         rebuild();
-    }
-
-    /** When the prompt now waiting first arrived, for the stall guard below. */
-    private long promptSeenAt;
-
-    /**
-     * A prompt is only put up once playback has caught up.
-     * <p>
-     * EDOPro gets this for free: its parsing thread reaches a MSG_SELECT_* only
-     * after every earlier message has been drawn and waited out, so it can
-     * never ask you to act over a board that is still catching up. Our prompt
-     * arrives in its own packet and used to be shown the moment it landed,
-     * which is why the opponent's turn appeared to rush past and then hand you
-     * a decision. The guard is time-limited so a stuck queue can never lock a
-     * duel up.
-     */
-    private boolean readyToShow()
-    {
-        if(DuelClientState.prompt == null || !animations.isBusy())
-        {
-            return true;
-        }
-        return System.currentTimeMillis() - promptSeenAt > PROMPT_WAIT_CAP_MS;
     }
 
     @Override
@@ -132,17 +118,14 @@ public class EngineDuelScreen extends Screen
             onClose();
             return;
         }
+        // No gate needed here any more: the prompt is only ever set by a
+        // zero-length step in the playback queue, behind every event that
+        // preceded it, so by the time it changes the board has caught up.
         if(DuelClientState.prompt != shownPrompt)
         {
-            if(promptSeenAt == 0)
-            {
-                promptSeenAt = System.currentTimeMillis();
-            }
-            if(readyToShow())
-            {
-                promptSeenAt = 0;
-                rebuild();
-            }
+            aimZone = pendingAimZone;
+            pendingAimZone = -1;
+            rebuild();
         }
         if(searchBox != null)
         {
@@ -185,6 +168,7 @@ public class EngineDuelScreen extends Screen
             Component.literal("Mat: " + DuelClientState.selfMat.displayName()), pressed ->
         {
             DuelClientState.selfMat = DuelClientState.selfMat.next();
+            DuelClientState.savePlayMat();
             DuelDimension.channel.sendToServer(
                 new PromptMessages.SetPlayMat(DuelClientState.selfMat.id()));
             rebuild();
@@ -492,6 +476,17 @@ public class EngineDuelScreen extends Screen
 
     private void choose(int index)
     {
+        EnginePrompt aimPrompt = shownPrompt;
+        if(aimPrompt != null && index >= 0 && index < aimPrompt.options().size())
+        {
+            EnginePrompt.Option option = aimPrompt.options().get(index);
+            if(option.command() == CardCommands.COMMAND_ATTACK && option.hasSlot())
+            {
+                // The next prompt is the target choice: aim from this zone.
+                pendingAimZone = de.cas_ual_ty.dueldimension.ocg.prompt.DuelEvent.zoneOf(
+                    option.controller(), option.location(), option.sequence(), 0);
+            }
+        }
         EnginePrompt prompt = shownPrompt;
         if(prompt == null || answered)
         {
@@ -578,6 +573,7 @@ public class EngineDuelScreen extends Screen
 
     private void answer(int[] chosen, int declaredCode)
     {
+        aimZone = -1;
         if(answered)
         {
             return;
@@ -585,7 +581,8 @@ public class EngineDuelScreen extends Screen
         answered = true;
         closeMenu();
         DuelClientState.prompt = null;
-        DuelDimension.channel.sendToServer(new PromptMessages.AnswerPrompt(chosen, declaredCode));
+        DuelDimension.channel.sendToServer(new PromptMessages.AnswerPrompt(chosen, declaredCode,
+            DuelClientState.promptSerial));
         rebuild();
     }
 
@@ -814,6 +811,21 @@ public class EngineDuelScreen extends Screen
         animations.renderOverlays(poseStack, boardRenderer.projection(), now);
         animations.renderShatters(poseStack, boardRenderer.projection(), now);
 
+        // Aiming: after clicking Attack, the sword tracks the mouse until the
+        // target is chosen -- sampled six times a second, so it snaps rather
+        // than glides.
+        if(aimZone >= 0 && shownPrompt != null && !answered)
+        {
+            long bucket = now / 167;
+            if(bucket != aimBucket)
+            {
+                aimBucket = bucket;
+                aimX = mouseX;
+                aimY = mouseY;
+            }
+            animations.renderAim(poseStack, boardRenderer.projection(), aimZone, aimX, aimY);
+        }
+
         // Hover picks the preview card and opens that card's command menu.
         BoardRenderer.Hit hovered = null;
         for(BoardRenderer.Hit hit : boardRenderer.hits())
@@ -979,10 +991,14 @@ public class EngineDuelScreen extends Screen
         @Override
         public void renderButton(PoseStack poseStack, int mouseX, int mouseY, float partialTick)
         {
+            // The reference's phase buttons are not textures: game.cpp:316
+            // builds them with env->addButton, so Irrlicht's GUI skin draws
+            // them -- a flat face with a one-pixel bevel, nothing of
+            // Minecraft's stone-slab button art. Reproduced here by hand.
             boolean hovered = isHoveredOrFocused();
-            fill(poseStack, x, y, x + width, y + height, hovered ? 0xF0463020 : 0xC0201818);
-            drawCenteredString(poseStack, font, getMessage(), x + width / 2, y + 2,
-                hovered ? 0xFFFFAA : 0xE8E8E8);
+            drawPhaseCell(poseStack, x, y, width, height, hovered, false);
+            drawCenteredString(poseStack, font, getMessage(), x + width / 2,
+                y + (height - 8) / 2, hovered ? 0xFFE066 : 0xE8E8E8);
         }
     }
 
@@ -1089,6 +1105,25 @@ public class EngineDuelScreen extends Screen
             width / 2, bandTop + 70, 0x7A7A7A);
     }
 
+    /**
+     * One cell of the phase row, in the reference's skin-button style: a flat
+     * dark face with a one-pixel bevel, pressed-in for the current phase.
+     */
+    private void drawPhaseCell(PoseStack poseStack, int x, int y, int w, int h,
+        boolean hovered, boolean pressed)
+    {
+        int face = pressed ? 0xFF17171B : hovered ? 0xFF35353C : 0xFF26262C;
+        int light = 0xFF5C5C66;
+        int dark = 0xFF0E0E12;
+        fill(poseStack, x, y, x + w, y + h, face);
+        // Bevel: light top and left, dark bottom and right; inverted when
+        // pressed, which is how a flat skin shows the active state.
+        fill(poseStack, x, y, x + w, y + 1, pressed ? dark : light);
+        fill(poseStack, x, y, x + 1, y + h, pressed ? dark : light);
+        fill(poseStack, x, y + h - 1, x + w, y + h, pressed ? light : dark);
+        fill(poseStack, x + w - 1, y, x + w, y + h, pressed ? light : dark);
+    }
+
     /** Draws the phase row's labels and marks the current phase. */
     private void renderPhaseBar(PoseStack poseStack, BoardSnapshot board)
     {
@@ -1101,12 +1136,14 @@ public class EngineDuelScreen extends Screen
             int cellX = x + i * PHASE_CELL_W;
 
             if(phaseOptionFor(shownPrompt, PHASE_VALUES[i]) < 0)
+            if(phaseOptionFor(shownPrompt, PHASE_VALUES[i]) < 0)
             {
                 // Not reachable: no button exists, so this cell is a label.
-                fill(poseStack, cellX, PHASE_BAR_Y, cellX + PHASE_CELL_W - 1,
-                    PHASE_BAR_Y + PHASE_CELL_H, current ? 0xC0705000 : 0x90181818);
+                drawPhaseCell(poseStack, cellX, PHASE_BAR_Y, PHASE_CELL_W - 1, PHASE_CELL_H,
+                    false, current);
                 drawCenteredString(poseStack, font, PHASE_NAMES[i],
-                    cellX + PHASE_CELL_W / 2, PHASE_BAR_Y + 2, current ? 0xFFE066 : 0x6A6A6A);
+                    cellX + (PHASE_CELL_W - 1) / 2, PHASE_BAR_Y + (PHASE_CELL_H - 8) / 2,
+                    current ? 0xFFE066 : 0x6A6A6A);
             }
             if(current)
             {

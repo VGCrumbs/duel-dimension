@@ -137,7 +137,7 @@ public final class DuelistDuels
             DuelSession running = sessionHolder[0];
             if(running != null)
             {
-                running.postPrompt(prompt);
+                running.postPrompt(prompt, seat.pendingSerial());
             }
         });
         SEATS.put(serverPlayer.getUUID(), human);
@@ -340,7 +340,7 @@ public final class DuelistDuels
                             new int[0], new ArrayList<>(events)));
                         events.clear();
                     }
-                    outbound.add(prompt.prompt());
+                    outbound.add(prompt);
                 }
                 else if(event instanceof DuelSession.Event.Finished done)
                 {
@@ -395,11 +395,11 @@ public final class DuelistDuels
                                     last ? log : List.of(), last && over[0], last ? result[0] : "",
                                     new int[0], update.events()));
                         }
-                        else if(outbound.get(i) instanceof de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt)
+                        else if(outbound.get(i) instanceof DuelSession.Event.Prompt prompt)
                         {
                             de.cas_ual_ty.dueldimension.DuelDimension.channel.send(
                                 net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
-                                new PromptMessages.ShowPrompt(prompt));
+                                new PromptMessages.ShowPrompt(prompt.prompt(), prompt.serial()));
                         }
                     }
                 }

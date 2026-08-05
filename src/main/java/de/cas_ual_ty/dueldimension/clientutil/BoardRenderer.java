@@ -88,6 +88,8 @@ public class BoardRenderer extends GuiComponent
     private static final int COLOUR_ACTIONABLE = 0xE0FFD700;
     /** custom_skin_enum.inl: DECLR(DUELFIELD_STACK, 0xffffff00). */
     private static final int COLOUR_STACK = 0xFFFFFF00;
+    /** The reference's numFont is a display size; ours scales up to match. */
+    private static final float STACK_NUM_SCALE = 1.4F;
 
     /** A drawn slot; piles use sequence -1. */
     public record Hit(FieldQuad.Corners corners, int code, int controller, int location, int sequence,
@@ -296,39 +298,53 @@ public class BoardRenderer extends GuiComponent
     }
 
     /**
-     * The vertical faces of a pile, from its base rectangle up to the lifted
-     * top card: the front face (the edge nearest the viewer) and whichever
-     * side edge faces the camera's x. Both sample the card-edge stripe with v
-     * running 0..count, so each card in the pile contributes one white and
-     * gray band.
+     * The vertical faces of a pile, between its base outline and the lifted
+     * top face: the front (near) edge, and whichever side edge faces the
+     * camera's x. Both sample the card-edge stripe with v running once per
+     * card, so the side of a pile shows that many white and gray bands.
      */
-    private void drawStackSides(PoseStack poseStack, FieldLayout.Rect base, float lift, int count)
+    private void drawStackSides(PoseStack poseStack, FieldLayout.Rect rect,
+        FieldQuad.Corners base, FieldQuad.Corners top, int count)
     {
-        float nearY = base.y() + base.h();
         float tiles = Math.min(count, LIFT_CAP);
 
-        // Front face: base near edge up to the lifted near edge.
         FieldQuad.Corners front = new FieldQuad.Corners(
-            projection.x(base.x(), nearY - lift), projection.y(nearY - lift),
-            projection.x(base.x() + base.w(), nearY - lift), projection.y(nearY - lift),
-            projection.x(base.x() + base.w(), nearY), projection.y(nearY),
-            projection.x(base.x(), nearY), projection.y(nearY));
+            top.x3(), top.y3(), top.x2(), top.y2(),
+            base.x2(), base.y2(), base.x3(), base.y3());
         FieldQuad.drawCorners(poseStack, DuelTextures.STACK_SIDE, front, 0F, 0F, 1F, tiles, 0.92F, 1F);
 
-        // The side edge the camera can see: a pile right of the camera's x
-        // shows its left face, one left of it shows its right. Darker, as a
-        // turned face.
-        boolean leftFace = base.x() + base.w() / 2F > CAMERA_X;
-        float edgeX = leftFace ? base.x() : base.x() + base.w();
-        FieldQuad.Corners side = new FieldQuad.Corners(
-            projection.x(edgeX, base.y() - lift), projection.y(base.y() - lift),
-            projection.x(edgeX, nearY - lift), projection.y(nearY - lift),
-            projection.x(edgeX, nearY), projection.y(nearY),
-            projection.x(edgeX, base.y()), projection.y(base.y()));
+        boolean leftFace = rect.x() + rect.w() / 2F > CAMERA_X;
+        FieldQuad.Corners side = leftFace
+            ? new FieldQuad.Corners(top.x0(), top.y0(), top.x3(), top.y3(),
+                base.x3(), base.y3(), base.x0(), base.y0())
+            : new FieldQuad.Corners(top.x1(), top.y1(), top.x2(), top.y2(),
+                base.x2(), base.y2(), base.x1(), base.y1());
         FieldQuad.drawCorners(poseStack, DuelTextures.STACK_SIDE, side, 0F, 0F, 1F, tiles, 0.7F, 1F);
     }
 
-    /** game.h: FIELD_X, the camera's x. Which side face of a pile is seen. */
+    /** A card drawn at explicit screen corners, with its UV window and turn. */
+    private void drawCardAtCorners(PoseStack poseStack, ResourceLocation texture,
+        FieldQuad.Corners corners, int turns)
+    {
+        boolean edoproArt = texture.equals(DuelTextures.COVER)
+            || texture.equals(DuelTextures.COVER_OPPONENT) || texture.equals(DuelTextures.UNKNOWN);
+        float u0 = edoproArt ? 0F : DuelTextures.CARD_U0;
+        float v0 = edoproArt ? 0F : DuelTextures.CARD_V0;
+        float u1 = edoproArt ? 1F : DuelTextures.CARD_U1;
+        float v1 = edoproArt ? 1F : DuelTextures.CARD_V1;
+        if(turns >= 2)
+        {
+            float swap = u0;
+            u0 = u1;
+            u1 = swap;
+            swap = v0;
+            v0 = v1;
+            v1 = swap;
+        }
+        FieldQuad.drawCorners(poseStack, texture, corners, u0, v0, u1, v1, 1F, 1F);
+    }
+
+    /** game.h: FIELD_X, the camera    /** game.h: FIELD_X, the camera's x. Which side face of a pile is seen. */
     private static final float CAMERA_X = 4.2F;
 
     /**
@@ -353,11 +369,17 @@ public class BoardRenderer extends GuiComponent
         // "bottom" edge is the far one for the opponent and the near one for us.
         float edgeY = controller == 1 ? (corners.y0() + corners.y1()) / 2F
             : (corners.y2() + corners.y3()) / 2F;
-        int x = Math.round(centreX(corners)) - font.width(text) / 2;
-        int y = Math.round(edgeY) - 4;
+        // DrawStackIndicator centres numFont's dimension on that edge point
+        // (rect from coords - dim to coords + dim); numFont is a display
+        // face, noticeably larger than the body text, hence the scale.
+        poseStack.pushPose();
+        poseStack.scale(STACK_NUM_SCALE, STACK_NUM_SCALE, 1F);
+        int x = Math.round(centreX(corners) / STACK_NUM_SCALE) - font.width(text) / 2;
+        int y = Math.round(edgeY / STACK_NUM_SCALE) - 4;
         // DrawShadowText's offset is Resize(0, 1, 0, 1): one pixel down-right.
         font.draw(poseStack, text, x + 1, y + 1, 0xFF000000);
         font.draw(poseStack, text, x, y, COLOUR_STACK);
+        poseStack.popPose();
     }
 
     /** A zone shrunk to its grid box, so neighbouring slots stay separate. */
@@ -451,14 +473,23 @@ public class BoardRenderer extends GuiComponent
             FieldLayout.Rect pileCard = new FieldLayout.Rect(
                 rect.x() + (rect.w() - CARD_W) / 2F, rect.y() + (rect.h() - CARD_H) / 2F, CARD_W, CARD_H);
             int turns = turnsFor(controller, false);
-            // The pile as a solid block: the top card raised by the stack's
-            // height, and the faces beneath it textured with the two-row
-            // card-edge stripe, tiled once per card, so the side genuinely
-            // reads as that many stacked cards.
+            // The pile as a solid block. The lift is applied in SCREEN space:
+            // every corner of the top face moves up by the same pixel count,
+            // exactly like client_field.cpp's Z lift, which is a translation
+            // along the table normal. Lifting in field-y instead moved the
+            // near and far edges by different amounts (perspective), so the
+            // whole stack leaned.
             float stackLift = Math.min(count, LIFT_CAP) * LIFT_PER_CARD;
-            drawStackSides(poseStack, pileCard, stackLift, count);
-            pileCard = new FieldLayout.Rect(
-                pileCard.x(), pileCard.y() - stackLift, pileCard.w(), pileCard.h());
+            FieldQuad.Corners baseCorners = projection.quad(pileCard);
+            float pxPerFieldY = ((baseCorners.y2() + baseCorners.y3()) / 2F
+                - (baseCorners.y0() + baseCorners.y1()) / 2F) / pileCard.h();
+            float liftPx = stackLift * pxPerFieldY;
+            FieldQuad.Corners topCorners = new FieldQuad.Corners(
+                baseCorners.x0(), baseCorners.y0() - liftPx,
+                baseCorners.x1(), baseCorners.y1() - liftPx,
+                baseCorners.x2(), baseCorners.y2() - liftPx,
+                baseCorners.x3(), baseCorners.y3() - liftPx);
+            drawStackSides(poseStack, pileCard, baseCorners, topCorners, count);
 
             // The top card. A graveyard is always face up in the reference
             // (client_field.cpp excludes LOCATION_GRAVE from the face-down
@@ -472,7 +503,7 @@ public class BoardRenderer extends GuiComponent
             {
                 top = textureFor(topCard, false, controller);
             }
-            drawCardArt(poseStack, top, pileCard, turns);
+            drawCardAtCorners(poseStack, top, topCorners, turns);
             drawStackIndicator(poseStack, font, corners, controller, count);
         }
         if(canActivateFromHere)
@@ -517,7 +548,11 @@ public class BoardRenderer extends GuiComponent
             // and squares up the backs of the opponent's.
             FieldQuad.Corners sheared = projection.quad(rect);
             float bottomY = (sheared.y2() + sheared.y3()) / 2F;
-            float height = bottomY - (sheared.y0() + sheared.y1()) / 2F;
+            // Height comes from the width and the card's own aspect, never
+            // from the projection: the opponent's hand row is deep in the
+            // distance, where projected height collapses, which is what made
+            // their cards come out short and wide.
+            float height = (sheared.x2() - sheared.x3()) / DuelTextures.CARD_ASPECT;
             FieldQuad.Corners corners = new FieldQuad.Corners(
                 sheared.x3(), bottomY - height, sheared.x2(), bottomY - height,
                 sheared.x2(), bottomY, sheared.x3(), bottomY);
@@ -526,6 +561,15 @@ public class BoardRenderer extends GuiComponent
                 OcgConstants.LOCATION_HAND, i, -1, "Hand", 0);
             if(actionable.test(hit))
             {
+                // A soft breathing glow behind a hand card that can act. Only
+                // ever true for this player's own prompt -- options exist only
+                // in the prompt the server sent them -- so nothing is revealed
+                // about the opponent's hand.
+                float pulse = 0.10F + 0.08F * (float)Math.sin(System.currentTimeMillis() / 240D);
+                FieldQuad.Corners glow = new FieldQuad.Corners(
+                    corners.x0() - 3, corners.y0() - 3, corners.x1() + 3, corners.y1() - 3,
+                    corners.x2() + 3, corners.y2() + 3, corners.x3() - 3, corners.y3() + 3);
+                FieldQuad.drawCorners(poseStack, DuelTextures.WHITE, glow, 0F, 0F, 1F, 1F, 1F, pulse);
                 FieldQuad.drawCorners(poseStack, DuelTextures.SLOT_ACTIVE, corners,
                     0F, 0F, 1F, 1F, 1F, 1F);
             }

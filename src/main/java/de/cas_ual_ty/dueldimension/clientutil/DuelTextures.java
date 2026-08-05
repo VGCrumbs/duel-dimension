@@ -58,6 +58,13 @@ public final class DuelTextures
      */
     public static final ResourceLocation STACK_SIDE =
         new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/stackside.png");
+    /**
+     * Plain white, for tinted screen-space shapes (the attack line). Flat
+     * colour geometry has to go through the textured path here: the
+     * position_color path has never rendered on this screen.
+     */
+    public static final ResourceLocation WHITE =
+        new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/white.png");
     public static final ResourceLocation ACT =
         new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/act.png");
     public static final ResourceLocation ATTACK =

@@ -341,22 +341,24 @@ public class DuelAnimations
             {
                 continue;
             }
-            float ax = from.x() + from.w() / 2F;
-            float ay = from.y() + from.h() / 2F;
+            float ax = projection.x(from.x() + from.w() / 2F, from.y() + from.h() / 2F);
+            float ay = projection.y(from.y() + from.h() / 2F);
 
-            float dx;
-            float dy;
             FieldLayout.Rect target = zoneRect(event.toZone());
+            float tx;
+            float ty;
             if(target != null)
             {
-                dx = target.x() + target.w() / 2F;
-                dy = target.y() + target.h() / 2F;
+                tx = projection.x(target.x() + target.w() / 2F, target.y() + target.h() / 2F);
+                ty = projection.y(target.y() + target.h() / 2F);
             }
             else
             {
-                // Direct attack: aim at the defending player's side of the table.
-                dx = DIRECT_ATTACK_X;
-                dy = event.player() == 0 ? -DIRECT_ATTACK_Y : DIRECT_ATTACK_Y;
+                // Direct attack: aim at the defending player's side of the
+                // table, duelclient.cpp's own point (3.95, -+3.5).
+                float fieldY = event.player() == 0 ? -DIRECT_ATTACK_Y : DIRECT_ATTACK_Y;
+                tx = projection.x(DIRECT_ATTACK_X, fieldY);
+                ty = projection.y(fieldY);
             }
 
             float t = animation.progress(now);
@@ -364,21 +366,90 @@ public class DuelAnimations
             // it, so the direction reads before the strike lands.
             float reach = Math.min(1F, t * 2.2F);
             float alpha = t < 0.8F ? 1F : 1F - (t - 0.8F) / 0.2F;
-            drawArrow(poseStack, projection, ax, ay, ax + (dx - ax) * reach, ay + (dy - ay) * reach,
-                alpha);
+            drawLine(poseStack, ax, ay, ax + (tx - ax) * reach, ay + (ty - ay) * reach, alpha);
 
-            // The sword sets off once the line is drawn and flies to the target.
             if(t > 0.35F)
             {
                 float travel = Math.min(1F, (t - 0.35F) / 0.5F);
-                float swordX = ax + (dx - ax) * travel;
-                float swordY = ay + (dy - ay) * travel;
-                FieldQuad.draw(poseStack, DuelTextures.ATTACK,
-                    projection.cardQuad(swordX, swordY, SWORD_SIZE, SWORD_SIZE),
-                    1F, 1F, 1F, alpha);
+                float size = zoneWidth(projection, from) * 0.9F;
+                drawSword(poseStack, ax + (tx - ax) * travel, ay + (ty - ay) * travel,
+                    tx - ax, ty - ay, size, alpha);
             }
         }
     }
+
+    /**
+     * The aiming pointer: the attack line and sword drawn from the attacker to
+     * wherever the player is pointing, while the core waits for the target.
+     */
+    public void renderAim(PoseStack poseStack, FieldLayout.Projection projection,
+        int fromZone, float targetX, float targetY)
+    {
+        FieldLayout.Rect from = projection == null ? null : zoneRect(fromZone);
+        if(from == null)
+        {
+            return;
+        }
+        float ax = projection.x(from.x() + from.w() / 2F, from.y() + from.h() / 2F);
+        float ay = projection.y(from.y() + from.h() / 2F);
+        drawLine(poseStack, ax, ay, targetX, targetY, 0.9F);
+        float size = zoneWidth(projection, from) * 0.9F;
+        drawSword(poseStack, ax + (targetX - ax) * 0.7F, ay + (targetY - ay) * 0.7F,
+            targetX - ax, targetY - ay, size, 1F);
+    }
+
+    private static float zoneWidth(FieldLayout.Projection projection, FieldLayout.Rect rect)
+    {
+        FieldQuad.Corners corners = projection.quad(rect);
+        return corners.maxX() - corners.minX();
+    }
+
+    /** The red attack line, as a rotated quad cut from white.png. */
+    private static void drawLine(PoseStack poseStack, float x1, float y1, float x2, float y2,
+        float alpha)
+    {
+        float dx = x2 - x1;
+        float dy = y2 - y1;
+        float length = (float)Math.sqrt(dx * dx + dy * dy);
+        if(length < 1F)
+        {
+            return;
+        }
+        float px = -dy / length * LINE_HALF_WIDTH;
+        float py = dx / length * LINE_HALF_WIDTH;
+        FieldQuad.drawCorners(poseStack, DuelTextures.WHITE, new FieldQuad.Corners(
+                x1 + px, y1 + py, x2 + px, y2 + py, x2 - px, y2 - py, x1 - px, y1 - py),
+            0F, 0F, 1F, 1F, 1F, 0.15F, 0.15F, alpha * 0.8F);
+    }
+
+    /**
+     * The sword, rotated to fly point-first at its target. The art points
+     * straight up, so its base heading is -PI/2 and the rotation needed is
+     * atan2(dy, dx) + PI/2.
+     */
+    private static void drawSword(PoseStack poseStack, float cx, float cy, float dirX, float dirY,
+        float size, float alpha)
+    {
+        float angle = (float)(Math.atan2(dirY, dirX) + Math.PI / 2);
+        float cos = (float)Math.cos(angle);
+        float sin = (float)Math.sin(angle);
+        float half = size / 2F;
+        // Corners TL, TR, BR, BL of a square rotated about its centre.
+        float[] xs = {-half, half, half, -half};
+        float[] ys = {-half, -half, half, half};
+        float[] corner = new float[8];
+        for(int i = 0; i < 4; i++)
+        {
+            corner[i * 2] = cx + xs[i] * cos - ys[i] * sin;
+            corner[i * 2 + 1] = cy + xs[i] * sin + ys[i] * cos;
+        }
+        FieldQuad.drawCorners(poseStack, DuelTextures.ATTACK, new FieldQuad.Corners(
+                corner[0], corner[1], corner[2], corner[3], corner[4], corner[5], corner[6], corner[7]),
+            0F, 0F, 1F, 1F, 1F, 1F, 1F, alpha);
+    }
+
+    /** Half thickness of the attack line, in gui pixels. */
+    private static final float LINE_HALF_WIDTH = 1.6F;
 
     /**
      * A destroyed card breaking apart.
@@ -470,58 +541,6 @@ public class DuelAnimations
         }
     }
 
-    /** One arrow from (ax, ay) to (dx, dy) in field units. */
-    private static void drawArrow(PoseStack poseStack, FieldLayout.Projection projection,
-        float ax, float ay, float dx, float dy, float alphaScale)
-    {
-        float vx = dx - ax;
-        float vy = dy - ay;
-        float length = (float)Math.sqrt(vx * vx + vy * vy);
-        if(length < 0.05F)
-        {
-            return;
-        }
-        float ux = vx / length;
-        float uy = vy / length;
-        // Perpendicular, for the shaft's and head's width.
-        float px = -uy;
-        float py = ux;
-
-        float headLength = Math.min(ARROW_HEAD_LENGTH, length * 0.6F);
-        float neckX = dx - ux * headLength;
-        float neckY = dy - uy * headLength;
-
-        int colour = scaleAlpha(ATTACK_ARROW, alphaScale);
-
-        FieldQuad.fill(poseStack, corners(projection,
-            ax + px * ARROW_HALF_WIDTH, ay + py * ARROW_HALF_WIDTH,
-            neckX + px * ARROW_HALF_WIDTH, neckY + py * ARROW_HALF_WIDTH,
-            neckX - px * ARROW_HALF_WIDTH, neckY - py * ARROW_HALF_WIDTH,
-            ax - px * ARROW_HALF_WIDTH, ay - py * ARROW_HALF_WIDTH), colour);
-
-        // The head, as a quad with its two tip corners coincident.
-        FieldQuad.fill(poseStack, corners(projection,
-            neckX + px * ARROW_HEAD_HALF_WIDTH, neckY + py * ARROW_HEAD_HALF_WIDTH,
-            dx, dy, dx, dy,
-            neckX - px * ARROW_HEAD_HALF_WIDTH, neckY - py * ARROW_HEAD_HALF_WIDTH), colour);
-    }
-
-    /** Projects four field-unit points into screen corners. */
-    private static FieldQuad.Corners corners(FieldLayout.Projection projection,
-        float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3)
-    {
-        return new FieldQuad.Corners(
-            projection.x(x0, y0), projection.y(y0),
-            projection.x(x1, y1), projection.y(y1),
-            projection.x(x2, y2), projection.y(y2),
-            projection.x(x3, y3), projection.y(y3));
-    }
-
-    private static int scaleAlpha(int colour, float scale)
-    {
-        int alpha = Math.round((colour >>> 24) * Math.max(0F, Math.min(1F, scale)));
-        return (alpha << 24) | (colour & 0xFFFFFF);
-    }
 
     /**
      * A card sliding into the zone it just moved to. Drawn after the board so

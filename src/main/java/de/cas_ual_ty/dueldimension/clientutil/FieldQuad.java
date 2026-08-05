@@ -220,8 +220,15 @@ public final class FieldQuad
     public static void drawCorners(PoseStack poseStack, ResourceLocation texture, Corners corners,
         float u0, float v0, float u1, float v1, float shade, float alpha)
     {
+        drawCorners(poseStack, texture, corners, u0, v0, u1, v1, shade, shade, shade, alpha);
+    }
+
+    /** As above with a full tint, for coloured shapes cut from white.png. */
+    public static void drawCorners(PoseStack poseStack, ResourceLocation texture, Corners corners,
+        float u0, float v0, float u1, float v1, float red, float green, float blue, float alpha)
+    {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderColor(shade, shade, shade, alpha);
+        RenderSystem.setShaderColor(red, green, blue, alpha);
         DuelTextures.bindSmooth(texture);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();

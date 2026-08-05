@@ -55,7 +55,8 @@ public class DuelSession
          * before everything preceding it has been animated. Sending ours on a
          * side channel from the duel thread let it overtake the event stream.
          */
-        record Prompt(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt) implements Event
+        record Prompt(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt, int serial)
+            implements Event
         {
         }
     }
@@ -107,9 +108,9 @@ public class DuelSession
      * duel thread (it is: HumanResponseSource.respond runs there), so it lands
      * in the queue after every message that led up to it.
      */
-    public void postPrompt(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt)
+    public void postPrompt(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt, int serial)
     {
-        events.add(new Event.Prompt(prompt));
+        events.add(new Event.Prompt(prompt, serial));
     }
 
     /** Starts the duel thread. Returns immediately. */

@@ -22,37 +22,41 @@ public final class PromptMessages
     }
 
     /** Server -> client: here is a decision to make. */
-    public record ShowPrompt(EnginePrompt prompt)
+    public record ShowPrompt(EnginePrompt prompt, int serial)
     {
         public static void encode(ShowPrompt message, FriendlyByteBuf buffer)
         {
             message.prompt().write(buffer);
+            buffer.writeVarInt(message.serial());
         }
 
         public static ShowPrompt decode(FriendlyByteBuf buffer)
         {
-            return new ShowPrompt(EnginePrompt.read(buffer));
+            return new ShowPrompt(EnginePrompt.read(buffer), buffer.readVarInt());
         }
 
         public static void handle(ShowPrompt message, Supplier<NetworkEvent.Context> context)
         {
-            context.get().enqueueWork(() -> DuelDimension.proxy.showEnginePrompt(message.prompt()));
+            context.get().enqueueWork(
+                () -> DuelDimension.proxy.showEnginePrompt(message.prompt(), message.serial()));
             context.get().setPacketHandled(true);
         }
     }
 
     /** Client -> server: I picked these (indices; declaredCode for name declares). */
-    public record AnswerPrompt(int[] chosen, int declaredCode)
+    public record AnswerPrompt(int[] chosen, int declaredCode, int serial)
     {
         public static void encode(AnswerPrompt message, FriendlyByteBuf buffer)
         {
             buffer.writeVarIntArray(message.chosen());
             buffer.writeVarInt(message.declaredCode());
+            buffer.writeVarInt(message.serial());
         }
 
         public static AnswerPrompt decode(FriendlyByteBuf buffer)
         {
-            return new AnswerPrompt(buffer.readVarIntArray(), buffer.readVarInt());
+            return new AnswerPrompt(buffer.readVarIntArray(), buffer.readVarInt(),
+                buffer.readVarInt());
         }
 
         public static void handle(AnswerPrompt message, Supplier<NetworkEvent.Context> context)
@@ -64,7 +68,8 @@ public final class PromptMessages
                 if(sender != null)
                 {
                     de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.submitAnswer(sender,
-                        new HumanResponseSource.Answer(message.chosen(), message.declaredCode()));
+                        new HumanResponseSource.Answer(message.chosen(), message.declaredCode(),
+                            message.serial()));
                 }
             });
             ctx.setPacketHandled(true);

@@ -29,7 +29,7 @@ public class HumanResponseSource implements ResponseSource
     private static final int MAX_INVALID_ANSWERS = 8;
 
     /** What the player sent back: option indices plus the declared card code, if any. */
-    public record Answer(int[] chosen, int declaredCode)
+    public record Answer(int[] chosen, int declaredCode, int serial)
     {
     }
 
@@ -39,6 +39,17 @@ public class HumanResponseSource implements ResponseSource
 
     private BoardObserver board;
     private volatile DuelMessage pending;
+    /**
+     * Which asked question an answer belongs to. Every prompt shown carries a
+     * serial and an answer must quote it back; without this, a click meant
+     * for one question could land on the next one -- the indices are just
+     * numbers, and if they happen to be legal for the newer prompt the engine
+     * executes an action the player never chose. An out-of-turn position
+     * change is exactly what that looks like from the player's seat.
+     */
+    private final java.util.concurrent.atomic.AtomicInteger serials =
+        new java.util.concurrent.atomic.AtomicInteger();
+    private volatile int pendingSerial;
     private volatile ChainPreference chainPreference = ChainPreference.DEFAULT;
 
     // Turn context, tracked from the observed stream (same thread as the core).
@@ -115,6 +126,7 @@ public class HumanResponseSource implements ResponseSource
             for(int attempt = 0; attempt < MAX_INVALID_ANSWERS; attempt++)
             {
                 pending = decoded;
+                pendingSerial = serials.incrementAndGet();
                 sendPrompt.accept(payload, this);
 
                 Answer answer = answers.poll(TIMEOUT_MINUTES, TimeUnit.MINUTES);
@@ -148,11 +160,19 @@ public class HumanResponseSource implements ResponseSource
      */
     public boolean submit(Answer answer)
     {
-        if(pending == null)
+        if(pending == null || answer.serial() != pendingSerial)
         {
+            // Nothing waiting, or an answer to a question that is no longer
+            // being asked: drop it rather than let it hit the wrong prompt.
             return false;
         }
         return answers.offer(answer);
+    }
+
+    /** The serial of the question currently being asked. */
+    public int pendingSerial()
+    {
+        return pendingSerial;
     }
 
     public void setChainPreference(ChainPreference preference)

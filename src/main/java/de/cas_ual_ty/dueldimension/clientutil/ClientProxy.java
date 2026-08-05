@@ -331,13 +331,14 @@ public class ClientProxy implements ISidedProxy
     }
 
     @Override
-    public void showEnginePrompt(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt)
+    public void showEnginePrompt(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt, int serial)
     {
-        DuelClientState.prompt = prompt;
-        DuelClientState.over = false;
-        if(!(Minecraft.getInstance().screen instanceof EngineDuelScreen))
+        // Into the playback queue, never straight onto the screen: the prompt
+        // was sent after the events it concludes, and it must not be seen
+        // before they have PLAYED. Applying it here let it jump the queue.
+        synchronized(DuelClientState.class)
         {
-            Minecraft.getInstance().setScreen(new EngineDuelScreen());
+            DuelClientState.pending.add(DuelClientState.PendingUpdate.ofPrompt(prompt, serial));
         }
     }
 
@@ -352,7 +353,15 @@ public class ClientProxy implements ISidedProxy
             // field advances at the pace of the animation rather than jumping
             // to the settled state the moment the packet lands.
             DuelClientState.pending.add(
-                new DuelClientState.PendingUpdate(update.events(), update.board()));
+                DuelClientState.PendingUpdate.ofUpdate(update.events(), update.board()));
+            if(update.over())
+            {
+                // The result rides the stream too, after the win animation.
+                boolean won = update.result() != null
+                    && update.result().toLowerCase(java.util.Locale.ROOT).contains("winner: you");
+                DuelClientState.pending.add(
+                    DuelClientState.PendingUpdate.ofOver(won, update.result()));
+            }
         }
         // The opponent's whole turn arrives as updates with no prompt attached.
         // Only opening the screen for prompts meant those events queued up
@@ -367,17 +376,6 @@ public class ClientProxy implements ISidedProxy
         if(update.board() != null)
         {
             DuelClientState.warmUpBoard(update.board());
-        }
-        if(update.over())
-        {
-            DuelClientState.over = true;
-            DuelClientState.overSince = System.currentTimeMillis();
-            // The server phrases it as "Winner: you"; anything else is a loss
-            // or a draw, both of which show the defeat card.
-            DuelClientState.won = update.result() != null
-                && update.result().toLowerCase(java.util.Locale.ROOT).contains("winner: you");
-            DuelClientState.result = update.result();
-            DuelClientState.prompt = null;
         }
     }
 

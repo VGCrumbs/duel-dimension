@@ -18,7 +18,7 @@ public interface ISidedProxy
     }
 
     /** Shows a duel prompt; server side does nothing. */
-    default void showEnginePrompt(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt)
+    default void showEnginePrompt(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt, int serial)
     {
     }
 
