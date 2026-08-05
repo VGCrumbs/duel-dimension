@@ -66,6 +66,79 @@ public final class FieldQuad
         }
     }
 
+    /**
+     * Draws a texture across a field rectangle with perspective correction.
+     * <p>
+     * A GPU interpolates texture coordinates linearly across a triangle, so a
+     * single quad whose corners have been perspective-projected smears its
+     * texture: the far half is stretched and a diagonal seam appears along the
+     * split. That is fatal for the playmat, whose printed zones then land
+     * nowhere near the zones we draw on top of it. Subdividing the rectangle
+     * and projecting each cell separately keeps the error per cell far below
+     * a pixel, which is the standard remedy when the pipeline cannot be given
+     * homogeneous texture coordinates.
+     *
+     * @param steps cells per axis; cost is steps squared, 1 disables it
+     */
+    public static void drawProjected(PoseStack poseStack, ResourceLocation texture,
+        FieldLayout.Projection projection, FieldLayout.Rect rect, int steps)
+    {
+        drawProjected(poseStack, texture, projection, rect, steps, false);
+    }
+
+    /**
+     * @param quarterTurn rotate the texture 90 degrees within the rectangle,
+     *                    for a monster lying in defence position
+     */
+    public static void drawProjected(PoseStack poseStack, ResourceLocation texture,
+        FieldLayout.Projection projection, FieldLayout.Rect rect, int steps, boolean quarterTurn)
+    {
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+        RenderSystem.setShaderTexture(0, texture);
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+
+        Matrix4f matrix = poseStack.last().pose();
+        Tesselator tesselator = Tesselator.getInstance();
+        BufferBuilder buffer = tesselator.getBuilder();
+        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+
+        for(int row = 0; row < steps; row++)
+        {
+            float v0 = row / (float)steps;
+            float v1 = (row + 1) / (float)steps;
+            float y0 = rect.y() + rect.h() * v0;
+            float y1 = rect.y() + rect.h() * v1;
+
+            for(int column = 0; column < steps; column++)
+            {
+                float u0 = column / (float)steps;
+                float u1 = (column + 1) / (float)steps;
+                float x0 = rect.x() + rect.w() * u0;
+                float x1 = rect.x() + rect.w() * u1;
+
+                // (u,v) -> (v, 1-u) turns the art a quarter turn inside the
+                // same rectangle, which is how a defending monster lies.
+                float au = quarterTurn ? v0 : u0;
+                float av = quarterTurn ? 1F - u0 : v0;
+                float bu = quarterTurn ? v1 : u0;
+                float bv = quarterTurn ? 1F - u0 : v1;
+                float cu = quarterTurn ? v1 : u1;
+                float cv = quarterTurn ? 1F - u1 : v1;
+                float du = quarterTurn ? v0 : u1;
+                float dv = quarterTurn ? 1F - u1 : v0;
+
+                buffer.vertex(matrix, projection.x(x0, y0), projection.y(y0), 0).uv(au, av).endVertex();
+                buffer.vertex(matrix, projection.x(x0, y1), projection.y(y1), 0).uv(bu, bv).endVertex();
+                buffer.vertex(matrix, projection.x(x1, y1), projection.y(y1), 0).uv(cu, cv).endVertex();
+                buffer.vertex(matrix, projection.x(x1, y0), projection.y(y0), 0).uv(du, dv).endVertex();
+            }
+        }
+        tesselator.end();
+        RenderSystem.disableBlend();
+    }
+
     /** Draws the whole texture into the quad. */
     public static void draw(PoseStack poseStack, ResourceLocation texture, Corners corners)
     {

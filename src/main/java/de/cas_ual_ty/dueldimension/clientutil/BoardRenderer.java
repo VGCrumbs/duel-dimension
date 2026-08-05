@@ -26,6 +26,9 @@ import java.util.Set;
  */
 public class BoardRenderer extends GuiComponent
 {
+    /** Cards are small, so a light subdivision removes the affine smear. */
+    private static final int CARD_STEPS = 4;
+
     private static final int COLOUR_ZONE = 0x50FFFFFF;
     private static final int COLOUR_ZONE_FILL = 0x40000000;
     private static final int COLOUR_HIGHLIGHT = 0xC000FF66;
@@ -95,11 +98,12 @@ public class BoardRenderer extends GuiComponent
         zoneHighlights = highlights == null ? Set.of() : highlights;
         projection = FieldLayout.fit(left, top, width, height);
 
-        // EDOPro's mat, projected onto the same trapezoid as the zones.
-        FieldQuad.draw(poseStack, DuelTextures.FIELD, projection.quad(new FieldLayout.Rect(
+        // The mat spans the whole table, so it needs the most subdivision:
+        // drawn as one quad its printed zones drift far from the drawn ones.
+        FieldQuad.drawProjected(poseStack, DuelTextures.FIELD, projection, new FieldLayout.Rect(
             FieldLayout.FIELD_MIN_X, FieldLayout.FIELD_MIN_Y,
             FieldLayout.FIELD_MAX_X - FieldLayout.FIELD_MIN_X,
-            FieldLayout.FIELD_MAX_Y - FieldLayout.FIELD_MIN_Y)));
+            FieldLayout.FIELD_MAX_Y - FieldLayout.FIELD_MIN_Y), 24);
 
         for(int controller = 0; controller <= 1; controller++)
         {
@@ -157,8 +161,9 @@ public class BoardRenderer extends GuiComponent
 
         if(count > 0)
         {
-            FieldQuad.draw(poseStack, controller == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT,
-                corners);
+            FieldQuad.drawProjected(poseStack,
+                controller == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT,
+                projection, rect, CARD_STEPS);
             String text = Integer.toString(count);
             int textX = corners.minX() + (corners.maxX() - corners.minX() - font.width(text)) / 2;
             int textY = corners.maxY() - 10;
@@ -168,7 +173,7 @@ public class BoardRenderer extends GuiComponent
         if(canActivateFromHere)
         {
             // EDOPro draws tAct over a pile whose contents can be activated.
-            FieldQuad.draw(poseStack, DuelTextures.ACT, corners);
+            FieldQuad.drawProjected(poseStack, DuelTextures.ACT, projection, rect, 2);
         }
         hits.add(hit);
     }
@@ -196,9 +201,10 @@ public class BoardRenderer extends GuiComponent
             BoardSnapshot.Slot slot = hide
                 ? new BoardSnapshot.Slot(true, 0, true, false, 0, 0, 0)
                 : hand.get(i);
-            FieldQuad.Corners corners = projection.cardQuad(x, fieldY, cardW, cardH);
-            Hit hit = new Hit(corners, slot.code(), controller, OcgConstants.LOCATION_HAND, i, -1, "Hand", 0);
-            drawSlot(poseStack, slot, hit, null, true);
+            FieldLayout.Rect rect = new FieldLayout.Rect(x - cardW / 2F, fieldY - cardH / 2F, cardW, cardH);
+            Hit hit = new Hit(projection.quad(rect), slot.code(), controller,
+                OcgConstants.LOCATION_HAND, i, -1, "Hand", 0);
+            drawSlot(poseStack, slot, hit, rect, true);
             x += step;
         }
     }
@@ -218,25 +224,24 @@ public class BoardRenderer extends GuiComponent
         {
             return;
         }
-        if(slot.defence() && rect != null && !inHand)
+        if(slot.defence() && !inHand)
         {
-            // A defence-position monster lies on its side. Rotating the corner
-            // order keeps the card flat on the projected table.
+            // A defence-position monster lies on its side within its zone.
             FieldLayout.Rect turned = new FieldLayout.Rect(
                 rect.x() + (rect.w() - rect.h()) / 2F, rect.y() + (rect.h() - rect.w()) / 2F,
                 rect.h(), rect.w());
-            FieldQuad.Corners t = projection.quad(turned);
-            FieldQuad.draw(poseStack, textureFor(slot, inHand, hit.controller()),
-                new FieldQuad.Corners(t.x3(), t.y3(), t.x0(), t.y0(), t.x1(), t.y1(), t.x2(), t.y2()));
+            FieldQuad.drawProjected(poseStack, textureFor(slot, inHand, hit.controller()),
+                projection, turned, CARD_STEPS, true);
         }
         else
         {
-            FieldQuad.draw(poseStack, textureFor(slot, inHand, hit.controller()), hit.corners());
+            FieldQuad.drawProjected(poseStack, textureFor(slot, inHand, hit.controller()),
+                projection, rect, CARD_STEPS);
         }
         if(!inHand && canAttack.test(hit))
         {
             // drawing.cpp bobs tAttack over any card that may attack.
-            FieldQuad.draw(poseStack, DuelTextures.ATTACK, hit.corners());
+            FieldQuad.drawProjected(poseStack, DuelTextures.ATTACK, projection, rect, 2);
         }
     }
 
