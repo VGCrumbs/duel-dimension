@@ -33,21 +33,22 @@ public final class FieldLayout
 
     private static final float MZONE_Y = 0.8F;
     private static final float SZONE_Y = 2.0F;
-    private static final float SIDE_LOW_Y = 0.1F;   // field spell
     private static final float SIDE_HIGH_Y = 2.7F;  // extra deck, main deck
 
     /**
-     * The right-hand column stacks away from the viewer: deck nearest, then
-     * the graveyard directly above it, then the banished pile above that, each
-     * flush against the one below.
-     * <p>
-     * A deliberate departure from materials.cpp, which puts the graveyard and
-     * banished pile low and side by side (vFieldGrave at 6.9, vFieldRemove at
-     * 7.9). Stacking them in one column keeps every pile a player owns in a
-     * single readable run and leaves the far side of the table clear.
+     * Both side columns stack away from the viewer, a cell at a time, flush
+     * against the one below:
+     * <pre>
+     * right   deck (SIDE_HIGH_Y), graveyard (SECOND), banished (THIRD)
+     * left    extra deck (SIDE_HIGH_Y), field spell (SECOND)
+     * </pre>
+     * A deliberate departure from materials.cpp, which scatters these: the
+     * graveyard and banished pile sit low and side by side there (vFieldGrave
+     * at x 6.9, vFieldRemove at 7.9) and the field spell sits low on its own.
+     * Stacking each column keeps everything a player owns in one readable run.
      */
-    private static final float GRAVE_Y = SIDE_HIGH_Y - CELL_H;
-    private static final float REMOVED_Y = GRAVE_Y - CELL_H;
+    private static final float SIDE_SECOND_Y = SIDE_HIGH_Y - CELL_H;
+    private static final float SIDE_THIRD_Y = SIDE_SECOND_Y - CELL_H;
     private static final float EMZ_Y = -0.6F;
 
     private static final float EXTRA_X = 0.2F;
@@ -147,7 +148,7 @@ public final class FieldLayout
                 }
                 if(sequence == 5)
                 {
-                    return new Rect(FIELD_SPELL_X, SIDE_LOW_Y, 0.8F, CELL_H); // field spell
+                    return new Rect(FIELD_SPELL_X, SIDE_SECOND_Y, 0.8F, CELL_H);
                 }
                 // Pendulum zones sit at the ends of the spell row.
                 return new Rect(FIRST_COLUMN_X + (sequence == 6 ? -COLUMN_PITCH : 5 * COLUMN_PITCH),
@@ -158,9 +159,9 @@ public final class FieldLayout
             case OcgConstants.LOCATION_EXTRA:
                 return new Rect(EXTRA_X, SIDE_HIGH_Y, 0.8F, CELL_H);
             case OcgConstants.LOCATION_GRAVE:
-                return new Rect(DECK_X, GRAVE_Y, 0.8F, CELL_H);
+                return new Rect(DECK_X, SIDE_SECOND_Y, 0.8F, CELL_H);
             case OcgConstants.LOCATION_REMOVED:
-                return new Rect(DECK_X, REMOVED_Y, 0.8F, CELL_H);
+                return new Rect(DECK_X, SIDE_THIRD_Y, 0.8F, CELL_H);
             default:
                 return null;
         }

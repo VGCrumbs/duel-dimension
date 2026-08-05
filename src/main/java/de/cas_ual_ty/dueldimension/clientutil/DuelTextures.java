@@ -84,6 +84,9 @@ public final class DuelTextures
      */
     public static final ResourceLocation COIN =
         new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/coin.png");
+    /** The field spell zone's own square, marked with a compass rose. */
+    public static final ResourceLocation FIELD_SPELL =
+        new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/field_spell.png");
     public static final ResourceLocation ACT =
         new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/act.png");
     public static final ResourceLocation ATTACK =

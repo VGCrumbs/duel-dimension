@@ -334,7 +334,11 @@ public class BoardRenderer extends GuiComponent
         FieldLayout.Rect rect = FieldLayout.zone(controller, location, sequence);
         if(rect != null)
         {
-            FieldQuad.drawProjected(poseStack, DuelTextures.SLOT, projection, inset(rect), 2,
+            // The field spell zone carries its own emblem; every other bare
+            // zone takes the plain square.
+            ResourceLocation square = location == OcgConstants.LOCATION_SZONE && sequence == 5
+                ? DuelTextures.FIELD_SPELL : DuelTextures.SLOT;
+            FieldQuad.drawProjected(poseStack, square, projection, inset(rect), 2,
                 turnsFor(controller, false), 0F, 0F, 1F, 1F);
         }
     }
