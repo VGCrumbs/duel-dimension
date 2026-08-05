@@ -89,6 +89,29 @@ public class BoardRenderer extends GuiComponent
         return hits;
     }
 
+    /**
+     * Screen x of the table's centre line. The frustum is off-centre by
+     * design, so this is well right of the screen's middle - header elements
+     * centred on the window would look misaligned against the table.
+     */
+    public float tableCentreX()
+    {
+        return projection == null ? 0
+            : projection.x((FieldLayout.FIELD_MIN_X + FieldLayout.FIELD_MAX_X) / 2F, 0F);
+    }
+
+    /** The projection last used, so overlays line up with the board. */
+    public FieldLayout.Projection projection()
+    {
+        return projection;
+    }
+
+    /** Screen y of the table's far edge, for placing headers above it. */
+    public float tableTopY()
+    {
+        return projection == null ? 0 : projection.y(FieldLayout.FIELD_MIN_Y);
+    }
+
     public void setActionable(java.util.function.Predicate<Hit> actionable)
     {
         this.actionable = actionable;

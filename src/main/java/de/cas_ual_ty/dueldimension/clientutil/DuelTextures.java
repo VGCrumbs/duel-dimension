@@ -78,6 +78,31 @@ public final class DuelTextures
     public static final float CARD_V0 = 0.0625F;
     public static final float CARD_V1 = 0.9375F;
 
+    /**
+     * The mod already ships an icon per duel action for its manual mode;
+     * reusing them gives the command menu a symbol beside every entry.
+     * Reposition has two icons because the action differs by current position.
+     */
+    public static ResourceLocation commandIcon(int command, boolean faceDown, boolean attackPosition)
+    {
+        String name = switch(command)
+        {
+            case de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.COMMAND_ACTIVATE -> "activate_spell_trap";
+            case de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.COMMAND_SUMMON -> "normal_summon";
+            case de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.COMMAND_SPSUMMON -> "special_summon_atk";
+            case de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.COMMAND_MSET -> "set_to_def";
+            case de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.COMMAND_SSET -> "set_spell_trap";
+            case de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.COMMAND_REPOS ->
+                faceDown ? "def_set_to_atk" : attackPosition ? "atk_to_def" : "def_set_to_atk";
+            case de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.COMMAND_ATTACK -> "attack";
+            case de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.COMMAND_LIST -> "show_card";
+            case de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.PHASE_SHUFFLE -> "shuffle_hand";
+            default -> null;
+        };
+        return name == null ? null
+            : new ResourceLocation(DuelDimension.MOD_ID, "textures/gui/action_icons/" + name + ".png");
+    }
+
     private DuelTextures()
     {
     }

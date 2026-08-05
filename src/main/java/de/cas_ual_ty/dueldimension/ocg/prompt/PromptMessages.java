@@ -75,11 +75,17 @@ public final class PromptMessages
      * Server -> client: the duel moved. Board is optional (log-only updates
      * skip it); {@code over} closes out the duel with a result line.
      */
-    public record DuelUpdate(BoardSnapshot board, List<String> log, boolean over, String result, int[] warmUp)
+    public record DuelUpdate(BoardSnapshot board, List<String> log, boolean over, String result, int[] warmUp,
+        List<DuelEvent> events)
     {
         public DuelUpdate(BoardSnapshot board, List<String> log, boolean over, String result)
         {
-            this(board, log, over, result, new int[0]);
+            this(board, log, over, result, new int[0], List.of());
+        }
+
+        public DuelUpdate(BoardSnapshot board, List<String> log, boolean over, String result, int[] warmUp)
+        {
+            this(board, log, over, result, warmUp, List.of());
         }
 
         public static void encode(DuelUpdate message, FriendlyByteBuf buffer)
@@ -94,6 +100,7 @@ public final class PromptMessages
             buffer.writeBoolean(message.over());
             buffer.writeUtf(message.result(), 128);
             buffer.writeVarIntArray(message.warmUp());
+            DuelEvent.writeList(buffer, message.events());
         }
 
         public static DuelUpdate decode(FriendlyByteBuf buffer)
@@ -106,7 +113,7 @@ public final class PromptMessages
                 log.add(buffer.readUtf(256));
             }
             return new DuelUpdate(board, log, buffer.readBoolean(), buffer.readUtf(128),
-                buffer.readVarIntArray());
+                buffer.readVarIntArray(), DuelEvent.readList(buffer));
         }
 
         public static void handle(DuelUpdate message, Supplier<NetworkEvent.Context> context)

@@ -20,6 +20,9 @@ public final class DuelClientState
     public static volatile boolean over;
     public static volatile String result = "";
     public static final Deque<String> log = new ArrayDeque<>();
+    /** Events the screen has not animated yet. */
+    public static final Deque<de.cas_ual_ty.dueldimension.ocg.prompt.DuelEvent> pendingEvents =
+        new ArrayDeque<>();
 
     private DuelClientState()
     {
@@ -79,5 +82,6 @@ public final class DuelClientState
         over = false;
         result = "";
         log.clear();
+        pendingEvents.clear();
     }
 }

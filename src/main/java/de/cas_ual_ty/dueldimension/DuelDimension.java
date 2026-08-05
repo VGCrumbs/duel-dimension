@@ -149,6 +149,7 @@ public class DuelDimension
         DdItems.register(bus);
         DdContainerTypes.register(bus);
         DdEntityTypes.register(bus);
+        DdSounds.register(bus);
         DdTileEntityTypes.register(bus);
         ActionIcons.register(bus);
         ZoneTypes.register(bus);

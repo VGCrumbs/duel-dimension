@@ -6,6 +6,7 @@ import de.cas_ual_ty.dueldimension.ocg.bot.HeuristicBot;
 import de.cas_ual_ty.dueldimension.ocg.deck.StarterDecks;
 import de.cas_ual_ty.dueldimension.ocg.msg.DuelMessage;
 import de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot;
+import de.cas_ual_ty.dueldimension.ocg.prompt.DuelEvent;
 import de.cas_ual_ty.dueldimension.ocg.prompt.HumanResponseSource;
 import de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages;
 import de.cas_ual_ty.dueldimension.ocg.prompt.PromptTranslator;
@@ -257,6 +258,7 @@ public final class DuelistDuels
         ACTIVE.forEach((watcher, session) ->
         {
             List<String> log = new ArrayList<>();
+            List<DuelEvent> events = new ArrayList<>();
             BoardSnapshot[] latestBoard = {null};
             boolean[] over = {false};
             String[] result = {""};
@@ -265,6 +267,11 @@ public final class DuelistDuels
             {
                 if(event instanceof DuelSession.Event.Message message)
                 {
+                    DuelEvent animated = toDuelEvent(message.message());
+                    if(animated != null)
+                    {
+                        events.add(animated);
+                    }
                     Component line = narrate(message.message(), descriptions);
                     if(line != null)
                     {
@@ -300,7 +307,7 @@ public final class DuelistDuels
                 }
             });
 
-            if(!watcher.console() && (latestBoard[0] != null || !log.isEmpty() || over[0]))
+            if(!watcher.console() && (latestBoard[0] != null || !log.isEmpty() || over[0] || !events.isEmpty()))
             {
                 ServerPlayer player = server.getPlayerList().getPlayer(watcher.playerId());
                 if(player != null)
@@ -308,7 +315,7 @@ public final class DuelistDuels
                     de.cas_ual_ty.dueldimension.DuelDimension.channel.send(
                         net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
                         new de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate(
-                            latestBoard[0], log, over[0], result[0]));
+                            latestBoard[0], log, over[0], result[0], new int[0], events));
                 }
             }
 
@@ -366,6 +373,64 @@ public final class DuelistDuels
                 .withStyle(ChatFormatting.GRAY);
         }
         return null; // per-card moves and chain bookkeeping would drown the log
+    }
+
+    /**
+     * Turns an engine message into something the client can animate and play a
+     * sound for. Seat 0 is the watching player, so controller 0 is "you".
+     */
+    private static DuelEvent toDuelEvent(RawMessage raw)
+    {
+        DuelMessage message = DuelMessage.decode(raw);
+
+        if(message instanceof DuelMessage.Move move)
+        {
+            int from = DuelEvent.zoneOf(move.from().controller(), move.from().location(),
+                move.from().sequence(), 0);
+            int to = DuelEvent.zoneOf(move.to().controller(), move.to().location(),
+                move.to().sequence(), 0);
+            DuelEvent.Kind kind = switch(move.to().location())
+            {
+                case de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_GRAVE -> DuelEvent.Kind.DESTROY;
+                case de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_MZONE ->
+                    (move.to().position() & de.cas_ual_ty.dueldimension.ocg.OcgConstants.POS_FACEDOWN) != 0
+                        ? DuelEvent.Kind.SET : DuelEvent.Kind.SUMMON;
+                case de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_SZONE ->
+                    (move.to().position() & de.cas_ual_ty.dueldimension.ocg.OcgConstants.POS_FACEDOWN) != 0
+                        ? DuelEvent.Kind.SET : DuelEvent.Kind.ACTIVATE;
+                default -> DuelEvent.Kind.MOVE;
+            };
+            return new DuelEvent(kind, move.code(), from, to, 0, move.to().controller());
+        }
+        if(message instanceof DuelMessage.Damage damage)
+        {
+            return new DuelEvent(DuelEvent.Kind.DAMAGE, 0, -1, -1, damage.amount(), damage.player());
+        }
+        if(message instanceof DuelMessage.Recover recover)
+        {
+            return new DuelEvent(DuelEvent.Kind.RECOVER, 0, -1, -1, recover.amount(), recover.player());
+        }
+        if(message instanceof DuelMessage.Draw draw)
+        {
+            return new DuelEvent(DuelEvent.Kind.DRAW, 0, -1, -1, draw.cards().size(), draw.player());
+        }
+        if(message instanceof DuelMessage.ShuffleDeck shuffle)
+        {
+            return new DuelEvent(DuelEvent.Kind.SHUFFLE, 0, -1, -1, 0, shuffle.player());
+        }
+        if(message instanceof DuelMessage.NewPhase phase)
+        {
+            return new DuelEvent(DuelEvent.Kind.PHASE, 0, -1, -1, phase.phase(), 0);
+        }
+        if(message instanceof DuelMessage.NewTurn turn)
+        {
+            return new DuelEvent(DuelEvent.Kind.NEW_TURN, 0, -1, -1, 0, turn.player());
+        }
+        if(message instanceof DuelMessage.Win win)
+        {
+            return new DuelEvent(DuelEvent.Kind.WIN, 0, -1, -1, win.reason(), win.winner());
+        }
+        return null;
     }
 
     private static String phaseName(int phase)

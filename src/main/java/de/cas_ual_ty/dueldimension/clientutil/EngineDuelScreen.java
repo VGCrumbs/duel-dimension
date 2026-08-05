@@ -39,6 +39,7 @@ public class EngineDuelScreen extends Screen
     private static final int LOG_W = 150;
 
     private final BoardRenderer boardRenderer = new BoardRenderer();
+    private final DuelAnimations animations = new DuelAnimations();
 
     private final Set<Integer> selected = new LinkedHashSet<>();
     private final List<Integer> sortOrder = new ArrayList<>();
@@ -314,19 +315,28 @@ public class EngineDuelScreen extends Screen
         menuAnchor = hit;
         EnginePrompt prompt = shownPrompt;
 
-        int widest = 60;
+        int widest = 70;
         for(int index : actions)
         {
-            widest = Math.max(widest, font.width(prompt.options().get(index).label()) + 14);
+            widest = Math.max(widest, font.width(prompt.options().get(index).label()) + 30);
         }
-        int menuX = Math.min(hit.x() + hit.w() + 2, width - widest - 4);
-        int menuY = Math.max(TOP_BAR_H, Math.min(hit.y(), height - actions.size() * MENU_ROW - 6));
+        // Above the card, centred on it: the card stays visible while you
+        // choose what to do with it.
+        int menuHeight = actions.size() * MENU_ROW;
+        int menuX = Math.max(SIDEBAR_W + 4,
+            Math.min(hit.x() + hit.w() / 2 - widest / 2, width - widest - 4));
+        int menuY = hit.y() - menuHeight - 4;
+        if(menuY < TOP_BAR_H + PHASE_CELL_H + 8)
+        {
+            menuY = hit.y() + hit.h() + 4; // no room above: fall below instead
+        }
 
         for(int row = 0; row < actions.size(); row++)
         {
             int index = actions.get(row);
-            Button button = new Button(menuX, menuY + row * MENU_ROW, widest, MENU_ROW - 2,
-                Component.literal(prompt.options().get(index).label()), pressed -> choose(index));
+            EnginePrompt.Option option = prompt.options().get(index);
+            CommandButton button = new CommandButton(menuX, menuY + row * MENU_ROW, widest, MENU_ROW - 2,
+                Component.literal(option.label()), option.command(), hit, pressed -> choose(index));
             menuButtons.add(button);
             addRenderableWidget(button);
         }
@@ -559,6 +569,19 @@ public class EngineDuelScreen extends Screen
         int fieldHeight = height - fieldTop - 30;
         boardRenderer.render(poseStack, font, board, fieldLeft, fieldTop, fieldWidth, fieldHeight, highlights);
 
+        // Drain and play whatever the duel just did.
+        long now = System.currentTimeMillis();
+        synchronized(DuelClientState.class)
+        {
+            if(!DuelClientState.pendingEvents.isEmpty())
+            {
+                animations.accept(new ArrayList<>(DuelClientState.pendingEvents), now);
+                DuelClientState.pendingEvents.clear();
+            }
+        }
+        animations.tick(now);
+        animations.renderMoves(poseStack, boardRenderer, boardRenderer.projection(), now);
+
         // Hover picks the preview card and opens that card's command menu.
         BoardRenderer.Hit hovered = null;
         for(BoardRenderer.Hit hit : boardRenderer.hits())
@@ -614,24 +637,104 @@ public class EngineDuelScreen extends Screen
      * marked, and a phase you may jump to is a live button - which is exactly
      * the idle/battle command the core offered.
      */
+    private static final int PHASE_CELL_W = 26;
+    private static final int PHASE_CELL_H = 12;
+    private static final int PHASE_BAR_Y = 23;
+
+    private int phaseBarLeft()
+    {
+        int barW = PHASE_NAMES.length * PHASE_CELL_W;
+        float centre = boardRenderer.tableCentreX();
+        if(centre <= SIDEBAR_W + barW / 2F || centre >= width - barW / 2F)
+        {
+            centre = (SIDEBAR_W + width) / 2F;
+        }
+        return Math.round(centre) - barW / 2;
+    }
+
     private void buildPhaseBar(EnginePrompt prompt)
     {
-        int cellW = 42;
-        int barW = PHASE_NAMES.length * (cellW + 2);
-        int x = width - barW - 8;
-        int y = TOP_BAR_H + 4;
-
+        int x = phaseBarLeft();
         for(int i = 0; i < PHASE_NAMES.length; i++)
         {
-            int target = PHASE_VALUES[i];
-            int option = phaseOptionFor(prompt, target);
+            int option = phaseOptionFor(prompt, PHASE_VALUES[i]);
             if(option < 0)
             {
-                continue; // not reachable now; drawn as a plain label instead
+                continue; // not reachable: drawn as a label instead
             }
             int index = option;
-            addRenderableWidget(new Button(x + i * (cellW + 2), y, cellW, 16,
-                Component.literal(PHASE_NAMES[i]), pressed -> choose(index)));
+            addRenderableWidget(new SlimPhaseButton(x + i * PHASE_CELL_W, PHASE_BAR_Y,
+                PHASE_CELL_W - 1, PHASE_CELL_H, Component.literal(PHASE_NAMES[i]),
+                pressed -> choose(index)));
+        }
+    }
+
+    /** A menu entry: the action's icon, then its caption. */
+    private class CommandButton extends Button
+    {
+        private final int command;
+        private final BoardRenderer.Hit anchor;
+
+        CommandButton(int x, int y, int w, int h, Component label, int command,
+            BoardRenderer.Hit anchor, OnPress onPress)
+        {
+            super(x, y, w, h, label, onPress);
+            this.command = command;
+            this.anchor = anchor;
+        }
+
+        @Override
+        public void renderButton(PoseStack poseStack, int mouseX, int mouseY, float partialTick)
+        {
+            boolean hovered = isHoveredOrFocused();
+            fill(poseStack, x, y, x + width, y + height, hovered ? 0xF0473A22 : 0xE01A1A1E);
+            fill(poseStack, x, y, x + width, y + 1, hovered ? 0xFFFFD700 : 0x60FFD700);
+
+            BoardSnapshot board = currentBoard();
+            boolean faceDown = false;
+            boolean attackPosition = true;
+            if(anchor != null && !anchor.isPile())
+            {
+                BoardSnapshot.Side side = anchor.controller() == 0 ? board.self() : board.opponent();
+                List<BoardSnapshot.Slot> zone = anchor.location() == OcgConstants.LOCATION_MZONE
+                    ? side.monsters() : side.spells();
+                if(anchor.sequence() >= 0 && anchor.sequence() < zone.size())
+                {
+                    BoardSnapshot.Slot slot = zone.get(anchor.sequence());
+                    faceDown = slot.faceDown();
+                    attackPosition = !slot.defence();
+                }
+            }
+
+            var icon = DuelTextures.commandIcon(command, faceDown, attackPosition);
+            int textX = x + 5;
+            if(icon != null)
+            {
+                ScreenUtil.white();
+                CardRenderUtil.bindMainResourceLocation(icon);
+                DdBlitUtil.fullBlit(poseStack, x + 3, y + 2, 15, 15);
+                textX = x + 21;
+            }
+            font.draw(poseStack, getMessage(), textX, y + (height - 8) / 2F,
+                hovered ? 0xFFFFCC : 0xE8E8E8);
+        }
+    }
+
+    /** A flat, compact button so the phase row reads as one strip. */
+    private class SlimPhaseButton extends Button
+    {
+        SlimPhaseButton(int x, int y, int w, int h, Component label, OnPress onPress)
+        {
+            super(x, y, w, h, label, onPress);
+        }
+
+        @Override
+        public void renderButton(PoseStack poseStack, int mouseX, int mouseY, float partialTick)
+        {
+            boolean hovered = isHoveredOrFocused();
+            fill(poseStack, x, y, x + width, y + height, hovered ? 0xF0463020 : 0xC0201818);
+            drawCenteredString(poseStack, font, getMessage(), x + width / 2, y + 2,
+                hovered ? 0xFFFFAA : 0xE8E8E8);
         }
     }
 
@@ -666,49 +769,82 @@ public class EngineDuelScreen extends Screen
     /** Draws the phase row's labels and marks the current phase. */
     private void renderPhaseBar(PoseStack poseStack, BoardSnapshot board)
     {
-        int cellW = 42;
-        int barW = PHASE_NAMES.length * (cellW + 2);
-        int x = width - barW - 8;
-        int y = TOP_BAR_H + 4;
-
+        int x = phaseBarLeft();
         for(int i = 0; i < PHASE_NAMES.length; i++)
         {
             boolean current = board.phase() == PHASE_VALUES[i]
                 || (PHASE_VALUES[i] == OcgConstants.PHASE_BATTLE && board.phase() > OcgConstants.PHASE_MAIN1
                     && board.phase() < OcgConstants.PHASE_MAIN2);
-            int cellX = x + i * (cellW + 2);
-            if(current)
-            {
-                fill(poseStack, cellX, y, cellX + cellW, y + 16, 0x80FFD700);
-            }
+            int cellX = x + i * PHASE_CELL_W;
+
             if(phaseOptionFor(shownPrompt, PHASE_VALUES[i]) < 0)
             {
-                // Not reachable: no button was made, so draw the label here.
-                fill(poseStack, cellX, y, cellX + cellW, y + 16, current ? 0x60FFD700 : 0x60202020);
-                drawCenteredString(poseStack, font, PHASE_NAMES[i], cellX + cellW / 2, y + 4,
-                    current ? 0xFFFFAA : 0x808080);
+                // Not reachable: no button exists, so this cell is a label.
+                fill(poseStack, cellX, PHASE_BAR_Y, cellX + PHASE_CELL_W - 1,
+                    PHASE_BAR_Y + PHASE_CELL_H, current ? 0xC0705000 : 0x90181818);
+                drawCenteredString(poseStack, font, PHASE_NAMES[i],
+                    cellX + PHASE_CELL_W / 2, PHASE_BAR_Y + 2, current ? 0xFFE066 : 0x6A6A6A);
+            }
+            if(current)
+            {
+                // A gold underline marks where the duel actually is.
+                fill(poseStack, cellX, PHASE_BAR_Y + PHASE_CELL_H - 1, cellX + PHASE_CELL_W - 1,
+                    PHASE_BAR_Y + PHASE_CELL_H, 0xFFFFD700);
             }
         }
     }
 
-    /** Life-point bars across the top, as EDOPro shows them. */
+    /**
+     * Life points across the top with the turn count between them, as the
+     * reference client shows it. Centred on the table rather than the window:
+     * the frustum is off-centre by design, so window-centred headers sit
+     * visibly left of the board.
+     */
     private void renderTopBar(PoseStack poseStack, BoardSnapshot board)
     {
-        int barW = Math.max(80, (width - SIDEBAR_W - 60) / 2);
-        drawLifeBar(poseStack, SIDEBAR_W + 8, 6, barW, "You", board.self().lifePoints(), 0xFF4CAF50);
-        drawLifeBar(poseStack, width - barW - 8, 6, barW, "Opponent", board.opponent().lifePoints(), 0xFFE53935);
+        int badgeW = 34;
+        int left = SIDEBAR_W + 10;
+        int right = width - 10;
+        float centre = boardRenderer.tableCentreX();
+        if(centre <= left + 80 || centre >= right - 80)
+        {
+            centre = (left + right) / 2F;
+        }
 
-        drawCenteredString(poseStack, font, "Turn " + board.turn() + " — " + phaseName(board.phase()),
-            SIDEBAR_W + (width - SIDEBAR_W) / 2, 20, 0xFFD700);
+        int badgeLeft = Math.round(centre) - badgeW / 2;
+        int leftBarW = Math.max(60, badgeLeft - 6 - left);
+        int rightBarW = Math.max(60, right - (badgeLeft + badgeW + 6));
+
+        long now = System.currentTimeMillis();
+        drawLifeBar(poseStack, left, 6, leftBarW, "You", board.self().lifePoints(), 0xFF3FA34D,
+            animations.damageFlash(0, now));
+        drawLifeBar(poseStack, right - rightBarW, 6, rightBarW, "Opponent",
+            board.opponent().lifePoints(), 0xFFC1362F, animations.damageFlash(1, now));
+
+        int badgeTop = 4;
+        fill(poseStack, badgeLeft, badgeTop, badgeLeft + badgeW, badgeTop + 17, 0xC0101014);
+        fill(poseStack, badgeLeft, badgeTop, badgeLeft + badgeW, badgeTop + 1, 0x80FFD700);
+        fill(poseStack, badgeLeft, badgeTop + 16, badgeLeft + badgeW, badgeTop + 17, 0x80FFD700);
+        drawCenteredString(poseStack, font, Integer.toString(Math.max(1, board.turn())),
+            badgeLeft + badgeW / 2, badgeTop + 5, 0xFFD700);
+        drawCenteredString(poseStack, font, board.turnPlayer() == 0 ? "your turn" : "their turn",
+            badgeLeft + badgeW / 2, badgeTop + 19, 0x7A7A7A);
     }
 
     /**
      * EDOPro draws a frame texture (lpf.png, a fixed 200x20 source) and fills
      * it procedurally; lp.png is never drawn. Same here.
      */
-    private void drawLifeBar(PoseStack poseStack, int x, int y, int barW, String name, int lifePoints, int colour)
+    private void drawLifeBar(PoseStack poseStack, int x, int y, int barW, String name, int lifePoints,
+        int colour, float flash)
     {
         int barH = 13;
+        if(flash > 0)
+        {
+            // A white wash over the bar the moment life points change.
+            int alpha = (int)(flash * 160) << 24;
+            fill(poseStack, x - 2, y - 2, x + barW + 2, y + barH + 2, alpha | 0xFFFFFF);
+        }
         int filled = Math.max(0, Math.min(barW - 4, Math.round((barW - 4) * lifePoints / 8000F)));
         fill(poseStack, x + 2, y + 2, x + barW - 2, y + barH - 2, 0xFF101010);
         fill(poseStack, x + 2, y + 2, x + 2 + filled, y + barH - 2, colour);
