@@ -23,6 +23,8 @@ public final class BotCard
     private final int level;
     private final int attack;
     private final int defense;
+    private final int baseAttack;
+    private final int baseDefense;
     private final int controller;
     private final int location;
     private final int sequence;
@@ -38,6 +40,14 @@ public final class BotCard
     public BotCard(int code, int position, int type, int level, int attack, int defense,
         int controller, int location, int sequence)
     {
+        this(code, position, type, level, attack, defense, attack, defense, controller, location, sequence);
+    }
+
+    public BotCard(int code, int position, int type, int level, int attack, int defense,
+        int baseAttack, int baseDefense, int controller, int location, int sequence)
+    {
+        this.baseAttack = baseAttack;
+        this.baseDefense = baseDefense;
         this.code = code;
         this.position = position;
         this.type = type;
@@ -78,6 +88,22 @@ public final class BotCard
     public int defense()
     {
         return Math.max(defense, 0);
+    }
+
+    /**
+     * Printed ATK, before any continuous effect. Distinct from {@link #attack}
+     * because some cards act on the ORIGINAL value: Shield &amp; Sword switches
+     * "the original ATK and DEF", so judging it against boosted numbers would
+     * mis-predict the swap.
+     */
+    public int baseAttack()
+    {
+        return baseAttack < 0 ? attack() : baseAttack;
+    }
+
+    public int baseDefense()
+    {
+        return baseDefense < 0 ? defense() : baseDefense;
     }
 
     public int controller()

@@ -50,6 +50,24 @@ public abstract class Executor
 
     protected final AIUtil util = new AIUtil(this);
 
+    /**
+     * {@code GameAI.m_selector}: cards a rule has already decided on, waiting
+     * for the prompt that asks for them.
+     * <p>
+     * This is how a card-specific rule controls its own targeting. WindBot's
+     * own {@code DefaultCallOfTheHaunted} is the pattern -- it picks the
+     * monster, hands it over, and only then returns true:
+     * <pre>
+     * ClientCard selected = Bot.Graveyard.GetMatchingCards(card =&gt; card.IsCanRevive())
+     *     .OrderByDescending(card =&gt; card.Attack).FirstOrDefault();
+     * AI.SelectCard(selected);
+     * return true;
+     * </pre>
+     * Without it every effect falls back to "take the first cards offered",
+     * which is fine for a cost and wrong for a target.
+     */
+    private final List<BotCard> selection = new ArrayList<>();
+
     // ---- the registration API ----
 
     /**
@@ -112,6 +130,44 @@ public abstract class Executor
     public final List<CardExecutor> executors()
     {
         return executors;
+    }
+
+    /** {@code AI.SelectCard(card)}: name the cards this effect should be pointed at, in order. */
+    protected final void selectCard(BotCard... cards)
+    {
+        selection.clear();
+        for(BotCard card : cards)
+        {
+            if(card != null)
+            {
+                selection.add(card);
+            }
+        }
+    }
+
+    protected final void selectCard(List<BotCard> cards)
+    {
+        selection.clear();
+        for(BotCard card : cards)
+        {
+            if(card != null)
+            {
+                selection.add(card);
+            }
+        }
+    }
+
+    /** Consumed by the dispatcher when the selection prompt arrives. */
+    final List<BotCard> takeSelection()
+    {
+        List<BotCard> taken = new ArrayList<>(selection);
+        selection.clear();
+        return taken;
+    }
+
+    final void clearSelection()
+    {
+        selection.clear();
     }
 
     // ---- state the gate maintains ----

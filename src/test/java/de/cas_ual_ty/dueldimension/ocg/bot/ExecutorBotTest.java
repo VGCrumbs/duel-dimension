@@ -72,11 +72,16 @@ class ExecutorBotTest
                     activatable.add(exec.cardId());
                 }
             }
-            for(int code : new int[] {REVERSE_TRAP, REINFORCEMENTS, SHIELD_AND_SWORD, TWO_PRONGED_ATTACK})
+            // Reverse Trap is the card that started this: neither the
+            // reference nor any house rule covers it, so nothing may fire it.
+            assertTrue(!activatable.contains(REVERSE_TRAP),
+                profile + " registered an activation rule for Reverse Trap, which nothing has a rule for");
+            // These three DO have house rules now, deliberately and separately
+            // from the ported ones. Pinned so the distinction stays visible.
+            for(int code : new int[] {REINFORCEMENTS, SHIELD_AND_SWORD, TWO_PRONGED_ATTACK})
             {
-                assertTrue(!activatable.contains(code),
-                    profile + " registered an activation rule for " + code
-                        + ", which the reference AI has no rule for");
+                assertTrue(activatable.contains(code),
+                    profile + " lost its house rule for " + code);
             }
             assertTrue(!executor.executors().isEmpty(), profile + " registered nothing at all");
         }

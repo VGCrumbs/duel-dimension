@@ -1,5 +1,9 @@
 package de.cas_ual_ty.dueldimension.ocg.bot.executor;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
 /**
  * The base a custom duelist extends, and the generic play it inherits.
  * <p>
@@ -95,5 +99,170 @@ public abstract class DuelistExecutor extends DefaultExecutor
         addExecutor(ExecutorType.ACTIVATE, CardId.Waboku, this::defaultTrap);
         addExecutor(ExecutorType.ACTIVATE, CardId.SevenToolsOfTheBandit, this::defaultTrap);
         addExecutor(ExecutorType.ACTIVATE, CardId.JustDesserts, this::defaultTrap);
+    }
+
+    // ------------------------------------------------------------------
+    // HOUSE RULES
+    //
+    // Everything below this line is OURS, not EDOPro's. The reference AI has
+    // no rule for any of these cards, so nothing here can be checked against
+    // it; each is a stated judgement about how the card should be played, and
+    // each says whose judgement it is and what it was asked to do.
+    //
+    // They are registered separately from addReferenceCardRules() so the two
+    // kinds of claim never blur together.
+    // ------------------------------------------------------------------
+
+    /** How much ATK Reinforcements adds. Card text: "it gains 500 ATK until the end of this turn". */
+    private static final int REINFORCEMENTS_BOOST = 500;
+    /** The ATK at which an enemy monster counts as a "dire threat" worth Two-Pronged Attack. */
+    private static final int DIRE_THREAT_ATTACK = 2000;
+
+    protected static final int TWO_PRONGED_ATTACK = 83887306;
+    protected static final int REINFORCEMENTS = 17814387;
+    protected static final int SHIELD_AND_SWORD = 52097679;
+
+    /** The three cards above, with the rules requested for them. */
+    protected final void addHouseCardRules()
+    {
+        addExecutor(ExecutorType.ACTIVATE, TWO_PRONGED_ATTACK, this::twoProngedAttack);
+        addExecutor(ExecutorType.ACTIVATE, REINFORCEMENTS, this::reinforcements);
+        addExecutor(ExecutorType.ACTIVATE, SHIELD_AND_SWORD, this::shieldAndSword);
+    }
+
+    /**
+     * Two-Pronged Attack — "Select and destroy 2 of your monsters and 1 of
+     * your opponent's monsters."
+     * <p>
+     * Held for a dire threat: it only fires against an enemy monster of more
+     * than {@value #DIRE_THREAT_ATTACK} ATK, which is the point at which
+     * trading two bodies for one stops being a loss. It takes the strongest
+     * such monster, and gives up our two least valuable — the two lowest by
+     * power, so a wall we are relying on is spent last.
+     * <p>
+     * Selection order matters: the strongest enemy first, then our two
+     * cheapest, so the prompt that follows is answered with the same intent
+     * the decision was made on.
+     */
+    private boolean twoProngedAttack()
+    {
+        BotCard target = null;
+        for(BotCard enemy : enemy().getMonsters())
+        {
+            if(enemy.attack() > DIRE_THREAT_ATTACK
+                && (target == null || enemy.attack() > target.attack()))
+            {
+                target = enemy;
+            }
+        }
+        if(target == null)
+        {
+            return false;
+        }
+        // Two of ours have to go, so there must be two to give.
+        List<BotCard> ours = new ArrayList<>(bot().getMonsters());
+        if(ours.size() < 2)
+        {
+            return false;
+        }
+        ours.sort(Comparator.comparingInt(BotCard::getDefensePower));
+        selectCard(target, ours.get(0), ours.get(1));
+        return true;
+    }
+
+    /**
+     * Reinforcements — "Target 1 face-up monster; it gains 500 ATK until the
+     * end of this turn."
+     * <p>
+     * Saved for a battle it actually turns. Both of the cases asked for reduce
+     * to the same arithmetic: one of our attack-position monsters currently
+     * loses or ties against one of theirs, and would win with the boost. On
+     * our turn that is "attack a strong monster with it"; on theirs it is
+     * "protect a monster it could save". The card gives ATK only, so a monster
+     * sitting in defence cannot be rescued by it and is not considered.
+     * <p>
+     * The boost is a known constant here rather than a guess: it is printed on
+     * the card, and {@link #REINFORCEMENTS_BOOST} quotes it.
+     */
+    private boolean reinforcements()
+    {
+        BotCard best = null;
+        for(BotCard ourMonster : bot().getMonsters())
+        {
+            if(!ourMonster.isFaceUp() || !ourMonster.isAttack())
+            {
+                continue;
+            }
+            for(BotCard theirMonster : enemy().getMonsters())
+            {
+                int theirPower = theirMonster.getDefensePower();
+                boolean losesNow = ourMonster.attack() <= theirPower;
+                boolean winsWithBoost = ourMonster.attack() + REINFORCEMENTS_BOOST > theirPower;
+                if(losesNow && winsWithBoost
+                    && (best == null || ourMonster.attack() > best.attack()))
+                {
+                    best = ourMonster;
+                }
+            }
+        }
+        if(best == null)
+        {
+            return false;
+        }
+        selectCard(best);
+        return true;
+    }
+
+    /**
+     * Shield &amp; Sword — "Switch the original ATK and DEF of all face-up
+     * monsters currently on the field, until the end of this turn."
+     * <p>
+     * Fired when the swap turns one of their monsters into something we can
+     * kill this turn. The swap is symmetric and hits our own monsters too, so
+     * the comparison is made on both sides after inverting: our attacker
+     * swings with its printed DEF, and their monster defends with the printed
+     * stat its position will then use.
+     * <p>
+     * It must be a change, not just a win — the rule requires that we cannot
+     * already beat the monster, so the card is never spent on a fight we were
+     * winning anyway. Our turn only, since the swap lasts one turn and the
+     * point is to attack into it.
+     * <p>
+     * Note this reads {@code baseAttack}/{@code baseDefense} rather than the
+     * live values, because the card switches ORIGINAL ATK and DEF; judging it
+     * on boosted numbers would mis-predict the result.
+     */
+    private boolean shieldAndSword()
+    {
+        if(duelPlayer() != 0)
+        {
+            return false;
+        }
+        for(BotCard ourMonster : bot().getMonsters())
+        {
+            if(!ourMonster.isFaceUp() || !ourMonster.isAttack())
+            {
+                continue;
+            }
+            for(BotCard theirMonster : enemy().getMonsters())
+            {
+                if(!theirMonster.isFaceUp())
+                {
+                    continue; // a set monster's stats are not ours to reason about
+                }
+                int theirPowerNow = theirMonster.getDefensePower();
+                // After the swap each monster's ATK is its printed DEF and its
+                // DEF is its printed ATK; which one defends still depends on
+                // the position it is sitting in.
+                int theirPowerAfter = theirMonster.isAttack()
+                    ? theirMonster.baseDefense() : theirMonster.baseAttack();
+                int ourPowerAfter = ourMonster.baseDefense();
+                if(ourMonster.attack() <= theirPowerNow && ourPowerAfter > theirPowerAfter)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

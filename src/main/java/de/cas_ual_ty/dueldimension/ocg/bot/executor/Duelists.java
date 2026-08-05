@@ -29,6 +29,7 @@ public final class Duelists
         public Generic()
         {
             addReferenceCardRules();
+            addHouseCardRules();
             addGenericPlay();
         }
     }
@@ -42,6 +43,7 @@ public final class Duelists
         public Yugi()
         {
             addReferenceCardRules();
+            addHouseCardRules();
             addGenericPlay();
         }
     }
@@ -58,6 +60,7 @@ public final class Duelists
         {
             addExecutor(ExecutorType.SUMMON_OR_SET, this::defaultMonsterSummon);
             addReferenceCardRules();
+            addHouseCardRules();
             addGenericPlay();
         }
     }
@@ -72,6 +75,7 @@ public final class Duelists
         {
             addExecutor(ExecutorType.SPELL_SET, this::defaultSpellSet);
             addReferenceCardRules();
+            addHouseCardRules();
             addGenericPlay();
         }
     }

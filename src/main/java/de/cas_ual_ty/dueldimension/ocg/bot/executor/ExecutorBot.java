@@ -107,6 +107,7 @@ public class ExecutorBot implements ResponseSource
                 lastChainPlayer = -1;
                 lastSummonPlayer = -1;
                 activatedCards.clear();
+                executor.clearSelection();
             }
             case OcgConstants.MSG_NEW_PHASE ->
             {
@@ -494,6 +495,41 @@ public class ExecutorBot implements ResponseSource
         if(count > select.cards().size())
         {
             return null;
+        }
+
+        // A rule that named its own targets wins over any generic fallback.
+        List<BotCard> wanted = executor.takeSelection();
+        if(!wanted.isEmpty() && !asAttackTarget)
+        {
+            List<Integer> picked = new ArrayList<>();
+            for(BotCard want : wanted)
+            {
+                for(int i = 0; i < select.cards().size() && picked.size() < select.max(); i++)
+                {
+                    DuelMessage.SelectableCard offered = select.cards().get(i);
+                    if(picked.contains(i))
+                    {
+                        continue;
+                    }
+                    if(offered.loc() != null
+                        && offered.loc().controller() == (want.controller() == 0 ? player : 1 - player)
+                        && offered.loc().location() == want.location()
+                        && offered.loc().sequence() == want.sequence())
+                    {
+                        picked.add(i);
+                        break;
+                    }
+                }
+            }
+            if(picked.size() >= select.min())
+            {
+                int[] chosenIndices = new int[picked.size()];
+                for(int i = 0; i < picked.size(); i++)
+                {
+                    chosenIndices[i] = picked.get(i);
+                }
+                return Responses.selectCards(chosenIndices);
+            }
         }
 
         if(asAttackTarget && attacker != null)

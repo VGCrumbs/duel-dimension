@@ -44,6 +44,16 @@ public final class BotField
     }
 
     /**
+     * A field built directly, for tests that need one specific board rather
+     * than whatever a duel happens to produce.
+     */
+    public static BotField forTest(List<BotCard> monsterZone, int lifePoints, int deckCount)
+    {
+        return new BotField(monsterZone, new ArrayList<>(java.util.Arrays.asList(new BotCard[8])),
+            List.of(), List.of(), List.of(), List.of(), lifePoints, deckCount);
+    }
+
+    /**
      * Builds a field from the honest per-player view. Static card data (type,
      * level) is filled from the database, because the core's board query
      * reports position and stats but the rules also ask "is this a trap?".
@@ -78,7 +88,8 @@ public final class BotField
             int type = view.type() != 0 ? view.type() : data != null ? data.type() : 0;
             int level = view.level() != 0 ? view.level() : data != null ? data.level() : 0;
             result.add(new BotCard(view.code(), view.position(), type, level,
-                view.attack(), view.defense(), controller, location, i));
+                view.attack(), view.defense(), view.baseAttack(), view.baseDefense(),
+                controller, location, i));
         }
         return result;
     }
