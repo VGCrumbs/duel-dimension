@@ -552,6 +552,18 @@ public class DuelAnimations
         return strongest;
     }
 
+    /** Drops everything, for when a duel ends or is left. */
+    public void clear()
+    {
+        queue.clear();
+        playing.clear();
+        flashes.clear();
+        attacks.clear();
+        overlays.clear();
+        shatters.clear();
+        nextStart = 0;
+    }
+
     /** True while anything is still playing, for callers that want to wait. */
     public boolean isBusy()
     {

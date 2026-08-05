@@ -33,6 +33,46 @@ public final class DuelClientState
 
     public static final Deque<PendingUpdate> pending = new ArrayDeque<>();
 
+    /**
+     * The duel's playback, which belongs to the duel and not to the screen.
+     * <p>
+     * EDOPro runs message playback on a dedicated parsing thread
+     * ({@code DuelClient::parsing_thread} draining {@code to_analyze}), which
+     * blocks on WaitFrameSignal and keeps going regardless of what is on
+     * screen. Ours used to live on EngineDuelScreen and only advanced inside
+     * render(), so closing the screen stopped playback dead and reopening it
+     * built a fresh queue -- losing every board commit still waiting in the old
+     * one, which froze the field on a stale snapshot, and dumping whatever had
+     * piled up in one burst. Hence "the opponent spams things and they
+     * disappear". Keeping it here means playback survives the screen.
+     */
+    public static final DuelAnimations animations = new DuelAnimations();
+
+    /**
+     * Advances playback. Called every client tick, not from render, so a duel
+     * keeps playing at the right pace whether or not its screen is open.
+     */
+    public static void tickPlayback()
+    {
+        long now = System.currentTimeMillis();
+        synchronized(DuelClientState.class)
+        {
+            while(!pending.isEmpty())
+            {
+                PendingUpdate update = pending.poll();
+                BoardSnapshot settled = update.board();
+                animations.accept(update.events(), () ->
+                {
+                    if(settled != null)
+                    {
+                        board = settled;
+                    }
+                });
+            }
+        }
+        animations.tick(now);
+    }
+
     private DuelClientState()
     {
     }
@@ -92,5 +132,6 @@ public final class DuelClientState
         result = "";
         log.clear();
         pending.clear();
+        animations.clear();
     }
 }

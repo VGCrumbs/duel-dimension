@@ -44,6 +44,8 @@ public class EngineDuelScreen extends Screen
     private static final int MIN_PREVIEW_H = 40;
     /** The preview card, as a fraction of the sidebar's text column. */
     private static final float PREVIEW_SCALE = 0.7F;
+    /** However backed up playback is, a prompt waits no longer than this. */
+    private static final long PROMPT_WAIT_CAP_MS = 6000;
     private static final int TOP_BAR_H = 48;
     private static final int MENU_ROW = CardCommands.MENU_ROW_HEIGHT;
     private static final int LOG_W = 150;
@@ -52,7 +54,8 @@ public class EngineDuelScreen extends Screen
     private static final int TURN_THEIRS = 0xFF453A;
 
     private final BoardRenderer boardRenderer = new BoardRenderer();
-    private final DuelAnimations animations = new DuelAnimations();
+    /** Shared with the duel, not owned by the screen: see DuelClientState. */
+    private final DuelAnimations animations = DuelClientState.animations;
 
     private final Set<Integer> selected = new LinkedHashSet<>();
     private final List<Integer> sortOrder = new ArrayList<>();
@@ -87,12 +90,43 @@ public class EngineDuelScreen extends Screen
         rebuild();
     }
 
+    /** When the prompt now waiting first arrived, for the stall guard below. */
+    private long promptSeenAt;
+
+    /**
+     * A prompt is only put up once playback has caught up.
+     * <p>
+     * EDOPro gets this for free: its parsing thread reaches a MSG_SELECT_* only
+     * after every earlier message has been drawn and waited out, so it can
+     * never ask you to act over a board that is still catching up. Our prompt
+     * arrives in its own packet and used to be shown the moment it landed,
+     * which is why the opponent's turn appeared to rush past and then hand you
+     * a decision. The guard is time-limited so a stuck queue can never lock a
+     * duel up.
+     */
+    private boolean readyToShow()
+    {
+        if(DuelClientState.prompt == null || !animations.isBusy())
+        {
+            return true;
+        }
+        return System.currentTimeMillis() - promptSeenAt > PROMPT_WAIT_CAP_MS;
+    }
+
     @Override
     public void tick()
     {
         if(DuelClientState.prompt != shownPrompt)
         {
-            rebuild();
+            if(promptSeenAt == 0)
+            {
+                promptSeenAt = System.currentTimeMillis();
+            }
+            if(readyToShow())
+            {
+                promptSeenAt = 0;
+                rebuild();
+            }
         }
         if(searchBox != null)
         {
@@ -730,24 +764,9 @@ public class EngineDuelScreen extends Screen
         int fieldHeight = height - fieldTop - 30;
         boardRenderer.render(poseStack, font, board, fieldLeft, fieldTop, fieldWidth, fieldHeight, highlights);
 
-        // Drain and play whatever the duel just did.
+        // Playback is advanced on the client tick, not here, so it keeps its
+        // pace even while this screen is closed. Rendering only draws it.
         long now = System.currentTimeMillis();
-        synchronized(DuelClientState.class)
-        {
-            while(!DuelClientState.pending.isEmpty())
-            {
-                DuelClientState.PendingUpdate update = DuelClientState.pending.poll();
-                BoardSnapshot settled = update.board();
-                animations.accept(update.events(), () ->
-                {
-                    if(settled != null)
-                    {
-                        DuelClientState.board = settled;
-                    }
-                });
-            }
-        }
-        animations.tick(now);
         animations.renderMoves(poseStack, boardRenderer, boardRenderer.projection(), now);
         animations.renderAttacks(poseStack, boardRenderer.projection(), now);
         animations.renderOverlays(poseStack, boardRenderer.projection(), now);

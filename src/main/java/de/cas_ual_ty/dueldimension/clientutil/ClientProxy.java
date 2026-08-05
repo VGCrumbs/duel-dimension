@@ -105,8 +105,23 @@ public class ClientProxy implements ISidedProxy
         bus.addListener(this::guiScreenDrawScreenPost);
         bus.addListener(this::renderGameOverlayPost);
         bus.addListener(this::clientChatReceived);
+        bus.addListener(this::clientTick);
     }
     
+    /**
+     * Drives duel playback once per client tick, so it advances whether or not
+     * the duel screen happens to be open -- the job EDOPro's parsing thread
+     * does. Doing it from render() instead stalled a duel the moment the
+     * screen closed.
+     */
+    private void clientTick(net.minecraftforge.event.TickEvent.ClientTickEvent event)
+    {
+        if(event.phase == net.minecraftforge.event.TickEvent.Phase.END)
+        {
+            DuelClientState.tickPlayback();
+        }
+    }
+
     @Override
     public void preInit()
     {
