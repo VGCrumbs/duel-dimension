@@ -42,17 +42,37 @@ public record EnginePrompt(Kind kind, String title, List<Option> options, int mi
      * @param zone     board-highlight metadata: -1 none, else packed
      *                 (opponent?16:0) | (monsterZone?8:0) | sequence
      * @param max      per-option limit (counter stock); 0 when unused
+     * @param controller which player's zone the card sits in, -1 if unknown
+     * @param location LOCATION_* of the card, 0 if unknown
+     * @param sequence index within that location, -1 if unknown
      */
-    public record Option(String label, String detail, int cardCode, int zone, int max)
+    public record Option(String label, String detail, int cardCode, int zone, int max,
+        int controller, int location, int sequence)
     {
         public Option(String label)
         {
-            this(label, "", 0, -1, 0);
+            this(label, "", 0, -1, 0, -1, 0, -1);
         }
 
         public Option(String label, String detail, int cardCode)
         {
-            this(label, detail, cardCode, -1, 0);
+            this(label, detail, cardCode, -1, 0, -1, 0, -1);
+        }
+
+        public Option(String label, String detail, int cardCode, int controller, int location, int sequence)
+        {
+            this(label, detail, cardCode, -1, 0, controller, location, sequence);
+        }
+
+        /** True when this option acts on the given board slot. */
+        public boolean isAt(int controller, int location, int sequence)
+        {
+            return this.controller == controller && this.location == location && this.sequence == sequence;
+        }
+
+        public boolean hasSlot()
+        {
+            return controller >= 0 && sequence >= 0;
         }
 
         public void write(FriendlyByteBuf buffer)
@@ -62,12 +82,16 @@ public record EnginePrompt(Kind kind, String title, List<Option> options, int mi
             buffer.writeVarInt(cardCode);
             buffer.writeVarInt(zone);
             buffer.writeVarInt(max);
+            buffer.writeVarInt(controller + 1);
+            buffer.writeVarInt(location);
+            buffer.writeVarInt(sequence + 1);
         }
 
         public static Option read(FriendlyByteBuf buffer)
         {
-            return new Option(buffer.readUtf(256), buffer.readUtf(256),
-                buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt());
+            return new Option(buffer.readUtf(256), buffer.readUtf(256), buffer.readVarInt(),
+                buffer.readVarInt(), buffer.readVarInt(),
+                buffer.readVarInt() - 1, buffer.readVarInt(), buffer.readVarInt() - 1);
         }
     }
 

@@ -43,13 +43,14 @@ public class PromptTranslator
         if(message instanceof DuelMessage.SelectIdleCmd idle)
         {
             List<EnginePrompt.Option> options = new ArrayList<>();
-            idle.summonable().forEach(card -> options.add(cardOption("Summon", card.code())));
-            idle.spSummonable().forEach(card -> options.add(cardOption("Special Summon", card.code())));
-            idle.repositionable().forEach(card -> options.add(cardOption("Change position", card.code())));
-            idle.monsterSettable().forEach(card -> options.add(cardOption("Set", card.code())));
-            idle.spellSettable().forEach(card -> options.add(cardOption("Set", card.code())));
+            idle.summonable().forEach(card -> options.add(idleOption("Summon", card)));
+            idle.spSummonable().forEach(card -> options.add(idleOption("Special Summon", card)));
+            idle.repositionable().forEach(card -> options.add(idleOption("Change position", card)));
+            idle.monsterSettable().forEach(card -> options.add(idleOption("Set", card)));
+            idle.spellSettable().forEach(card -> options.add(idleOption("Set", card)));
             idle.activatable().forEach(card -> options.add(new EnginePrompt.Option(
-                "Activate: " + cardName(card.code()), text.describe(card.description()), card.code())));
+                "Activate", text.describe(card.description()), card.code(),
+                card.controller(), card.location(), card.sequence())));
             if(idle.toBattle())
             {
                 options.add(new EnginePrompt.Option("Go to Battle Phase"));
@@ -69,9 +70,11 @@ public class PromptTranslator
         {
             List<EnginePrompt.Option> options = new ArrayList<>();
             battle.activatable().forEach(card -> options.add(new EnginePrompt.Option(
-                "Activate: " + cardName(card.code()), text.describe(card.description()), card.code())));
+                "Activate", text.describe(card.description()), card.code(),
+                card.controller(), card.location(), card.sequence())));
             battle.attackable().forEach(card -> options.add(new EnginePrompt.Option(
-                "Attack with " + cardName(card.code()), card.canDirect() ? "can attack directly" : "", card.code())));
+                "Attack", card.canDirect() ? "can attack directly" : "", card.code(),
+                card.controller(), card.location(), card.sequence())));
             if(battle.toMain2())
             {
                 options.add(new EnginePrompt.Option("Go to Main Phase 2"));
@@ -86,8 +89,11 @@ public class PromptTranslator
         if(message instanceof DuelMessage.SelectCard select)
         {
             List<EnginePrompt.Option> options = new ArrayList<>();
-            select.cards().forEach(card -> options.add(
-                new EnginePrompt.Option(cardName(card.code()), where(card.loc()), card.code())));
+            select.cards().forEach(card -> options.add(new EnginePrompt.Option(cardName(card.code()),
+                where(card.loc()), card.code(),
+                card.loc() == null ? -1 : card.loc().controller(),
+                card.loc() == null ? 0 : card.loc().location(),
+                card.loc() == null ? -1 : card.loc().sequence())));
             return new EnginePrompt(EnginePrompt.Kind.MULTI, selectTitle(select.min(), select.max()),
                 options, select.min(), select.max(), select.cancelable(), field);
         }
@@ -96,7 +102,10 @@ public class PromptTranslator
         {
             List<EnginePrompt.Option> options = new ArrayList<>();
             chain.chains().forEach(option -> options.add(new EnginePrompt.Option(
-                "Chain: " + cardName(option.code()), text.describe(option.description()), option.code())));
+                "Chain: " + cardName(option.code()), text.describe(option.description()), option.code(),
+                option.loc() == null ? -1 : option.loc().controller(),
+                option.loc() == null ? 0 : option.loc().location(),
+                option.loc() == null ? -1 : option.loc().sequence())));
             return new EnginePrompt(EnginePrompt.Kind.CHOOSE,
                 chain.forced() ? "You must respond" : "Respond to the chain?",
                 options, chain.forced() ? 1 : 0, 1, !chain.forced(), field);
@@ -122,7 +131,8 @@ public class PromptTranslator
                 options.add(new EnginePrompt.Option(
                     (monsterZone ? "Monster zone " : "Spell/Trap zone ") + (zone.sequence() + 1),
                     opponent ? "opponent's side" : "your side", 0,
-                    EnginePrompt.zoneRef(opponent, monsterZone, zone.sequence()), 0));
+                    EnginePrompt.zoneRef(opponent, monsterZone, zone.sequence()), 0,
+                    zone.player(), zone.location(), zone.sequence()));
             }
             return new EnginePrompt(EnginePrompt.Kind.PLACES, "Choose a zone", options,
                 place.count(), place.count(), false, field);
@@ -155,7 +165,8 @@ public class PromptTranslator
         {
             List<EnginePrompt.Option> options = new ArrayList<>();
             tribute.cards().forEach(card -> options.add(new EnginePrompt.Option(cardName(card.code()),
-                "counts as " + card.releaseParam(), card.code())));
+                "counts as " + card.releaseParam(), card.code(),
+                card.controller(), card.location(), card.sequence())));
             return new EnginePrompt(EnginePrompt.Kind.MULTI, "Select tributes", options,
                 tribute.min(), tribute.max(), tribute.cancelable(), field);
         }
@@ -164,7 +175,10 @@ public class PromptTranslator
         {
             List<EnginePrompt.Option> options = new ArrayList<>();
             sum.selectable().forEach(card -> options.add(new EnginePrompt.Option(cardName(card.code()),
-                "value " + card.primary() + (card.alternate() != 0 ? " or " + card.alternate() : ""), card.code())));
+                "value " + card.primary() + (card.alternate() != 0 ? " or " + card.alternate() : ""), card.code(),
+                card.loc() == null ? -1 : card.loc().controller(),
+                card.loc() == null ? 0 : card.loc().location(),
+                card.loc() == null ? -1 : card.loc().sequence())));
             return new EnginePrompt(EnginePrompt.Kind.MULTI, "Select cards totalling " + sum.acc(), options,
                 Math.max(sum.min(), 1), Math.max(sum.max(), options.size()), false, field);
         }
@@ -172,10 +186,16 @@ public class PromptTranslator
         if(message instanceof DuelMessage.SelectUnselectCard unselect)
         {
             List<EnginePrompt.Option> options = new ArrayList<>();
-            unselect.selectable().forEach(card -> options.add(
-                new EnginePrompt.Option(cardName(card.code()), where(card.loc()), card.code())));
+            unselect.selectable().forEach(card -> options.add(new EnginePrompt.Option(cardName(card.code()),
+                where(card.loc()), card.code(),
+                card.loc() == null ? -1 : card.loc().controller(),
+                card.loc() == null ? 0 : card.loc().location(),
+                card.loc() == null ? -1 : card.loc().sequence())));
             unselect.unselectable().forEach(card -> options.add(
-                new EnginePrompt.Option("Deselect " + cardName(card.code()), where(card.loc()), card.code())));
+                new EnginePrompt.Option("Deselect " + cardName(card.code()), where(card.loc()), card.code(),
+                    card.loc() == null ? -1 : card.loc().controller(),
+                    card.loc() == null ? 0 : card.loc().location(),
+                    card.loc() == null ? -1 : card.loc().sequence())));
             return new EnginePrompt(EnginePrompt.Kind.CHOOSE, "Select a card", options, 1, 1,
                 unselect.finishable() || unselect.cancelable(), field);
         }
@@ -194,7 +214,8 @@ public class PromptTranslator
         {
             List<EnginePrompt.Option> options = new ArrayList<>();
             counter.cards().forEach(card -> options.add(new EnginePrompt.Option(cardName(card.code()),
-                "has " + card.counters(), card.code(), -1, card.counters())));
+                "has " + card.counters(), card.code(), -1, card.counters(),
+                card.controller(), card.location(), card.sequence())));
             return new EnginePrompt(EnginePrompt.Kind.COUNTERS,
                 "Remove " + counter.count() + " " + text.counterName(counter.counterType()) + " counter(s)",
                 options, counter.count(), counter.count(), false, field);
@@ -547,11 +568,13 @@ public class PromptTranslator
             : "Select " + min + " to " + max + " cards";
     }
 
-    private EnginePrompt.Option cardOption(String verb, int code)
+    /** An idle-command option, tagged with the board slot it acts on. */
+    private EnginePrompt.Option idleOption(String verb, DuelMessage.IdleOption idle)
     {
-        OcgCard card = cards.get(code);
+        OcgCard card = cards.get(idle.code());
         String detail = card == null ? "" : card.attack() + " ATK / " + card.defense() + " DEF";
-        return new EnginePrompt.Option(verb + ": " + cardName(code), detail, code);
+        return new EnginePrompt.Option(verb, detail, idle.code(),
+            idle.controller(), idle.location(), idle.sequence());
     }
 
     private String cardName(int code)
