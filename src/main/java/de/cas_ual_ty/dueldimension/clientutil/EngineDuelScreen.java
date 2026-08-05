@@ -894,16 +894,19 @@ public class EngineDuelScreen extends Screen
      * the idle/battle command the core offered.
      */
     /**
-     * The phase row, in the reference's own proportions. game.cpp:314 builds
-     * {@code wPhase} at {@code Scale(480, 310, 855, 330)} -- 375 by 20 against
-     * its 1024-wide base -- holding buttons of {@code Scale(0, 0, 50, 20)}. So
-     * a phase button is 50 wide and 20 tall, and the row spans 375. Ours was
-     * 26 by 12, both too small and the wrong shape (2.17:1 against 2.5:1).
+     * The phase indicator's geometry, matching build/gen_phase_assets.py --
+     * change one and regenerate the other. The bar is half the height it was:
+     * a 10px key in a 16px case rather than 20 in 28.
+     * <p>
+     * The two paddings are deliberately different. PAD_X has to clear the
+     * shell's angled nose so neither end key sits inside the slope, while
+     * PAD_Y only sets how much case shows above and below; tying them together
+     * is what made the first half-height pass look lopsided.
      */
     private static final int PHASE_CELL_W = 50;
-    private static final int PHASE_CELL_H = 20;
-    /** The reference's row width, for the gap either side of the buttons. */
-    private static final int PHASE_BAR_W = 375;
+    private static final int PHASE_CELL_H = 10;
+    private static final int PHASE_PAD_X = 8;
+    private static final int PHASE_PAD_Y = 3;
     /**
      * The phase row sits below the life bars, tucked up under the turn badge:
      * the "your turn" label that used to occupy this space is gone (the badge's
@@ -1198,8 +1201,8 @@ public class EngineDuelScreen extends Screen
         // The housing first, sitting a little proud of the bays.
         ScreenUtil.white();
         DuelTextures.bindSmooth(DuelTextures.PHASE_CASE);
-        DdBlitUtil.fullBlit(poseStack, x - 3, PHASE_BAR_Y - 4,
-            PHASE_NAMES.length * PHASE_CELL_W + 6, PHASE_CELL_H + 8);
+        DdBlitUtil.fullBlit(poseStack, x - PHASE_PAD_X, PHASE_BAR_Y - PHASE_PAD_Y,
+            PHASE_NAMES.length * PHASE_CELL_W + PHASE_PAD_X * 2, PHASE_CELL_H + PHASE_PAD_Y * 2);
 
         for(int i = 0; i < PHASE_NAMES.length; i++)
         {
