@@ -116,6 +116,35 @@ public final class PromptMessages
         }
     }
 
+    /** Client -> server: change how chain windows are answered. */
+    public record SetChainPreference(ChainPreference preference)
+    {
+        public static void encode(SetChainPreference message, FriendlyByteBuf buffer)
+        {
+            buffer.writeEnum(message.preference());
+        }
+
+        public static SetChainPreference decode(FriendlyByteBuf buffer)
+        {
+            return new SetChainPreference(buffer.readEnum(ChainPreference.class));
+        }
+
+        public static void handle(SetChainPreference message, Supplier<NetworkEvent.Context> context)
+        {
+            NetworkEvent.Context ctx = context.get();
+            ctx.enqueueWork(() ->
+            {
+                ServerPlayer sender = ctx.getSender();
+                if(sender != null)
+                {
+                    de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.setChainPreference(sender,
+                        message.preference());
+                }
+            });
+            ctx.setPacketHandled(true);
+        }
+    }
+
     /** Client -> server: I give up. */
     public record Surrender()
     {

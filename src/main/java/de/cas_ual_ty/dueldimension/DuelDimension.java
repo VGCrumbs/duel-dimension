@@ -229,6 +229,11 @@ public class DuelDimension
                 de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.Surrender::encode,
                 de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.Surrender::decode,
                 de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.Surrender::handle);
+        DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.SetChainPreference.class,
+                de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.SetChainPreference::encode,
+                de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.SetChainPreference::decode,
+                de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.SetChainPreference::handle);
         DuelDimension.channel.registerMessage(index++, CIIMessages.SetPage.class, CIIMessages.SetPage::encode, CIIMessages.SetPage::decode, CIIMessages.SetPage::handle);
         DuelDimension.channel.registerMessage(index++, CIIMessages.ChangePage.class, CIIMessages.ChangePage::encode, CIIMessages.ChangePage::decode, CIIMessages.ChangePage::handle);
         

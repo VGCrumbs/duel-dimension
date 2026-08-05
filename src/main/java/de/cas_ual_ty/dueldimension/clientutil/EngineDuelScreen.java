@@ -55,6 +55,8 @@ public class EngineDuelScreen extends Screen
     private List<BoardSnapshot.Slot> pileView;
     private String pileViewLabel = "";
     private boolean answered;
+    private de.cas_ual_ty.dueldimension.ocg.prompt.ChainPreference chainPreference =
+        de.cas_ual_ty.dueldimension.ocg.prompt.ChainPreference.DEFAULT;
 
     public EngineDuelScreen()
     {
@@ -103,6 +105,14 @@ public class EngineDuelScreen extends Screen
             counterAmounts = new int[prompt.options().size()];
         }
 
+        // EDOPro keeps the chain toggles next to Surrender; same here.
+        addRenderableWidget(new Button(SIDEBAR_PAD, height - 44, SIDEBAR_W - SIDEBAR_PAD * 2, 18,
+            Component.literal(chainPreference.label()), pressed ->
+        {
+            chainPreference = chainPreference.next();
+            DuelDimension.channel.sendToServer(new PromptMessages.SetChainPreference(chainPreference));
+            rebuild();
+        }));
         addRenderableWidget(new Button(SIDEBAR_PAD, height - 24, SIDEBAR_W - SIDEBAR_PAD * 2, 18,
             Component.literal(DuelClientState.over ? "Close" : "Surrender"), pressed ->
         {
@@ -267,6 +277,13 @@ public class EngineDuelScreen extends Screen
             }
             else if(option.hasSlot() && option.isAt(hit.controller(), hit.location(), hit.sequence()))
             {
+                found.add(i);
+            }
+            else if(hit.isPile() && option.hasSlot() && option.controller() == hit.controller()
+                && option.location() == hit.location())
+            {
+                // duelclient.cpp raises deck_act/grave_act/remove_act/extra_act
+                // for activations from a pile; the pile is the click target.
                 found.add(i);
             }
             else if(!option.hasSlot() && option.cardCode() != 0 && option.cardCode() == hit.code()
@@ -463,12 +480,16 @@ public class EngineDuelScreen extends Screen
                 {
                     continue;
                 }
-                if(hit.isPile() && hit.count() > 0)
-                {
-                    openPile(hit);
-                    return true;
-                }
                 List<Integer> actions = optionsFor(hit);
+                if(hit.isPile() && actions.isEmpty())
+                {
+                    if(hit.count() > 0)
+                    {
+                        openPile(hit);
+                        return true;
+                    }
+                    continue;
+                }
                 if(actions.size() == 1)
                 {
                     choose(actions.get(0));
@@ -545,7 +566,7 @@ public class EngineDuelScreen extends Screen
         {
             previewCode = hovered.code();
         }
-        if(hovered != null && !hovered.isPile() && !optionsFor(hovered).isEmpty())
+        if(hovered != null && !optionsFor(hovered).isEmpty())
         {
             openMenu(hovered);
         }
@@ -637,7 +658,7 @@ public class EngineDuelScreen extends Screen
         int scaledX = Math.round(SIDEBAR_PAD / 0.75F);
         int scaledY = Math.round(y / 0.75F) + 2;
         int scaledW = Math.round(imageW / 0.75F);
-        int limit = Math.round((height - 30) / 0.75F);
+        int limit = Math.round((height - 50) / 0.75F);
 
         for(Component component : header)
         {

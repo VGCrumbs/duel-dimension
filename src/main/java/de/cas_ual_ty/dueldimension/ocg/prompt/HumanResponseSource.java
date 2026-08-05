@@ -38,6 +38,7 @@ public class HumanResponseSource implements ResponseSource
 
     private BoardObserver board;
     private volatile DuelMessage pending;
+    private volatile ChainPreference chainPreference = ChainPreference.DEFAULT;
 
     // Turn context, tracked from the observed stream (same thread as the core).
     private int turn;
@@ -78,6 +79,12 @@ public class HumanResponseSource implements ResponseSource
     public byte[] respond(RawMessage prompt)
     {
         DuelMessage decoded = DuelMessage.decode(prompt);
+        // Chain windows the policy answers for us never reach the screen.
+        byte[] automatic = translator.autoAnswer(decoded, chainPreference);
+        if(automatic != null)
+        {
+            return automatic;
+        }
         BoardSnapshot field = board == null ? BoardSnapshot.EMPTY
             : BoardSnapshot.of(board.observe(), turn, phase, turnPlayer);
         EnginePrompt payload = translator.toPrompt(decoded, field);
@@ -87,7 +94,7 @@ public class HumanResponseSource implements ResponseSource
             // Nothing to decide (an empty chain window, say): answer it for
             // them rather than opening a screen with no buttons. If even that
             // is impossible, refuse instead of guessing on their behalf.
-            return translator.autoAnswer(decoded);
+            return translator.autoAnswer(decoded, chainPreference);
         }
 
         try
@@ -133,6 +140,11 @@ public class HumanResponseSource implements ResponseSource
             return false;
         }
         return answers.offer(answer);
+    }
+
+    public void setChainPreference(ChainPreference preference)
+    {
+        chainPreference = preference;
     }
 
     public boolean isWaiting()

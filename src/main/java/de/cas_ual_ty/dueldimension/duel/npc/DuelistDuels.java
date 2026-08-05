@@ -169,6 +169,17 @@ public final class DuelistDuels
         }
     }
 
+    /** Applies a chain-response policy to the player's seat. */
+    public static void setChainPreference(ServerPlayer player,
+        de.cas_ual_ty.dueldimension.ocg.prompt.ChainPreference preference)
+    {
+        HumanResponseSource seat = SEATS.get(player.getUUID());
+        if(seat != null)
+        {
+            seat.setChainPreference(preference);
+        }
+    }
+
     /** Concedes the player's running duel. */
     public static void surrender(ServerPlayer player)
     {

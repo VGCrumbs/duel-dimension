@@ -281,9 +281,22 @@ public class PromptTranslator
      */
     public byte[] autoAnswer(DuelMessage message)
     {
-        if(message instanceof DuelMessage.SelectChain chain && chain.chains().isEmpty())
+        return autoAnswer(message, ChainPreference.DEFAULT);
+    }
+
+    public byte[] autoAnswer(DuelMessage message, ChainPreference chainPreference)
+    {
+        if(message instanceof DuelMessage.SelectChain chain)
         {
-            return chain.forced() ? null : Responses.chainDecline();
+            // duelclient.cpp decides this before ever showing the window.
+            if(chainPreference.declinesWithoutAsking(chain))
+            {
+                return Responses.chainDecline();
+            }
+            if(chain.chains().isEmpty())
+            {
+                return chain.forced() ? null : Responses.chainDecline();
+            }
         }
         if(message instanceof DuelMessage.SelectUnselectCard unselect && unselect.optionCount() == 0)
         {

@@ -7,7 +7,8 @@ Inventory extracted from the EDOPro client source (`gframe/`: `game.cpp` widget 
 | EDOPro element (source) | What it is | Status |
 | --- | --- | --- |
 | Field zones (`materials.cpp` vertex table) | 5 monster + 2 extra monster zones, 5 spell/trap, field spell, pendulum zones, side columns | ✅ **1:1 port** — `FieldLayout` keeps EDOPro's own field-unit coordinates (1.1 pitch, side columns, EMZ on the centre line); only the 3D→2D projection is ours |
-| Deck/extra/grave/banished piles | Pile stacks with counts | ✅ counts + clickable grave/banished viewers |
+| Deck/extra/grave/banished piles | Pile stacks with counts | ✅ counts, viewers, and **activation from a pile** (grave/banished/deck/extra), which the option list previously made unreachable |
+| `act.png` on piles (`deck_act`/`grave_act`/`remove_act`/`extra_act`) | Indicator that something in that pile can be activated | ✅ EDOPro's own texture, same trigger |
 | Both hands | Own face-up, opponent's as backs | ✅ |
 | Card art on field (`DrawCard`) | Real art, face-downs as card backs | ✅ via the mod's own image pipeline |
 | Defence rotation | Sideways cards | ✅ |
@@ -36,7 +37,7 @@ Inventory extracted from the EDOPro client source (`gframe/`: `game.cpp` widget 
 | `wOptions` | `SELECT_OPTION` | ✅ |
 | `wPosSelect` (4 position buttons) | `SELECT_POSITION` | ✅ |
 | Zone click + flash | `SELECT_PLACE` / `SELECT_DISFIELD` | ✅ highlighted zones, click to choose |
-| Chain respond + `btnChainAlways/Ignore/WhenAvail` | `SELECT_CHAIN` | 🟡 respond/decline ✅; the three auto-respond preference toggles ❌ |
+| Chain respond + `btnChainAlways/Ignore/WhenAvail` | `SELECT_CHAIN` | ✅ **1:1 port** — `ChainPreference` reproduces duelclient.cpp's auto-respond formula incl. the `spe_count == 0x7f` select-trigger sentinel; cycled from a toggle beside Surrender |
 | Tribute selection | `SELECT_TRIBUTE` | ✅ (release_param shown) |
 | Material sums | `SELECT_SUM` | ✅ |
 | `wANCard` (text search + list) | `ANNOUNCE_CARD` | ✅ client-side name search over local DB, server validates with the opcode filter |

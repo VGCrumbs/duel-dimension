@@ -133,8 +133,9 @@ public class BoardRenderer extends GuiComponent
         Hit hit = new Hit(box[0], box[1], box[2], box[3], 0, controller, location, -1, -1,
             label + " (" + count + ")", count);
 
+        boolean canActivateFromHere = actionable.test(hit);
         fill(poseStack, box[0] - 1, box[1] - 1, box[0] + box[2] + 1, box[1] + box[3] + 1,
-            actionable.test(hit) ? COLOUR_ACTIONABLE : COLOUR_ZONE);
+            canActivateFromHere ? COLOUR_ACTIONABLE : COLOUR_ZONE);
         fill(poseStack, box[0], box[1], box[0] + box[2], box[1] + box[3], COLOUR_ZONE_FILL);
         if(count > 0)
         {
@@ -147,6 +148,16 @@ public class BoardRenderer extends GuiComponent
             fill(poseStack, box[0] + box[2] - badgeW - 1, box[1] + box[3] - 10,
                 box[0] + box[2] - 1, box[1] + box[3] - 1, 0xC0000000);
             font.draw(poseStack, text, box[0] + box[2] - badgeW + 1, box[1] + box[3] - 9, 0xFFFFFF);
+        }
+        if(canActivateFromHere)
+        {
+            // EDOPro draws tAct over a pile whose contents can be activated
+            // (drawing.cpp, deck_act/grave_act/remove_act/extra_act).
+            ScreenUtil.white();
+            CardRenderUtil.bindMainResourceLocation(DuelTextures.ACT);
+            int size = Math.min(box[2], box[3]) * 2 / 3;
+            DdBlitUtil.fullBlit(poseStack, box[0] + (box[2] - size) / 2,
+                box[1] + (box[3] - size) / 2, size, size);
         }
         hits.add(hit);
     }
