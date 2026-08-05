@@ -125,11 +125,21 @@ public final class DuelistDuels
         HeadlessDuelRunner.Deck deck1 = npcDeck.load().toRunnerDeck();
 
         // The challenger plays seat 0 themselves; the NPC plays seat 1.
+        // The prompt callback runs on the duel thread. It used to channel.send
+        // directly from there, racing the DuelUpdate stream sent by the server
+        // tick -- a prompt could reach the client before the events of the turn
+        // it concluded. It now posts into the session's own queue, so the drain
+        // sends everything, prompts included, in stream order from one thread.
         PromptTranslator translator = new PromptTranslator(engine.cards(), engine.descriptions());
+        DuelSession[] sessionHolder = new DuelSession[1];
         HumanResponseSource human = new HumanResponseSource(translator, (prompt, seat) ->
-            de.cas_ual_ty.dueldimension.DuelDimension.channel.send(
-                net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> serverPlayer),
-                new PromptMessages.ShowPrompt(prompt)));
+        {
+            DuelSession running = sessionHolder[0];
+            if(running != null)
+            {
+                running.postPrompt(prompt);
+            }
+        });
         SEATS.put(serverPlayer.getUUID(), human);
 
         DuelSession session = DuelSession.create(
@@ -139,6 +149,7 @@ public final class DuelistDuels
             human,
             new HeuristicBot(seed * 2 + 1, engine.cards(), engine.cards().all()));
 
+        sessionHolder[0] = session;
         ACTIVE.put(Watcher.of(serverPlayer), session);
 
         serverPlayer.sendSystemMessage(Component.literal("Duel started: ")
@@ -266,7 +277,10 @@ public final class DuelistDuels
             // batch ended on a message the board sent with it predated the
             // events sent with it, and the field jumped backwards until the
             // next batch corrected it.
-            List<PromptMessages.DuelUpdate> updates = new ArrayList<>();
+            // Outbound packets in stream order: DuelUpdates and ShowPrompts
+            // interleaved exactly as the duel produced them. All are sent from
+            // this thread on one channel, so they arrive in this order too.
+            List<Object> outbound = new ArrayList<>();
             List<DuelEvent> events = new ArrayList<>();
             boolean[] over = {false};
             String[] result = {""};
@@ -292,9 +306,22 @@ public final class DuelistDuels
                 else if(event instanceof DuelSession.Event.Board board)
                 {
                     // Checkpoint: everything up to here, then this board.
-                    updates.add(new PromptMessages.DuelUpdate(board.snapshot(), List.of(), false, "",
+                    outbound.add(new PromptMessages.DuelUpdate(board.snapshot(), List.of(), false, "",
                         new int[0], new ArrayList<>(events)));
                     events.clear();
+                }
+                else if(event instanceof DuelSession.Event.Prompt prompt)
+                {
+                    // The question the duel stopped on, in its place in the
+                    // stream: whatever led up to it is flushed first so the
+                    // client animates it before the prompt appears.
+                    if(!events.isEmpty())
+                    {
+                        outbound.add(new PromptMessages.DuelUpdate(null, List.of(), false, "",
+                            new int[0], new ArrayList<>(events)));
+                        events.clear();
+                    }
+                    outbound.add(prompt.prompt());
                 }
                 else if(event instanceof DuelSession.Event.Finished done)
                 {
@@ -314,31 +341,47 @@ public final class DuelistDuels
                 }
             });
 
-            // Anything after the last board checkpoint still has to be played;
-            // it commits no board of its own.
+            // Anything after the last checkpoint still has to be played; it
+            // commits no board of its own.
             if(!events.isEmpty() || !log.isEmpty() || over[0])
             {
-                updates.add(new PromptMessages.DuelUpdate(null, List.of(), false, "", new int[0],
+                outbound.add(new PromptMessages.DuelUpdate(null, List.of(), false, "", new int[0],
                     new ArrayList<>(events)));
                 events.clear();
             }
 
-            if(!watcher.console() && !updates.isEmpty())
+            if(!watcher.console() && !outbound.isEmpty())
             {
                 ServerPlayer player = server.getPlayerList().getPlayer(watcher.playerId());
                 if(player != null)
                 {
-                    for(int i = 0; i < updates.size(); i++)
+                    int lastUpdate = -1;
+                    for(int i = 0; i < outbound.size(); i++)
                     {
-                        PromptMessages.DuelUpdate update = updates.get(i);
-                        boolean last = i == updates.size() - 1;
-                        // The log and the result belong to the batch, so they
-                        // ride on its final update.
-                        de.cas_ual_ty.dueldimension.DuelDimension.channel.send(
-                            net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
-                            new PromptMessages.DuelUpdate(update.board(),
-                                last ? log : List.of(), last && over[0], last ? result[0] : "",
-                                new int[0], update.events()));
+                        if(outbound.get(i) instanceof PromptMessages.DuelUpdate)
+                        {
+                            lastUpdate = i;
+                        }
+                    }
+                    for(int i = 0; i < outbound.size(); i++)
+                    {
+                        if(outbound.get(i) instanceof PromptMessages.DuelUpdate update)
+                        {
+                            // The log and the result belong to the batch, so
+                            // they ride on its final update.
+                            boolean last = i == lastUpdate;
+                            de.cas_ual_ty.dueldimension.DuelDimension.channel.send(
+                                net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
+                                new PromptMessages.DuelUpdate(update.board(),
+                                    last ? log : List.of(), last && over[0], last ? result[0] : "",
+                                    new int[0], update.events()));
+                        }
+                        else if(outbound.get(i) instanceof de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt)
+                        {
+                            de.cas_ual_ty.dueldimension.DuelDimension.channel.send(
+                                net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
+                                new PromptMessages.ShowPrompt(prompt));
+                        }
                     }
                 }
             }

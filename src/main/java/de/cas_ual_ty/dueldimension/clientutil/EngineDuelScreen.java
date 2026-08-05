@@ -725,8 +725,30 @@ public class EngineDuelScreen extends Screen
 
     // ---- rendering ----
 
+    /**
+     * The board the screen draws: always the paced one, advanced only as its
+     * events play out.
+     * <p>
+     * The prompt also carries a settled snapshot ({@code prompt.field()},
+     * captured server-side when the core asked its question) and this method
+     * used to prefer it. That was the bypass behind every "cards appear before
+     * their animation" report: the moment any prompt existed — which on your
+     * turn is always — the screen drew the end-state directly and the entire
+     * hold-the-board-behind-its-events pipeline was ignored. EDOPro has no
+     * equivalent snapshot to leak: its select messages are handled in the same
+     * stream as everything else (duelclient.cpp:1702/1778/1976), over card
+     * state that its own animations own.
+     * <p>
+     * The prompt's field is still used as a seed before the first update
+     * lands, so the very first question of a duel is not asked over an empty
+     * table.
+     */
     private BoardSnapshot currentBoard()
     {
+        if(DuelClientState.board != BoardSnapshot.EMPTY)
+        {
+            return DuelClientState.board;
+        }
         EnginePrompt prompt = shownPrompt;
         return prompt != null ? prompt.field() : DuelClientState.board;
     }

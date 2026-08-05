@@ -45,6 +45,19 @@ public class DuelSession
         record Board(de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot snapshot) implements Event
         {
         }
+
+        /**
+         * The duel is waiting on the player, and this is the question. A
+         * prompt travels in the same queue as the messages before it because
+         * that is how the reference client stays ordered: EDOPro's select
+         * messages are cases inside ClientAnalyze (duelclient.cpp:1702, 1778,
+         * 1976), consumed from one stream, so a prompt can never be handled
+         * before everything preceding it has been animated. Sending ours on a
+         * side channel from the duel thread let it overtake the event stream.
+         */
+        record Prompt(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt) implements Event
+        {
+        }
     }
 
     private final String id;
@@ -87,6 +100,16 @@ public class DuelSession
 
         holder[0] = new DuelSession(id, runner);
         return holder[0];
+    }
+
+    /**
+     * Posts the prompt the duel is now blocked on. Must be called from the
+     * duel thread (it is: HumanResponseSource.respond runs there), so it lands
+     * in the queue after every message that led up to it.
+     */
+    public void postPrompt(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt)
+    {
+        events.add(new Event.Prompt(prompt));
     }
 
     /** Starts the duel thread. Returns immediately. */
