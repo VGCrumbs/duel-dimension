@@ -120,79 +120,90 @@ public final class FieldLayout
     }
 
     /**
-     * Projects the field onto the screen as a trapezoid, so the table appears
-     * tilted away from the viewer as it does in the reference client's 3D
-     * scene. The far (opponent) edge is narrower than the near (your) edge,
-     * and equal steps in field depth compress towards the far edge.
+     * A pinhole camera looking down at the table, which is what makes the
+     * board look tilted.
+     * <p>
+     * The previous attempt scaled horizontal and vertical distances by
+     * different laws, so cards stretched and sheared instead of simply
+     * receding. Here a single depth divisor drives both axes, exactly as a
+     * real camera does: a point at table depth {@code d} from the lens
+     * projects to {@code f/d} times its size, so a card keeps its shape and
+     * rows bunch towards the horizon on their own.
      *
-     * @param farHalfWidth  half-width of the table's far edge, in pixels
-     * @param nearHalfWidth half-width of the near edge
+     * @param centreX    screen x of the table's centre line
+     * @param horizonY   screen y the table converges to at infinite depth
+     * @param focal      focal length in pixels
+     * @param cameraDist distance from lens to the table's near edge, field units
+     * @param cameraHigh height of the lens above the table plane, field units
      */
-    public record Projection(float centreX, float topY, float bottomY, float farHalfWidth, float nearHalfWidth)
+    public record Projection(float centreX, float horizonY, float focal, float cameraDist, float cameraHigh)
     {
-        /** Depth fraction: 0 at the opponent's edge, 1 at yours. */
+        private static final float FIELD_CENTRE_X = (FIELD_MIN_X + FIELD_MAX_X) / 2F;
+
+        /** Distance from the lens to a row of the table. */
         private float depth(float fieldY)
         {
-            return (fieldY - FIELD_MIN_Y) / (FIELD_MAX_Y - FIELD_MIN_Y);
-        }
-
-        /**
-         * Perspective-correct screen fraction for a depth. With k the ratio of
-         * far to near width, s(v) = k·v / (1 + (k-1)·v) — the standard
-         * projective interpolation across a trapezoid, so rows bunch up
-         * towards the horizon instead of being evenly spaced.
-         */
-        private float screenFraction(float fieldY)
-        {
-            float v = depth(fieldY);
-            float k = farHalfWidth / nearHalfWidth;
-            return k * v / (1F + (k - 1F) * v);
+            return cameraDist + (FIELD_MAX_Y - fieldY);
         }
 
         public float y(float fieldY)
         {
-            return topY + screenFraction(fieldY) * (bottomY - topY);
-        }
-
-        /** Half-width of the table at this depth; edges of the trapezoid are straight. */
-        public float halfWidth(float fieldY)
-        {
-            float s = screenFraction(fieldY);
-            return farHalfWidth + (nearHalfWidth - farHalfWidth) * s;
+            return horizonY + cameraHigh * focal / depth(fieldY);
         }
 
         public float x(float fieldX, float fieldY)
         {
-            float centreFieldX = (FIELD_MIN_X + FIELD_MAX_X) / 2F;
-            float halfFieldWidth = (FIELD_MAX_X - FIELD_MIN_X) / 2F;
-            return centreX + ((fieldX - centreFieldX) / halfFieldWidth) * halfWidth(fieldY);
+            return centreX + (fieldX - FIELD_CENTRE_X) * focal / depth(fieldY);
+        }
+
+        /** On-screen height of one field unit at this depth, for card sizing. */
+        public float scaleAt(float fieldY)
+        {
+            return focal / depth(fieldY);
         }
 
         /** The four projected corners of a zone rectangle. */
         public FieldQuad.Corners quad(Rect rect)
         {
-            float farY = rect.y();
-            float nearY = rect.y() + rect.h();
+            float far = rect.y();
+            float near = rect.y() + rect.h();
             return new FieldQuad.Corners(
-                x(rect.x(), farY), y(farY),
-                x(rect.x() + rect.w(), farY), y(farY),
-                x(rect.x() + rect.w(), nearY), y(nearY),
-                x(rect.x(), nearY), y(nearY));
+                x(rect.x(), far), y(far),
+                x(rect.x() + rect.w(), far), y(far),
+                x(rect.x() + rect.w(), near), y(near),
+                x(rect.x(), near), y(near));
         }
 
-        /** A free-floating card (hand), sized as if it sat at the given depth. */
+        /** A free-floating card (a hand), centred on a point of the table. */
         public FieldQuad.Corners cardQuad(float centreFieldX, float fieldY, float width, float height)
         {
             return quad(new Rect(centreFieldX - width / 2F, fieldY - height / 2F, width, height));
         }
     }
 
-    /** Fits the tilted table into the given screen box. */
+    /**
+     * Fits the tilted table into a screen box.
+     * <p>
+     * {@code farNearRatio} is how wide the far edge appears relative to the
+     * near edge; it fixes the camera distance, and the remaining parameters
+     * follow from making the table exactly fill the box.
+     */
     public static Projection fit(int left, int top, int width, int height)
     {
-        // Reserve room at the bottom edge for the near hand row.
-        float nearHalf = width / 2F * 0.98F;
-        float farHalf = nearHalf * 0.58F;
-        return new Projection(left + width / 2F, top, top + height, farHalf, nearHalf);
+        final float farNearRatio = 0.62F;
+        float fieldDepth = FIELD_MAX_Y - FIELD_MIN_Y;
+        float fieldWidth = FIELD_MAX_X - FIELD_MIN_X;
+
+        // near width : far width = (dist + depth) : dist
+        float cameraDist = farNearRatio * fieldDepth / (1F - farNearRatio);
+        // Near edge spans the full box width.
+        float focal = cameraDist * width / fieldWidth;
+        // Choose the lens height that makes the table exactly as tall as the box.
+        float spread = 1F / cameraDist - 1F / (cameraDist + fieldDepth);
+        float cameraHigh = height / (focal * spread);
+        // Far edge lands on the top of the box.
+        float horizonY = top - cameraHigh * focal / (cameraDist + fieldDepth);
+
+        return new Projection(left + width / 2F, horizonY, focal, cameraDist, cameraHigh);
     }
 }
