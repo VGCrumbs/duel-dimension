@@ -745,6 +745,7 @@ public class EngineDuelScreen extends Screen
         animations.renderMoves(poseStack, boardRenderer, boardRenderer.projection(), now);
         animations.renderAttacks(poseStack, boardRenderer.projection(), now);
         animations.renderOverlays(poseStack, boardRenderer.projection(), now);
+        animations.renderShatters(poseStack, boardRenderer.projection(), now);
 
         // Hover picks the preview card and opens that card's command menu.
         BoardRenderer.Hit hovered = null;

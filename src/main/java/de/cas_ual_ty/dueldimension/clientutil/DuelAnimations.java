@@ -38,6 +38,10 @@ public class DuelAnimations
     private static final long BEAT_MS = 320;
     /** A chain or target marker has to be readable before it goes. */
     private static final long OVERLAY_MS = 1200;
+    /** A destroyed card breaks apart over this long. */
+    private static final long SHATTER_MS = 850;
+    /** Fragments per axis: the card breaks into SHARDS x SHARDS pieces. */
+    private static final int SHARDS = 3;
     /** However far behind we are, nothing is allowed to flash past faster. */
     private static final long FLOOR_MS = 260;
 
@@ -91,6 +95,8 @@ public class DuelAnimations
      * or an equip card gave no feedback at all.
      */
     private final List<Playing> overlays = new ArrayList<>();
+    /** Cards breaking apart where they were destroyed. */
+    private final List<Playing> shatters = new ArrayList<>();
 
     /** Events waiting their turn to be played. */
     private final java.util.ArrayDeque<DuelEvent> queue = new java.util.ArrayDeque<>();
@@ -120,7 +126,8 @@ public class DuelAnimations
     {
         long base = switch(event.kind())
         {
-            case MOVE, SUMMON, SPECIAL_SUMMON, SET, ACTIVATE, DESTROY, DRAW -> MOVE_MS;
+            case DESTROY -> SHATTER_MS;
+            case MOVE, SUMMON, SPECIAL_SUMMON, SET, ACTIVATE, DRAW -> MOVE_MS;
             case ATTACK -> ATTACK_MS;
             case DAMAGE, RECOVER -> FLASH_MS;
             case CHAINING, BECOME_TARGET -> OVERLAY_MS;
@@ -157,7 +164,8 @@ public class DuelAnimations
         long duration = duration(event);
         switch(event.kind())
         {
-            case MOVE, SUMMON, SPECIAL_SUMMON, SET, ACTIVATE, DESTROY, DRAW ->
+            case DESTROY -> shatters.add(new Playing(event, now, duration));
+            case MOVE, SUMMON, SPECIAL_SUMMON, SET, ACTIVATE, DRAW ->
                 playing.add(new Playing(event, now, duration));
             case DAMAGE, RECOVER -> flashes.add(new Playing(event, now, duration));
             case ATTACK -> attacks.add(new Playing(event, now, duration));
@@ -211,6 +219,7 @@ public class DuelAnimations
         flashes.removeIf(animation -> animation.done(now));
         attacks.removeIf(animation -> animation.done(now));
         overlays.removeIf(animation -> animation.done(now));
+        shatters.removeIf(animation -> animation.done(now));
 
         if(!queue.isEmpty() && now >= nextStart)
         {
@@ -279,6 +288,71 @@ public class DuelAnimations
                     projection.cardQuad(swordX, swordY, SWORD_SIZE, SWORD_SIZE),
                     1F, 1F, 1F, alpha);
             }
+        }
+    }
+
+    /**
+     * A destroyed card breaking apart.
+     * <p>
+     * The card is cut into a grid of shards, each drawn from its own corner of
+     * the art (drawProjected already samples a UV window, which is what makes
+     * this possible), then thrown outwards from the centre and faded. Without
+     * it a destroyed card simply vanished into the graveyard count.
+     */
+    public void renderShatters(PoseStack poseStack, FieldLayout.Projection projection, long now)
+    {
+        if(projection == null)
+        {
+            return;
+        }
+        for(Playing animation : shatters)
+        {
+            DuelEvent event = animation.event();
+            // Destroyed cards move to the graveyard, so the card's last place
+            // on the board is where it came FROM.
+            FieldLayout.Rect rect = zoneRect(event.fromZone());
+            if(rect == null)
+            {
+                continue;
+            }
+            float t = animation.progress(now);
+            float alpha = 1F - t * t;
+            ResourceLocation texture = artFor(event.code());
+
+            float shardW = CARD_W / SHARDS;
+            float shardH = CARD_H / SHARDS;
+            float centreX = rect.x() + rect.w() / 2F;
+            float centreY = rect.y() + rect.h() / 2F;
+
+            for(int row = 0; row < SHARDS; row++)
+            {
+                for(int column = 0; column < SHARDS; column++)
+                {
+                    // Where this shard starts, as a card-sized grid cell.
+                    float x = centreX - CARD_W / 2F + column * shardW;
+                    float y = centreY - CARD_H / 2F + row * shardH;
+                    // Thrown out from the middle, further the longer it runs.
+                    float awayX = (x + shardW / 2F) - centreX;
+                    float awayY = (y + shardH / 2F) - centreY;
+                    float drift = t * 1.9F;
+
+                    // The matching window of the card's art.
+                    float u0 = DuelTextures.CARD_U0
+                        + (DuelTextures.CARD_U1 - DuelTextures.CARD_U0) * column / SHARDS;
+                    float u1 = DuelTextures.CARD_U0
+                        + (DuelTextures.CARD_U1 - DuelTextures.CARD_U0) * (column + 1) / SHARDS;
+                    float v0 = DuelTextures.CARD_V0
+                        + (DuelTextures.CARD_V1 - DuelTextures.CARD_V0) * row / SHARDS;
+                    float v1 = DuelTextures.CARD_V0
+                        + (DuelTextures.CARD_V1 - DuelTextures.CARD_V0) * (row + 1) / SHARDS;
+
+                    com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1F, 1F, 1F, alpha);
+                    FieldQuad.drawProjected(poseStack, texture, projection,
+                        new FieldLayout.Rect(x + awayX * drift, y + awayY * drift, shardW, shardH),
+                        1, false, u0, v0, u1, v1);
+                }
+            }
+            com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
         }
     }
 
@@ -453,7 +527,8 @@ public class DuelAnimations
     /** True while anything is still playing, for callers that want to wait. */
     public boolean isBusy()
     {
-        return !playing.isEmpty() || !attacks.isEmpty() || !overlays.isEmpty() || !queue.isEmpty();
+        return !playing.isEmpty() || !attacks.isEmpty() || !overlays.isEmpty()
+            || !shatters.isEmpty() || !queue.isEmpty();
     }
 
     private static ResourceLocation artFor(int code)
@@ -482,6 +557,10 @@ public class DuelAnimations
                 : de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_SZONE,
             sequence);
     }
+
+    /** The card quad from materials.cpp, matching BoardRenderer's. */
+    private static final float CARD_W = 0.7F;
+    private static final float CARD_H = 1.0F;
 
     /** Ease-out, so a card decelerates into its zone. */
     private static float ease(float t)

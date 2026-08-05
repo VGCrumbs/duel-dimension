@@ -5,6 +5,7 @@ import de.cas_ual_ty.dueldimension.ocg.OcgConstants;
 import de.cas_ual_ty.dueldimension.ocg.RawMessage;
 import de.cas_ual_ty.dueldimension.ocg.ResponseSource;
 import de.cas_ual_ty.dueldimension.ocg.msg.DuelMessage;
+import de.cas_ual_ty.dueldimension.ocg.text.DescriptionTable;
 import de.cas_ual_ty.dueldimension.ocg.query.BoardObserver;
 
 import java.util.concurrent.SynchronousQueue;
@@ -72,6 +73,18 @@ public class HumanResponseSource implements ResponseSource
         else if(message.type() == OcgConstants.MSG_NEW_PHASE)
         {
             phase = ((DuelMessage.NewPhase)DuelMessage.decode(message)).phase();
+        }
+        else if(message.type() == OcgConstants.MSG_HINT)
+        {
+            // HINT_SELECTMSG is how the core says what a coming selection is
+            // FOR ("select a card to discard", "select a monster to tribute").
+            // duelclient.cpp stashes it in select_hint and titles the next
+            // selection with it; without this every prompt read "Select a card".
+            DuelMessage.Hint hint = (DuelMessage.Hint)DuelMessage.decode(message);
+            if(hint.hintType() == DescriptionTable.OcgHints.SELECT_MESSAGE)
+            {
+                translator.noteSelectHint(hint.description());
+            }
         }
     }
 

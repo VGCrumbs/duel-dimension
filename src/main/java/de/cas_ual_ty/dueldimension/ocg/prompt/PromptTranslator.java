@@ -584,11 +584,44 @@ public class PromptTranslator
         };
     }
 
-    private static String selectTitle(int min, int max)
+    /**
+     * The caption EDOPro puts on a card selection, from duelclient.cpp:
+     * <pre>
+     * stHintMsg->setText(format(L"{}({}-{})",
+     *     GetDesc(select_hint ? select_hint : 531), select_min, select_max));
+     * </pre>
+     * {@code select_hint} is whatever the core last sent as HINT_SELECTMSG, so
+     * a prompt says what it is actually for -- "select a card to discard" --
+     * instead of a generic line. System string 531 is the fallback the
+     * reference uses when the core sent no hint.
+     */
+    private String selectTitle(int min, int max)
     {
-        return min == max
-            ? "Select " + min + " card" + (min == 1 ? "" : "s")
-            : "Select " + min + " to " + max + " cards";
+        long hintId = takeSelectHint();
+        String hint = hintId != 0 ? text.describe(hintId) : text.systemString(DEFAULT_SELECT_HINT);
+        return hint + "(" + min + "-" + max + ")";
+    }
+
+    /** strings.conf 531, the reference's default selection caption. */
+    private static final int DEFAULT_SELECT_HINT = 531;
+
+    /**
+     * The core's HINT_SELECTMSG for the selection about to be asked for.
+     * Cleared once used, as duelclient.cpp clears select_hint at the top of
+     * each select handler.
+     */
+    private long selectHint;
+
+    public void noteSelectHint(long description)
+    {
+        this.selectHint = description;
+    }
+
+    private long takeSelectHint()
+    {
+        long hint = selectHint;
+        selectHint = 0;
+        return hint;
     }
 
     /**
