@@ -263,6 +263,23 @@ public sealed interface DuelMessage
     {
     }
 
+    /**
+     * A coin toss. operations.cpp:6034 writes the player, a count, then that
+     * many bytes of 0 or 1. The core also re-sends the whole message after a
+     * negating effect has rewritten the results, so the last one seen wins.
+     */
+    record TossCoin(int player, List<Integer> results) implements DuelMessage
+    {
+    }
+
+    /**
+     * A dice roll. operations.cpp:6112, same shape, each byte 1 to 6. A roll
+     * for both players arrives as two messages, one per player.
+     */
+    record TossDice(int player, List<Integer> results) implements DuelMessage
+    {
+    }
+
     /** A card was set; code is 0 when hidden. Sound only in the reference. */
     record SetCard(int code, CardLocation card) implements DuelMessage
     {
@@ -458,6 +475,18 @@ public sealed interface DuelMessage
             case OcgConstants.MSG_SUMMONING -> new Summoning(in.u32(), in.loc());
             case OcgConstants.MSG_SPSUMMONING -> new SpSummoning(in.u32(), in.loc());
             case OcgConstants.MSG_SET -> new SetCard(in.u32(), in.loc());
+            case OcgConstants.MSG_TOSS_COIN, OcgConstants.MSG_TOSS_DICE ->
+            {
+                int player = in.u8();
+                int count = in.u8();
+                List<Integer> results = new ArrayList<>(count);
+                for(int i = 0; i < count; i++)
+                {
+                    results.add(in.u8());
+                }
+                yield message.type() == OcgConstants.MSG_TOSS_COIN
+                    ? new TossCoin(player, results) : new TossDice(player, results);
+            }
             case OcgConstants.MSG_POS_CHANGE -> new PositionChange(in.u32(), in.u8(), in.u8(),
                 in.u8(), in.u8(), in.u8());
             case OcgConstants.MSG_BATTLE -> new Battle(in.loc(), in.u32(), in.u32(), in.u8(),

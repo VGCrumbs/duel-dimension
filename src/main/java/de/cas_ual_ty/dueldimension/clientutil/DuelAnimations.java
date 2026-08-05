@@ -61,6 +61,7 @@ public class DuelAnimations
     private static final long CHAIN_MS = frames(30);
     private static final long TARGET_MS = frames(30);
     private static final long SHUFFLE_MS = frames(10);
+    private static final long TOSS_MS = frames(40);
     private static final long POSITION_MS = frames(11);
     private static final long WIN_MS = frames(120);
     /**
@@ -124,6 +125,8 @@ public class DuelAnimations
      * or an equip card gave no feedback at all.
      */
     private final List<Playing> overlays = new ArrayList<>();
+    /** Coin and dice results, announced over the middle of the table. */
+    private final List<Playing> tosses = new ArrayList<>();
     /** Cards breaking apart where they were destroyed. */
     private final List<Playing> shatters = new ArrayList<>();
 
@@ -195,6 +198,9 @@ public class DuelAnimations
             case PHASE -> PHASE_MS;
             case NEW_TURN -> TURN_MS;
             case SHUFFLE -> SHUFFLE_MS;
+            // MSG_TOSS_COIN and MSG_TOSS_DICE both hold 40 frames in
+            // duelclient.cpp, the same beat as a phase change.
+            case COIN, DICE -> TOSS_MS;
             case WIN -> WIN_MS;
         };
         return Math.max(FLOOR_MS, Math.round(base * backlogScale()));
@@ -249,6 +255,7 @@ public class DuelAnimations
             case DAMAGE, RECOVER -> flashes.add(new Playing(event, now, duration));
             case ATTACK -> attacks.add(new Playing(event, now, duration));
             case CHAINING, BECOME_TARGET -> overlays.add(new Playing(event, now, duration));
+            case COIN, DICE -> tosses.add(new Playing(event, now, duration));
             default ->
             {
             }
@@ -280,6 +287,8 @@ public class DuelAnimations
             case CHAINING -> DdSounds.ACTIVATE.get();
             case BECOME_TARGET -> DdSounds.EQUIP.get();
             case SHUFFLE -> DdSounds.SHUFFLE.get();
+            case COIN -> DdSounds.COIN_FLIP.get();
+            case DICE -> DdSounds.DICE_ROLL.get();
             case PHASE -> DdSounds.PHASE.get();
             case NEW_TURN -> DdSounds.NEXT_TURN.get();
             default -> null;
@@ -300,6 +309,7 @@ public class DuelAnimations
         attacks.removeIf(animation -> animation.done(now));
         overlays.removeIf(animation -> animation.done(now));
         shatters.removeIf(animation -> animation.done(now));
+        tosses.removeIf(animation -> animation.done(now));
 
         // Release as many zero-length steps as are ready, so a commit that
         // follows a finished event lands on the same frame rather than a frame
@@ -518,6 +528,79 @@ public class DuelAnimations
     }
 
     /**
+     * A coin or dice result, announced over the middle of the table.
+     * <p>
+     * The reference has no art for either -- it prints the outcome through
+     * stACMessage and holds 40 frames -- so the timing and the sound are its
+     * own while the face drawing is ours: a coin is a disc reading H or T, a
+     * die a rounded square with pips.
+     */
+    public void renderTosses(PoseStack poseStack, net.minecraft.client.gui.Font font,
+        FieldLayout.Projection projection, long now)
+    {
+        if(projection == null)
+        {
+            return;
+        }
+        for(Playing animation : tosses)
+        {
+            DuelEvent event = animation.event();
+            int count = Math.max(1, event.code());
+            boolean coin = event.kind() == DuelEvent.Kind.COIN;
+            float t = animation.progress(now);
+            // Rises into place, holds, then fades out.
+            float rise = Math.min(1F, t * 4F);
+            float alpha = t < 0.75F ? 1F : 1F - (t - 0.75F) / 0.25F;
+
+            float centreX = projection.x(FIELD_CENTRE_X, 0F);
+            float centreY = projection.y(0F) - 26F * rise;
+            int size = 22;
+            int spacing = size + 6;
+            float startX = centreX - (count - 1) * spacing / 2F - size / 2F;
+
+            for(int i = 0; i < count; i++)
+            {
+                int value = coin ? (event.amount() >> i) & 1 : (event.amount() >> (i * 6)) & 0x3F;
+                drawTossFace(poseStack, font, Math.round(startX + i * spacing),
+                    Math.round(centreY - size / 2F), size, coin, value, alpha);
+            }
+        }
+    }
+
+    /** One coin or die, drawn from white.png and the font. */
+    private static void drawTossFace(PoseStack poseStack, net.minecraft.client.gui.Font font,
+        int x, int y, int size, boolean coin, int value, float alpha)
+    {
+        int a = Math.round(Math.max(0F, Math.min(1F, alpha)) * 255);
+        FieldQuad.Corners box = new FieldQuad.Corners(x, y, x + size, y, x + size, y + size, x, y + size);
+        // Body, then a lighter inner face, so it reads as a struck object.
+        FieldQuad.drawCorners(poseStack, DuelTextures.WHITE, box, 0F, 0F, 1F, 1F,
+            0.10F, 0.11F, 0.13F, a / 255F);
+        FieldQuad.Corners face = new FieldQuad.Corners(x + 2, y + 2, x + size - 2, y + 2,
+            x + size - 2, y + size - 2, x + 2, y + size - 2);
+        if(coin)
+        {
+            FieldQuad.drawCorners(poseStack, DuelTextures.WHITE, face, 0F, 0F, 1F, 1F,
+                0.85F, 0.72F, 0.28F, a / 255F);
+            String label = value == 1 ? "H" : "T";
+            font.draw(poseStack, label, x + (size - font.width(label)) / 2F, y + (size - 8) / 2F,
+                (a << 24) | 0x201804);
+        }
+        else
+        {
+            FieldQuad.drawCorners(poseStack, DuelTextures.WHITE, face, 0F, 0F, 1F, 1F,
+                0.90F, 0.90F, 0.92F, a / 255F);
+            String label = Integer.toString(Math.max(1, Math.min(6, value)));
+            font.draw(poseStack, label, x + (size - font.width(label)) / 2F, y + (size - 8) / 2F,
+                (a << 24) | 0x14161A);
+        }
+    }
+
+    /** The table's middle, where an announcement belongs. */
+    private static final float FIELD_CENTRE_X =
+        (FieldLayout.FIELD_MIN_X + FieldLayout.FIELD_MAX_X) / 2F;
+
+    /**
      * Chain and target markers over the cards they concern, the way
      * drawing.cpp lays tChain over a chaining card and tChainTarget over a
      * targeted one.
@@ -601,6 +684,7 @@ public class DuelAnimations
     {
         queue.clear();
         playing.clear();
+        tosses.clear();
         flashes.clear();
         attacks.clear();
         overlays.clear();
@@ -612,7 +696,7 @@ public class DuelAnimations
     public boolean isBusy()
     {
         return !playing.isEmpty() || !attacks.isEmpty() || !overlays.isEmpty()
-            || !shatters.isEmpty() || !queue.isEmpty();
+            || !shatters.isEmpty() || !tosses.isEmpty() || !queue.isEmpty();
     }
 
     private static ResourceLocation artFor(int code)

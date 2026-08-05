@@ -425,6 +425,19 @@ public final class DuelistDuels
     {
         DuelMessage message = DuelMessage.decode(raw);
 
+        if(message instanceof DuelMessage.TossCoin coin)
+        {
+            StringBuilder faces = new StringBuilder();
+            coin.results().forEach(r -> faces.append(faces.length() == 0 ? "" : ", ")
+                .append(r == 1 ? "heads" : "tails"));
+            return Component.literal("Coin toss: " + faces).withStyle(ChatFormatting.YELLOW);
+        }
+        if(message instanceof DuelMessage.TossDice dice)
+        {
+            StringBuilder faces = new StringBuilder();
+            dice.results().forEach(r -> faces.append(faces.length() == 0 ? "" : ", ").append(r));
+            return Component.literal("Dice roll: " + faces).withStyle(ChatFormatting.YELLOW);
+        }
         if(message instanceof DuelMessage.Battle battle)
         {
             // The core's own damage-step numbers, so a surprising outcome can
@@ -521,6 +534,29 @@ public final class DuelistDuels
             return List.of(new DuelEvent(DuelEvent.Kind.POSITION, shown, -1,
                 DuelEvent.zoneOf(position.controller(), position.location(), position.sequence(), 0),
                 0, position.controller()));
+        }
+        if(message instanceof DuelMessage.TossCoin coin)
+        {
+            // The results ride in `amount`, a bit per coin, so the client can
+            // show what actually came up rather than inventing a result.
+            int packed = 0;
+            for(int i = 0; i < coin.results().size() && i < 30; i++)
+            {
+                packed |= (coin.results().get(i) & 1) << i;
+            }
+            return List.of(new DuelEvent(DuelEvent.Kind.COIN, coin.results().size(), -1, -1,
+                packed, coin.player()));
+        }
+        if(message instanceof DuelMessage.TossDice dice)
+        {
+            // Six bits a die: enough for 1-6 with room to spare.
+            int packed = 0;
+            for(int i = 0; i < dice.results().size() && i < 5; i++)
+            {
+                packed |= (dice.results().get(i) & 0x3F) << (i * 6);
+            }
+            return List.of(new DuelEvent(DuelEvent.Kind.DICE, dice.results().size(), -1, -1,
+                packed, dice.player()));
         }
         if(message instanceof DuelMessage.SetCard set)
         {

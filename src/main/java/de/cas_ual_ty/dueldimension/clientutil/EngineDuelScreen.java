@@ -818,6 +818,7 @@ public class EngineDuelScreen extends Screen
         animations.renderAttacks(poseStack, boardRenderer.projection(), now);
         animations.renderOverlays(poseStack, boardRenderer.projection(), now);
         animations.renderShatters(poseStack, boardRenderer.projection(), now);
+        animations.renderTosses(poseStack, font, boardRenderer.projection(), now);
 
         // Aiming: after clicking Attack, the sword tracks the mouse until the
         // target is chosen -- sampled six times a second, so it snaps rather

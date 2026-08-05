@@ -539,8 +539,44 @@ public class HeuristicBot implements ResponseSource
         {
             return chain.forced() ? null : Responses.chainDecline();
         }
-        return chain.forced() ? Responses.chain(0) : Responses.chainDecline();
+        if(chain.forced())
+        {
+            return Responses.chain(0);
+        }
+        // Judge a chain window by what the card is FOR, the same way the main
+        // phase judges an activation. Declining everything unreactively -- the
+        // old policy -- meant a set trap never fired at the moment it was set
+        // for, which is most of what a trap is.
+        BoardState state = board.observe();
+        double bestScore = CHAIN_THRESHOLD;
+        int best = -1;
+        CardRoles.Role bestRole = null;
+        for(int i = 0; i < chain.chains().size(); i++)
+        {
+            int code = chain.chains().get(i).code();
+            double score = activationScore(state, code);
+            if(score > bestScore)
+            {
+                bestScore = score;
+                bestRole = CardRoles.of(code);
+                best = i;
+            }
+        }
+        if(best < 0)
+        {
+            return Responses.chainDecline();
+        }
+        pendingTargetRole = bestRole;
+        return Responses.chain(best);
     }
+
+    /**
+     * How good a response has to look before the bot spends a card on it.
+     * An unknown effect scores UTILITY (170) and stays below this, so the
+     * cautious default survives: only cards whose role actually fits the board
+     * are worth chaining.
+     */
+    private static final double CHAIN_THRESHOLD = 200;
 
     /** Give up the least: tribute the weakest monsters that still satisfy the requirement. */
     private byte[] tribute(DuelMessage.SelectTribute tribute)

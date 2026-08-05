@@ -39,6 +39,10 @@ public record DuelEvent(Kind kind, int code, int fromZone, int toZone, int amoun
         DESTROY,
         DRAW,
         SHUFFLE,
+        /** A coin toss; amount packs one bit per coin, low bit first. */
+        COIN,
+        /** A dice roll; amount packs one die per six bits, low first. */
+        DICE,
         /** An effect went onto the chain: show it activating. */
         CHAINING,
         /** An effect picked this card as a target. */
