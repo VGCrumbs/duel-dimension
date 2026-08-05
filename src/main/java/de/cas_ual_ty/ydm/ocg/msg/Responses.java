@@ -175,4 +175,93 @@ public final class Responses
         }
         return buffer.array();
     }
+
+    // ---- MSG_SELECT_TRIBUTE / MSG_SELECT_SUM: same card-index buffer as SELECT_CARD ----
+
+    public static byte[] selectTribute(int... indices)
+    {
+        return selectCards(indices);
+    }
+
+    /** Indices into the prompt's <em>selectable</em> list; must-select cards are implicit. */
+    public static byte[] selectSum(int... indices)
+    {
+        return selectCards(indices);
+    }
+
+    // ---- MSG_SELECT_UNSELECT_CARD: [i32 1][i32 index] one at a time, or -1 to finish/cancel ----
+
+    public static byte[] selectUnselect(int index)
+    {
+        ByteBuffer buffer = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN);
+        buffer.putInt(1);
+        buffer.putInt(index);
+        return buffer.array();
+    }
+
+    public static byte[] selectUnselectFinish()
+    {
+        return int32(-1);
+    }
+
+    // ---- MSG_SELECT_COUNTER: one i16 per offered card ----
+
+    public static byte[] counters(int... perCard)
+    {
+        ByteBuffer buffer = ByteBuffer.allocate(2 * perCard.length).order(ByteOrder.LITTLE_ENDIAN);
+        for(int amount : perCard)
+        {
+            buffer.putShort((short)amount);
+        }
+        return buffer.array();
+    }
+
+    // ---- MSG_SORT_CARD / MSG_SORT_CHAIN: one i8 destination per card, or -1 to decline ----
+
+    public static byte[] sort(int... order)
+    {
+        ByteBuffer buffer = ByteBuffer.allocate(order.length).order(ByteOrder.LITTLE_ENDIAN);
+        for(int position : order)
+        {
+            buffer.put((byte)position);
+        }
+        return buffer.array();
+    }
+
+    public static byte[] sortDecline()
+    {
+        return new byte[] {-1};
+    }
+
+    // ---- MSG_ANNOUNCE_*: bit masks / indices / card codes ----
+
+    /** MSG_ANNOUNCE_RACE: u64 mask with exactly {@code count} bits set. */
+    public static byte[] announceRace(long mask)
+    {
+        return ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putLong(mask).array();
+    }
+
+    /** MSG_ANNOUNCE_ATTRIB: u32 mask with exactly {@code count} bits set. */
+    public static byte[] announceAttribute(int mask)
+    {
+        return int32(mask);
+    }
+
+    /** MSG_ANNOUNCE_CARD: the declared passcode (must satisfy the prompt's filter). */
+    public static byte[] announceCard(int code)
+    {
+        return int32(code);
+    }
+
+    /** MSG_ANNOUNCE_NUMBER: index into the offered options. */
+    public static byte[] announceNumber(int index)
+    {
+        return int32(index);
+    }
+
+    /** MSG_ROCK_PAPER_SCISSORS: 1 = rock, 2 = paper, 3 = scissors. */
+    public static byte[] rockPaperScissors(int hand)
+    {
+        return int32(hand);
+    }
 }

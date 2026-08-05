@@ -190,6 +190,22 @@ tasks.register('ocgSpike', JavaExec) {
         (project.findProperty('ocgScripts') ? [project.findProperty('ocgScripts')] : [])
 }
 
+// Bot-vs-bot fuzzing: many duels, failures dumped as reproducible replays.
+// Usage: gradlew17 duelFuzz [-Pcount=500] [-Pthreads=4] [-Pseed=1]
+tasks.register('duelFuzz', JavaExec) {
+    group = 'duelmonsters'
+    description = 'Runs randomised bot-vs-bot duels and reports/records any failures.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'de.cas_ual_ty.ydm.ocg.bot.DuelFuzzer'
+    args = ['--lib', project.findProperty('ocgLib') ?: 'native/ocgcore.dll',
+            '--scripts', project.findProperty('ocgScripts') ?: 'C:/ProjectIgnis/script',
+            '--cdb', project.findProperty('ocgCdb') ?: 'C:/ProjectIgnis/expansions/cards.cdb',
+            '--count', (project.findProperty('count') ?: '100').toString(),
+            '--threads', (project.findProperty('threads') ?: '1').toString(),
+            '--seed', (project.findProperty('seed') ?: '1').toString(),
+            '--out', (project.findProperty('fuzzOut') ?: 'build/fuzz').toString()]
+}
+
 // Example for how to get properties into the manifest for reading at runtime.
 jar {
     manifest {

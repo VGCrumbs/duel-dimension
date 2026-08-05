@@ -101,6 +101,88 @@ public sealed interface DuelMessage
     {
     }
 
+    /** A card offered for tribute; {@code releaseParam} is how much it counts toward the required total. */
+    record TributeCard(int code, int controller, int location, int sequence, int releaseParam)
+    {
+    }
+
+    record SelectTribute(int player, boolean cancelable, int min, int max, List<TributeCard> cards) implements Prompt
+    {
+    }
+
+    /** A card offered to a sum selection; {@code sumParam} packs two alternative values (low/high 16 bits). */
+    record SumCard(int code, CardLocation loc, int sumParam)
+    {
+        public int primary()
+        {
+            return sumParam & 0xFFFF;
+        }
+
+        /** Second acceptable value (e.g. Double Tribute / level-changing effects), 0 if none. */
+        public int alternate()
+        {
+            return sumParam >>> 16;
+        }
+    }
+
+    /**
+     * Pick cards whose parameters sum to {@code acc}.
+     * <p>
+     * {@code exactCount} false is the core's "max == 0" mode: the selection
+     * must reach {@code acc} without any member being redundant, rather than
+     * matching a card count.
+     */
+    record SelectSum(int player, boolean exactCount, int acc, int min, int max,
+        List<SumCard> mustSelect, List<SumCard> selectable) implements Prompt
+    {
+    }
+
+    /** Incremental select/unselect loop: answer with ONE index, repeatedly, until finished. */
+    record SelectUnselectCard(int player, boolean finishable, boolean cancelable, int min, int max,
+        List<SelectableCard> selectable, List<SelectableCard> unselectable) implements Prompt
+    {
+        /** Combined index space of the response: selectable first, then unselectable. */
+        public int optionCount()
+        {
+            return selectable.size() + unselectable.size();
+        }
+    }
+
+    record CounterCard(int code, int controller, int location, int sequence, int counters)
+    {
+    }
+
+    record SelectCounter(int player, int counterType, int count, List<CounterCard> cards) implements Prompt
+    {
+    }
+
+    /** MSG_SORT_CARD / MSG_SORT_CHAIN. Location is a u32 here, not the usual loc_info. */
+    record SortableCard(int code, int controller, int location, int sequence)
+    {
+    }
+
+    record SortCard(int player, boolean chain, List<SortableCard> cards) implements Prompt
+    {
+    }
+
+    /** MSG_ANNOUNCE_RACE (u64 mask) / MSG_ANNOUNCE_ATTRIB (u32 mask): pick exactly {@code count} bits of {@code available}. */
+    record AnnounceBits(int player, int count, long available, boolean race) implements Prompt
+    {
+    }
+
+    /** Declare a card name; {@code filter} is an RPN opcode program (see {@link DeclarableFilter}). */
+    record AnnounceCard(int player, long[] filter) implements Prompt
+    {
+    }
+
+    record AnnounceNumber(int player, long[] options) implements Prompt
+    {
+    }
+
+    record RockPaperScissors(int player) implements Prompt
+    {
+    }
+
     // ---- informational messages ----
 
     record Move(int code, CardLocation from, CardLocation to, int reason) implements DuelMessage
@@ -221,6 +303,68 @@ public sealed interface DuelMessage
             }
             case OcgConstants.MSG_SELECT_YESNO -> new SelectYesNo(in.u8(), in.u64());
             case OcgConstants.MSG_SELECT_EFFECTYN -> new SelectEffectYesNo(in.u8(), in.u32(), in.loc(), in.u64());
+            case OcgConstants.MSG_SELECT_TRIBUTE ->
+            {
+                int player = in.u8();
+                boolean cancelable = in.flag();
+                int min = in.u32();
+                int max = in.u32();
+                int count = in.u32();
+                List<TributeCard> cards = new ArrayList<>(count);
+                for(int i = 0; i < count; i++)
+                {
+                    cards.add(new TributeCard(in.u32(), in.u8(), in.u8(), in.u32(), in.u8()));
+                }
+                yield new SelectTribute(player, cancelable, min, max, cards);
+            }
+            case OcgConstants.MSG_SELECT_SUM ->
+            {
+                int player = in.u8();
+                boolean exactCount = !in.flag(); // core writes 0 when a max count applies, 1 when not
+                int acc = in.u32();
+                int min = in.u32();
+                int max = in.u32();
+                yield new SelectSum(player, exactCount, acc, min, max, sumList(in), sumList(in));
+            }
+            case OcgConstants.MSG_SELECT_UNSELECT_CARD ->
+            {
+                int player = in.u8();
+                boolean finishable = in.flag();
+                boolean cancelable = in.flag();
+                int min = in.u32();
+                int max = in.u32();
+                yield new SelectUnselectCard(player, finishable, cancelable, min, max,
+                    selectableList(in), selectableList(in));
+            }
+            case OcgConstants.MSG_SELECT_COUNTER ->
+            {
+                int player = in.u8();
+                int counterType = in.u16();
+                int count = in.u16();
+                int size = in.u32();
+                List<CounterCard> cards = new ArrayList<>(size);
+                for(int i = 0; i < size; i++)
+                {
+                    cards.add(new CounterCard(in.u32(), in.u8(), in.u8(), in.u8(), in.u16()));
+                }
+                yield new SelectCounter(player, counterType, count, cards);
+            }
+            case OcgConstants.MSG_SORT_CARD, OcgConstants.MSG_SORT_CHAIN ->
+            {
+                int player = in.u8();
+                int count = in.u32();
+                List<SortableCard> cards = new ArrayList<>(count);
+                for(int i = 0; i < count; i++)
+                {
+                    cards.add(new SortableCard(in.u32(), in.u8(), in.u32(), in.u32()));
+                }
+                yield new SortCard(player, message.type() == OcgConstants.MSG_SORT_CHAIN, cards);
+            }
+            case OcgConstants.MSG_ANNOUNCE_RACE -> new AnnounceBits(in.u8(), in.u8(), in.u64(), true);
+            case OcgConstants.MSG_ANNOUNCE_ATTRIB -> new AnnounceBits(in.u8(), in.u8(), in.u32() & 0xFFFFFFFFL, false);
+            case OcgConstants.MSG_ANNOUNCE_CARD -> new AnnounceCard(in.u8(), longList(in));
+            case OcgConstants.MSG_ANNOUNCE_NUMBER -> new AnnounceNumber(in.u8(), longList(in));
+            case OcgConstants.MSG_ROCK_PAPER_SCISSORS -> new RockPaperScissors(in.u8());
             case OcgConstants.MSG_MOVE -> new Move(in.u32(), in.loc(), in.loc(), in.u32());
             case OcgConstants.MSG_DRAW ->
             {
@@ -242,6 +386,38 @@ public sealed interface DuelMessage
             case OcgConstants.MSG_WIN -> new Win(in.u8(), in.u8());
             default -> new Unknown(message);
         };
+    }
+
+    private static List<SumCard> sumList(MsgReader in)
+    {
+        int count = in.u32();
+        List<SumCard> list = new ArrayList<>(count);
+        for(int i = 0; i < count; i++)
+        {
+            list.add(new SumCard(in.u32(), in.loc(), in.u32()));
+        }
+        return list;
+    }
+
+    private static List<SelectableCard> selectableList(MsgReader in)
+    {
+        int count = in.u32();
+        List<SelectableCard> list = new ArrayList<>(count);
+        for(int i = 0; i < count; i++)
+        {
+            list.add(new SelectableCard(in.u32(), in.loc()));
+        }
+        return list;
+    }
+
+    private static long[] longList(MsgReader in)
+    {
+        long[] values = new long[in.u8()];
+        for(int i = 0; i < values.length; i++)
+        {
+            values[i] = in.u64();
+        }
+        return values;
     }
 
     /** The idle lists share their layout except reposition, whose sequence is u8 (see playerop.cpp). */

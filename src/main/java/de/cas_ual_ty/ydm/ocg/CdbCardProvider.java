@@ -103,4 +103,14 @@ public class CdbCardProvider implements OcgDuel.CardProvider
     {
         return cards.size();
     }
+
+    /**
+     * Every card known to this provider. Needed by MSG_ANNOUNCE_CARD, where a
+     * player declares a card name and the answer is searched over the whole
+     * index rather than a list the prompt supplies.
+     */
+    public java.util.Collection<OcgCard> all()
+    {
+        return java.util.Collections.unmodifiableCollection(cards.values());
+    }
 }
