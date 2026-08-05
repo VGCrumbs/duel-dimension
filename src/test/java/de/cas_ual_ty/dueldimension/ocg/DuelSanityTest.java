@@ -35,7 +35,8 @@ class DuelSanityTest
         return Path.of(System.getProperty("ocg.cdb", "C:/ProjectIgnis/expansions/cards.cdb"));
     }
 
-    private record Outcome(List<Integer> firstDraws, int selfSummons, int opponentSummons, int turns)
+    private record Outcome(List<Integer> firstDraws, int selfSummons, int opponentSummons, int turns,
+        int attacks, int directAttacks)
     {
     }
 
@@ -57,9 +58,31 @@ class DuelSanityTest
         int self = 0;
         int opponent = 0;
         int turns = 0;
+        int attacks = 0;
+        int directAttacks = 0;
         for(RawMessage raw : trace.messages)
         {
             DuelMessage message = DuelMessage.decode(raw);
+            if(message instanceof DuelMessage.Attack attack)
+            {
+                attacks++;
+                if(attack.isDirect())
+                {
+                    directAttacks++;
+                }
+                else
+                {
+                    // A real target must be a monster on the other side.
+                    assertTrue(attack.target().location() == OcgConstants.LOCATION_MZONE,
+                        "attack target decoded as location " + attack.target().location()
+                            + ", so the MSG_ATTACK payload is being read wrong");
+                }
+                assertTrue(attack.attacker().location() == OcgConstants.LOCATION_MZONE,
+                    "attacker decoded as location " + attack.attacker().location()
+                        + ", so the MSG_ATTACK payload is being read wrong");
+                assertTrue(attack.attacker().sequence() < 7,
+                    "attacker sequence " + attack.attacker().sequence() + " is not a monster zone");
+            }
             if(message instanceof DuelMessage.Draw draw && draws.size() < 5)
             {
                 draw.cards().forEach(card -> draws.add(card.code()));
@@ -82,7 +105,7 @@ class DuelSanityTest
                 }
             }
         }
-        return new Outcome(draws, self, opponent, turns);
+        return new Outcome(draws, self, opponent, turns, attacks, directAttacks);
     }
 
     @Test
@@ -102,7 +125,8 @@ class DuelSanityTest
             outcomes.add(outcome);
             System.out.println("seed " + seed + ": opening " + outcome.firstDraws()
                 + " summons you=" + outcome.selfSummons() + " opponent=" + outcome.opponentSummons()
-                + " turns=" + outcome.turns());
+                + " turns=" + outcome.turns() + " attacks=" + outcome.attacks()
+                + " (direct " + outcome.directAttacks() + ")");
         }
 
         // Different seeds must not deal the same opening hand.
@@ -116,5 +140,9 @@ class DuelSanityTest
                 "the opponent never put a monster on the field in " + outcome.turns() + " turns");
             assertTrue(outcome.selfSummons() > 0, "player one never summoned either");
         }
+
+        // MSG_ATTACK has to reach the client for the attack arrow to exist.
+        assertTrue(outcomes.stream().mapToInt(Outcome::attacks).sum() > 0,
+            "no attack was ever decoded across three duels");
     }
 }

@@ -28,7 +28,24 @@ public class DuelAnimations
     /** How long each kind of animation lasts, in milliseconds. */
     private static final long MOVE_MS = 320;
     private static final long FLASH_MS = 420;
-    private static final long LUNGE_MS = 260;
+    /** An attack arrow holds long enough to read before the damage lands. */
+    private static final long ATTACK_MS = 700;
+
+    /** custom_skin_enum.inl: DECLR(DUELFIELD_ATTACK_ARROW, 0x8000ff00). */
+    private static final int ATTACK_ARROW = 0x8000FF00;
+
+    // GenArrow builds a 0.2-wide shaft ending in a wider head; these are the
+    // same proportions expressed in field units.
+    private static final float ARROW_HALF_WIDTH = 0.1F;
+    private static final float ARROW_HEAD_LENGTH = 0.55F;
+    private static final float ARROW_HEAD_HALF_WIDTH = 0.3F;
+
+    /**
+     * Where a direct attack points, from duelclient.cpp MSG_ATTACK:
+     * {@code xd = 3.95f; yd = (info1.controler == 0) ? -3.5f : 3.5f}.
+     */
+    private static final float DIRECT_ATTACK_X = 3.95F;
+    private static final float DIRECT_ATTACK_Y = 3.5F;
 
     /** One playing animation. */
     private record Playing(DuelEvent event, long start, long duration)
@@ -47,6 +64,8 @@ public class DuelAnimations
     private final List<Playing> playing = new ArrayList<>();
     /** Damage flashes, kept separate so they can tint the life bars. */
     private final List<Playing> flashes = new ArrayList<>();
+    /** Attack arrows, which are drawn as arrows rather than moving cards. */
+    private final List<Playing> attacks = new ArrayList<>();
 
     /**
      * Accepts what the server reported. Sounds fire immediately; visuals are
@@ -62,7 +81,7 @@ public class DuelAnimations
                 case MOVE, SUMMON, SPECIAL_SUMMON, SET, ACTIVATE, DESTROY, DRAW ->
                     playing.add(new Playing(event, now, MOVE_MS));
                 case DAMAGE, RECOVER -> flashes.add(new Playing(event, now, FLASH_MS));
-                case ATTACK -> playing.add(new Playing(event, now, LUNGE_MS));
+                case ATTACK -> attacks.add(new Playing(event, now, ATTACK_MS));
                 default ->
                 {
                 }
@@ -102,6 +121,112 @@ public class DuelAnimations
     {
         playing.removeIf(animation -> animation.done(now));
         flashes.removeIf(animation -> animation.done(now));
+        attacks.removeIf(animation -> animation.done(now));
+    }
+
+    /**
+     * The attack arrow, ported from drawing.cpp's {@code is_attacking} block.
+     * <p>
+     * EDOPro does not lunge the attacking card: it builds an arrow with
+     * {@code Materials::GenArrow}, lays it along the line between attacker and
+     * target, and draws it while the attack resolves. This does the same in the
+     * projected table's own coordinates, so the arrow lies on the field and
+     * foreshortens with it. It extends towards the target rather than pulsing
+     * along a strip, because our events are discrete and the arrow has one
+     * attack's worth of time to read rather than however long a battle takes.
+     */
+    public void renderAttacks(PoseStack poseStack, FieldLayout.Projection projection, long now)
+    {
+        if(projection == null)
+        {
+            return;
+        }
+        for(Playing animation : attacks)
+        {
+            DuelEvent event = animation.event();
+            FieldLayout.Rect from = zoneRect(event.fromZone());
+            if(from == null)
+            {
+                continue;
+            }
+            float ax = from.x() + from.w() / 2F;
+            float ay = from.y() + from.h() / 2F;
+
+            float dx;
+            float dy;
+            FieldLayout.Rect target = zoneRect(event.toZone());
+            if(target != null)
+            {
+                dx = target.x() + target.w() / 2F;
+                dy = target.y() + target.h() / 2F;
+            }
+            else
+            {
+                // Direct attack: aim at the defending player's side of the table.
+                dx = DIRECT_ATTACK_X;
+                dy = event.player() == 0 ? -DIRECT_ATTACK_Y : DIRECT_ATTACK_Y;
+            }
+
+            float t = animation.progress(now);
+            // Reach the target in the first stretch, then hold and fade.
+            float reach = Math.min(1F, t * 1.6F);
+            float alpha = t < 0.75F ? 1F : 1F - (t - 0.75F) / 0.25F;
+            drawArrow(poseStack, projection, ax, ay, ax + (dx - ax) * reach, ay + (dy - ay) * reach,
+                alpha);
+        }
+    }
+
+    /** One arrow from (ax, ay) to (dx, dy) in field units. */
+    private static void drawArrow(PoseStack poseStack, FieldLayout.Projection projection,
+        float ax, float ay, float dx, float dy, float alphaScale)
+    {
+        float vx = dx - ax;
+        float vy = dy - ay;
+        float length = (float)Math.sqrt(vx * vx + vy * vy);
+        if(length < 0.05F)
+        {
+            return;
+        }
+        float ux = vx / length;
+        float uy = vy / length;
+        // Perpendicular, for the shaft's and head's width.
+        float px = -uy;
+        float py = ux;
+
+        float headLength = Math.min(ARROW_HEAD_LENGTH, length * 0.6F);
+        float neckX = dx - ux * headLength;
+        float neckY = dy - uy * headLength;
+
+        int colour = scaleAlpha(ATTACK_ARROW, alphaScale);
+
+        FieldQuad.fill(poseStack, corners(projection,
+            ax + px * ARROW_HALF_WIDTH, ay + py * ARROW_HALF_WIDTH,
+            neckX + px * ARROW_HALF_WIDTH, neckY + py * ARROW_HALF_WIDTH,
+            neckX - px * ARROW_HALF_WIDTH, neckY - py * ARROW_HALF_WIDTH,
+            ax - px * ARROW_HALF_WIDTH, ay - py * ARROW_HALF_WIDTH), colour);
+
+        // The head, as a quad with its two tip corners coincident.
+        FieldQuad.fill(poseStack, corners(projection,
+            neckX + px * ARROW_HEAD_HALF_WIDTH, neckY + py * ARROW_HEAD_HALF_WIDTH,
+            dx, dy, dx, dy,
+            neckX - px * ARROW_HEAD_HALF_WIDTH, neckY - py * ARROW_HEAD_HALF_WIDTH), colour);
+    }
+
+    /** Projects four field-unit points into screen corners. */
+    private static FieldQuad.Corners corners(FieldLayout.Projection projection,
+        float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3)
+    {
+        return new FieldQuad.Corners(
+            projection.x(x0, y0), projection.y(y0),
+            projection.x(x1, y1), projection.y(y1),
+            projection.x(x2, y2), projection.y(y2),
+            projection.x(x3, y3), projection.y(y3));
+    }
+
+    private static int scaleAlpha(int colour, float scale)
+    {
+        int alpha = Math.round((colour >>> 24) * Math.max(0F, Math.min(1F, scale)));
+        return (alpha << 24) | (colour & 0xFFFFFF);
     }
 
     /**
@@ -160,7 +285,7 @@ public class DuelAnimations
     /** True while anything is still playing, for callers that want to wait. */
     public boolean isBusy()
     {
-        return !playing.isEmpty();
+        return !playing.isEmpty() || !attacks.isEmpty();
     }
 
     private static ResourceLocation artFor(int code)

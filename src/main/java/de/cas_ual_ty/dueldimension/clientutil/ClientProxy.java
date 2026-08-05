@@ -333,6 +333,16 @@ public class ClientProxy implements ISidedProxy
         {
             DuelClientState.pendingEvents.addAll(update.events());
         }
+        // The opponent's whole turn arrives as updates with no prompt attached.
+        // Only opening the screen for prompts meant those events queued up
+        // unseen and then replayed in a rush at the next prompt, so a duel
+        // update reopens the screen too — that is what makes an opponent's
+        // sequence watchable rather than something that happens off-screen.
+        if(!update.over() && !update.events().isEmpty()
+            && !(Minecraft.getInstance().screen instanceof EngineDuelScreen))
+        {
+            Minecraft.getInstance().setScreen(new EngineDuelScreen());
+        }
         if(update.board() != null)
         {
             DuelClientState.warmUpBoard(update.board());

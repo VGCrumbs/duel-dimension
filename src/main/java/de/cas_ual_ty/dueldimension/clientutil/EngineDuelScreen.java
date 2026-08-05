@@ -34,6 +34,8 @@ public class EngineDuelScreen extends Screen
 {
     private static final int SIDEBAR_W = 132;
     private static final int SIDEBAR_PAD = 6;
+    /** Log lines kept in the sidebar's log band. */
+    private static final int LOG_LINES = 4;
     private static final int TOP_BAR_H = 32;
     private static final int MENU_ROW = CardCommands.MENU_ROW_HEIGHT;
     private static final int LOG_W = 150;
@@ -635,6 +637,7 @@ public class EngineDuelScreen extends Screen
         }
         animations.tick(now);
         animations.renderMoves(poseStack, boardRenderer, boardRenderer.projection(), now);
+        animations.renderAttacks(poseStack, boardRenderer.projection(), now);
 
         // Hover picks the preview card and opens that card's command menu.
         BoardRenderer.Hit hovered = null;
@@ -907,6 +910,24 @@ public class EngineDuelScreen extends Screen
         font.draw(poseStack, value, x + barW - font.width(value) - 5, y + 3, 0xFFFFFF);
     }
 
+    /**
+     * The sidebar is split into fixed bands so its sections cannot collide:
+     * card image and name, then the card's text, then the log, then the two
+     * buttons. Previously the card text ran to {@code height - 50} while the
+     * log drew upwards from {@code height - 52}, so on a short window the log
+     * printed straight over the card description.
+     */
+    private int footerTop()
+    {
+        return height - 48;
+    }
+
+    /** Top of the log band; the card description must stop above this. */
+    private int logTop()
+    {
+        return footerTop() - (LOG_LINES * 9 + 12);
+    }
+
     /** Left column: card image, then card info — EDOPro's Card info tab. */
     private void renderSidebar(PoseStack poseStack)
     {
@@ -937,8 +958,12 @@ public class EngineDuelScreen extends Screen
             y += 9;
         }
 
-        // Type line and effect text at 3/4 scale, so a full card fits above
-        // the Surrender button instead of spilling over it.
+        // Type line and effect text at 3/4 scale, in the band between the card
+        // name and the log. The band is the card's dedicated description space:
+        // nothing else draws into it, and the text is clipped to its bottom.
+        int descriptionBottom = logTop() - 4;
+        fill(poseStack, SIDEBAR_PAD, y - 2, SIDEBAR_W - SIDEBAR_PAD, y - 1, 0x40FFFFFF);
+
         List<Component> header = new ArrayList<>();
         card.addHeader(header);
         poseStack.pushPose();
@@ -946,7 +971,7 @@ public class EngineDuelScreen extends Screen
         int scaledX = Math.round(SIDEBAR_PAD / 0.75F);
         int scaledY = Math.round(y / 0.75F) + 2;
         int scaledW = Math.round(imageW / 0.75F);
-        int limit = Math.round((height - 50) / 0.75F);
+        int limit = Math.round(descriptionBottom / 0.75F);
 
         for(Component component : header)
         {
@@ -980,22 +1005,29 @@ public class EngineDuelScreen extends Screen
     private void renderLog(PoseStack poseStack)
     {
         int x = SIDEBAR_PAD;
-        int y = height - 52;
-        int shown = 0;
+        int top = logTop();
+        fill(poseStack, SIDEBAR_PAD, top, SIDEBAR_W - SIDEBAR_PAD, top + 1, 0x40FFFFFF);
+
+        // Newest last, so the log reads downwards and stays inside its band.
+        List<String> lines = new ArrayList<>();
         synchronized(DuelClientState.class)
         {
             var iterator = DuelClientState.log.descendingIterator();
-            while(iterator.hasNext() && shown < 4)
+            while(iterator.hasNext() && lines.size() < LOG_LINES)
             {
                 String line = iterator.next();
                 while(font.width(line) > SIDEBAR_W - SIDEBAR_PAD * 2 && line.length() > 4)
                 {
                     line = line.substring(0, line.length() - 2);
                 }
-                font.draw(poseStack, line, x, y, 0x8A8A8A);
-                y -= 9;
-                shown++;
+                lines.add(0, line);
             }
+        }
+        int y = top + 4;
+        for(String line : lines)
+        {
+            font.draw(poseStack, line, x, y, 0x8A8A8A);
+            y += 9;
         }
     }
 
@@ -1075,9 +1107,20 @@ public class EngineDuelScreen extends Screen
         return false;
     }
 
+    /**
+     * Escape backs out of menus and cancelable prompts (handled in
+     * {@link #keyPressed}) but does not tear down the duel.
+     * <p>
+     * This used to return {@code shownPrompt == null}, so pressing Escape while
+     * waiting on the opponent closed the screen outright. Since only a prompt
+     * reopened it, the opponent's attacks and summons then played out with no
+     * screen to animate them — the sequence looked like it had been cut off by
+     * the cancel key. The duel is left with the explicit Close button, which
+     * only appears once it is over.
+     */
     @Override
     public boolean shouldCloseOnEsc()
     {
-        return shownPrompt == null;
+        return DuelClientState.over;
     }
 }

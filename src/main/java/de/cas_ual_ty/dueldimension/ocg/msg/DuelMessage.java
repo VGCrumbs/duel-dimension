@@ -189,6 +189,20 @@ public sealed interface DuelMessage
     {
     }
 
+    /**
+     * An attack declaration. The core writes the attacker's loc_info followed
+     * by the target's; for a direct attack it writes a zeroed loc_info instead
+     * (processor.cpp: {@code message->write(loc_info{})}), which is what
+     * {@link #isDirect()} tests for.
+     */
+    record Attack(CardLocation attacker, CardLocation target) implements DuelMessage
+    {
+        public boolean isDirect()
+        {
+            return target.location() == 0;
+        }
+    }
+
     record Draw(int player, List<DrawnCard> cards) implements DuelMessage
     {
     }
@@ -366,6 +380,7 @@ public sealed interface DuelMessage
             case OcgConstants.MSG_ANNOUNCE_NUMBER -> new AnnounceNumber(in.u8(), longList(in));
             case OcgConstants.MSG_ROCK_PAPER_SCISSORS -> new RockPaperScissors(in.u8());
             case OcgConstants.MSG_MOVE -> new Move(in.u32(), in.loc(), in.loc(), in.u32());
+            case OcgConstants.MSG_ATTACK -> new Attack(in.loc(), in.loc());
             case OcgConstants.MSG_DRAW ->
             {
                 int player = in.u8();

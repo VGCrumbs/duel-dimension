@@ -402,6 +402,18 @@ public final class DuelistDuels
             };
             return new DuelEvent(kind, move.code(), from, to, 0, move.to().controller());
         }
+        if(message instanceof DuelMessage.Attack attack)
+        {
+            // A direct attack has no target zone; the animation lunges at the
+            // defending player's side of the table instead.
+            int from = DuelEvent.zoneOf(attack.attacker().controller(), attack.attacker().location(),
+                attack.attacker().sequence(), 0);
+            int to = attack.isDirect() ? -1
+                : DuelEvent.zoneOf(attack.target().controller(), attack.target().location(),
+                    attack.target().sequence(), 0);
+            return new DuelEvent(DuelEvent.Kind.ATTACK, 0, from, to, 0,
+                attack.attacker().controller());
+        }
         if(message instanceof DuelMessage.Damage damage)
         {
             return new DuelEvent(DuelEvent.Kind.DAMAGE, 0, -1, -1, damage.amount(), damage.player());

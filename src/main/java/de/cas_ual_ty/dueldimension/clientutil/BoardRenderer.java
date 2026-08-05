@@ -53,10 +53,21 @@ public class BoardRenderer extends GuiComponent
      * slots at all.
      * <p>
      * A mat with no visible rows or columns reads as broken, so every zone
-     * keeps a box: a dim fill and a 2px outline in EDOPro's own line width.
+     * keeps a box, drawn as a 2px outline in EDOPro's own line width.
+     * <p>
+     * The box is inset from the zone rather than matching it. materials.cpp
+     * gives cells a width of 1.1 at a column pitch of 1.1 and rows that meet at
+     * y = 2.0, so zones tile edge to edge: outlining them exactly draws every
+     * interior line twice and fills them merges all 22 into one slab, which is
+     * why the first attempt came out as a grey haze instead of a grid. Insetting
+     * leaves a gap between neighbours so each slot reads as its own box.
+     * <p>
+     * Only the idle grid is inset. A zone the core is actually offering keeps
+     * the exact zone quad, matching DrawSelectionLine, so selection still lands
+     * on the true zone and reads as the box growing slightly.
      */
-    private static final int COLOUR_GRID = 0xB0C8D0DC;
-    private static final int COLOUR_GRID_FILL = 0x26FFFFFF;
+    private static final int COLOUR_GRID = 0xC0C8D0DC;
+    private static final float GRID_INSET = 0.06F;
     private static final int COLOUR_ACTIONABLE = 0xE0FFD700;
 
     /** A drawn slot; piles use sequence -1. */
@@ -280,11 +291,9 @@ public class BoardRenderer extends GuiComponent
         else if(!inHand)
         {
             // Hand cards are not zones and get no slot box.
-            if(!slot.present())
-            {
-                FieldQuad.fill(poseStack, hit.corners(), COLOUR_GRID_FILL);
-            }
-            FieldQuad.outline(poseStack, hit.corners(), COLOUR_GRID);
+            FieldQuad.outline(poseStack, projection.quad(new FieldLayout.Rect(
+                rect.x() + GRID_INSET, rect.y() + GRID_INSET,
+                rect.w() - GRID_INSET * 2F, rect.h() - GRID_INSET * 2F)), COLOUR_GRID);
         }
         hits.add(hit);
 
