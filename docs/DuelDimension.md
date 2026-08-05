@@ -42,6 +42,7 @@ Fork of [YgoDuelingMod](https://github.com/CAS-ual-TY/YgoDuelingMod) (Forge 1.19
 | 2026-08-04 | **Rebrand now**, before worlds exist (mod id change breaks saves — do it while cheap) |
 | 2026-08-04 | Bots must **observe all messages** (not just prompts) and see only a **filtered, non-omniscient board state** — cheating is an explicit profile knob, never an accident |
 | 2026-08-04 | Named **Duel Dimension**: mod id `dueldimension`, packages `de.cas_ual_ty.dueldimension`, `YDM`/`Ydm*` classes to `DuelDimension`/`Dd*` (an interim "Duel Monsters" naming was replaced the same day) |
+| 2026-08-04 | Starter decks are the real SDY/SDK/SDJ lists, generated from the card DB's set data (verified ids, all cards pack-obtainable) |
 | 2026-08-04 | Launch NPC roster: **Joey** (Red-Eyes gambler aggro, high misplay, loaner-deck friend) and **Kaiba** (Blue-Eyes control-beatdown, zero misplay, boss) — anime decks as **real-card builds** (anime-only variants lack engine scripts), dueling under an Unrestricted-classic ruleset |
 
 ## Open decisions
@@ -103,7 +104,8 @@ Fork of [YgoDuelingMod](https://github.com/CAS-ual-TY/YgoDuelingMod) (Forge 1.19
 
 - [ ] Card role auto-tagging from cdb `category` bits; profile `card_hints` override
 - [ ] `DuelistProfile` JSON (schema-versioned): personality weights, `misplay_rate`, dialogue hooks, ruleset ref, deck ref
-- [ ] Launch roster: `joey.json` + `joey.ydk`, `kaiba.json` + `kaiba.ydk` (anime decks as real-card builds; original-flavored dialogue, not verbatim anime lines)
+- [x] Player starter decks: **Starter Deck: Yugi / Kaiba / Joey** (`data/dueldimension/decks/*.ydk`, `StarterDecks` roster) — verified against the engine, full duels played, wired into fuzz + arena
+- [ ] Launch NPC roster: `joey.json` + `kaiba.json` profiles (anime decks as real-card builds; original-flavored dialogue, not verbatim anime lines)
 - [ ] Ruleset JSON + loader: `mechanics` / `banlist` / `pool` / `house`; presets `goat_2005`, `unrestricted`, `modern`
 - [ ] Deck validation: ruleset legality × collection ownership (strict)
 - [ ] `.ydk` loader; `duelists/` + `decks/` roster layout
@@ -164,6 +166,12 @@ JAVA_HOME=<jdk17> ./gradlew ocgSpike -PocgLib=native/ocgcore.dll -PocgScripts=C:
 Verified end-to-end 2026-08-04 (empty decks → instant deck-out `MSG_WIN`, then `MSG_SELECT_IDLECMD` await — exactly right). Grows into `HeadlessDuelRunner` in Phase 0.
 
 ## Designed — not yet built
+
+### Starter decks *(built)*
+
+Three decks a new player picks from — **Starter Deck: Yugi** (SDY, 46 cards), **Kaiba** (SDK, 46) and **Joey** (SDJ, 50) — shipped as `.ydk` files in `data/dueldimension/decks/`. The lists are generated from the card database's own set data rather than transcribed, so every passcode is verified and, because collection-bound play is the rule, every card is genuinely obtainable from packs in game. `YdkDeck` reads the community `.ydk` format (so decks interchange with EDOPro and friends) and `StarterDecks` is the selectable roster, which doubles as the source of NPC loaner decks.
+
+`StarterDeckTest` guards the whole chain: legal construction, every card known to the engine, every card scripted — following alt-art aliases, since a 2002 reprint's script lives under the original's id and the core resolves that itself — and a complete duel played between each pair. HeuristicBot wins 99.5% / 98.5% / 95.0% with them against RandomBot.
 
 ### Board state & the honesty rule *(built — Phase 3)*
 
