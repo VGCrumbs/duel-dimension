@@ -246,6 +246,32 @@ public sealed interface DuelMessage
      * code, controller, location, sequence, the previous position and the new
      * one -- all single bytes after the code, NOT a loc_info.
      */
+    /**
+     * An equip card attaching to its target. {@code card.cpp}:1557 writes two
+     * loc_infos, the equip card's own and {@code equiping_target}'s.
+     */
+    record Equip(CardLocation equipCard, CardLocation target) implements DuelMessage
+    {
+    }
+
+    /** An equip coming off; {@code card::unequip} reports only the equip card. */
+    record Unequip(CardLocation equipCard) implements DuelMessage
+    {
+    }
+
+    /**
+     * An effect naming a card as its target. {@code card.cpp}:2351, again two
+     * loc_infos: the card doing the targeting, then the card targeted.
+     */
+    record CardTarget(CardLocation source, CardLocation target) implements DuelMessage
+    {
+    }
+
+    /** The same pair, being taken back ({@code card::cancel_card_target}). */
+    record CancelTarget(CardLocation source, CardLocation target) implements DuelMessage
+    {
+    }
+
     record PositionChange(int code, int controller, int location, int sequence,
         int previousPosition, int position) implements DuelMessage
     {
@@ -499,6 +525,10 @@ public sealed interface DuelMessage
                 yield message.type() == OcgConstants.MSG_TOSS_COIN
                     ? new TossCoin(player, results) : new TossDice(player, results);
             }
+            case OcgConstants.MSG_EQUIP -> new Equip(in.loc(), in.loc());
+            case OcgConstants.MSG_UNEQUIP -> new Unequip(in.loc());
+            case OcgConstants.MSG_CARD_TARGET -> new CardTarget(in.loc(), in.loc());
+            case OcgConstants.MSG_CANCEL_TARGET -> new CancelTarget(in.loc(), in.loc());
             case OcgConstants.MSG_POS_CHANGE -> new PositionChange(in.u32(), in.u8(), in.u8(),
                 in.u8(), in.u8(), in.u8());
             case OcgConstants.MSG_BATTLE -> new Battle(in.loc(), in.u32(), in.u32(), in.u8(),

@@ -95,6 +95,12 @@ public final class DuelTextures
      */
     public static final ResourceLocation DIGITS =
         new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/digits.png");
+    /**
+     * EDOPro's own equip mark, laid over the partner of a hovered equip card
+     * ({@code drawing.cpp}:404, {@code imageManager.tEquip}).
+     */
+    public static final ResourceLocation EQUIP =
+        new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/equip.png");
     public static final ResourceLocation ACT =
         new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/act.png");
     public static final ResourceLocation ATTACK =

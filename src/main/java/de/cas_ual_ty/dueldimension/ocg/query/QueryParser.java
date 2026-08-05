@@ -25,7 +25,8 @@ public final class QueryParser
     public static final int BOARD_FLAGS = OcgConstants.QUERY_CODE | OcgConstants.QUERY_POSITION
         | OcgConstants.QUERY_TYPE | OcgConstants.QUERY_LEVEL | OcgConstants.QUERY_ATTACK
         | OcgConstants.QUERY_DEFENSE | OcgConstants.QUERY_BASE_ATTACK
-        | OcgConstants.QUERY_BASE_DEFENSE | OcgConstants.QUERY_IS_PUBLIC;
+        | OcgConstants.QUERY_BASE_DEFENSE | OcgConstants.QUERY_IS_PUBLIC
+        | OcgConstants.QUERY_EQUIP_CARD;
 
     private QueryParser()
     {
@@ -80,6 +81,7 @@ public final class QueryParser
         int baseAttack = -1;
         int baseDefense = -1;
         boolean isPublic = false;
+        CardView.Equip equip = null;
 
         while(true)
         {
@@ -111,10 +113,23 @@ public final class QueryParser
                 case OcgConstants.QUERY_BASE_ATTACK -> baseAttack = buffer.getInt();
                 case OcgConstants.QUERY_BASE_DEFENSE -> baseDefense = buffer.getInt();
                 case OcgConstants.QUERY_IS_PUBLIC -> isPublic = buffer.get() != 0;
+                case OcgConstants.QUERY_EQUIP_CARD ->
+                {
+                    // card.cpp:149 -- always emitted when asked for, as a
+                    // 10-byte loc_info, zero-filled when nothing is equipped.
+                    // Location 0 is no zone, so it doubles as "no target".
+                    int controller = buffer.get() & 0xFF;
+                    int location = buffer.get() & 0xFF;
+                    int sequence = buffer.getInt();
+                    if(location != 0)
+                    {
+                        equip = new CardView.Equip(controller, location, sequence);
+                    }
+                }
                 case OcgConstants.QUERY_END ->
                 {
                     return new CardView(code, position, type, level, attack, defense,
-                        baseAttack, baseDefense, isPublic, false);
+                        baseAttack, baseDefense, isPublic, false, equip);
                 }
                 default ->
                 {

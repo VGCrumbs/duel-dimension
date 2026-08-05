@@ -113,20 +113,20 @@ public record BoardState(int viewer, boolean omniscient, PlayerBoard self, Playe
     {
         boolean own = player == viewer;
         return new PlayerBoard(counts[player * 3],
-            zone(duel, player, OcgConstants.LOCATION_MZONE, own, omniscient, MONSTER_ZONES),
-            zone(duel, player, OcgConstants.LOCATION_SZONE, own, omniscient, SPELL_ZONES),
+            zone(duel, player, viewer, OcgConstants.LOCATION_MZONE, own, omniscient, MONSTER_ZONES),
+            zone(duel, player, viewer, OcgConstants.LOCATION_SZONE, own, omniscient, SPELL_ZONES),
             // A player always knows their own hand; an opponent's hand is
             // known only for cards the core marks public.
-            zone(duel, player, OcgConstants.LOCATION_HAND, own, omniscient, -1),
-            zone(duel, player, OcgConstants.LOCATION_GRAVE, true, omniscient, -1),
+            zone(duel, player, viewer, OcgConstants.LOCATION_HAND, own, omniscient, -1),
+            zone(duel, player, viewer, OcgConstants.LOCATION_GRAVE, true, omniscient, -1),
             // Banished face-up is public; face-down banished stays hidden.
-            zone(duel, player, OcgConstants.LOCATION_REMOVED, own, omniscient, -1),
+            zone(duel, player, viewer, OcgConstants.LOCATION_REMOVED, own, omniscient, -1),
             // Your own extra deck is known to you; the opponent's is not.
-            zone(duel, player, OcgConstants.LOCATION_EXTRA, own, omniscient, -1),
+            zone(duel, player, viewer, OcgConstants.LOCATION_EXTRA, own, omniscient, -1),
             counts[player * 3 + 1], counts[player * 3 + 2]);
     }
 
-    private static List<CardView> zone(OcgDuel duel, int player, int location, boolean ownerIsViewer,
+    private static List<CardView> zone(OcgDuel duel, int player, int viewer, int location, boolean ownerIsViewer,
         boolean omniscient, int expectedSize)
     {
         OcgStructs.OcgQueryInfo info = new OcgStructs.OcgQueryInfo();
@@ -140,7 +140,7 @@ public record BoardState(int viewer, boolean omniscient, PlayerBoard self, Playe
         List<CardView> result = new ArrayList<>(cards.size());
         for(CardView card : cards)
         {
-            result.add(card == null ? null : conceal(card, ownerIsViewer, omniscient));
+            result.add(card == null ? null : relative(conceal(card, ownerIsViewer, omniscient), viewer));
         }
         while(expectedSize > 0 && result.size() < expectedSize)
         {
@@ -157,7 +157,28 @@ public record BoardState(int viewer, boolean omniscient, PlayerBoard self, Playe
         }
         // Keep the position (that a card is set there is public) but strip
         // identity, including the base stats a set card must not reveal.
-        return new CardView(0, card.position(), 0, 0, -1, -1, -1, -1, false, true);
+        return new CardView(0, card.position(), 0, 0, -1, -1, -1, -1, false, true, null);
+    }
+
+    /**
+     * Restates an equip target in the viewer's own numbering, where 0 is
+     * always this player's side. Everything else on a board reaches the screen
+     * that way already; leaving this one field in the core's absolute
+     * numbering would point the opponent's equip links at the wrong half of
+     * the table.
+     */
+    private static CardView relative(CardView card, int viewer)
+    {
+        CardView.Equip equip = card.equip();
+        if(equip == null)
+        {
+            return card;
+        }
+        int controller = equip.controller() == viewer ? 0 : 1;
+        return controller == equip.controller() ? card
+            : new CardView(card.code(), card.position(), card.type(), card.level(), card.attack(),
+                card.defense(), card.baseAttack(), card.baseDefense(), card.isPublic(), card.hidden(),
+                new CardView.Equip(controller, equip.location(), equip.sequence()));
     }
 
     /** Life points and pile sizes, from OCG_DuelQueryField. Layout: ocgapi.cpp. */

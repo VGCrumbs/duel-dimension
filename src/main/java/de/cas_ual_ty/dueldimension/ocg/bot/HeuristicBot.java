@@ -48,6 +48,33 @@ public class HeuristicBot implements ResponseSource
     /** Set when we declare an attack, so the following card selection is read as target choice. */
     private boolean expectingAttackTarget;
 
+    /**
+     * The attacking monster's ATK, kept alongside the flag above so the target
+     * selection can pick the biggest defender that still dies rather than the
+     * smallest. {@code GameAI.OnSelectBattleCmd} sorts defenders by defence
+     * power descending and {@code OnSelectAttackTarget} takes the first one
+     * the attacker beats, which is the strongest beatable body.
+     */
+    private int attackerPower;
+
+    /**
+     * Ported from {@code Duel.LastChainPlayer} / {@code Duel.LastSummonPlayer}
+     * / {@code Duel.Player}, the three facts WindBot's {@code DefaultTrap}
+     * needs to tell "the opponent is doing something" from "I am".
+     */
+    private int turnPlayer = -1;
+    private int lastChainPlayer = -1;
+    private int lastSummonPlayer = -1;
+
+    /**
+     * How often each card has been activated, and the ceiling from
+     * {@code GameAI.ShouldExecute}: {@code if (_activatedCards[card.Id] >= 9)
+     * return false;}. A continuous card whose activation stays legal after it
+     * resolves would otherwise be fired forever.
+     */
+    private final java.util.Map<Integer, Integer> activatedCards = new java.util.HashMap<>();
+    private static final int ACTIVATION_LIMIT = 9;
+
     public HeuristicBot(long seed, OcgDuel.CardProvider cards, Collection<OcgCard> declarableIndex)
     {
         this.cards = cards;
@@ -67,6 +94,54 @@ public class HeuristicBot implements ResponseSource
     public void observe(RawMessage message)
     {
         fallback.observe(message);
+        // Track who is acting. The core's controller bytes are absolute, and
+        // so is our own player index, so these compare directly.
+        switch(message.type())
+        {
+            case OcgConstants.MSG_NEW_TURN ->
+            {
+                if(DuelMessage.decode(message) instanceof DuelMessage.NewTurn turn)
+                {
+                    turnPlayer = turn.player();
+                }
+                // WindBot clears both at the start of a turn; a trap must
+                // answer something happening now, not something last turn.
+                lastChainPlayer = -1;
+                lastSummonPlayer = -1;
+            }
+            case OcgConstants.MSG_CHAINING ->
+            {
+                if(DuelMessage.decode(message) instanceof DuelMessage.Chaining chaining)
+                {
+                    lastChainPlayer = chaining.card().controller();
+                }
+            }
+            case OcgConstants.MSG_CHAIN_END -> lastChainPlayer = -1;
+            case OcgConstants.MSG_SUMMONING, OcgConstants.MSG_SPSUMMONING,
+                OcgConstants.MSG_FLIPSUMMONING, OcgConstants.MSG_SET ->
+            {
+                DuelMessage decoded = DuelMessage.decode(message);
+                if(decoded instanceof DuelMessage.Summoning summon)
+                {
+                    lastSummonPlayer = summon.card().controller();
+                }
+                else if(decoded instanceof DuelMessage.SpSummoning summon)
+                {
+                    lastSummonPlayer = summon.card().controller();
+                }
+                else if(decoded instanceof DuelMessage.FlipSummoning summon)
+                {
+                    lastSummonPlayer = summon.card().controller();
+                }
+                else if(decoded instanceof DuelMessage.SetCard set)
+                {
+                    lastSummonPlayer = set.card().controller();
+                }
+            }
+            default ->
+            {
+            }
+        }
     }
 
     @Override
@@ -103,10 +178,24 @@ public class HeuristicBot implements ResponseSource
         {
             answer = chain(chain);
         }
-        else if(decoded instanceof DuelMessage.SelectEffectYesNo || decoded instanceof DuelMessage.SelectYesNo)
+        else if(decoded instanceof DuelMessage.SelectEffectYesNo effect)
         {
-            // These ask "do you want to use this?" about the asked player's
-            // own option; taking it is the better default than a coin flip.
+            // "Do you want to use this card's effect?" -- which names the card,
+            // so it is an activation decision and goes through the same table
+            // as every other one. WindBot's OnSelectEffectYn is the same shape:
+            // it walks its executors and returns false when none matches.
+            //
+            // Answering an unconditional yes here was a hole straight through
+            // the roles table: a trap the bot had correctly declined to
+            // activate from the main phase was activated anyway the moment the
+            // core asked about it politely.
+            answer = activationScore(board.observe(), effect.code(), true) >= 0
+                ? Responses.yes() : Responses.no();
+        }
+        else if(decoded instanceof DuelMessage.SelectYesNo)
+        {
+            // No card is named, so there is nothing to judge; this is the
+            // asked player's own option and taking it beats a coin flip.
             answer = Responses.yes();
         }
 
@@ -184,36 +273,38 @@ public class HeuristicBot implements ResponseSource
         // any legal spell immediately -- including a board wipe whose only
         // victims were the bot's own monsters.
         CardRoles.Role bestRole = null;
+        int bestCode = 0;
         for(int i = 0; i < idle.activatable().size(); i++)
         {
             int code = idle.activatable().get(i).code();
-            double score = activationScore(state, code);
-            if(score > bestScore)
+            double score = activationScore(state, code, false);
+            // A negative score means "never", not "only if nothing else is
+            // going on". bestScore starts at -Infinity, so without this test a
+            // -1 still counted as the best available play whenever the board
+            // offered nothing at all -- which is exactly the position a bot
+            // holding one dead card is in, and exactly when it fired it.
+            if(score >= 0 && score > bestScore)
             {
                 bestScore = score;
                 bestRole = CardRoles.of(code);
+                bestCode = code;
                 best = Responses.idleActivate(i);
             }
         }
 
         // Backrow discipline: set spells/traps rather than sitting on them.
+        // Anything the roles table says to hold back is still worth SETTING --
+        // that is how a reactive trap gets into position to answer the
+        // opponent later, and it is why declining to activate costs nothing.
         for(int i = 0; i < idle.spellSettable().size(); i++)
         {
             double score = 110;
             if(score > bestScore)
             {
                 bestScore = score;
+                bestRole = null; // this play targets nothing; see pendingTargetRole
+                bestCode = 0;
                 best = Responses.idleSpellSet(i);
-            }
-        }
-
-        if(idle.toBattle() && hasWinningAttack(state))
-        {
-            double score = 100;
-            if(score > bestScore)
-            {
-                bestScore = score;
-                best = Responses.idleToBattle();
             }
         }
 
@@ -239,6 +330,8 @@ public class HeuristicBot implements ResponseSource
             if(score > bestScore)
             {
                 bestScore = score;
+                bestRole = null;
+                bestCode = 0;
                 best = Responses.idleReposition(i);
             }
         }
@@ -246,49 +339,194 @@ public class HeuristicBot implements ResponseSource
         if(best != null)
         {
             pendingTargetRole = bestRole;
+            if(bestCode != 0)
+            {
+                activatedCards.merge(bestCode, 1, Integer::sum);
+            }
             return best;
         }
-        return idle.toBattle() ? Responses.idleToBattle()
-            : idle.toEnd() ? Responses.idleToEnd() : null;
+
+        // Nothing left worth doing in the main phase. WindBot's fallback at
+        // the end of GameAI.OnSelectIdleCmd is:
+        //
+        //     if (main.CanBattlePhase && Duel.Fields[0].HasAttackingMonster())
+        //         return new MainPhaseAction(MainAction.ToBattlePhase);
+        //     return new MainPhaseAction(MainAction.ToEndPhase);
+        //
+        // Note what it does NOT ask: whether an attack would be good. That
+        // judgement belongs to the battle phase, which can see the defenders
+        // and can still activate battle-phase cards. Gating entry on "do I
+        // already have a winning attack" -- the rule this replaces -- is what
+        // made the bot buff a monster in Main 1 and then end its turn without
+        // swinging, wasting the card it had just spent.
+        if(idle.toBattle() && state.self().strongestAttacker() > 0)
+        {
+            return Responses.idleToBattle();
+        }
+        return idle.toEnd() ? Responses.idleToEnd()
+            : idle.toBattle() ? Responses.idleToBattle() : null;
     }
 
-    /** True if any of our face-up attackers beats something (or the opponent is open). */
     /**
      * How much this board wants this card activated; negative means "keep it".
      * Legality is the engine's business — this is the judgement the engine
      * cannot supply, because effects are opaque scripts to the host.
      */
-    private double activationScore(BoardState state, int code)
+    private double activationScore(BoardState state, int code, boolean respondingToOpponent)
     {
-        int ownCount = state.self().monsterCount();
+        // GameAI.ShouldExecute refuses a card it has already fired nine times,
+        // which is the only thing standing between a continuous card and an
+        // infinite main phase.
+        if(activatedCards.getOrDefault(code, 0) >= ACTIVATION_LIMIT)
+        {
+            return -1;
+        }
+
         int oppCount = state.opponent().monsterCount();
-        int ownBest = state.self().strongestFaceUpAttack();
         int oppBest = state.opponent().strongestFaceUpAttack();
 
         return switch(CardRoles.of(code))
         {
-            case WIPES_ALL_MONSTERS ->
-            {
-                // Both boards die, so its value is the exchange. Firing it
-                // while ahead -- or with only our own monsters out, the play
-                // that prompted this method -- reads as negative and never
-                // beats doing anything else.
-                double exchange = (oppCount * 120 + oppBest / 8.0) - (ownCount * 120 + ownBest / 8.0);
-                yield exchange > 100 ? 200 + exchange : -1;
-            }
-            case HITS_OPPONENT_MONSTER ->
-                oppCount == 0 ? -1 : 260 + oppBest / 10.0;
+            // WindBot: protected bool DefaultDarkHole() { return
+            // Util.IsOneEnemyBetter(); } -- a symmetric wipe is worth it
+            // exactly when they have something we cannot handle. With only our
+            // own monsters out this is false, so the board-wipe-into-itself
+            // that started this method never happens.
+            case WIPES_ALL_MONSTERS -> isOneEnemyBetter(state) ? 300 : -1;
+            case HITS_OPPONENT_MONSTER -> oppCount == 0 ? -1 : 260 + oppBest / 10.0;
             case HITS_BACKROW ->
                 backrow(state.opponent()) == 0 ? -1 : 220 + backrow(state.opponent()) * 15;
-            case BUFFS_OWN_MONSTER ->
-                hasFaceUpMonster(state) ? 210 : -1;
+            case BUFFS_OWN_MONSTER -> buffScore(state);
             case REVIVES_FROM_GRAVE ->
             {
                 int best = Math.max(bestGraveAttack(state.self()), bestGraveAttack(state.opponent()));
                 yield best >= 1200 ? 240 + best / 10.0 : -1;
             }
-            case UTILITY -> 170;
+            // "500 damage for each monster they control": worth nothing
+            // against an empty board, and better the wider theirs is.
+            case BURNS_OPPONENT -> oppCount == 0 ? -1 : 230 + oppCount * 20;
+            // Never wrong, never urgent: below every play that touches the
+            // board, so it fills a turn rather than replacing a real one.
+            case GAINS_LIFE -> 60;
+            // WindBot: protected bool DefaultField() { return Bot.SpellZone[5] == null; }
+            case FIELD_SPELL -> fieldZoneEmpty(state) ? 130 : -1;
+            // The engine only offers these when they can resolve, so its
+            // legality check IS the condition WindBot would hand-write.
+            case SUMMONS_MONSTER -> 280;
+            // WindBot: protected bool DefaultTrap() { return (Duel.LastChainPlayer
+            // == -1 && Duel.LastSummonPlayer != 0) || Duel.LastChainPlayer == 1; }
+            // An answer is worth a card only against something the opponent is
+            // doing; on our own turn, with nothing on the stack, it is a
+            // wasted card. Fired from a chain window only.
+            case REACTIVE -> respondingToOpponent && opponentIsActing() ? 250 : -1;
+            // Held. These cost more than they take on any board we can read,
+            // and no legality check will ever say so.
+            case SELF_HARMING -> -1;
+            case UTILITY -> unclassifiedScore(code);
         };
+    }
+
+    /**
+     * What to do with a card the table says nothing about.
+     * <p>
+     * For a spell or trap the answer is nothing: firing it spends a card on an
+     * effect the bot cannot evaluate, which is the whole reason WindBot
+     * requires a registered rule before it activates anything.
+     * <p>
+     * A monster's own effect is a different trade. The body stays on the
+     * field, so using it costs no card — declining one is a real loss, and
+     * flip and ignition effects are most of what the starter-deck monsters do.
+     * These stay available.
+     */
+    private double unclassifiedScore(int code)
+    {
+        OcgCard card = cards.get(code);
+        return card != null && (card.type() & OcgConstants.TYPE_MONSTER) != 0 ? 200 : -1;
+    }
+
+    /**
+     * WindBot's {@code AIUtil.IsOneEnemyBetter}: is any enemy monster's power
+     * above the best of ours? Power is ATK for an attacker and DEF for a
+     * defender, matching {@code ClientCard.GetDefensePower}.
+     */
+    private boolean isOneEnemyBetter(BoardState state)
+    {
+        int ours = bestPower(state.self());
+        for(CardView card : state.opponent().monsters())
+        {
+            if(card != null && power(card) > ours)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static int power(CardView card)
+    {
+        return card.isAttackPosition() ? card.attack() : card.defense();
+    }
+
+    private static int bestPower(BoardState.PlayerBoard side)
+    {
+        int best = -1;
+        for(CardView card : side.monsters())
+        {
+            if(card != null)
+            {
+                best = Math.max(best, power(card));
+            }
+        }
+        return best;
+    }
+
+    /**
+     * A buff is only worth a card when it can change something.
+     * <p>
+     * The old rule was "we have a face-up monster", which spent an equip on a
+     * board where every trade was already decided — the wasted-card complaint.
+     * We cannot read the size of the boost (it lives in a Lua script), but we
+     * do not need to: what matters is whether there is a battle whose outcome
+     * is still open. If their board is empty the extra ATK is extra damage; if
+     * something out there already beats or ties our best attacker, the boost
+     * has a job. When we already beat everything, it has none.
+     */
+    private double buffScore(BoardState state)
+    {
+        int ours = state.self().strongestAttacker();
+        if(ours <= 0)
+        {
+            return -1; // nothing face-up in attack position to carry it
+        }
+        if(state.opponent().monsterCount() == 0)
+        {
+            return 210; // straight to life points, so every point counts
+        }
+        for(CardView card : state.opponent().monsters())
+        {
+            if(card != null && (!card.isFaceUp() || power(card) >= ours))
+            {
+                return 210;
+            }
+        }
+        return -1;
+    }
+
+    /** The field zone is spell sequence 5, per the core's zone numbering. */
+    private boolean fieldZoneEmpty(BoardState state)
+    {
+        List<CardView> spells = state.self().spells();
+        return spells.size() <= 5 || spells.get(5) == null;
+    }
+
+    /** {@code Duel.LastChainPlayer == 1}, or a summon that was not ours. */
+    private boolean opponentIsActing()
+    {
+        if(lastChainPlayer >= 0)
+        {
+            return lastChainPlayer != player;
+        }
+        return lastSummonPlayer >= 0 ? lastSummonPlayer != player : turnPlayer != player;
     }
 
     private static int backrow(BoardState.PlayerBoard side)
@@ -302,18 +540,6 @@ public class HeuristicBot implements ResponseSource
             }
         }
         return count;
-    }
-
-    private boolean hasFaceUpMonster(BoardState state)
-    {
-        for(CardView card : state.self().monsters())
-        {
-            if(card != null && card.isFaceUp())
-            {
-                return true;
-            }
-        }
-        return false;
     }
 
     private int bestGraveAttack(BoardState.PlayerBoard side)
@@ -330,31 +556,6 @@ public class HeuristicBot implements ResponseSource
         return best;
     }
 
-    private boolean hasWinningAttack(BoardState state)
-    {
-        int ours = state.self().strongestAttacker();
-        if(ours <= 0)
-        {
-            return false;
-        }
-        if(state.opponent().monsterCount() == 0)
-        {
-            return true; // direct attack
-        }
-        for(CardView card : state.opponent().monsters())
-        {
-            if(card == null)
-            {
-                continue;
-            }
-            if(!card.isFaceUp() || ours > card.attack())
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
     // ---- battle phase ----
 
     private byte[] battle(DuelMessage.SelectBattleCmd battle)
@@ -362,6 +563,7 @@ public class HeuristicBot implements ResponseSource
         BoardState state = board.observe();
         double bestScore = 0;
         byte[] best = null;
+        int bestPower = 0;
 
         for(int i = 0; i < battle.attackable().size(); i++)
         {
@@ -371,6 +573,7 @@ public class HeuristicBot implements ResponseSource
             if(score > bestScore)
             {
                 bestScore = score;
+                bestPower = attack;
                 best = Responses.battleAttack(i);
             }
         }
@@ -378,6 +581,7 @@ public class HeuristicBot implements ResponseSource
         if(best != null)
         {
             expectingAttackTarget = true;
+            attackerPower = bestPower;
             return best;
         }
         if(battle.toMain2())
@@ -472,7 +676,9 @@ public class HeuristicBot implements ResponseSource
     private byte[] selectCard(DuelMessage.SelectCard select)
     {
         boolean asAttackTarget = expectingAttackTarget;
+        int power = attackerPower;
         expectingAttackTarget = false;
+        attackerPower = 0;
         CardRoles.Role targetRole = pendingTargetRole;
         pendingTargetRole = null;
 
@@ -488,8 +694,8 @@ public class HeuristicBot implements ResponseSource
             order.add(i);
         }
         order.sort((left, right) -> Double.compare(
-            selectionPriority(select, right, asAttackTarget, targetRole),
-            selectionPriority(select, left, asAttackTarget, targetRole)));
+            selectionPriority(select, right, asAttackTarget, power, targetRole),
+            selectionPriority(select, left, asAttackTarget, power, targetRole)));
 
         int[] chosen = new int[count];
         for(int i = 0; i < count; i++)
@@ -501,7 +707,7 @@ public class HeuristicBot implements ResponseSource
 
     /** Higher means "pick this one first". */
     private double selectionPriority(DuelMessage.SelectCard select, int index, boolean asAttackTarget,
-        CardRoles.Role targetRole)
+        int power, CardRoles.Role targetRole)
     {
         DuelMessage.SelectableCard card = select.cards().get(index);
         int attack = attackOf(cards.get(card.code()));
@@ -509,8 +715,12 @@ public class HeuristicBot implements ResponseSource
 
         if(asAttackTarget)
         {
-            // Attack the cheapest defender that still dies.
-            return -attack;
+            // GameAI sorts defenders by power descending and OnSelectAttackTarget
+            // takes the first the attacker beats, i.e. the biggest body that
+            // still dies. Picking the cheapest instead -- the rule this
+            // replaces -- left their best monster standing and burned the
+            // attack on something that was no threat.
+            return power > attack ? 10000 + attack : -attack;
         }
         if(targetRole == CardRoles.Role.BUFFS_OWN_MONSTER)
         {
@@ -550,15 +760,19 @@ public class HeuristicBot implements ResponseSource
         BoardState state = board.observe();
         double bestScore = CHAIN_THRESHOLD;
         int best = -1;
+        int bestCode = 0;
         CardRoles.Role bestRole = null;
         for(int i = 0; i < chain.chains().size(); i++)
         {
             int code = chain.chains().get(i).code();
-            double score = activationScore(state, code);
+            // A chain window is by definition a response, so REACTIVE cards
+            // become available here and only here.
+            double score = activationScore(state, code, true);
             if(score > bestScore)
             {
                 bestScore = score;
                 bestRole = CardRoles.of(code);
+                bestCode = code;
                 best = i;
             }
         }
@@ -567,6 +781,7 @@ public class HeuristicBot implements ResponseSource
             return Responses.chainDecline();
         }
         pendingTargetRole = bestRole;
+        activatedCards.merge(bestCode, 1, Integer::sum);
         return Responses.chain(best);
     }
 

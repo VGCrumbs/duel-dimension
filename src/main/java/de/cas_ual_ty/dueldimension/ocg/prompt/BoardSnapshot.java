@@ -27,9 +27,9 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
 
     /** A card in a zone, or an empty zone when {@code present} is false. */
     public record Slot(boolean present, int code, boolean faceDown, boolean defence, int attack, int defense,
-        int baseAttack, int baseDefense, int overlays)
+        int baseAttack, int baseDefense, int overlays, CardView.Equip equip)
     {
-        public static final Slot EMPTY = new Slot(false, 0, false, false, 0, 0, 0, 0, 0);
+        public static final Slot EMPTY = new Slot(false, 0, false, false, 0, 0, 0, 0, 0, null);
 
         /**
          * True if an effect has moved this stat off its printed value. An
@@ -65,7 +65,7 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
             // -1 is the core's "you may not know this", and it is kept:
             // flattening it to 0 turned "unknown" into a stated 0 ATK.
             return new Slot(true, card.code(), !card.isFaceUp(), !card.isAttackPosition(),
-                card.attack(), card.defense(), card.baseAttack(), card.baseDefense(), 0);
+                card.attack(), card.defense(), card.baseAttack(), card.baseDefense(), 0, card.equip());
         }
 
         public void write(FriendlyByteBuf buffer)
@@ -82,6 +82,15 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
                 buffer.writeVarInt(baseAttack + 1);
                 buffer.writeVarInt(baseDefense + 1);
                 buffer.writeVarInt(overlays);
+                // An equip and the monster under it are both face up, so this
+                // relation is public knowledge and needs no concealment.
+                buffer.writeBoolean(equip != null);
+                if(equip != null)
+                {
+                    buffer.writeVarInt(equip.controller());
+                    buffer.writeVarInt(equip.location());
+                    buffer.writeVarInt(equip.sequence());
+                }
             }
         }
 
@@ -91,9 +100,19 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
             {
                 return EMPTY;
             }
-            return new Slot(true, buffer.readVarInt(), buffer.readBoolean(), buffer.readBoolean(),
-                buffer.readVarInt() - 1, buffer.readVarInt() - 1, buffer.readVarInt() - 1,
-                buffer.readVarInt() - 1, buffer.readVarInt());
+            int code = buffer.readVarInt();
+            boolean faceDown = buffer.readBoolean();
+            boolean defence = buffer.readBoolean();
+            int attack = buffer.readVarInt() - 1;
+            int defense = buffer.readVarInt() - 1;
+            int baseAttack = buffer.readVarInt() - 1;
+            int baseDefense = buffer.readVarInt() - 1;
+            int overlays = buffer.readVarInt();
+            CardView.Equip equip = buffer.readBoolean()
+                ? new CardView.Equip(buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt())
+                : null;
+            return new Slot(true, code, faceDown, defence, attack, defense,
+                baseAttack, baseDefense, overlays, equip);
         }
     }
 

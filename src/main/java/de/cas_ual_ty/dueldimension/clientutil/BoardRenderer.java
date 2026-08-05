@@ -211,6 +211,116 @@ public class BoardRenderer extends GuiComponent
     }
 
     /**
+     * The link between an equip card and the monster it is attached to, drawn
+     * while either end is hovered.
+     * <p>
+     * EDOPro marks the relation rather than drawing it: hovering a card sets
+     * {@code is_showequip} on its partner ({@code ClientField::SetShowMark},
+     * event_handler.cpp:2746) and the partner then wears {@code tEquip} over
+     * its face ({@code drawing.cpp}:404). That badge is kept — it is the
+     * reference's own art, at the reference's own size, {@code vSymbol} being
+     * 0.7 field units square, exactly the width of a card quad — and a line is
+     * drawn between the two so the pairing is legible at a glance even when
+     * several equips are out.
+     * <p>
+     * The core reports one direction only, {@code card::equiping_target}, so
+     * both are found by sweeping every on-field slot for an equip whose own
+     * zone or whose target zone is the hovered one. This mirrors EDOPro, which
+     * builds its reverse {@code equipped} set the same way.
+     */
+    public void drawEquipLinks(PoseStack poseStack, BoardSnapshot board, Hit hovered)
+    {
+        if(hovered == null || hovered.isPile())
+        {
+            return;
+        }
+        for(int controller = 0; controller < 2; controller++)
+        {
+            BoardSnapshot.Side side = controller == 0 ? board.self() : board.opponent();
+            drawEquipLinks(poseStack, side.monsters(), controller, OcgConstants.LOCATION_MZONE, hovered);
+            drawEquipLinks(poseStack, side.spells(), controller, OcgConstants.LOCATION_SZONE, hovered);
+        }
+    }
+
+    private void drawEquipLinks(PoseStack poseStack, List<BoardSnapshot.Slot> slots, int controller,
+        int location, Hit hovered)
+    {
+        for(int sequence = 0; sequence < slots.size(); sequence++)
+        {
+            BoardSnapshot.Slot slot = slots.get(sequence);
+            if(slot == null || !slot.present() || slot.equip() == null)
+            {
+                continue;
+            }
+            boolean fromHovered = at(hovered, controller, location, sequence);
+            boolean toHovered = at(hovered, slot.equip().controller(), slot.equip().location(),
+                slot.equip().sequence());
+            if(!fromHovered && !toHovered)
+            {
+                continue;
+            }
+            Hit other = fromHovered
+                ? find(slot.equip().controller(), slot.equip().location(), slot.equip().sequence())
+                : find(controller, location, sequence);
+            if(other != null)
+            {
+                drawLink(poseStack, hovered.corners(), other.corners());
+            }
+        }
+    }
+
+    private static boolean at(Hit hit, int controller, int location, int sequence)
+    {
+        return hit.controller() == controller && hit.location() == location && hit.sequence() == sequence;
+    }
+
+    private Hit find(int controller, int location, int sequence)
+    {
+        for(Hit hit : hits)
+        {
+            if(at(hit, controller, location, sequence))
+            {
+                return hit;
+            }
+        }
+        return null;
+    }
+
+    /** Amber, so an equip link never reads as the red attack line. */
+    private static final float LINK_R = 1F;
+    private static final float LINK_G = 0.82F;
+    private static final float LINK_B = 0.30F;
+    private static final float LINK_HALF_WIDTH = 1.6F;
+
+    private static void drawLink(PoseStack poseStack, FieldQuad.Corners from, FieldQuad.Corners to)
+    {
+        float x1 = centreX(from);
+        float y1 = centreY(from);
+        float x2 = centreX(to);
+        float y2 = centreY(to);
+        float dx = x2 - x1;
+        float dy = y2 - y1;
+        float length = (float)Math.sqrt(dx * dx + dy * dy);
+        if(length >= 1F)
+        {
+            float px = -dy / length * LINK_HALF_WIDTH;
+            float py = dx / length * LINK_HALF_WIDTH;
+            FieldQuad.drawCorners(poseStack, DuelTextures.WHITE, new FieldQuad.Corners(
+                    x1 + px, y1 + py, x2 + px, y2 + py, x2 - px, y2 - py, x1 - px, y1 - py),
+                0F, 0F, 1F, 1F, LINK_R, LINK_G, LINK_B, 0.85F);
+        }
+
+        // The reference's own mark, on the partner: vSymbol is a square the
+        // width of a card quad, centred on the card.
+        float half = (to.maxX() - to.minX()) / 2F;
+        float cx = centreX(to);
+        float cy = centreY(to);
+        FieldQuad.drawCorners(poseStack, DuelTextures.EQUIP, new FieldQuad.Corners(
+                cx - half, cy - half, cx + half, cy - half, cx + half, cy + half, cx - half, cy + half),
+            0F, 0F, 1F, 1F, 1F, 1F, 1F, 1F);
+    }
+
+    /**
      * Screen x of the table's centre line. The frustum is off-centre by
      * design, so this is well right of the screen's middle - header elements
      * centred on the window would look misaligned against the table.
@@ -629,7 +739,7 @@ public class BoardRenderer extends GuiComponent
         for(int i = 0; i < hand.size(); i++)
         {
             BoardSnapshot.Slot slot = hide
-                ? new BoardSnapshot.Slot(true, 0, true, false, 0, 0, 0, 0, 0)
+                ? new BoardSnapshot.Slot(true, 0, true, false, 0, 0, 0, 0, 0, null)
                 : hand.get(i);
             FieldLayout.Rect rect = new FieldLayout.Rect(x - cardW / 2F, fieldY - cardH / 2F, cardW, cardH);
 

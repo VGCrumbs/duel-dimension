@@ -855,6 +855,10 @@ public class EngineDuelScreen extends Screen
         // EDOPro opens the command menu on click, not on hover; hovering only
         // drives the card preview.
 
+        // Drawn straight after the board so the link sits over the cards but
+        // under every panel, the way EDOPro's own equip mark does.
+        boardRenderer.drawEquipLinks(poseStack, board, hovered);
+
         renderTopBar(poseStack, board);
         renderPhaseBar(poseStack, board);
         renderHintBanner(poseStack, prompt);
