@@ -379,6 +379,7 @@ public class DuelDimension
             // Duels run on their own threads; this is where what they produced
             // is handed back to the game thread.
             de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.tick(event.getServer());
+            de.cas_ual_ty.dueldimension.duel.match.DuelInvites.tick(event.getServer());
         }
     }
     
@@ -391,6 +392,7 @@ public class DuelDimension
     private void registerCommands(RegisterCommandsEvent event)
     {
         DdCommand.registerCommand(event.getDispatcher());
+        de.cas_ual_ty.dueldimension.duel.match.DuelCommand.register(event.getDispatcher());
     }
     
     private void modConfig(ModConfigEvent event)

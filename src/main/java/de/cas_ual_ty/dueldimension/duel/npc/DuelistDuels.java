@@ -206,6 +206,111 @@ public final class DuelistDuels
         session.start();
     }
 
+    /**
+     * Starts a duel between two players, each answering their own prompts.
+     *
+     * @return null on success, else why it could not start
+     */
+    public static String startPlayerDuel(ServerPlayer first, ServerPlayer second)
+    {
+        for(ServerPlayer player : new ServerPlayer[] {first, second})
+        {
+            RunningDuel busy = ACTIVE.get(Watcher.of(player));
+            if(busy != null && busy.session.isRunning())
+            {
+                return player.getGameProfile().getName() + " is already duelling";
+            }
+        }
+
+        EngineRuntime.Paths paths = EngineRuntime.Paths.defaults();
+        String missing = paths.missing();
+        if(missing != null)
+        {
+            return "Ruled duels unavailable: " + missing;
+        }
+        EngineRuntime engine = EngineRuntime.get(paths);
+        if(engine == null)
+        {
+            return "Ruled duels unavailable";
+        }
+
+        // Until deck building lands, the two seats take fixed starter decks.
+        StarterDecks.Entry deckA = StarterDecks.YUGI;
+        StarterDecks.Entry deckB = StarterDecks.KAIBA;
+        HeadlessDuelRunner.Deck deck0 = deckA.load().toRunnerDeck();
+        HeadlessDuelRunner.Deck deck1 = deckB.load().toRunnerDeck();
+
+        long seed = first.level.getGameTime()
+            ^ first.getUUID().getLeastSignificantBits()
+            ^ second.getUUID().getMostSignificantBits();
+        long[] seeds = {seed | 1, seed * 31 + 7, seed * 131 + 17, ~seed};
+
+        PromptTranslator translator = new PromptTranslator(engine.cards(), engine.descriptions());
+        DuelSession[] sessionHolder = new DuelSession[1];
+
+        // One responder per player, each posting its prompts under its OWN
+        // seat number. The seat is what the drain uses to decide who a
+        // question is for, so getting it wrong here would send both players
+        // the same prompts and let either answer for the other.
+        HumanResponseSource seat0 = new HumanResponseSource(translator, (prompt, seat) ->
+        {
+            DuelSession running = sessionHolder[0];
+            if(running != null)
+            {
+                running.postPrompt(prompt, seat.pendingSerial(), 0);
+            }
+        });
+        HumanResponseSource seat1 = new HumanResponseSource(translator, (prompt, seat) ->
+        {
+            DuelSession running = sessionHolder[0];
+            if(running != null)
+            {
+                running.postPrompt(prompt, seat.pendingSerial(), 1);
+            }
+        });
+        SEATS.put(first.getUUID(), seat0);
+        SEATS.put(second.getUUID(), seat1);
+
+        DuelSession session = DuelSession.create(
+            "pvp-" + first.getGameProfile().getName() + "-" + second.getGameProfile().getName(),
+            engine.api(), engine.defaultFlags(), seeds,
+            engine.cards(), engine.scripts(), deck0, deck1, seat0, seat1);
+        sessionHolder[0] = session;
+
+        // Both watchers point at the SAME RunningDuel: the session exists once
+        // and the tick de-duplicates by identity before draining it.
+        RunningDuel duel = new RunningDuel(session, Watcher.of(first), Watcher.of(second));
+        ACTIVE.put(Watcher.of(first), duel);
+        ACTIVE.put(Watcher.of(second), duel);
+
+        announceStart(first, second, deckA, deckB, deck0);
+        announceStart(second, first, deckB, deckA, deck1);
+
+        session.start();
+        return null;
+    }
+
+    /** Tells one player the duel has begun, and warms up the art for their own deck. */
+    private static void announceStart(ServerPlayer player, ServerPlayer opponent,
+        StarterDecks.Entry own, StarterDecks.Entry theirs, HeadlessDuelRunner.Deck ownDeck)
+    {
+        player.sendSystemMessage(Component.literal("Duel started against ")
+            .withStyle(ChatFormatting.GOLD)
+            .append(Component.literal(opponent.getGameProfile().getName())
+                .withStyle(ChatFormatting.YELLOW))
+            .append(Component.literal(" - "))
+            .append(Component.literal(own.displayName()).withStyle(ChatFormatting.AQUA))
+            .append(Component.literal(" vs "))
+            .append(Component.literal(theirs.displayName()).withStyle(ChatFormatting.LIGHT_PURPLE)));
+
+        // Only this player's own list: the opponent's deck is hidden
+        // information, and their cards are fetched as they reach the field.
+        int[] warmUp = ownDeck.main().stream().mapToInt(Integer::intValue).distinct().toArray();
+        de.cas_ual_ty.dueldimension.DuelDimension.channel.send(
+            net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
+            new PromptMessages.DuelUpdate(null, List.of(), false, "", warmUp));
+    }
+
     /** Routes a client's answer to the seat that is waiting for it. */
     public static void submitAnswer(ServerPlayer player, HumanResponseSource.Answer answer)
     {
@@ -794,6 +899,7 @@ public final class DuelistDuels
     public static void stopAll()
     {
         ACTIVE.values().forEach(duel -> duel.session.stop());
+        de.cas_ual_ty.dueldimension.duel.match.DuelInvites.clear();
         ACTIVE.clear();
     }
 }
