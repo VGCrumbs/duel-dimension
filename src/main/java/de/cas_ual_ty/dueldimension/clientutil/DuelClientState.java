@@ -20,9 +20,18 @@ public final class DuelClientState
     public static volatile boolean over;
     public static volatile String result = "";
     public static final Deque<String> log = new ArrayDeque<>();
-    /** Events the screen has not animated yet. */
-    public static final Deque<de.cas_ual_ty.dueldimension.ocg.prompt.DuelEvent> pendingEvents =
-        new ArrayDeque<>();
+    /**
+     * Updates the screen has not played yet, each holding the events that
+     * happened and the board they produced. The board is applied only once its
+     * events have been animated, so the field never shows a card that has not
+     * finished moving.
+     */
+    public record PendingUpdate(java.util.List<de.cas_ual_ty.dueldimension.ocg.prompt.DuelEvent> events,
+        BoardSnapshot board)
+    {
+    }
+
+    public static final Deque<PendingUpdate> pending = new ArrayDeque<>();
 
     private DuelClientState()
     {
@@ -82,6 +91,6 @@ public final class DuelClientState
         over = false;
         result = "";
         log.clear();
-        pendingEvents.clear();
+        pending.clear();
     }
 }

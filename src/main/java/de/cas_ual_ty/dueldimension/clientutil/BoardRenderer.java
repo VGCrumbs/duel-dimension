@@ -118,14 +118,6 @@ public class BoardRenderer extends GuiComponent
     private java.util.function.Predicate<Hit> actionable = hit -> false;
     private java.util.function.Predicate<Hit> canAttack = hit -> false;
     private java.util.function.Predicate<Hit> canActivate = hit -> false;
-    /** Asks whether this exact card is still flying into this zone. */
-    public interface ArrivalTest
-    {
-        boolean isArriving(int zoneRef, int code);
-    }
-
-    /** Zones whose card is mid-flight, so the static copy is held back. */
-    private ArrivalTest arriving = (zone, code) -> false;
     private FieldLayout.Projection projection;
     /** Set for the duration of a render, so zone drawing can label stats. */
     private Font font;
@@ -173,17 +165,6 @@ public class BoardRenderer extends GuiComponent
     public void setCanActivate(java.util.function.Predicate<Hit> canActivate)
     {
         this.canActivate = canActivate;
-    }
-
-    /**
-     * Zones with a card still flying into them. The board snapshot is applied
-     * the moment it arrives, so without this the card was already sitting in
-     * its zone while its own set/summon animation was still travelling -- two
-     * copies of the same card, the destination one appearing first.
-     */
-    public void setArriving(ArrivalTest arriving)
-    {
-        this.arriving = arriving;
     }
 
     public void render(PoseStack poseStack, Font font, BoardSnapshot board, int left, int top,
@@ -437,7 +418,7 @@ public class BoardRenderer extends GuiComponent
         // override it are drawn here.
         hits.add(hit);
 
-        if(!slot.present() || (hit.zoneRef() >= 0 && arriving.isArriving(hit.zoneRef(), slot.code())))
+        if(!slot.present())
         {
             return;
         }

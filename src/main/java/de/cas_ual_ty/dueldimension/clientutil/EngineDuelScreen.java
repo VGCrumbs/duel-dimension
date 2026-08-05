@@ -716,8 +716,6 @@ public class EngineDuelScreen extends Screen
         // window is exactly the set of responses available to you.
         boardRenderer.setCanActivate(hit -> optionsFor(hit).stream().anyMatch(index ->
             prompt != null && prompt.options().get(index).command() == CardCommands.COMMAND_ACTIVATE));
-        boardRenderer.setArriving((zone, code) ->
-            animations.isArriving(zone, code, System.currentTimeMillis()));
 
         // EDOPro's frustum is off-centre by design (M[8] = 1/3) so the table
         // sits right of screen centre and leaves room for the card-info column.
@@ -736,10 +734,17 @@ public class EngineDuelScreen extends Screen
         long now = System.currentTimeMillis();
         synchronized(DuelClientState.class)
         {
-            if(!DuelClientState.pendingEvents.isEmpty())
+            while(!DuelClientState.pending.isEmpty())
             {
-                animations.accept(new ArrayList<>(DuelClientState.pendingEvents), now);
-                DuelClientState.pendingEvents.clear();
+                DuelClientState.PendingUpdate update = DuelClientState.pending.poll();
+                BoardSnapshot settled = update.board();
+                animations.accept(update.events(), () ->
+                {
+                    if(settled != null)
+                    {
+                        DuelClientState.board = settled;
+                    }
+                });
             }
         }
         animations.tick(now);

@@ -323,15 +323,15 @@ public class ClientProxy implements ISidedProxy
     @Override
     public void updateEngineDuel(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate update)
     {
-        if(update.board() != null)
-        {
-            DuelClientState.board = update.board();
-        }
         update.log().forEach(DuelClientState::addLog);
         DuelClientState.warmUpArt(update.warmUp());
         synchronized(DuelClientState.class)
         {
-            DuelClientState.pendingEvents.addAll(update.events());
+            // Board and events travel together and are played in order, so the
+            // field advances at the pace of the animation rather than jumping
+            // to the settled state the moment the packet lands.
+            DuelClientState.pending.add(
+                new DuelClientState.PendingUpdate(update.events(), update.board()));
         }
         // The opponent's whole turn arrives as updates with no prompt attached.
         // Only opening the screen for prompts meant those events queued up

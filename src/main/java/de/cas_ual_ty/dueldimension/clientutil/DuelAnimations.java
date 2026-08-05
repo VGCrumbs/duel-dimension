@@ -26,24 +26,50 @@ import java.util.List;
 public class DuelAnimations
 {
     /**
-     * How long each kind of animation lasts, in milliseconds. These are paced
-     * for following a duel rather than for speed: events play one after another
-     * (see {@link #tick}), so each of these is also the wait before the next.
+     * EDOPro's own pacing, in frames at 60fps, taken from the
+     * {@code WaitFrameSignal(n, lock)} call in each message handler in
+     * {@code gframe/duelclient.cpp}.
+     * <p>
+     * That call is the reference client's timing primitive: it blocks the
+     * message loop for n frames, so the duel state can never run ahead of what
+     * is on screen. These are its numbers rather than invented ones:
+     * <pre>
+     * MSG_MOVE            10        MSG_SUMMONING     11 + 30
+     * MSG_DRAW             5        MSG_SPSUMMONING   11 + 30
+     * MSG_CHAINING        30        MSG_FLIPSUMMONING 11 + 30
+     * MSG_BECOME_TARGET   30        MSG_DAMAGE        11 + 30
+     * MSG_ATTACK          40        MSG_RECOVER       11 + 30
+     * MSG_NEW_PHASE       40        MSG_POS_CHANGE    11
+     * MSG_NEW_TURN        40        MSG_SHUFFLE_DECK  10
+     * MSG_WIN            120        MSG_CHAINED       20
+     * </pre>
      */
-    private static final long MOVE_MS = 750;
-    private static final long FLASH_MS = 700;
-    /** An attack arrow holds long enough to read before the damage lands. */
-    private static final long ATTACK_MS = 1300;
-    /** Events with no visual still get a beat, so their sounds stay distinct. */
-    private static final long BEAT_MS = 320;
-    /** A chain or target marker has to be readable before it goes. */
-    private static final long OVERLAY_MS = 1200;
-    /** A destroyed card breaks apart over this long. */
-    private static final long SHATTER_MS = 850;
+    private static long frames(int count)
+    {
+        return Math.round(count * 1000D / 60D);
+    }
+
+    private static final long MOVE_MS = frames(10);
+    private static final long SUMMON_MS = frames(11 + 30);
+    private static final long DRAW_MS = frames(5);
+    private static final long FLASH_MS = frames(11 + 30);
+    private static final long ATTACK_MS = frames(40);
+    private static final long PHASE_MS = frames(40);
+    private static final long TURN_MS = frames(40);
+    private static final long CHAIN_MS = frames(30);
+    private static final long TARGET_MS = frames(30);
+    private static final long SHUFFLE_MS = frames(10);
+    private static final long WIN_MS = frames(120);
+    /**
+     * A destroyed card breaks apart. EDOPro has no such effect -- destruction
+     * is just a MSG_MOVE to the graveyard there -- so this is the one timing
+     * here that is ours, stretched enough for the shards to read.
+     */
+    private static final long SHATTER_MS = frames(30);
     /** Fragments per axis: the card breaks into SHARDS x SHARDS pieces. */
     private static final int SHARDS = 3;
-    /** However far behind we are, nothing is allowed to flash past faster. */
-    private static final long FLOOR_MS = 260;
+    /** However far behind we are, nothing flashes past faster than this. */
+    private static final long FLOOR_MS = frames(5);
 
     /**
      * The attack line. EDOPro's own arrow is green
@@ -98,8 +124,16 @@ public class DuelAnimations
     /** Cards breaking apart where they were destroyed. */
     private final List<Playing> shatters = new ArrayList<>();
 
+    /**
+     * One entry in the playback queue: either an event to animate, or a commit
+     * to run once everything before it has finished.
+     */
+    private record Step(DuelEvent event, Runnable commit)
+    {
+    }
+
     /** Events waiting their turn to be played. */
-    private final java.util.ArrayDeque<DuelEvent> queue = new java.util.ArrayDeque<>();
+    private final java.util.ArrayDeque<Step> queue = new java.util.ArrayDeque<>();
     /** When the next queued event may start. */
     private long nextStart;
 
@@ -114,34 +148,56 @@ public class DuelAnimations
      */
     public void accept(List<DuelEvent> events, long now)
     {
-        queue.addAll(events);
+        events.forEach(event -> queue.add(new Step(event, null)));
     }
 
     /**
-     * How long one event's visual runs. A long backlog compresses these, so a
-     * turn full of effects catches up instead of falling further behind — the
-     * same idea as the reference client's own catching-up mode.
+     * Queues an update's events and the board they produced, so the board is
+     * only shown once those events have played.
+     * <p>
+     * This is what {@code WaitFrameSignal} buys the reference client. There the
+     * card's state and its animation are the same object and the message loop
+     * blocks, so the field can never show a card that has not finished moving.
+     * Here the server sends a settled snapshot, and applying it on arrival put
+     * every card in place before its own animation had run -- which is also
+     * what forced the arrival-suppression hack that made cards vanish. Holding
+     * the snapshot behind its events removes both problems at the source.
+     */
+    public void accept(List<DuelEvent> events, Runnable applyBoard)
+    {
+        events.forEach(event -> queue.add(new Step(event, null)));
+        queue.add(new Step(null, applyBoard));
+    }
+
+    /**
+     * How long one event holds the queue. This is both its animation's length
+     * and the wait before the next event starts, which is exactly what
+     * WaitFrameSignal does in the reference.
      */
     private long duration(DuelEvent event)
     {
         long base = switch(event.kind())
         {
+            case MOVE -> MOVE_MS;
+            case SUMMON, SPECIAL_SUMMON, SET, FLIP -> SUMMON_MS;
             case DESTROY -> SHATTER_MS;
-            case MOVE, SUMMON, SPECIAL_SUMMON, SET, ACTIVATE, DRAW -> MOVE_MS;
+            case DRAW -> DRAW_MS;
+            case ACTIVATE, CHAINING -> CHAIN_MS;
+            case BECOME_TARGET -> TARGET_MS;
             case ATTACK -> ATTACK_MS;
             case DAMAGE, RECOVER -> FLASH_MS;
-            case CHAINING, BECOME_TARGET -> OVERLAY_MS;
-            // No visual of their own: just enough of a beat to hear the sound.
-            default -> BEAT_MS;
+            case PHASE -> PHASE_MS;
+            case NEW_TURN -> TURN_MS;
+            case SHUFFLE -> SHUFFLE_MS;
+            case WIN -> WIN_MS;
         };
         return Math.max(FLOOR_MS, Math.round(base * backlogScale()));
     }
 
     /**
      * Only a genuinely long backlog compresses playback, and never below the
-     * floor. The first attempt dropped to 0.3x past a dozen queued events,
-     * which a single busy turn reaches easily -- so the pacing it was supposed
-     * to fix came straight back.
+     * floor. EDOPro does the same when it has fallen behind: its catching-up
+     * mode returns from each handler before the animation and the wait.
      */
     private float backlogScale()
     {
@@ -221,9 +277,18 @@ public class DuelAnimations
         overlays.removeIf(animation -> animation.done(now));
         shatters.removeIf(animation -> animation.done(now));
 
-        if(!queue.isEmpty() && now >= nextStart)
+        // Release as many zero-length steps as are ready, so a commit that
+        // follows a finished event lands on the same frame rather than a frame
+        // later, but never more than one event.
+        while(!queue.isEmpty() && now >= nextStart)
         {
-            start(queue.poll(), now);
+            Step step = queue.poll();
+            if(step.event() != null)
+            {
+                start(step.event(), now);
+                break;
+            }
+            step.commit().run();
         }
     }
 
@@ -485,34 +550,6 @@ public class DuelAnimations
             }
         }
         return strongest;
-    }
-
-    /**
-     * True while <em>this</em> card is still travelling into this zone, so the
-     * board can hold back the settled copy until the animation lands.
-     * <p>
-     * Both the zone and the card must match, and only animations actually
-     * running count. The first version matched on zone alone and also counted
-     * queued events, which made cards vanish outright: any card sitting in a
-     * zone some pending event happened to name was hidden, and a queued event
-     * that never played left it hidden indefinitely. Control changes hit this
-     * hardest, since a card moves into a zone the opponent's card just left.
-     */
-    public boolean isArriving(int zoneRef, int code, long now)
-    {
-        if(zoneRef < 0)
-        {
-            return false;
-        }
-        for(Playing animation : playing)
-        {
-            DuelEvent event = animation.event();
-            if(event.toZone() == zoneRef && event.code() == code && !animation.done(now))
-            {
-                return true;
-            }
-        }
-        return false;
     }
 
     /** True while anything is still playing, for callers that want to wait. */
