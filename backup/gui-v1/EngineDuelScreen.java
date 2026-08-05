@@ -800,9 +800,7 @@ public class EngineDuelScreen extends Screen
         // the life bars, turn badge and phase row keep their own positions.
         int fieldTop = TOP_BAR_H + FIELD_DROP;
         int fieldWidth = width - SIDEBAR_W;
-        // Down to the last few pixels: the wide margin here left a dead band
-        // between the hand and the bottom edge and crushed the board above it.
-        int fieldHeight = height - fieldTop - 6;
+        int fieldHeight = height - fieldTop - 30;
         boardRenderer.render(poseStack, font, board, fieldLeft, fieldTop, fieldWidth, fieldHeight, highlights);
 
         // Playback is advanced on the client tick, not here, so it keeps its
@@ -1162,27 +1160,26 @@ public class EngineDuelScreen extends Screen
      * the frustum is off-centre by design, so window-centred headers sit
      * visibly left of the board.
      */
-    /**
-     * Life displays as corner plates, arranged the way Master Duel arranges
-     * them -- your plate at the lower left of the board, the opponent's at the
-     * upper right -- but drawn entirely by hand here; nothing is copied from
-     * that game. Each plate carries the duelist's name, an LP readout with the
-     * number at display size, and a thin accent line that depletes with their
-     * life. The turn badge stays centred above the field.
-     */
     private void renderTopBar(PoseStack poseStack, BoardSnapshot board)
     {
+        int badgeW = 34;
+        int left = SIDEBAR_W + 10;
+        int right = width - 10;
+        // Both players get the same bar: a wider one for you would misread as
+        // an advantage at a glance.
+        int barW = Math.max(60, (right - left - badgeW - 12) / 2);
+        int badgeLeft = left + barW + 6;
+
         long now = System.currentTimeMillis();
         boolean yourTurn = board.turnPlayer() == 0;
-
-        drawLifePlate(poseStack, SIDEBAR_W + 8, height - PLATE_H - 6, "You",
-            board.self().lifePoints(), 0xFF3FA34D, animations.damageFlash(0, now), yourTurn, now);
-        drawLifePlate(poseStack, width - PLATE_W - 8, 4, "Opponent",
+        drawLifeBar(poseStack, left, 6, barW, "You", board.self().lifePoints(), 0xFF3FA34D,
+            animations.damageFlash(0, now), yourTurn, now);
+        drawLifeBar(poseStack, right - barW, 6, barW, "Opponent",
             board.opponent().lifePoints(), 0xFFC1362F, animations.damageFlash(1, now), !yourTurn, now);
 
-        // Whose turn it is, said with colour instead of words.
-        int badgeW = 34;
-        int badgeLeft = Math.round(boardRenderer.tableCentreX()) - badgeW / 2;
+        // Whose turn it is, said with colour instead of words: the badge and
+        // the active player's bar carry it, so the label underneath (which the
+        // phase row kept colliding with) is gone.
         int badgeTop = 4;
         int turnColour = yourTurn ? TURN_YOURS : TURN_THEIRS;
         fill(poseStack, badgeLeft, badgeTop, badgeLeft + badgeW, badgeTop + 17, 0xC0101014);
@@ -1192,55 +1189,43 @@ public class EngineDuelScreen extends Screen
             badgeLeft + badgeW / 2, badgeTop + 5, turnColour);
     }
 
-    private static final int PLATE_W = 118;
-    private static final int PLATE_H = 34;
-
-    private void drawLifePlate(PoseStack poseStack, int x, int y, String name, int lifePoints,
-        int accent, float flash, boolean active, long now)
+    /**
+     * EDOPro draws a frame texture (lpf.png, a fixed 200x20 source) and fills
+     * it procedurally; lp.png is never drawn. Same here.
+     */
+    private void drawLifeBar(PoseStack poseStack, int x, int y, int barW, String name, int lifePoints,
+        int colour, float flash, boolean active, long now)
     {
+        int barH = 13;
         if(active)
         {
-            // The active duelist's plate breathes, softly and feathered.
-            float pulse = 0.18F + 0.10F * (float)Math.sin(now / 420D);
-            float[] spread = {1.5F, 3F, 4.5F};
-            float[] fade = {1F, 0.55F, 0.28F};
-            for(int shell = 0; shell < spread.length; shell++)
-            {
-                int e = Math.round(spread[shell]);
-                int alpha = Math.round(pulse * fade[shell] * 255) << 24;
-                fill(poseStack, x - e, y - e, x + PLATE_W + e, y + PLATE_H + e, alpha | 0xFFFFFF);
-            }
+            // A slow breath around the bar of whoever is playing. Subtle enough
+            // to ignore, bright enough to answer "whose turn is it" at a glance.
+            float pulse = 0.35F + 0.25F * (float)Math.sin(now / 420D);
+            int glow = (Math.round(pulse * 255) << 24) | 0xFFFFFF;
+            fill(poseStack, x - 2, y - 2, x + barW + 2, y, glow);
+            fill(poseStack, x - 2, y + barH, x + barW + 2, y + barH + 2, glow);
+            fill(poseStack, x - 2, y, x, y + barH, glow);
+            fill(poseStack, x + barW, y, x + barW + 2, y + barH, glow);
         }
-
-        fill(poseStack, x, y, x + PLATE_W, y + PLATE_H, 0xE60F1216);
-        // The accent runs down the plate's outer edge and under its name.
-        fill(poseStack, x, y, x + 2, y + PLATE_H, 0xFF000000 | (accent & 0xFFFFFF));
-        fill(poseStack, x + 4, y + 12, x + PLATE_W - 4, y + 13, 0x50FFFFFF);
-
-        font.draw(poseStack, name, x + 6, y + 3, 0xE8E8E8);
-
-        // "LP" small, the number at display size, as the reference layout has it.
-        font.draw(poseStack, "LP", x + 6, y + 19, 0x9AA0A8);
-        String value = Integer.toString(Math.max(0, lifePoints));
-        poseStack.pushPose();
-        poseStack.scale(1.5F, 1.5F, 1F);
-        font.draw(poseStack, value,
-            (x + PLATE_W - 6 - font.width(value) * 1.5F) / 1.5F, (y + 15) / 1.5F, 0xFFFFFF);
-        poseStack.popPose();
-
-        // The depletion line: full at 8000, gone at 0.
-        int lineW = Math.max(0, Math.min(PLATE_W - 8, Math.round((PLATE_W - 8) * lifePoints / 8000F)));
-        fill(poseStack, x + 4, y + PLATE_H - 3, x + 4 + PLATE_W - 8, y + PLATE_H - 2, 0xFF23262B);
-        fill(poseStack, x + 4, y + PLATE_H - 3, x + 4 + lineW, y + PLATE_H - 2,
-            0xFF000000 | (accent & 0xFFFFFF));
-
         if(flash > 0)
         {
-            int alpha = (int)(flash * 150) << 24;
-            fill(poseStack, x, y, x + PLATE_W, y + PLATE_H, alpha | 0xFFFFFF);
+            // A white wash over the bar the moment life points change.
+            int alpha = (int)(flash * 160) << 24;
+            fill(poseStack, x - 2, y - 2, x + barW + 2, y + barH + 2, alpha | 0xFFFFFF);
         }
-    }
+        int filled = Math.max(0, Math.min(barW - 4, Math.round((barW - 4) * lifePoints / 8000F)));
+        fill(poseStack, x + 2, y + 2, x + barW - 2, y + barH - 2, 0xFF101010);
+        fill(poseStack, x + 2, y + 2, x + 2 + filled, y + barH - 2, colour);
 
+        ScreenUtil.white();
+        CardRenderUtil.bindMainResourceLocation(DuelTextures.LP_FRAME);
+        DdBlitUtil.fullBlit(poseStack, x, y, barW, barH);
+
+        font.draw(poseStack, name, x + 5, y + 3, 0xFFFFFF);
+        String value = Integer.toString(lifePoints);
+        font.draw(poseStack, value, x + barW - font.width(value) - 5, y + 3, 0xFFFFFF);
+    }
 
     /**
      * The sidebar is split into fixed bands so its sections cannot collide:
@@ -1313,24 +1298,18 @@ public class EngineDuelScreen extends Screen
             DuelTextures.CARD_U1 - DuelTextures.CARD_U0, DuelTextures.CARD_V1 - DuelTextures.CARD_V0,
             1, 1);
 
-        // The name sits on its own plate under the art, the type line on an
-        // accent chip, and the effect text in a bordered well -- the reference
-        // layout's structure, drawn from scratch.
         int y = SIDEBAR_PAD + imageH + 4;
-        List<net.minecraft.util.FormattedCharSequence> nameLines =
-            font.split(Component.literal(card.getName()), textWidth - 4);
-        int plateH = nameLines.size() * 9 + 4;
-        fill(poseStack, SIDEBAR_PAD - 2, y - 2, SIDEBAR_W - SIDEBAR_PAD + 2, y + plateH - 2, 0xFF14161A);
-        fill(poseStack, SIDEBAR_PAD - 2, y + plateH - 2, SIDEBAR_W - SIDEBAR_PAD + 2, y + plateH - 1,
-            0xFFB08A2A);
-        for(var line : nameLines)
+        for(var line : font.split(Component.literal(card.getName()), textWidth))
         {
-            font.draw(poseStack, line, SIDEBAR_PAD + 2, y, 0xFFD700);
+            font.draw(poseStack, line, SIDEBAR_PAD, y, 0xFFD700);
             y += 9;
         }
-        y += 4;
 
+        // Type line and effect text at 3/4 scale, in the band between the card
+        // name and the log. The band is the card's dedicated description space:
+        // nothing else draws into it, and the text is clipped to its bottom.
         int descriptionBottom = logTop() - 4;
+        fill(poseStack, SIDEBAR_PAD, y - 2, SIDEBAR_W - SIDEBAR_PAD, y - 1, 0x40FFFFFF);
 
         List<Component> header = new ArrayList<>();
         card.addHeader(header);
@@ -1347,43 +1326,26 @@ public class EngineDuelScreen extends Screen
         int scaledW = Math.round(imageW / 0.75F);
         int limit = Math.round(descriptionBottom / 0.75F);
 
-        boolean typeChip = true;
         for(Component component : header)
         {
-            for(var line : font.split(component, scaledW - 8))
+            for(var line : font.split(component, scaledW))
             {
                 if(scaledY > limit)
                 {
                     break;
                 }
-                if(typeChip)
-                {
-                    // The [Type / Race] row reads as a chip, like the bracket
-                    // bar of the reference layout.
-                    fill(poseStack, scaledX - 2, scaledY - 2, scaledX + scaledW + 2, scaledY + 8,
-                        0xFF1B222B);
-                    font.draw(poseStack, line, scaledX + 2, scaledY, 0xFFC864);
-                }
-                else
-                {
-                    font.draw(poseStack, line, scaledX + 2, scaledY, 0xB0B0B0);
-                }
-                scaledY += 10;
+                font.draw(poseStack, line, scaledX, scaledY, 0xB0B0B0);
+                scaledY += 8;
             }
-            typeChip = false;
         }
-        scaledY += 2;
-        // The effect text in its own well.
-        int wellTop = scaledY - 3;
-        fill(poseStack, scaledX - 2, wellTop, scaledX + scaledW + 2, limit + 3, 0xC0101318);
-        fill(poseStack, scaledX - 2, wellTop, scaledX + scaledW + 2, wellTop + 1, 0x33FFFFFF);
-        for(var line : font.split(Component.literal(card.getText()), scaledW - 8))
+        scaledY += 4;
+        for(var line : font.split(Component.literal(card.getText()), scaledW))
         {
             if(scaledY > limit)
             {
                 break;
             }
-            font.draw(poseStack, line, scaledX + 2, scaledY, 0xA8AeB4);
+            font.draw(poseStack, line, scaledX, scaledY, 0x909090);
             scaledY += 8;
         }
         poseStack.popPose();

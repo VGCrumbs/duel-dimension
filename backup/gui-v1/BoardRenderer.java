@@ -88,48 +88,6 @@ public class BoardRenderer extends GuiComponent
     private static final int COLOUR_ACTIONABLE = 0xE0FFD700;
     /** custom_skin_enum.inl: DECLR(DUELFIELD_STACK, 0xffffff00). */
     private static final int COLOUR_STACK = 0xFFFFFF00;
-
-    /**
-     * What colour an actionable card breathes: baby blue for spells, pink for
-     * traps, yellow for monsters, white when the card is unknown to us.
-     */
-    private static float[] glowTint(int code)
-    {
-        Properties card = code == 0 ? null : DdDatabase.PROPERTIES_LIST.get((long)code);
-        if(card == null)
-        {
-            return new float[] {1F, 1F, 1F};
-        }
-        if(card.getIsSpell())
-        {
-            return new float[] {0.55F, 0.85F, 1F};
-        }
-        if(card.getIsTrap())
-        {
-            return new float[] {1F, 0.55F, 0.8F};
-        }
-        return new float[] {1F, 0.9F, 0.45F};
-    }
-
-    /**
-     * A soft glow: three nested shells widening by a pixel and a half each,
-     * fading as they go, so the edge feathers out instead of cutting off.
-     */
-    private static void drawFeatheredGlow(PoseStack poseStack, FieldQuad.Corners corners,
-        float[] tint, float strength)
-    {
-        float[] spread = {1.5F, 3F, 4.5F};
-        float[] fade = {0.45F, 0.25F, 0.12F};
-        for(int shell = 0; shell < spread.length; shell++)
-        {
-            float e = spread[shell];
-            FieldQuad.Corners ring = new FieldQuad.Corners(
-                corners.x0() - e, corners.y0() - e, corners.x1() + e, corners.y1() - e,
-                corners.x2() + e, corners.y2() + e, corners.x3() - e, corners.y3() + e);
-            FieldQuad.drawCorners(poseStack, DuelTextures.WHITE, ring, 0F, 0F, 1F, 1F,
-                tint[0], tint[1], tint[2], strength * fade[shell]);
-        }
-    }
     /** The reference's numFont is a display size; ours scales up to match. */
     private static final float STACK_NUM_SCALE = 1.4F;
 
@@ -603,13 +561,17 @@ public class BoardRenderer extends GuiComponent
                 OcgConstants.LOCATION_HAND, i, -1, "Hand", 0);
             if(actionable.test(hit))
             {
-                // A soft breathing glow behind a hand card that can act,
-                // coloured by what the card is. Only ever true for this
-                // player's own prompt -- options exist only in the prompt the
-                // server sent them -- so nothing is revealed about the
-                // opponent's hand.
-                float pulse = 0.5F + 0.3F * (float)Math.sin(System.currentTimeMillis() / 240D);
-                drawFeatheredGlow(poseStack, corners, glowTint(slot.code()), pulse);
+                // A soft breathing glow behind a hand card that can act. Only
+                // ever true for this player's own prompt -- options exist only
+                // in the prompt the server sent them -- so nothing is revealed
+                // about the opponent's hand.
+                float pulse = 0.10F + 0.08F * (float)Math.sin(System.currentTimeMillis() / 240D);
+                FieldQuad.Corners glow = new FieldQuad.Corners(
+                    corners.x0() - 3, corners.y0() - 3, corners.x1() + 3, corners.y1() - 3,
+                    corners.x2() + 3, corners.y2() + 3, corners.x3() - 3, corners.y3() + 3);
+                FieldQuad.drawCorners(poseStack, DuelTextures.WHITE, glow, 0F, 0F, 1F, 1F, 1F, pulse);
+                FieldQuad.drawCorners(poseStack, DuelTextures.SLOT_ACTIVE, corners,
+                    0F, 0F, 1F, 1F, 1F, 1F);
             }
             drawHandCard(poseStack, slot, corners, controller);
             hits.add(hit);
@@ -658,11 +620,12 @@ public class BoardRenderer extends GuiComponent
         {
             if(canActivate.test(hit))
             {
-                // The breathing glow over anything you may activate -- during
-                // a chain window that is the set of responses open to you --
-                // coloured by the kind of card doing the offering.
-                float pulse = 0.5F + 0.3F * (float)Math.sin(System.currentTimeMillis() / 190D);
-                drawFeatheredGlow(poseStack, hit.corners(), glowTint(slot.code()), pulse);
+                // A white breath over anything you may activate -- during a
+                // chain window that is the set of responses open to you.
+                float pulse = 0.45F + 0.4F * (float)Math.sin(System.currentTimeMillis() / 190D);
+                int glow = (Math.round(pulse * 255) << 24) | 0xFFFFFF;
+                FieldQuad.fill(poseStack, hit.corners(), (Math.round(pulse * 70) << 24) | 0xFFFFFF);
+                FieldQuad.outline(poseStack, hit.corners(), glow);
             }
             else
             {
