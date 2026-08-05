@@ -32,7 +32,7 @@ import java.util.Set;
  */
 public class EngineDuelScreen extends Screen
 {
-    private static final int SIDEBAR_W = 168;
+    private static final int SIDEBAR_W = 132;
     private static final int SIDEBAR_PAD = 6;
     private static final int TOP_BAR_H = 32;
     private static final int MENU_ROW = CardCommands.MENU_ROW_HEIGHT;
@@ -171,7 +171,7 @@ public class EngineDuelScreen extends Screen
             case PLACES -> prompt.minSelect() > 1;
             default -> false;
         };
-        int rightX = width - LOG_W - 12;
+        int rightX = width - LOG_W - 16;
         if(needsConfirm)
         {
             addRenderableWidget(new Button(rightX - 76, height - 24, 74, 18,
@@ -546,10 +546,12 @@ public class EngineDuelScreen extends Screen
         }
         boardRenderer.setActionable(hit -> !optionsFor(hit).isEmpty());
 
+        // The hand rows are drawn just outside the table, so leave a card's
+        // worth of room above and below the projected trapezoid.
         int fieldLeft = SIDEBAR_W + 4;
-        int fieldTop = TOP_BAR_H;
-        int fieldWidth = width - fieldLeft - 4;
-        int fieldHeight = height - fieldTop - 52;
+        int fieldTop = TOP_BAR_H + 22;
+        int fieldWidth = width - fieldLeft - 8;
+        int fieldHeight = height - fieldTop - 66;
         boardRenderer.render(poseStack, font, board, fieldLeft, fieldTop, fieldWidth, fieldHeight, highlights);
 
         // Hover picks the preview card and opens that card's command menu.
@@ -688,12 +690,12 @@ public class EngineDuelScreen extends Screen
     private void renderLog(PoseStack poseStack)
     {
         int x = width - LOG_W - 4;
-        int y = height - 62;
+        int y = height - 30;
         int shown = 0;
         synchronized(DuelClientState.class)
         {
             var iterator = DuelClientState.log.descendingIterator();
-            while(iterator.hasNext() && shown < 6)
+            while(iterator.hasNext() && shown < 3)
             {
                 String line = iterator.next();
                 while(font.width(line) > LOG_W && line.length() > 4)

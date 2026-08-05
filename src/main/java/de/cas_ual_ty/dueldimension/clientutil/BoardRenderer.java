@@ -15,35 +15,54 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Draws the duel field using {@link FieldLayout} — EDOPro's own zone table —
- * so the arrangement matches the reference client: five monster and five
- * spell/trap columns on a 1.1-unit pitch, field spell and graveyard/banished
- * in the side columns, deck and extra deck at the outer corners, the two extra
- * monster zones straddling the centre line, and the opponent's side as the
- * point reflection of yours.
+ * Draws the duel field as a tilted table: zone rectangles come from
+ * {@link FieldLayout} (EDOPro's own coordinates) projected through a
+ * trapezoid, so the far side narrows and rows bunch towards the horizon the
+ * way the reference client's 3D scene does. Cards are drawn as four-cornered
+ * quads rather than upright rectangles, so they lie on the table.
  * <p>
- * Every drawn slot records a {@link Hit} carrying controller, location and
+ * Each drawn slot records a {@link Hit} carrying controller, location and
  * sequence, so the screen can ask what that exact card may do.
  */
 public class BoardRenderer extends GuiComponent
 {
-    private static final int COLOUR_ZONE = 0x40FFFFFF;
-    private static final int COLOUR_ZONE_FILL = 0x50000000;
-    private static final int COLOUR_HIGHLIGHT = 0xA000FF66;
-    private static final int COLOUR_ACTIONABLE = 0xC0FFD700;
+    private static final int COLOUR_ZONE = 0x50FFFFFF;
+    private static final int COLOUR_ZONE_FILL = 0x40000000;
+    private static final int COLOUR_HIGHLIGHT = 0xC000FF66;
+    private static final int COLOUR_ACTIONABLE = 0xE0FFD700;
 
     /** A drawn slot; piles use sequence -1. */
-    public record Hit(int x, int y, int w, int h, int code, int controller, int location, int sequence,
+    public record Hit(FieldQuad.Corners corners, int code, int controller, int location, int sequence,
         int zoneRef, String label, int count)
     {
         public boolean contains(double mouseX, double mouseY)
         {
-            return mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
+            return corners.contains(mouseX, mouseY);
         }
 
         public boolean isPile()
         {
             return sequence < 0;
+        }
+
+        public int x()
+        {
+            return corners.minX();
+        }
+
+        public int y()
+        {
+            return corners.minY();
+        }
+
+        public int w()
+        {
+            return corners.maxX() - corners.minX();
+        }
+
+        public int h()
+        {
+            return corners.maxY() - corners.minY();
         }
     }
 
@@ -69,15 +88,11 @@ public class BoardRenderer extends GuiComponent
         zoneHighlights = highlights == null ? Set.of() : highlights;
         projection = FieldLayout.fit(left, top, width, height);
 
-        // EDOPro's own mat, stretched across the play area the zone table
-        // describes, so the printed zones sit under the drawn ones.
-        int matLeft = projection.x(FieldLayout.FIELD_MIN_X);
-        int matTop = projection.y(FieldLayout.FIELD_MIN_Y);
-        int matRight = projection.x(FieldLayout.FIELD_MAX_X);
-        int matBottom = projection.y(FieldLayout.FIELD_MAX_Y);
-        ScreenUtil.white();
-        CardRenderUtil.bindMainResourceLocation(DuelTextures.FIELD);
-        DdBlitUtil.fullBlit(poseStack, matLeft, matTop, matRight - matLeft, matBottom - matTop);
+        // EDOPro's mat, projected onto the same trapezoid as the zones.
+        FieldQuad.draw(poseStack, DuelTextures.FIELD, projection.quad(new FieldLayout.Rect(
+            FieldLayout.FIELD_MIN_X, FieldLayout.FIELD_MIN_Y,
+            FieldLayout.FIELD_MAX_X - FieldLayout.FIELD_MIN_X,
+            FieldLayout.FIELD_MAX_Y - FieldLayout.FIELD_MIN_Y)));
 
         for(int controller = 0; controller <= 1; controller++)
         {
@@ -100,8 +115,8 @@ public class BoardRenderer extends GuiComponent
             drawPile(poseStack, font, controller, OcgConstants.LOCATION_REMOVED, "Banished", side.banished().size());
         }
 
-        drawHand(poseStack, board.opponent().hand(), 1, left, top, width, true);
-        drawHand(poseStack, board.self().hand(), 0, left, top, width, false);
+        drawHand(poseStack, board.opponent().hand(), 1, true);
+        drawHand(poseStack, board.self().hand(), 0, false);
     }
 
     private void drawZone(PoseStack poseStack, List<BoardSnapshot.Slot> slots, int controller, int location,
@@ -112,14 +127,11 @@ public class BoardRenderer extends GuiComponent
         {
             return;
         }
-        int[] box = projection.rect(rect);
         BoardSnapshot.Slot slot = sequence < slots.size() ? slots.get(sequence) : BoardSnapshot.Slot.EMPTY;
         boolean monsterZone = location == OcgConstants.LOCATION_MZONE;
-        int zoneRef = EnginePrompt.zoneRef(controller == 1, monsterZone, sequence);
-
-        Hit hit = new Hit(box[0], box[1], box[2], box[3], slot.code(), controller, location, sequence,
-            zoneRef, label, 0);
-        drawSlot(poseStack, slot, hit);
+        Hit hit = new Hit(projection.quad(rect), slot.code(), controller, location, sequence,
+            EnginePrompt.zoneRef(controller == 1, monsterZone, sequence), label, 0);
+        drawSlot(poseStack, slot, hit, rect);
     }
 
     private void drawPile(PoseStack poseStack, Font font, int controller, int location, String label, int count)
@@ -129,92 +141,89 @@ public class BoardRenderer extends GuiComponent
         {
             return;
         }
-        int[] box = projection.rect(rect);
-        Hit hit = new Hit(box[0], box[1], box[2], box[3], 0, controller, location, -1, -1,
-            label + " (" + count + ")", count);
+        FieldQuad.Corners corners = projection.quad(rect);
+        Hit hit = new Hit(corners, 0, controller, location, -1, -1, label + " (" + count + ")", count);
 
         boolean canActivateFromHere = actionable.test(hit);
-        fill(poseStack, box[0] - 1, box[1] - 1, box[0] + box[2] + 1, box[1] + box[3] + 1,
-            canActivateFromHere ? COLOUR_ACTIONABLE : COLOUR_ZONE);
-        fill(poseStack, box[0], box[1], box[0] + box[2], box[1] + box[3], COLOUR_ZONE_FILL);
+        FieldQuad.fill(poseStack, corners, COLOUR_ZONE_FILL);
+        FieldQuad.outline(poseStack, corners, canActivateFromHere ? COLOUR_ACTIONABLE : COLOUR_ZONE);
+
         if(count > 0)
         {
-            ScreenUtil.white();
-            CardRenderUtil.bindMainResourceLocation(DuelTextures.COVER);
-            DdBlitUtil.fullBlit(poseStack, box[0], box[1], box[2], box[3]);
-            // Count badge sits inside the pile, not spilling onto neighbours.
+            FieldQuad.draw(poseStack, DuelTextures.COVER, corners);
             String text = Integer.toString(count);
-            int badgeW = font.width(text) + 4;
-            fill(poseStack, box[0] + box[2] - badgeW - 1, box[1] + box[3] - 10,
-                box[0] + box[2] - 1, box[1] + box[3] - 1, 0xC0000000);
-            font.draw(poseStack, text, box[0] + box[2] - badgeW + 1, box[1] + box[3] - 9, 0xFFFFFF);
+            int textX = corners.minX() + (corners.maxX() - corners.minX() - font.width(text)) / 2;
+            int textY = corners.maxY() - 10;
+            fill(poseStack, textX - 2, textY - 1, textX + font.width(text) + 2, textY + 9, 0xC0000000);
+            font.draw(poseStack, text, textX, textY, 0xFFFFFF);
         }
         if(canActivateFromHere)
         {
-            // EDOPro draws tAct over a pile whose contents can be activated
-            // (drawing.cpp, deck_act/grave_act/remove_act/extra_act).
-            ScreenUtil.white();
-            CardRenderUtil.bindMainResourceLocation(DuelTextures.ACT);
-            int size = Math.min(box[2], box[3]) * 2 / 3;
-            DdBlitUtil.fullBlit(poseStack, box[0] + (box[2] - size) / 2,
-                box[1] + (box[3] - size) / 2, size, size);
+            // EDOPro draws tAct over a pile whose contents can be activated.
+            FieldQuad.draw(poseStack, DuelTextures.ACT, corners);
         }
         hits.add(hit);
     }
 
-    /** Hands run along the outer edges, fanned to fit the field's width. */
-    private void drawHand(PoseStack poseStack, List<BoardSnapshot.Slot> hand, int controller,
-        int left, int top, int width, boolean hide)
+    /** Hands sit just beyond the near and far edges of the table. */
+    private void drawHand(PoseStack poseStack, List<BoardSnapshot.Slot> hand, int controller, boolean hide)
     {
         if(hand.isEmpty())
         {
             return;
         }
-        int cardW = projection.size(1.1F);
-        int cardH = projection.size(1.2F);
-        // Your hand below the mat, the opponent's above it.
-        int y = controller == 0 ? projection.y(FieldLayout.FIELD_MAX_Y) + 2
-            : projection.y(FieldLayout.FIELD_MIN_Y) - cardH - 2;
+        float cardW = 1.1F;
+        float cardH = 1.2F;
+        float fieldY = controller == 0 ? FieldLayout.FIELD_MAX_Y + cardH * 0.5F
+            : FieldLayout.FIELD_MIN_Y - cardH * 0.5F;
 
-        int span = Math.min(width - 20, hand.size() * (cardW + 2));
-        int step = hand.size() > 1 ? (span - cardW) / (hand.size() - 1) : 0;
-        int x = left + (width - span) / 2;
+        float centreFieldX = (FieldLayout.FIELD_MIN_X + FieldLayout.FIELD_MAX_X) / 2F;
+        float spanUnits = Math.min(FieldLayout.FIELD_MAX_X - FieldLayout.FIELD_MIN_X - 1F,
+            hand.size() * (cardW + 0.1F));
+        float step = hand.size() > 1 ? (spanUnits - cardW) / (hand.size() - 1) : 0;
+        float x = centreFieldX - spanUnits / 2F + cardW / 2F;
 
         for(int i = 0; i < hand.size(); i++)
         {
             BoardSnapshot.Slot slot = hide
                 ? new BoardSnapshot.Slot(true, 0, true, false, 0, 0, 0)
                 : hand.get(i);
-            Hit hit = new Hit(x, y, cardW, cardH, slot.code(), controller,
-                OcgConstants.LOCATION_HAND, i, -1, "Hand", 0);
-            drawSlot(poseStack, slot, hit);
+            FieldQuad.Corners corners = projection.cardQuad(x, fieldY, cardW, cardH);
+            Hit hit = new Hit(corners, slot.code(), controller, OcgConstants.LOCATION_HAND, i, -1, "Hand", 0);
+            drawSlot(poseStack, slot, hit, null);
             x += step;
         }
     }
 
-    private void drawSlot(PoseStack poseStack, BoardSnapshot.Slot slot, Hit hit)
+    private void drawSlot(PoseStack poseStack, BoardSnapshot.Slot slot, Hit hit, FieldLayout.Rect rect)
     {
         boolean zoneLit = hit.zoneRef() >= 0 && zoneHighlights.contains(hit.zoneRef());
         boolean canAct = actionable.test(hit);
-        int border = zoneLit ? COLOUR_HIGHLIGHT : canAct ? COLOUR_ACTIONABLE : COLOUR_ZONE;
 
-        fill(poseStack, hit.x() - 1, hit.y() - 1, hit.x() + hit.w() + 1, hit.y() + hit.h() + 1, border);
-        fill(poseStack, hit.x(), hit.y(), hit.x() + hit.w(), hit.y() + hit.h(), COLOUR_ZONE_FILL);
-
-        if(slot.present())
-        {
-            ScreenUtil.white();
-            CardRenderUtil.bindMainResourceLocation(textureFor(slot));
-            if(slot.defence())
-            {
-                DdBlitUtil.fullBlit90Degree(poseStack, hit.x(), hit.y(), hit.w(), hit.h());
-            }
-            else
-            {
-                DdBlitUtil.fullBlit(poseStack, hit.x(), hit.y(), hit.w(), hit.h());
-            }
-        }
+        FieldQuad.fill(poseStack, hit.corners(), COLOUR_ZONE_FILL);
+        FieldQuad.outline(poseStack, hit.corners(),
+            zoneLit ? COLOUR_HIGHLIGHT : canAct ? COLOUR_ACTIONABLE : COLOUR_ZONE);
         hits.add(hit);
+
+        if(!slot.present())
+        {
+            return;
+        }
+        if(slot.defence() && rect != null)
+        {
+            // A defence-position monster lies on its side. Rotating the corner
+            // order keeps the card flat on the projected table.
+            FieldLayout.Rect turned = new FieldLayout.Rect(
+                rect.x() + (rect.w() - rect.h()) / 2F, rect.y() + (rect.h() - rect.w()) / 2F,
+                rect.h(), rect.w());
+            FieldQuad.Corners t = projection.quad(turned);
+            FieldQuad.draw(poseStack, textureFor(slot),
+                new FieldQuad.Corners(t.x3(), t.y3(), t.x0(), t.y0(), t.x1(), t.y1(), t.x2(), t.y2()));
+        }
+        else
+        {
+            FieldQuad.draw(poseStack, textureFor(slot), hit.corners());
+        }
     }
 
     private ResourceLocation textureFor(BoardSnapshot.Slot slot)

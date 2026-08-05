@@ -119,46 +119,80 @@ public final class FieldLayout
         }
     }
 
-    /** Projects field units onto the screen; y grows upward in field units. */
-    public record Projection(int originX, int originY, float scale)
+    /**
+     * Projects the field onto the screen as a trapezoid, so the table appears
+     * tilted away from the viewer as it does in the reference client's 3D
+     * scene. The far (opponent) edge is narrower than the near (your) edge,
+     * and equal steps in field depth compress towards the far edge.
+     *
+     * @param farHalfWidth  half-width of the table's far edge, in pixels
+     * @param nearHalfWidth half-width of the near edge
+     */
+    public record Projection(float centreX, float topY, float bottomY, float farHalfWidth, float nearHalfWidth)
     {
-        public int x(float fieldX)
+        /** Depth fraction: 0 at the opponent's edge, 1 at yours. */
+        private float depth(float fieldY)
         {
-            return originX + Math.round(fieldX * scale);
+            return (fieldY - FIELD_MIN_Y) / (FIELD_MAX_Y - FIELD_MIN_Y);
         }
 
         /**
-         * Field +y is your side of the table, which is the BOTTOM of the
-         * screen, so screen y grows with field y.
+         * Perspective-correct screen fraction for a depth. With k the ratio of
+         * far to near width, s(v) = k·v / (1 + (k-1)·v) — the standard
+         * projective interpolation across a trapezoid, so rows bunch up
+         * towards the horizon instead of being evenly spaced.
          */
-        public int y(float fieldY)
+        private float screenFraction(float fieldY)
         {
-            return originY + Math.round(fieldY * scale);
+            float v = depth(fieldY);
+            float k = farHalfWidth / nearHalfWidth;
+            return k * v / (1F + (k - 1F) * v);
         }
 
-        public int size(float fieldSize)
+        public float y(float fieldY)
         {
-            return Math.max(1, Math.round(fieldSize * scale));
+            return topY + screenFraction(fieldY) * (bottomY - topY);
         }
 
-        /** Screen rectangle of a zone: x, y, width, height. */
-        public int[] rect(Rect rect)
+        /** Half-width of the table at this depth; edges of the trapezoid are straight. */
+        public float halfWidth(float fieldY)
         {
-            return new int[] {x(rect.x()), y(rect.y()), size(rect.w()), size(rect.h())};
+            float s = screenFraction(fieldY);
+            return farHalfWidth + (nearHalfWidth - farHalfWidth) * s;
+        }
+
+        public float x(float fieldX, float fieldY)
+        {
+            float centreFieldX = (FIELD_MIN_X + FIELD_MAX_X) / 2F;
+            float halfFieldWidth = (FIELD_MAX_X - FIELD_MIN_X) / 2F;
+            return centreX + ((fieldX - centreFieldX) / halfFieldWidth) * halfWidth(fieldY);
+        }
+
+        /** The four projected corners of a zone rectangle. */
+        public FieldQuad.Corners quad(Rect rect)
+        {
+            float farY = rect.y();
+            float nearY = rect.y() + rect.h();
+            return new FieldQuad.Corners(
+                x(rect.x(), farY), y(farY),
+                x(rect.x() + rect.w(), farY), y(farY),
+                x(rect.x() + rect.w(), nearY), y(nearY),
+                x(rect.x(), nearY), y(nearY));
+        }
+
+        /** A free-floating card (hand), sized as if it sat at the given depth. */
+        public FieldQuad.Corners cardQuad(float centreFieldX, float fieldY, float width, float height)
+        {
+            return quad(new Rect(centreFieldX - width / 2F, fieldY - height / 2F, width, height));
         }
     }
 
-    /** Fits the whole table into the given screen box. */
+    /** Fits the tilted table into the given screen box. */
     public static Projection fit(int left, int top, int width, int height)
     {
-        float unitsWide = FIELD_MAX_X - FIELD_MIN_X;
-        float unitsTall = FIELD_MAX_Y - FIELD_MIN_Y;
-        float scale = Math.min(width / unitsWide, height / unitsTall);
-        int usedWidth = Math.round(unitsWide * scale);
-        int usedHeight = Math.round(unitsTall * scale);
-        // origin = where field (0,0) lands on screen.
-        int originX = left + (width - usedWidth) / 2 - Math.round(FIELD_MIN_X * scale);
-        int originY = top + (height - usedHeight) / 2 - Math.round(FIELD_MIN_Y * scale);
-        return new Projection(originX, originY, scale);
+        // Reserve room at the bottom edge for the near hand row.
+        float nearHalf = width / 2F * 0.98F;
+        float farHalf = nearHalf * 0.58F;
+        return new Projection(left + width / 2F, top, top + height, farHalf, nearHalf);
     }
 }
