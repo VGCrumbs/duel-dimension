@@ -227,6 +227,25 @@ public sealed interface DuelMessage
     {
     }
 
+    /**
+     * A normal summon is being announced. operations.cpp:2239 writes code then
+     * loc_info; EDOPro answers it with a 683ms card splash (duelclient.cpp:3281,
+     * WaitFrameSignal(30) then (11)) before the card's own MSG_MOVE slides it.
+     */
+    record Summoning(int code, CardLocation card) implements DuelMessage
+    {
+    }
+
+    /** A special summon announce; operations.cpp:3143, same shape and splash. */
+    record SpSummoning(int code, CardLocation card) implements DuelMessage
+    {
+    }
+
+    /** A card was set; code is 0 when hidden. Sound only in the reference. */
+    record SetCard(int code, CardLocation card) implements DuelMessage
+    {
+    }
+
     record NewTurn(int player) implements DuelMessage
     {
     }
@@ -414,6 +433,9 @@ public sealed interface DuelMessage
                 yield new BecomeTarget(targets);
             }
             case OcgConstants.MSG_FLIPSUMMONING -> new FlipSummoning(in.u32(), in.loc());
+            case OcgConstants.MSG_SUMMONING -> new Summoning(in.u32(), in.loc());
+            case OcgConstants.MSG_SPSUMMONING -> new SpSummoning(in.u32(), in.loc());
+            case OcgConstants.MSG_SET -> new SetCard(in.u32(), in.loc());
             case OcgConstants.MSG_DRAW ->
             {
                 int player = in.u8();

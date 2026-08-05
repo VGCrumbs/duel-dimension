@@ -71,7 +71,7 @@ public class PromptTranslator
             {
                 options.add(phaseOption("Shuffle hand", CardCommands.PHASE_SHUFFLE));
             }
-            return new EnginePrompt(EnginePrompt.Kind.CHOOSE, "Main Phase", options, 1, 1, false, field);
+            return new EnginePrompt(EnginePrompt.Kind.CHOOSE, "", options, 1, 1, false, field);
         }
 
         if(message instanceof DuelMessage.SelectBattleCmd battle)
@@ -93,7 +93,7 @@ public class PromptTranslator
             {
                 options.add(phaseOption("End Turn", CardCommands.PHASE_END_TURN));
             }
-            return new EnginePrompt(EnginePrompt.Kind.CHOOSE, "Battle Phase", options, 1, 1, false, field);
+            return new EnginePrompt(EnginePrompt.Kind.CHOOSE, "", options, 1, 1, false, field);
         }
 
         if(message instanceof DuelMessage.SelectCard select)

@@ -50,6 +50,8 @@ public class DuelAnimations
     }
 
     private static final long MOVE_MS = frames(10);
+    /** MSG_SET has no wait in the reference: sound, then the slide arrives. */
+    private static final long SET_MS = frames(5);
     private static final long SUMMON_MS = frames(11 + 30);
     private static final long DRAW_MS = frames(5);
     private static final long FLASH_MS = frames(11 + 30);
@@ -179,7 +181,8 @@ public class DuelAnimations
         long base = switch(event.kind())
         {
             case MOVE -> MOVE_MS;
-            case SUMMON, SPECIAL_SUMMON, SET, FLIP -> SUMMON_MS;
+            case SET -> SET_MS;
+            case SUMMON, SPECIAL_SUMMON, FLIP -> SUMMON_MS;
             case DESTROY -> SHATTER_MS;
             case DRAW -> DRAW_MS;
             case ACTIVATE, CHAINING -> CHAIN_MS;
@@ -195,18 +198,35 @@ public class DuelAnimations
     }
 
     /**
-     * Only a genuinely long backlog compresses playback, and never below the
-     * floor. EDOPro does the same when it has fallen behind: its catching-up
-     * mode returns from each handler before the animation and the wait.
+     * Playback never compresses during ordinary play — that is the reference's
+     * behaviour, and getting it wrong was the whole "no delay between actions"
+     * bug. EDOPro has exactly one speed-up, {@code isCatchingUp}, used for
+     * replays and reconnects; every live message plays at full pace no matter
+     * how many are queued (each handler checks only that flag).
+     * <p>
+     * Two mistakes here previously compressed every busy turn. The threshold
+     * counted {@code queue.size()}, which includes the zero-length board-commit
+     * steps — about one per event (197 checkpoints per 1031 messages,
+     * measured) — so a 15-event turn looked like 30. And the threshold itself
+     * (20) was below a single turn's event count. Now only real events are
+     * counted, and the thresholds mean "multiple full turns behind", our
+     * equivalent of catching up.
      */
     private float backlogScale()
     {
-        int waiting = queue.size();
-        if(waiting > 40)
+        int waiting = 0;
+        for(Step step : queue)
+        {
+            if(step.event() != null)
+            {
+                waiting++;
+            }
+        }
+        if(waiting > 100)
         {
             return 0.4F;
         }
-        if(waiting > 20)
+        if(waiting > 60)
         {
             return 0.7F;
         }
@@ -239,7 +259,8 @@ public class DuelAnimations
         nextStart = now + hold;
     }
 
-    private void playSound(DuelEvent event)
+    /** Overridable so tests can run the queue without Minecraft's registries. */
+    protected void playSound(DuelEvent event)
     {
         SoundEvent sound = switch(event.kind())
         {

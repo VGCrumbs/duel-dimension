@@ -853,11 +853,11 @@ public class EngineDuelScreen extends Screen
     private static final int PHASE_CELL_W = 26;
     private static final int PHASE_CELL_H = 12;
     /**
-     * The phase row sits below the life bars and the turn badge. It used to be
-     * at 23, which is exactly where the badge's "your turn" label draws, so the
-     * two printed on top of each other.
+     * The phase row sits below the life bars, tucked up under the turn badge:
+     * the "your turn" label that used to occupy this space is gone (the badge's
+     * colour says whose turn it is), so the bar can sit higher.
      */
-    private static final int PHASE_BAR_Y = 34;
+    private static final int PHASE_BAR_Y = 26;
 
     private int phaseBarLeft()
     {

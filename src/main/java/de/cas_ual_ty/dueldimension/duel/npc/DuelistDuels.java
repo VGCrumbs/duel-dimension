@@ -469,6 +469,24 @@ public final class DuelistDuels
             return List.of(new DuelEvent(DuelEvent.Kind.FLIP, flip.code(),
                 -1, zoneOf(flip.card()), 0, flip.card().controller()));
         }
+        // The announce messages carry the pause a summon has in the reference:
+        // duelclient.cpp:3281 holds a card splash for 30 then 11 frames before
+        // the MSG_MOVE slide. Without these events a summon was only its slide.
+        if(message instanceof DuelMessage.Summoning summoning)
+        {
+            return List.of(new DuelEvent(DuelEvent.Kind.SUMMON, summoning.code(),
+                -1, -1, 0, summoning.card().controller()));
+        }
+        if(message instanceof DuelMessage.SpSummoning spSummoning)
+        {
+            return List.of(new DuelEvent(DuelEvent.Kind.SPECIAL_SUMMON, spSummoning.code(),
+                -1, -1, 0, spSummoning.card().controller()));
+        }
+        if(message instanceof DuelMessage.SetCard set)
+        {
+            return List.of(new DuelEvent(DuelEvent.Kind.SET, set.code(),
+                -1, zoneOf(set.card()), 0, set.card().controller()));
+        }
 
         DuelEvent single = toDuelEvent(message);
         return single == null ? List.of() : List.of(single);
@@ -489,17 +507,13 @@ public final class DuelistDuels
                 move.from().sequence(), 0);
             int to = DuelEvent.zoneOf(move.to().controller(), move.to().location(),
                 move.to().sequence(), 0);
-            DuelEvent.Kind kind = switch(move.to().location())
-            {
-                case de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_GRAVE -> DuelEvent.Kind.DESTROY;
-                case de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_MZONE ->
-                    (move.to().position() & de.cas_ual_ty.dueldimension.ocg.OcgConstants.POS_FACEDOWN) != 0
-                        ? DuelEvent.Kind.SET : DuelEvent.Kind.SUMMON;
-                case de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_SZONE ->
-                    (move.to().position() & de.cas_ual_ty.dueldimension.ocg.OcgConstants.POS_FACEDOWN) != 0
-                        ? DuelEvent.Kind.SET : DuelEvent.Kind.ACTIVATE;
-                default -> DuelEvent.Kind.MOVE;
-            };
+            // A move is just the slide, as in the reference: the pageantry of a
+            // summon or activation arrives separately (MSG_SUMMONING splash,
+            // MSG_CHAINING marker), so classifying moves as summons here both
+            // double-counted the pause and mislabelled ordinary shuffles.
+            DuelEvent.Kind kind =
+                move.to().location() == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_GRAVE
+                    ? DuelEvent.Kind.DESTROY : DuelEvent.Kind.MOVE;
             return new DuelEvent(kind, move.code(), from, to, 0, move.to().controller());
         }
         if(message instanceof DuelMessage.Attack attack)
