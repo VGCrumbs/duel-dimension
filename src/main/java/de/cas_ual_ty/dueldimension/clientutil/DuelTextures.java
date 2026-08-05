@@ -52,6 +52,12 @@ public final class DuelTextures
     /** The same square lit, for a zone the core is currently offering. */
     public static final ResourceLocation SLOT_ACTIVE =
         new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/slot_active.png");
+    /**
+     * The side of a card stack: 16x2, a white row over a gray row, tiled
+     * vertically once per card so a pile's edge reads as many thin cards.
+     */
+    public static final ResourceLocation STACK_SIDE =
+        new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/stackside.png");
     public static final ResourceLocation ACT =
         new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/act.png");
     public static final ResourceLocation ATTACK =

@@ -38,10 +38,14 @@ public class BoardRenderer extends GuiComponent
     private static final float CARD_W = 0.7F;
     private static final float CARD_H = 1.0F;
 
-    /** Cards of a pile drawn stacked, past which the lift stops reading. */
-    private static final int MAX_STACK = 10;
-    /** Per-card lift, standing in for client_field.cpp's 0.01 of Z. */
-    private static final float STACK_LIFT = 0.012F;
+    /**
+     * Per-card lift of a pile's top face, in field units. client_field.cpp
+     * raises each pile card by 0.01 of Z; a 40-card deck there stands 0.4
+     * units tall, and 0.008 here reads the same through our flatter mapping.
+     */
+    private static final float LIFT_PER_CARD = 0.008F;
+    /** Past this the stack stops growing, so a 60-card deck still fits. */
+    private static final int LIFT_CAP = 45;
 
     private static final int COLOUR_ZONE = 0x50FFFFFF;
     private static final int COLOUR_HIGHLIGHT = 0xC000FF66;
@@ -292,6 +296,42 @@ public class BoardRenderer extends GuiComponent
     }
 
     /**
+     * The vertical faces of a pile, from its base rectangle up to the lifted
+     * top card: the front face (the edge nearest the viewer) and whichever
+     * side edge faces the camera's x. Both sample the card-edge stripe with v
+     * running 0..count, so each card in the pile contributes one white and
+     * gray band.
+     */
+    private void drawStackSides(PoseStack poseStack, FieldLayout.Rect base, float lift, int count)
+    {
+        float nearY = base.y() + base.h();
+        float tiles = Math.min(count, LIFT_CAP);
+
+        // Front face: base near edge up to the lifted near edge.
+        FieldQuad.Corners front = new FieldQuad.Corners(
+            projection.x(base.x(), nearY - lift), projection.y(nearY - lift),
+            projection.x(base.x() + base.w(), nearY - lift), projection.y(nearY - lift),
+            projection.x(base.x() + base.w(), nearY), projection.y(nearY),
+            projection.x(base.x(), nearY), projection.y(nearY));
+        FieldQuad.drawCorners(poseStack, DuelTextures.STACK_SIDE, front, 0F, 0F, 1F, tiles, 0.92F, 1F);
+
+        // The side edge the camera can see: a pile right of the camera's x
+        // shows its left face, one left of it shows its right. Darker, as a
+        // turned face.
+        boolean leftFace = base.x() + base.w() / 2F > CAMERA_X;
+        float edgeX = leftFace ? base.x() : base.x() + base.w();
+        FieldQuad.Corners side = new FieldQuad.Corners(
+            projection.x(edgeX, base.y() - lift), projection.y(base.y() - lift),
+            projection.x(edgeX, nearY - lift), projection.y(nearY - lift),
+            projection.x(edgeX, nearY), projection.y(nearY),
+            projection.x(edgeX, base.y()), projection.y(base.y()));
+        FieldQuad.drawCorners(poseStack, DuelTextures.STACK_SIDE, side, 0F, 0F, 1F, tiles, 0.7F, 1F);
+    }
+
+    /** game.h: FIELD_X, the camera's x. Which side face of a pile is seen. */
+    private static final float CAMERA_X = 4.2F;
+
+    /**
      * The pile count, ported from {@code Game::DrawStackIndicator}
      * (drawing.cpp:753), whose own comment reads "Draws the text in the middle
      * of the bottom side of the zone".
@@ -410,22 +450,16 @@ public class BoardRenderer extends GuiComponent
             // offset per card towards the viewer.
             FieldLayout.Rect pileCard = new FieldLayout.Rect(
                 rect.x() + (rect.w() - CARD_W) / 2F, rect.y() + (rect.h() - CARD_H) / 2F, CARD_W, CARD_H);
-            int stack = Math.min(count, MAX_STACK);
             int turns = turnsFor(controller, false);
-            ResourceLocation back = controller == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT;
-            for(int depth = stack - 1; depth > 0; depth--)
-            {
-                float lift = depth * STACK_LIFT;
-                // Each buried card is drawn darker than the one on top of it,
-                // so the sliver of it that shows past the card above reads as a
-                // separate card. Identically lit layers merged into one solid
-                // slab, which is what a stack looked like before.
-                float shade = 1F - Math.min(0.62F, depth * 0.085F);
-                FieldQuad.drawProjected(poseStack, back, projection,
-                    new FieldLayout.Rect(pileCard.x() + lift, pileCard.y() - lift,
-                        pileCard.w(), pileCard.h()),
-                    CARD_STEPS, turns, 0F, 0F, 1F, 1F, shade, shade, shade, 1F);
-            }
+            // The pile as a solid block: the top card raised by the stack's
+            // height, and the faces beneath it textured with the two-row
+            // card-edge stripe, tiled once per card, so the side genuinely
+            // reads as that many stacked cards.
+            float stackLift = Math.min(count, LIFT_CAP) * LIFT_PER_CARD;
+            drawStackSides(poseStack, pileCard, stackLift, count);
+            pileCard = new FieldLayout.Rect(
+                pileCard.x(), pileCard.y() - stackLift, pileCard.w(), pileCard.h());
+
             // The top card. A graveyard is always face up in the reference
             // (client_field.cpp excludes LOCATION_GRAVE from the face-down
             // rotation); banished follows suit unless the engine set it face
@@ -473,11 +507,56 @@ public class BoardRenderer extends GuiComponent
                 ? new BoardSnapshot.Slot(true, 0, true, false, 0, 0, 0, 0, 0)
                 : hand.get(i);
             FieldLayout.Rect rect = new FieldLayout.Rect(x - cardW / 2F, fieldY - cardH / 2F, cardW, cardH);
-            Hit hit = new Hit(projection.quad(rect), slot.code(), controller,
+
+            // Hands are held toward their owner, not laid on the table:
+            // EDOPro tilts them at the camera (handfaceup, -FIELD_ANGLE), so
+            // they barely shear. Projecting them flat on the table sheared
+            // them like floor tiles. Instead the projected quad is stood
+            // upright: the near edge is kept and the far edge is placed
+            // directly above it at the same width, which unshears your hand
+            // and squares up the backs of the opponent's.
+            FieldQuad.Corners sheared = projection.quad(rect);
+            float bottomY = (sheared.y2() + sheared.y3()) / 2F;
+            float height = bottomY - (sheared.y0() + sheared.y1()) / 2F;
+            FieldQuad.Corners corners = new FieldQuad.Corners(
+                sheared.x3(), bottomY - height, sheared.x2(), bottomY - height,
+                sheared.x2(), bottomY, sheared.x3(), bottomY);
+
+            Hit hit = new Hit(corners, slot.code(), controller,
                 OcgConstants.LOCATION_HAND, i, -1, "Hand", 0);
-            drawSlot(poseStack, slot, hit, rect, true);
+            if(actionable.test(hit))
+            {
+                FieldQuad.drawCorners(poseStack, DuelTextures.SLOT_ACTIVE, corners,
+                    0F, 0F, 1F, 1F, 1F, 1F);
+            }
+            drawHandCard(poseStack, slot, corners, controller);
+            hits.add(hit);
             x += step;
         }
+    }
+
+    /** One upright hand card; the opponent's are shown to us upside down. */
+    private void drawHandCard(PoseStack poseStack, BoardSnapshot.Slot slot,
+        FieldQuad.Corners corners, int controller)
+    {
+        ResourceLocation texture = textureFor(slot, true, controller);
+        boolean edoproArt = texture.equals(DuelTextures.COVER)
+            || texture.equals(DuelTextures.COVER_OPPONENT) || texture.equals(DuelTextures.UNKNOWN);
+        float u0 = edoproArt ? 0F : DuelTextures.CARD_U0;
+        float v0 = edoproArt ? 0F : DuelTextures.CARD_V0;
+        float u1 = edoproArt ? 1F : DuelTextures.CARD_U1;
+        float v1 = edoproArt ? 1F : DuelTextures.CARD_V1;
+        if(controller == 1)
+        {
+            // The 180-degree turn of everything the opponent owns.
+            float swap = u0;
+            u0 = u1;
+            u1 = swap;
+            swap = v0;
+            v0 = v1;
+            v1 = swap;
+        }
+        FieldQuad.drawCorners(poseStack, texture, corners, u0, v0, u1, v1, 1F, 1F);
     }
 
     private void drawSlot(PoseStack poseStack, BoardSnapshot.Slot slot, Hit hit, FieldLayout.Rect rect,

@@ -211,6 +211,35 @@ public final class FieldQuad
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
     }
 
+    /**
+     * A textured quad at explicit screen corners, with a UV window and a tint.
+     * Sampling v past 1 tiles the texture (GL_REPEAT is the default wrap),
+     * which is how a stack's side repeats its two-row card-edge stripe once
+     * per card.
+     */
+    public static void drawCorners(PoseStack poseStack, ResourceLocation texture, Corners corners,
+        float u0, float v0, float u1, float v1, float shade, float alpha)
+    {
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderColor(shade, shade, shade, alpha);
+        DuelTextures.bindSmooth(texture);
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+
+        Matrix4f matrix = poseStack.last().pose();
+        Tesselator tesselator = Tesselator.getInstance();
+        BufferBuilder buffer = tesselator.getBuilder();
+        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        buffer.vertex(matrix, corners.x0(), corners.y0(), 0).uv(u0, v0).endVertex();
+        buffer.vertex(matrix, corners.x3(), corners.y3(), 0).uv(u0, v1).endVertex();
+        buffer.vertex(matrix, corners.x2(), corners.y2(), 0).uv(u1, v1).endVertex();
+        buffer.vertex(matrix, corners.x1(), corners.y1(), 0).uv(u1, v0).endVertex();
+        tesselator.end();
+
+        RenderSystem.disableBlend();
+        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+    }
+
     /** Draws the whole texture into the quad. */
     public static void draw(PoseStack poseStack, ResourceLocation texture, Corners corners)
     {

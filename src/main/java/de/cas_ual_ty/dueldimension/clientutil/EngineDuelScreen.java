@@ -853,7 +853,7 @@ public class EngineDuelScreen extends Screen
 
         if(pileView != null)
         {
-            renderPileView(poseStack);
+            renderPileView(poseStack, mouseX, mouseY);
         }
         if(hovered != null && hovered.isPile())
         {
@@ -1371,7 +1371,7 @@ public class EngineDuelScreen extends Screen
         }
     }
 
-    private void renderPileView(PoseStack poseStack)
+    private void renderPileView(PoseStack poseStack, int mouseX, int mouseY)
     {
         int cardW = 34;
         int cardH = Math.round(cardW / DuelTextures.CARD_ASPECT);
@@ -1392,6 +1392,15 @@ public class EngineDuelScreen extends Screen
             int x = left + 4 + (i % columns) * (cardW + 4);
             int y = top + 20 + (i / columns) * (cardH + 4);
             Properties card = slot.code() == 0 ? null : DdDatabase.PROPERTIES_LIST.get((long)slot.code());
+            // Pointing at a card in the pile reads it in the sidebar, the same
+            // as pointing at one on the field.
+            if(slot.code() != 0 && mouseX >= x && mouseX < x + cardW + 4
+                && mouseY >= y && mouseY < y + cardH + 4)
+            {
+                previewCode = slot.code();
+                DuelTextures.bindSmooth(DuelTextures.SLOT_ACTIVE);
+                DdBlitUtil.fullBlit(poseStack, x - 1, y - 1, cardW + 2, cardH + 2);
+            }
             ScreenUtil.white();
             if(card == null)
             {
