@@ -32,7 +32,8 @@ public class EngineDuelScreen extends Screen
 {
     private static final int PREVIEW_W = 116;
     private static final int MENU_W = 104;
-    private static final int MENU_ROW = 15;
+    /** ShowMenu stacks entries at Scale(21); we keep the same step. */
+    private static final int MENU_ROW = de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.MENU_ROW_HEIGHT;
 
     private final BoardRenderer boardRenderer = new BoardRenderer();
 
@@ -296,6 +297,21 @@ public class EngineDuelScreen extends Screen
         return found;
     }
 
+    /** ShowMenu's fixed button order: Activate, Summon, SpSummon, MSet, SSet, Repos, Attack, ... */
+    private List<Integer> inMenuOrder(List<Integer> optionIndices)
+    {
+        EnginePrompt prompt = shownPrompt;
+        if(prompt == null)
+        {
+            return optionIndices;
+        }
+        List<Integer> ordered = new ArrayList<>(optionIndices);
+        ordered.sort(java.util.Comparator.comparingInt(index ->
+            de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.menuIndex(
+                prompt.options().get(index).command())));
+        return ordered;
+    }
+
     private void choose(int index)
     {
         EnginePrompt prompt = shownPrompt;
@@ -438,6 +454,7 @@ public class EngineDuelScreen extends Screen
                 {
                     continue;
                 }
+                actions = inMenuOrder(actions);
                 if(actions.size() == 1)
                 {
                     choose(actions.get(0)); // one action: no menu needed
@@ -490,10 +507,16 @@ public class EngineDuelScreen extends Screen
         {
             prompt.options().forEach(option -> highlights.add(option.zone()));
         }
-        boardRenderer.setActionable((hit, ignored) -> !optionsFor(hit).isEmpty());
+        boardRenderer.setActionable(hit -> !optionsFor(hit).isEmpty());
 
-        int fieldCentre = PREVIEW_W + (width - PREVIEW_W) / 2;
-        boardRenderer.render(poseStack, font, board, fieldCentre, 34, highlights);
+        // The field fills everything right of the preview column, leaving room
+        // for the header and the bottom button strip.
+        int fieldLeft = PREVIEW_W + 6;
+        int fieldTop = 32;
+        int fieldWidth = width - fieldLeft - 6;
+        int fieldHeight = height - fieldTop - 34;
+        int fieldCentre = fieldLeft + fieldWidth / 2;
+        boardRenderer.render(poseStack, font, board, fieldLeft, fieldTop, fieldWidth, fieldHeight, highlights);
 
         // Header: turn / phase / prompt title.
         drawCenteredString(poseStack, font, "Turn " + board.turn() + " — " + phaseName(board.phase())
@@ -653,7 +676,7 @@ public class EngineDuelScreen extends Screen
             {
                 lines.add(Component.literal(hit.label()).withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
             }
-            List<Integer> actions = optionsFor(hit);
+            List<Integer> actions = inMenuOrder(optionsFor(hit));
             EnginePrompt prompt = shownPrompt;
             for(int index : actions)
             {
@@ -694,8 +717,8 @@ public class EngineDuelScreen extends Screen
     private void renderPileView(PoseStack poseStack)
     {
         int columns = 8;
-        int cardW = BoardRenderer.CARD_W;
-        int cardH = BoardRenderer.CARD_H;
+        int cardW = 30;
+        int cardH = 33;
         int rows = (pileView.size() + columns - 1) / columns;
         int panelW = columns * (cardW + 4) + 8;
         int panelH = rows * (cardH + 4) + 26;

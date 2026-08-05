@@ -45,23 +45,31 @@ public record EnginePrompt(Kind kind, String title, List<Option> options, int mi
      * @param controller which player's zone the card sits in, -1 if unknown
      * @param location LOCATION_* of the card, 0 if unknown
      * @param sequence index within that location, -1 if unknown
+     * @param command  {@link CardCommands} COMMAND_* bit this option is, or 0
+     *                 when it isn't a per-card command
      */
     public record Option(String label, String detail, int cardCode, int zone, int max,
-        int controller, int location, int sequence)
+        int controller, int location, int sequence, int command)
     {
         public Option(String label)
         {
-            this(label, "", 0, -1, 0, -1, 0, -1);
+            this(label, "", 0, -1, 0, -1, 0, -1, 0);
         }
 
         public Option(String label, String detail, int cardCode)
         {
-            this(label, detail, cardCode, -1, 0, -1, 0, -1);
+            this(label, detail, cardCode, -1, 0, -1, 0, -1, 0);
         }
 
         public Option(String label, String detail, int cardCode, int controller, int location, int sequence)
         {
-            this(label, detail, cardCode, -1, 0, controller, location, sequence);
+            this(label, detail, cardCode, -1, 0, controller, location, sequence, 0);
+        }
+
+        public Option(String label, String detail, int cardCode, int zone, int max,
+            int controller, int location, int sequence)
+        {
+            this(label, detail, cardCode, zone, max, controller, location, sequence, 0);
         }
 
         /** True when this option acts on the given board slot. */
@@ -85,13 +93,15 @@ public record EnginePrompt(Kind kind, String title, List<Option> options, int mi
             buffer.writeVarInt(controller + 1);
             buffer.writeVarInt(location);
             buffer.writeVarInt(sequence + 1);
+            buffer.writeVarInt(command);
         }
 
         public static Option read(FriendlyByteBuf buffer)
         {
             return new Option(buffer.readUtf(256), buffer.readUtf(256), buffer.readVarInt(),
                 buffer.readVarInt(), buffer.readVarInt(),
-                buffer.readVarInt() - 1, buffer.readVarInt(), buffer.readVarInt() - 1);
+                buffer.readVarInt() - 1, buffer.readVarInt(), buffer.readVarInt() - 1,
+                buffer.readVarInt());
         }
     }
 

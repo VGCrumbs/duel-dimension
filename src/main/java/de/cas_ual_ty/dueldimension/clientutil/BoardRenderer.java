@@ -15,38 +15,30 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Draws the duel field the way a duel sim does: opponent mirrored on top, your
- * side below, each side laid out as
- * {@code [extra] [5 monster zones] [grave]} and
- * {@code [field] [5 spell/trap] [deck]}, the two shared extra monster zones
- * between the rows, and hands along the outer edges.
+ * Draws the duel field using {@link FieldLayout} — EDOPro's own zone table —
+ * so the arrangement matches the reference client: five monster and five
+ * spell/trap columns on a 1.1-unit pitch, field spell and graveyard/banished
+ * in the side columns, deck and extra deck at the outer corners, the two extra
+ * monster zones straddling the centre line, and the opponent's side as the
+ * point reflection of yours.
  * <p>
- * Every drawn slot records a {@link Hit} carrying its controller, location and
- * sequence, so the screen can ask "what can this exact card do?" rather than
- * matching on passcode (which breaks with three copies of a card).
+ * Every drawn slot records a {@link Hit} carrying controller, location and
+ * sequence, so the screen can ask what that exact card may do.
  */
 public class BoardRenderer extends GuiComponent
 {
-    public static final int CARD_W = 26;
-    public static final int CARD_H = 38;
-    private static final int GAP = 3;
-    private static final int PILE_GAP = 10;
-
     private static final int COLOUR_ZONE = 0x40FFFFFF;
-    private static final int COLOUR_ZONE_FILL = 0x60000000;
+    private static final int COLOUR_ZONE_FILL = 0x50000000;
     private static final int COLOUR_HIGHLIGHT = 0xA000FF66;
-    private static final int COLOUR_ACTIONABLE = 0xA0FFD700;
+    private static final int COLOUR_ACTIONABLE = 0xC0FFD700;
 
-    /**
-     * A drawn slot. {@code location} is a LOCATION_* value; piles use their own
-     * location constant with sequence -1.
-     */
-    public record Hit(int x, int y, int code, int controller, int location, int sequence, int zoneRef,
-        String label, int count)
+    /** A drawn slot; piles use sequence -1. */
+    public record Hit(int x, int y, int w, int h, int code, int controller, int location, int sequence,
+        int zoneRef, String label, int count)
     {
         public boolean contains(double mouseX, double mouseY)
         {
-            return mouseX >= x && mouseX < x + CARD_W && mouseY >= y && mouseY < y + CARD_H;
+            return mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
         }
 
         public boolean isPile()
@@ -57,201 +49,131 @@ public class BoardRenderer extends GuiComponent
 
     private final List<Hit> hits = new ArrayList<>();
     private Set<Integer> zoneHighlights = Set.of();
-    private java.util.function.BiPredicate<Hit, Void> actionable;
+    private java.util.function.Predicate<Hit> actionable = hit -> false;
+    private FieldLayout.Projection projection;
 
     public List<Hit> hits()
     {
         return hits;
     }
 
-    /** Slots the current prompt can act on, drawn with a gold border. */
-    public void setActionable(java.util.function.BiPredicate<Hit, Void> actionable)
+    public void setActionable(java.util.function.Predicate<Hit> actionable)
     {
         this.actionable = actionable;
     }
 
-    public static int width()
-    {
-        return 9 * CARD_W + 8 * GAP + 2 * PILE_GAP;
-    }
-
-    public static int height()
-    {
-        return 7 * (CARD_H + GAP) + 26;
-    }
-
-    public void render(PoseStack poseStack, Font font, BoardSnapshot board, int centreX, int top,
-        Set<Integer> highlights)
+    public void render(PoseStack poseStack, Font font, BoardSnapshot board, int left, int top,
+        int width, int height, Set<Integer> highlights)
     {
         hits.clear();
         zoneHighlights = highlights == null ? Set.of() : highlights;
-        int y = top;
+        projection = FieldLayout.fit(left, top, width, height);
 
-        // Opponent: hand, then backrow, then monsters (mirrored so the two
-        // fields face each other across the middle).
-        y = handRow(poseStack, board.opponent().hand(), centreX, y, 1, true);
-        y = mainRow(poseStack, board.opponent().spells(), centreX, y, 1, false,
-            pile(board.opponent(), true), pile(board.opponent(), false));
-        y = mainRow(poseStack, board.opponent().monsters(), centreX, y, 1, true,
-            graveOf(board.opponent(), 1), extraOf(board.opponent(), 1));
-
-        y = extraMonsterRow(poseStack, board, centreX, y);
-
-        y = mainRow(poseStack, board.self().monsters(), centreX, y, 0, true,
-            extraOf(board.self(), 0), graveOf(board.self(), 0));
-        y = mainRow(poseStack, board.self().spells(), centreX, y, 0, false,
-            pileSelf(board.self(), true), pileSelf(board.self(), false));
-        y = handRow(poseStack, board.self().hand(), centreX, y, 0, false);
-
-        drawCenteredString(poseStack, font,
-            "Opponent " + board.opponent().lifePoints() + " LP", centreX, top - 12, 0xFF8080);
-        drawCenteredString(poseStack, font,
-            "You " + board.self().lifePoints() + " LP", centreX, y + 2, 0x80FF80);
-    }
-
-    // Pile descriptors: [left, right] per row.
-    private PileInfo extraOf(BoardSnapshot.Side side, int controller)
-    {
-        return new PileInfo("Extra Deck", side.extra().size(), OcgConstants.LOCATION_EXTRA, controller);
-    }
-
-    private PileInfo graveOf(BoardSnapshot.Side side, int controller)
-    {
-        return new PileInfo("Graveyard", side.grave().size(), OcgConstants.LOCATION_GRAVE, controller);
-    }
-
-    private PileInfo pile(BoardSnapshot.Side side, boolean left)
-    {
-        return left ? new PileInfo("Deck", side.deckCount(), OcgConstants.LOCATION_DECK, 1)
-            : new PileInfo("Banished", side.banished().size(), OcgConstants.LOCATION_REMOVED, 1);
-    }
-
-    private PileInfo pileSelf(BoardSnapshot.Side side, boolean left)
-    {
-        return left ? new PileInfo("Banished", side.banished().size(), OcgConstants.LOCATION_REMOVED, 0)
-            : new PileInfo("Deck", side.deckCount(), OcgConstants.LOCATION_DECK, 0);
-    }
-
-    private record PileInfo(String label, int count, int location, int controller)
-    {
-    }
-
-    /** A five-zone row flanked by two piles. */
-    private int mainRow(PoseStack poseStack, List<BoardSnapshot.Slot> slots, int centreX, int y,
-        int controller, boolean monsterZone, PileInfo left, PileInfo right)
-    {
-        int rowWidth = width();
-        int x = centreX - rowWidth / 2;
-
-        drawPile(poseStack, left, x, y);
-        x += CARD_W + PILE_GAP;
-
-        int[] order = monsterZone ? new int[] {0, 1, 2, 3, 4} : new int[] {5, 0, 1, 2, 3, 4, 6, 7};
-        if(!monsterZone)
+        for(int controller = 0; controller <= 1; controller++)
         {
-            // Field spell and the two pendulum zones flank the five backrow
-            // slots; keep the row the same width as the monster row.
-            order = new int[] {5, 0, 1, 2, 3, 4, 6};
-        }
-        for(int sequence : order)
-        {
-            BoardSnapshot.Slot slot = sequence < slots.size() ? slots.get(sequence) : BoardSnapshot.Slot.EMPTY;
-            int zoneRef = EnginePrompt.zoneRef(controller == 1, monsterZone, sequence);
-            drawSlot(poseStack, slot, x, y, zoneRef, controller,
-                monsterZone ? OcgConstants.LOCATION_MZONE : OcgConstants.LOCATION_SZONE, sequence,
-                labelFor(monsterZone, sequence));
-            x += CARD_W + GAP;
+            BoardSnapshot.Side side = controller == 0 ? board.self() : board.opponent();
+
+            for(int sequence = 0; sequence < 7; sequence++)
+            {
+                drawZone(poseStack, side.monsters(), controller, OcgConstants.LOCATION_MZONE, sequence,
+                    sequence < 5 ? "Monster Zone " + (sequence + 1) : "Extra Monster Zone");
+            }
+            for(int sequence = 0; sequence < 6; sequence++)
+            {
+                drawZone(poseStack, side.spells(), controller, OcgConstants.LOCATION_SZONE, sequence,
+                    sequence == 5 ? "Field Spell" : "Spell/Trap Zone " + (sequence + 1));
+            }
+
+            drawPile(poseStack, font, controller, OcgConstants.LOCATION_DECK, "Deck", side.deckCount());
+            drawPile(poseStack, font, controller, OcgConstants.LOCATION_EXTRA, "Extra Deck", side.extra().size());
+            drawPile(poseStack, font, controller, OcgConstants.LOCATION_GRAVE, "Graveyard", side.grave().size());
+            drawPile(poseStack, font, controller, OcgConstants.LOCATION_REMOVED, "Banished", side.banished().size());
         }
 
-        drawPile(poseStack, right, centreX + rowWidth / 2 - CARD_W, y);
-        return y + CARD_H + GAP;
+        drawHand(poseStack, board.opponent().hand(), 1, left, top, width, true);
+        drawHand(poseStack, board.self().hand(), 0, left, top, width, false);
     }
 
-    private static String labelFor(boolean monsterZone, int sequence)
+    private void drawZone(PoseStack poseStack, List<BoardSnapshot.Slot> slots, int controller, int location,
+        int sequence, String label)
     {
-        if(monsterZone)
+        FieldLayout.Rect rect = FieldLayout.zone(controller, location, sequence);
+        if(rect == null)
         {
-            return "Monster Zone " + (sequence + 1);
+            return;
         }
-        return switch(sequence)
-        {
-            case 5 -> "Field Spell";
-            case 6, 7 -> "Pendulum Zone";
-            default -> "Spell/Trap Zone " + (sequence + 1);
-        };
+        int[] box = projection.rect(rect);
+        BoardSnapshot.Slot slot = sequence < slots.size() ? slots.get(sequence) : BoardSnapshot.Slot.EMPTY;
+        boolean monsterZone = location == OcgConstants.LOCATION_MZONE;
+        int zoneRef = EnginePrompt.zoneRef(controller == 1, monsterZone, sequence);
+
+        Hit hit = new Hit(box[0], box[1], box[2], box[3], slot.code(), controller, location, sequence,
+            zoneRef, label, 0);
+        drawSlot(poseStack, slot, hit);
     }
 
-    private int extraMonsterRow(PoseStack poseStack, BoardSnapshot board, int centreX, int y)
+    private void drawPile(PoseStack poseStack, Font font, int controller, int location, String label, int count)
     {
-        int x = centreX - CARD_W - PILE_GAP / 2;
-        for(int sequence = 5; sequence <= 6; sequence++)
+        FieldLayout.Rect rect = FieldLayout.zone(controller, location, 0);
+        if(rect == null)
         {
-            BoardSnapshot.Slot own = slotAt(board.self().monsters(), sequence);
-            BoardSnapshot.Slot theirs = slotAt(board.opponent().monsters(), sequence);
-            boolean ownsIt = own.present();
-            BoardSnapshot.Slot shown = ownsIt ? own : theirs;
-            int controller = ownsIt ? 0 : (theirs.present() ? 1 : 0);
-            drawSlot(poseStack, shown, x, y, EnginePrompt.zoneRef(false, true, sequence), controller,
-                OcgConstants.LOCATION_MZONE, sequence, "Extra Monster Zone");
-            x += CARD_W + PILE_GAP;
+            return;
         }
-        return y + CARD_H + GAP;
+        int[] box = projection.rect(rect);
+        Hit hit = new Hit(box[0], box[1], box[2], box[3], 0, controller, location, -1, -1,
+            label + " (" + count + ")", count);
+
+        fill(poseStack, box[0] - 1, box[1] - 1, box[0] + box[2] + 1, box[1] + box[3] + 1,
+            actionable.test(hit) ? COLOUR_ACTIONABLE : COLOUR_ZONE);
+        fill(poseStack, box[0], box[1], box[0] + box[2], box[1] + box[3], COLOUR_ZONE_FILL);
+        if(count > 0)
+        {
+            ScreenUtil.white();
+            CardRenderUtil.bindMainResourceLocation(CardRenderUtil.getMainCardBack());
+            DdBlitUtil.fullBlit(poseStack, box[0], box[1], box[2], box[3]);
+            drawCenteredString(poseStack, font, Integer.toString(count),
+                box[0] + box[2] / 2, box[1] + box[3] - 9, 0xFFFFFF);
+        }
+        hits.add(hit);
     }
 
-    private int handRow(PoseStack poseStack, List<BoardSnapshot.Slot> hand, int centreX, int y,
-        int controller, boolean hide)
+    /** Hands run along the outer edges, fanned to fit the field's width. */
+    private void drawHand(PoseStack poseStack, List<BoardSnapshot.Slot> hand, int controller,
+        int left, int top, int width, boolean hide)
     {
         if(hand.isEmpty())
         {
-            return y + CARD_H + GAP;
+            return;
         }
-        // Hands overlap when large, like a real hand of cards.
-        int step = hand.size() * (CARD_W + GAP) > width() ? (width() - CARD_W) / Math.max(1, hand.size() - 1)
-            : CARD_W + GAP;
-        int totalWidth = (hand.size() - 1) * step + CARD_W;
-        int x = centreX - totalWidth / 2;
+        int cardW = projection.size(1.1F);
+        int cardH = projection.size(1.2F);
+        int y = controller == 0 ? projection.y(FieldLayout.FIELD_MIN_Y) - cardH + 2
+            : projection.y(FieldLayout.FIELD_MAX_Y) - 2;
+
+        int span = Math.min(width - 20, hand.size() * (cardW + 2));
+        int step = hand.size() > 1 ? (span - cardW) / (hand.size() - 1) : 0;
+        int x = left + (width - span) / 2;
 
         for(int i = 0; i < hand.size(); i++)
         {
             BoardSnapshot.Slot slot = hide
                 ? new BoardSnapshot.Slot(true, 0, true, false, 0, 0, 0)
                 : hand.get(i);
-            drawSlot(poseStack, slot, x, y, -1, controller, OcgConstants.LOCATION_HAND, i, "Hand");
+            Hit hit = new Hit(x, y, cardW, cardH, slot.code(), controller,
+                OcgConstants.LOCATION_HAND, i, -1, "Hand", 0);
+            drawSlot(poseStack, slot, hit);
             x += step;
         }
-        return y + CARD_H + GAP;
     }
 
-    private static BoardSnapshot.Slot slotAt(List<BoardSnapshot.Slot> slots, int index)
+    private void drawSlot(PoseStack poseStack, BoardSnapshot.Slot slot, Hit hit)
     {
-        return index < slots.size() ? slots.get(index) : BoardSnapshot.Slot.EMPTY;
-    }
-
-    private void drawPile(PoseStack poseStack, PileInfo pile, int x, int y)
-    {
-        fill(poseStack, x - 1, y - 1, x + CARD_W + 1, y + CARD_H + 1, COLOUR_ZONE);
-        fill(poseStack, x, y, x + CARD_W, y + CARD_H, COLOUR_ZONE_FILL);
-        if(pile.count() > 0)
-        {
-            ScreenUtil.white();
-            CardRenderUtil.bindMainResourceLocation(CardRenderUtil.getMainCardBack());
-            DdBlitUtil.fullBlit(poseStack, x, y, CARD_W, CARD_H);
-        }
-        hits.add(new Hit(x, y, 0, pile.controller(), pile.location(), -1, -1,
-            pile.label() + " (" + pile.count() + ")", pile.count()));
-    }
-
-    private void drawSlot(PoseStack poseStack, BoardSnapshot.Slot slot, int x, int y, int zoneRef,
-        int controller, int location, int sequence, String label)
-    {
-        Hit hit = new Hit(x, y, slot.code(), controller, location, sequence, zoneRef, label, 0);
-
-        boolean zoneLit = zoneRef >= 0 && zoneHighlights.contains(zoneRef);
-        boolean canAct = actionable != null && actionable.test(hit, null);
+        boolean zoneLit = hit.zoneRef() >= 0 && zoneHighlights.contains(hit.zoneRef());
+        boolean canAct = actionable.test(hit);
         int border = zoneLit ? COLOUR_HIGHLIGHT : canAct ? COLOUR_ACTIONABLE : COLOUR_ZONE;
 
-        fill(poseStack, x - 1, y - 1, x + CARD_W + 1, y + CARD_H + 1, border);
-        fill(poseStack, x, y, x + CARD_W, y + CARD_H, COLOUR_ZONE_FILL);
+        fill(poseStack, hit.x() - 1, hit.y() - 1, hit.x() + hit.w() + 1, hit.y() + hit.h() + 1, border);
+        fill(poseStack, hit.x(), hit.y(), hit.x() + hit.w(), hit.y() + hit.h(), COLOUR_ZONE_FILL);
 
         if(slot.present())
         {
@@ -259,11 +181,11 @@ public class BoardRenderer extends GuiComponent
             CardRenderUtil.bindMainResourceLocation(textureFor(slot));
             if(slot.defence())
             {
-                DdBlitUtil.fullBlit90Degree(poseStack, x, y, CARD_W, CARD_H);
+                DdBlitUtil.fullBlit90Degree(poseStack, hit.x(), hit.y(), hit.w(), hit.h());
             }
             else
             {
-                DdBlitUtil.fullBlit(poseStack, x, y, CARD_W, CARD_H);
+                DdBlitUtil.fullBlit(poseStack, hit.x(), hit.y(), hit.w(), hit.h());
             }
         }
         hits.add(hit);

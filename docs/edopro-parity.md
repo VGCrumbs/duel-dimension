@@ -6,7 +6,7 @@ Inventory extracted from the EDOPro client source (`gframe/`: `game.cpp` widget 
 
 | EDOPro element (source) | What it is | Status |
 | --- | --- | --- |
-| Field zones (`client_field.cpp`) | 5 monster + 2 extra monster zones, 5 spell/trap, field spell, 2 pendulum zones, per player | ✅ full zone grid incl. EMZ/field/pendulum slots |
+| Field zones (`materials.cpp` vertex table) | 5 monster + 2 extra monster zones, 5 spell/trap, field spell, pendulum zones, side columns | ✅ **1:1 port** — `FieldLayout` keeps EDOPro's own field-unit coordinates (1.1 pitch, side columns, EMZ on the centre line); only the 3D→2D projection is ours |
 | Deck/extra/grave/banished piles | Pile stacks with counts | ✅ counts + clickable grave/banished viewers |
 | Both hands | Own face-up, opponent's as backs | ✅ |
 | Card art on field (`DrawCard`) | Real art, face-downs as card backs | ✅ via the mod's own image pipeline |
@@ -28,7 +28,7 @@ Inventory extracted from the EDOPro client source (`gframe/`: `game.cpp` widget 
 
 | EDOPro widget | Engine message | Status |
 | --- | --- | --- |
-| `wCmdMenu` (Summon/SP/MSet/SSet/Repos/Attack/Activate) | `SELECT_IDLECMD` / `SELECT_BATTLECMD` | ✅ option list + click-on-card shortcut |
+| `wCmdMenu` (Summon/SP/MSet/SSet/Repos/Attack/Activate) | `SELECT_IDLECMD` / `SELECT_BATTLECMD` | ✅ **1:1 port** — `CardCommands` mirrors game.h COMMAND_* bits, duelclient.cpp's cmdFlag population and ShowMenu's order/captions |
 | Phase buttons `btnBP/btnM2/btnEP/btnShuffle` | phase commands in idle/battle | ✅ as options |
 | `wCardSelect` + `btnCancelOrFinish` | `SELECT_CARD` (min/max, cancel) | ✅ multi-select + confirm/cancel |
 | `wCardSelect` unselect loop | `SELECT_UNSELECT_CARD` | ✅ one-at-a-time + finish |
@@ -52,6 +52,14 @@ Inventory extracted from the EDOPro client source (`gframe/`: `game.cpp` widget 
 | `btnLeaveGame` | surrender | ✅ Surrender button |
 | Timers (`time_limit`) | per-player clocks | ❌ (10-min prompt timeout instead) |
 | Replay controls / spectating | `wReplay`, swap views | ❌ in-game (replay format exists engine-side) |
+
+## Deviations, stated explicitly
+
+Three places where byte-for-byte copying is impossible or unwise, and what we do instead:
+
+1. **3D perspective → 2D GUI.** EDOPro renders the field as textured quads in an Irrlicht 3D scene. The *coordinates* port exactly (`FieldLayout`), the perspective projection does not; we fit the same table orthographically into the Minecraft screen.
+2. **Client-side rules state.** EDOPro's client keeps a full `ClientField` mirror and computes `cmdFlag` locally from the raw message stream. We compute the identical bitmask **server-side** and send only the resulting legal commands, because a Minecraft client is untrusted — see the note below.
+3. **UI assets.** EDOPro's textures and skins are its own project's assets under its own licence; the mod already ships a card-image pipeline for the same cards. We match layout and behaviour, not texture files.
 
 ## Architecture note
 

@@ -42,15 +42,23 @@ public class PromptTranslator
     {
         if(message instanceof DuelMessage.SelectIdleCmd idle)
         {
+            // duelclient.cpp sets one cmdFlag bit per list; the option order
+            // here must stay the order the response encoder expects.
             List<EnginePrompt.Option> options = new ArrayList<>();
-            idle.summonable().forEach(card -> options.add(idleOption("Summon", card)));
-            idle.spSummonable().forEach(card -> options.add(idleOption("Special Summon", card)));
-            idle.repositionable().forEach(card -> options.add(idleOption("Change position", card)));
-            idle.monsterSettable().forEach(card -> options.add(idleOption("Set", card)));
-            idle.spellSettable().forEach(card -> options.add(idleOption("Set", card)));
+            idle.summonable().forEach(card ->
+                options.add(commandOption(CardCommands.COMMAND_SUMMON, card, field)));
+            idle.spSummonable().forEach(card ->
+                options.add(commandOption(CardCommands.COMMAND_SPSUMMON, card, field)));
+            idle.repositionable().forEach(card ->
+                options.add(commandOption(CardCommands.COMMAND_REPOS, card, field)));
+            idle.monsterSettable().forEach(card ->
+                options.add(commandOption(CardCommands.COMMAND_MSET, card, field)));
+            idle.spellSettable().forEach(card ->
+                options.add(commandOption(CardCommands.COMMAND_SSET, card, field)));
             idle.activatable().forEach(card -> options.add(new EnginePrompt.Option(
-                "Activate", text.describe(card.description()), card.code(),
-                card.controller(), card.location(), card.sequence())));
+                CardCommands.label(CardCommands.COMMAND_ACTIVATE, typeOf(card.code()), 0, text),
+                text.describe(card.description()), card.code(), -1, 0,
+                card.controller(), card.location(), card.sequence(), CardCommands.COMMAND_ACTIVATE)));
             if(idle.toBattle())
             {
                 options.add(new EnginePrompt.Option("Go to Battle Phase"));
@@ -70,11 +78,13 @@ public class PromptTranslator
         {
             List<EnginePrompt.Option> options = new ArrayList<>();
             battle.activatable().forEach(card -> options.add(new EnginePrompt.Option(
-                "Activate", text.describe(card.description()), card.code(),
-                card.controller(), card.location(), card.sequence())));
+                CardCommands.label(CardCommands.COMMAND_ACTIVATE, typeOf(card.code()), 0, text),
+                text.describe(card.description()), card.code(), -1, 0,
+                card.controller(), card.location(), card.sequence(), CardCommands.COMMAND_ACTIVATE)));
             battle.attackable().forEach(card -> options.add(new EnginePrompt.Option(
-                "Attack", card.canDirect() ? "can attack directly" : "", card.code(),
-                card.controller(), card.location(), card.sequence())));
+                CardCommands.label(CardCommands.COMMAND_ATTACK, typeOf(card.code()), 0, text),
+                card.canDirect() ? "can attack directly" : "", card.code(), -1, 0,
+                card.controller(), card.location(), card.sequence(), CardCommands.COMMAND_ATTACK)));
             if(battle.toMain2())
             {
                 options.add(new EnginePrompt.Option("Go to Main Phase 2"));
@@ -568,13 +578,52 @@ public class PromptTranslator
             : "Select " + min + " to " + max + " cards";
     }
 
-    /** An idle-command option, tagged with the board slot it acts on. */
-    private EnginePrompt.Option idleOption(String verb, DuelMessage.IdleOption idle)
+    /**
+     * An idle-command option carrying its COMMAND_* bit and the caption
+     * ShowMenu would give it (which for REPOS and SSET depends on the card's
+     * current position and type).
+     */
+    private EnginePrompt.Option commandOption(int command, DuelMessage.IdleOption idle, BoardSnapshot field)
     {
         OcgCard card = cards.get(idle.code());
         String detail = card == null ? "" : card.attack() + " ATK / " + card.defense() + " DEF";
-        return new EnginePrompt.Option(verb, detail, idle.code(),
-            idle.controller(), idle.location(), idle.sequence());
+        int position = positionAt(field, idle.controller(), idle.location(), idle.sequence());
+        return new EnginePrompt.Option(
+            CardCommands.label(command, card == null ? 0 : card.type(), position, text),
+            detail, idle.code(), -1, 0,
+            idle.controller(), idle.location(), idle.sequence(), command);
+    }
+
+    private int typeOf(int code)
+    {
+        OcgCard card = cards.get(code);
+        return card == null ? 0 : card.type();
+    }
+
+    /** The POS_* of a card on the field, for the reposition caption. */
+    private static int positionAt(BoardSnapshot field, int controller, int location, int sequence)
+    {
+        if(field == null)
+        {
+            return 0;
+        }
+        BoardSnapshot.Side side = controller == 0 ? field.self() : field.opponent();
+        List<BoardSnapshot.Slot> slots = location == OcgConstants.LOCATION_MZONE ? side.monsters()
+            : location == OcgConstants.LOCATION_SZONE ? side.spells() : List.of();
+        if(sequence < 0 || sequence >= slots.size())
+        {
+            return 0;
+        }
+        BoardSnapshot.Slot slot = slots.get(sequence);
+        if(!slot.present())
+        {
+            return 0;
+        }
+        if(slot.faceDown())
+        {
+            return OcgConstants.POS_FACEDOWN;
+        }
+        return slot.defence() ? OcgConstants.POS_FACEUP_DEFENSE : OcgConstants.POS_FACEUP_ATTACK;
     }
 
     private String cardName(int code)
