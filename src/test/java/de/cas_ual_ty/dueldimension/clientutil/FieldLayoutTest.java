@@ -21,9 +21,14 @@ class FieldLayoutTest
     private final FieldLayout.Projection projection = FieldLayout.fit(LEFT, TOP, WIDTH, HEIGHT);
 
     /**
-     * The board has to use the box it is given. Mapping raw NDC to the box left
-     * the mat filling 89% of the width and 64% of the height, which reads as a
-     * small table adrift in empty space.
+     * The board has to use the box it is given, without changing shape.
+     * <p>
+     * Mapping raw NDC to the box left the mat filling 89% of the width and 64%
+     * of the height, which reads as a small table adrift in empty space. Fitting
+     * the framed area fixes that, and because one scale is used for both axes
+     * the table keeps a fixed aspect: it fills the limiting axis exactly and is
+     * centred on the other, so the leftover is an even margin rather than a
+     * stretch.
      */
     @Test
     void theFramedBoardFillsItsBox()
@@ -42,11 +47,25 @@ class FieldLayoutTest
         float nearY = projection.y(FieldLayout.FIELD_MAX_Y + 1F);
         float farY = projection.y(FieldLayout.FIELD_MIN_Y - 1F);
 
-        assertEquals(LEFT, minX, 1F, "framed board should start at the box's left edge");
-        assertEquals(LEFT + WIDTH, maxX, 1F, "framed board should reach the box's right edge");
-        assertEquals(TOP, Math.min(nearY, farY), 1F, "framed board should start at the box's top");
-        assertEquals(TOP + HEIGHT, Math.max(nearY, farY), 1F,
-            "framed board should reach the box's bottom");
+        float drawnWidth = maxX - minX;
+        float drawnHeight = Math.max(nearY, farY) - Math.min(nearY, farY);
+
+        // Inside the box on both axes, touching it on at least one.
+        assertTrue(minX >= LEFT - 1F && maxX <= LEFT + WIDTH + 1F, "board must stay inside its box");
+        assertTrue(Math.min(nearY, farY) >= TOP - 1F && Math.max(nearY, farY) <= TOP + HEIGHT + 1F,
+            "board must stay inside its box");
+        assertTrue(drawnWidth >= WIDTH - 1F || drawnHeight >= HEIGHT - 1F,
+            "board should fill the limiting axis, not float in the middle");
+
+        // Centred on whichever axis has room left over.
+        assertEquals((LEFT + LEFT + WIDTH) / 2F, (minX + maxX) / 2F, 1F, "board should be centred");
+        assertEquals((TOP + TOP + HEIGHT) / 2F, (nearY + farY) / 2F, 1F, "board should be centred");
+
+        // A fixed aspect: the same scale on both axes. Rendering the same board
+        // into a box of a different shape must not change its proportions.
+        FieldLayout.Projection wide = FieldLayout.fit(0, 0, WIDTH * 2, HEIGHT);
+        assertEquals(1F, wide.scaleX() / wide.scaleY(), 0.001F,
+            "both axes must share one scale, or the board changes shape with the window");
     }
 
     /**

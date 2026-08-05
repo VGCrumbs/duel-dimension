@@ -117,6 +117,9 @@ public class BoardRenderer extends GuiComponent
     private Set<Integer> zoneHighlights = Set.of();
     private java.util.function.Predicate<Hit> actionable = hit -> false;
     private java.util.function.Predicate<Hit> canAttack = hit -> false;
+    private java.util.function.Predicate<Hit> canActivate = hit -> false;
+    /** Zones whose card is mid-flight, so the static copy is held back. */
+    private java.util.function.IntPredicate arriving = zone -> false;
     private FieldLayout.Projection projection;
     /** Set for the duration of a render, so zone drawing can label stats. */
     private Font font;
@@ -160,6 +163,23 @@ public class BoardRenderer extends GuiComponent
         this.canAttack = canAttack;
     }
 
+    /** Cards whose command bitmask includes COMMAND_ACTIVATE. */
+    public void setCanActivate(java.util.function.Predicate<Hit> canActivate)
+    {
+        this.canActivate = canActivate;
+    }
+
+    /**
+     * Zones with a card still flying into them. The board snapshot is applied
+     * the moment it arrives, so without this the card was already sitting in
+     * its zone while its own set/summon animation was still travelling -- two
+     * copies of the same card, the destination one appearing first.
+     */
+    public void setArriving(java.util.function.IntPredicate arriving)
+    {
+        this.arriving = arriving;
+    }
+
     public void render(PoseStack poseStack, Font font, BoardSnapshot board, int left, int top,
         int width, int height, Set<Integer> highlights)
     {
@@ -174,6 +194,25 @@ public class BoardRenderer extends GuiComponent
             FieldLayout.FIELD_MIN_X, FieldLayout.FIELD_MIN_Y,
             FieldLayout.FIELD_MAX_X - FieldLayout.FIELD_MIN_X,
             FieldLayout.FIELD_MAX_Y - FieldLayout.FIELD_MIN_Y), 24);
+
+        // The slot grid, drawn as its own pass over the bare mat and under
+        // everything else, so no card, pile or overlay can paint across it.
+        for(int controller = 0; controller <= 1; controller++)
+        {
+            for(int sequence = 0; sequence < 7; sequence++)
+            {
+                drawGridBox(poseStack, controller, OcgConstants.LOCATION_MZONE, sequence);
+            }
+            for(int sequence = 0; sequence < 6; sequence++)
+            {
+                drawGridBox(poseStack, controller, OcgConstants.LOCATION_SZONE, sequence);
+            }
+            for(int location : new int[] {OcgConstants.LOCATION_DECK, OcgConstants.LOCATION_EXTRA,
+                OcgConstants.LOCATION_GRAVE, OcgConstants.LOCATION_REMOVED})
+            {
+                drawGridBox(poseStack, controller, location, 0);
+            }
+        }
 
         for(int controller = 0; controller <= 1; controller++)
         {
@@ -213,6 +252,16 @@ public class BoardRenderer extends GuiComponent
         Hit hit = new Hit(projection.quad(rect), slot.code(), controller, location, sequence,
             EnginePrompt.zoneRef(controller == 1, monsterZone, sequence), label, 0);
         drawSlot(poseStack, slot, hit, rect, false);
+    }
+
+    /** One slot's box on the mat. */
+    private void drawGridBox(PoseStack poseStack, int controller, int location, int sequence)
+    {
+        FieldLayout.Rect rect = FieldLayout.zone(controller, location, sequence);
+        if(rect != null)
+        {
+            FieldQuad.outline(poseStack, projection.quad(inset(rect)), COLOUR_GRID);
+        }
     }
 
     /** A zone shrunk to its grid box, so neighbouring slots stay separate. */
@@ -290,12 +339,6 @@ public class BoardRenderer extends GuiComponent
         FieldQuad.Corners corners = projection.quad(rect);
         Hit hit = new Hit(corners, 0, controller, location, -1, -1, label + " (" + count + ")", count);
 
-        // Piles are slots too: a playmat outlines the deck, grave, banished and
-        // extra boxes just like the monster and spell rows. Only outlining them
-        // when they happened to be activatable left those corners of the mat
-        // blank, which read as a missing grid.
-        FieldQuad.outline(poseStack, projection.quad(inset(rect)), COLOUR_GRID);
-
         boolean canActivateFromHere = actionable.test(hit);
         if(canActivateFromHere)
         {
@@ -370,16 +413,25 @@ public class BoardRenderer extends GuiComponent
         }
         else if(canAct)
         {
-            FieldQuad.outline(poseStack, hit.corners(), COLOUR_ACTIONABLE);
+            if(canActivate.test(hit))
+            {
+                // A white breath over anything you may activate -- during a
+                // chain window that is the set of responses open to you.
+                float pulse = 0.45F + 0.4F * (float)Math.sin(System.currentTimeMillis() / 190D);
+                int glow = (Math.round(pulse * 255) << 24) | 0xFFFFFF;
+                FieldQuad.fill(poseStack, hit.corners(), (Math.round(pulse * 70) << 24) | 0xFFFFFF);
+                FieldQuad.outline(poseStack, hit.corners(), glow);
+            }
+            else
+            {
+                FieldQuad.outline(poseStack, hit.corners(), COLOUR_ACTIONABLE);
+            }
         }
-        else if(!inHand)
-        {
-            // Hand cards are not zones and get no slot box.
-            FieldQuad.outline(poseStack, projection.quad(inset(rect)), COLOUR_GRID);
-        }
+        // The idle box is already down from the grid pass; only the states that
+        // override it are drawn here.
         hits.add(hit);
 
-        if(!slot.present())
+        if(!slot.present() || (hit.zoneRef() >= 0 && arriving.test(hit.zoneRef())))
         {
             return;
         }

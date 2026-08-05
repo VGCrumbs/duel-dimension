@@ -41,8 +41,16 @@ public class DuelAnimations
     /** However far behind we are, nothing is allowed to flash past faster. */
     private static final long FLOOR_MS = 260;
 
-    /** custom_skin_enum.inl: DECLR(DUELFIELD_ATTACK_ARROW, 0x8000ff00). */
-    private static final int ATTACK_ARROW = 0x8000FF00;
+    /**
+     * The attack line. EDOPro's own arrow is green
+     * ({@code DECLR(DUELFIELD_ATTACK_ARROW, 0x8000ff00)}); this project asked
+     * for a red line with a sword launching along it, so the shaft is red and
+     * {@code attack.png} -- the same texture EDOPro bobs over a card that may
+     * attack -- rides it from attacker to target.
+     */
+    private static final int ATTACK_ARROW = 0xC0FF2020;
+    /** How big the travelling sword is, in field units. */
+    private static final float SWORD_SIZE = 1.0F;
 
     // GenArrow builds a 0.2-wide shaft ending in a wider head; these are the
     // same proportions expressed in field units.
@@ -254,11 +262,23 @@ public class DuelAnimations
             }
 
             float t = animation.progress(now);
-            // Reach the target in the first stretch, then hold and fade.
-            float reach = Math.min(1F, t * 1.6F);
-            float alpha = t < 0.75F ? 1F : 1F - (t - 0.75F) / 0.25F;
+            // The line reaches the target first, then the sword launches along
+            // it, so the direction reads before the strike lands.
+            float reach = Math.min(1F, t * 2.2F);
+            float alpha = t < 0.8F ? 1F : 1F - (t - 0.8F) / 0.2F;
             drawArrow(poseStack, projection, ax, ay, ax + (dx - ax) * reach, ay + (dy - ay) * reach,
                 alpha);
+
+            // The sword sets off once the line is drawn and flies to the target.
+            if(t > 0.35F)
+            {
+                float travel = Math.min(1F, (t - 0.35F) / 0.5F);
+                float swordX = ax + (dx - ax) * travel;
+                float swordY = ay + (dy - ay) * travel;
+                FieldQuad.draw(poseStack, DuelTextures.ATTACK,
+                    projection.cardQuad(swordX, swordY, SWORD_SIZE, SWORD_SIZE),
+                    1F, 1F, 1F, alpha);
+            }
         }
     }
 
@@ -391,6 +411,43 @@ public class DuelAnimations
             }
         }
         return strongest;
+    }
+
+    /**
+     * True while a card is still travelling into this zone, so the board can
+     * hold back the settled copy until the animation lands.
+     */
+    public boolean isArriving(int zoneRef, long now)
+    {
+        if(zoneRef < 0)
+        {
+            return false;
+        }
+        for(Playing animation : playing)
+        {
+            if(animation.event().toZone() == zoneRef && !animation.done(now))
+            {
+                return true;
+            }
+        }
+        // Also while it is still queued, or it would pop in and then fly again.
+        for(DuelEvent waiting : queue)
+        {
+            if(waiting.toZone() == zoneRef && isMove(waiting))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isMove(DuelEvent event)
+    {
+        return switch(event.kind())
+        {
+            case MOVE, SUMMON, SPECIAL_SUMMON, SET, ACTIVATE, DESTROY, DRAW -> true;
+            default -> false;
+        };
     }
 
     /** True while anything is still playing, for callers that want to wait. */

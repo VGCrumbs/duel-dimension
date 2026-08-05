@@ -259,10 +259,19 @@ public final class FieldLayout
         float minNdcY = Math.min(ndcYNear, ndcYFar);
         float maxNdcY = Math.max(ndcYNear, ndcYFar);
 
-        float scaleX = width / (maxNdcX - minNdcX);
-        float scaleY = height / (maxNdcY - minNdcY);
-        // x = originX + ndcX * scaleX, and y = originY - ndcY * scaleY, so the
-        // low x edge and the high y edge land on the box's left and top.
-        return new Projection(left - minNdcX * scaleX, top + maxNdcY * scaleY, scaleX, scaleY);
+        // One scale for both axes, so the board keeps a fixed shape whatever
+        // the window is. EDOPro sets keep_aspect_ratio=false and lets the
+        // frustum stretch, but a table that changes proportion as the window
+        // resizes reads as broken here, so the smaller of the two fits is used
+        // and the leftover becomes an even margin.
+        float ndcWidth = maxNdcX - minNdcX;
+        float ndcHeight = maxNdcY - minNdcY;
+        float scale = Math.min(width / ndcWidth, height / ndcHeight);
+        float marginX = (width - ndcWidth * scale) / 2F;
+        float marginY = (height - ndcHeight * scale) / 2F;
+        // x = originX + ndcX * scale, and y = originY - ndcY * scale, so the low
+        // x edge and the high y edge land on the box's left and top.
+        return new Projection(left + marginX - minNdcX * scale,
+            top + marginY + maxNdcY * scale, scale, scale);
     }
 }

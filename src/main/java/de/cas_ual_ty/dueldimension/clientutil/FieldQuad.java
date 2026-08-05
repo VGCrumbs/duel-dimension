@@ -210,6 +210,14 @@ public final class FieldQuad
         float blue = (colour & 0xFF) / 255F;
 
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        // position_color multiplies the vertex colour by RenderSystem's shader
+        // colour, and this was the one draw path here that never set it -- every
+        // other one does. It therefore inherited whatever the last widget left
+        // behind (the mod's widgets all set (1,1,1,alpha) for their fade and do
+        // not restore it), and since Screen.render draws widgets after the
+        // board, a stale alpha carried from one frame into the next one's zone
+        // grid. Set it explicitly.
+        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
 

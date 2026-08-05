@@ -42,9 +42,14 @@ public class EngineDuelScreen extends Screen
     private static final int MIN_DESCRIPTION_H = 30;
     /** However short the window, the preview stays recognisable. */
     private static final int MIN_PREVIEW_H = 40;
+    /** The preview card, as a fraction of the sidebar's text column. */
+    private static final float PREVIEW_SCALE = 0.7F;
     private static final int TOP_BAR_H = 48;
     private static final int MENU_ROW = CardCommands.MENU_ROW_HEIGHT;
     private static final int LOG_W = 150;
+    /** The turn badge reads green on your turn, red on theirs. */
+    private static final int TURN_YOURS = 0x4CD964;
+    private static final int TURN_THEIRS = 0xFF453A;
 
     private final BoardRenderer boardRenderer = new BoardRenderer();
     private final DuelAnimations animations = new DuelAnimations();
@@ -187,7 +192,8 @@ public class EngineDuelScreen extends Screen
         }
         if(prompt.cancelable())
         {
-            addRenderableWidget(new Button(rightX - 76, height - 44, 74, 18,
+            // Bottom right corner, away from the board and the command menu.
+            addRenderableWidget(new Button(width - 80, height - 24, 74, 18,
                 Component.literal(prompt.kind() == EnginePrompt.Kind.SORT ? "Keep order" : "Cancel"),
                 pressed -> answer(new int[0], 0)));
         }
@@ -582,6 +588,20 @@ public class EngineDuelScreen extends Screen
                 closeMenu();
                 return true;
             }
+            // Nothing left to back out of, so right-click answers the prompt
+            // itself -- the same order Escape backs out in.
+            EnginePrompt prompt = shownPrompt;
+            if(prompt != null && prompt.cancelable() && !answered)
+            {
+                answer(new int[0], 0);
+                return true;
+            }
+            if(!selected.isEmpty() || !sortOrder.isEmpty())
+            {
+                selected.clear();
+                sortOrder.clear();
+                return true;
+            }
         }
         if(button == 0 && pileView != null)
         {
@@ -692,6 +712,11 @@ public class EngineDuelScreen extends Screen
         boardRenderer.setActionable(hit -> !optionsFor(hit).isEmpty());
         boardRenderer.setCanAttack(hit -> optionsFor(hit).stream().anyMatch(index ->
             prompt != null && prompt.options().get(index).command() == CardCommands.COMMAND_ATTACK));
+        // A card the core will let you activate right now, which during a chain
+        // window is exactly the set of responses available to you.
+        boardRenderer.setCanActivate(hit -> optionsFor(hit).stream().anyMatch(index ->
+            prompt != null && prompt.options().get(index).command() == CardCommands.COMMAND_ACTIVATE));
+        boardRenderer.setArriving(zone -> animations.isArriving(zone, System.currentTimeMillis()));
 
         // EDOPro's frustum is off-centre by design (M[8] = 1/3) so the table
         // sits right of screen centre and leaves room for the card-info column.
@@ -993,19 +1018,22 @@ public class EngineDuelScreen extends Screen
         int badgeLeft = left + barW + 6;
 
         long now = System.currentTimeMillis();
+        boolean yourTurn = board.turnPlayer() == 0;
         drawLifeBar(poseStack, left, 6, barW, "You", board.self().lifePoints(), 0xFF3FA34D,
-            animations.damageFlash(0, now));
+            animations.damageFlash(0, now), yourTurn, now);
         drawLifeBar(poseStack, right - barW, 6, barW, "Opponent",
-            board.opponent().lifePoints(), 0xFFC1362F, animations.damageFlash(1, now));
+            board.opponent().lifePoints(), 0xFFC1362F, animations.damageFlash(1, now), !yourTurn, now);
 
+        // Whose turn it is, said with colour instead of words: the badge and
+        // the active player's bar carry it, so the label underneath (which the
+        // phase row kept colliding with) is gone.
         int badgeTop = 4;
+        int turnColour = yourTurn ? TURN_YOURS : TURN_THEIRS;
         fill(poseStack, badgeLeft, badgeTop, badgeLeft + badgeW, badgeTop + 17, 0xC0101014);
-        fill(poseStack, badgeLeft, badgeTop, badgeLeft + badgeW, badgeTop + 1, 0x80FFD700);
-        fill(poseStack, badgeLeft, badgeTop + 16, badgeLeft + badgeW, badgeTop + 17, 0x80FFD700);
+        fill(poseStack, badgeLeft, badgeTop, badgeLeft + badgeW, badgeTop + 1, 0xC0000000 | turnColour);
+        fill(poseStack, badgeLeft, badgeTop + 16, badgeLeft + badgeW, badgeTop + 17, 0xC0000000 | turnColour);
         drawCenteredString(poseStack, font, Integer.toString(Math.max(1, board.turn())),
-            badgeLeft + badgeW / 2, badgeTop + 5, 0xFFD700);
-        drawCenteredString(poseStack, font, board.turnPlayer() == 0 ? "your turn" : "their turn",
-            badgeLeft + badgeW / 2, badgeTop + 19, 0x7A7A7A);
+            badgeLeft + badgeW / 2, badgeTop + 5, turnColour);
     }
 
     /**
@@ -1013,9 +1041,20 @@ public class EngineDuelScreen extends Screen
      * it procedurally; lp.png is never drawn. Same here.
      */
     private void drawLifeBar(PoseStack poseStack, int x, int y, int barW, String name, int lifePoints,
-        int colour, float flash)
+        int colour, float flash, boolean active, long now)
     {
         int barH = 13;
+        if(active)
+        {
+            // A slow breath around the bar of whoever is playing. Subtle enough
+            // to ignore, bright enough to answer "whose turn is it" at a glance.
+            float pulse = 0.35F + 0.25F * (float)Math.sin(now / 420D);
+            int glow = (Math.round(pulse * 255) << 24) | 0xFFFFFF;
+            fill(poseStack, x - 2, y - 2, x + barW + 2, y, glow);
+            fill(poseStack, x - 2, y + barH, x + barW + 2, y + barH + 2, glow);
+            fill(poseStack, x - 2, y, x, y + barH, glow);
+            fill(poseStack, x + barW, y, x + barW + 2, y + barH, glow);
+        }
         if(flash > 0)
         {
             // A white wash over the bar the moment life points change.
@@ -1085,7 +1124,9 @@ public class EngineDuelScreen extends Screen
         // window on a high GUI scale — that is what pushed the description off
         // the bottom and left the log printing over the card and its name.
         int textWidth = SIDEBAR_W - SIDEBAR_PAD * 2;
-        int imageW = textWidth;
+        // 70% of the column: the preview only has to be recognisable, and the
+        // height it gives back goes to the description below it.
+        int imageW = Math.round(textWidth * PREVIEW_SCALE);
         int imageH = Math.round(imageW / DuelTextures.CARD_ASPECT);
         int maxImageH = logTop() - SIDEBAR_PAD - NAME_H - MIN_DESCRIPTION_H;
         if(imageH > maxImageH)
