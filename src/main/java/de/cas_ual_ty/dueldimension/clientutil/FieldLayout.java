@@ -127,10 +127,13 @@ public final class FieldLayout
             return originX + Math.round(fieldX * scale);
         }
 
-        /** Field +y is towards the player, which is down the screen. */
+        /**
+         * Field +y is your side of the table, which is the BOTTOM of the
+         * screen, so screen y grows with field y.
+         */
         public int y(float fieldY)
         {
-            return originY - Math.round(fieldY * scale);
+            return originY + Math.round(fieldY * scale);
         }
 
         public int size(float fieldSize)
@@ -141,9 +144,7 @@ public final class FieldLayout
         /** Screen rectangle of a zone: x, y, width, height. */
         public int[] rect(Rect rect)
         {
-            int width = size(rect.w());
-            int height = size(rect.h());
-            return new int[] {x(rect.x()), y(rect.y() + rect.h()), width, height};
+            return new int[] {x(rect.x()), y(rect.y()), size(rect.w()), size(rect.h())};
         }
     }
 
@@ -155,8 +156,9 @@ public final class FieldLayout
         float scale = Math.min(width / unitsWide, height / unitsTall);
         int usedWidth = Math.round(unitsWide * scale);
         int usedHeight = Math.round(unitsTall * scale);
+        // origin = where field (0,0) lands on screen.
         int originX = left + (width - usedWidth) / 2 - Math.round(FIELD_MIN_X * scale);
-        int originY = top + (height - usedHeight) / 2 + Math.round(FIELD_MAX_Y * scale);
+        int originY = top + (height - usedHeight) / 2 - Math.round(FIELD_MIN_Y * scale);
         return new Projection(originX, originY, scale);
     }
 }

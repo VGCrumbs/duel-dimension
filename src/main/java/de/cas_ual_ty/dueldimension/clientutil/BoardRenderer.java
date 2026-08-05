@@ -69,6 +69,16 @@ public class BoardRenderer extends GuiComponent
         zoneHighlights = highlights == null ? Set.of() : highlights;
         projection = FieldLayout.fit(left, top, width, height);
 
+        // EDOPro's own mat, stretched across the play area the zone table
+        // describes, so the printed zones sit under the drawn ones.
+        int matLeft = projection.x(FieldLayout.FIELD_MIN_X);
+        int matTop = projection.y(FieldLayout.FIELD_MIN_Y);
+        int matRight = projection.x(FieldLayout.FIELD_MAX_X);
+        int matBottom = projection.y(FieldLayout.FIELD_MAX_Y);
+        ScreenUtil.white();
+        CardRenderUtil.bindMainResourceLocation(DuelTextures.FIELD);
+        DdBlitUtil.fullBlit(poseStack, matLeft, matTop, matRight - matLeft, matBottom - matTop);
+
         for(int controller = 0; controller <= 1; controller++)
         {
             BoardSnapshot.Side side = controller == 0 ? board.self() : board.opponent();
@@ -129,10 +139,14 @@ public class BoardRenderer extends GuiComponent
         if(count > 0)
         {
             ScreenUtil.white();
-            CardRenderUtil.bindMainResourceLocation(CardRenderUtil.getMainCardBack());
+            CardRenderUtil.bindMainResourceLocation(DuelTextures.COVER);
             DdBlitUtil.fullBlit(poseStack, box[0], box[1], box[2], box[3]);
-            drawCenteredString(poseStack, font, Integer.toString(count),
-                box[0] + box[2] / 2, box[1] + box[3] - 9, 0xFFFFFF);
+            // Count badge sits inside the pile, not spilling onto neighbours.
+            String text = Integer.toString(count);
+            int badgeW = font.width(text) + 4;
+            fill(poseStack, box[0] + box[2] - badgeW - 1, box[1] + box[3] - 10,
+                box[0] + box[2] - 1, box[1] + box[3] - 1, 0xC0000000);
+            font.draw(poseStack, text, box[0] + box[2] - badgeW + 1, box[1] + box[3] - 9, 0xFFFFFF);
         }
         hits.add(hit);
     }
@@ -147,8 +161,9 @@ public class BoardRenderer extends GuiComponent
         }
         int cardW = projection.size(1.1F);
         int cardH = projection.size(1.2F);
-        int y = controller == 0 ? projection.y(FieldLayout.FIELD_MIN_Y) - cardH + 2
-            : projection.y(FieldLayout.FIELD_MAX_Y) - 2;
+        // Your hand below the mat, the opponent's above it.
+        int y = controller == 0 ? projection.y(FieldLayout.FIELD_MAX_Y) + 2
+            : projection.y(FieldLayout.FIELD_MIN_Y) - cardH - 2;
 
         int span = Math.min(width - 20, hand.size() * (cardW + 2));
         int step = hand.size() > 1 ? (span - cardW) / (hand.size() - 1) : 0;
@@ -195,10 +210,10 @@ public class BoardRenderer extends GuiComponent
     {
         if(slot.faceDown() || slot.code() == 0)
         {
-            return CardRenderUtil.getMainCardBack();
+            return DuelTextures.COVER;
         }
         Properties properties = DdDatabase.PROPERTIES_LIST.get((long)slot.code());
-        return properties == null ? CardRenderUtil.getMainCardBack()
-            : properties.getMainImageResourceLocation((byte)0);
+        return properties == null ? DuelTextures.COVER
+            : DuelTextures.card(properties, (byte)0, DuelTextures.FIELD_CARD_SIZE);
     }
 }

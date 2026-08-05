@@ -577,12 +577,15 @@ public class EngineDuelScreen extends Screen
         {
             return;
         }
-        int imageSize = PREVIEW_W - 16;
+        // Cards are 480x700; drawing a square would squash the art.
+        int imageW = PREVIEW_W - 16;
+        int imageH = Math.round(imageW / DuelTextures.CARD_ASPECT);
         ScreenUtil.white();
-        CardRenderUtil.bindMainResourceLocation(card.getMainImageResourceLocation((byte)0));
-        DdBlitUtil.fullBlit(poseStack, 8, 8, imageSize, imageSize);
+        CardRenderUtil.bindMainResourceLocation(
+            DuelTextures.card(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE));
+        DdBlitUtil.fullBlit(poseStack, 8, 8, imageW, imageH);
 
-        int y = imageSize + 14;
+        int y = imageH + 14;
         for(var line : font.split(Component.literal(card.getName()), PREVIEW_W - 12))
         {
             font.draw(poseStack, line, 6, y, 0xFFD700);
@@ -615,16 +618,23 @@ public class EngineDuelScreen extends Screen
         poseStack.popPose();
     }
 
+    /** Log runs up the right edge, clear of the field and the button strip. */
     private void renderLog(PoseStack poseStack)
     {
-        int y = height - 12;
+        int x = width - 132;
+        int y = height - 60;
         int shown = 0;
         synchronized(DuelClientState.class)
         {
             var iterator = DuelClientState.log.descendingIterator();
-            while(iterator.hasNext() && shown < 4)
+            while(iterator.hasNext() && shown < 5)
             {
-                font.draw(poseStack, iterator.next(), PREVIEW_W + 8, y, 0x707070);
+                String line = iterator.next();
+                while(font.width(line) > 126 && line.length() > 4)
+                {
+                    line = line.substring(0, line.length() - 2);
+                }
+                font.draw(poseStack, line, x, y, 0x808080);
                 y -= 9;
                 shown++;
             }
