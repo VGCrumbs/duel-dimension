@@ -42,6 +42,16 @@ public final class DuelTextures
     /** 5x4 atlas of 64px digits, used for chain-link and counter badges. */
     public static final ResourceLocation NUMBERS =
         new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/number.png");
+    /**
+     * A card square for the zones the playmat does not cover: the two extra
+     * monster zones and the four piles. Drawn as a texture rather than as line
+     * geometry so it goes through the same path as the mat and the cards.
+     */
+    public static final ResourceLocation SLOT =
+        new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/slot.png");
+    /** The same square lit, for a zone the core is currently offering. */
+    public static final ResourceLocation SLOT_ACTIVE =
+        new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/slot_active.png");
     public static final ResourceLocation ACT =
         new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/act.png");
     public static final ResourceLocation ATTACK =

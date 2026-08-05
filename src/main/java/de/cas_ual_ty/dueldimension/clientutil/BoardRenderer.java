@@ -209,37 +209,32 @@ public class BoardRenderer extends GuiComponent
         zoneHighlights = highlights == null ? Set.of() : highlights;
         projection = FieldLayout.fit(left, top, width, height);
 
-        // Two mats laid end to end, each the right way up for its owner, so
-        // the opponent's reads upside down from here. Both sample the near half
-        // of their own texture (v 0.5..1), which is the half a playmat's owner
-        // sits behind; the far half is drawn from the other player's mat.
-        // The mat needs the most subdivision: drawn as one quad its printed
-        // zones drift far from the drawn ones.
-        float matWidth = FieldLayout.FIELD_MAX_X - FieldLayout.FIELD_MIN_X;
-        FieldQuad.drawProjected(poseStack, mat(0), projection,
-            new FieldLayout.Rect(FieldLayout.FIELD_MIN_X, 0F, matWidth, FieldLayout.FIELD_MAX_Y),
-            12, 0, 0F, 0.5F, 1F, 1F);
-        FieldQuad.drawProjected(poseStack, mat(1), projection,
-            new FieldLayout.Rect(FieldLayout.FIELD_MIN_X, FieldLayout.FIELD_MIN_Y, matWidth,
-                -FieldLayout.FIELD_MIN_Y),
-            12, 2, 0F, 0.5F, 1F, 1F);
-
-        // The slot grid, drawn as its own pass over the bare mat and under
-        // everything else, so no card, pile or overlay can paint across it.
+        // Each player's playmat, covering exactly their five columns by two
+        // rows and nothing else. The opponent's is turned 180 degrees, so it
+        // reads upside down from here the way a mat across a table does.
+        //
+        // The mat prints its own card squares. Drawing them as line geometry
+        // never worked -- FieldQuad.fill has never rendered on this screen
+        // despite correct colour, geometry and shader state -- so the squares
+        // now travel the same textured path as the mat and the cards, which
+        // demonstrably does.
         for(int controller = 0; controller <= 1; controller++)
         {
-            for(int sequence = 0; sequence < 7; sequence++)
-            {
-                drawGridBox(poseStack, controller, OcgConstants.LOCATION_MZONE, sequence);
-            }
-            for(int sequence = 0; sequence < 6; sequence++)
-            {
-                drawGridBox(poseStack, controller, OcgConstants.LOCATION_SZONE, sequence);
-            }
+            FieldQuad.drawProjected(poseStack, mat(controller), projection,
+                FieldLayout.zoneBand(controller), 10, controller == 0 ? 0 : 2, 0F, 0F, 1F, 1F);
+        }
+
+        // The zones outside the mat block: the two extra monster zones and the
+        // four piles. Same square, no theme.
+        for(int controller = 0; controller <= 1; controller++)
+        {
+            drawSlotSquare(poseStack, controller, OcgConstants.LOCATION_MZONE, 5);
+            drawSlotSquare(poseStack, controller, OcgConstants.LOCATION_MZONE, 6);
+            drawSlotSquare(poseStack, controller, OcgConstants.LOCATION_SZONE, 5);
             for(int location : new int[] {OcgConstants.LOCATION_DECK, OcgConstants.LOCATION_EXTRA,
                 OcgConstants.LOCATION_GRAVE, OcgConstants.LOCATION_REMOVED})
             {
-                drawGridBox(poseStack, controller, location, 0);
+                drawSlotSquare(poseStack, controller, location, 0);
             }
         }
 
@@ -283,13 +278,14 @@ public class BoardRenderer extends GuiComponent
         drawSlot(poseStack, slot, hit, rect, false);
     }
 
-    /** One slot's box on the mat. */
-    private void drawGridBox(PoseStack poseStack, int controller, int location, int sequence)
+    /** One card square, for a zone the playmat does not print. */
+    private void drawSlotSquare(PoseStack poseStack, int controller, int location, int sequence)
     {
         FieldLayout.Rect rect = FieldLayout.zone(controller, location, sequence);
         if(rect != null)
         {
-            FieldQuad.outline(poseStack, projection.quad(inset(rect)), COLOUR_GRID);
+            FieldQuad.drawProjected(poseStack, DuelTextures.SLOT, projection, inset(rect), 2,
+                turnsFor(controller, false), 0F, 0F, 1F, 1F);
         }
     }
 
@@ -384,12 +380,19 @@ public class BoardRenderer extends GuiComponent
                 rect.x() + (rect.w() - CARD_W) / 2F, rect.y() + (rect.h() - CARD_H) / 2F, CARD_W, CARD_H);
             int stack = Math.min(count, MAX_STACK);
             int turns = turnsFor(controller, false);
+            ResourceLocation back = controller == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT;
             for(int depth = stack - 1; depth > 0; depth--)
             {
                 float lift = depth * STACK_LIFT;
-                drawCardArt(poseStack, controller == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT,
+                // Each buried card is drawn darker than the one on top of it,
+                // so the sliver of it that shows past the card above reads as a
+                // separate card. Identically lit layers merged into one solid
+                // slab, which is what a stack looked like before.
+                float shade = 1F - Math.min(0.62F, depth * 0.085F);
+                FieldQuad.drawProjected(poseStack, back, projection,
                     new FieldLayout.Rect(pileCard.x() + lift, pileCard.y() - lift,
-                        pileCard.w(), pileCard.h()), turns);
+                        pileCard.w(), pileCard.h()),
+                    CARD_STEPS, turns, 0F, 0F, 1F, 1F, shade, shade, shade, 1F);
             }
             // The top card. A graveyard is always face up in the reference
             // (client_field.cpp excludes LOCATION_GRAVE from the face-down
@@ -461,8 +464,8 @@ public class BoardRenderer extends GuiComponent
         // gains a stronger one when the core is actually offering it.
         if(zoneLit)
         {
-            FieldQuad.fill(poseStack, hit.corners(), COLOUR_HIGHLIGHT_FILL);
-            FieldQuad.outline(poseStack, hit.corners(), COLOUR_HIGHLIGHT);
+            FieldQuad.drawProjected(poseStack, DuelTextures.SLOT_ACTIVE, projection, rect, 2,
+                turnsFor(hit.controller(), false), 0F, 0F, 1F, 1F);
         }
         else if(canAct)
         {
@@ -477,7 +480,8 @@ public class BoardRenderer extends GuiComponent
             }
             else
             {
-                FieldQuad.outline(poseStack, hit.corners(), COLOUR_ACTIONABLE);
+                FieldQuad.drawProjected(poseStack, DuelTextures.SLOT_ACTIVE, projection, rect, 2,
+                    turnsFor(hit.controller(), false), 0F, 0F, 1F, 1F);
             }
         }
         // The idle box is already down from the grid pass; only the states that

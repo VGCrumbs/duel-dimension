@@ -67,6 +67,30 @@ public final class FieldLayout
 
     public static final float CARD_ASPECT = CELL_W / CELL_H;
 
+    /**
+     * One player's playmat: the five columns by two rows that hold the monster
+     * and spell/trap zones, and nothing else.
+     * <p>
+     * The mat used to be EDOPro's whole-table field4.png, whose panels are a
+     * flat #000 at alpha 207 with no slot dividers printed anywhere -- which is
+     * why the middle of the board was a pitch-black void. A mat texture now
+     * covers exactly this block and prints its own ten card squares, so the
+     * squares are drawn by the same textured path as the cards themselves.
+     * <p>
+     * Row order matches the texture: v=0 is the far edge, which on your own
+     * side is the monster row (y 0.8), with the spell row nearer (y 2.0).
+     */
+    public static Rect zoneBand(int controller)
+    {
+        Rect self = new Rect(FIRST_COLUMN_X, MZONE_Y, COLUMN_PITCH * 5F,
+            (SZONE_Y + CELL_H) - MZONE_Y);
+        if(controller == 0)
+        {
+            return self;
+        }
+        return new Rect(MIRROR_X - self.x() - self.w(), -self.y() - self.h(), self.w(), self.h());
+    }
+
     private FieldLayout()
     {
     }

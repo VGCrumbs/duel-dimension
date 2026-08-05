@@ -125,8 +125,21 @@ public final class FieldQuad
         FieldLayout.Projection projection, FieldLayout.Rect rect, int steps, int turns,
         float su0, float sv0, float su1, float sv1)
     {
+        drawProjected(poseStack, texture, projection, rect, steps, turns, su0, sv0, su1, sv1,
+            1F, 1F, 1F, 1F);
+    }
+
+    /**
+     * As above, tinted. Used to shade the buried cards of a pile so a stack
+     * reads as separate cards rather than one slab.
+     */
+    public static void drawProjected(PoseStack poseStack, ResourceLocation texture,
+        FieldLayout.Projection projection, FieldLayout.Rect rect, int steps, int turns,
+        float su0, float sv0, float su1, float sv1,
+        float red, float green, float blue, float alpha)
+    {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+        RenderSystem.setShaderColor(red, green, blue, alpha);
         DuelTextures.bindSmooth(texture);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -195,6 +208,7 @@ public final class FieldQuad
         }
         tesselator.end();
         RenderSystem.disableBlend();
+        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
     }
 
     /** Draws the whole texture into the quad. */
