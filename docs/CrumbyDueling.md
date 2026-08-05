@@ -77,12 +77,12 @@ Fork of [YgoDuelingMod](https://github.com/CAS-ual-TY/YgoDuelingMod) (Forge 1.19
 
 ## Phase 2 — Legality + fuzzing
 
-- [ ] `LegalMoveEnumerator` — every legal response per prompt, **including the hard ones**: `SELECT_SUM` (subset-sum: rituals/synchros), `SELECT_UNSELECT_CARD` loops, `SELECT_TRIBUTE`, `ANNOUNCE_CARD`
+- [x] Legal-move logic for **all 19 prompt types**, including the hard ones: `SELECT_SUM` (`SumSolver` — port of `select_sum_check1` + the max==0 minimality rule), `SELECT_UNSELECT_CARD` (one index per prompt, re-prompted), `SELECT_TRIBUTE` (release_param totals, not card counts), `ANNOUNCE_CARD` (`DeclarableFilter` — RPN opcode VM port of `is_declarable`, scans the card index)
 - [x] `RandomBot` (seeded) — random legal answers to all 9 decoded prompt types, aborts loudly on unknown prompts. **First full real-deck bot-vs-bot duel passed 2026-08-04**: vanilla decks from the real cdb via `CdbCardProvider`, decisive `MSG_WIN`, zero RETRY. Discovery: the core never returns `DUEL_STATUS_END` after a win — it plays zombie turns; stopping at `MSG_WIN` is the host's job (`stopOnWin`)
-- [ ] `gradlew duelFuzz -Pcount=N` — forked-JVM batches (native segfault gets attributed, not fatal), failures dump `(seed, decks, response trace)` for exact replay
-- [ ] Replay format frozen (the fuzz-repro triple *is* the replay format)
-- [ ] Parallel-duels stress mode → decides threading model before MC integration bakes it in
-- **Gate:** two RandomBots finish real duels (incl. a Ritual/Synchro deck) at a legitimate `MSG_WIN`; 1000-duel fuzz clean
+- [x] `gradlew17 duelFuzz -Pcount=N -Pthreads=T` — failures dump `(flags, seed, decks, responses)` as `.replay` files; per-worker in-flight marker files mean even a native crash names its seed
+- [x] Replay format frozen (`Replay`, v1, line-based text) — verified by replaying a recorded duel to an identical message stream and winner
+- [x] Parallel-duels stress → **independent duel handles are safe to run concurrently**; the MC server can host parallel duels without serialising them
+- **Gate:** ✅ 2026-08-04 — RandomBots finish real duels incl. Ritual/Synchro (`MSG_SELECT_SUM` exercised, 8 prompt types seen); **1000 duels/4 threads and 3000 duels/8 threads: NO FAILURES**, 12–16 ms/duel
 
 ## Phase 2.5 — Data foundations *(parallelizable with Phase 3)*
 
@@ -164,6 +164,12 @@ JAVA_HOME=<jdk17> ./gradlew ocgSpike -PocgLib=native/ocgcore.dll -PocgScripts=C:
 Verified end-to-end 2026-08-04 (empty decks → instant deck-out `MSG_WIN`, then `MSG_SELECT_IDLECMD` await — exactly right). Grows into `HeadlessDuelRunner` in Phase 0.
 
 ## Designed — not yet built
+
+### Fuzzing & replays *(built — Phase 2)*
+
+`gradlew17 duelFuzz -Pcount=1000 -Pthreads=4` plays that many bot-vs-bot duels, alternating a vanilla beatdown deck and a Ritual/Synchro deck so both the easy and hard prompt paths get hit. Anything that isn't a clean finish — a rejected response, an undecodable message, a prompt no bot can answer, a hang — is written to `build/fuzz/failure-<seed>.replay`. Each worker also keeps an `in-flight-<n>.txt` marker, so a native crash (which kills the JVM outright) still leaves the responsible seed on disk.
+
+A `Replay` is `(flags, seed, decks, responses)` in line-based text — that quadruple fully determines a duel, so one format covers fuzz repro, regression fixtures, and later in-game replay/spectating. `ReplayTest` proves it by re-running a recorded duel and asserting an identical message stream and winner.
 
 ### Message layer (Phase 1)
 
