@@ -2,9 +2,7 @@ package de.cas_ual_ty.ydm.ocg;
 
 import com.sun.jna.ptr.IntByReference;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
 /**
  * Standalone smoke test for the ocgcore binding — no Minecraft involved.
@@ -19,7 +17,7 @@ import java.util.List;
  */
 public class OcgSpike
 {
-    public static void main(String[] args) throws Exception
+    public static void main(String[] args)
     {
         if(args.length < 1)
         {
@@ -43,91 +41,47 @@ public class OcgSpike
             System.err.println("WARNING: major version mismatch, expect broken struct layouts!");
         }
 
-        OcgDuel.CardProvider cards = code -> null; // no card database yet
-
-        OcgDuel.ScriptProvider scripts = name ->
+        // Aborts at the first prompt (no bot yet).
+        ResponseSource aborting = prompt ->
         {
-            if(scriptsDir == null)
-            {
-                return null;
-            }
-            // CardScripts layout: constant.lua/utility.lua at the root, card scripts in official/
-            for(Path candidate : new Path[] {scriptsDir.resolve(name), scriptsDir.resolve("official").resolve(name)})
-            {
-                if(Files.isRegularFile(candidate))
-                {
-                    try
-                    {
-                        return Files.readAllBytes(candidate);
-                    }
-                    catch(Exception e)
-                    {
-                        System.err.println("Failed reading " + candidate + ": " + e);
-                        return null;
-                    }
-                }
-            }
+            System.out.println("Prompted: " + prompt.name() + " for player " + prompt.promptedPlayer() + " — no responder, aborting run.");
             return null;
         };
 
-        OcgDuel.LogSink log = (message, type) -> System.out.println("[core:" + type + "] " + message);
-
-        long[] seed = {0x1234567890ABCDEFL, 0xFEDCBA0987654321L, 0xDEADBEEFDEADBEEFL, 0xCAFEBABECAFEBABEL};
-
-        System.out.println("Creating duel (MR5, 8000 LP)...");
-        try(OcgDuel duel = OcgDuel.create(api, seed, OcgConstants.DUEL_MODE_MR5,
-            OcgDuel.PlayerConfig.DEFAULT, OcgDuel.PlayerConfig.DEFAULT, cards, scripts, log))
+        // Same, but also logs every observed message (registered for player 0
+        // only, so the shared stream is printed once).
+        ResponseSource abortingLogged = new ResponseSource()
         {
-            System.out.println("Duel created.");
-
-            if(scriptsDir != null)
+            @Override
+            public void observe(RawMessage message)
             {
-                // Load the base scripts the card scripts depend on.
-                for(String name : new String[] {"constant.lua", "utility.lua"})
-                {
-                    byte[] content = scripts.load(name);
-                    if(content == null)
-                    {
-                        System.err.println("Base script missing from " + scriptsDir + ": " + name);
-                    }
-                    else
-                    {
-                        System.out.println("Loaded " + name + ": " + duel.loadScript(name, content));
-                    }
-                }
+                System.out.println("  " + message.name() + " (" + message.size() + " bytes)");
             }
 
-            System.out.println("Starting duel (empty decks)...");
-            duel.start();
-
-            for(int i = 0; i < 16; i++)
+            @Override
+            public byte[] respond(RawMessage prompt)
             {
-                int status = duel.process();
-                List<byte[]> messages = duel.getMessages();
-                System.out.println("process() -> " + statusName(status) + ", " + messages.size() + " message(s)");
-                for(byte[] message : messages)
-                {
-                    int type = message.length > 0 ? message[0] & 0xFF : -1;
-                    System.out.println("  " + OcgConstants.msgName(type) + " (" + message.length + " bytes)");
-                }
-                if(status != OcgConstants.DUEL_STATUS_CONTINUE)
-                {
-                    break;
-                }
+                return aborting.respond(prompt);
             }
-        }
-
-        System.out.println("Duel destroyed. Spike complete.");
-    }
-
-    private static String statusName(int status)
-    {
-        return switch(status)
-        {
-            case OcgConstants.DUEL_STATUS_END -> "END";
-            case OcgConstants.DUEL_STATUS_AWAITING -> "AWAITING";
-            case OcgConstants.DUEL_STATUS_CONTINUE -> "CONTINUE";
-            default -> "UNKNOWN(" + status + ")";
         };
+
+        System.out.println("Running empty-deck duel (MR5, 8000 LP)...");
+        HeadlessDuelRunner.DuelTrace trace = HeadlessDuelRunner.builder(api)
+            .seed(new long[] {0x1234567890ABCDEFL, 0xFEDCBA0987654321L, 0xDEADBEEFDEADBEEFL, 0xCAFEBABECAFEBABEL})
+            .flags(OcgConstants.DUEL_MODE_MR5)
+            .scripts(scriptsDir != null ? HeadlessDuelRunner.cardScriptsDirectory(scriptsDir) : name -> null)
+            .log((message, type) -> System.out.println("[core:" + type + "] " + message))
+            .responder(0, abortingLogged)
+            .responder(1, aborting)
+            .build()
+            .run(64);
+
+        System.out.println("Steps: " + trace.steps
+            + ", messages: " + trace.messages.size()
+            + ", completed: " + trace.completed
+            + ", result: " + (trace.result != null
+                ? "winner=" + trace.result.winner() + " reason=" + trace.result.reason()
+                : "none"));
+        System.out.println("Spike complete.");
     }
 }

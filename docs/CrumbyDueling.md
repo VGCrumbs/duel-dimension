@@ -42,11 +42,12 @@ Fork of [YgoDuelingMod](https://github.com/CAS-ual-TY/YgoDuelingMod) (Forge 1.19
 | 2026-08-04 | **Rebrand now**, before worlds exist (mod id change breaks saves — do it while cheap) |
 | 2026-08-04 | Bots must **observe all messages** (not just prompts) and see only a **filtered, non-omniscient board state** — cheating is an explicit profile knob, never an accident |
 | 2026-08-04 | Renamed: mod id `duelmonsters`, display "Duel Monsters" (provisional); packages unchanged |
+| 2026-08-04 | Launch NPC roster: **Joey** (Red-Eyes gambler aggro, high misplay, loaner-deck friend) and **Kaiba** (Blue-Eyes control-beatdown, zero misplay, boss) — anime decks as **real-card builds** (anime-only variants lack engine scripts), dueling under an Unrestricted-classic ruleset |
 
 ## Open decisions
 
 - [x] **Name**: mod id `duelmonsters`, display "Duel Monsters" *(provisional — it's the in-universe Konami name, so it must change before any public release; mod-id changes break saves, so settle it before serious worlds exist)*. Java packages stay `de.cas_ual_ty.ydm` until the name is final.
-- [ ] **Division of labor**: engine/GUI machinery vs. content authoring (duelist JSONs, dialogue, decks, ruleset presets) — who does what?
+- [x] **Division of labor**: Claude handles machinery *and* content; user reviews/playtests (decided 2026-08-04)
 - [ ] *(Parked)* Long-term hosting for the card-DB fork (`db.json` auto-update source). Dev rides upstream's 2023 snapshot — covers the Goat pool completely.
 
 ---
@@ -102,6 +103,7 @@ Fork of [YgoDuelingMod](https://github.com/CAS-ual-TY/YgoDuelingMod) (Forge 1.19
 
 - [ ] Card role auto-tagging from cdb `category` bits; profile `card_hints` override
 - [ ] `DuelistProfile` JSON (schema-versioned): personality weights, `misplay_rate`, dialogue hooks, ruleset ref, deck ref
+- [ ] Launch roster: `joey.json` + `joey.ydk`, `kaiba.json` + `kaiba.ydk` (anime decks as real-card builds; original-flavored dialogue, not verbatim anime lines)
 - [ ] Ruleset JSON + loader: `mechanics` / `banlist` / `pool` / `house`; presets `goat_2005`, `unrestricted`, `modern`
 - [ ] Deck validation: ruleset legality × collection ownership (strict)
 - [ ] `.ydk` loader; `duelists/` + `decks/` roster layout

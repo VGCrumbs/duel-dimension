@@ -163,6 +163,20 @@ dependencies {
     // For more info...
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
+}
+
+// Headless engine/bot tests (no Minecraft). Engine-backed tests skip
+// themselves when the native core or CardScripts checkout is absent.
+// Usage: gradlew17 test [-PocgLib=...] [-PocgScripts=...]
+test {
+    useJUnitPlatform()
+    systemProperty 'ocg.lib', project.findProperty('ocgLib') ?: 'native/ocgcore.dll'
+    systemProperty 'ocg.scripts', project.findProperty('ocgScripts') ?: 'C:/ProjectIgnis/script'
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
 }
 
 // Standalone smoke test of the ocgcore JNA binding, no Minecraft involved.
