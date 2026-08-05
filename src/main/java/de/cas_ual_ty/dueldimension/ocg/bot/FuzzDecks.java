@@ -1,6 +1,7 @@
 package de.cas_ual_ty.dueldimension.ocg.bot;
 
 import de.cas_ual_ty.dueldimension.ocg.HeadlessDuelRunner;
+import de.cas_ual_ty.dueldimension.ocg.deck.StarterDecks;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -66,6 +67,17 @@ public final class FuzzDecks
         add(main, GIANT_SOLDIER_OF_STONE, 13);
         add(main, MYSTICAL_ELF, 12);
         return new HeadlessDuelRunner.Deck(main, List.of(JUNK_WARRIOR, JUNK_WARRIOR, JUNK_WARRIOR));
+    }
+
+    /**
+     * The real starter decks. Worth fuzzing precisely because they are what
+     * players actually hold: 140+ distinct real cards with effects, versus
+     * the hand-picked probe decks above.
+     */
+    public static HeadlessDuelRunner.Deck starter(int index)
+    {
+        StarterDecks.Entry entry = StarterDecks.ALL.get(Math.floorMod(index, StarterDecks.ALL.size()));
+        return entry.load().toRunnerDeck();
     }
 
     private static void add(List<Integer> deck, int code, int copies)

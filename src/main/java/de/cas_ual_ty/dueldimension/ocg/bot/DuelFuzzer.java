@@ -117,9 +117,14 @@ public class DuelFuzzer
 
     private static Failure runOne(OcgApi api, CdbCardProvider cards, long seed, int steps, Map<String, Integer> outcomes)
     {
-        // Alternate deck archetypes so both the simple and the hard prompt
-        // paths get fuzzed.
-        HeadlessDuelRunner.Deck deck = (seed & 1) == 0 ? FuzzDecks.vanillaBeatdown() : FuzzDecks.ritualSynchro();
+        // Rotate archetypes so the simple, the hard-prompt, and the real
+        // player-facing decks all get fuzzed.
+        HeadlessDuelRunner.Deck deck = switch((int)Math.floorMod(seed, 4))
+        {
+            case 0 -> FuzzDecks.vanillaBeatdown();
+            case 1 -> FuzzDecks.ritualSynchro();
+            default -> FuzzDecks.starter((int)(seed / 4));
+        };
         long[] seeds = {seed, seed * 6364136223846793005L + 1, seed * 1442695040888963407L + 2, ~seed};
 
         HeadlessDuelRunner.DuelTrace trace;

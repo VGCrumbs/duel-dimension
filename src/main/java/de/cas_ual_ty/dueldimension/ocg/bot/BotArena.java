@@ -123,11 +123,16 @@ public class BotArena
         BotFactory randomBot = seed -> new RandomBot(seed ^ 0xABCDEF, cards.all());
 
         System.out.println("Arena: " + duels + " duels per matchup, base seed " + baseSeed);
-        for(String deckName : new String[] {"vanilla", "ritual-synchro"})
+        for(String deckName : new String[] {"vanilla", "ritual-synchro", "starter-yugi", "starter-kaiba", "starter-joey"})
         {
-            HeadlessDuelRunner.Deck deck = deckName.equals("vanilla")
-                ? FuzzDecks.vanillaBeatdown()
-                : FuzzDecks.ritualSynchro();
+            HeadlessDuelRunner.Deck deck = switch(deckName)
+            {
+                case "vanilla" -> FuzzDecks.vanillaBeatdown();
+                case "ritual-synchro" -> FuzzDecks.ritualSynchro();
+                case "starter-yugi" -> de.cas_ual_ty.dueldimension.ocg.deck.StarterDecks.YUGI.load().toRunnerDeck();
+                case "starter-kaiba" -> de.cas_ual_ty.dueldimension.ocg.deck.StarterDecks.KAIBA.load().toRunnerDeck();
+                default -> de.cas_ual_ty.dueldimension.ocg.deck.StarterDecks.JOEY.load().toRunnerDeck();
+            };
             long start = System.nanoTime();
             Result result = play(api, cards, deck, "HeuristicBot vs RandomBot [" + deckName + "]",
                 heuristic, randomBot, duels, baseSeed);
