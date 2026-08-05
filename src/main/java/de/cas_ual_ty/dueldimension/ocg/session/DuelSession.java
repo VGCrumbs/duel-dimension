@@ -41,9 +41,27 @@ public class DuelSession
         {
         }
 
-        /** A fresh view of the field for seat 0, captured on the duel thread. */
-        record Board(de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot snapshot) implements Event
+        /**
+         * A fresh view of the field, captured on the duel thread — one per
+         * seat, because a board is not a fact but a point of view.
+         * <p>
+         * Each snapshot is built from that seat's own {@code BoardObserver},
+         * so a face-down card is blank in the snapshot its owner's opponent
+         * receives and only in that one. With two human players this is the
+         * whole of the concealment story: neither client is ever sent the
+         * other's hidden information and then trusted not to look.
+         * <p>
+         * {@code self} and {@code opponent} are also swapped per seat, so each
+         * player sees their own side nearest.
+         */
+        record Board(de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot seat0,
+            de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot seat1) implements Event
         {
+            /** The view belonging to one seat. */
+            public de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot forSeat(int seat)
+            {
+                return seat == 0 ? seat0 : seat1;
+            }
         }
 
         /**
@@ -55,7 +73,7 @@ public class DuelSession
          * before everything preceding it has been animated. Sending ours on a
          * side channel from the duel thread let it overtake the event stream.
          */
-        record Prompt(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt, int serial)
+        record Prompt(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt, int serial, int seat)
             implements Event
         {
         }
@@ -85,6 +103,7 @@ public class DuelSession
         ResponseSource player0, ResponseSource player1)
     {
         DuelSession[] holder = new DuelSession[1];
+        SeatView seat1 = new SeatView(player1);
 
         HeadlessDuelRunner runner = HeadlessDuelRunner.builder(api)
             .seed(seed)
@@ -93,10 +112,13 @@ public class DuelSession
             .scripts(scripts)
             .deck(0, deck0)
             .deck(1, deck1)
-            .responder(0, new Relay(player0,
+            // Seat 1 is wrapped only to capture its observer: the message tap
+            // and the checkpoint trigger stay on seat 0, so the stream is
+            // produced once and stays single-threaded and ordered.
+            .responder(1, seat1)
+            .responder(0, new Relay(player0, seat1,
                 message -> holder[0].events.add(new Event.Message(message)),
-                snapshot -> holder[0].events.add(new Event.Board(snapshot))))
-            .responder(1, player1)
+                board -> holder[0].events.add(board)))
             .build();
 
         holder[0] = new DuelSession(id, runner);
@@ -108,9 +130,9 @@ public class DuelSession
      * duel thread (it is: HumanResponseSource.respond runs there), so it lands
      * in the queue after every message that led up to it.
      */
-    public void postPrompt(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt, int serial)
+    public void postPrompt(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt, int serial, int seat)
     {
-        events.add(new Event.Prompt(prompt, serial));
+        events.add(new Event.Prompt(prompt, serial, seat));
     }
 
     /** Starts the duel thread. Returns immediately. */
@@ -180,21 +202,66 @@ public class DuelSession
      * out, and captures board snapshots after state-changing messages — on
      * the duel thread, the only thread allowed to query the core.
      */
+    /**
+     * Passes a responder through untouched, keeping hold of the
+     * {@link BoardObserver} the runner hands it. That observer is the only way
+     * to build this seat's honest view, and the runner gives it to the
+     * responder rather than to us.
+     */
+    private static final class SeatView implements ResponseSource
+    {
+        private final ResponseSource inner;
+        private BoardObserver board;
+
+        private SeatView(ResponseSource inner)
+        {
+            this.inner = inner;
+        }
+
+        @Override
+        public void onDuelStart(int playerIndex, BoardObserver board)
+        {
+            this.board = board;
+            inner.onDuelStart(playerIndex, board);
+        }
+
+        @Override
+        public void observe(RawMessage message)
+        {
+            inner.observe(message);
+        }
+
+        @Override
+        public byte[] respond(RawMessage prompt)
+        {
+            return inner.respond(prompt);
+        }
+
+        @Override
+        public void onDuelEnd(HeadlessDuelRunner.DuelResult result)
+        {
+            inner.onDuelEnd(result);
+        }
+    }
+
     private static final class Relay implements ResponseSource
     {
         private final ResponseSource inner;
         private final Consumer<RawMessage> tap;
-        private final Consumer<de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot> boardTap;
+        private final Consumer<Event.Board> boardTap;
+        private final SeatView other;
         private BoardObserver board;
         private int turn;
         private int phase;
+        /** The seat whose turn it is, in the core's own numbering. */
         private int turnPlayer;
         private int seat;
 
-        private Relay(ResponseSource inner, Consumer<RawMessage> tap,
-            Consumer<de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot> boardTap)
+        private Relay(ResponseSource inner, SeatView other, Consumer<RawMessage> tap,
+            Consumer<Event.Board> boardTap)
         {
             this.inner = inner;
+            this.other = other;
             this.tap = tap;
             this.boardTap = boardTap;
         }
@@ -218,7 +285,9 @@ public class DuelSession
                 case OcgConstants.MSG_NEW_TURN ->
                 {
                     turn++;
-                    turnPlayer = (message.payload().length > 0 && (message.payload()[0] & 0xFF) == seat) ? 0 : 1;
+                    // Kept absolute here and made relative per seat below: the
+                    // two players disagree about whose turn "0" is.
+                    turnPlayer = message.payload().length > 0 ? message.payload()[0] & 0xFF : turnPlayer;
                     snapshot();
                 }
                 case OcgConstants.MSG_NEW_PHASE ->
@@ -255,11 +324,22 @@ public class DuelSession
 
         private void snapshot()
         {
-            if(board != null && boardTap != null)
+            if(board == null || boardTap == null)
             {
-                boardTap.accept(de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot.of(
-                    board.observe(), turn, phase, turnPlayer));
+                return;
             }
+            de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot mine =
+                de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot.of(
+                    board.observe(), turn, phase, turnPlayer == seat ? 0 : 1);
+            // Seat 1's view is built from ITS observer, never derived from
+            // seat 0's: deriving it would mean reading, and then hiding,
+            // information that must not cross in the first place.
+            de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot theirs =
+                other != null && other.board != null
+                    ? de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot.of(
+                        other.board.observe(), turn, phase, turnPlayer == 1 ? 0 : 1)
+                    : mine;
+            boardTap.accept(new Event.Board(mine, theirs));
         }
 
         @Override

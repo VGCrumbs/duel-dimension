@@ -66,7 +66,7 @@ class PhantomMonsterTest
             {
                 if(event instanceof DuelSession.Event.Board board)
                 {
-                    boards.add(board.snapshot());
+                    boards.add(board.forSeat(0));
                 }
             });
             Thread.sleep(5);

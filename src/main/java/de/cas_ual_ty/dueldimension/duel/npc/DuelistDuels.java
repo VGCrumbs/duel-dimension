@@ -138,7 +138,7 @@ public final class DuelistDuels
             DuelSession running = sessionHolder[0];
             if(running != null)
             {
-                running.postPrompt(prompt, seat.pendingSerial());
+                running.postPrompt(prompt, seat.pendingSerial(), 0);
             }
         });
         SEATS.put(serverPlayer.getUUID(), human);
@@ -329,7 +329,7 @@ public final class DuelistDuels
                 else if(event instanceof DuelSession.Event.Board board)
                 {
                     // Checkpoint: everything up to here, then this board.
-                    outbound.add(new PromptMessages.DuelUpdate(board.snapshot(), List.of(), false, "",
+                    outbound.add(new PromptMessages.DuelUpdate(board.forSeat(0), List.of(), false, "",
                         new int[0], new ArrayList<>(events)));
                     events.clear();
                 }
