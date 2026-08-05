@@ -131,7 +131,7 @@ public class BoardRenderer extends GuiComponent
         boolean monsterZone = location == OcgConstants.LOCATION_MZONE;
         Hit hit = new Hit(projection.quad(rect), slot.code(), controller, location, sequence,
             EnginePrompt.zoneRef(controller == 1, monsterZone, sequence), label, 0);
-        drawSlot(poseStack, slot, hit, rect);
+        drawSlot(poseStack, slot, hit, rect, false);
     }
 
     private void drawPile(PoseStack poseStack, Font font, int controller, int location, String label, int count)
@@ -190,12 +190,13 @@ public class BoardRenderer extends GuiComponent
                 : hand.get(i);
             FieldQuad.Corners corners = projection.cardQuad(x, fieldY, cardW, cardH);
             Hit hit = new Hit(corners, slot.code(), controller, OcgConstants.LOCATION_HAND, i, -1, "Hand", 0);
-            drawSlot(poseStack, slot, hit, null);
+            drawSlot(poseStack, slot, hit, null, true);
             x += step;
         }
     }
 
-    private void drawSlot(PoseStack poseStack, BoardSnapshot.Slot slot, Hit hit, FieldLayout.Rect rect)
+    private void drawSlot(PoseStack poseStack, BoardSnapshot.Slot slot, Hit hit, FieldLayout.Rect rect,
+        boolean inHand)
     {
         boolean zoneLit = hit.zoneRef() >= 0 && zoneHighlights.contains(hit.zoneRef());
         boolean canAct = actionable.test(hit);
@@ -209,7 +210,7 @@ public class BoardRenderer extends GuiComponent
         {
             return;
         }
-        if(slot.defence() && rect != null)
+        if(slot.defence() && rect != null && !inHand)
         {
             // A defence-position monster lies on its side. Rotating the corner
             // order keeps the card flat on the projected table.
@@ -217,18 +218,24 @@ public class BoardRenderer extends GuiComponent
                 rect.x() + (rect.w() - rect.h()) / 2F, rect.y() + (rect.h() - rect.w()) / 2F,
                 rect.h(), rect.w());
             FieldQuad.Corners t = projection.quad(turned);
-            FieldQuad.draw(poseStack, textureFor(slot),
+            FieldQuad.draw(poseStack, textureFor(slot, inHand),
                 new FieldQuad.Corners(t.x3(), t.y3(), t.x0(), t.y0(), t.x1(), t.y1(), t.x2(), t.y2()));
         }
         else
         {
-            FieldQuad.draw(poseStack, textureFor(slot), hit.corners());
+            FieldQuad.draw(poseStack, textureFor(slot, inHand), hit.corners());
         }
     }
 
-    private ResourceLocation textureFor(BoardSnapshot.Slot slot)
+    /**
+     * Cards in hand carry a face-down position in the engine, but you are
+     * entitled to see your own hand, so face-down only means "show the back"
+     * for cards set on the field. A code of 0 means the snapshot withheld the
+     * identity, which is the real test for hiding.
+     */
+    private ResourceLocation textureFor(BoardSnapshot.Slot slot, boolean inHand)
     {
-        if(slot.faceDown() || slot.code() == 0)
+        if(slot.code() == 0 || (slot.faceDown() && !inHand))
         {
             return DuelTextures.COVER;
         }
