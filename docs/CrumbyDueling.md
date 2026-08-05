@@ -70,10 +70,10 @@ Fork of [YgoDuelingMod](https://github.com/CAS-ual-TY/YgoDuelingMod) (Forge 1.19
 
 ## Phase 1 — Protocol precision layer
 
-- [ ] Decoders for the ~18 core-duel messages (interactive `SELECT_*` + informational)
-- [ ] Byte-stream fixtures captured from real duels; every decoder unit-tested against them
-- [ ] Response encoders per `SELECT_*` (formats cribbed from `playerop.cpp` — the parser is the spec)
-- **Gate:** zero `MSG_RETRY` anywhere — the engine itself validates our encodings; any RETRY = test failure
+- [x] Decoders for the ~18 core-duel messages (`ocg.msg`: sealed `DuelMessage`, 9 prompts + 9 informational + `Unknown`; strict exact-consume decoding). Layout details verified from source: 10-byte loc_info; repositionable/attackable lists use u8 sequences; `SELECT_PLACE` mask flags *forbidden* zones
+- [x] Decoder unit tests: hand-built fixtures to the writers' layouts + live-stream decode of real duels
+- [x] Response encoders for all 9 prompt types (`Responses`, from `playerop.cpp` — the parser is the spec)
+- **Gate:** ✅ zero `MSG_RETRY` — live test plays multi-turn end-turn/decline-chain sequences accepted by the core; any RETRY in any test auto-fails (2026-08-04)
 
 ## Phase 2 — Legality + fuzzing
 
