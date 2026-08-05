@@ -78,6 +78,12 @@ public final class DuelTextures
         new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/phase_blue.png");
     public static final ResourceLocation PHASE_RED =
         new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/phase_red.png");
+    /**
+     * The coin, as two frames side by side: tails on the left, heads on the
+     * right. Replaceable art -- drop a new file here and the flip uses it.
+     */
+    public static final ResourceLocation COIN =
+        new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/coin.png");
     public static final ResourceLocation ACT =
         new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/act.png");
     public static final ResourceLocation ATTACK =

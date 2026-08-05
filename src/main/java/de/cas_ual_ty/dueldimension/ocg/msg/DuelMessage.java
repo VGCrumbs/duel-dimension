@@ -280,6 +280,16 @@ public sealed interface DuelMessage
     {
     }
 
+    /** Life paid as a cost. operations.cpp:749 -- player, then the amount. */
+    record PayLpCost(int player, int amount) implements DuelMessage
+    {
+    }
+
+    /** Life set outright. field.cpp:1243 / libduel.cpp:48 -- player, then the new total. */
+    record LpUpdate(int player, int lifePoints) implements DuelMessage
+    {
+    }
+
     /** A card was set; code is 0 when hidden. Sound only in the reference. */
     record SetCard(int code, CardLocation card) implements DuelMessage
     {
@@ -475,6 +485,8 @@ public sealed interface DuelMessage
             case OcgConstants.MSG_SUMMONING -> new Summoning(in.u32(), in.loc());
             case OcgConstants.MSG_SPSUMMONING -> new SpSummoning(in.u32(), in.loc());
             case OcgConstants.MSG_SET -> new SetCard(in.u32(), in.loc());
+            case OcgConstants.MSG_PAY_LPCOST -> new PayLpCost(in.u8(), in.u32());
+            case OcgConstants.MSG_LPUPDATE -> new LpUpdate(in.u8(), in.u32());
             case OcgConstants.MSG_TOSS_COIN, OcgConstants.MSG_TOSS_DICE ->
             {
                 int player = in.u8();

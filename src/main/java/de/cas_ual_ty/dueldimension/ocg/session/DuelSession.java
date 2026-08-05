@@ -243,7 +243,10 @@ public class DuelSession
                     // board that only refreshed later showed a boosted card at
                     // its old attack while the battle played out.
                     OcgConstants.MSG_CHAIN_SOLVED, OcgConstants.MSG_CHAIN_END,
-                    OcgConstants.MSG_BATTLE -> snapshot();
+                    OcgConstants.MSG_BATTLE,
+                    // Life changes are board state too: without these the bars
+                    // held their old numbers until something else moved.
+                    OcgConstants.MSG_PAY_LPCOST, OcgConstants.MSG_LPUPDATE -> snapshot();
                 default ->
                 {
                 }

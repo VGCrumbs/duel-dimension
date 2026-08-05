@@ -125,6 +125,8 @@ public class DuelAnimations
      * or an equip card gave no feedback at all.
      */
     private final List<Playing> overlays = new ArrayList<>();
+    /** Cards turning over in place. */
+    private final List<Playing> flips = new ArrayList<>();
     /** Coin and dice results, announced over the middle of the table. */
     private final List<Playing> tosses = new ArrayList<>();
     /** Cards breaking apart where they were destroyed. */
@@ -250,8 +252,20 @@ public class DuelAnimations
         switch(event.kind())
         {
             case DESTROY -> shatters.add(new Playing(event, now, duration));
-            case MOVE, SUMMON, SPECIAL_SUMMON, SET, ACTIVATE, DRAW, FLIP, POSITION ->
+            // A set is announced, not slid: MSG_SET has no wait in the
+            // reference and the MSG_MOVE that follows carries the card into
+            // its zone. Giving SET a slide of its own drew the same card
+            // twice, one arriving just behind the other -- the stagger.
+            case MOVE, SUMMON, SPECIAL_SUMMON, ACTIVATE, DRAW ->
                 playing.add(new Playing(event, now, duration));
+            // A flip turns in place. Routed through renderMoves it was treated
+            // as a move with no origin, which starts a card at the owner's
+            // hand edge: an attacked face-down monster vanished and slid back
+            // in from the hand instead of turning over.
+            case FLIP, POSITION -> flips.add(new Playing(event, now, duration));
+            case SET ->
+            {
+            }
             case DAMAGE, RECOVER -> flashes.add(new Playing(event, now, duration));
             case ATTACK -> attacks.add(new Playing(event, now, duration));
             case CHAINING, BECOME_TARGET -> overlays.add(new Playing(event, now, duration));
@@ -310,6 +324,7 @@ public class DuelAnimations
         overlays.removeIf(animation -> animation.done(now));
         shatters.removeIf(animation -> animation.done(now));
         tosses.removeIf(animation -> animation.done(now));
+        flips.removeIf(animation -> animation.done(now));
 
         // Release as many zero-length steps as are ready, so a commit that
         // follows a finished event lands on the same frame rather than a frame
@@ -528,6 +543,54 @@ public class DuelAnimations
     }
 
     /**
+     * A card turning over where it lies.
+     * <p>
+     * The quad narrows to nothing at the halfway point and opens again, which
+     * is what a card rotating about its long axis looks like from above, and
+     * the face swaps at that midpoint: back then front for a card being turned
+     * up, front then back for one being turned down.
+     */
+    public void renderFlips(PoseStack poseStack, FieldLayout.Projection projection, long now)
+    {
+        if(projection == null)
+        {
+            return;
+        }
+        for(Playing animation : flips)
+        {
+            DuelEvent event = animation.event();
+            FieldLayout.Rect zone = zoneRect(event.toZone());
+            if(zone == null)
+            {
+                continue;
+            }
+            float t = animation.progress(now);
+            boolean endsFaceUp = event.amount() != 0;
+            boolean showFace = (t < 0.5F) != endsFaceUp;
+            ResourceLocation texture = showFace ? artFor(event.code())
+                : (event.player() == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT);
+
+            // |cos| gives one full narrow-and-open across the animation.
+            float squash = Math.abs((float)Math.cos(Math.PI * t));
+            float width = FLIP_CARD_W * Math.max(0.04F, squash);
+            FieldLayout.Rect card = new FieldLayout.Rect(
+                zone.x() + (zone.w() - width) / 2F,
+                zone.y() + (zone.h() - FLIP_CARD_H) / 2F, width, FLIP_CARD_H);
+
+            boolean edopro = !showFace || event.code() == 0;
+            FieldQuad.drawProjected(poseStack, texture, projection, card, FLIP_STEPS,
+                event.player() == 1 ? 2 : 0,
+                edopro ? 0F : DuelTextures.CARD_U0, edopro ? 0F : DuelTextures.CARD_V0,
+                edopro ? 1F : DuelTextures.CARD_U1, edopro ? 1F : DuelTextures.CARD_V1);
+        }
+    }
+
+    /** The card quad and subdivision a flip uses, matching the board's. */
+    private static final float FLIP_CARD_W = 0.7F;
+    private static final float FLIP_CARD_H = 1.0F;
+    private static final int FLIP_STEPS = 4;
+
+    /**
      * A coin or dice result, announced over the middle of the table.
      * <p>
      * The reference has no art for either -- it prints the outcome through
@@ -580,11 +643,9 @@ public class DuelAnimations
             x + size - 2, y + size - 2, x + 2, y + size - 2);
         if(coin)
         {
-            FieldQuad.drawCorners(poseStack, DuelTextures.WHITE, face, 0F, 0F, 1F, 1F,
-                0.85F, 0.72F, 0.28F, a / 255F);
-            String label = value == 1 ? "H" : "T";
-            font.draw(poseStack, label, x + (size - font.width(label)) / 2F, y + (size - 8) / 2F,
-                (a << 24) | 0x201804);
+            // coin.png is two frames side by side: tails left, heads right.
+            FieldQuad.drawCorners(poseStack, DuelTextures.COIN, box,
+                value == 1 ? 0.5F : 0F, 0F, value == 1 ? 1F : 0.5F, 1F, 1F, a / 255F);
         }
         else
         {
@@ -685,6 +746,7 @@ public class DuelAnimations
         queue.clear();
         playing.clear();
         tosses.clear();
+        flips.clear();
         flashes.clear();
         attacks.clear();
         overlays.clear();
@@ -696,7 +758,7 @@ public class DuelAnimations
     public boolean isBusy()
     {
         return !playing.isEmpty() || !attacks.isEmpty() || !overlays.isEmpty()
-            || !shatters.isEmpty() || !tosses.isEmpty() || !queue.isEmpty();
+            || !shatters.isEmpty() || !tosses.isEmpty() || !flips.isEmpty() || !queue.isEmpty();
     }
 
     private static ResourceLocation artFor(int code)

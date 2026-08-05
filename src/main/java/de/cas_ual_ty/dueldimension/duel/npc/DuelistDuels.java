@@ -425,6 +425,11 @@ public final class DuelistDuels
     {
         DuelMessage message = DuelMessage.decode(raw);
 
+        if(message instanceof DuelMessage.PayLpCost cost)
+        {
+            return Component.literal("Player " + cost.player() + " pays " + cost.amount() + " LP")
+                .withStyle(ChatFormatting.RED);
+        }
         if(message instanceof DuelMessage.TossCoin coin)
         {
             StringBuilder faces = new StringBuilder();
@@ -508,8 +513,9 @@ public final class DuelistDuels
         }
         if(message instanceof DuelMessage.FlipSummoning flip)
         {
+            // A flip summon always ends face up.
             return List.of(new DuelEvent(DuelEvent.Kind.FLIP, flip.code(),
-                -1, zoneOf(flip.card()), 0, flip.card().controller()));
+                -1, zoneOf(flip.card()), 1, flip.card().controller()));
         }
         // The announce messages carry the pause a summon has in the reference:
         // duelclient.cpp:3281 holds a card splash for 30 then 11 frames before
@@ -531,9 +537,18 @@ public final class DuelistDuels
             boolean nowHidden = (position.position()
                 & de.cas_ual_ty.dueldimension.ocg.OcgConstants.POS_FACEDOWN) != 0;
             int shown = nowHidden && position.controller() != 0 ? 0 : position.code();
+            // `amount` carries which way the card is turning, so the animation
+            // knows whether it ends on the face or the back.
             return List.of(new DuelEvent(DuelEvent.Kind.POSITION, shown, -1,
                 DuelEvent.zoneOf(position.controller(), position.location(), position.sequence(), 0),
-                0, position.controller()));
+                nowHidden ? 0 : 1, position.controller()));
+        }
+        if(message instanceof DuelMessage.PayLpCost cost)
+        {
+            // duelclient.cpp:3690 plays the damage sound for a paid cost, so
+            // it rides the same event as battle damage.
+            return List.of(new DuelEvent(DuelEvent.Kind.DAMAGE, 0, -1, -1, cost.amount(),
+                cost.player()));
         }
         if(message instanceof DuelMessage.TossCoin coin)
         {
