@@ -120,7 +120,8 @@ Fork of [YgoDuelingMod](https://github.com/CAS-ual-TY/YgoDuelingMod) (Forge 1.19
 - [x] `DescriptionTable` — prompts read as English, not numbers
 - [x] Human `ResponseSource` + two packets; challenger is seated as player 0
 - [x] Prompt GUI (`EnginePromptScreen`) covering **all 12 player-facing prompt types**
-- [ ] Playfield rendering for ruled duels (reuse `duel/screen` widgets; the option list works meanwhile)
+- [x] Playfield rendering: persistent `EngineDuelScreen` with full mirrored field (incl. EMZ/field/pendulum zones), hover card-info panel, live updates between prompts, event log, zone-click placement, Surrender — parity inventory & status in [[edopro-parity]]
+- [x] All 19 prompt types answerable by a human (sort, counters, announces incl. name search, RPS)
 - [ ] Challenge screen: Casual vs Ruled, deck picker (+ ruleset picker for PvP later)
 - [ ] Rewards hook: win → packs (existing distribution system)
 - **Gate:** ✅ *partially* — a full duel runs in a live server and a human seat can play every prompt (8/8 duels, 509 choices, zero RETRY). Remaining: play one start-to-finish from the client GUI by hand.
