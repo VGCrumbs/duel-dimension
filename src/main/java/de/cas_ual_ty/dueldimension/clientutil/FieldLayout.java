@@ -58,6 +58,13 @@ public final class FieldLayout
     public static final float FIELD_MIN_Y = -4.0F;
     public static final float FIELD_MAX_Y = 4.0F;
 
+    /**
+     * What {@link #fit} keeps on screen: the mat plus one card's height past
+     * each near edge, which is where {@code BoardRenderer} lays the hands.
+     */
+    private static final float FRAME_MIN_Y = FIELD_MIN_Y - 1.0F;
+    private static final float FRAME_MAX_Y = FIELD_MAX_Y + 1.0F;
+
     public static final float CARD_ASPECT = CELL_W / CELL_H;
 
     private FieldLayout()
@@ -225,14 +232,37 @@ public final class FieldLayout
      */
     public static Projection fit(int left, int top, int width, int height)
     {
-        float scaleX = width / 2F;
-        float scaleY = height / 2F;
-        // The frustum puts the table's centre at NDC +1/3, which in EDOPro
-        // leaves room for its card panel. Our sidebar has its own width, so
-        // undo that offset and centre the table in the box we were handed.
-        float centreNdcX = Projection.ndcX((FIELD_MIN_X + FIELD_MAX_X) / 2F, 0F);
-        float centreNdcY = Projection.ndcY(0F);
-        return new Projection(left + width / 2F - centreNdcX * scaleX,
-            top + height / 2F + centreNdcY * scaleY, scaleX, scaleY);
+        // Frame what actually has to be on screen -- the mat, plus the two hand
+        // rows that sit a card beyond its near and far edges -- and stretch
+        // that to the box.
+        //
+        // Mapping raw NDC [-1, 1] to the box instead, as this did before, wastes
+        // whatever the frustum does not use: the mat alone spans 1.78 of NDC x
+        // but only 1.27 of NDC y, so it filled 89% of the width and just 64% of
+        // the height. Normalising the framed area recovers that, and because
+        // each axis is scaled independently (EDOPro's keep_aspect_ratio is
+        // false) the table's proportions are unchanged.
+        float minNdcX = Float.MAX_VALUE;
+        float maxNdcX = -Float.MAX_VALUE;
+        for(float fieldX : new float[] {FIELD_MIN_X, FIELD_MAX_X})
+        {
+            for(float fieldY : new float[] {FRAME_MIN_Y, FRAME_MAX_Y})
+            {
+                float ndc = Projection.ndcX(fieldX, fieldY);
+                minNdcX = Math.min(minNdcX, ndc);
+                maxNdcX = Math.max(maxNdcX, ndc);
+            }
+        }
+        // ndcY depends only on the table's y, so its extremes are the edges.
+        float ndcYNear = Projection.ndcY(FRAME_MAX_Y);
+        float ndcYFar = Projection.ndcY(FRAME_MIN_Y);
+        float minNdcY = Math.min(ndcYNear, ndcYFar);
+        float maxNdcY = Math.max(ndcYNear, ndcYFar);
+
+        float scaleX = width / (maxNdcX - minNdcX);
+        float scaleY = height / (maxNdcY - minNdcY);
+        // x = originX + ndcX * scaleX, and y = originY - ndcY * scaleY, so the
+        // low x edge and the high y edge land on the box's left and top.
+        return new Projection(left - minNdcX * scaleX, top + maxNdcY * scaleY, scaleX, scaleY);
     }
 }

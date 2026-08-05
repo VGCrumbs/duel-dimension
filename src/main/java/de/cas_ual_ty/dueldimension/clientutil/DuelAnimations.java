@@ -30,14 +30,16 @@ public class DuelAnimations
      * for following a duel rather than for speed: events play one after another
      * (see {@link #tick}), so each of these is also the wait before the next.
      */
-    private static final long MOVE_MS = 520;
-    private static final long FLASH_MS = 600;
+    private static final long MOVE_MS = 750;
+    private static final long FLASH_MS = 700;
     /** An attack arrow holds long enough to read before the damage lands. */
-    private static final long ATTACK_MS = 900;
+    private static final long ATTACK_MS = 1300;
     /** Events with no visual still get a beat, so their sounds stay distinct. */
-    private static final long BEAT_MS = 220;
+    private static final long BEAT_MS = 320;
     /** A chain or target marker has to be readable before it goes. */
-    private static final long OVERLAY_MS = 900;
+    private static final long OVERLAY_MS = 1200;
+    /** However far behind we are, nothing is allowed to flash past faster. */
+    private static final long FLOOR_MS = 260;
 
     /** custom_skin_enum.inl: DECLR(DUELFIELD_ATTACK_ARROW, 0x8000ff00). */
     private static final int ATTACK_ARROW = 0x8000FF00;
@@ -117,19 +119,25 @@ public class DuelAnimations
             // No visual of their own: just enough of a beat to hear the sound.
             default -> BEAT_MS;
         };
-        return Math.round(base * backlogScale());
+        return Math.max(FLOOR_MS, Math.round(base * backlogScale()));
     }
 
+    /**
+     * Only a genuinely long backlog compresses playback, and never below the
+     * floor. The first attempt dropped to 0.3x past a dozen queued events,
+     * which a single busy turn reaches easily -- so the pacing it was supposed
+     * to fix came straight back.
+     */
     private float backlogScale()
     {
         int waiting = queue.size();
-        if(waiting > 12)
+        if(waiting > 40)
         {
-            return 0.3F;
+            return 0.4F;
         }
-        if(waiting > 6)
+        if(waiting > 20)
         {
-            return 0.6F;
+            return 0.7F;
         }
         return 1F;
     }

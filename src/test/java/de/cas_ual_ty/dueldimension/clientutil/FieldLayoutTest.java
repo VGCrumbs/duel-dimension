@@ -21,6 +21,35 @@ class FieldLayoutTest
     private final FieldLayout.Projection projection = FieldLayout.fit(LEFT, TOP, WIDTH, HEIGHT);
 
     /**
+     * The board has to use the box it is given. Mapping raw NDC to the box left
+     * the mat filling 89% of the width and 64% of the height, which reads as a
+     * small table adrift in empty space.
+     */
+    @Test
+    void theFramedBoardFillsItsBox()
+    {
+        float minX = Float.MAX_VALUE;
+        float maxX = -Float.MAX_VALUE;
+        // The framed area is the mat plus a card's height of hand at each end.
+        for(float fieldX : new float[] {FieldLayout.FIELD_MIN_X, FieldLayout.FIELD_MAX_X})
+        {
+            for(float fieldY : new float[] {FieldLayout.FIELD_MIN_Y - 1F, FieldLayout.FIELD_MAX_Y + 1F})
+            {
+                minX = Math.min(minX, projection.x(fieldX, fieldY));
+                maxX = Math.max(maxX, projection.x(fieldX, fieldY));
+            }
+        }
+        float nearY = projection.y(FieldLayout.FIELD_MAX_Y + 1F);
+        float farY = projection.y(FieldLayout.FIELD_MIN_Y - 1F);
+
+        assertEquals(LEFT, minX, 1F, "framed board should start at the box's left edge");
+        assertEquals(LEFT + WIDTH, maxX, 1F, "framed board should reach the box's right edge");
+        assertEquals(TOP, Math.min(nearY, farY), 1F, "framed board should start at the box's top");
+        assertEquals(TOP + HEIGHT, Math.max(nearY, farY), 1F,
+            "framed board should reach the box's bottom");
+    }
+
+    /**
      * The mat's near corners run off the edge in the reference client too -
      * the frustum is wider than the table - but every zone a player has to
      * interact with must be fully on screen.
@@ -74,11 +103,15 @@ class FieldLayoutTest
         assertEquals(expected, farWidth / nearWidth, 0.01F,
             "far/near width ratio should equal the camera's depth ratio");
 
-        // EDOPro's frustum pushes the table right to clear its own panel; we
-        // take that offset out so the table is centred in the space our
-        // sidebar leaves. The perspective is unchanged, only the origin.
+        // EDOPro's frustum pushes the table right to clear its own panel and
+        // leaves most of the box unused; fit takes that offset out and scales
+        // the framed area (mat plus hands) to the box. The table's centre LINE
+        // is then near, but not exactly on, the box's middle: the projected mat
+        // is a trapezoid, so its bounding box is not symmetric about that line.
+        // Being off by a few pixels is the cost of actually filling the box.
         float centre = projection.x((FieldLayout.FIELD_MIN_X + FieldLayout.FIELD_MAX_X) / 2F, 0F);
-        assertEquals(LEFT + WIDTH / 2F, centre, 2F, "table should be centred in its box");
+        assertEquals(LEFT + WIDTH / 2F, centre, WIDTH * 0.02F,
+            "table should sit near the middle of its box");
     }
 
     /**

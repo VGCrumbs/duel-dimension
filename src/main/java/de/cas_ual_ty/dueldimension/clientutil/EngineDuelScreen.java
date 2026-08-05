@@ -64,6 +64,8 @@ public class EngineDuelScreen extends Screen
     private List<BoardSnapshot.Slot> pileView;
     private String pileViewLabel = "";
     private boolean answered;
+    /** The duel history is hidden until asked for. */
+    private boolean showHistory;
     private de.cas_ual_ty.dueldimension.ocg.prompt.ChainPreference chainPreference =
         de.cas_ual_ty.dueldimension.ocg.prompt.ChainPreference.DEFAULT;
 
@@ -122,18 +124,14 @@ public class EngineDuelScreen extends Screen
             DuelDimension.channel.sendToServer(new PromptMessages.SetChainPreference(chainPreference));
             rebuild();
         }));
+        // Surrender and Close now live on the deck's own menu; this row toggles
+        // the duel history, which is off by default so the card description gets
+        // the room instead.
         addRenderableWidget(new Button(SIDEBAR_PAD, height - 24, SIDEBAR_W - SIDEBAR_PAD * 2, 18,
-            Component.literal(DuelClientState.over ? "Close" : "Surrender"), pressed ->
+            Component.literal(showHistory ? "History: on" : "History: off"), pressed ->
         {
-            if(DuelClientState.over)
-            {
-                DuelClientState.reset();
-                onClose();
-            }
-            else
-            {
-                DuelDimension.channel.sendToServer(new PromptMessages.Surrender());
-            }
+            showHistory = !showHistory;
+            rebuild();
         }));
 
         if(prompt == null)
@@ -308,6 +306,11 @@ public class EngineDuelScreen extends Screen
     }
 
     /** Opens the command menu at a card, as EDOPro's wCmdMenu does. */
+    /** One row of a contextual menu: a caption, its icon, and what it does. */
+    private record MenuEntry(String label, int command, Runnable action)
+    {
+    }
+
     private void openMenu(BoardRenderer.Hit hit)
     {
         if(menuAnchor != null && sameSlot(menuAnchor, hit))
@@ -320,17 +323,65 @@ public class EngineDuelScreen extends Screen
         {
             return;
         }
-        menuAnchor = hit;
         EnginePrompt prompt = shownPrompt;
-
-        int widest = 70;
+        List<MenuEntry> entries = new ArrayList<>();
         for(int index : actions)
         {
-            widest = Math.max(widest, font.width(prompt.options().get(index).label()) + 30);
+            EnginePrompt.Option option = prompt.options().get(index);
+            entries.add(new MenuEntry(option.label(), option.command(), () -> choose(index)));
+        }
+        showMenu(hit, entries);
+    }
+
+    /**
+     * The deck's own menu. Surrendering belongs to a duel rather than to any
+     * prompt, and a permanent button for it sat in the sidebar taking up room;
+     * asking the deck for it matches how every other action on this screen is
+     * reached — point at the thing, read what it can do.
+     */
+    private void openDeckMenu(BoardRenderer.Hit hit)
+    {
+        if(menuAnchor != null && sameSlot(menuAnchor, hit))
+        {
+            return;
+        }
+        closeMenu();
+        List<MenuEntry> entries = new ArrayList<>();
+        if(DuelClientState.over)
+        {
+            entries.add(new MenuEntry("Close", 0, () ->
+            {
+                DuelClientState.reset();
+                onClose();
+            }));
+        }
+        else
+        {
+            entries.add(new MenuEntry("Surrender", 0, () ->
+            {
+                DuelDimension.channel.sendToServer(new PromptMessages.Surrender());
+                closeMenu();
+            }));
+        }
+        showMenu(hit, entries);
+    }
+
+    private void showMenu(BoardRenderer.Hit hit, List<MenuEntry> entries)
+    {
+        if(entries.isEmpty())
+        {
+            return;
+        }
+        menuAnchor = hit;
+
+        int widest = 70;
+        for(MenuEntry entry : entries)
+        {
+            widest = Math.max(widest, font.width(entry.label()) + 30);
         }
         // Above the card, centred on it: the card stays visible while you
         // choose what to do with it.
-        int menuHeight = (actions.size() + 1) * MENU_ROW; // + the Cancel row
+        int menuHeight = (entries.size() + 1) * MENU_ROW; // + the Cancel row
         int menuX = Math.max(SIDEBAR_W + 4,
             Math.min(hit.x() + hit.w() / 2 - widest / 2, width - widest - 4));
         int menuY = hit.y() - menuHeight - 4;
@@ -339,17 +390,16 @@ public class EngineDuelScreen extends Screen
             menuY = hit.y() + hit.h() + 4; // no room above: fall below instead
         }
 
-        for(int row = 0; row < actions.size(); row++)
+        for(int row = 0; row < entries.size(); row++)
         {
-            int index = actions.get(row);
-            EnginePrompt.Option option = prompt.options().get(index);
+            MenuEntry entry = entries.get(row);
             CommandButton button = new CommandButton(menuX, menuY + row * MENU_ROW, widest, MENU_ROW - 2,
-                Component.literal(option.label()), option.command(), hit, pressed -> choose(index));
+                Component.literal(entry.label()), entry.command(), hit, pressed -> entry.action().run());
             menuButtons.add(button);
             addRenderableWidget(button);
         }
         // Always offer a way out of the menu itself.
-        CommandButton close = new CommandButton(menuX, menuY + actions.size() * MENU_ROW, widest,
+        CommandButton close = new CommandButton(menuX, menuY + entries.size() * MENU_ROW, widest,
             MENU_ROW - 2, Component.literal("Cancel"), 0, hit, pressed -> closeMenu());
         menuButtons.add(close);
         addRenderableWidget(close);
@@ -551,6 +601,12 @@ public class EngineDuelScreen extends Screen
                     continue;
                 }
                 List<Integer> actions = optionsFor(hit);
+                if(actions.isEmpty() && hit.controller() == 0
+                    && hit.location() == OcgConstants.LOCATION_DECK)
+                {
+                    openDeckMenu(hit);
+                    return true;
+                }
                 if(hit.isPile() && actions.isEmpty())
                 {
                     if(hit.count() > 0)
@@ -997,6 +1053,10 @@ public class EngineDuelScreen extends Screen
      */
     private int logLines()
     {
+        if(!showHistory)
+        {
+            return 0;
+        }
         int quarter = (footerTop() - SIDEBAR_PAD) / 4;
         return Math.max(0, Math.min(LOG_LINES, (quarter - 12) / 9));
     }
