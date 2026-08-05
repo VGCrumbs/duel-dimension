@@ -33,15 +33,27 @@ public final class FieldLayout
 
     private static final float MZONE_Y = 0.8F;
     private static final float SZONE_Y = 2.0F;
-    private static final float SIDE_LOW_Y = 0.1F;   // field spell, grave, banished
+    private static final float SIDE_LOW_Y = 0.1F;   // field spell
     private static final float SIDE_HIGH_Y = 2.7F;  // extra deck, main deck
+
+    /**
+     * The right-hand column stacks away from the viewer: deck nearest, then
+     * the graveyard directly above it, then the banished pile above that, each
+     * flush against the one below.
+     * <p>
+     * A deliberate departure from materials.cpp, which puts the graveyard and
+     * banished pile low and side by side (vFieldGrave at 6.9, vFieldRemove at
+     * 7.9). Stacking them in one column keeps every pile a player owns in a
+     * single readable run and leaves the far side of the table clear.
+     */
+    private static final float GRAVE_Y = SIDE_HIGH_Y - CELL_H;
+    private static final float REMOVED_Y = GRAVE_Y - CELL_H;
     private static final float EMZ_Y = -0.6F;
 
     private static final float EXTRA_X = 0.2F;
     private static final float FIELD_SPELL_X = 0.2F;
+    /** Deck, graveyard and banished all share this column. */
     private static final float DECK_X = 6.9F;
-    private static final float GRAVE_X = 6.9F;
-    private static final float REMOVED_X = 7.9F;
     private static final float EMZ_LEFT_X = 2.3F;
     private static final float EMZ_RIGHT_X = 4.5F;
 
@@ -146,9 +158,9 @@ public final class FieldLayout
             case OcgConstants.LOCATION_EXTRA:
                 return new Rect(EXTRA_X, SIDE_HIGH_Y, 0.8F, CELL_H);
             case OcgConstants.LOCATION_GRAVE:
-                return new Rect(GRAVE_X, SIDE_LOW_Y, 0.8F, CELL_H);
+                return new Rect(DECK_X, GRAVE_Y, 0.8F, CELL_H);
             case OcgConstants.LOCATION_REMOVED:
-                return new Rect(REMOVED_X, SIDE_LOW_Y, 0.8F, CELL_H);
+                return new Rect(DECK_X, REMOVED_Y, 0.8F, CELL_H);
             default:
                 return null;
         }
