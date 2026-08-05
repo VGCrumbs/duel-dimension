@@ -439,35 +439,26 @@ public class BoardRenderer extends GuiComponent
     private static final float CAMERA_X = 4.2F;
 
     /**
-     * The pile count, ported from {@code Game::DrawStackIndicator}
-     * (drawing.cpp:753), whose own comment reads "Draws the text in the middle
-     * of the bottom side of the zone".
-     * <pre>
-     * x0 = (v[0].Pos.X + v[1].Pos.X) / 2      // the zone's middle
-     * y0 = opponent ? v[0].Pos.Y : v[2].Pos.Y // the zone's bottom edge
-     * DrawShadowText(numFont, text, rect centred on that point, ...,
-     *                skin::DUELFIELD_STACK_VAL /* 0xffffff00 *&#47;, 0xff000000)
-     * </pre>
-     * So it sits centred on the edge of the zone nearest the viewer, in yellow
-     * with a black shadow -- not boxed in the middle of the zone, which is
-     * where ours was.
+     * The pile count, laid on the top card of the stack.
+     * <p>
+     * {@code Game::DrawStackIndicator} puts it on the zone's bottom edge, which
+     * works there because a pile is flat. Ours stands proud of the table, so
+     * the same spot left the number stranded below the cards; it sits on the
+     * top face instead.
+     * <p>
+     * The size comes from that face rather than being fixed, so a distant
+     * pile's count shrinks with the pile -- the opponent's numbers were drawn
+     * at the same size as yours despite their zones being half as tall.
      */
-    private void drawStackIndicator(PoseStack poseStack, Font font, FieldQuad.Corners corners,
-        int controller, int count)
+    private void drawStackIndicator(PoseStack poseStack, FieldQuad.Corners face, int count)
     {
         String text = Integer.toString(count);
-        // v[0]/v[1] are the far corners and v[2]/v[3] the near ones, so the
-        // "bottom" edge is the far one for the opponent and the near one for us.
-        float edgeY = controller == 1 ? (corners.y0() + corners.y1()) / 2F
-            : (corners.y2() + corners.y3()) / 2F;
-
-        // Drawn from the digit atlas rather than the GUI font: the reference
-        // sets its counts in numFont, a heavy outlined face, which the body
-        // text cannot imitate at this size.
-        float digitH = STACK_DIGIT_H;
+        float faceHeight = ((face.y2() + face.y3()) - (face.y0() + face.y1())) / 2F;
+        float digitH = Math.max(4F, Math.abs(faceHeight) * STACK_DIGIT_SCALE);
         float digitW = digitH * STACK_DIGIT_ASPECT;
-        float x = centreX(corners) - text.length() * digitW / 2F;
-        float y = edgeY - digitH / 2F;
+
+        float x = centreX(face) - text.length() * digitW / 2F;
+        float y = centreY(face) - digitH / 2F;
         for(int i = 0; i < text.length(); i++)
         {
             int digit = text.charAt(i) - '0';
@@ -479,9 +470,11 @@ public class BoardRenderer extends GuiComponent
         }
     }
 
-    /** Height of a pile's count, and the atlas cell's width over its height. */
-    private static final float STACK_DIGIT_H = 13F;
-    private static final float STACK_DIGIT_ASPECT = 64F / 80F;
+    /** The count's height as a fraction of the card face it sits on. */
+    private static final float STACK_DIGIT_SCALE = 0.46F;
+    /** The atlas cell's width over its height, so digits keep their shape. */
+    private static final float STACK_DIGIT_ASPECT = 48F / 80F;
+
 
     /** A zone shrunk to its grid box, so neighbouring slots stay separate. */
     private static FieldLayout.Rect inset(FieldLayout.Rect rect)
@@ -605,7 +598,7 @@ public class BoardRenderer extends GuiComponent
                 top = textureFor(topCard, false, controller);
             }
             drawCardAtCorners(poseStack, top, topCorners, turns);
-            drawStackIndicator(poseStack, font, corners, controller, count);
+            drawStackIndicator(poseStack, topCorners, count);
         }
         if(canActivateFromHere)
         {
