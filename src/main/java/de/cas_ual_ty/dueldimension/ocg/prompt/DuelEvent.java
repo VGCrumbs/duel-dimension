@@ -37,6 +37,10 @@ public record DuelEvent(Kind kind, int code, int fromZone, int toZone, int amoun
         DESTROY,
         DRAW,
         SHUFFLE,
+        /** An effect went onto the chain: show it activating. */
+        CHAINING,
+        /** An effect picked this card as a target. */
+        BECOME_TARGET,
         PHASE,
         NEW_TURN,
         WIN

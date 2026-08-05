@@ -663,6 +663,7 @@ public class EngineDuelScreen extends Screen
         animations.tick(now);
         animations.renderMoves(poseStack, boardRenderer, boardRenderer.projection(), now);
         animations.renderAttacks(poseStack, boardRenderer.projection(), now);
+        animations.renderOverlays(poseStack, boardRenderer.projection(), now);
 
         // Hover picks the preview card and opens that card's command menu.
         BoardRenderer.Hit hovered = null;
@@ -683,6 +684,7 @@ public class EngineDuelScreen extends Screen
 
         renderTopBar(poseStack, board);
         renderPhaseBar(poseStack, board);
+        renderHintBanner(poseStack, prompt);
         renderSidebar(poseStack);
         renderLog(poseStack);
 
@@ -851,6 +853,43 @@ public class EngineDuelScreen extends Screen
             }
         }
         return -1;
+    }
+
+    /**
+     * The instruction banner, EDOPro's {@code stHintMsg}.
+     * <p>
+     * The reference sets this text and shows it for every prompt it puts up —
+     * ten separate sites in duelclient.cpp, one per selection message — so the
+     * player is always told what the core is asking for. Our prompts carried
+     * the same text in {@link EnginePrompt#title()} from the beginning and
+     * nothing ever drew it, which is the bulk of the missing feedback: an
+     * effect would ask for a target and the screen said nothing at all.
+     * <p>
+     * Selection prompts also show progress, since a prompt wanting two cards
+     * looks identical to one wanting one until you know how many you have.
+     */
+    private void renderHintBanner(PoseStack poseStack, EnginePrompt prompt)
+    {
+        if(prompt == null || answered || prompt.title() == null || prompt.title().isBlank())
+        {
+            return;
+        }
+        String text = prompt.title();
+        if(prompt.maxSelect() > 1)
+        {
+            text = text + "  (" + selected.size() + "/" + prompt.maxSelect() + ")";
+        }
+
+        int textWidth = font.width(text);
+        int centre = Math.round(boardRenderer.tableCentreX());
+        int left = Math.max(SIDEBAR_W + 6, centre - textWidth / 2 - 6);
+        int right = Math.min(width - 6, left + textWidth + 12);
+        int top = TOP_BAR_H + 2;
+
+        fill(poseStack, left, top, right, top + 14, 0xD0101014);
+        fill(poseStack, left, top, right, top + 1, 0x80FFD700);
+        fill(poseStack, left, top + 13, right, top + 14, 0x80FFD700);
+        drawCenteredString(poseStack, font, text, (left + right) / 2, top + 3, 0xFFE066);
     }
 
     /** Draws the phase row's labels and marks the current phase. */

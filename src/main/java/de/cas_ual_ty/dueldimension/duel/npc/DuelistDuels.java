@@ -267,11 +267,7 @@ public final class DuelistDuels
             {
                 if(event instanceof DuelSession.Event.Message message)
                 {
-                    DuelEvent animated = toDuelEvent(message.message());
-                    if(animated != null)
-                    {
-                        events.add(animated);
-                    }
+                    events.addAll(toDuelEvents(message.message()));
                     Component line = narrate(message.message(), descriptions);
                     if(line != null)
                     {
@@ -374,9 +370,47 @@ public final class DuelistDuels
      * Turns an engine message into something the client can animate and play a
      * sound for. Seat 0 is the watching player, so controller 0 is "you".
      */
-    private static DuelEvent toDuelEvent(RawMessage raw)
+    private static List<DuelEvent> toDuelEvents(RawMessage raw)
     {
         DuelMessage message = DuelMessage.decode(raw);
+
+        // An effect going onto the chain, and the cards it picked. Without
+        // these the client had no way to show that anything was happening: an
+        // effect resolved, the board simply changed, and a flip effect looked
+        // like it had never activated at all.
+        if(message instanceof DuelMessage.Chaining chaining)
+        {
+            return List.of(new DuelEvent(DuelEvent.Kind.CHAINING, chaining.code(),
+                -1, zoneOf(chaining.card()), 0, chaining.card().controller()));
+        }
+        if(message instanceof DuelMessage.BecomeTarget target)
+        {
+            List<DuelEvent> events = new ArrayList<>();
+            for(de.cas_ual_ty.dueldimension.ocg.msg.CardLocation location : target.targets())
+            {
+                events.add(new DuelEvent(DuelEvent.Kind.BECOME_TARGET, 0,
+                    -1, zoneOf(location), 0, location.controller()));
+            }
+            return events;
+        }
+        if(message instanceof DuelMessage.FlipSummoning flip)
+        {
+            return List.of(new DuelEvent(DuelEvent.Kind.FLIP, flip.code(),
+                -1, zoneOf(flip.card()), 0, flip.card().controller()));
+        }
+
+        DuelEvent single = toDuelEvent(message);
+        return single == null ? List.of() : List.of(single);
+    }
+
+    /** Packs a decoded location the way the animation layer expects. */
+    private static int zoneOf(de.cas_ual_ty.dueldimension.ocg.msg.CardLocation location)
+    {
+        return DuelEvent.zoneOf(location.controller(), location.location(), location.sequence(), 0);
+    }
+
+    private static DuelEvent toDuelEvent(DuelMessage message)
+    {
 
         if(message instanceof DuelMessage.Move move)
         {

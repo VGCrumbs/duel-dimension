@@ -207,6 +207,26 @@ public sealed interface DuelMessage
     {
     }
 
+    /**
+     * An effect is going onto the chain. processor.cpp writes the handler's
+     * code and location, then the triggering state, the effect description and
+     * the new chain size.
+     */
+    record Chaining(int code, CardLocation card, int triggeringController, int triggeringLocation,
+        int triggeringSequence, long description, int chainSize) implements DuelMessage
+    {
+    }
+
+    /** Cards an effect has just targeted. libduel.cpp: a count then that many loc_infos. */
+    record BecomeTarget(List<CardLocation> targets) implements DuelMessage
+    {
+    }
+
+    /** A monster is being flip summoned. operations.cpp: code then loc_info. */
+    record FlipSummoning(int code, CardLocation card) implements DuelMessage
+    {
+    }
+
     record NewTurn(int player) implements DuelMessage
     {
     }
@@ -381,6 +401,19 @@ public sealed interface DuelMessage
             case OcgConstants.MSG_ROCK_PAPER_SCISSORS -> new RockPaperScissors(in.u8());
             case OcgConstants.MSG_MOVE -> new Move(in.u32(), in.loc(), in.loc(), in.u32());
             case OcgConstants.MSG_ATTACK -> new Attack(in.loc(), in.loc());
+            case OcgConstants.MSG_CHAINING -> new Chaining(in.u32(), in.loc(), in.u8(), in.u8(),
+                in.u32(), in.u64(), in.u32());
+            case OcgConstants.MSG_BECOME_TARGET ->
+            {
+                int count = in.u32();
+                List<CardLocation> targets = new ArrayList<>(count);
+                for(int i = 0; i < count; i++)
+                {
+                    targets.add(in.loc());
+                }
+                yield new BecomeTarget(targets);
+            }
+            case OcgConstants.MSG_FLIPSUMMONING -> new FlipSummoning(in.u32(), in.loc());
             case OcgConstants.MSG_DRAW ->
             {
                 int player = in.u8();

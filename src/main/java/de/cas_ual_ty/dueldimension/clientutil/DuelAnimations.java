@@ -36,6 +36,8 @@ public class DuelAnimations
     private static final long ATTACK_MS = 900;
     /** Events with no visual still get a beat, so their sounds stay distinct. */
     private static final long BEAT_MS = 220;
+    /** A chain or target marker has to be readable before it goes. */
+    private static final long OVERLAY_MS = 900;
 
     /** custom_skin_enum.inl: DECLR(DUELFIELD_ATTACK_ARROW, 0x8000ff00). */
     private static final int ATTACK_ARROW = 0x8000FF00;
@@ -72,6 +74,13 @@ public class DuelAnimations
     private final List<Playing> flashes = new ArrayList<>();
     /** Attack arrows, which are drawn as arrows rather than moving cards. */
     private final List<Playing> attacks = new ArrayList<>();
+    /**
+     * Chain and target markers. EDOPro ships tChain and tChainTarget and lays
+     * them over the card that is activating and the cards it picked; we shipped
+     * the same textures but never drew them, which is why targeting an effect
+     * or an equip card gave no feedback at all.
+     */
+    private final List<Playing> overlays = new ArrayList<>();
 
     /** Events waiting their turn to be played. */
     private final java.util.ArrayDeque<DuelEvent> queue = new java.util.ArrayDeque<>();
@@ -104,6 +113,7 @@ public class DuelAnimations
             case MOVE, SUMMON, SPECIAL_SUMMON, SET, ACTIVATE, DESTROY, DRAW -> MOVE_MS;
             case ATTACK -> ATTACK_MS;
             case DAMAGE, RECOVER -> FLASH_MS;
+            case CHAINING, BECOME_TARGET -> OVERLAY_MS;
             // No visual of their own: just enough of a beat to hear the sound.
             default -> BEAT_MS;
         };
@@ -135,6 +145,7 @@ public class DuelAnimations
                 playing.add(new Playing(event, now, duration));
             case DAMAGE, RECOVER -> flashes.add(new Playing(event, now, duration));
             case ATTACK -> attacks.add(new Playing(event, now, duration));
+            case CHAINING, BECOME_TARGET -> overlays.add(new Playing(event, now, duration));
             default ->
             {
             }
@@ -162,6 +173,8 @@ public class DuelAnimations
             case DESTROY -> DdSounds.DESTROYED.get();
             case DRAW -> DdSounds.DRAW.get();
             case FLIP -> DdSounds.FLIP.get();
+            case CHAINING -> DdSounds.ACTIVATE.get();
+            case BECOME_TARGET -> DdSounds.EQUIP.get();
             case SHUFFLE -> DdSounds.SHUFFLE.get();
             case PHASE -> DdSounds.PHASE.get();
             case NEW_TURN -> DdSounds.NEXT_TURN.get();
@@ -181,6 +194,7 @@ public class DuelAnimations
         playing.removeIf(animation -> animation.done(now));
         flashes.removeIf(animation -> animation.done(now));
         attacks.removeIf(animation -> animation.done(now));
+        overlays.removeIf(animation -> animation.done(now));
 
         if(!queue.isEmpty() && now >= nextStart)
         {
@@ -237,6 +251,31 @@ public class DuelAnimations
             float alpha = t < 0.75F ? 1F : 1F - (t - 0.75F) / 0.25F;
             drawArrow(poseStack, projection, ax, ay, ax + (dx - ax) * reach, ay + (dy - ay) * reach,
                 alpha);
+        }
+    }
+
+    /**
+     * Chain and target markers over the cards they concern, the way
+     * drawing.cpp lays tChain over a chaining card and tChainTarget over a
+     * targeted one.
+     */
+    public void renderOverlays(PoseStack poseStack, FieldLayout.Projection projection, long now)
+    {
+        if(projection == null)
+        {
+            return;
+        }
+        for(Playing animation : overlays)
+        {
+            DuelEvent event = animation.event();
+            FieldLayout.Rect rect = zoneRect(event.toZone());
+            if(rect == null)
+            {
+                continue; // activated from a hand or a pile: nothing to mark
+            }
+            ResourceLocation texture = event.kind() == DuelEvent.Kind.CHAINING
+                ? DuelTextures.CHAIN : DuelTextures.TARGET;
+            FieldQuad.drawProjected(poseStack, texture, projection, rect, 2);
         }
     }
 
@@ -349,7 +388,7 @@ public class DuelAnimations
     /** True while anything is still playing, for callers that want to wait. */
     public boolean isBusy()
     {
-        return !playing.isEmpty() || !attacks.isEmpty() || !queue.isEmpty();
+        return !playing.isEmpty() || !attacks.isEmpty() || !overlays.isEmpty() || !queue.isEmpty();
     }
 
     private static ResourceLocation artFor(int code)
