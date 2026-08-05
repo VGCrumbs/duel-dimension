@@ -37,6 +37,14 @@ public class HeuristicBot implements ResponseSource
     private BoardObserver board;
     private int player;
 
+    /**
+     * The role of the effect just activated, so the selection that follows it
+     * knows which way to point. Activation was already role-driven; TARGETING
+     * was not, and "always prefer the opponent's best card" is exactly how a
+     * buff like Reinforcements landed on the player's monster.
+     */
+    private CardRoles.Role pendingTargetRole;
+
     /** Set when we declare an attack, so the following card selection is read as target choice. */
     private boolean expectingAttackTarget;
 
@@ -175,12 +183,15 @@ public class HeuristicBot implements ResponseSource
         // via the curated CardRoles table. The flat score this replaces fired
         // any legal spell immediately -- including a board wipe whose only
         // victims were the bot's own monsters.
+        CardRoles.Role bestRole = null;
         for(int i = 0; i < idle.activatable().size(); i++)
         {
-            double score = activationScore(state, idle.activatable().get(i).code());
+            int code = idle.activatable().get(i).code();
+            double score = activationScore(state, code);
             if(score > bestScore)
             {
                 bestScore = score;
+                bestRole = CardRoles.of(code);
                 best = Responses.idleActivate(i);
             }
         }
@@ -234,6 +245,7 @@ public class HeuristicBot implements ResponseSource
 
         if(best != null)
         {
+            pendingTargetRole = bestRole;
             return best;
         }
         return idle.toBattle() ? Responses.idleToBattle()
@@ -461,6 +473,8 @@ public class HeuristicBot implements ResponseSource
     {
         boolean asAttackTarget = expectingAttackTarget;
         expectingAttackTarget = false;
+        CardRoles.Role targetRole = pendingTargetRole;
+        pendingTargetRole = null;
 
         int count = Math.max(select.min(), 1);
         if(select.cards().isEmpty() || count > select.cards().size())
@@ -474,8 +488,8 @@ public class HeuristicBot implements ResponseSource
             order.add(i);
         }
         order.sort((left, right) -> Double.compare(
-            selectionPriority(select, right, asAttackTarget),
-            selectionPriority(select, left, asAttackTarget)));
+            selectionPriority(select, right, asAttackTarget, targetRole),
+            selectionPriority(select, left, asAttackTarget, targetRole)));
 
         int[] chosen = new int[count];
         for(int i = 0; i < count; i++)
@@ -486,7 +500,8 @@ public class HeuristicBot implements ResponseSource
     }
 
     /** Higher means "pick this one first". */
-    private double selectionPriority(DuelMessage.SelectCard select, int index, boolean asAttackTarget)
+    private double selectionPriority(DuelMessage.SelectCard select, int index, boolean asAttackTarget,
+        CardRoles.Role targetRole)
     {
         DuelMessage.SelectableCard card = select.cards().get(index);
         int attack = attackOf(cards.get(card.code()));
@@ -496,6 +511,12 @@ public class HeuristicBot implements ResponseSource
         {
             // Attack the cheapest defender that still dies.
             return -attack;
+        }
+        if(targetRole == CardRoles.Role.BUFFS_OWN_MONSTER)
+        {
+            // What we just activated HELPS its target, so it belongs on our
+            // best monster and never on theirs.
+            return mine ? 10000 + attack : -10000 - attack;
         }
         if(mine)
         {

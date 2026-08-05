@@ -816,7 +816,7 @@ public class EngineDuelScreen extends Screen
         // Aiming: after clicking Attack, the sword tracks the mouse until the
         // target is chosen -- sampled six times a second, so it snaps rather
         // than glides.
-        if(aimZone >= 0 && shownPrompt != null && !answered)
+        if(aimZone >= 0 && shownPrompt != null && !answered && isTargetSelection(shownPrompt))
         {
             long bucket = now / 167;
             if(bucket != aimBucket)
@@ -1190,6 +1190,26 @@ public class EngineDuelScreen extends Screen
         fill(poseStack, badgeLeft, badgeTop + 16, badgeLeft + badgeW, badgeTop + 17, 0xC0000000 | turnColour);
         drawCenteredString(poseStack, font, Integer.toString(Math.max(1, board.turn())),
             badgeLeft + badgeW / 2, badgeTop + 5, turnColour);
+    }
+
+    /**
+     * True only for a prompt that asks the player to pick a card on the board
+     * -- slot options with no command. The aim pointer must not outlive its
+     * question: a direct attack produces no target selection at all, and the
+     * sword used to linger over whatever prompt came next.
+     */
+    private static boolean isTargetSelection(EnginePrompt prompt)
+    {
+        boolean anySlot = false;
+        for(EnginePrompt.Option option : prompt.options())
+        {
+            if(option.command() != 0)
+            {
+                return false;
+            }
+            anySlot |= option.hasSlot();
+        }
+        return anySlot;
     }
 
     private static final int PLATE_W = 118;

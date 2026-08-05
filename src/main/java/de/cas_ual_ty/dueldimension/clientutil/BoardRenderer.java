@@ -350,18 +350,49 @@ public class BoardRenderer extends GuiComponent
     {
         float tiles = Math.min(count, LIFT_CAP);
 
-        FieldQuad.Corners front = new FieldQuad.Corners(
+        drawTiledFace(poseStack,
             top.x3(), top.y3(), top.x2(), top.y2(),
-            base.x2(), base.y2(), base.x3(), base.y3());
-        FieldQuad.drawCorners(poseStack, DuelTextures.STACK_SIDE, front, 0F, 0F, 1F, tiles, 0.92F, 1F);
+            base.x3(), base.y3(), base.x2(), base.y2(), tiles, 0.92F);
 
         boolean leftFace = rect.x() + rect.w() / 2F > CAMERA_X;
-        FieldQuad.Corners side = leftFace
-            ? new FieldQuad.Corners(top.x0(), top.y0(), top.x3(), top.y3(),
-                base.x3(), base.y3(), base.x0(), base.y0())
-            : new FieldQuad.Corners(top.x1(), top.y1(), top.x2(), top.y2(),
-                base.x2(), base.y2(), base.x1(), base.y1());
-        FieldQuad.drawCorners(poseStack, DuelTextures.STACK_SIDE, side, 0F, 0F, 1F, tiles, 0.7F, 1F);
+        if(leftFace)
+        {
+            drawTiledFace(poseStack, top.x0(), top.y0(), top.x3(), top.y3(),
+                base.x0(), base.y0(), base.x3(), base.y3(), tiles, 0.7F);
+        }
+        else
+        {
+            drawTiledFace(poseStack, top.x1(), top.y1(), top.x2(), top.y2(),
+                base.x1(), base.y1(), base.x2(), base.y2(), tiles, 0.7F);
+        }
+    }
+
+    /**
+     * One vertical face of a pile, the stripe texture TILED once per card
+     * between its top and bottom edges. Passing v past 1 and hoping the
+     * texture repeats stretched instead -- the wrap mode is not repeat here --
+     * so the tiling is done by hand: one slice per card, each sampling the
+     * whole stripe.
+     */
+    private void drawTiledFace(PoseStack poseStack,
+        float topLx, float topLy, float topRx, float topRy,
+        float baseLx, float baseLy, float baseRx, float baseRy, float tiles, float shade)
+    {
+        int slices = Math.max(1, (int)Math.ceil(tiles));
+        for(int i = 0; i < slices; i++)
+        {
+            float f0 = i / tiles;
+            float f1 = Math.min(1F, (i + 1) / tiles);
+            FieldQuad.Corners slice = new FieldQuad.Corners(
+                topLx + (baseLx - topLx) * f0, topLy + (baseLy - topLy) * f0,
+                topRx + (baseRx - topRx) * f0, topRy + (baseRy - topRy) * f0,
+                topRx + (baseRx - topRx) * f1, topRy + (baseRy - topRy) * f1,
+                topLx + (baseLx - topLx) * f1, topLy + (baseLy - topLy) * f1);
+            // The last slice may be partial; it samples that much of the stripe.
+            float v1 = (f1 - f0) * tiles;
+            FieldQuad.drawCorners(poseStack, DuelTextures.STACK_SIDE, slice,
+                0F, 0F, 1F, v1, shade, 1F);
+        }
     }
 
     /** A card drawn at explicit screen corners, with its UV window and turn. */

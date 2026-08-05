@@ -251,6 +251,18 @@ public sealed interface DuelMessage
     {
     }
 
+    /**
+     * The damage-step calculation, with the FINAL stats the core used --
+     * after every chained modifier. processor.cpp:2444 writes the attacker's
+     * loc_info, its attack and defence as u32s and a flag byte, then the same
+     * for the target (zeroed loc_info on a direct attack). Logging these turns
+     * "that battle felt wrong" into two checkable numbers.
+     */
+    record Battle(CardLocation attacker, int attackerAtk, int attackerDef, int attackerFlag,
+        CardLocation target, int targetAtk, int targetDef, int targetFlag) implements DuelMessage
+    {
+    }
+
     /** A card was set; code is 0 when hidden. Sound only in the reference. */
     record SetCard(int code, CardLocation card) implements DuelMessage
     {
@@ -448,6 +460,8 @@ public sealed interface DuelMessage
             case OcgConstants.MSG_SET -> new SetCard(in.u32(), in.loc());
             case OcgConstants.MSG_POS_CHANGE -> new PositionChange(in.u32(), in.u8(), in.u8(),
                 in.u8(), in.u8(), in.u8());
+            case OcgConstants.MSG_BATTLE -> new Battle(in.loc(), in.u32(), in.u32(), in.u8(),
+                in.loc(), in.u32(), in.u32(), in.u8());
             case OcgConstants.MSG_DRAW ->
             {
                 int player = in.u8();

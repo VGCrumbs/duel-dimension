@@ -393,9 +393,10 @@ public class DuelAnimations
         float ax = projection.x(from.x() + from.w() / 2F, from.y() + from.h() / 2F);
         float ay = projection.y(from.y() + from.h() / 2F);
         drawLine(poseStack, ax, ay, targetX, targetY, 0.9F);
+        // The sword stays planted on the attacker while aiming; only its
+        // rotation follows the cursor. It flies when the attack itself plays.
         float size = zoneWidth(projection, from) * 0.9F;
-        drawSword(poseStack, ax + (targetX - ax) * 0.7F, ay + (targetY - ay) * 0.7F,
-            targetX - ax, targetY - ay, size, 1F);
+        drawSword(poseStack, ax, ay, targetX - ax, targetY - ay, size, 1F);
     }
 
     private static float zoneWidth(FieldLayout.Projection projection, FieldLayout.Rect rect)

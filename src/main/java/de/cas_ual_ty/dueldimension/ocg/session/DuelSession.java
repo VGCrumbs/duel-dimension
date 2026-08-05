@@ -237,7 +237,13 @@ public class DuelSession
                     OcgConstants.MSG_POS_CHANGE, OcgConstants.MSG_FLIPSUMMONING,
                     OcgConstants.MSG_SET, OcgConstants.MSG_SUMMONING,
                     OcgConstants.MSG_SPSUMMONING, OcgConstants.MSG_SWAP,
-                    OcgConstants.MSG_CHAINING -> snapshot();
+                    OcgConstants.MSG_CHAINING,
+                    // Stat changes land when a chain RESOLVES, and the battle
+                    // message carries the values damage was computed from; a
+                    // board that only refreshed later showed a boosted card at
+                    // its old attack while the battle played out.
+                    OcgConstants.MSG_CHAIN_SOLVED, OcgConstants.MSG_CHAIN_END,
+                    OcgConstants.MSG_BATTLE -> snapshot();
                 default ->
                 {
                 }

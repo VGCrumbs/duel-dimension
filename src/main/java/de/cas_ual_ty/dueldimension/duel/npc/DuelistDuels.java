@@ -425,6 +425,16 @@ public final class DuelistDuels
     {
         DuelMessage message = DuelMessage.decode(raw);
 
+        if(message instanceof DuelMessage.Battle battle)
+        {
+            // The core's own damage-step numbers, so a surprising outcome can
+            // be checked against the rules instead of argued about.
+            String line = battle.target().location() == 0
+                ? "Battle: " + battle.attackerAtk() + " ATK, direct"
+                : "Battle: " + battle.attackerAtk() + " ATK vs "
+                    + battle.targetAtk() + " ATK / " + battle.targetDef() + " DEF";
+            return Component.literal(line).withStyle(ChatFormatting.GRAY);
+        }
         if(message instanceof DuelMessage.Damage damage)
         {
             return Component.literal("Player " + damage.player() + " takes " + damage.amount() + " damage")
@@ -509,7 +519,10 @@ public final class DuelistDuels
         }
         if(message instanceof DuelMessage.SetCard set)
         {
-            return List.of(new DuelEvent(DuelEvent.Kind.SET, set.code(),
+            // A set card's identity is hidden information; only its owner's
+            // client may hear the code.
+            return List.of(new DuelEvent(DuelEvent.Kind.SET,
+                set.card().controller() == 0 ? set.code() : 0,
                 -1, zoneOf(set.card()), 0, set.card().controller()));
         }
 
@@ -539,7 +552,21 @@ public final class DuelistDuels
             DuelEvent.Kind kind =
                 move.to().location() == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_GRAVE
                     ? DuelEvent.Kind.DESTROY : DuelEvent.Kind.MOVE;
-            return new DuelEvent(kind, move.code(), from, to, 0, move.to().controller());
+            // generic_duel.cpp rewrites each message per player before sending
+            // it, so a real client never receives the identity of a card it
+            // cannot see. This tap reads the core's unfiltered stream, and
+            // without the same concealment the SLIDE of an opponent's set card
+            // briefly wore its true art -- the settled board was honest, the
+            // animation was not.
+            int shownCode = move.code();
+            if(move.to().controller() != 0
+                && ((move.to().position() & de.cas_ual_ty.dueldimension.ocg.OcgConstants.POS_FACEDOWN) != 0
+                    || move.to().location() == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_HAND
+                    || move.to().location() == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_DECK))
+            {
+                shownCode = 0;
+            }
+            return new DuelEvent(kind, shownCode, from, to, 0, move.to().controller());
         }
         if(message instanceof DuelMessage.Attack attack)
         {
