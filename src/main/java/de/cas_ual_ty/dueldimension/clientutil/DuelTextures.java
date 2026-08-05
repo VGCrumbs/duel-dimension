@@ -87,6 +87,14 @@ public final class DuelTextures
     /** The field spell zone's own square, marked with a compass rose. */
     public static final ResourceLocation FIELD_SPELL =
         new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/field_spell.png");
+    /**
+     * Digits 0-9 in the reference's stack-indicator style: bold, white, heavily
+     * outlined. EDOPro's own number.png carries whole numbers 1 to 20 with no
+     * zero, so it cannot spell an arbitrary pile count; this matches its look
+     * while composing.
+     */
+    public static final ResourceLocation DIGITS =
+        new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/digits.png");
     public static final ResourceLocation ACT =
         new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/act.png");
     public static final ResourceLocation ATTACK =

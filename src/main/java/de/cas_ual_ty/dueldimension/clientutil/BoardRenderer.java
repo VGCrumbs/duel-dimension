@@ -332,14 +332,28 @@ public class BoardRenderer extends GuiComponent
     private void drawSlotSquare(PoseStack poseStack, int controller, int location, int sequence)
     {
         FieldLayout.Rect rect = FieldLayout.zone(controller, location, sequence);
-        if(rect != null)
+        if(rect == null)
         {
-            // The field spell zone carries its own emblem; every other bare
-            // zone takes the plain square.
-            ResourceLocation square = location == OcgConstants.LOCATION_SZONE && sequence == 5
-                ? DuelTextures.FIELD_SPELL : DuelTextures.SLOT;
-            FieldQuad.drawProjected(poseStack, square, projection, inset(rect), 2,
-                turnsFor(controller, false), 0F, 0F, 1F, 1F);
+            return;
+        }
+        // Every bare zone wears its owner's mat colour, so a duelist's whole
+        // side of the table is themed rather than just the mat block.
+        int accent = mats[controller].accent();
+        float red = (accent >> 16 & 0xFF) / 255F;
+        float green = (accent >> 8 & 0xFF) / 255F;
+        float blue = (accent & 0xFF) / 255F;
+        FieldQuad.drawProjected(poseStack, DuelTextures.SLOT, projection, inset(rect), 2,
+            turnsFor(controller, false), 0F, 0F, 1F, 1F, red, green, blue, 1F);
+
+        if(location == OcgConstants.LOCATION_SZONE && sequence == 5)
+        {
+            // The compass rose is square; the zone is not. Centre it at its own
+            // aspect instead of stretching it to the rect.
+            float side = Math.min(rect.w(), rect.h()) * 0.82F;
+            FieldQuad.drawProjected(poseStack, DuelTextures.FIELD_SPELL, projection,
+                new FieldLayout.Rect(rect.x() + (rect.w() - side) / 2F,
+                    rect.y() + (rect.h() - side) / 2F, side, side),
+                2, turnsFor(controller, false), 0F, 0F, 1F, 1F, red, green, blue, 1F);
         }
     }
 
@@ -446,18 +460,28 @@ public class BoardRenderer extends GuiComponent
         // "bottom" edge is the far one for the opponent and the near one for us.
         float edgeY = controller == 1 ? (corners.y0() + corners.y1()) / 2F
             : (corners.y2() + corners.y3()) / 2F;
-        // DrawStackIndicator centres numFont's dimension on that edge point
-        // (rect from coords - dim to coords + dim); numFont is a display
-        // face, noticeably larger than the body text, hence the scale.
-        poseStack.pushPose();
-        poseStack.scale(STACK_NUM_SCALE, STACK_NUM_SCALE, 1F);
-        int x = Math.round(centreX(corners) / STACK_NUM_SCALE) - font.width(text) / 2;
-        int y = Math.round(edgeY / STACK_NUM_SCALE) - 4;
-        // DrawShadowText's offset is Resize(0, 1, 0, 1): one pixel down-right.
-        font.draw(poseStack, text, x + 1, y + 1, 0xFF000000);
-        font.draw(poseStack, text, x, y, COLOUR_STACK);
-        poseStack.popPose();
+
+        // Drawn from the digit atlas rather than the GUI font: the reference
+        // sets its counts in numFont, a heavy outlined face, which the body
+        // text cannot imitate at this size.
+        float digitH = STACK_DIGIT_H;
+        float digitW = digitH * STACK_DIGIT_ASPECT;
+        float x = centreX(corners) - text.length() * digitW / 2F;
+        float y = edgeY - digitH / 2F;
+        for(int i = 0; i < text.length(); i++)
+        {
+            int digit = text.charAt(i) - '0';
+            FieldQuad.Corners cell = new FieldQuad.Corners(
+                x + i * digitW, y, x + (i + 1) * digitW, y,
+                x + (i + 1) * digitW, y + digitH, x + i * digitW, y + digitH);
+            FieldQuad.drawCorners(poseStack, DuelTextures.DIGITS, cell,
+                digit / 10F, 0F, (digit + 1) / 10F, 1F, 1F, 1F);
+        }
     }
+
+    /** Height of a pile's count, and the atlas cell's width over its height. */
+    private static final float STACK_DIGIT_H = 13F;
+    private static final float STACK_DIGIT_ASPECT = 64F / 80F;
 
     /** A zone shrunk to its grid box, so neighbouring slots stay separate. */
     private static FieldLayout.Rect inset(FieldLayout.Rect rect)

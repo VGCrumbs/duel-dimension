@@ -52,6 +52,11 @@ minecraft {
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             property 'forge.enabledGameTestNamespaces', 'dueldimension'
 
+            // The duel screen is laid out in logical GUI pixels, so the window
+            // size decides how much board there is to lay out on. Fixing it at
+            // 920p means what is seen here is what was designed against.
+            args '--width', '1634', '--height', '920'
+
             mods {
                 dueldimension {
                     source sourceSets.main

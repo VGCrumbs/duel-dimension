@@ -22,23 +22,25 @@ import java.util.List;
  */
 public enum PlayMats
 {
-    CLASSIC("classic", "Classic"),
-    CRIMSON("crimson", "Crimson"),
-    ABYSS("abyss", "Abyss"),
-    VERDANT("verdant", "Verdant"),
-    AMETHYST("amethyst", "Amethyst"),
-    SANDSTORM("sandstorm", "Sandstorm");
+    CLASSIC("classic", "Classic", 0x8FA3B8),
+    CRIMSON("crimson", "Crimson", 0xD8563F),
+    ABYSS("abyss", "Abyss", 0x2FB6C8),
+    VERDANT("verdant", "Verdant", 0x4FBF6A),
+    AMETHYST("amethyst", "Amethyst", 0xA678D8),
+    SANDSTORM("sandstorm", "Sandstorm", 0xD8B25A);
 
     public static final List<PlayMats> ALL = List.of(values());
 
     private final String id;
     private final String displayName;
+    private final int accent;
     private final ResourceLocation texture;
 
-    PlayMats(String id, String displayName)
+    PlayMats(String id, String displayName, int accent)
     {
         this.id = id;
         this.displayName = displayName;
+        this.accent = accent;
         this.texture = new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/mats/" + id + ".png");
     }
 
@@ -55,6 +57,17 @@ public enum PlayMats
     public ResourceLocation texture()
     {
         return texture;
+    }
+
+    /**
+     * The mat's signature colour, matching the slot outlines printed on its
+     * own art. The zones the mat itself does not cover -- the piles, the extra
+     * monster zones, the field spell -- are tinted with this, so a duelist's
+     * whole half of the table carries their theme rather than just the middle.
+     */
+    public int accent()
+    {
+        return accent;
     }
 
     public PlayMats next()

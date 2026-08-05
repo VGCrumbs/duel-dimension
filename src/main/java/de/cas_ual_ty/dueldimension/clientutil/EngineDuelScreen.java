@@ -432,7 +432,7 @@ public class EngineDuelScreen extends Screen
         int menuX = Math.max(SIDEBAR_W + 4,
             Math.min(hit.x() + hit.w() / 2 - widest / 2, width - widest - 4));
         int menuY = hit.y() - menuHeight - 4;
-        if(menuY < TOP_BAR_H + PHASE_CELL_H + 8)
+        if(menuY < TOP_BAR_H + phaseCellH() + 8)
         {
             menuY = hit.y() + hit.h() + 4; // no room above: fall below instead
         }
@@ -905,10 +905,43 @@ public class EngineDuelScreen extends Screen
      * PAD_Y only sets how much case shows above and below; tying them together
      * is what made the first half-height pass look lopsided.
      */
-    private static final int PHASE_CELL_W = 50;
-    private static final int PHASE_CELL_H = 10;
-    private static final int PHASE_PAD_X = 8;
-    private static final int PHASE_PAD_Y = 3;
+    /** The authored proportions; the bar scales from these to fit the board. */
+    private static final int PHASE_CELL_W_BASE = 50;
+    private static final int PHASE_CELL_H_BASE = 10;
+    private static final int PHASE_PAD_X_BASE = 8;
+    private static final int PHASE_PAD_Y_BASE = 3;
+    /** Never so small it cannot be read, nor so wide it dwarfs the board. */
+    private static final int PHASE_CELL_W_MIN = 40;
+    private static final int PHASE_CELL_W_MAX = 110;
+    /** How much of the board's width the bar spans. */
+    private static final float PHASE_FILL = 0.86F;
+
+    /**
+     * Key width for this window: the board's width shared between six keys,
+     * held between the bounds above. Everything else scales from it, so the
+     * bar keeps the shape it was drawn at whatever it is stretched to.
+     */
+    private int phaseCellW()
+    {
+        int available = Math.round((width - SIDEBAR_W) * PHASE_FILL) - PHASE_PAD_X_BASE * 2;
+        return Math.max(PHASE_CELL_W_MIN,
+            Math.min(PHASE_CELL_W_MAX, available / PHASE_NAMES.length));
+    }
+
+    private int phaseCellH()
+    {
+        return Math.max(6, Math.round(phaseCellW() * (float)PHASE_CELL_H_BASE / PHASE_CELL_W_BASE));
+    }
+
+    private int phasePadX()
+    {
+        return Math.round(phaseCellW() * (float)PHASE_PAD_X_BASE / PHASE_CELL_W_BASE);
+    }
+
+    private int phasePadY()
+    {
+        return Math.max(2, Math.round(phaseCellH() * (float)PHASE_PAD_Y_BASE / PHASE_CELL_H_BASE));
+    }
     /**
      * The phase row sits below the life bars, tucked up under the turn badge:
      * the "your turn" label that used to occupy this space is gone (the badge's
@@ -918,7 +951,7 @@ public class EngineDuelScreen extends Screen
 
     private int phaseBarLeft()
     {
-        int barW = PHASE_NAMES.length * PHASE_CELL_W;
+        int barW = PHASE_NAMES.length * phaseCellW();
         float centre = boardRenderer.tableCentreX();
         if(centre <= SIDEBAR_W + barW / 2F || centre >= width - barW / 2F)
         {
@@ -938,8 +971,8 @@ public class EngineDuelScreen extends Screen
                 continue; // not reachable: drawn as a label instead
             }
             int index = option;
-            addRenderableWidget(new SlimPhaseButton(x + i * PHASE_CELL_W, PHASE_BAR_Y,
-                PHASE_CELL_W, PHASE_CELL_H, Component.literal(PHASE_NAMES[i]), i,
+            addRenderableWidget(new SlimPhaseButton(x + i * phaseCellW(), PHASE_BAR_Y,
+                phaseCellW(), phaseCellH(), Component.literal(PHASE_NAMES[i]), i,
                 pressed -> choose(index)));
         }
     }
@@ -1203,8 +1236,8 @@ public class EngineDuelScreen extends Screen
         // The housing first, sitting a little proud of the bays.
         ScreenUtil.white();
         DuelTextures.bindSmooth(DuelTextures.PHASE_CASE);
-        DdBlitUtil.fullBlit(poseStack, x - PHASE_PAD_X, PHASE_BAR_Y - PHASE_PAD_Y,
-            PHASE_NAMES.length * PHASE_CELL_W + PHASE_PAD_X * 2, PHASE_CELL_H + PHASE_PAD_Y * 2);
+        DdBlitUtil.fullBlit(poseStack, x - phasePadX(), PHASE_BAR_Y - phasePadY(),
+            PHASE_NAMES.length * phaseCellW() + phasePadX() * 2, phaseCellH() + phasePadY() * 2);
 
         for(int i = 0; i < PHASE_NAMES.length; i++)
         {
@@ -1213,8 +1246,8 @@ public class EngineDuelScreen extends Screen
             // is where an unreachable phase greys out.
             if(phaseOptionFor(shownPrompt, PHASE_VALUES[i]) < 0)
             {
-                drawPhaseCell(poseStack, x + i * PHASE_CELL_W, PHASE_BAR_Y, PHASE_CELL_W,
-                    PHASE_CELL_H, i, phaseState(board, i), yourTurn);
+                drawPhaseCell(poseStack, x + i * phaseCellW(), PHASE_BAR_Y, phaseCellW(),
+                    phaseCellH(), i, phaseState(board, i), yourTurn);
             }
         }
     }
