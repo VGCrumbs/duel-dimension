@@ -716,7 +716,8 @@ public class EngineDuelScreen extends Screen
         // window is exactly the set of responses available to you.
         boardRenderer.setCanActivate(hit -> optionsFor(hit).stream().anyMatch(index ->
             prompt != null && prompt.options().get(index).command() == CardCommands.COMMAND_ACTIVATE));
-        boardRenderer.setArriving(zone -> animations.isArriving(zone, System.currentTimeMillis()));
+        boardRenderer.setArriving((zone, code) ->
+            animations.isArriving(zone, code, System.currentTimeMillis()));
 
         // EDOPro's frustum is off-centre by design (M[8] = 1/3) so the table
         // sits right of screen centre and leaves room for the card-info column.

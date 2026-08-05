@@ -175,6 +175,14 @@ public final class FieldLayout
         /** The off-centre shift: (l + r) / (l - r) = +1/3. */
         private static final float M8 = (CAMERA_LEFT + CAMERA_RIGHT) / (CAMERA_LEFT - CAMERA_RIGHT);
 
+        /**
+         * Screen pixels per NDC x over pixels per NDC y for an undistorted
+         * table: the frustum is 1.35 wide and 0.84 tall, so one NDC x unit is
+         * 1.607 times the world span of one NDC y unit.
+         */
+        static final float FRUSTUM_ASPECT =
+            (CAMERA_RIGHT - CAMERA_LEFT) / (CAMERA_TOP - CAMERA_BOTTOM);
+
         /** Camera-space depth of a point on the table. */
         private static float viewDepth(float fieldY)
         {
@@ -259,19 +267,25 @@ public final class FieldLayout
         float minNdcY = Math.min(ndcYNear, ndcYFar);
         float maxNdcY = Math.max(ndcYNear, ndcYFar);
 
-        // One scale for both axes, so the board keeps a fixed shape whatever
-        // the window is. EDOPro sets keep_aspect_ratio=false and lets the
-        // frustum stretch, but a table that changes proportion as the window
-        // resizes reads as broken here, so the smaller of the two fits is used
-        // and the leftover becomes an even margin.
+        // A fixed shape whatever the window is. EDOPro sets
+        // keep_aspect_ratio=false and lets the frustum stretch, but a table that
+        // changes proportion as the window resizes reads as broken here.
+        //
+        // Fixed does NOT mean one scale for both axes. NDC x and y are not the
+        // same physical unit: x spans the frustum's width (r - l = 1.35) and y
+        // its height (t - b = 0.84), so an undistorted table needs
+        //     scaleX / scaleY = (r - l) / (t - b) = 1.607
+        // Using a single scale squashes the table horizontally by exactly that
+        // factor, which is what made it skinny.
         float ndcWidth = maxNdcX - minNdcX;
         float ndcHeight = maxNdcY - minNdcY;
-        float scale = Math.min(width / ndcWidth, height / ndcHeight);
-        float marginX = (width - ndcWidth * scale) / 2F;
-        float marginY = (height - ndcHeight * scale) / 2F;
-        // x = originX + ndcX * scale, and y = originY - ndcY * scale, so the low
-        // x edge and the high y edge land on the box's left and top.
-        return new Projection(left + marginX - minNdcX * scale,
-            top + marginY + maxNdcY * scale, scale, scale);
+        float scaleY = Math.min(width / (ndcWidth * Projection.FRUSTUM_ASPECT), height / ndcHeight);
+        float scaleX = scaleY * Projection.FRUSTUM_ASPECT;
+        float marginX = (width - ndcWidth * scaleX) / 2F;
+        float marginY = (height - ndcHeight * scaleY) / 2F;
+        // x = originX + ndcX * scaleX, and y = originY - ndcY * scaleY, so the
+        // low x edge and the high y edge land on the box's left and top.
+        return new Projection(left + marginX - minNdcX * scaleX,
+            top + marginY + maxNdcY * scaleY, scaleX, scaleY);
     }
 }

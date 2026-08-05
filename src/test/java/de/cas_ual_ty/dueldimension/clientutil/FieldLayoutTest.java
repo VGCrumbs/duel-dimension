@@ -61,11 +61,16 @@ class FieldLayoutTest
         assertEquals((LEFT + LEFT + WIDTH) / 2F, (minX + maxX) / 2F, 1F, "board should be centred");
         assertEquals((TOP + TOP + HEIGHT) / 2F, (nearY + farY) / 2F, 1F, "board should be centred");
 
-        // A fixed aspect: the same scale on both axes. Rendering the same board
-        // into a box of a different shape must not change its proportions.
+        // A fixed aspect. NOT one scale for both axes: NDC x spans the
+        // frustum's width (1.35) and y its height (0.84), so undistorted means
+        // scaleX / scaleY = 1.35 / 0.84. Forcing them equal squashes the table
+        // horizontally by that factor, which is what made it look skinny.
+        float frustumAspect = (0.45F + 0.90F) / (0.42F + 0.42F);
+        assertEquals(frustumAspect, projection.scaleX() / projection.scaleY(), 0.001F,
+            "the table must not be squashed: pixels per NDC unit differ by the frustum's aspect");
         FieldLayout.Projection wide = FieldLayout.fit(0, 0, WIDTH * 2, HEIGHT);
-        assertEquals(1F, wide.scaleX() / wide.scaleY(), 0.001F,
-            "both axes must share one scale, or the board changes shape with the window");
+        assertEquals(projection.scaleX() / projection.scaleY(), wide.scaleX() / wide.scaleY(), 0.001F,
+            "the board must keep its shape when the window's shape changes");
     }
 
     /**

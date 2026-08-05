@@ -488,10 +488,17 @@ public class DuelAnimations
     }
 
     /**
-     * True while a card is still travelling into this zone, so the board can
-     * hold back the settled copy until the animation lands.
+     * True while <em>this</em> card is still travelling into this zone, so the
+     * board can hold back the settled copy until the animation lands.
+     * <p>
+     * Both the zone and the card must match, and only animations actually
+     * running count. The first version matched on zone alone and also counted
+     * queued events, which made cards vanish outright: any card sitting in a
+     * zone some pending event happened to name was hidden, and a queued event
+     * that never played left it hidden indefinitely. Control changes hit this
+     * hardest, since a card moves into a zone the opponent's card just left.
      */
-    public boolean isArriving(int zoneRef, long now)
+    public boolean isArriving(int zoneRef, int code, long now)
     {
         if(zoneRef < 0)
         {
@@ -499,29 +506,13 @@ public class DuelAnimations
         }
         for(Playing animation : playing)
         {
-            if(animation.event().toZone() == zoneRef && !animation.done(now))
-            {
-                return true;
-            }
-        }
-        // Also while it is still queued, or it would pop in and then fly again.
-        for(DuelEvent waiting : queue)
-        {
-            if(waiting.toZone() == zoneRef && isMove(waiting))
+            DuelEvent event = animation.event();
+            if(event.toZone() == zoneRef && event.code() == code && !animation.done(now))
             {
                 return true;
             }
         }
         return false;
-    }
-
-    private static boolean isMove(DuelEvent event)
-    {
-        return switch(event.kind())
-        {
-            case MOVE, SUMMON, SPECIAL_SUMMON, SET, ACTIVATE, DESTROY, DRAW -> true;
-            default -> false;
-        };
     }
 
     /** True while anything is still playing, for callers that want to wait. */
