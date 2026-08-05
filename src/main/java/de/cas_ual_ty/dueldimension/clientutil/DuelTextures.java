@@ -16,10 +16,32 @@ import net.minecraft.resources.ResourceLocation;
  */
 public final class DuelTextures
 {
+    /**
+     * The Master Rule 5 playmat. EDOPro keeps one mat per rules era and picks
+     * by duel_field; field4 is the modern one, and the *-transparent variant
+     * is only swapped in when a face-up Field Spell's own art is drawn
+     * underneath it.
+     */
     public static final ResourceLocation FIELD =
-        new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/field-transparent.png");
+        new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/field4.png");
+    public static final ResourceLocation FIELD_TRANSPARENT =
+        new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/field-transparent4.png");
+    /** Card backs: EDOPro uses a different one per side (tCover[controler]). */
     public static final ResourceLocation COVER =
         new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/cover.png");
+    public static final ResourceLocation COVER_OPPONENT =
+        new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/cover2.png");
+    /** Fallback art for a card whose image is missing or still downloading. */
+    public static final ResourceLocation UNKNOWN =
+        new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/unknown.png");
+    /** The life-point bar frame; the fill inside it is drawn procedurally. */
+    public static final ResourceLocation LP_FRAME =
+        new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/lpf.png");
+    public static final ResourceLocation BACKDROP =
+        new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/bg.png");
+    /** 5x4 atlas of 64px digits, used for chain-link and counter badges. */
+    public static final ResourceLocation NUMBERS =
+        new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/number.png");
     public static final ResourceLocation ACT =
         new ResourceLocation(DuelDimension.MOD_ID, "textures/duel/act.png");
     public static final ResourceLocation ATTACK =
@@ -54,7 +76,14 @@ public final class DuelTextures
      */
     public static ResourceLocation card(Properties properties, byte imageIndex, int size)
     {
-        return new ResourceLocation(DuelDimension.MOD_ID,
-            "textures/item/" + ImageHandler.getReplacementImage(properties, imageIndex, size) + ".png");
+        String image = ImageHandler.getReplacementImage(properties, imageIndex, size);
+        // While the pipeline is still fetching (or gave up on) a card, show
+        // the reference client's own "unknown card" art rather than the mod's
+        // loading placeholder, which reads as a broken card on a duel field.
+        if(image.endsWith("card_loading") || image.endsWith("card_failed"))
+        {
+            return UNKNOWN;
+        }
+        return new ResourceLocation(DuelDimension.MOD_ID, "textures/item/" + image + ".png");
     }
 }

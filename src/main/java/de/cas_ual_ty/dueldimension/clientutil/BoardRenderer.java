@@ -69,6 +69,7 @@ public class BoardRenderer extends GuiComponent
     private final List<Hit> hits = new ArrayList<>();
     private Set<Integer> zoneHighlights = Set.of();
     private java.util.function.Predicate<Hit> actionable = hit -> false;
+    private java.util.function.Predicate<Hit> canAttack = hit -> false;
     private FieldLayout.Projection projection;
 
     public List<Hit> hits()
@@ -79,6 +80,12 @@ public class BoardRenderer extends GuiComponent
     public void setActionable(java.util.function.Predicate<Hit> actionable)
     {
         this.actionable = actionable;
+    }
+
+    /** Cards whose command bitmask includes COMMAND_ATTACK. */
+    public void setCanAttack(java.util.function.Predicate<Hit> canAttack)
+    {
+        this.canAttack = canAttack;
     }
 
     public void render(PoseStack poseStack, Font font, BoardSnapshot board, int left, int top,
@@ -150,7 +157,8 @@ public class BoardRenderer extends GuiComponent
 
         if(count > 0)
         {
-            FieldQuad.draw(poseStack, DuelTextures.COVER, corners);
+            FieldQuad.draw(poseStack, controller == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT,
+                corners);
             String text = Integer.toString(count);
             int textX = corners.minX() + (corners.maxX() - corners.minX() - font.width(text)) / 2;
             int textY = corners.maxY() - 10;
@@ -218,12 +226,17 @@ public class BoardRenderer extends GuiComponent
                 rect.x() + (rect.w() - rect.h()) / 2F, rect.y() + (rect.h() - rect.w()) / 2F,
                 rect.h(), rect.w());
             FieldQuad.Corners t = projection.quad(turned);
-            FieldQuad.draw(poseStack, textureFor(slot, inHand),
+            FieldQuad.draw(poseStack, textureFor(slot, inHand, hit.controller()),
                 new FieldQuad.Corners(t.x3(), t.y3(), t.x0(), t.y0(), t.x1(), t.y1(), t.x2(), t.y2()));
         }
         else
         {
-            FieldQuad.draw(poseStack, textureFor(slot, inHand), hit.corners());
+            FieldQuad.draw(poseStack, textureFor(slot, inHand, hit.controller()), hit.corners());
+        }
+        if(!inHand && canAttack.test(hit))
+        {
+            // drawing.cpp bobs tAttack over any card that may attack.
+            FieldQuad.draw(poseStack, DuelTextures.ATTACK, hit.corners());
         }
     }
 
@@ -233,11 +246,12 @@ public class BoardRenderer extends GuiComponent
      * for cards set on the field. A code of 0 means the snapshot withheld the
      * identity, which is the real test for hiding.
      */
-    private ResourceLocation textureFor(BoardSnapshot.Slot slot, boolean inHand)
+    private ResourceLocation textureFor(BoardSnapshot.Slot slot, boolean inHand, int controller)
     {
         if(slot.code() == 0 || (slot.faceDown() && !inHand))
         {
-            return DuelTextures.COVER;
+            // EDOPro gives each side its own card back (tCover[controler]).
+            return controller == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT;
         }
         Properties properties = DdDatabase.PROPERTIES_LIST.get((long)slot.code());
         return properties == null ? DuelTextures.COVER

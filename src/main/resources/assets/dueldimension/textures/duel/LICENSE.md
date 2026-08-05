@@ -6,8 +6,10 @@ Copyright notices are preserved verbatim in `EDOPRO_CREDITS.md`; in short:
 
 | Files | Copyright |
 | --- | --- |
-| `cover.png`, `field-transparent.png` | © 2020 Icematoro |
-| `act.png`, `chain.png`, `chaintarget.png`, `negated.png`, `equip.png`, `target.png`, `attack.png`, `lp.png` | © 2020 NaimSantos |
+| `cover.png`, `cover2.png`, `field4.png`, `field-transparent.png`, `field-transparent4.png` | © 2020 Icematoro |
+| `act.png`, `chain.png`, `chaintarget.png`, `negated.png`, `equip.png`, `target.png`, `attack.png`, `lp.png`, `lpf.png`, `number.png`, `mask.png` | © 2020 NaimSantos |
+| `bg.png` | © 2020 LogicalNonsense |
+| `unknown.png` (converted from `unknown.jpg`) | © 2020 NaimSantos |
 
 Because these are AGPL, this mod's source must remain available to anyone it is
 distributed to (and to users of any network service running it). That is

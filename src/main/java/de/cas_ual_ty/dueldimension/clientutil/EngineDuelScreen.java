@@ -545,6 +545,8 @@ public class EngineDuelScreen extends Screen
             prompt.options().forEach(option -> highlights.add(option.zone()));
         }
         boardRenderer.setActionable(hit -> !optionsFor(hit).isEmpty());
+        boardRenderer.setCanAttack(hit -> optionsFor(hit).stream().anyMatch(index ->
+            prompt != null && prompt.options().get(index).command() == CardCommands.COMMAND_ATTACK));
 
         // EDOPro's frustum is off-centre by design: it pushes the table into
         // the right two thirds and leaves the left for the card-info column.
@@ -617,14 +619,24 @@ public class EngineDuelScreen extends Screen
             SIDEBAR_W + (width - SIDEBAR_W) / 2, 20, 0xFFD700);
     }
 
+    /**
+     * EDOPro draws a frame texture (lpf.png, a fixed 200x20 source) and fills
+     * it procedurally; lp.png is never drawn. Same here.
+     */
     private void drawLifeBar(PoseStack poseStack, int x, int y, int barW, String name, int lifePoints, int colour)
     {
-        int filled = Math.max(0, Math.min(barW, Math.round(barW * lifePoints / 8000F)));
-        fill(poseStack, x, y, x + barW, y + 11, 0xFF202020);
-        fill(poseStack, x, y, x + filled, y + 11, colour);
-        font.draw(poseStack, name, x + 3, y + 2, 0xFFFFFF);
+        int barH = 13;
+        int filled = Math.max(0, Math.min(barW - 4, Math.round((barW - 4) * lifePoints / 8000F)));
+        fill(poseStack, x + 2, y + 2, x + barW - 2, y + barH - 2, 0xFF101010);
+        fill(poseStack, x + 2, y + 2, x + 2 + filled, y + barH - 2, colour);
+
+        ScreenUtil.white();
+        CardRenderUtil.bindMainResourceLocation(DuelTextures.LP_FRAME);
+        DdBlitUtil.fullBlit(poseStack, x, y, barW, barH);
+
+        font.draw(poseStack, name, x + 5, y + 3, 0xFFFFFF);
         String value = Integer.toString(lifePoints);
-        font.draw(poseStack, value, x + barW - font.width(value) - 3, y + 2, 0xFFFFFF);
+        font.draw(poseStack, value, x + barW - font.width(value) - 5, y + 3, 0xFFFFFF);
     }
 
     /** Left column: card image, then card info — EDOPro's Card info tab. */
