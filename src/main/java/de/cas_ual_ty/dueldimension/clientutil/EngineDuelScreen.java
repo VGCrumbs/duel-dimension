@@ -560,13 +560,20 @@ public class EngineDuelScreen extends Screen
                     }
                     continue;
                 }
-                if(actions.size() == 1)
+                if(actions.size() == 1 && !isCardCommand(actions.get(0)))
                 {
+                    // Selecting a card for a prompt ("pick a target") stays one
+                    // click: there is nothing to choose between.
                     choose(actions.get(0));
                     return true;
                 }
                 if(!actions.isEmpty())
                 {
+                    // Anything the card can *do* goes through the menu, even
+                    // when there is only one of them. Firing it on click meant
+                    // touching a monster silently changed its battle position,
+                    // and the reference always opens ShowMenu for a card's
+                    // commands rather than acting on the click itself.
                     openMenu(hit);
                     return true;
                 }
@@ -574,6 +581,18 @@ public class EngineDuelScreen extends Screen
             closeMenu();
         }
         return false;
+    }
+
+    /**
+     * True if this option is one of the card's own commands (summon, set,
+     * activate, reposition, attack...) rather than a prompt selection. Card
+     * commands always deserve a button to press; selections do not.
+     */
+    private boolean isCardCommand(int index)
+    {
+        EnginePrompt prompt = shownPrompt;
+        return prompt != null && index >= 0 && index < prompt.options().size()
+            && prompt.options().get(index).command() != 0;
     }
 
     private void openPile(BoardRenderer.Hit hit)

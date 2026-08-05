@@ -245,8 +245,11 @@ public class BoardRenderer extends GuiComponent
      */
     private void drawStats(PoseStack poseStack, BoardSnapshot.Slot slot, Hit hit, boolean inHand)
     {
+        // A concealed card (code 0) has no stats we are allowed to know: the
+        // board state sends -1, which clamps to 0, so drawing them anyway
+        // printed a misleading "0/0" under every card whose identity is hidden.
         if(font == null || inHand || hit.location() != OcgConstants.LOCATION_MZONE
-            || !slot.present() || slot.faceDown())
+            || !slot.present() || slot.faceDown() || slot.code() == 0)
         {
             return;
         }

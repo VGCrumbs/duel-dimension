@@ -339,10 +339,6 @@ public final class DuelistDuels
     {
         DuelMessage message = DuelMessage.decode(raw);
 
-        if(message instanceof DuelMessage.NewTurn turn)
-        {
-            return Component.literal("— Turn: player " + turn.player() + " —").withStyle(ChatFormatting.YELLOW);
-        }
         if(message instanceof DuelMessage.Damage damage)
         {
             return Component.literal("Player " + damage.player() + " takes " + damage.amount() + " damage")
@@ -363,15 +359,14 @@ public final class DuelistDuels
             return Component.literal("  " + descriptions.describeHint(hint.hintType(), hint.description()))
                 .withStyle(ChatFormatting.GRAY);
         }
-        if(message instanceof DuelMessage.NewPhase phase)
-        {
-            return Component.literal(phaseName(phase.phase())).withStyle(ChatFormatting.YELLOW);
-        }
         if(message instanceof DuelMessage.Draw draw)
         {
             return Component.literal("Player " + draw.player() + " draws " + draw.cards().size())
                 .withStyle(ChatFormatting.GRAY);
         }
+        // Turn and phase changes are deliberately absent: the phase bar and the
+        // turn badge already show both, and narrating them filled the whole log
+        // band with "Draw Phase / Standby Phase / Main Phase 1" every turn.
         return null; // per-card moves and chain bookkeeping would drown the log
     }
 
