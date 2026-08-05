@@ -128,9 +128,21 @@ public final class DuelTextures
      */
     public static ResourceLocation commandIcon(int command, boolean faceDown, boolean attackPosition)
     {
+        // Where the reference has its own symbol, use it: act.png is the mark
+        // EDOPro lays over an activatable card and attack.png the one it bobs
+        // over an attacker. It ships no others -- its command menu is text-only
+        // (ShowMenu builds plain buttons), so summon, set and reposition have
+        // no EDOPro art to take and keep the mod's own icons.
+        if(command == de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.COMMAND_ACTIVATE)
+        {
+            return ACT;
+        }
+        if(command == de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.COMMAND_ATTACK)
+        {
+            return ATTACK;
+        }
         String name = switch(command)
         {
-            case de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.COMMAND_ACTIVATE -> "activate_spell_trap";
             case de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.COMMAND_SUMMON -> "normal_summon";
             case de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.COMMAND_SPSUMMON -> "special_summon_atk";
             case de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.COMMAND_MSET -> "set_to_def";

@@ -49,7 +49,13 @@ public class EngineDuelScreen extends Screen
     /** The play space starts this far below the header. */
     private static final int FIELD_DROP = 14;
     private static final int TOP_BAR_H = 48;
-    private static final int MENU_ROW = CardCommands.MENU_ROW_HEIGHT;
+    /**
+     * Menu row height. ShowMenu uses Scale(21) in the reference
+     * (CardCommands.MENU_ROW_HEIGHT keeps that number on record), but at this
+     * screen's size those rows sit heavily over the board, so the menu is
+     * drawn slimmer.
+     */
+    private static final int MENU_ROW = 15;
     private static final int LOG_W = 150;
     /** The turn badge reads green on your turn, red on theirs. */
     private static final int TURN_YOURS = 0x4CD964;
@@ -818,7 +824,9 @@ public class EngineDuelScreen extends Screen
         // than glides.
         if(aimZone >= 0 && shownPrompt != null && !answered && isTargetSelection(shownPrompt))
         {
-            long bucket = now / 167;
+            // 30 updates a second: smooth enough to track the cursor without
+            // redrawing the pointer every frame.
+            long bucket = now / 33;
             if(bucket != aimBucket)
             {
                 aimBucket = bucket;
@@ -973,9 +981,10 @@ public class EngineDuelScreen extends Screen
             if(icon != null)
             {
                 ScreenUtil.white();
-                CardRenderUtil.bindMainResourceLocation(icon);
-                DdBlitUtil.fullBlit(poseStack, x + 3, y + 2, 15, 15);
-                textX = x + 21;
+                DuelTextures.bindSmooth(icon);
+                int size = height - 4;
+                DdBlitUtil.fullBlit(poseStack, x + 3, y + 2, size, size);
+                textX = x + 6 + size;
             }
             font.draw(poseStack, getMessage(), textX, y + (height - 8) / 2F,
                 hovered ? 0xFFFFCC : 0xE8E8E8);
@@ -1229,12 +1238,19 @@ public class EngineDuelScreen extends Screen
         {
             // A slow breath around the bar of whoever is playing. Subtle enough
             // to ignore, bright enough to answer "whose turn is it" at a glance.
-            float pulse = 0.35F + 0.25F * (float)Math.sin(now / 420D);
-            int glow = (Math.round(pulse * 255) << 24) | 0xFFFFFF;
-            fill(poseStack, x - 2, y - 2, x + barW + 2, y, glow);
-            fill(poseStack, x - 2, y + barH, x + barW + 2, y + barH + 2, glow);
-            fill(poseStack, x - 2, y, x, y + barH, glow);
-            fill(poseStack, x + barW, y, x + barW + 2, y + barH, glow);
+            // Three shells, each a pixel wider and fainter than the last, so
+            // the edge fades out instead of stopping dead.
+            float pulse = 0.30F + 0.18F * (float)Math.sin(now / 420D);
+            float[] fade = {1F, 0.5F, 0.22F};
+            for(int shell = 0; shell < fade.length; shell++)
+            {
+                int e = shell + 1;
+                int glow = (Math.round(pulse * fade[shell] * 255) << 24) | 0xFFFFFF;
+                fill(poseStack, x - e, y - e, x + barW + e, y - e + 1, glow);
+                fill(poseStack, x - e, y + barH + e - 1, x + barW + e, y + barH + e, glow);
+                fill(poseStack, x - e, y - e, x - e + 1, y + barH + e, glow);
+                fill(poseStack, x + barW + e - 1, y - e, x + barW + e, y + barH + e, glow);
+            }
         }
         if(flash > 0)
         {
