@@ -39,7 +39,7 @@ public class CdbCardProvider implements OcgDuel.CardProvider
 
     private void loadFile(Path cdb) throws SQLException
     {
-        try(Connection connection = DriverManager.getConnection("jdbc:sqlite:" + cdb.toAbsolutePath());
+        try(Connection connection = de.cas_ual_ty.dueldimension.ocg.Sqlite.open(cdb);
             Statement statement = connection.createStatement();
             ResultSet rows = statement.executeQuery("SELECT id, alias, setcode, type, atk, def, level, race, attribute FROM datas"))
         {

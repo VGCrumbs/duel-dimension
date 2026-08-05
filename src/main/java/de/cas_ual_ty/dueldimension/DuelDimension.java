@@ -142,6 +142,7 @@ public class DuelDimension
         bus.addListener(this::init);
         bus.addListener(this::modConfig);
         bus.addListener(this::newRegistry);
+        bus.addListener(this::entityAttributes);
         DuelDimension.proxy.registerModEventListeners(bus);
         
         DdBlocks.register(bus);
@@ -164,6 +165,8 @@ public class DuelDimension
         bus.addListener(this::registerCommands);
         bus.addListener(this::findDecks);
         bus.addListener(this::serverStopped);
+        bus.addListener(this::serverTick);
+        bus.addListener(this::serverStarted);
         DuelDimension.proxy.registerForgeEventListeners(bus);
         
         DuelDimension.proxy.preInit();
@@ -326,6 +329,27 @@ public class DuelDimension
         {
             event.player.getCapability(COOLDOWN_HOLDER).ifPresent(CooldownHolder::tick);
         }
+    }
+    
+    private void serverStarted(net.minecraftforge.event.server.ServerStartedEvent event)
+    {
+        de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.maybeStartSelfTest(event.getServer());
+    }
+
+    private void serverTick(TickEvent.ServerTickEvent event)
+    {
+        if(event.phase == TickEvent.Phase.END)
+        {
+            // Duels run on their own threads; this is where what they produced
+            // is handed back to the game thread.
+            de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.tick(event.getServer());
+        }
+    }
+    
+    private void entityAttributes(net.minecraftforge.event.entity.EntityAttributeCreationEvent event)
+    {
+        event.put(DdEntityTypes.DUELIST.get(),
+            de.cas_ual_ty.dueldimension.duel.npc.DuelistEntity.createAttributes().build());
     }
     
     private void registerCommands(RegisterCommandsEvent event)

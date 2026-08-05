@@ -318,6 +318,8 @@ public class ClientProxy implements ISidedProxy
     private void entityRenderers(EntityRenderersEvent.RegisterRenderers event)
     {
         event.registerEntityRenderer(DdEntityTypes.DUEL.get(), DuelEntityRenderer::new);
+        event.registerEntityRenderer(DdEntityTypes.DUELIST.get(),
+            de.cas_ual_ty.dueldimension.duel.npc.DuelistRenderer::new);
     }
     
     @SuppressWarnings("deprecation")

@@ -110,7 +110,7 @@ public class DescriptionTable
         {
             columns.append(", str").append(i);
         }
-        try(Connection connection = DriverManager.getConnection("jdbc:sqlite:" + cdb.toAbsolutePath());
+        try(Connection connection = de.cas_ual_ty.dueldimension.ocg.Sqlite.open(cdb);
             Statement statement = connection.createStatement();
             ResultSet rows = statement.executeQuery("SELECT " + columns + " FROM texts"))
         {

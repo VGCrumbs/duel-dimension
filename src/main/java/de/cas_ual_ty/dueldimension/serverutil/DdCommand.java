@@ -24,9 +24,69 @@ import java.util.UUID;
 
 public class DdCommand
 {
+    private static int engineStatus(CommandContext<CommandSourceStack> context)
+    {
+        de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime.Paths paths =
+                de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime.Paths.defaults();
+        String status = de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime.status(paths);
+        context.getSource().sendSuccess(Component.literal("Rules engine: " + status), false);
+        return Command.SINGLE_SUCCESS;
+    }
+    
+    private static int testDuel(CommandContext<CommandSourceStack> context)
+    {
+        String error = de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels
+                .startConsoleDuel("yugi", "kaiba", System.nanoTime());
+        if(error != null)
+        {
+            context.getSource().sendFailure(Component.literal("Cannot start duel: " + error));
+            return 0;
+        }
+        context.getSource().sendSuccess(Component.literal("Test duel started (Yugi vs Kaiba); watch the log."), true);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int spawnDuelist(CommandContext<CommandSourceStack> context, String profile)
+    {
+        CommandSourceStack source = context.getSource();
+        de.cas_ual_ty.dueldimension.duel.npc.DuelistEntity duelist =
+                de.cas_ual_ty.dueldimension.DdEntityTypes.DUELIST.get().create(source.getLevel());
+        if(duelist == null)
+        {
+            source.sendFailure(Component.literal("Could not create duelist"));
+            return 0;
+        }
+        duelist.moveTo(source.getPosition().x, source.getPosition().y, source.getPosition().z,
+                source.getRotation().y, 0);
+        duelist.setProfileId(profile);
+        source.getLevel().addFreshEntity(duelist);
+        source.sendSuccess(Component.literal("Spawned duelist: " + profile), false);
+        return Command.SINGLE_SUCCESS;
+    }
+    
     public static void registerCommand(CommandDispatcher<CommandSourceStack> dispatcher)
     {
         dispatcher.register(Commands.literal(DuelDimension.MOD_ID)
+                .then(Commands.literal("engine")
+                        .executes((context) -> DdCommand.engineStatus(context))
+                        .then(Commands.literal("testduel")
+                                .requires((source) -> source.hasPermission(2))
+                                .executes((context) -> DdCommand.testDuel(context))
+                        )
+                )
+                .then(Commands.literal("duelist")
+                        .requires((source) -> source.hasPermission(2))
+                        .then(Commands.argument("profile", com.mojang.brigadier.arguments.StringArgumentType.word())
+                                .suggests((context, builder) ->
+                                {
+                                    de.cas_ual_ty.dueldimension.ocg.deck.StarterDecks.ALL
+                                            .forEach(entry -> builder.suggest(entry.id()));
+                                    return builder.buildFuture();
+                                })
+                                .executes((context) -> DdCommand.spawnDuelist(context,
+                                        com.mojang.brigadier.arguments.StringArgumentType.getString(context, "profile")))
+                        )
+                )
                 .then(Commands.literal("setcontents")
                         .requires((source) -> source.getEntity() instanceof Player)
                         .executes((source) -> DdCommand.setcontents(source))

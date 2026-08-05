@@ -1,0 +1,279 @@
+package de.cas_ual_ty.dueldimension.duel.npc;
+
+import de.cas_ual_ty.dueldimension.ocg.HeadlessDuelRunner;
+import de.cas_ual_ty.dueldimension.ocg.RawMessage;
+import de.cas_ual_ty.dueldimension.ocg.bot.HeuristicBot;
+import de.cas_ual_ty.dueldimension.ocg.deck.StarterDecks;
+import de.cas_ual_ty.dueldimension.ocg.msg.DuelMessage;
+import de.cas_ual_ty.dueldimension.ocg.session.DuelSession;
+import de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime;
+import de.cas_ual_ty.dueldimension.ocg.text.DescriptionTable;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Bridges NPC duelists to the rules engine.
+ * <p>
+ * This is the interim step before the duel GUI exists: challenging a duelist
+ * runs a real, fully rules-enforced duel between two bots — the NPC's deck
+ * against the challenger's chosen starter deck — and narrates it into chat.
+ * It exercises the entire server-side path (engine thread, sessions, event
+ * pumping, text) with no screens involved, so the GUI later only has to
+ * replace the narration.
+ */
+public final class DuelistDuels
+{
+    /** Who is watching a duel: a player, or the server console. */
+    public record Watcher(UUID playerId, boolean console)
+    {
+        public static Watcher of(ServerPlayer player)
+        {
+            return new Watcher(player.getUUID(), false);
+        }
+
+        public static Watcher forConsole()
+        {
+            return new Watcher(new UUID(0, 0), true);
+        }
+
+        void send(net.minecraft.server.MinecraftServer server, Component line)
+        {
+            if(console)
+            {
+                org.apache.logging.log4j.LogManager.getLogger().info("[duel] {}", line.getString());
+                return;
+            }
+            ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+            if(player != null)
+            {
+                player.sendSystemMessage(line);
+            }
+        }
+    }
+
+    /** Sessions keyed by watcher, so one watcher runs one duel at a time. */
+    private static final Map<Watcher, DuelSession> ACTIVE = new ConcurrentHashMap<>();
+
+    /**
+     * Set by the -Pselftest run flag: play one duel on a freshly started
+     * server, report it, then shut the server down. This is how the whole
+     * in-game path gets verified without a human clicking anything.
+     */
+    private static volatile boolean selfTestMode;
+
+    private DuelistDuels()
+    {
+    }
+
+    public static void challenge(DuelistEntity duelist, Player player)
+    {
+        if(!(player instanceof ServerPlayer serverPlayer))
+        {
+            return;
+        }
+
+        DuelSession existing = ACTIVE.get(Watcher.of(serverPlayer));
+        if(existing != null && existing.isRunning())
+        {
+            serverPlayer.sendSystemMessage(Component.literal("A duel is already running.")
+                .withStyle(ChatFormatting.RED));
+            return;
+        }
+
+        EngineRuntime.Paths paths = EngineRuntime.Paths.defaults();
+        String missing = paths.missing();
+        if(missing != null)
+        {
+            serverPlayer.sendSystemMessage(Component.literal("Ruled duels unavailable: " + missing)
+                .withStyle(ChatFormatting.RED));
+            return;
+        }
+
+        EngineRuntime engine = EngineRuntime.get(paths);
+        if(engine == null)
+        {
+            serverPlayer.sendSystemMessage(Component.literal("Ruled duels unavailable.")
+                .withStyle(ChatFormatting.RED));
+            return;
+        }
+
+        StarterDecks.Entry npcDeck = StarterDecks.byId(duelist.getProfileId());
+        // Until deck selection exists, the challenger runs Yugi's deck unless
+        // that is what the NPC is using.
+        StarterDecks.Entry playerDeck = npcDeck == StarterDecks.YUGI ? StarterDecks.KAIBA : StarterDecks.YUGI;
+
+        long seed = serverPlayer.level.getGameTime() ^ serverPlayer.getUUID().getLeastSignificantBits();
+        long[] seeds = {seed | 1, seed * 31 + 7, seed * 131 + 17, ~seed};
+
+        HeadlessDuelRunner.Deck deck0 = playerDeck.load().toRunnerDeck();
+        HeadlessDuelRunner.Deck deck1 = npcDeck.load().toRunnerDeck();
+
+        DuelSession session = DuelSession.create(
+            "npc-" + serverPlayer.getGameProfile().getName(),
+            engine.api(), engine.defaultFlags(), seeds,
+            engine.cards(), engine.scripts(), deck0, deck1,
+            new HeuristicBot(seed, engine.cards(), engine.cards().all()),
+            new HeuristicBot(seed * 2 + 1, engine.cards(), engine.cards().all()));
+
+        ACTIVE.put(Watcher.of(serverPlayer), session);
+
+        serverPlayer.sendSystemMessage(Component.literal("Duel started: ")
+            .withStyle(ChatFormatting.GOLD)
+            .append(Component.literal(playerDeck.displayName()).withStyle(ChatFormatting.AQUA))
+            .append(Component.literal(" vs "))
+            .append(Component.literal(npcDeck.displayName()).withStyle(ChatFormatting.LIGHT_PURPLE)));
+        serverPlayer.sendSystemMessage(Component.literal("(both sides are played by the AI for now)")
+            .withStyle(ChatFormatting.DARK_GRAY));
+
+        session.start();
+    }
+
+    /**
+     * Starts a duel between two starter decks with no player involved, for the
+     * server console and for verifying the whole path headlessly.
+     *
+     * @return null on success, else why it could not start
+     */
+    public static String startConsoleDuel(String deckA, String deckB, long seed)
+    {
+        EngineRuntime.Paths paths = EngineRuntime.Paths.defaults();
+        String missing = paths.missing();
+        if(missing != null)
+        {
+            return missing;
+        }
+        EngineRuntime engine = EngineRuntime.get(paths);
+        if(engine == null)
+        {
+            return "engine unavailable";
+        }
+        long[] seeds = {seed | 1, seed * 31 + 7, seed * 131 + 17, ~seed};
+        DuelSession session = DuelSession.create("console", engine.api(), engine.defaultFlags(), seeds,
+            engine.cards(), engine.scripts(),
+            StarterDecks.byId(deckA).load().toRunnerDeck(),
+            StarterDecks.byId(deckB).load().toRunnerDeck(),
+            new HeuristicBot(seed, engine.cards(), engine.cards().all()),
+            new HeuristicBot(seed * 2 + 1, engine.cards(), engine.cards().all()));
+        ACTIVE.put(Watcher.forConsole(), session);
+        session.start();
+        return null;
+    }
+
+    /**
+     * Called every server tick: drains what the duel threads produced and
+     * narrates it. Engine threads never touch the game state themselves.
+     */
+    /** Starts the self-test duel if this server was launched with the flag. */
+    public static void maybeStartSelfTest(net.minecraft.server.MinecraftServer server)
+    {
+        if(!Boolean.getBoolean("dueldimension.selftest"))
+        {
+            return;
+        }
+        selfTestMode = true;
+        org.apache.logging.log4j.LogManager.getLogger().info("[selftest] starting Yugi vs Kaiba");
+        String error = startConsoleDuel("yugi", "kaiba", 20260804L);
+        if(error != null)
+        {
+            org.apache.logging.log4j.LogManager.getLogger().error("[selftest] FAILED to start: {}", error);
+            server.halt(false);
+        }
+    }
+
+    public static void tick(net.minecraft.server.MinecraftServer server)
+    {
+        if(ACTIVE.isEmpty())
+        {
+            return;
+        }
+        DescriptionTable descriptions = EngineRuntime.isLoaded()
+            ? EngineRuntime.get(EngineRuntime.Paths.defaults()).descriptions()
+            : new DescriptionTable();
+
+        List<Watcher> finished = new ArrayList<>();
+        ACTIVE.forEach((watcher, session) ->
+        {
+            session.drainEvents(event ->
+            {
+                if(event instanceof DuelSession.Event.Message message)
+                {
+                    Component line = narrate(message.message(), descriptions);
+                    if(line != null)
+                    {
+                        watcher.send(server, line);
+                    }
+                }
+                else if(event instanceof DuelSession.Event.Finished done)
+                {
+                    watcher.send(server, Component.literal(done.completed()
+                        ? "Duel over - winner: player " + (done.result() == null ? "?" : done.result().winner())
+                            + " (" + done.steps() + " engine steps)"
+                        : "Duel ended without a result after " + done.steps() + " steps")
+                        .withStyle(ChatFormatting.GOLD));
+                }
+                else if(event instanceof DuelSession.Event.Failed failed)
+                {
+                    watcher.send(server, Component.literal("Duel failed: " + failed.reason())
+                        .withStyle(ChatFormatting.RED));
+                }
+            });
+            if(!session.isRunning())
+            {
+                finished.add(watcher);
+                if(selfTestMode && watcher.console())
+                {
+                    org.apache.logging.log4j.LogManager.getLogger()
+                        .info("[selftest] duel finished, stopping server");
+                    server.halt(false);
+                }
+            }
+        });
+        finished.forEach(ACTIVE::remove);
+    }
+
+    /** Turns an engine message into a chat line, or null for the noisy ones. */
+    private static Component narrate(RawMessage raw, DescriptionTable descriptions)
+    {
+        DuelMessage message = DuelMessage.decode(raw);
+
+        if(message instanceof DuelMessage.NewTurn turn)
+        {
+            return Component.literal("— Turn: player " + turn.player() + " —").withStyle(ChatFormatting.YELLOW);
+        }
+        if(message instanceof DuelMessage.Damage damage)
+        {
+            return Component.literal("Player " + damage.player() + " takes " + damage.amount() + " damage")
+                .withStyle(ChatFormatting.RED);
+        }
+        if(message instanceof DuelMessage.Recover recover)
+        {
+            return Component.literal("Player " + recover.player() + " gains " + recover.amount() + " LP")
+                .withStyle(ChatFormatting.GREEN);
+        }
+        if(message instanceof DuelMessage.Win win)
+        {
+            return Component.literal("WIN: player " + win.winner() + " (reason " + win.reason() + ")")
+                .withStyle(ChatFormatting.GOLD);
+        }
+        if(message instanceof DuelMessage.Hint hint && hint.hintType() == DescriptionTable.OcgHints.SELECT_MESSAGE)
+        {
+            return Component.literal("  " + descriptions.describeHint(hint.hintType(), hint.description()))
+                .withStyle(ChatFormatting.GRAY);
+        }
+        return null; // moves, phases and chain bookkeeping would drown the chat
+    }
+
+    public static void stopAll()
+    {
+        ACTIVE.values().forEach(DuelSession::stop);
+        ACTIVE.clear();
+    }
+}

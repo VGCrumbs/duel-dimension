@@ -226,5 +226,6 @@
     "actionIcon.dueldimension.special_summon_token_atk": "Special Summon Token ATK",
     "actionIcon.dueldimension.special_summon_token_def": "Special Summon Token DEF",
     "actionIcon.dueldimension.remove_token_atk": "Remove Token",
-    "actionIcon.dueldimension.remove_token_def": "Remove Token"
+    "actionIcon.dueldimension.remove_token_def": "Remove Token",
+    "entity.dueldimension.duelist": "Duelist"
 }
