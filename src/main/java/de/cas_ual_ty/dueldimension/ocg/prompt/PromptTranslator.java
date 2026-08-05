@@ -37,6 +37,7 @@ public class PromptTranslator
     public EnginePrompt toPrompt(DuelMessage message, BoardState board)
     {
         List<String> summary = summarise(board);
+        BoardSnapshot field = BoardSnapshot.of(board);
 
         if(message instanceof DuelMessage.SelectIdleCmd idle)
         {
@@ -61,7 +62,7 @@ public class PromptTranslator
             {
                 options.add(new EnginePrompt.Option("Shuffle hand"));
             }
-            return new EnginePrompt("Main Phase", options, 1, 1, false, summary);
+            return new EnginePrompt("Main Phase", options, 1, 1, false, summary, field);
         }
 
         if(message instanceof DuelMessage.SelectBattleCmd battle)
@@ -81,7 +82,7 @@ public class PromptTranslator
             {
                 options.add(new EnginePrompt.Option("End Turn"));
             }
-            return new EnginePrompt("Battle Phase", options, 1, 1, false, summary);
+            return new EnginePrompt("Battle Phase", options, 1, 1, false, summary, field);
         }
 
         if(message instanceof DuelMessage.SelectCard select)
@@ -92,7 +93,7 @@ public class PromptTranslator
             String title = select.min() == select.max()
                 ? "Select " + select.min() + " card" + (select.min() == 1 ? "" : "s")
                 : "Select " + select.min() + " to " + select.max() + " cards";
-            return new EnginePrompt(title, options, select.min(), select.max(), select.cancelable(), summary);
+            return new EnginePrompt(title, options, select.min(), select.max(), select.cancelable(), summary, field);
         }
 
         if(message instanceof DuelMessage.SelectChain chain)
@@ -102,7 +103,7 @@ public class PromptTranslator
                 new EnginePrompt.Option("Chain: " + cardName(option.code()),
                     text.describe(option.description()), option.code())));
             return new EnginePrompt(chain.forced() ? "You must respond" : "Respond to the chain?",
-                options, chain.forced() ? 1 : 0, 1, !chain.forced(), summary);
+                options, chain.forced() ? 1 : 0, 1, !chain.forced(), summary, field);
         }
 
         if(message instanceof DuelMessage.SelectPosition position)
@@ -112,7 +113,7 @@ public class PromptTranslator
             {
                 options.add(new EnginePrompt.Option(positionName(pos), cardName(position.code()), position.code()));
             }
-            return new EnginePrompt("Choose a position", options, 1, 1, false, summary);
+            return new EnginePrompt("Choose a position", options, 1, 1, false, summary, field);
         }
 
         if(message instanceof DuelMessage.SelectPlace place)
@@ -125,7 +126,7 @@ public class PromptTranslator
                         + (zone.sequence() + 1),
                     zone.player() == place.player() ? "your side" : "opponent's side", 0));
             }
-            return new EnginePrompt("Choose a zone", options, place.count(), place.count(), false, summary);
+            return new EnginePrompt("Choose a zone", options, place.count(), place.count(), false, summary, field);
         }
 
         if(message instanceof DuelMessage.SelectOption option)
@@ -135,20 +136,20 @@ public class PromptTranslator
             {
                 options.add(new EnginePrompt.Option(text.describe(description)));
             }
-            return new EnginePrompt("Choose an effect", options, 1, 1, false, summary);
+            return new EnginePrompt("Choose an effect", options, 1, 1, false, summary, field);
         }
 
         if(message instanceof DuelMessage.SelectEffectYesNo effect)
         {
             return new EnginePrompt(text.describe(effect.description()),
                 List.of(new EnginePrompt.Option("Yes", cardName(effect.code()), effect.code()),
-                    new EnginePrompt.Option("No")), 1, 1, false, summary);
+                    new EnginePrompt.Option("No")), 1, 1, false, summary, field);
         }
 
         if(message instanceof DuelMessage.SelectYesNo yesNo)
         {
             return new EnginePrompt(text.describe(yesNo.description()),
-                List.of(new EnginePrompt.Option("Yes"), new EnginePrompt.Option("No")), 1, 1, false, summary);
+                List.of(new EnginePrompt.Option("Yes"), new EnginePrompt.Option("No")), 1, 1, false, summary, field);
         }
 
         if(message instanceof DuelMessage.SelectTribute tribute)
@@ -157,7 +158,7 @@ public class PromptTranslator
             tribute.cards().forEach(card -> options.add(new EnginePrompt.Option(cardName(card.code()),
                 "counts as " + card.releaseParam(), card.code())));
             return new EnginePrompt("Select tributes", options, tribute.min(), tribute.max(),
-                tribute.cancelable(), summary);
+                tribute.cancelable(), summary, field);
         }
 
         if(message instanceof DuelMessage.SelectSum sum)
@@ -167,7 +168,7 @@ public class PromptTranslator
                 "value " + card.primary() + (card.alternate() != 0 ? " or " + card.alternate() : ""),
                 card.code())));
             return new EnginePrompt("Select cards totalling " + sum.acc(), options,
-                Math.max(sum.min(), 1), Math.max(sum.max(), options.size()), false, summary);
+                Math.max(sum.min(), 1), Math.max(sum.max(), options.size()), false, summary, field);
         }
 
         if(message instanceof DuelMessage.SelectUnselectCard unselect)
@@ -178,7 +179,7 @@ public class PromptTranslator
             unselect.unselectable().forEach(card -> options.add(
                 new EnginePrompt.Option("Deselect " + cardName(card.code()), where(card.loc()), card.code())));
             return new EnginePrompt("Select a card", options, 1, 1,
-                unselect.finishable() || unselect.cancelable(), summary);
+                unselect.finishable() || unselect.cancelable(), summary, field);
         }
 
         return null; // prompt types the screen cannot present yet

@@ -21,9 +21,10 @@ import java.util.List;
  * @param maxSelect   how many may be chosen
  * @param cancelable  whether the player may decline entirely
  * @param board       a few lines summarising the field, for context
+ * @param field       the same field, structured, for the playfield renderer
  */
 public record EnginePrompt(String title, List<Option> options, int minSelect, int maxSelect,
-    boolean cancelable, List<String> board)
+    boolean cancelable, List<String> board, BoardSnapshot field)
 {
     /**
      * @param label   what the player reads
@@ -60,6 +61,7 @@ public record EnginePrompt(String title, List<Option> options, int minSelect, in
         buffer.writeBoolean(cancelable);
         buffer.writeVarInt(board.size());
         board.forEach(line -> buffer.writeUtf(line, 256));
+        field.write(buffer);
     }
 
     public static EnginePrompt read(FriendlyByteBuf buffer)
@@ -80,7 +82,7 @@ public record EnginePrompt(String title, List<Option> options, int minSelect, in
         {
             board.add(buffer.readUtf(256));
         }
-        return new EnginePrompt(title, options, min, max, cancelable, board);
+        return new EnginePrompt(title, options, min, max, cancelable, board, BoardSnapshot.read(buffer));
     }
 
     /** True when exactly one option is expected — the common case, one click. */
