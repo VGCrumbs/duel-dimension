@@ -74,7 +74,12 @@ minecraft {
         }
 
         server {
-            workingDirectory project.file('run')
+            // Its own directory, NOT the client's. A dedicated server and a
+            // client both write logs, and the server writes a world where the
+            // client keeps saves; sharing `run` means the two fight over the
+            // same files whenever a multiplayer test is running, which is
+            // exactly when it matters that neither is confused.
+            workingDirectory project.file(project.findProperty('mcserverrun') ?: 'run-server')
 
             property 'forge.logging.markers', 'REGISTRIES'
 

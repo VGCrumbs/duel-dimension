@@ -41,3 +41,6 @@ src/generated
 /ocgcore-build/build/
 run/
 run-omega/
+# The dedicated dev server's own world, logs and downloaded database.
+run-server/
+.gradle-server/

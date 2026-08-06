@@ -8,7 +8,9 @@ import net.minecraft.network.FriendlyByteBuf;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * What the card shop sells, and what a pack costs.
@@ -17,11 +19,42 @@ import java.util.Set;
  * in step: a set that exists is a pack that can be bought. Only sets that pull
  * randomly are offered — a structure deck has fixed contents and is a different
  * kind of product, not a booster.
+ * <p>
+ * All of this is derived from a database that is loaded once and does not
+ * change afterwards, so it is derived once and kept. That matters more than it
+ * looks: working out a pack's size means actually rolling one, and building the
+ * catalogue rolls every set in the game. Doing that on the server thread each
+ * time a player opened the shop meant several hundred pack rolls per click,
+ * with every other player waiting. {@link #invalidate()} exists for the one
+ * moment the assumption stops holding — the database being reloaded.
  */
 public final class ShopStock
 {
     /** The base price of a pack, matching the reference's 150 DP. */
     public static final int BASE_PRICE = 150;
+
+    /**
+     * The catalogue, built on first use. Volatile because the server thread
+     * builds it and the client thread of an integrated server may read it.
+     */
+    private static volatile List<Pack> catalogue;
+
+    /** Pack size per set code; the value is the expensive part, not the lookup. */
+    private static final Map<String, Integer> PACK_SIZES = new ConcurrentHashMap<>();
+
+    /** Distinct card ids per set code, read every frame by the completion figure. */
+    private static final Map<String, List<Integer>> CARD_IDS = new ConcurrentHashMap<>();
+
+    /**
+     * Forget everything derived from the database. Call when the database
+     * itself has been rebuilt, which is the only way these answers can change.
+     */
+    public static void invalidate()
+    {
+        catalogue = null;
+        PACK_SIZES.clear();
+        CARD_IDS.clear();
+    }
 
     /**
      * One purchasable product.
@@ -60,6 +93,22 @@ public final class ShopStock
     /** Every pack on sale, newest first, since that is what a shop leads with. */
     public static List<Pack> available()
     {
+        List<Pack> known = catalogue;
+        if(known != null)
+        {
+            return known;
+        }
+        // Two players opening the shop in the same tick could both find this
+        // empty and both build it. That is wasteful once and harmless — the
+        // answer is the same either way — which is cheaper than holding a lock
+        // across several hundred pack rolls.
+        known = build();
+        catalogue = known;
+        return known;
+    }
+
+    private static List<Pack> build()
+    {
         List<Pack> packs = new ArrayList<>();
         for(CardSet set : DdDatabase.SETS_LIST)
         {
@@ -80,19 +129,17 @@ public final class ShopStock
                 priceOf(set), cardsPerPack(set), distinctCards(set), describe(set), deck));
         }
         packs.sort((left, right) -> right.code().compareTo(left.code()));
-        return packs;
+        // Shared and long-lived, so it is handed out read-only rather than
+        // trusting every caller not to sort it.
+        return List.copyOf(packs);
     }
 
     public static CardSet setOf(String code)
     {
-        for(CardSet set : DdDatabase.SETS_LIST)
-        {
-            if(set != null && code.equals(set.code))
-            {
-                return set;
-            }
-        }
-        return null;
+        // The set list is keyed by code and kept sorted, so this is a binary
+        // search rather than the walk over every set it used to be. The shop
+        // screen asks per pack per frame, which made the difference visible.
+        return code == null ? null : DdDatabase.SETS_LIST.get(code);
     }
 
     /**
@@ -118,6 +165,15 @@ public final class ShopStock
      * rolls it rather than assumed to be five.
      */
     public static int cardsPerPack(CardSet set)
+    {
+        if(set == null || set.code == null)
+        {
+            return 5;
+        }
+        return PACK_SIZES.computeIfAbsent(set.code, code -> roll(set));
+    }
+
+    private static int roll(CardSet set)
     {
         try
         {
@@ -152,15 +208,24 @@ public final class ShopStock
     /** Every distinct card id in the set, for measuring collection completeness. */
     public static List<Integer> cardIds(CardSet set)
     {
-        Set<Integer> ids = new LinkedHashSet<>();
-        for(CardHolder card : set.cards)
+        if(set == null || set.code == null || set.cards == null)
         {
-            if(card != null && card.getCard() != null)
-            {
-                ids.add((int)card.getCard().getId());
-            }
+            return List.of();
         }
-        return new ArrayList<>(ids);
+        // The shop draws a completion percentage for the selected pack every
+        // frame, so this used to rebuild a set of ids sixty times a second.
+        return CARD_IDS.computeIfAbsent(set.code, code ->
+        {
+            Set<Integer> ids = new LinkedHashSet<>();
+            for(CardHolder card : set.cards)
+            {
+                if(card != null && card.getCard() != null)
+                {
+                    ids.add((int)card.getCard().getId());
+                }
+            }
+            return List.copyOf(ids);
+        });
     }
 
     /**

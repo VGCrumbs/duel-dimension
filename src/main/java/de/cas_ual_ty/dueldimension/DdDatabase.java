@@ -185,7 +185,9 @@ public class DdDatabase
         DdDatabase.SETS_LIST.add(CardSet.DUMMY);
         
         CustomCards.createAndRegisterEverything();
-        
+
+        DdDatabase.installBundledExtras();
+
         if(!DuelDimension.mainFolder.exists())
         {
             DuelDimension.log(DuelDimension.mainFolder.getAbsolutePath() + " (main folder) does not exist! Aborting...");
@@ -230,6 +232,112 @@ public class DdDatabase
         DdDatabase.postDBInit();
     }
     
+    /**
+     * Where the bundled extras live inside the mod, and the list of them.
+     * <p>
+     * A jar cannot have its directories listed through the classloader, so the
+     * contents are named in an index written alongside them by
+     * {@code tools/import_set.py}.
+     */
+    private static final String EXTRAS_ROOT = "/ydm_extras/";
+    private static final String EXTRAS_INDEX = EXTRAS_ROOT + "index.json";
+
+    /**
+     * Copies the cards and sets shipped inside the mod into the live database.
+     * <p>
+     * The database proper is downloaded per installation and stops in August
+     * 2021, so anything printed since is added here. Doing it at load time
+     * rather than by running a script matters for multiplayer: a card is
+     * carried between client and server as an id, and an id the other side
+     * cannot find silently becomes a dummy card. A server whose database was
+     * assembled differently from its players' therefore does not fail loudly —
+     * it quietly turns their cards into blanks. Shipping the extras in the jar
+     * is what makes every installation agree.
+     * <p>
+     * Existing files are left alone unless their contents differ, so this is
+     * cheap on every boot after the first and still corrects a stale copy.
+     */
+    private static void installBundledExtras()
+    {
+        String index;
+        try(InputStream stream = DdDatabase.class.getResourceAsStream(EXTRAS_INDEX))
+        {
+            if(stream == null)
+            {
+                // No extras bundled is a perfectly valid build.
+                return;
+            }
+            index = new String(stream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        }
+        catch(IOException e)
+        {
+            DuelDimension.log("Could not read the bundled extras index: " + e.getMessage());
+            return;
+        }
+
+        JsonArray entries;
+        try
+        {
+            entries = JSON_PARSER.parse(index).getAsJsonArray();
+        }
+        catch(RuntimeException notJson)
+        {
+            DuelDimension.log("Bundled extras index is not a JSON array; skipping extras.");
+            return;
+        }
+
+        int written = 0;
+        for(JsonElement entry : entries)
+        {
+            String path = entry.getAsString();
+            // The index is written by us, but it names a file path, so a path
+            // that climbs out of the database folder is refused rather than
+            // followed.
+            if(path.contains("..") || path.startsWith("/") || path.contains("\\"))
+            {
+                DuelDimension.log("Refusing suspicious bundled extras path: " + path);
+                continue;
+            }
+
+            try(InputStream stream = DdDatabase.class.getResourceAsStream(EXTRAS_ROOT + path))
+            {
+                if(stream == null)
+                {
+                    DuelDimension.log("Bundled extras index names a missing file: " + path);
+                    continue;
+                }
+
+                byte[] bundled = stream.readAllBytes();
+                File target = new File(DuelDimension.mainFolder, path);
+                if(target.isFile() && java.util.Arrays.equals(bundled,
+                    java.nio.file.Files.readAllBytes(target.toPath())))
+                {
+                    continue;
+                }
+
+                File parent = target.getParentFile();
+                if(parent != null && !parent.exists() && !parent.mkdirs())
+                {
+                    DuelDimension.log("Could not create " + parent.getAbsolutePath() + " for bundled extras.");
+                    continue;
+                }
+
+                java.nio.file.Files.write(target.toPath(), bundled);
+                written++;
+            }
+            catch(IOException e)
+            {
+                DuelDimension.log("Could not install bundled extra " + path + ": " + e.getMessage());
+            }
+        }
+
+        if(written > 0)
+        {
+            DuelDimension.log("Installed " + written + " bundled database files into "
+                + DuelDimension.mainFolder.getAbsolutePath());
+        }
+    }
+
     public static void downloadDatabase() throws IOException
     {
         DuelDimension.log("Downloading database from " + DdDatabase.remoteDownloadLink);
@@ -556,6 +664,10 @@ public class DdDatabase
         }
         
         SETS_LIST.getList().stream().filter(Objects::nonNull).map(s -> s.rarityPool).filter(Objects::nonNull).forEach(FOUND_RARITIES::addAll);
+
+        // The shop's catalogue is derived from these sets and cached, so it is
+        // dropped whenever the sets themselves are rebuilt.
+        de.cas_ual_ty.dueldimension.shop.ShopStock.invalidate();
         
         DuelDimension.log("All rarities found:");
         DuelDimension.log(FOUND_RARITIES.stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(", ")));

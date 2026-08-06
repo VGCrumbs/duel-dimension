@@ -6,9 +6,10 @@ from the same source the database was originally built from (YGOPRODeck, which
 is what every card's image URL already points at) into the exact JSON shapes the
 mod reads.
 
-Output goes to a tracked folder AND into the live database, so the data survives
-in the repository rather than only in a downloaded folder that a database
-refresh would wipe.
+Output goes into the mod's own resources, so the data is tracked in the
+repository, packaged into the jar, and installed into the live database by the
+mod itself on every boot. Nothing here needs running for a checkout to work --
+it is only needed to add a set that is not bundled yet.
 
     python tools/import_set.py "Burst of Destiny" BODE "Booster Pack (Series 11)" 05-11-2021
 
@@ -22,8 +23,12 @@ import urllib.parse
 import urllib.request
 
 API = "https://db.ygoprodeck.com/api/v7/cardinfo.php"
-TRACKED = "ydm_extras"
-LIVE = os.path.join("run", "ydm_db")
+# Inside the mod's resources, so the imported data is packaged in the jar and
+# installed into the live database by DdDatabase.installBundledExtras() on every
+# boot. Writing it into one machine's run folder instead -- which is what this
+# used to do -- meant a server and its players could disagree about which cards
+# exist, and a card the other side cannot find silently becomes a blank.
+TRACKED = os.path.join("src", "main", "resources", "ydm_extras")
 
 # Sets imported on top of the bundled database, re-runnable as a batch.
 EXTRA_SETS = [
@@ -159,15 +164,12 @@ def import_set(name, code, set_type, date, distribution):
 
         payload = card_json(card)
         filename = slug(card["name"]) + ".json"
-        live = os.path.join(LIVE, "cards", filename)
-        if os.path.exists(live):
+        target = os.path.join(TRACKED, "cards", filename)
+        if os.path.exists(target):
             skipped += 1
         else:
             written += 1
-        # Written to both: the tracked copy is the record, the live copy is what
-        # the game actually reads.
-        write(os.path.join(TRACKED, "cards", filename), payload)
-        write(live, payload)
+        write(target, payload)
 
     entries.sort(key=lambda e: e["code"])
     set_payload = {
@@ -182,9 +184,29 @@ def import_set(name, code, set_type, date, distribution):
     }
     set_file = slug(name) + ".json"
     write(os.path.join(TRACKED, "sets", set_file), set_payload)
-    write(os.path.join(LIVE, "sets", set_file), set_payload)
     print("   %d cards in set, %d new card files, %d already present"
           % (len(entries), written, skipped))
+
+
+def write_index():
+    """Names every bundled file, because a jar's directories cannot be listed.
+
+    The mod reads this index to know what to install, so it is rewritten after
+    every import rather than maintained by hand.
+    """
+    paths = []
+    for folder in ("cards", "sets", "distributions", "rarities"):
+        directory = os.path.join(TRACKED, folder)
+        if not os.path.isdir(directory):
+            continue
+        for filename in sorted(os.listdir(directory)):
+            if filename.endswith(".json"):
+                paths.append(folder + "/" + filename)
+
+    with open(os.path.join(TRACKED, "index.json"), "w", encoding="utf-8") as handle:
+        json.dump(paths, handle, indent=1)
+        handle.write("\n")
+    print("== index: %d files ==" % len(paths))
 
 
 if __name__ == "__main__":
@@ -195,3 +217,4 @@ if __name__ == "__main__":
     else:
         for entry in EXTRA_SETS:
             import_set(*entry)
+    write_index()
