@@ -197,6 +197,42 @@ def greyscale_mat(source, out_name):
     print('  %s %s' % (out_name, im.size))
 
 
+def header_bar(width=CELL):
+    """A section header: a darker strip with a gold underline."""
+    im = Image.new('RGBA', (width, CELL), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle([0, 0, width - 1, CELL - 1], radius=BORDER - 3, fill=(24, 26, 33, 255))
+    vgrad(d, (2, 2, width - 2, CELL - 6), (52, 57, 70), (30, 33, 41))
+    d.line([(BORDER // 2, CELL - 4), (width - BORDER // 2, CELL - 4)], fill=GOLD + (210,), width=2)
+    d.rounded_rectangle([0, 0, width - 1, CELL - 1], radius=BORDER - 3,
+                        outline=(74, 80, 92, 255), width=1)
+    return im
+
+
+def search_field():
+    """A recessed text field; the caret and text are drawn by the game."""
+    return panel((16, 17, 22), (22, 24, 30), (96, 104, 118), inset=True)
+
+
+def chip_state(state):
+    """A filter chip: small, and clearly on or off at a glance."""
+    if state == 'idle':
+        return panel((38, 42, 52), (26, 29, 36), (84, 92, 106))
+    if state == 'hover':
+        return panel((54, 59, 72), (36, 40, 50), (150, 160, 176))
+    return panel((92, 74, 34), (60, 48, 22), (240, 200, 110), accent=GOLD)
+
+
+def scrollbar():
+    """Track above, thumb below, as two tiles in one file."""
+    im = Image.new('RGBA', (CELL, CELL * 2), (0, 0, 0, 0))
+    track = panel((16, 17, 22), (20, 22, 28), (60, 66, 78), inset=True)
+    thumb = panel((72, 78, 94), (46, 50, 62), (150, 160, 176))
+    im.paste(track, (0, 0))
+    im.paste(thumb, (0, CELL))
+    return im
+
+
 if __name__ == '__main__':
     print('common/')
     write(panel((44, 48, 58), (28, 31, 39), EDGE_LIGHT), 'common', 'panel.png')
@@ -209,6 +245,12 @@ if __name__ == '__main__':
     write(colour_wheel(), 'settings', 'colour_wheel.png')
     write(value_slider(), 'settings', 'value_slider.png')
     write(picker_cursor(), 'settings', 'picker_cursor.png')
+
+    print('deckeditor/')
+    write(header_bar(), 'deckeditor', 'header.png')
+    write(search_field(), 'deckeditor', 'search_field.png')
+    write(states(chip_state), 'deckeditor', 'chip.png')
+    write(scrollbar(), 'deckeditor', 'scrollbar.png')
 
     print('mats/')
     greyscale_mat('src/main/resources/assets/dueldimension/textures/duel/mats/classic.png',
