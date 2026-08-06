@@ -22,6 +22,15 @@ public final class HubTextures
     /** A single card slot for the deck editor grids. */
     public static final ResourceLocation SLOT = gui("common/slot.png");
 
+    /** Section header for the editor's grids. */
+    public static final ResourceLocation HEADER = gui("deckeditor/header.png");
+    /** The recessed search field the trunk is filtered with. */
+    public static final ResourceLocation SEARCH_FIELD = gui("deckeditor/search_field.png");
+    /** Filter chip; three rows, the third being lit rather than disabled. */
+    public static final ResourceLocation CHIP = gui("deckeditor/chip.png");
+    /** Two tiles: track then thumb. */
+    public static final ResourceLocation SCROLLBAR = gui("deckeditor/scrollbar.png");
+
     /** Hue around, saturation outward; the picker samples it directly. */
     public static final ResourceLocation COLOUR_WHEEL = gui("settings/colour_wheel.png");
     /** The brightness the wheel does not carry. */

@@ -99,6 +99,18 @@ public class DuelHubScreen extends Screen
                 applyMat();
             }));
         }
+        else if(section == Section.DECKS)
+        {
+            matPicker = null;
+            addRenderableWidget(new HubWidgets.TextureButton(left + PAD + 6, top + HEIGHT - 32,
+                120, 20, Component.literal("Edit Deck"), pressed ->
+            {
+                if(minecraft != null)
+                {
+                    minecraft.setScreen(new DeckEditorScreen(this));
+                }
+            }));
+        }
         else
         {
             matPicker = null;
@@ -173,7 +185,8 @@ public class DuelHubScreen extends Screen
         y += 12;
         font.drawShadow(poseStack, "  (none unlocked)", x, y, 0xFF7A8090);
         y += 18;
-        font.drawShadow(poseStack, "The deck editor opens from here.", x, y, 0xFF7A8090);
+        font.drawShadow(poseStack, "Editing: " + EditorState.deck().name()
+            + "  (" + EditorState.deck().main().size() + " main)", x, y, 0xFF7A8090);
     }
 
     private void renderSettings(PoseStack poseStack, int bodyTop)
