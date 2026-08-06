@@ -1107,10 +1107,15 @@ public class DeckEditorScreen extends Screen
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta)
     {
-        // A card under the cursor takes the wheel: its description is the thing
-        // the player is looking at, and the trunk is still scrollable anywhere
-        // else in the panel.
-        if(carried == null && cardAt(mouseX, mouseY) != null)
+        // Shift reads the hovered card's description; the plain wheel scrolls
+        // whatever grid is under the cursor.
+        //
+        // It used to be the other way round, and that was a mistake: a full
+        // grid has a card under the cursor almost everywhere, so the wheel
+        // reached the description whatever the player meant by it and the
+        // collection could not be scrolled at all. Reading a long effect is the
+        // rarer thing to want, so it is the one that takes the modifier.
+        if(carried == null && hasShiftDown() && cardAt(mouseX, mouseY) != null)
         {
             previewScroll = Math.max(0, previewScroll - (int)Math.signum(delta));
             return true;
@@ -1374,7 +1379,9 @@ public class DeckEditorScreen extends Screen
         }
         if(maxScroll > 0)
         {
-            font.drawShadow(poseStack, "scroll  " + (previewScroll + shownLines)
+            // Names the key, because the plain wheel scrolls the grid and a
+            // binding nobody is told about is a binding nobody uses.
+            font.drawShadow(poseStack, "shift+scroll  " + (previewScroll + shownLines)
                 + "/" + textLines.size(), sx, sy + 2F / scale, 0xFF7A8090);
         }
         poseStack.popPose();
