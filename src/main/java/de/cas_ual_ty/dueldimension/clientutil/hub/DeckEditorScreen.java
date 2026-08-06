@@ -6,6 +6,7 @@ import de.cas_ual_ty.dueldimension.card.properties.Properties;
 import de.cas_ual_ty.dueldimension.clientutil.CardRenderUtil;
 import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
 import de.cas_ual_ty.dueldimension.clientutil.DuelTextures;
+import de.cas_ual_ty.dueldimension.clientutil.DuelTextures;
 import de.cas_ual_ty.dueldimension.duel.profile.CardQuery;
 import de.cas_ual_ty.dueldimension.duel.profile.DeckLimits;
 import de.cas_ual_ty.dueldimension.clientutil.layout.Layout;
@@ -67,6 +68,9 @@ public class DeckEditorScreen extends Screen
     /** Why the last attempted add was refused; cleared on the next action. */
     private String refusal = "";
     private int trunkScroll;
+
+    /** The rename field, present only while renaming. */
+    private EditBox rename;
 
     public DeckEditorScreen(Screen parent)
     {
@@ -136,6 +140,7 @@ public class DeckEditorScreen extends Screen
     {
         clearWidgets();
         addWidget(search);
+        buildDeckBar();
 
         Layout layout = Layout.of(LAYOUT);
         int rowH = layout.i("trunk.searchHeight", 16) + 4;
@@ -194,6 +199,100 @@ public class DeckEditorScreen extends Screen
 
         addRenderableWidget(new HubWidgets.TextureButton(width - pad - 80, height - 26, 80, 20,
             Component.literal("Done"), pressed -> onClose()));
+    }
+
+    /**
+     * The deck bar: which deck is open, and what can be done to it.
+     * <p>
+     * Rename swaps the title for a text field in place rather than opening a
+     * dialogue, so the deck stays visible while it is being named -- and
+     * commits on Enter or on losing focus, since a rename that is only applied
+     * by a button is easy to lose.
+     */
+    private void buildDeckBar()
+    {
+        int y = panelTop + pad - 2;
+        int right = leftX + leftW - pad;
+        int buttonW = 46;
+
+        // Delete is refused for a granted structure deck, so it reports that by
+        // being disabled rather than by failing when pressed.
+        HubWidgets.TextureButton delete = new HubWidgets.TextureButton(right - buttonW, y,
+            buttonW, 16, Component.literal("Delete"), pressed ->
+        {
+            String error = EditorState.deleteCurrent();
+            refusal = error == null ? "" : error;
+            rename = null;
+            rebuildControls();
+        });
+        delete.active = EditorState.deck().origin() != DeckList.Origin.STRUCTURE;
+        addRenderableWidget(delete);
+
+        addRenderableWidget(new HubWidgets.TextureButton(right - buttonW * 2 - 2, y,
+            buttonW, 16, Component.literal("Rename"), pressed -> startRename()));
+
+        addRenderableWidget(new HubWidgets.TextureButton(right - buttonW * 3 - 4, y,
+            buttonW, 16, Component.literal("New"), pressed ->
+        {
+            EditorState.newDeck();
+            rename = null;
+            refusal = "";
+            rebuildControls();
+        }));
+
+        // Stepping through decks, which doubles as showing how many there are.
+        List<DeckList> all = EditorState.decks();
+        if(all.size() > 1)
+        {
+            addRenderableWidget(new HubWidgets.TextureButton(right - buttonW * 3 - 4 - 34, y,
+                16, 16, Component.literal("<"), pressed ->
+            {
+                EditorState.select((EditorState.currentIndex() - 1 + all.size()) % all.size());
+                rename = null;
+                rebuildControls();
+            }));
+            addRenderableWidget(new HubWidgets.TextureButton(right - buttonW * 3 - 4 - 16, y,
+                16, 16, Component.literal(">"), pressed ->
+            {
+                EditorState.select((EditorState.currentIndex() + 1) % all.size());
+                rename = null;
+                rebuildControls();
+            }));
+        }
+
+        if(rename != null)
+        {
+            rename.x = leftX + pad;
+            rename.y = y + 2;
+            rename.setWidth(Math.max(60, right - buttonW * 3 - 4 - 40 - (leftX + pad)));
+            addWidget(rename);
+            setFocused(rename);
+            rename.setFocus(true);
+        }
+    }
+
+    private void startRename()
+    {
+        int y = panelTop + pad;
+        rename = new EditBox(font, leftX + pad, y, 120, 14, Component.literal("Deck name"));
+        rename.setValue(EditorState.deck().name());
+        rename.setMaxLength(40);
+        rebuildControls();
+    }
+
+    /** Applies the pending rename, if any. Silently keeps the old name if taken. */
+    private void commitRename()
+    {
+        if(rename == null)
+        {
+            return;
+        }
+        if(!EditorState.rename(rename.getValue()))
+        {
+            refusal = "That name is already used";
+        }
+        rename = null;
+        rebuildControls();
     }
 
     private static String label(CardQuery.Kind kind)
@@ -304,6 +403,10 @@ public class DeckEditorScreen extends Screen
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button)
     {
+        if(rename != null && !rename.isMouseOver(mouseX, mouseY))
+        {
+            commitRename();
+        }
         refusal = "";
         boolean shift = hasShiftDown();
 
@@ -440,6 +543,25 @@ public class DeckEditorScreen extends Screen
     @Override
     public boolean keyPressed(int key, int scan, int modifiers)
     {
+        if(rename != null && rename.isFocused())
+        {
+            if(key == org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER
+                || key == org.lwjgl.glfw.GLFW.GLFW_KEY_KP_ENTER)
+            {
+                commitRename();
+                return true;
+            }
+            if(key == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE)
+            {
+                rename = null;
+                rebuildControls();
+                return true;
+            }
+            if(rename.keyPressed(key, scan, modifiers))
+            {
+                return true;
+            }
+        }
         if(search != null && search.isFocused() && search.keyPressed(key, scan, modifiers))
         {
             return true;
@@ -450,6 +572,10 @@ public class DeckEditorScreen extends Screen
     @Override
     public boolean charTyped(char typed, int modifiers)
     {
+        if(rename != null && rename.isFocused() && rename.charTyped(typed, modifiers))
+        {
+            return true;
+        }
         if(search != null && search.isFocused() && search.charTyped(typed, modifiers))
         {
             return true;
@@ -471,6 +597,10 @@ public class DeckEditorScreen extends Screen
 
         super.render(poseStack, mouseX, mouseY, partialTick);
         search.render(poseStack, mouseX, mouseY, partialTick);
+        if(rename != null)
+        {
+            rename.render(poseStack, mouseX, mouseY, partialTick);
+        }
 
         if(!refusal.isEmpty())
         {
@@ -514,29 +644,58 @@ public class DeckEditorScreen extends Screen
     }
 
     /**
-     * The preview panel: art at full size, then name and effect text.
+     * The preview panel, built the way the duel screen's sidebar is.
      * <p>
-     * Anchored to whichever side of the cursor has room and clamped to the
-     * screen, so it can never be the thing that overflows. The text is wrapped
-     * to the panel rather than drawn as one line, and truncated with an ellipsis
-     * if the card's text is longer than the space allows.
+     * Three things matter here and all three were wrong before. The art comes
+     * from {@link DuelTextures#card} at {@code PREVIEW_CARD_SIZE} with bilinear
+     * filtering, because the mod's MAIN image is sized for item icons and
+     * upscaling it is what made the preview blurry. It is sampled out of its
+     * letterboxed square, or it stretches. And the card's own header lines --
+     * type, race, level, attribute, ATK/DEF -- are printed under the name,
+     * because a preview without them cannot answer the question a player is
+     * actually asking.
+     * <p>
+     * The panel is anchored to whichever side of the cursor has room and
+     * clamped to the screen, so it can never be the thing that overflows.
      */
     private void drawPreview(PoseStack poseStack, Properties card, int mouseX, int mouseY)
     {
         Layout layout = Layout.of(LAYOUT);
-        int artW = layout.i("preview.width", 104);
-        int artH = Math.round(artW / layout.f("card.aspect", 480F / 700F));
-        int inner = 6;
-        int panelW = artW + inner * 2;
+        int artW = layout.i("preview.width", 78);
+        int artH = Math.round(artW / layout.f("card.aspect", DuelTextures.CARD_ASPECT));
+        int inner = 5;
+        int panelW = Math.max(artW, layout.i("preview.textWidth", 132)) + inner * 2;
+        int textW = panelW - inner * 2;
 
-        List<net.minecraft.util.FormattedCharSequence> lines =
-            font.split(Component.literal(card.getText() == null ? "" : card.getText()), panelW - inner * 2);
-        int maxLines = layout.i("preview.maxLines", 8);
-        boolean clipped = lines.size() > maxLines;
-        int shownLines = Math.min(lines.size(), maxLines);
-        int panelH = inner * 2 + artH + 4 + 10 + shownLines * 9 + (clipped ? 9 : 0);
+        // The card's own summary: [Type / Race], level, attribute, ATK/DEF.
+        // addHeader leads with the name, which is drawn separately below, so
+        // that first entry is dropped rather than printed twice.
+        java.util.List<Component> header = new java.util.ArrayList<>();
+        card.addHeader(header);
+        if(!header.isEmpty())
+        {
+            header.remove(0);
+        }
+        java.util.List<net.minecraft.util.FormattedCharSequence> headerLines =
+            new java.util.ArrayList<>();
+        for(Component component : header)
+        {
+            headerLines.addAll(font.split(component, textW));
+        }
 
-        // Prefer the side the cursor is not heading into, then clamp.
+        java.util.List<net.minecraft.util.FormattedCharSequence> nameLines =
+            font.split(Component.literal(card.getName() == null ? "" : card.getName()), textW);
+        java.util.List<net.minecraft.util.FormattedCharSequence> textLines =
+            font.split(Component.literal(card.getText() == null ? "" : card.getText()), textW);
+        int maxLines = layout.i("preview.maxLines", 7);
+        boolean clipped = textLines.size() > maxLines;
+        int shownLines = Math.min(textLines.size(), maxLines);
+
+        int panelH = inner * 2 + artH + 4
+            + nameLines.size() * 9 + 2
+            + headerLines.size() * 9 + 3
+            + shownLines * 9 + (clipped ? 9 : 0);
+
         int x = mouseX + 14;
         if(x + panelW > width - 4)
         {
@@ -546,16 +705,35 @@ public class DeckEditorScreen extends Screen
         int y = Math.max(4, Math.min(mouseY - panelH / 2, height - panelH - 4));
 
         NineSlice.draw(poseStack, HubTextures.PANEL, x, y, panelW, panelH);
-        drawCard(poseStack, card, x + inner, y + inner, artW, artH, 1F);
+
+        // Sharp art: the preview-sized image, filtered, sampled out of its
+        // letterbox window.
+        RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+        RenderSystem.enableBlend();
+        DuelTextures.bindSmooth(DuelTextures.card(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE));
+        int artX = x + (panelW - artW) / 2;
+        DdBlitUtil.blit(poseStack, artX, y + inner, artW, artH,
+            DuelTextures.CARD_U0, DuelTextures.CARD_V0,
+            DuelTextures.CARD_U1 - DuelTextures.CARD_U0,
+            DuelTextures.CARD_V1 - DuelTextures.CARD_V0, 1, 1);
 
         int textY = y + inner + artH + 4;
-        String name = card.getName() == null ? "" : card.getName();
-        font.drawShadow(poseStack, font.plainSubstrByWidth(name, panelW - inner * 2),
-            x + inner, textY, 0xFFF4D089);
-        textY += 11;
+        for(net.minecraft.util.FormattedCharSequence line : nameLines)
+        {
+            font.drawShadow(poseStack, line, x + inner, textY, 0xFFF4D089);
+            textY += 9;
+        }
+        textY += 2;
+        for(net.minecraft.util.FormattedCharSequence line : headerLines)
+        {
+            font.draw(poseStack, line, x + inner, textY, 0xFF9FD4FF);
+            textY += 9;
+        }
+        textY += 3;
         for(int i = 0; i < shownLines; i++)
         {
-            font.draw(poseStack, lines.get(i), x + inner, textY, 0xFFC2C9D6);
+            font.draw(poseStack, textLines.get(i), x + inner, textY, 0xFFC2C9D6);
             textY += 9;
         }
         if(clipped)
@@ -567,7 +745,20 @@ public class DeckEditorScreen extends Screen
     private void renderDeckSide(PoseStack poseStack, int mouseX, int mouseY)
     {
         DeckList deck = EditorState.deck();
-        font.drawShadow(poseStack, deck.name(), leftX + pad, panelTop + pad, 0xFFF4D089);
+        if(rename == null)
+        {
+            String title = deck.name();
+            List<DeckList> all = EditorState.decks();
+            if(all.size() > 1)
+            {
+                title += "  (" + (EditorState.currentIndex() + 1) + "/" + all.size() + ")";
+            }
+            if(deck.origin() == DeckList.Origin.STRUCTURE)
+            {
+                title += "  [structure]";
+            }
+            font.drawShadow(poseStack, title, leftX + pad, panelTop + pad, 0xFFF4D089);
+        }
 
         for(DeckList.Part part : DeckList.Part.values())
         {

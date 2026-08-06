@@ -27,7 +27,10 @@ public final class EditorState
     private static final int SEEDED_COPIES = 3;
 
     private static Trunk trunk;
-    private static DeckList deck = new DeckList("New Deck", DeckList.Origin.SAVED);
+    /** Every deck the player has, and which one the editor is on. */
+    private static final de.cas_ual_ty.dueldimension.duel.profile.DuelProfile PROFILE =
+        new de.cas_ual_ty.dueldimension.duel.profile.DuelProfile();
+    private static int current;
     private static Banlist banlist = Banlist.none();
     private static CardQuery<Properties> query;
     private static List<Properties> visible = new ArrayList<>();
@@ -112,14 +115,103 @@ public final class EditorState
         return trunk;
     }
 
-    public static DeckList deck()
+    public static de.cas_ual_ty.dueldimension.duel.profile.DuelProfile profile()
     {
-        return deck;
+        return PROFILE;
     }
 
-    public static void setDeck(DeckList value)
+    /** Every deck, in the order they were made. */
+    public static List<DeckList> decks()
     {
-        deck = value;
+        if(PROFILE.decks().isEmpty())
+        {
+            // A player always has somewhere to put cards, so the editor is
+            // never in the state of having no deck to edit.
+            PROFILE.addDeck(new DeckList("New Deck", DeckList.Origin.SAVED));
+        }
+        return PROFILE.decks();
+    }
+
+    /** The deck being edited. */
+    public static DeckList deck()
+    {
+        List<DeckList> all = decks();
+        current = Math.max(0, Math.min(current, all.size() - 1));
+        return all.get(current);
+    }
+
+    public static int currentIndex()
+    {
+        decks();
+        return current;
+    }
+
+    public static void select(int index)
+    {
+        List<DeckList> all = decks();
+        current = Math.max(0, Math.min(index, all.size() - 1));
+    }
+
+    /** Adds a deck and switches to it, with a name that is not already taken. */
+    public static DeckList newDeck()
+    {
+        String name = "New Deck";
+        for(int suffix = 2; PROFILE.deckNamed(name) != null; suffix++)
+        {
+            name = "New Deck " + suffix;
+        }
+        DeckList made = new DeckList(name, DeckList.Origin.SAVED);
+        PROFILE.addDeck(made);
+        current = PROFILE.decks().size() - 1;
+        return made;
+    }
+
+    /**
+     * Renames the current deck. Refused if the name is blank or taken, since
+     * decks are found by name and two alike could not be told apart.
+     */
+    public static boolean rename(String name)
+    {
+        String trimmed = name == null ? "" : name.strip();
+        if(trimmed.isEmpty())
+        {
+            return false;
+        }
+        DeckList existing = PROFILE.deckNamed(trimmed);
+        if(existing != null && existing != deck())
+        {
+            return false;
+        }
+        deck().rename(trimmed);
+        return true;
+    }
+
+    /**
+     * Deletes the current deck. A granted structure deck is left alone: it is
+     * the recipe the cards came with, and deleting it would lose the record of
+     * what was opened.
+     *
+     * @return null on success, else why not
+     */
+    public static String deleteCurrent()
+    {
+        DeckList target = deck();
+        if(target.origin() == DeckList.Origin.STRUCTURE)
+        {
+            return "Structure decks cannot be deleted";
+        }
+        if(PROFILE.savedRecipes().size() <= 1)
+        {
+            // Clearing it is the same outcome and leaves somewhere to build.
+            target.main().clear();
+            target.extra().clear();
+            target.side().clear();
+            target.rename("New Deck");
+            return null;
+        }
+        PROFILE.removeDeck(target.name());
+        current = Math.max(0, current - 1);
+        return null;
     }
 
     public static Banlist banlist()

@@ -9,7 +9,7 @@
   "card.aspect": 0.6857,
   "card.gap": 2,
 
-  "deck.titleHeight": 14,
+  "deck.titleHeight": 20,
   "deck.headerHeight": 12,
   "deck.sectionGap": 6,
   "deck.mainColumns": 10,
@@ -24,6 +24,7 @@
   "trunk.sortWidth": 56,
   "trunk.dirWidth": 30,
 
-  "preview.width": 104,
-  "preview.maxLines": 8
+  "preview.width": 78,
+  "preview.textWidth": 132,
+  "preview.maxLines": 7
 }
