@@ -8,6 +8,7 @@ import de.cas_ual_ty.dueldimension.clientutil.DuelTextures;
 import de.cas_ual_ty.dueldimension.clientutil.layout.Layout;
 import de.cas_ual_ty.dueldimension.shop.ShopMessages;
 import de.cas_ual_ty.dueldimension.shop.ShopStock;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -42,15 +43,52 @@ public class CardShopScreen extends Screen
         return points;
     }
 
+    /** Everything the server offered, and the part of it currently on show. */
     private final List<ShopStock.Pack> packs;
+    private List<ShopStock.Pack> shown;
     private int selected;
     private int scroll;
     private String notice = "";
+
+    /** What the grid is filtered by, and in what order it is arranged. */
+    private EditBox search;
+    private Sort sort = Sort.NAME;
+    private boolean descending;
+
+    /**
+     * The orders the shop offers, alphabetical first because that is the one a
+     * player can navigate without knowing anything about the catalogue: with
+     * three hundred sets, finding one you can name beats browsing by date.
+     * Every order runs either way, so "oldest first" is the ascending release
+     * order rather than a fifth entry in this list.
+     */
+    private enum Sort
+    {
+        NAME("Name"), RELEASE("Release"), PRICE("Price"), OWNED("Owned");
+
+        private final String label;
+
+        Sort(String label)
+        {
+            this.label = label;
+        }
+
+        String label()
+        {
+            return label;
+        }
+
+        Sort next()
+        {
+            return values()[(ordinal() + 1) % values().length];
+        }
+    }
 
     public CardShopScreen(List<ShopStock.Pack> packs)
     {
         super(Component.literal("Card Shop"));
         this.packs = new ArrayList<>(packs);
+        this.shown = this.packs;
     }
 
     /** Whether this player pays for packs at all. */
@@ -61,7 +99,7 @@ public class CardShopScreen extends Screen
 
     private ShopStock.Pack current()
     {
-        return packs.isEmpty() ? null : packs.get(Math.max(0, Math.min(selected, packs.size() - 1)));
+        return shown.isEmpty() ? null : shown.get(Math.max(0, Math.min(selected, shown.size() - 1)));
     }
 
     // ---- geometry ----
@@ -101,9 +139,19 @@ public class CardShopScreen extends Screen
         return Math.round(cellW() / layout().f("pack.aspect", 1F));
     }
 
+    /**
+     * As many rows as fit between the controls and the detail box.
+     * <p>
+     * Fixed at four before, which left the grid floating in whatever space
+     * happened to be there and broke as soon as a control row was added above
+     * it. Deriving it means the grid grows into a taller window instead.
+     */
     private int gridRows()
     {
-        return Math.max(1, layout().i("grid.rows", 4));
+        int bottom = height - layout().i("bottom.height", 62) - 12;
+        int room = bottom - gridTop();
+        int gap = layout().i("grid.gap", 4);
+        return Math.max(1, (room + gap) / (cellH() + gap));
     }
 
     private int gridLeft()
@@ -123,10 +171,126 @@ public class CardShopScreen extends Screen
         int pad = layout.i("pad", 8);
         int buyW = layout.i("left.width", 120);
 
+        // Kept across a resize, so typing a search and then scaling the window
+        // does not silently empty the field.
+        String typed = search == null ? "" : search.getValue();
+        int controlsY = controlsTop();
+        int sortW = layout.i("sort.width", 62);
+        int dirW = layout.i("dir.width", 30);
+        int searchW = Math.max(60, width - pad - gridLeft() - sortW - dirW - 8);
+
+        search = new EditBox(font, gridLeft() + 4, controlsY + 3, searchW - 6, 12,
+            Component.literal("Search"));
+        search.setValue(typed);
+        search.setResponder(value -> refresh());
+        addWidget(search);
+
+        addRenderableWidget(new HubWidgets.TextureButton(gridLeft() + searchW + 2, controlsY,
+            sortW, 16, Component.literal(sort.label()), pressed ->
+        {
+            sort = sort.next();
+            refresh();
+            rebuild();
+        }));
+        addRenderableWidget(new HubWidgets.TextureButton(gridLeft() + searchW + sortW + 4,
+            controlsY, dirW, 16, Component.literal(descending ? "DESC" : "ASC"), pressed ->
+        {
+            descending = !descending;
+            refresh();
+            rebuild();
+        }));
+
         addRenderableWidget(new HubWidgets.TextureButton(pad, height - layout.i("bottom.height", 62) - 30,
             buyW, 20, Component.literal("Buy"), pressed -> buy()));
         addRenderableWidget(new HubWidgets.TextureButton(closeLeft(), height - 26,
             layout.i("close.width", 70), 20, Component.literal("Close"), pressed -> onClose()));
+
+        refresh();
+    }
+
+    /** Rebuilds the widgets so a button's own label can change. */
+    private void rebuild()
+    {
+        clearWidgets();
+        init();
+    }
+
+    /** The row the search field and the sort controls sit on. */
+    private int controlsTop()
+    {
+        return layout().i("pad", 8) + layout().i("controls.top", 22);
+    }
+
+    /**
+     * Rebuilds what the grid shows from the search text and the chosen order.
+     * <p>
+     * The selected pack is kept by CODE rather than by position: filtering
+     * changes what index a pack sits at, and a player who had Burst of Destiny
+     * selected should still have it selected after typing, not whatever has
+     * taken its place.
+     */
+    private void refresh()
+    {
+        String selectedCode = current() == null ? null : current().code();
+        String needle = search == null ? "" : search.getValue().trim().toLowerCase(java.util.Locale.ROOT);
+
+        List<ShopStock.Pack> matching = new ArrayList<>();
+        for(ShopStock.Pack pack : packs)
+        {
+            if(needle.isEmpty() || matches(pack, needle))
+            {
+                matching.add(pack);
+            }
+        }
+        matching.sort(order());
+        shown = matching;
+
+        selected = 0;
+        for(int i = 0; i < shown.size(); i++)
+        {
+            if(shown.get(i).code().equals(selectedCode))
+            {
+                selected = i;
+                break;
+            }
+        }
+        scroll = 0;
+        notice = "";
+    }
+
+    /**
+     * Whether a pack answers the search.
+     * <p>
+     * Name, set code and type are all searched, so "BODE", "burst" and "series
+     * 11" each find the same pack -- a player looking for a set knows it by
+     * whichever of those they happen to remember.
+     */
+    private static boolean matches(ShopStock.Pack pack, String needle)
+    {
+        return contains(pack.name(), needle) || contains(pack.code(), needle)
+            || contains(pack.type(), needle);
+    }
+
+    private static boolean contains(String haystack, String needle)
+    {
+        return haystack != null && haystack.toLowerCase(java.util.Locale.ROOT).contains(needle);
+    }
+
+    private java.util.Comparator<ShopStock.Pack> order()
+    {
+        java.util.Comparator<ShopStock.Pack> byChosen = switch(sort)
+        {
+            case RELEASE -> java.util.Comparator.comparingLong(ShopStock.Pack::released);
+            case NAME -> java.util.Comparator.comparing(ShopStock.Pack::name,
+                String.CASE_INSENSITIVE_ORDER);
+            case PRICE -> java.util.Comparator.comparingInt(ShopStock.Pack::price);
+            case OWNED -> java.util.Comparator.comparingInt(this::completion);
+        };
+        // Ties broken by code, so two sets released the same day keep a stable
+        // order rather than shuffling every time the list is rebuilt.
+        java.util.Comparator<ShopStock.Pack> full =
+            byChosen.thenComparing(ShopStock.Pack::code);
+        return descending ? full.reversed() : full;
     }
 
     /**
@@ -181,9 +345,33 @@ public class CardShopScreen extends Screen
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta)
     {
-        int maxScroll = Math.max(0, (packs.size() + gridColumns() - 1) / gridColumns() - gridRows());
+        int maxScroll = Math.max(0, (shown.size() + gridColumns() - 1) / gridColumns() - gridRows());
         scroll = Math.max(0, Math.min(maxScroll, scroll - (int)Math.signum(delta)));
         return true;
+    }
+
+    @Override
+    public boolean keyPressed(int key, int scan, int modifiers)
+    {
+        // The search field takes the keyboard while it has focus, so typing a
+        // set's name does not also fire whatever the letters are bound to --
+        // and Escape still closes the shop rather than being swallowed.
+        if(search != null && search.isFocused() && key != 256
+            && search.keyPressed(key, scan, modifiers))
+        {
+            return true;
+        }
+        return super.keyPressed(key, scan, modifiers);
+    }
+
+    @Override
+    public boolean charTyped(char typed, int modifiers)
+    {
+        if(search != null && search.isFocused() && search.charTyped(typed, modifiers))
+        {
+            return true;
+        }
+        return super.charTyped(typed, modifiers);
     }
 
     private int packAt(double mouseX, double mouseY)
@@ -199,7 +387,7 @@ public class CardShopScreen extends Screen
             return -1;
         }
         int index = (row + scroll) * columns + column;
-        return index < packs.size() ? index : -1;
+        return index < shown.size() ? index : -1;
     }
 
     // ---- rendering ----
@@ -213,12 +401,17 @@ public class CardShopScreen extends Screen
         int bottomH = layout.i("bottom.height", 62);
         int leftW = layout.i("left.width", 120);
 
+        renderControls(poseStack);
         renderPreview(poseStack, pad, leftW, bottomH);
         renderGrid(poseStack, mouseX, mouseY);
         renderDetails(poseStack, bottomH, mouseX, mouseY);
         renderBalance(poseStack);
 
         super.render(poseStack, mouseX, mouseY, partialTick);
+        if(search != null)
+        {
+            search.render(poseStack, mouseX, mouseY, partialTick);
+        }
     }
 
     /** Left: the highlighted pack, large, with what it costs. */
@@ -240,7 +433,7 @@ public class CardShopScreen extends Screen
         // values down the right in another: the eye reads either column on its
         // own, which is what makes a list of unrelated facts scannable.
         String released = releaseDate(pack);
-        int rows = released == null ? 2 : 3;
+        int rows = released == null ? 3 : 4;
         int rowH = 12;
         int boxX = pad + 6;
         int boxW = leftW - 12;
@@ -251,6 +444,9 @@ public class CardShopScreen extends Screen
         int rowY = boxY + 5;
         detail(poseStack, boxX, boxW, rowY, "Contents", pack.deck() ? "1 DECK" : "1 PACK",
             0xFFC2C9D6);
+        // How many cards actually come out, which is what the price is per.
+        detail(poseStack, boxX, boxW, rowY, "Cards",
+            Integer.toString(pack.cardsPerPack()), 0xFFC2C9D6);
         rowY += rowH;
         detail(poseStack, boxX, boxW, rowY, "Price",
             isCreative() ? "FREE" : pack.price() + " DP",
@@ -315,6 +511,21 @@ public class CardShopScreen extends Screen
         }
     }
 
+    /** The search field's frame, and how much of the catalogue is showing. */
+    private void renderControls(PoseStack poseStack)
+    {
+        if(search == null)
+        {
+            return;
+        }
+        NineSlice.draw(poseStack, HubTextures.SEARCH_FIELD, search.x - 4, controlsTop(),
+            search.getWidth() + 8, 16);
+        String count = shown.size() == packs.size()
+            ? packs.size() + " packs"
+            : shown.size() + " of " + packs.size();
+        font.drawShadow(poseStack, count, gridLeft(), gridTop() - 12, 0xFF7A8090);
+    }
+
     /** Centre: every pack, the highlighted one ringed. */
     private void renderGrid(PoseStack poseStack, int mouseX, int mouseY)
     {
@@ -335,13 +546,13 @@ public class CardShopScreen extends Screen
             for(int column = 0; column < columns; column++)
             {
                 int index = (row + scroll) * columns + column;
-                if(index >= packs.size())
+                if(index >= shown.size())
                 {
                     continue;
                 }
                 int x = left + column * (cellW + gap);
                 int y = top + row * (cellH + gap);
-                drawPackArt(poseStack, packs.get(index), x, y, cellW, cellH);
+                drawPackArt(poseStack, shown.get(index), x, y, cellW, cellH);
                 if(index == selected)
                 {
                     // The reference marks focus with a blue ring rather than a
