@@ -17,8 +17,8 @@ import java.util.List;
 
 /**
  * The card shop, arranged as Tag Force arranges it: the highlighted pack and
- * its price down the left, a grid of every pack in the middle, the shopkeeper
- * on the right, and a details bar with the description underneath.
+ * its price down the left, a grid of every pack and deck filling the middle,
+ * and a details bar with the description underneath.
  * <p>
  * The balance shown is the server's, pushed on open and after every purchase.
  * Nothing here decides what a pack costs or what comes out of it — a purchase
@@ -65,9 +65,16 @@ public class CardShopScreen extends Screen
         return Layout.of(LAYOUT);
     }
 
+    /**
+     * As many columns as the space allows rather than a fixed count. The
+     * shopkeeper used to occupy the right of the screen; with it gone the grid
+     * would otherwise leave that space empty.
+     */
     private int gridColumns()
     {
-        return Math.max(1, layout().i("grid.columns", 7));
+        int available = width - gridLeft() - layout().i("pad", 8);
+        int cell = cellW() + layout().i("grid.gap", 4);
+        return Math.max(1, Math.min(layout().i("grid.maxColumns", 12), available / Math.max(1, cell)));
     }
 
     private int cellW()
@@ -103,7 +110,7 @@ public class CardShopScreen extends Screen
         int buyW = layout.i("left.width", 120);
 
         addRenderableWidget(new HubWidgets.TextureButton(pad, height - layout.i("bottom.height", 62) - 30,
-            buyW, 20, Component.literal("Buy 1 Pack"), pressed -> buy()));
+            buyW, 20, Component.literal("Buy"), pressed -> buy()));
         addRenderableWidget(new HubWidgets.TextureButton(width - pad - 70, height - 26, 70, 20,
             Component.literal("Close"), pressed -> onClose()));
     }
@@ -178,7 +185,6 @@ public class CardShopScreen extends Screen
 
         renderPreview(poseStack, pad, leftW, bottomH);
         renderGrid(poseStack, mouseX, mouseY);
-        renderVendor(poseStack);
         renderDetails(poseStack, bottomH);
         renderBalance(poseStack);
 
@@ -200,7 +206,7 @@ public class CardShopScreen extends Screen
         drawPackArt(poseStack, pack, pad + 8, pad + 8, artW, artH);
 
         int y = pad + 8 + artH + 6;
-        String quantity = "1 PACK";
+        String quantity = pack.deck() ? "1 DECK" : "1 PACK";
         font.drawShadow(poseStack, quantity, pad + 8, y, 0xFFC2C9D6);
         String price = pack.price() + " DP";
         font.drawShadow(poseStack, price, pad + 8, y + 12, 0xFFF4D089);
@@ -243,18 +249,6 @@ public class CardShopScreen extends Screen
         }
     }
 
-    /** Right: the shopkeeper. */
-    private void renderVendor(PoseStack poseStack)
-    {
-        Layout layout = layout();
-        int w = layout.i("vendor.width", 96);
-        int h = layout.i("vendor.height", 128);
-        int x = width - layout.i("pad", 8) - w;
-        int y = layout.i("pad", 8) + layout.i("vendor.top", 22);
-        NineSlice.draw(poseStack, HubTextures.PANEL, x - 4, y - 4, w + 8, h + 8);
-        NineSlice.image(poseStack, HubTextures.SHOPKEEPER, x, y, w, h);
-    }
-
     /** Bottom: name, cards per pack, price, completion, and the blurb. */
     private void renderDetails(PoseStack poseStack, int bottomH)
     {
@@ -269,6 +263,9 @@ public class CardShopScreen extends Screen
         }
         int textY = y + 7;
         font.drawShadow(poseStack, pack.name(), pad + 8, textY, 0xFFE6EAF2);
+        String kind = pack.deck() ? "DECK" : "PACK";
+        font.drawShadow(poseStack, kind, pad + 12 + font.width(pack.name()), textY,
+            pack.deck() ? 0xFF9FD4FF : 0xFF7A8090);
 
         // The metrics run along the right of the title row, as the reference's
         // bar does: how many cards, what it costs, how much of it you have.
@@ -337,20 +334,22 @@ public class CardShopScreen extends Screen
         return Math.round(owned * 100F / pack.distinctCards());
     }
 
-    /** Pack art, falling back to a card back while the image is unavailable. */
+    /**
+     * Product art, from the set's own image.
+     * <p>
+     * Nothing is shipped for this. Every set already carries an image URL and
+     * the mod already has a pipeline that fetches and caches set images -- the
+     * same one the set item uses -- so this asks for the art rather than
+     * bundling several hundred pictures. A set still downloading yields the
+     * pipeline's own placeholder, and the next frame picks up the real thing.
+     */
     private void drawPackArt(PoseStack poseStack, ShopStock.Pack pack, int x, int y, int w, int h)
     {
         RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
         RenderSystem.enableBlend();
-        ResourceLocation art = new ResourceLocation(DuelDimension.MOD_ID,
-            "textures/gui/shop/packs/" + pack.code().toLowerCase(java.util.Locale.ROOT) + ".png");
-        // Set art is not shipped for every one of several hundred sets, so a
-        // missing file falls back to the card back rather than a magenta square.
-        if(net.minecraft.client.Minecraft.getInstance().getResourceManager().getResource(art).isEmpty())
-        {
-            art = DuelTextures.COVER;
-        }
+        de.cas_ual_ty.dueldimension.set.CardSet set = ShopStock.setOf(pack.code());
+        ResourceLocation art = set == null ? DuelTextures.COVER : set.getInfoImageResourceLocation();
         DuelTextures.bindSmooth(art);
         DdBlitUtil.fullBlit(poseStack, x, y, w, h);
     }

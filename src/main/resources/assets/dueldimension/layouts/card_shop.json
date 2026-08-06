@@ -5,13 +5,9 @@
 
   "pack.aspect": 0.68,
 
-  "grid.columns": 7,
+  "grid.maxColumns": 12,
   "grid.rows": 4,
   "grid.cellWidth": 40,
   "grid.gap": 4,
-  "grid.top": 22,
-
-  "vendor.width": 96,
-  "vendor.height": 128,
-  "vendor.top": 22
+  "grid.top": 22
 }

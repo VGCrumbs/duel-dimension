@@ -23,9 +23,15 @@ public final class ShopStock
     /** The base price of a pack, matching the reference's 150 DP. */
     public static final int BASE_PRICE = 150;
 
-    /** One purchasable pack, as the shop screen needs it. */
+    /**
+     * One purchasable product.
+     *
+     * @param deck true for a structure or starter deck, which has fixed
+     *             contents rather than a random pull -- the shop shows that
+     *             difference rather than pretending everything is a booster
+     */
     public record Pack(String code, String name, String type, int price, int cardsPerPack,
-        int distinctCards, String description)
+        int distinctCards, String description, boolean deck)
     {
         public void write(FriendlyByteBuf buffer)
         {
@@ -36,12 +42,14 @@ public final class ShopStock
             buffer.writeVarInt(cardsPerPack);
             buffer.writeVarInt(distinctCards);
             buffer.writeUtf(description, 256);
+            buffer.writeBoolean(deck);
         }
 
         public static Pack read(FriendlyByteBuf buffer)
         {
             return new Pack(buffer.readUtf(32), buffer.readUtf(128), buffer.readUtf(64),
-                buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(), buffer.readUtf(256));
+                buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(), buffer.readUtf(256),
+                buffer.readBoolean());
         }
     }
 
@@ -59,19 +67,17 @@ public final class ShopStock
             {
                 continue;
             }
-            // A pack is something you open for a random handful. A structure or
-            // starter deck has fixed contents, so it belongs in a different
-            // part of the shop rather than being sold as a booster.
             if(set.pull == null || set.cards == null || set.cards.isEmpty())
             {
                 continue;
             }
-            if(set.type != null && (set.type.contains("Structure Deck") || set.type.contains("Starter Deck")))
-            {
-                continue;
-            }
+            // Decks are sold too, they simply are not boosters: fixed contents,
+            // and opening one grants the deck and its recipe as well as the
+            // cards. The flag lets the shop say which it is.
+            boolean deck = set.type != null
+                && (set.type.contains("Structure Deck") || set.type.contains("Starter Deck"));
             packs.add(new Pack(set.code, set.name, set.type == null ? "" : set.type,
-                priceOf(set), cardsPerPack(set), distinctCards(set), describe(set)));
+                priceOf(set), cardsPerPack(set), distinctCards(set), describe(set), deck));
         }
         packs.sort((left, right) -> right.code().compareTo(left.code()));
         return packs;
@@ -98,6 +104,13 @@ public final class ShopStock
     {
         int perPack = cardsPerPack(set);
         return Math.max(50, BASE_PRICE * Math.max(1, perPack) / 5);
+    }
+
+    /** True for a fixed-contents product rather than a random pull. */
+    public static boolean isDeck(CardSet set)
+    {
+        return set != null && set.type != null
+            && (set.type.contains("Structure Deck") || set.type.contains("Starter Deck"));
     }
 
     /**
