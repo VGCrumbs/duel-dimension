@@ -8,6 +8,7 @@ import de.cas_ual_ty.dueldimension.card.properties.Type;
 import de.cas_ual_ty.dueldimension.duel.match.Banlist;
 import de.cas_ual_ty.dueldimension.duel.profile.CardQuery;
 import de.cas_ual_ty.dueldimension.duel.profile.DeckList;
+import de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages;
 import de.cas_ual_ty.dueldimension.duel.profile.Trunk;
 
 import java.util.ArrayList;
@@ -16,20 +17,27 @@ import java.util.List;
 /**
  * What the deck editor is working on: a collection, a deck, and a query.
  * <p>
- * Client-side and in memory. Server-backed profiles are not wired yet, so the
- * trunk is seeded from the card database — the editor is fully usable and every
- * rule it enforces is the real one, but the contents are a stand-in until packs
- * register cards for real. That is stated in the UI rather than hidden.
+ * A <em>copy</em> of what the server holds. It used to be the original — a
+ * collection invented on the client and seeded from the whole card database —
+ * which made the editor usable but meant nothing it did was real. Now the
+ * server sends the profile on join and after every change, and this holds the
+ * latest one.
+ * <p>
+ * Changes are applied here immediately <em>and</em> asked for over the wire, so
+ * the editor stays responsive while the server decides. Every reply is a whole
+ * profile, so a change the server refuses simply does not survive the next
+ * message: the guess is corrected rather than argued with.
  */
 public final class EditorState
 {
-    /** Copies of each card the seeded trunk grants. Three is the deck ceiling. */
-    private static final int SEEDED_COPIES = 3;
-
-    private static Trunk trunk;
     /** Every deck the player has, and which one the editor is on. */
-    private static final de.cas_ual_ty.dueldimension.duel.profile.DuelProfile PROFILE =
+    private static de.cas_ual_ty.dueldimension.duel.profile.DuelProfile profile =
         new de.cas_ual_ty.dueldimension.duel.profile.DuelProfile();
+    /**
+     * True once the server has actually told us something. Before that the
+     * profile above is an empty placeholder rather than the player's.
+     */
+    private static boolean synced;
     private static int current;
     private static Banlist banlist = Banlist.none();
     private static CardQuery<Properties> query;
@@ -109,119 +117,116 @@ public final class EditorState
         }
     };
 
+    /**
+     * Takes the profile the server just sent.
+     * <p>
+     * The open deck is kept by <em>name</em> rather than by position: the list
+     * can come back in a different order, or a deck short, and a player who was
+     * editing "Burn" should still be editing "Burn" rather than whatever is now
+     * third in the list.
+     */
+    public static void accept(net.minecraft.nbt.CompoundTag tag)
+    {
+        String open = synced && current >= 0 && current < profile.decks().size()
+            ? profile.decks().get(current).name() : "";
+
+        profile = de.cas_ual_ty.dueldimension.duel.profile.DuelProfile.load(tag);
+        synced = true;
+
+        current = 0;
+        List<DeckList> all = profile.decks();
+        for(int i = 0; i < all.size(); i++)
+        {
+            if(all.get(i).name().equals(open))
+            {
+                current = i;
+                break;
+            }
+        }
+        // What we now hold came from the server, so there is nothing to send.
+        agreed = contentsOf(deck());
+        dirty = true;
+    }
+
+    /** True once the server has sent this player's collection. */
+    public static boolean isSynced()
+    {
+        return synced;
+    }
+
     public static Trunk trunk()
     {
-        ensureSeeded();
-        return trunk;
+        return profile.trunk();
     }
 
     public static de.cas_ual_ty.dueldimension.duel.profile.DuelProfile profile()
     {
-        return PROFILE;
+        return profile;
     }
 
     /** The player's own builds -- what the Decks view lists. */
     public static List<DeckList> ownDecks()
     {
-        decks();
-        List<DeckList> own = new ArrayList<>(PROFILE.savedRecipes());
-        if(own.isEmpty())
-        {
-            PROFILE.addDeck(new DeckList("New Deck", DeckList.Origin.SAVED));
-            own = new ArrayList<>(PROFILE.savedRecipes());
-        }
-        return own;
+        return new ArrayList<>(profile.savedRecipes());
     }
 
     /** Every deck, in the order they were made. */
     public static List<DeckList> decks()
     {
-        ensureStarterDecks();
-        if(PROFILE.decks().isEmpty())
-        {
-            // A player always has somewhere to put cards, so the editor is
-            // never in the state of having no deck to edit.
-            PROFILE.addDeck(new DeckList("New Deck", DeckList.Origin.SAVED));
-        }
-        return PROFILE.decks();
+        return profile.decks();
     }
 
     /**
-     * Starter decks ARE structure decks: opening one grants its cards, the deck
-     * itself ready to play, and the recipe. They are granted here for now
-     * because pack opening is not wired to a profile yet — the same stand-in as
-     * the seeded trunk, and the same single call
-     * ({@link DuelProfile#unlockStructureDeck}) the real opening will make.
+     * A deck to show before the server has said anything, so the editor opened
+     * early has something to draw rather than an index out of an empty list.
+     * Detached on purpose: edits to it go nowhere, which is right, because
+     * there is nothing yet to edit.
      */
-    private static boolean startersGranted;
-
-    private static void ensureStarterDecks()
-    {
-        if(startersGranted)
-        {
-            return;
-        }
-        startersGranted = true;
-        for(de.cas_ual_ty.dueldimension.ocg.deck.StarterDecks.Entry entry
-            : de.cas_ual_ty.dueldimension.ocg.deck.StarterDecks.ALL)
-        {
-            try
-            {
-                de.cas_ual_ty.dueldimension.ocg.deck.YdkDeck deck = entry.load();
-                ensureSeeded();
-                PROFILE.unlockStarterDeck(entry.id(), entry.displayName(),
-                    deck.main(), deck.extra(), deck.side());
-            }
-            catch(Exception unavailable)
-            {
-                // A missing deck list is not worth failing the editor over.
-            }
-        }
-    }
-
-    /**
-     * Grants a structure deck: its cards into the trunk, the deck itself, and
-     * its recipe. This is the call an opened product makes.
-     */
-    public static void unlockStructureDeck(String id, String displayName,
-        List<Integer> main, List<Integer> extra, List<Integer> side)
-    {
-        ensureSeeded();
-        PROFILE.unlockStructureDeck(id, displayName, main, extra, side);
-        dirty = true;
-    }
+    private static final DeckList PLACEHOLDER = new DeckList("...", DeckList.Origin.SAVED);
 
     /** The deck being edited. */
     public static DeckList deck()
     {
         List<DeckList> all = decks();
+        if(all.isEmpty())
+        {
+            return PLACEHOLDER;
+        }
         current = Math.max(0, Math.min(current, all.size() - 1));
         return all.get(current);
     }
 
     public static int currentIndex()
     {
-        decks();
         return current;
     }
 
     public static void select(int index)
     {
         List<DeckList> all = decks();
+        if(all.isEmpty())
+        {
+            current = 0;
+            return;
+        }
+        // Leaving a deck is the last chance to save what was done to it.
+        flush();
         current = Math.max(0, Math.min(index, all.size() - 1));
+        agreed = contentsOf(deck());
     }
 
     /** Adds a deck and switches to it, with a name that is not already taken. */
     public static DeckList newDeck()
     {
         String name = "New Deck";
-        for(int suffix = 2; PROFILE.deckNamed(name) != null; suffix++)
+        for(int suffix = 2; profile.deckNamed(name) != null; suffix++)
         {
             name = "New Deck " + suffix;
         }
         DeckList made = new DeckList(name, DeckList.Origin.SAVED);
-        PROFILE.addDeck(made);
-        current = PROFILE.decks().size() - 1;
+        profile.addDeck(made);
+        current = profile.decks().size() - 1;
+        send(new ProfileMessages.CreateDeck(name));
         return made;
     }
 
@@ -237,13 +242,25 @@ public final class EditorState
         List<DeckList> all = decks();
         DeckList source = all.get(Math.max(0, Math.min(index, all.size() - 1)));
         String name = source.name() + " copy";
-        for(int suffix = 2; PROFILE.deckNamed(name) != null; suffix++)
+        for(int suffix = 2; profile.deckNamed(name) != null; suffix++)
         {
             name = source.name() + " copy " + suffix;
         }
         DeckList copy = source.copy(name, DeckList.Origin.SAVED);
-        PROFILE.addDeck(copy);
-        current = PROFILE.decks().size() - 1;
+        profile.addDeck(copy);
+        current = profile.decks().size() - 1;
+        // A copy of a granted deck is a recipe being used; a copy of a build is
+        // a new deck with the same cards. The server tells them apart by which
+        // message arrives, so the right one is sent.
+        if(source.origin().isGranted())
+        {
+            send(new ProfileMessages.CopyRecipe(source.name(), name));
+        }
+        else
+        {
+            send(new ProfileMessages.CreateDeck(name));
+            send(new ProfileMessages.SaveDeck(name, copy.main(), copy.extra(), copy.side()));
+        }
         return copy;
     }
 
@@ -261,13 +278,14 @@ public final class EditorState
         List<DeckList> all = decks();
         DeckList source = all.get(Math.max(0, Math.min(index, all.size() - 1)));
         String name = source.name();
-        for(int suffix = 2; PROFILE.deckNamed(name) != null; suffix++)
+        for(int suffix = 2; profile.deckNamed(name) != null; suffix++)
         {
             name = source.name() + " " + suffix;
         }
         DeckList made = source.copy(name, DeckList.Origin.SAVED);
-        PROFILE.addDeck(made);
-        current = PROFILE.decks().size() - 1;
+        profile.addDeck(made);
+        current = profile.decks().size() - 1;
+        send(new ProfileMessages.CopyRecipe(source.name(), name));
         return made;
     }
 
@@ -282,12 +300,15 @@ public final class EditorState
         {
             return false;
         }
-        DeckList existing = PROFILE.deckNamed(trimmed);
+        DeckList existing = profile.deckNamed(trimmed);
         if(existing != null && existing != deck())
         {
             return false;
         }
-        deck().rename(trimmed);
+        DeckList target = deck();
+        String was = target.name();
+        target.rename(trimmed);
+        send(new ProfileMessages.RenameDeck(was, trimmed));
         return true;
     }
 
@@ -305,17 +326,25 @@ public final class EditorState
         {
             return "Granted decks cannot be deleted";
         }
-        if(PROFILE.savedRecipes().size() <= 1)
+        if(profile.savedRecipes().size() <= 1)
         {
             // Clearing it is the same outcome and leaves somewhere to build.
+            String name = target.name();
             target.main().clear();
             target.extra().clear();
             target.side().clear();
-            target.rename("New Deck");
+            send(new ProfileMessages.SaveDeck(name, List.of(), List.of(), List.of()));
+            if(!"New Deck".equals(name))
+            {
+                target.rename("New Deck");
+                send(new ProfileMessages.RenameDeck(name, "New Deck"));
+            }
             return null;
         }
-        PROFILE.removeDeck(target.name());
+        String name = target.name();
+        profile.removeDeck(name);
         current = Math.max(0, current - 1);
+        send(new ProfileMessages.DeleteDeck(name));
         return null;
     }
 
@@ -353,11 +382,10 @@ public final class EditorState
      */
     public static List<Properties> visible()
     {
-        ensureSeeded();
         if(dirty)
         {
             List<Properties> owned = new ArrayList<>();
-            for(int code : trunk.all().keySet())
+            for(int code : trunk().all().keySet())
             {
                 Properties card = DdDatabase.PROPERTIES_LIST.get((long)code);
                 if(card != null)
@@ -371,27 +399,61 @@ public final class EditorState
         return visible;
     }
 
-    /** True while the collection is the database stand-in rather than earned cards. */
-    public static boolean isSeeded()
+    /**
+     * Sends the open deck if it differs from what the server last had.
+     * <p>
+     * Driven by comparison rather than by each edit announcing itself. A deck
+     * is edited from a dozen places — click, shift-click, drag, drop, the
+     * right-click menu — and a scheme where every one of them has to remember
+     * to say so is a scheme where one of them eventually does not. Comparing
+     * ninety numbers once a tick cannot miss one.
+     * <p>
+     * Called from the editor's tick and when it closes, so a burst of clicks
+     * costs one message rather than one each.
+     */
+    public static void flush()
     {
-        return true;
-    }
-
-    private static void ensureSeeded()
-    {
-        if(trunk != null)
+        if(!synced)
         {
             return;
         }
-        trunk = new Trunk();
-        for(Properties card : DdDatabase.PROPERTIES_LIST)
+        DeckList open = deck();
+        if(open == PLACEHOLDER)
         {
-            if(card == null || card.getId() <= 0 || card.getIllegal())
-            {
-                continue;
-            }
-            trunk.add((int)card.getId(), SEEDED_COPIES);
+            return;
         }
-        dirty = true;
+        String now = contentsOf(open);
+        if(now.equals(agreed))
+        {
+            return;
+        }
+        agreed = now;
+        send(new ProfileMessages.SaveDeck(open.name(), open.main(), open.extra(), open.side()));
+    }
+
+    /**
+     * What the server is believed to hold for the open deck.
+     * <p>
+     * Set whenever the two are known to agree — on a sync, and on switching
+     * decks. Without that, a sync would look like a change, be sent straight
+     * back, and be answered with another sync.
+     */
+    private static String agreed = "";
+
+    private static String contentsOf(DeckList deck)
+    {
+        return deck.name() + "|" + deck.main() + deck.extra() + deck.side();
+    }
+
+    /** Tells the server which deck this player duels with. */
+    public static void setActiveDeck(String name)
+    {
+        profile.setActiveDeck(name);
+        send(new ProfileMessages.SetActiveDeck(name));
+    }
+
+    private static void send(Object message)
+    {
+        de.cas_ual_ty.dueldimension.DuelDimension.channel.sendToServer(message);
     }
 }

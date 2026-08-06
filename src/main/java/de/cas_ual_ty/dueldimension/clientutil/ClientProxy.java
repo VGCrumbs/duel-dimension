@@ -815,4 +815,10 @@ public class ClientProxy implements ISidedProxy
     {
         de.cas_ual_ty.dueldimension.clientutil.hub.CardShopScreen.setPoints(points);
     }
+
+    @Override
+    public void setDuelProfile(net.minecraft.nbt.CompoundTag profile)
+    {
+        de.cas_ual_ty.dueldimension.clientutil.hub.EditorState.accept(profile);
+    }
 }

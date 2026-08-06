@@ -77,12 +77,9 @@ public class PackOpeningScreen extends Screen
     protected void init()
     {
         stageStart = System.currentTimeMillis();
-        // Everything pulled is already the player's; adding it here means the
-        // trunk is right whether or not they sit through the reveal.
-        for(int code : codes)
-        {
-            EditorState.trunk().add(code, 1);
-        }
+        // The cards were added to the collection by the server before this
+        // screen was ever asked for, and it has already sent the new one. Doing
+        // it here as well would count every card twice.
         EditorState.invalidate();
         // Ask the image pipeline for every card NOW rather than when each one
         // turns. It fetches asynchronously and yields placeholder art until it

@@ -145,4 +145,12 @@ public interface ISidedProxy
     default void setDuelPoints(int points)
     {
     }
+
+    /**
+     * Takes the player's collection and decks as the server holds them. Client
+     * only: the server does not need to be told what it already knows.
+     */
+    default void setDuelProfile(net.minecraft.nbt.CompoundTag profile)
+    {
+    }
 }

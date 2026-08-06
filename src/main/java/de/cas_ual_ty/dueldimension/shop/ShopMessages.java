@@ -1,6 +1,7 @@
 package de.cas_ual_ty.dueldimension.shop;
 
 import de.cas_ual_ty.dueldimension.DuelDimension;
+import de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles;
 import de.cas_ual_ty.dueldimension.set.CardSet;
 import de.cas_ual_ty.dueldimension.set.PackMessages;
 import net.minecraft.ChatFormatting;
@@ -167,6 +168,13 @@ public final class ShopMessages
                 rarities.add(holder.getRarity() == null ? "" : holder.getRarity());
                 player.getInventory().placeItemBackInInventory(card.copy());
             }
+
+            // The cards go into the collection as well as the inventory. The
+            // item is the physical card a player can hand over or lose; the
+            // trunk is what the deck editor builds from, and it is recorded on
+            // the server so it is the same collection wherever they log in.
+            codes.forEach(id -> DuelProfiles.get(player).trunk().add(id, 1));
+            DuelProfiles.saveAndSync(player);
 
             DuelDimension.channel.send(PacketDistributor.PLAYER.with(() -> player),
                 new SyncPoints(DuelPoints.get(player)));

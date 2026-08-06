@@ -163,6 +163,10 @@ public class DuelDimension
         bus.addGenericListener(Entity.class, this::attachPlayerCapabilities);
         bus.addListener(this::playerClone);
         bus.addListener(this::playerTick);
+        bus.addListener(this::playerLoggedIn);
+        bus.addListener(this::playerLoggedOut);
+        bus.addListener(this::playerRespawned);
+        bus.addListener(this::playerChangedDimension);
         bus.addListener(this::registerCommands);
         bus.addListener(this::findDecks);
         bus.addListener(this::serverStopped);
@@ -251,7 +255,42 @@ public class DuelDimension
                 de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.SetChainPreference::handle);
         DuelDimension.channel.registerMessage(index++, CIIMessages.SetPage.class, CIIMessages.SetPage::encode, CIIMessages.SetPage::decode, CIIMessages.SetPage::handle);
         DuelDimension.channel.registerMessage(index++, CIIMessages.ChangePage.class, CIIMessages.ChangePage::encode, CIIMessages.ChangePage::decode, CIIMessages.ChangePage::handle);
-        
+        DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.Sync.class,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.Sync::encode,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.Sync::decode,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.Sync::handle);
+        DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.SaveDeck.class,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.SaveDeck::encode,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.SaveDeck::decode,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.SaveDeck::handle);
+        DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.CreateDeck.class,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.CreateDeck::encode,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.CreateDeck::decode,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.CreateDeck::handle);
+        DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.RenameDeck.class,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.RenameDeck::encode,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.RenameDeck::decode,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.RenameDeck::handle);
+        DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.DeleteDeck.class,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.DeleteDeck::encode,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.DeleteDeck::decode,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.DeleteDeck::handle);
+        DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.CopyRecipe.class,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.CopyRecipe::encode,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.CopyRecipe::decode,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.CopyRecipe::handle);
+        DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.SetActiveDeck.class,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.SetActiveDeck::encode,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.SetActiveDeck::decode,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.SetActiveDeck::handle);
+
         DuelDimension.proxy.init();
         WorkerManager.init();
     }
@@ -363,6 +402,59 @@ public class DuelDimension
         original.discard();
     }
     
+    /**
+     * A joining player is told what they own, and their balance with it.
+     * <p>
+     * The client starts each session knowing nothing, so this is what makes the
+     * deck editor show a real collection rather than an invented one.
+     */
+    private void playerLoggedIn(net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent event)
+    {
+        if(event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player)
+        {
+            de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.saveAndSync(player);
+            DuelDimension.channel.send(
+                net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
+                new de.cas_ual_ty.dueldimension.shop.ShopMessages.SyncPoints(
+                    de.cas_ual_ty.dueldimension.shop.DuelPoints.get(player)));
+        }
+    }
+
+    /**
+     * A leaving player's duel is ended and their cached profile dropped.
+     * <p>
+     * A duel is a conversation: the session thread is sitting waiting for an
+     * answer that is never going to come now, and the other seat would wait
+     * with it forever. Ending it is the only honest outcome.
+     */
+    private void playerLoggedOut(net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event)
+    {
+        if(event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player)
+        {
+            de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.abandon(player);
+            de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.save(player);
+            de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.forget(player);
+        }
+    }
+
+    /** A respawned player has a new client-side world; tell it what it owns again. */
+    private void playerRespawned(net.minecraftforge.event.entity.player.PlayerEvent.PlayerRespawnEvent event)
+    {
+        if(event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player)
+        {
+            de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.sync(player);
+        }
+    }
+
+    private void playerChangedDimension(
+        net.minecraftforge.event.entity.player.PlayerEvent.PlayerChangedDimensionEvent event)
+    {
+        if(event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player)
+        {
+            de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.sync(player);
+        }
+    }
+
     private void playerTick(TickEvent.PlayerTickEvent event)
     {
         if(event.phase == TickEvent.Phase.END)

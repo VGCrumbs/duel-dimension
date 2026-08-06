@@ -392,7 +392,9 @@ public class DuelHubScreen extends Screen
             HubWidgets.TextureButton use = new HubWidgets.TextureButton(x, y, useW, ROW_H - 2,
                 Component.literal("Use"), pressed ->
             {
-                EditorState.profile().setActiveDeck(decks.get(useIndex).name());
+                // Told to the server, which is what actually decides the deck
+                // a duel is played with.
+                EditorState.setActiveDeck(decks.get(useIndex).name());
                 notice = "";
                 rebuild();
             });

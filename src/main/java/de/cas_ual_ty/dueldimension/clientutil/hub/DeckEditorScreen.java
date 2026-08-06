@@ -1155,8 +1155,18 @@ public class DeckEditorScreen extends Screen
     }
 
     @Override
+    public void tick()
+    {
+        super.tick();
+        // An edit reaches the server within a tick of being made, so closing
+        // the game rather than the screen still keeps the deck.
+        EditorState.flush();
+    }
+
+    @Override
     public void onClose()
     {
+        EditorState.flush();
         if(minecraft != null)
         {
             minecraft.setScreen(parent);

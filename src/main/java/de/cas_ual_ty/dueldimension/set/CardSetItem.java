@@ -150,6 +150,12 @@ public class CardSetItem extends CardSetBaseItem
         {
             return false;
         }
+        // Recorded on the server, exactly as a shop purchase is: a pack opened
+        // in the world and a pack bought at the counter are the same event as
+        // far as the collection is concerned.
+        codes.forEach(code -> de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles
+            .get(serverPlayer).trunk().add(code, 1));
+        de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.saveAndSync(serverPlayer);
         de.cas_ual_ty.dueldimension.DuelDimension.channel.send(
             net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> serverPlayer),
             new de.cas_ual_ty.dueldimension.set.PackMessages.OpenPack(

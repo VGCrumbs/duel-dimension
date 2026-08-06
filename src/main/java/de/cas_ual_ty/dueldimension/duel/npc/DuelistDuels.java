@@ -146,14 +146,16 @@ public final class DuelistDuels
         }
 
         StarterDecks.Entry npcDeck = StarterDecks.byId(duelist.getProfileId());
-        // Until deck selection exists, the challenger runs Yugi's deck unless
-        // that is what the NPC is using.
-        StarterDecks.Entry playerDeck = npcDeck == StarterDecks.YUGI ? StarterDecks.KAIBA : StarterDecks.YUGI;
+        // The challenger plays their own chosen deck. The fallback, for a
+        // player who has not chosen one or whose choice will not do, is a
+        // starter deck that is not the one the NPC is already using.
+        ChosenDeck playerDeck = deckFor(serverPlayer,
+            npcDeck == StarterDecks.YUGI ? StarterDecks.KAIBA : StarterDecks.YUGI);
 
         long seed = serverPlayer.level.getGameTime() ^ serverPlayer.getUUID().getLeastSignificantBits();
         long[] seeds = {seed | 1, seed * 31 + 7, seed * 131 + 17, ~seed};
 
-        HeadlessDuelRunner.Deck deck0 = playerDeck.load().toRunnerDeck();
+        HeadlessDuelRunner.Deck deck0 = playerDeck.cards();
         HeadlessDuelRunner.Deck deck1 = npcDeck.load().toRunnerDeck();
 
         // The challenger plays seat 0 themselves; the NPC plays seat 1.
@@ -234,11 +236,13 @@ public final class DuelistDuels
             return "Ruled duels unavailable";
         }
 
-        // Until deck building lands, the two seats take fixed starter decks.
-        StarterDecks.Entry deckA = StarterDecks.YUGI;
-        StarterDecks.Entry deckB = StarterDecks.KAIBA;
-        HeadlessDuelRunner.Deck deck0 = deckA.load().toRunnerDeck();
-        HeadlessDuelRunner.Deck deck1 = deckB.load().toRunnerDeck();
+        // Each player brings their own deck. The fallbacks differ so that two
+        // players who have both chosen nothing still get a duel rather than a
+        // mirror match neither asked for.
+        ChosenDeck deckA = deckFor(first, StarterDecks.YUGI);
+        ChosenDeck deckB = deckFor(second, StarterDecks.KAIBA);
+        HeadlessDuelRunner.Deck deck0 = deckA.cards();
+        HeadlessDuelRunner.Deck deck1 = deckB.cards();
 
         long seed = first.level.getGameTime()
             ^ first.getUUID().getLeastSignificantBits()
@@ -292,7 +296,7 @@ public final class DuelistDuels
 
     /** Tells one player the duel has begun, and warms up the art for their own deck. */
     private static void announceStart(ServerPlayer player, ServerPlayer opponent,
-        StarterDecks.Entry own, StarterDecks.Entry theirs, HeadlessDuelRunner.Deck ownDeck)
+        ChosenDeck own, ChosenDeck theirs, HeadlessDuelRunner.Deck ownDeck)
     {
         player.sendSystemMessage(Component.literal("Duel started against ")
             .withStyle(ChatFormatting.GOLD)
@@ -372,6 +376,88 @@ public final class DuelistDuels
                             .withStyle(ChatFormatting.GOLD));
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * The deck a player duels with, and what it is called.
+     * <p>
+     * Their chosen deck if they have one that is fit to play, and the fallback
+     * otherwise. Legality is checked here rather than trusted from the client
+     * that offered it: this is the moment a deck stops being a thing being
+     * built and becomes a thing being played with, and it is the last point at
+     * which a deck of forty Blue-Eyes can be turned away.
+     */
+    private record ChosenDeck(HeadlessDuelRunner.Deck cards, String displayName)
+    {
+    }
+
+    private static ChosenDeck deckFor(ServerPlayer player, StarterDecks.Entry fallback)
+    {
+        de.cas_ual_ty.dueldimension.duel.profile.DuelProfile profile =
+            de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.get(player);
+        String active = profile.activeDeck();
+        if(!active.isEmpty())
+        {
+            de.cas_ual_ty.dueldimension.duel.profile.DeckList chosen = profile.deckNamed(active);
+            java.util.List<String> problems = de.cas_ual_ty.dueldimension.duel.profile.DeckEdits
+                .duelReadiness(player, active);
+            if(chosen != null && problems.isEmpty())
+            {
+                return new ChosenDeck(
+                    new HeadlessDuelRunner.Deck(chosen.main(), chosen.extra()), chosen.name());
+            }
+            if(chosen != null)
+            {
+                player.sendSystemMessage(Component.literal("\"" + active
+                        + "\" cannot be duelled with (" + problems.get(0) + "); using "
+                        + fallback.displayName() + ".").withStyle(ChatFormatting.YELLOW));
+            }
+        }
+        return new ChosenDeck(fallback.load().toRunnerDeck(), fallback.displayName());
+    }
+
+    /**
+     * Ends the duel of a player who has left, and frees their seat.
+     * <p>
+     * A duel waits on its players: the session thread is blocked on a prompt
+     * that a disconnected player will never answer, and the other seat would
+     * sit there indefinitely. This is not a surrender — nobody chose it — but
+     * the outcome has to be the same, because the alternative is a duel that
+     * never ends and a thread that never stops.
+     * <p>
+     * The seat and the active entry are dropped here rather than left to the
+     * tick, which recognises a duel that <em>finished</em>; this one was
+     * abandoned, and the player it belonged to is already gone.
+     */
+    public static void abandon(ServerPlayer player)
+    {
+        Watcher watcher = Watcher.of(player);
+        RunningDuel duel = ACTIVE.remove(watcher);
+        SEATS.remove(player.getUUID());
+        if(duel == null)
+        {
+            return;
+        }
+
+        duel.session.stop();
+        for(Watcher other : duel.seats)
+        {
+            if(other == null || other.equals(watcher) || other.console())
+            {
+                continue;
+            }
+            // The far seat is released too: their duel is over whether or not
+            // they know it yet, and leaving them ACTIVE would refuse them a
+            // new one forever.
+            ACTIVE.remove(other);
+            SEATS.remove(other.playerId());
+            ServerPlayer opponent = player.server.getPlayerList().getPlayer(other.playerId());
+            if(opponent != null)
+            {
+                opponent.sendSystemMessage(Component.literal("Your opponent disconnected; the duel is over.")
+                    .withStyle(ChatFormatting.GOLD));
             }
         }
     }
