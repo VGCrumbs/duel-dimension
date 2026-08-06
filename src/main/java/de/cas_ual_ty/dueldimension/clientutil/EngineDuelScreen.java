@@ -70,6 +70,17 @@ public class EngineDuelScreen extends Screen
     private int[] counterAmounts = new int[0];
 
     private EnginePrompt shownPrompt;
+
+    /**
+     * Option indices the card picker is showing, or null when it is closed.
+     * <p>
+     * Some choices are between cards the player cannot see. Monster Reborn asks
+     * for a target in a graveyard, and a graveyard is drawn as a stack — there
+     * is nothing on the board to point at, so the choice used to arrive as a
+     * list of names in the pile's context menu. This shows the cards.
+     */
+    private List<Integer> picker;
+    private int pickerScroll;
     private EditBox searchBox;
     private final List<Integer> searchResults = new ArrayList<>();
     private final List<Button> searchButtons = new ArrayList<>();
@@ -159,6 +170,12 @@ public class EngineDuelScreen extends Screen
         {
             counterAmounts = new int[prompt.options().size()];
         }
+        List<Integer> hidden = prompt == null ? null : pickableCards(prompt);
+        if(hidden == null || !hidden.equals(picker))
+        {
+            pickerScroll = 0;
+        }
+        picker = hidden;
 
         // EDOPro keeps the chain toggles next to Surrender; same here.
         addRenderableWidget(new Button(SIDEBAR_PAD, height - 44, SIDEBAR_W - SIDEBAR_PAD * 2, 18,
@@ -299,6 +316,197 @@ public class EngineDuelScreen extends Screen
                 button.setMessage(Component.literal(card == null ? "?" : card.getName()));
             }
         }
+    }
+
+    /**
+     * The options of a prompt that are cards the player cannot already see and
+     * click, or null when there are none.
+     * <p>
+     * A card on the field is pointed at directly, which is the better gesture
+     * and already works. A card in a deck, a graveyard, a banished pile or the
+     * opponent's hand is not drawn individually anywhere, so choosing one has
+     * to be done from a list — and a list of cards beats a list of names.
+     * <p>
+     * Options carrying a command are verbs, not cards: "Activate", "Summon".
+     * Those stay in the context menu they belong to.
+     */
+    private static List<Integer> pickableCards(EnginePrompt prompt)
+    {
+        List<Integer> found = new ArrayList<>();
+        for(int i = 0; i < prompt.options().size(); i++)
+        {
+            EnginePrompt.Option option = prompt.options().get(i);
+            if(option.command() != 0 || option.cardCode() == 0 || !option.hasSlot())
+            {
+                return null;
+            }
+            if((option.location() & OcgConstants.LOCATION_ONFIELD) != 0)
+            {
+                // Anything on the field is chosen by pointing at it.
+                return null;
+            }
+            found.add(i);
+        }
+        return found.size() > 1 ? found : null;
+    }
+
+    // ---- the card picker ----
+
+    /** Geometry of the picker, worked out once and used to draw and to hit-test. */
+    private record PickerLayout(int x, int y, int width, int height, int cardW, int cardH,
+        int columns, int rows, int gridX, int gridY, int gap)
+    {
+    }
+
+    private PickerLayout pickerLayout()
+    {
+        int count = picker.size();
+        int gap = 6;
+        int cardW = 62;
+        int cardH = Math.round(cardW / DuelTextures.CARD_ASPECT);
+        // Wide enough for the whole selection where that fits, and never wider
+        // than the window: a graveyard can hold thirty cards.
+        int maxColumns = Math.max(1, (width - 80 + gap) / (cardW + gap));
+        int columns = Math.max(1, Math.min(maxColumns, Math.min(count, 8)));
+        int rows = Math.max(1, Math.min(3, (count + columns - 1) / columns));
+
+        int gridW = columns * cardW + (columns - 1) * gap;
+        int gridH = rows * (cardH + NAME_LINE) + (rows - 1) * gap;
+        int panelW = gridW + PICKER_PAD * 2;
+        int panelH = gridH + PICKER_PAD * 2 + PICKER_HEADER + PICKER_FOOTER;
+        int x = (width - panelW) / 2;
+        int y = (height - panelH) / 2;
+        return new PickerLayout(x, y, panelW, panelH, cardW, cardH, columns, rows,
+            x + PICKER_PAD, y + PICKER_PAD + PICKER_HEADER, gap);
+    }
+
+    private static final int PICKER_PAD = 10;
+    private static final int PICKER_HEADER = 14;
+    private static final int PICKER_FOOTER = 22;
+    /** Room under each card for its name. */
+    private static final int NAME_LINE = 10;
+
+    /**
+     * The picker: the choosable cards as cards, over a dimmed board.
+     * <p>
+     * Drawn after everything else and before the tooltips, so it sits over the
+     * field it is asking about without hiding what a hovered card is.
+     */
+    private void renderPicker(PoseStack poseStack, int mouseX, int mouseY)
+    {
+        EnginePrompt prompt = shownPrompt;
+        if(picker == null || prompt == null || answered)
+        {
+            return;
+        }
+        PickerLayout at = pickerLayout();
+        int perPage = at.columns() * at.rows();
+        int maxScroll = Math.max(0, (picker.size() - 1) / at.columns() - at.rows() + 1);
+        pickerScroll = Math.max(0, Math.min(pickerScroll, maxScroll));
+
+        // Dim the board rather than hide it: the question is about the duel,
+        // and the player should still be able to see its state.
+        fill(poseStack, 0, 0, width, height, 0xA0000000);
+        de.cas_ual_ty.dueldimension.clientutil.hub.NineSlice.draw(poseStack, de.cas_ual_ty.dueldimension.clientutil.hub.HubTextures.PANEL, at.x(), at.y(), at.width(), at.height());
+
+        String title = prompt.title() == null || prompt.title().isBlank()
+            ? "Select a card" : prompt.title();
+        font.drawShadow(poseStack, title, at.x() + PICKER_PAD, at.y() + 5, 0xFFF4D089);
+
+        for(int cell = 0; cell < perPage; cell++)
+        {
+            int index = cell + pickerScroll * at.columns();
+            if(index >= picker.size())
+            {
+                break;
+            }
+            EnginePrompt.Option option = prompt.options().get(picker.get(index));
+            int column = cell % at.columns();
+            int row = cell / at.columns();
+            int cardX = at.gridX() + column * (at.cardW() + at.gap());
+            int cardY = at.gridY() + row * (at.cardH() + NAME_LINE + at.gap());
+            boolean hovered = mouseX >= cardX && mouseX < cardX + at.cardW()
+                && mouseY >= cardY && mouseY < cardY + at.cardH();
+            boolean picked = selected.contains(picker.get(index));
+
+            if(picked || hovered)
+            {
+                de.cas_ual_ty.dueldimension.clientutil.hub.NineSlice.draw(poseStack, de.cas_ual_ty.dueldimension.clientutil.hub.HubTextures.PANEL, cardX - 3, cardY - 3,
+                    at.cardW() + 6, at.cardH() + 6,
+                    picked ? de.cas_ual_ty.dueldimension.clientutil.hub.NineSlice.SELECTED : de.cas_ual_ty.dueldimension.clientutil.hub.NineSlice.HOVER, 3, 0.9F);
+            }
+
+            Properties card = DdDatabase.PROPERTIES_LIST.get((long)option.cardCode());
+            ScreenUtil.white();
+            if(card != null)
+            {
+                DuelTextures.bindSmooth(
+                    DuelTextures.card(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE));
+                DdBlitUtil.blit(poseStack, cardX, cardY, at.cardW(), at.cardH(),
+                    DuelTextures.CARD_U0, DuelTextures.CARD_V0,
+                    DuelTextures.CARD_U1 - DuelTextures.CARD_U0,
+                    DuelTextures.CARD_V1 - DuelTextures.CARD_V0, 1, 1);
+            }
+            else
+            {
+                // The label is all we have for a card the database lacks; the
+                // back at least keeps it the same shape as its neighbours.
+                DuelTextures.bindSmooth(DuelTextures.COVER);
+                DdBlitUtil.fullBlit(poseStack, cardX, cardY, at.cardW(), at.cardH());
+            }
+
+            String name = card != null ? card.getName() : option.label();
+            String shown = font.plainSubstrByWidth(name == null ? "" : name, at.cardW());
+            font.drawShadow(poseStack, shown, cardX + (at.cardW() - font.width(shown)) / 2F,
+                cardY + at.cardH() + 2, picked ? 0xFFFFE9B0 : 0xFFC2C9D6);
+        }
+
+        int footerY = at.y() + at.height() - PICKER_FOOTER + 5;
+        String need = prompt.isSingleChoice() ? "Click a card"
+            : "Choose " + prompt.minSelect()
+                + (prompt.maxSelect() > prompt.minSelect() ? " to " + prompt.maxSelect() : "")
+                + "   (" + selected.size() + " picked)";
+        font.drawShadow(poseStack, need, at.x() + PICKER_PAD, footerY, 0xFF9FA6B4);
+        if(maxScroll > 0)
+        {
+            String more = "scroll  " + Math.min(picker.size(),
+                (pickerScroll + at.rows()) * at.columns()) + " / " + picker.size();
+            font.drawShadow(poseStack, more,
+                at.x() + at.width() - PICKER_PAD - font.width(more), footerY, 0xFF7A8090);
+        }
+    }
+
+    /** A click on the picker, or false if it fell outside one. */
+    private boolean clickPicker(double mouseX, double mouseY)
+    {
+        EnginePrompt prompt = shownPrompt;
+        if(picker == null || prompt == null || answered)
+        {
+            return false;
+        }
+        PickerLayout at = pickerLayout();
+        for(int cell = 0; cell < at.columns() * at.rows(); cell++)
+        {
+            int index = cell + pickerScroll * at.columns();
+            if(index >= picker.size())
+            {
+                break;
+            }
+            int column = cell % at.columns();
+            int row = cell / at.columns();
+            int cardX = at.gridX() + column * (at.cardW() + at.gap());
+            int cardY = at.gridY() + row * (at.cardH() + NAME_LINE + at.gap());
+            if(mouseX >= cardX && mouseX < cardX + at.cardW()
+                && mouseY >= cardY && mouseY < cardY + at.cardH())
+            {
+                choose(picker.get(index));
+                return true;
+            }
+        }
+        // Everything inside the panel is swallowed, so a miss between cards
+        // does not fall through to the board underneath it.
+        return mouseX >= at.x() && mouseX < at.x() + at.width()
+            && mouseY >= at.y() && mouseY < at.y() + at.height();
     }
 
     // ---- contextual command menu ----
@@ -619,8 +827,24 @@ public class EngineDuelScreen extends Screen
     }
 
     @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta)
+    {
+        // A graveyard can hold more cards than the picker shows at once.
+        if(picker != null && shownPrompt != null && !answered)
+        {
+            pickerScroll = Math.max(0, pickerScroll - (int)Math.signum(delta));
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, delta);
+    }
+
+    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button)
     {
+        if(button == 0 && clickPicker(mouseX, mouseY))
+        {
+            return true;
+        }
         // Right-click closes the command menu, as it does in the reference.
         if(button == 1)
         {
@@ -869,6 +1093,7 @@ public class EngineDuelScreen extends Screen
         }
 
         super.render(poseStack, mouseX, mouseY, partialTick);
+        renderPicker(poseStack, mouseX, mouseY);
         renderResult(poseStack);
 
         if(pileView != null)

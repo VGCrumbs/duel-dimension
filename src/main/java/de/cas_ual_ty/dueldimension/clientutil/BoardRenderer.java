@@ -431,10 +431,28 @@ public class BoardRenderer extends GuiComponent
                     sequence == 5 ? "Field Spell" : "Spell/Trap Zone " + (sequence + 1));
             }
 
-            drawPile(poseStack, font, controller, OcgConstants.LOCATION_DECK, "Deck", side.deckCount());
-            drawPile(poseStack, font, controller, OcgConstants.LOCATION_EXTRA, "Extra Deck", side.extra().size());
-            drawPile(poseStack, font, controller, OcgConstants.LOCATION_GRAVE, "Graveyard", side.grave().size());
-            drawPile(poseStack, font, controller, OcgConstants.LOCATION_REMOVED, "Banished", side.banished().size());
+            // Furthest pile first. A pile is a stack standing off the mat, so
+            // a nearer one has to be painted over a further one -- and the
+            // camera sits at +Y looking back toward the origin, which makes a
+            // HIGHER y nearer. Drawn in a fixed order, the player's graveyard
+            // (further) was painted over their deck (nearer); the opponent's
+            // side, whose coordinates are mirrored through -y, happened to come
+            // out right. Sorting by depth is correct for both without either
+            // being a special case.
+            for(int location : pilesFarToNear(controller))
+            {
+                switch(location)
+                {
+                    case OcgConstants.LOCATION_DECK -> drawPile(poseStack, font, controller,
+                        location, "Deck", side.deckCount());
+                    case OcgConstants.LOCATION_EXTRA -> drawPile(poseStack, font, controller,
+                        location, "Extra Deck", side.extra().size());
+                    case OcgConstants.LOCATION_GRAVE -> drawPile(poseStack, font, controller,
+                        location, "Graveyard", side.grave().size());
+                    default -> drawPile(poseStack, font, controller,
+                        location, "Banished", side.banished().size());
+                }
+            }
         }
 
         drawHand(poseStack, board.opponent().hand(), 1, true);
@@ -668,6 +686,22 @@ public class BoardRenderer extends GuiComponent
         x += font.width("/");
         font.draw(poseStack, defense, x, y, defenseColour);
         poseStack.popPose();
+    }
+
+    /** The four piles of one side, furthest from the camera first. */
+    private static int[] pilesFarToNear(int controller)
+    {
+        int[] locations = {OcgConstants.LOCATION_DECK, OcgConstants.LOCATION_EXTRA,
+            OcgConstants.LOCATION_GRAVE, OcgConstants.LOCATION_REMOVED};
+        Integer[] boxed = {locations[0], locations[1], locations[2], locations[3]};
+        java.util.Arrays.sort(boxed, java.util.Comparator.comparingDouble(location ->
+        {
+            FieldLayout.Rect rect = FieldLayout.zone(controller, location, 0);
+            // Read off the layout rather than restated here, so moving a pile
+            // moves its place in the order with it.
+            return rect == null ? 0F : rect.y();
+        }));
+        return new int[] {boxed[0], boxed[1], boxed[2], boxed[3]};
     }
 
     private void drawPile(PoseStack poseStack, Font font, int controller, int location, String label, int count)
