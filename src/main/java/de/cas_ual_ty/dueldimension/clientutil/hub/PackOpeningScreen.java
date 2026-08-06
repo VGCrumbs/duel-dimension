@@ -78,8 +78,16 @@ public class PackOpeningScreen extends Screen
     /** Whether the drag moved far enough to count as a swipe, not a click. */
     private boolean dragged;
 
-    /** First visible row of the summary grid. */
-    private int summaryScroll;
+    /**
+     * How far the summary grid is scrolled, in pixels, and where it is heading.
+     * <p>
+     * Pixels rather than a row number: a grid that moves a whole row per notch
+     * jumps, and with rows a hundred pixels tall the jump is most of the
+     * screen. Held as a pair so the wheel sets a destination and the drawing
+     * eases toward it.
+     */
+    private float summaryScroll;
+    private float summaryTarget;
 
     /** Reveals everything, then closes: its label says which it will do. */
     private HubWidgets.TextureButton skip;
@@ -187,7 +195,8 @@ public class PackOpeningScreen extends Screen
     private void toSummary()
     {
         stage = Stage.SUMMARY;
-        summaryScroll = 0;
+        summaryScroll = 0F;
+        summaryTarget = 0F;
         playSound(SoundEvents.PLAYER_LEVELUP, 1.2F);
     }
 
@@ -282,7 +291,10 @@ public class PackOpeningScreen extends Screen
     {
         if(stage == Stage.SUMMARY)
         {
-            summaryScroll = Math.max(0, summaryScroll - (int)Math.signum(delta));
+            // A notch moves most of a row rather than exactly one, so the grid
+            // does not settle back into the same alignment every time and the
+            // movement reads as scrolling rather than paging.
+            summaryTarget -= (float)delta * Layout.of(LAYOUT).f("summary.step", 42F);
             return true;
         }
         moveTo(focus - (int)Math.signum(delta));
@@ -524,9 +536,24 @@ public class PackOpeningScreen extends Screen
         int cardH = Math.round(cardW / layout.f("card.aspect", DuelTextures.CARD_ASPECT));
 
         int rows = (codes.size() + columns - 1) / columns;
-        int visibleRows = Math.max(1, (usableH + gap) / (cardH + gap));
-        int maxScroll = Math.max(0, rows - visibleRows);
-        summaryScroll = Math.max(0, Math.min(summaryScroll, maxScroll));
+        int pitch = cardH + gap;
+        // The scroll is in pixels over the whole grid, so the last row can come
+        // to rest against the bottom edge instead of the grid stopping a row
+        // early because a row is the smallest unit it can move.
+        float maxScroll = Math.max(0F, rows * pitch - gap - usableH);
+        summaryTarget = Mth.clamp(summaryTarget, 0F, maxScroll);
+        summaryScroll += (summaryTarget - summaryScroll)
+            * Mth.clamp(layout.f("summary.glide", 0.3F), 0.02F, 1F);
+        if(Math.abs(summaryTarget - summaryScroll) < 0.4F)
+        {
+            summaryScroll = summaryTarget;
+        }
+
+        int firstRow = (int)(summaryScroll / pitch);
+        // What is left over after the whole rows: the offset that makes the top
+        // row slide rather than snap.
+        int slide = Math.round(summaryScroll - firstRow * pitch);
+        int visibleRows = Math.max(1, (usableH + gap) / pitch);
 
         int gridW = columns * cardW + (columns - 1) * gap;
         int startX = (width - gridW) / 2;
@@ -534,11 +561,16 @@ public class PackOpeningScreen extends Screen
         String title = codes.size() + " cards from " + setName;
         font.drawShadow(poseStack, title, width / 2F - font.width(title) / 2F, 22, 0xFFF4D089);
 
-        for(int row = 0; row < visibleRows; row++)
+        // Clipped to the grid's own strip, so a row halfway off the top is cut
+        // rather than drawn over the title.
+        clipToSummary(top, usableH, true);
+        // One row more than fits, because scrolling means a partial row at each
+        // end rather than a whole number of them.
+        for(int row = 0; row <= visibleRows; row++)
         {
             for(int column = 0; column < columns; column++)
             {
-                int index = (row + summaryScroll) * columns + column;
+                int index = (row + firstRow) * columns + column;
                 if(index >= codes.size())
                 {
                     break;
@@ -549,7 +581,7 @@ public class PackOpeningScreen extends Screen
                     continue;
                 }
                 int x = startX + column * (cardW + gap);
-                int y = top + row * (cardH + gap);
+                int y = top + row * pitch - slide;
                 drawFace(poseStack, card, x, y, cardW, cardH);
                 if(isRare(index))
                 {
@@ -563,16 +595,38 @@ public class PackOpeningScreen extends Screen
             }
         }
 
+        clipToSummary(top, usableH, false);
+
         // Only claim there is more when there is, and say how much.
-        if(maxScroll > 0)
+        if(maxScroll > 0F)
         {
             String position = "scroll  " + Math.min(codes.size(),
-                (summaryScroll + visibleRows) * columns) + " / " + codes.size();
+                (firstRow + visibleRows) * columns) + " / " + codes.size();
             font.drawShadow(poseStack, position, width / 2F - font.width(position) / 2F,
                 height - 30, 0xFF7A8090);
         }
         String hint = "Click to close";
         font.drawShadow(poseStack, hint, width / 2F - font.width(hint) / 2F, height - 18, 0xFF9FA6B4);
+    }
+
+    /**
+     * Limits drawing to the summary's own strip, or lifts that limit.
+     * <p>
+     * Scissor coordinates are real framebuffer pixels measured from the BOTTOM
+     * of the window, while everything else here is scaled GUI pixels from the
+     * top, so the rectangle is converted rather than passed through.
+     */
+    private void clipToSummary(int top, int height, boolean on)
+    {
+        if(!on)
+        {
+            RenderSystem.disableScissor();
+            return;
+        }
+        double scale = minecraft.getWindow().getGuiScale();
+        RenderSystem.enableScissor(0,
+            (int)(minecraft.getWindow().getHeight() - (top + height) * scale),
+            (int)(this.width * scale), (int)(height * scale));
     }
 
     private void drawFace(PoseStack poseStack, Properties card, int x, int y, int w, int h)
