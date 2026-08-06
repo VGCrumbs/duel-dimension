@@ -56,14 +56,12 @@ public class CardSetItem extends CardSetBaseItem
         boolean revealing = announcePull(getCardSet(itemStack), newStack, player);
         if(revealing && !player.level.isClientSide)
         {
-            // The reveal is the opening, so the cards go straight to the player
-            // and the spent wrapper goes away. Leaving an empty pack in hand to
-            // be emptied by hand afterwards made the reveal a preview of work
-            // still to do rather than the opening itself.
-            for(ItemStack card : de.cas_ual_ty.dueldimension.set.OpenedCardSetItem.contentsOf(newStack))
-            {
-                player.getInventory().placeItemBackInInventory(card.copy());
-            }
+            // The reveal is the opening: the cards were recorded in the
+            // player's collection by announcePull, and the spent wrapper goes
+            // away. They are NOT also handed over as items -- the collection is
+            // where a card is owned now, and putting each one in the inventory
+            // as well would be the same fact twice, filling a hotbar with
+            // things that can be dropped by accident.
             player.setItemInHand(hand, ItemStack.EMPTY);
         }
         

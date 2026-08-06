@@ -76,6 +76,9 @@ public class DeckEditorScreen extends Screen
     private int filterScroll;
     /** How tall the drawer's contents came out, so the scroll can be bounded. */
     private int filterContentHeight;
+    /** The selector whose list is open, if any, and how far that list is scrolled. */
+    private DropdownButton openList;
+    private int openListScroll;
     /** The four numeric bands, kept as text so a half-typed number is allowed. */
     private EditBox levelMin;
     private EditBox levelMax;
@@ -223,6 +226,7 @@ public class DeckEditorScreen extends Screen
             () -> filtersOpen, pressed ->
         {
             filtersOpen = !filtersOpen;
+            openList = null;
             rebuildControls();
         }));
 
@@ -378,61 +382,120 @@ public class DeckEditorScreen extends Screen
      * the card model's own enums rather than a list typed out here, so a card
      * property the database gains is a filter this gains with it.
      */
+    /**
+     * The extra filters: one selector per category, in two columns, with the
+     * three numeric bands beneath.
+     * <p>
+     * This used to be sixty chips in four wrapping rows -- every attribute,
+     * every card type, every ability and all twenty-seven monster types laid
+     * out at once. It was complete and unreadable, and it needed a scrollbar to
+     * show a thing whose whole job is to be glanced at. A selector says what is
+     * chosen in one line and opens its list only when asked, which is how the
+     * reference editors do it and takes a quarter of the room.
+     * <p>
+     * One value per category rather than several. Choosing DARK and LIGHT at
+     * once is a rare thing to want and it cost four rows of screen to offer.
+     */
     private void buildFilterDrawer(int top)
     {
         Layout layout = Layout.of(LAYOUT);
-        int chipH = layout.i("trunk.chipHeight", 14);
-        int rowGap = 3;
         filterSections.clear();
-        // Everything is laid out from a scrolled origin, so a chip's position
-        // and the frame drawn round it move together with no second offset to
-        // keep in step.
         int y = top - filterScroll;
         int contentTop = y;
 
-        y = chipRow(y, chipH, rowGap, "Attribute", attributeNames(),
-            value -> EditorState.query().attributes().contains(value),
-            value -> EditorState.query().toggleAttribute(value), 52);
+        int inset = 5;
+        int left = rightX + pad;
+        int usable = rightW - pad * 2 - 8;
+        int columnGap = 6;
+        int selectorW = Math.max(80, (usable - inset * 2 - columnGap) / 2);
+        int rowH = 16;
+        int rowGap = 4;
 
-        y = chipRow(y, chipH, rowGap, "Card Type", subTypeNames(),
-            value -> EditorState.query().subTypes().contains(value),
-            value -> EditorState.query().toggleSubType(value), 58);
-
-        y = chipRow(y, chipH, rowGap, "Ability", abilityNames(),
-            value -> EditorState.query().abilities().contains(value),
-            value -> EditorState.query().toggleAbility(value), 54);
-
-        y = chipRow(y, chipH, rowGap, "Type", speciesNames(),
-            value -> EditorState.query().species().contains(value),
-            value -> EditorState.query().toggleSpecies(value), 64);
+        int fieldsTop = y;
+        int fy = y + FRAME_HEADING + inset;
+        selector(left + inset, fy, selectorW, rowH, "Attribute", attributeNames(),
+            EditorState.query().attributes(),
+            chosen -> replaceOnly(EditorState.query().attributes(), chosen,
+                EditorState.query()::toggleAttribute));
+        selector(left + inset + selectorW + columnGap, fy, selectorW, rowH, "Type",
+            speciesNames(), EditorState.query().species(),
+            chosen -> replaceOnly(EditorState.query().species(), chosen,
+                EditorState.query()::toggleSpecies));
+        fy += rowH + rowGap;
+        selector(left + inset, fy, selectorW, rowH, "Card Type", subTypeNames(),
+            EditorState.query().subTypes(),
+            chosen -> replaceOnly(EditorState.query().subTypes(), chosen,
+                EditorState.query()::toggleSubType));
+        selector(left + inset + selectorW + columnGap, fy, selectorW, rowH, "Ability",
+            abilityNames(), EditorState.query().abilities(),
+            chosen -> replaceOnly(EditorState.query().abilities(), chosen,
+                EditorState.query()::toggleAbility));
+        fy += rowH + inset;
+        filterSections.add(new Section("Card", left, fieldsTop, usable, fy - fieldsTop));
 
         // The bands. Text rather than steppers because a player filtering for
         // 2500 ATK wants to type 2500, not press a button twenty-five times.
-        int bandsTop = y;
-        int bandY = y + FRAME_HEADING + 4;
-        levelMin = band(rightX + pad + 48, bandY, EditorState.query().minLevel(), 0);
-        levelMax = band(rightX + pad + 100, bandY, EditorState.query().maxLevel(), 0);
-        bandY += 20;
-        attackMin = band(rightX + pad + 48, bandY, EditorState.query().minAttack(), -1);
-        attackMax = band(rightX + pad + 100, bandY, EditorState.query().maxAttack(), -1);
-        bandY += 20;
-        defenceMin = band(rightX + pad + 48, bandY, EditorState.query().minDefence(), -1);
-        defenceMax = band(rightX + pad + 100, bandY, EditorState.query().maxDefence(), -1);
-        int bandsHeight = (bandY + 20) - bandsTop;
-        filterSections.add(new Section("Numbers", rightX + pad, bandsTop,
-            rightW - pad * 2 - 6, bandsHeight));
+        int bandsTop = fy + FRAME_GAP;
+        int bandY = bandsTop + FRAME_HEADING + inset;
+        int captionW = 34;
+        int boxW = Math.max(30, (selectorW - captionW - 10) / 2);
+        levelMin = band(left + inset + captionW, bandY, boxW, EditorState.query().minLevel(), 0);
+        levelMax = band(left + inset + captionW + boxW + 8, bandY, boxW,
+            EditorState.query().maxLevel(), 0);
+        attackMin = band(left + inset + selectorW + columnGap + captionW, bandY, boxW,
+            EditorState.query().minAttack(), -1);
+        attackMax = band(left + inset + selectorW + columnGap + captionW + boxW + 8, bandY, boxW,
+            EditorState.query().maxAttack(), -1);
+        bandY += rowH + rowGap;
+        defenceMin = band(left + inset + captionW, bandY, boxW,
+            EditorState.query().minDefence(), -1);
+        defenceMax = band(left + inset + captionW + boxW + 8, bandY, boxW,
+            EditorState.query().maxDefence(), -1);
+        int bandsBottom = bandY + rowH + inset;
+        filterSections.add(new Section("Numbers", left, bandsTop, usable, bandsBottom - bandsTop));
 
-        filterContentHeight = (bandsTop + bandsHeight) - contentTop;
+        filterContentHeight = bandsBottom - contentTop;
         int room = filterViewBottom() - top;
         int limit = Math.max(0, filterContentHeight - room);
         if(filterScroll > limit)
         {
-            // The contents shrank -- a category collapsed onto fewer rows --
-            // and the old offset is now past the end, so it is pulled back and
-            // the layout redone from the corrected position.
+            // The contents shrank and the old offset is past the end, so it is
+            // pulled back and the layout redone from the corrected position.
             filterScroll = limit;
             buildFilterDrawer(top);
         }
+    }
+
+    /**
+     * Makes {@code chosen} the only value in a filter set, or empties it when
+     * "Any" was picked.
+     * <p>
+     * The query keeps sets because several of its filters genuinely take
+     * several values; the selectors simply never put more than one in.
+     */
+    private void replaceOnly(java.util.Set<String> current, String chosen,
+        java.util.function.Consumer<String> toggle)
+    {
+        for(String value : new java.util.ArrayList<>(current))
+        {
+            toggle.accept(value);
+        }
+        if(chosen != null)
+        {
+            toggle.accept(chosen);
+        }
+    }
+
+    /** A selector: its caption, and the value chosen, on one line. */
+    private void selector(int x, int y, int width, int height, String caption,
+        List<String> values, java.util.Set<String> current, java.util.function.Consumer<String> choose)
+    {
+        String chosen = current.isEmpty() ? "Any" : current.iterator().next();
+        DropdownButton button = new DropdownButton(x, y, width, height, caption, chosen,
+            values, choose);
+        button.visible = inFilterView(y, height);
+        button.active = button.visible;
+        addRenderableWidget(button);
     }
 
     private int filterViewTop()
@@ -524,9 +587,9 @@ public class DeckEditorScreen extends Screen
      *
      * @param unset the value that means "no bound", shown as an empty field
      */
-    private EditBox band(int x, int y, int value, int unset)
+    private EditBox band(int x, int y, int width, int value, int unset)
     {
-        EditBox box = new EditBox(font, x + 2, y + 2, 44, 12, Component.literal(""));
+        EditBox box = new EditBox(font, x + 2, y + 2, width - 4, 12, Component.literal(""));
         box.setValue(value == unset ? "" : String.valueOf(value));
         // Digits only, and short: the field is a number, so a letter typed
         // into it is refused rather than parsed and quietly ignored.
@@ -905,6 +968,10 @@ public class DeckEditorScreen extends Screen
             }
             closeMenu();
         }
+        if(filtersOpen && clickOpenList(mouseX, mouseY))
+        {
+            return true;
+        }
         if(button == 1)
         {
             return openMenu(mouseX, mouseY);
@@ -1212,6 +1279,13 @@ public class DeckEditorScreen extends Screen
                 deckScroll - (int)Math.signum(delta) * (cardH + gap)));
             return true;
         }
+        if(openList != null)
+        {
+            int overflow = Math.max(0, openList.values.size() + 1 - LIST_ROWS);
+            openListScroll = Math.max(0, Math.min(overflow,
+                openListScroll - (int)Math.signum(delta)));
+            return true;
+        }
         if(filtersOpen && mouseX >= rightX && mouseY >= filterViewTop()
             && mouseY < filterViewBottom())
         {
@@ -1302,6 +1376,10 @@ public class DeckEditorScreen extends Screen
                     box.render(poseStack, mouseX, mouseY, partialTick);
                 }
             }
+        }
+        if(filtersOpen)
+        {
+            renderOpenList(poseStack, mouseX, mouseY);
         }
         if(rename != null)
         {
@@ -1566,17 +1644,10 @@ public class DeckEditorScreen extends Screen
 
         // A scroll bar only when there is something to scroll, so a deck that
         // fits shows no furniture it does not need.
-        int overflow = maxDeckScroll();
-        if(overflow > 0)
-        {
-            int trackX = leftX + leftW - pad + 1;
-            int trackY = deckViewTop();
-            int trackH = deckViewHeight();
-            int thumbH = Math.max(16, trackH * trackH / deckContentHeight());
-            int thumbY = trackY + (trackH - thumbH) * deckScroll / overflow;
-            NineSlice.draw(poseStack, HubTextures.PANEL_INSET, trackX, trackY, 4, trackH);
-            NineSlice.draw(poseStack, HubTextures.PANEL, trackX, thumbY, 4, thumbH);
-        }
+        // Measured in pixels rather than rows, because the deck's three
+        // sections are different heights and a row is not a fixed unit here.
+        pixelScrollbar(poseStack, leftX + leftW - pad + 1, deckViewTop(), deckViewHeight(),
+            deckContentHeight(), deckScroll);
     }
 
     /**
@@ -1610,6 +1681,12 @@ public class DeckEditorScreen extends Screen
     {
         int top = filterViewTop();
         int bottom = filterViewBottom();
+        // Its own container: a raised panel over the trunk's, so the drawer
+        // reads as a thing laid on top of the collection rather than a recess
+        // cut into it. The recessed backing behind the frames keeps the sunken
+        // look where the chips actually sit.
+        NineSlice.draw(poseStack, HubTextures.PANEL, rightX + pad - 4, top - 2,
+            rightW - pad * 2 + 8, Math.max(24, bottom - top + 4));
         NineSlice.draw(poseStack, HubTextures.PANEL_INSET, rightX + pad - 2, top,
             rightW - pad * 2 + 4, Math.max(20, bottom - top));
 
@@ -1635,16 +1712,44 @@ public class DeckEditorScreen extends Screen
         }
         clipToFilterView(false);
 
-        int overflow = maxFilterScroll();
-        if(overflow > 0)
+        pixelScrollbar(poseStack, rightX + rightW - pad - 2, top + 2, bottom - top - 4,
+            filterContentHeight, filterScroll);
+    }
+
+    /**
+     * A scrollbar, drawn only when there is something to scroll.
+     * <p>
+     * The thumb's length reports how much of the list is on screen and its
+     * position reports where in the list that is, so the bar answers "how much
+     * more is there" as well as "where am I".
+     */
+    private void scrollbar(PoseStack poseStack, int x, int y, int height,
+        int total, int visible, int offset)
+    {
+        int overflow = Math.max(0, total - visible);
+        if(overflow <= 0 || height <= 0)
         {
-            int trackX = rightX + rightW - pad - 2;
-            int trackH = bottom - top - 4;
-            int thumbH = Math.max(16, trackH * trackH / Math.max(1, filterContentHeight));
-            int thumbY = top + 2 + (trackH - thumbH) * filterScroll / overflow;
-            NineSlice.draw(poseStack, HubTextures.PANEL_INSET, trackX, top + 2, 4, trackH);
-            NineSlice.draw(poseStack, HubTextures.PANEL, trackX, thumbY, 4, thumbH);
+            return;
         }
+        NineSlice.draw(poseStack, HubTextures.SCROLLBAR, x, y, 4, height, 0, 2);
+        int thumbH = Math.max(12, height * visible / Math.max(1, total));
+        int thumbY = y + (height - thumbH) * offset / overflow;
+        NineSlice.draw(poseStack, HubTextures.SCROLLBAR, x, thumbY, 4, thumbH, 1, 2);
+    }
+
+    /** A scrollbar over a run of pixels rather than a count of rows. */
+    private void pixelScrollbar(PoseStack poseStack, int x, int y, int height,
+        int content, int offset)
+    {
+        int overflow = Math.max(0, content - height);
+        if(overflow <= 0 || height <= 0)
+        {
+            return;
+        }
+        NineSlice.draw(poseStack, HubTextures.SCROLLBAR, x, y, 4, height, 0, 2);
+        int thumbH = Math.max(12, height * height / Math.max(1, content));
+        int thumbY = y + (height - thumbH) * offset / overflow;
+        NineSlice.draw(poseStack, HubTextures.SCROLLBAR, x, thumbY, 4, thumbH, 1, 2);
     }
 
     /** As {@link #clipToDeckView}, for the filter drawer's strip. */
@@ -1670,10 +1775,11 @@ public class DeckEditorScreen extends Screen
         {
             return;
         }
-        font.drawShadow(poseStack, caption, rightX + pad + 5, y + 4, 0xFFC2C9D6);
-        NineSlice.draw(poseStack, HubTextures.SEARCH_FIELD, min.x - 2, y, 48, 16);
-        NineSlice.draw(poseStack, HubTextures.SEARCH_FIELD, max.x - 2, y, 48, 16);
-        font.drawShadow(poseStack, "-", min.x + 46, y + 4, 0xFF7A8090);
+        int boxW = min.getWidth() + 4;
+        font.drawShadow(poseStack, caption, min.x - 2 - font.width(caption) - 4, y + 4, 0xFFC2C9D6);
+        NineSlice.draw(poseStack, HubTextures.SEARCH_FIELD, min.x - 2, y, boxW, 16);
+        NineSlice.draw(poseStack, HubTextures.SEARCH_FIELD, max.x - 2, y, boxW, 16);
+        font.drawShadow(poseStack, "-", min.x - 2 + boxW + 1, y + 4, 0xFF7A8090);
     }
 
     private void renderTrunkSide(PoseStack poseStack, int mouseX, int mouseY)
@@ -1728,15 +1834,41 @@ public class DeckEditorScreen extends Screen
                     poseStack.translate(x + cardW - font.width(count) * scale - 1,
                         y + cardH - font.lineHeight * scale - 1, 0);
                     poseStack.scale(scale, scale, 1F);
-                    font.drawShadow(poseStack, count, 0, 0,
-                        inDeck >= max ? 0xFFFF8A80 : 0xFFF4D089);
+                    outlined(poseStack, count, inDeck >= max ? 0xFFFF8A80 : 0xFFF4D089);
                     poseStack.popPose();
                 }
             }
         }
 
+        int rows = (shown.size() + trunkColumns - 1) / trunkColumns;
+        scrollbar(poseStack, rightX + rightW - pad - 2, gridTop,
+            visibleRows * (cardH + gap), rows, visibleRows, trunkScroll);
+
         font.drawShadow(poseStack, shown.size() + " cards", rightX + pad,
-            panelTop + panelH - 12, 0xFF7A8090);
+            panelTop + panelH - pad - 34, 0xFF7A8090);
+    }
+
+    /**
+     * Draws text ringed in black.
+     * <p>
+     * A drop shadow is only below and to the right, which is not enough over
+     * card art: the count sits on whatever colour the artwork happens to be
+     * there, and against a light one the unshadowed edges disappear. A full
+     * ring reads on anything.
+     */
+    private void outlined(PoseStack poseStack, String text, int colour)
+    {
+        for(int dx = -1; dx <= 1; dx++)
+        {
+            for(int dy = -1; dy <= 1; dy++)
+            {
+                if(dx != 0 || dy != 0)
+                {
+                    font.draw(poseStack, text, dx, dy, 0xFF000000);
+                }
+            }
+        }
+        font.draw(poseStack, text, 0, 0, colour);
     }
 
     private static Properties card(int code)
@@ -1810,6 +1942,148 @@ public class DeckEditorScreen extends Screen
     {
         return false;
     }
+
+    /**
+     * A filter selector: a caption, the chosen value, and a list that opens
+     * only when it is asked for.
+     * <p>
+     * The list is drawn and clicked by the screen rather than by the widget, so
+     * it can sit above everything else and be dismissed by a click anywhere --
+     * a widget can only paint inside its own rectangle, and a list that
+     * appeared underneath the chips below it would be unusable.
+     */
+    private class DropdownButton extends HubWidgets.TextureButton
+    {
+        private final String caption;
+        private final String chosen;
+        private final List<String> values;
+        private final java.util.function.Consumer<String> choose;
+
+        DropdownButton(int x, int y, int width, int height, String caption, String chosen,
+            List<String> values, java.util.function.Consumer<String> choose)
+        {
+            super(x, y, width, height, Component.literal(caption), pressed ->
+            {
+            });
+            this.caption = caption;
+            this.chosen = chosen;
+            this.values = values;
+            this.choose = choose;
+        }
+
+        @Override
+        public void onPress()
+        {
+            openList = openList == this ? null : this;
+            openListScroll = 0;
+        }
+
+        int listWidth()
+        {
+            return width;
+        }
+
+        int listAnchor()
+        {
+            return y + height;
+        }
+
+        @Override
+        public void renderButton(PoseStack poseStack, int mouseX, int mouseY, float partialTick)
+        {
+            int row = openList == this ? NineSlice.SELECTED
+                : isHoveredOrFocused() ? NineSlice.HOVER : NineSlice.IDLE;
+            NineSlice.draw(poseStack, HubTextures.CHIP, x, y, width, height, row, 3);
+            font.drawShadow(poseStack, caption, x + 4, y + (height - 8) / 2, 0xFF9AA2B2);
+            // The value is right-aligned so the eye can run down the chosen
+            // values in a column without the captions in the way.
+            boolean any = "Any".equals(chosen);
+            String shown = font.width(chosen) > width - font.width(caption) - 14
+                ? font.plainSubstrByWidth(chosen, width - font.width(caption) - 18) + "."
+                : chosen;
+            font.drawShadow(poseStack, shown, x + width - 4 - font.width(shown),
+                y + (height - 8) / 2, any ? 0xFF6A7080 : 0xFFFFE9B0);
+        }
+    }
+
+    /** Draws the open selector's list, above everything else on the panel. */
+    private void renderOpenList(PoseStack poseStack, int mouseX, int mouseY)
+    {
+        if(openList == null)
+        {
+            return;
+        }
+        List<String> values = openList.values;
+        int rowH = 11;
+        int shown = Math.min(values.size() + 1, LIST_ROWS);
+        int listX = openList.x;
+        int listW = openList.listWidth();
+        int listY = openList.listAnchor();
+        // Opens upward when there is no room below, so the last selector in the
+        // drawer is not a list drawn off the bottom of the screen.
+        if(listY + shown * rowH > filterViewBottom())
+        {
+            listY = Math.max(filterViewTop(), openList.y - shown * rowH);
+        }
+
+        poseStack.pushPose();
+        poseStack.translate(0, 0, 300);
+        NineSlice.draw(poseStack, HubTextures.PANEL, listX, listY, listW, shown * rowH + 4);
+        for(int i = 0; i < shown; i++)
+        {
+            int index = i + openListScroll;
+            String label = index == 0 ? "Any" : values.get(index - 1);
+            int rowY = listY + 2 + i * rowH;
+            boolean hovered = mouseX >= listX && mouseX < listX + listW
+                && mouseY >= rowY && mouseY < rowY + rowH;
+            font.drawShadow(poseStack, label, listX + 5, rowY + 2,
+                hovered ? 0xFFFFE9B0 : 0xFFC2C9D6);
+        }
+        pixelScrollbar(poseStack, listX + listW - 5, listY + 2, shown * rowH,
+            (values.size() + 1) * rowH, openListScroll * rowH);
+        poseStack.popPose();
+    }
+
+    /** The click on an open list, or false if it fell outside one. */
+    private boolean clickOpenList(double mouseX, double mouseY)
+    {
+        if(openList == null)
+        {
+            return false;
+        }
+        List<String> values = openList.values;
+        int rowH = 11;
+        int shown = Math.min(values.size() + 1, LIST_ROWS);
+        int listX = openList.x;
+        int listW = openList.listWidth();
+        int listY = openList.listAnchor();
+        if(listY + shown * rowH > filterViewBottom())
+        {
+            listY = Math.max(filterViewTop(), openList.y - shown * rowH);
+        }
+        if(mouseX < listX || mouseX >= listX + listW
+            || mouseY < listY || mouseY >= listY + shown * rowH + 4)
+        {
+            // A click anywhere else closes the list without choosing, and is
+            // then allowed through to whatever was actually clicked.
+            openList = null;
+            return false;
+        }
+        int row = (int)((mouseY - listY - 2) / rowH) + openListScroll;
+        if(row >= 0 && row <= values.size())
+        {
+            DropdownButton target = openList;
+            openList = null;
+            target.choose.accept(row == 0 ? null : values.get(row - 1));
+            EditorState.invalidate();
+            trunkScroll = 0;
+            rebuildControls();
+        }
+        return true;
+    }
+
+    /** How many rows of a selector's list are shown before it scrolls. */
+    private static final int LIST_ROWS = 12;
 
     /** A filter chip: lit when its filter is on. */
     private static class ChipButton extends HubWidgets.TextureButton

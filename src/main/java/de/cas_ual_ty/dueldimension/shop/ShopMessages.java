@@ -166,13 +166,13 @@ public final class ShopMessages
                 }
                 codes.add((int)holder.getCard().getId());
                 rarities.add(holder.getRarity() == null ? "" : holder.getRarity());
-                player.getInventory().placeItemBackInInventory(card.copy());
             }
 
-            // The cards go into the collection as well as the inventory. The
-            // item is the physical card a player can hand over or lose; the
-            // trunk is what the deck editor builds from, and it is recorded on
-            // the server so it is the same collection wherever they log in.
+            // Into the collection, and only there. The cards used to be dropped
+            // into the player's inventory as items as well, which was how the
+            // mod tracked ownership before there was a trunk; now that the
+            // server holds one, the items are a second copy of the same fact
+            // that fills a hotbar and can be thrown away by accident.
             codes.forEach(id -> DuelProfiles.get(player).trunk().add(id, 1));
             DuelProfiles.saveAndSync(player);
 
