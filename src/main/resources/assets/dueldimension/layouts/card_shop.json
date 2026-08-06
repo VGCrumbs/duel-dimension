@@ -1,0 +1,17 @@
+{
+  "pad": 8,
+  "left.width": 120,
+  "bottom.height": 62,
+
+  "pack.aspect": 0.68,
+
+  "grid.columns": 7,
+  "grid.rows": 4,
+  "grid.cellWidth": 40,
+  "grid.gap": 4,
+  "grid.top": 22,
+
+  "vendor.width": 96,
+  "vendor.height": 128,
+  "vendor.top": 22
+}

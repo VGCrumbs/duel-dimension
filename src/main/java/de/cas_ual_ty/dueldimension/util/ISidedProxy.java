@@ -134,4 +134,15 @@ public interface ISidedProxy
         java.util.List<String> rarities)
     {
     }
+
+    /** Opens the card shop. Client only. */
+    default void openCardShop(int points,
+        java.util.List<de.cas_ual_ty.dueldimension.shop.ShopStock.Pack> packs)
+    {
+    }
+
+    /** Records the player's DP balance for display. Client only. */
+    default void setDuelPoints(int points)
+    {
+    }
 }

@@ -30,6 +30,7 @@ public class DdItems
     public static final RegistryObject<CardBinderItem> CARD_BINDER = DEFERRED_REGISTER.register("card_binder", () -> new CardBinderItem(new Item.Properties().tab(DuelDimension.ydmItemGroup).stacksTo(1)));
     public static final RegistryObject<Item> DUEL_PLAYMAT = DEFERRED_REGISTER.register("duel_playmat", () -> new BlockItem(DdBlocks.DUEL_PLAYMAT.get(), new Item.Properties().tab(DuelDimension.ydmItemGroup)));
     public static final RegistryObject<Item> DUEL_TABLE = DEFERRED_REGISTER.register("duel_table", () -> new BlockItem(DdBlocks.DUEL_TABLE.get(), new Item.Properties().tab(DuelDimension.ydmItemGroup)));
+    public static final RegistryObject<Item> CARD_SHOP = DEFERRED_REGISTER.register("card_shop", () -> new BlockItem(DdBlocks.CARD_SHOP.get(), new Item.Properties().tab(DuelDimension.ydmItemGroup)));
     public static final RegistryObject<Item> CARD_SUPPLY = DEFERRED_REGISTER.register("card_supply", () -> new BlockItem(DdBlocks.CARD_SUPPLY.get(), new Item.Properties().tab(DuelDimension.ydmItemGroup)));
     
     public static final RegistryObject<SimpleBinderItem> SIMPLE_BINDER_3 = DEFERRED_REGISTER.register("simple_binder_" + 3, () -> SimpleBinderItem.makeItem(DuelDimension.MOD_ID, DuelDimension.ydmItemGroup, 3));

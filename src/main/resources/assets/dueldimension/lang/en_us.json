@@ -229,5 +229,6 @@
     "actionIcon.dueldimension.remove_token_def": "Remove Token",
     "entity.dueldimension.duelist": "Duelist",
     "key.dueldimension.duel_hub": "Open Duel Hub",
-    "key.categories.dueldimension": "Duel Dimension"
+    "key.categories.dueldimension": "Duel Dimension",
+    "block.dueldimension.card_shop": "Card Shop"
 }

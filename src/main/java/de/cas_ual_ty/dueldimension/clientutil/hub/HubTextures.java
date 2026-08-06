@@ -31,6 +31,9 @@ public final class HubTextures
     /** Two tiles: track then thumb. */
     public static final ResourceLocation SCROLLBAR = gui("deckeditor/scrollbar.png");
 
+    /** The shopkeeper portrait. Replaceable art: drop a PNG here and it is used. */
+    public static final ResourceLocation SHOPKEEPER = gui("shop/shopkeeper.png");
+
     /** Hue around, saturation outward; the picker samples it directly. */
     public static final ResourceLocation COLOUR_WHEEL = gui("settings/colour_wheel.png");
     /** The brightness the wheel does not carry. */

@@ -21,6 +21,9 @@ public class DdBlocks
             Block.box(1, 0, 1, 15, 3, 15),
             Block.box(0, 13, 0, 16, 15, 16),
             Block.box(1, 12.5, 1, 15, 15.5, 15))));
+    public static final RegistryObject<de.cas_ual_ty.dueldimension.shop.CardShopBlock> CARD_SHOP =
+        DEFERRED_REGISTER.register("card_shop", () -> new de.cas_ual_ty.dueldimension.shop.CardShopBlock(
+            Block.Properties.of(Material.METAL, MaterialColor.COLOR_BLUE).strength(5.0F, 6.0F).sound(SoundType.METAL)));
     public static final RegistryObject<CardSupplyBlock> CARD_SUPPLY = DEFERRED_REGISTER.register("card_supply", () -> new CardSupplyBlock(Block.Properties.of(Material.METAL, MaterialColor.METAL).strength(5.0F, 6.0F).sound(SoundType.METAL)));
     
     public static void register(IEventBus bus)

@@ -800,4 +800,19 @@ public class ClientProxy implements ISidedProxy
         Minecraft.getInstance().setScreen(
             new de.cas_ual_ty.dueldimension.clientutil.hub.PackOpeningScreen(setName, codes, rarities));
     }
+
+    @Override
+    public void openCardShop(int points,
+        java.util.List<de.cas_ual_ty.dueldimension.shop.ShopStock.Pack> packs)
+    {
+        de.cas_ual_ty.dueldimension.clientutil.hub.CardShopScreen.setPoints(points);
+        Minecraft.getInstance().setScreen(
+            new de.cas_ual_ty.dueldimension.clientutil.hub.CardShopScreen(packs));
+    }
+
+    @Override
+    public void setDuelPoints(int points)
+    {
+        de.cas_ual_ty.dueldimension.clientutil.hub.CardShopScreen.setPoints(points);
+    }
 }
