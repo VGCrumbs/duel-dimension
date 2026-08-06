@@ -1,6 +1,7 @@
 {
-  "panel.top": 34,
-  "panel.bottom": 30,
+  "panel.top": 2,
+  "panel.bottom": 2,
+  "panel.controls": 28,
   "panel.pad": 8,
   "panel.gap": 8,
   "panel.leftPercent": 58,
@@ -8,6 +9,8 @@
   "card.width": 30,
   "card.aspect": 0.6857,
   "card.gap": 2,
+  "card.minWidth": 10,
+  "card.maxWidth": 72,
 
   "deck.titleHeight": 20,
   "deck.headerHeight": 12,
@@ -23,6 +26,7 @@
   "trunk.chipHeight": 14,
   "trunk.sortWidth": 56,
   "trunk.dirWidth": 30,
+  "trunk.countScale": 0.5,
 
   "preview.width": 78,
   "preview.textWidth": 132,
