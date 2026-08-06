@@ -122,28 +122,32 @@ public class DeckEditorScreen extends Screen
         rightX = leftX + leftW + layout.i("panel.gap", 8);
         rightW = width - rightX - pad;
 
-        // The card size is DERIVED from the rows the deck REQUIRES, not from
-        // whatever rows happen to fit. Sizing the card first and then asking
-        // how many rows were left is what hid 26 of a 46-card deck: at a
-        // comfortable card size only two rows fitted, so the rest simply were
-        // not drawn.
+        // Cards fill the row. The card WIDTH comes from the columns -- ten
+        // across with exactly `gap` between -- so the cell pitch IS cardW + gap
+        // rather than the panel divided by ten. Dividing the panel and then
+        // drawing a smaller card inside each cell is what left the wide empty
+        // channels between columns.
         float aspect = layout.f("card.aspect", 480F / 700F);
-        int mainRowsNeeded = (int)Math.ceil(DeckList.Part.MAIN.capacity() / (double)mainColumns);
-        int extraRowsNeeded = (int)Math.ceil(DeckList.Part.EXTRA.capacity() / (double)extraColumns);
-        int sideRowsNeeded = (int)Math.ceil(DeckList.Part.SIDE.capacity() / (double)extraColumns);
-        int rowsNeeded = mainRowsNeeded + extraRowsNeeded + sideRowsNeeded;
+        int usableW = leftW - pad * 2;
+        cardW = Math.max(8, (usableW - (mainColumns - 1) * gap) / mainColumns);
+        cardH = Math.max(10, Math.round(cardW / aspect));
 
+        // Rows grow with what is actually in each part, plus one spare so there
+        // is always an empty slot to drop onto, capped by what the part can
+        // hold. Reserving every part's full capacity meant ten rows on screen
+        // at all times and cards too small to read.
+        mainRows = rowsFor(DeckList.Part.MAIN);
+        int totalRows = rowsFor(DeckList.Part.MAIN)
+            + rowsFor(DeckList.Part.EXTRA) + rowsFor(DeckList.Part.SIDE);
         int spaceForRows = panelH - titleH - pad * 2 - (headerH + sectionGap) * 3;
-        int cellFromHeight = Math.max(8, spaceForRows / Math.max(1, rowsNeeded) - gap);
-        int cellFromWidth = Math.max(6, (leftW - pad * 2) / mainColumns - gap);
-        int cellFromTrunk = Math.max(6, (rightW - pad * 2) / trunkColumns - gap);
 
-        // Whichever constraint bites hardest decides, so every row of every
-        // part is on screen and the art still keeps its own proportions.
-        cardH = Math.max(10, Math.min(cellFromHeight,
-            Math.round(Math.min(cellFromWidth, cellFromTrunk) / aspect)));
-        cardW = Math.max(8, Math.round(cardH * aspect));
-        mainRows = mainRowsNeeded;
+        // If that many rows will not fit, the card shrinks until they do --
+        // height is the binding constraint, never a reason to hide a card.
+        while(totalRows * (cardH + gap) > spaceForRows && cardW > 12)
+        {
+            cardW -= 1;
+            cardH = Math.max(10, Math.round(cardW / aspect));
+        }
 
         search = new EditBox(font, rightX + pad + 2, panelTop + pad + 2,
             Math.max(40, rightW - pad * 2 - layout.i("trunk.sortWidth", 56)
@@ -399,10 +403,16 @@ public class DeckEditorScreen extends Screen
         return extraTop() + rowsFor(DeckList.Part.EXTRA) * (cardH + gap) + headerH + sectionGap;
     }
 
-    /** How many rows a part needs to show everything it can hold. */
+    /**
+     * How many rows a part is drawn with: enough for what it holds, plus one
+     * spare to drop into, never more than it can hold.
+     */
     private int rowsFor(DeckList.Part part)
     {
-        return (int)Math.ceil(part.capacity() / (double)partColumns(part));
+        int columns = partColumns(part);
+        int max = (int)Math.ceil(part.capacity() / (double)columns);
+        int used = (int)Math.ceil(EditorState.deck().partFor(part).size() / (double)columns);
+        return Math.max(1, Math.min(max, used + 1));
     }
 
     private int partTop(DeckList.Part part)
@@ -417,7 +427,7 @@ public class DeckEditorScreen extends Screen
 
     private int partColumns(DeckList.Part part)
     {
-        return part == DeckList.Part.MAIN ? mainColumns : extraColumns;
+        return mainColumns;
     }
 
     /** Which slot of which part a point falls in, or null. */
@@ -439,7 +449,7 @@ public class DeckEditorScreen extends Screen
     private int slotIndexAt(DeckList.Part part, double mouseX, double mouseY)
     {
         int columns = partColumns(part);
-        int cellW = Math.max(8, (leftW - pad * 2) / columns);
+        int cellW = cardW + gap;
         int column = (int)((mouseX - (leftX + pad)) / cellW);
         int row = (int)((mouseY - partTop(part)) / (cardH + gap));
         if(column < 0 || column >= columns || row < 0)
@@ -459,8 +469,9 @@ public class DeckEditorScreen extends Screen
 
     private int trunkIndexAt(double mouseX, double mouseY)
     {
+        trunkColumns = Math.max(1, (rightW - pad * 2 + gap) / (cardW + gap));
         int gridTop = trunkGridTop();
-        int cellW = Math.max(8, (rightW - pad * 2) / trunkColumns);
+        int cellW = cardW + gap;
         if(mouseX < rightX + pad || mouseX >= rightX + rightW - pad || mouseY < gridTop)
         {
             return -1;
@@ -1037,7 +1048,7 @@ public class DeckEditorScreen extends Screen
                 leftX + pad, top - headerH + 3, ok ? 0xFFC2C9D6 : 0xFFFF8A80);
 
             int columns = partColumns(part);
-            int cellW = Math.max(8, (leftW - pad * 2) / columns);
+            int cellW = cardW + gap;
             int rows = part == DeckList.Part.MAIN ? mainRows : 1;
             // One rectangle for the whole area rather than a frame per card:
             // a grid of empty slots is a lot of visual noise for something the
@@ -1070,8 +1081,9 @@ public class DeckEditorScreen extends Screen
             search.getWidth() + 6, Layout.of(LAYOUT).i("trunk.searchHeight", 16) + 2);
 
         List<Properties> shown = EditorState.visible();
+        trunkColumns = Math.max(1, (rightW - pad * 2 + gap) / (cardW + gap));
         int gridTop = trunkGridTop();
-        int cellW = Math.max(8, (rightW - pad * 2) / trunkColumns);
+        int cellW = cardW + gap;
         int visibleRows = Math.max(1, (panelTop + panelH - gridTop - pad - 12) / (cardH + gap));
         NineSlice.draw(poseStack, HubTextures.PANEL_INSET, rightX + pad - 2, gridTop - 2,
             rightW - pad * 2 + 4, visibleRows * (cardH + gap) + 4);
