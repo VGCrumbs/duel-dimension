@@ -290,6 +290,11 @@ public class DuelDimension
                 de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.SetActiveDeck::encode,
                 de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.SetActiveDeck::decode,
                 de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.SetActiveDeck::handle);
+        DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.ToggleFavourite.class,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.ToggleFavourite::encode,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.ToggleFavourite::decode,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.ToggleFavourite::handle);
 
         DuelDimension.proxy.init();
         WorkerManager.init();

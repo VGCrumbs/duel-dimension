@@ -176,6 +176,24 @@ public final class DeckEdits
     }
 
     /**
+     * Stars a card, or unstars one already starred.
+     * <p>
+     * A player may only star a card they own. The list is meant to be a
+     * shortcut into their own collection, so a favourite they cannot see would
+     * be a filter that hides everything.
+     */
+    public static String toggleFavourite(ServerPlayer player, int passcode)
+    {
+        DuelProfile profile = DuelProfiles.get(player);
+        if(!profile.trunk().has(passcode) && !profile.isFavourite(passcode))
+        {
+            return "You do not own that card.";
+        }
+        profile.toggleFavourite(passcode);
+        return null;
+    }
+
+    /**
      * Whether a deck is fit to duel with, as opposed to merely saveable.
      *
      * @return the reasons it is not, empty if it is

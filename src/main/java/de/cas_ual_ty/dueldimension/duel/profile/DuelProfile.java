@@ -27,6 +27,12 @@ public final class DuelProfile
     private final List<DeckList> decks = new ArrayList<>();
     /** Structure deck ids already granted, so a second copy is not a second deck. */
     private final Set<String> unlockedStructures = new LinkedHashSet<>();
+    /**
+     * Cards the player has starred. Kept in insertion order so the list reads
+     * as the order they were picked rather than by passcode, which means
+     * nothing to anyone.
+     */
+    private final Set<Integer> favourites = new LinkedHashSet<>();
     private String activeDeck = "";
 
     public Trunk trunk()
@@ -60,6 +66,31 @@ public final class DuelProfile
     public Set<String> unlockedStructures()
     {
         return Collections.unmodifiableSet(unlockedStructures);
+    }
+
+    public Set<Integer> favourites()
+    {
+        return Collections.unmodifiableSet(favourites);
+    }
+
+    public boolean isFavourite(int passcode)
+    {
+        return favourites.contains(passcode);
+    }
+
+    /**
+     * Stars a card, or unstars one already starred.
+     *
+     * @return true if it is now a favourite
+     */
+    public boolean toggleFavourite(int passcode)
+    {
+        if(favourites.remove(passcode))
+        {
+            return false;
+        }
+        favourites.add(passcode);
+        return true;
     }
 
     public String activeDeck()
@@ -162,6 +193,9 @@ public final class DuelProfile
         ListTag unlocked = new ListTag();
         unlockedStructures.forEach(id -> unlocked.add(net.minecraft.nbt.StringTag.valueOf(id)));
         tag.put("Structures", unlocked);
+        // An int array rather than a list of tags: this is a few hundred
+        // numbers travelling on every profile sync.
+        tag.putIntArray("Favourites", new ArrayList<>(favourites));
         tag.putString("Active", activeDeck);
         return tag;
     }
@@ -180,6 +214,10 @@ public final class DuelProfile
         for(int i = 0; i < structures.size(); i++)
         {
             profile.unlockedStructures.add(structures.getString(i));
+        }
+        for(int passcode : tag.getIntArray("Favourites"))
+        {
+            profile.favourites.add(passcode);
         }
         profile.activeDeck = tag.getString("Active");
         return profile;

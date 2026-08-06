@@ -72,6 +72,10 @@ public class DeckEditorScreen extends Screen
     private int deckScroll;
     /** Whether the extra filters are showing; they cover the trunk grid. */
     private boolean filtersOpen;
+    /** How far the filter drawer is scrolled, in pixels. */
+    private int filterScroll;
+    /** How tall the drawer's contents came out, so the scroll can be bounded. */
+    private int filterContentHeight;
     /** The four numeric bands, kept as text so a half-typed number is allowed. */
     private EditBox levelMin;
     private EditBox levelMax;
@@ -379,8 +383,12 @@ public class DeckEditorScreen extends Screen
         Layout layout = Layout.of(LAYOUT);
         int chipH = layout.i("trunk.chipHeight", 14);
         int rowGap = 3;
-        int y = top;
-        filterHeadings.clear();
+        filterSections.clear();
+        // Everything is laid out from a scrolled origin, so a chip's position
+        // and the frame drawn round it move together with no second offset to
+        // keep in step.
+        int y = top - filterScroll;
+        int contentTop = y;
 
         y = chipRow(y, chipH, rowGap, "Attribute", attributeNames(),
             value -> EditorState.query().attributes().contains(value),
@@ -400,15 +408,46 @@ public class DeckEditorScreen extends Screen
 
         // The bands. Text rather than steppers because a player filtering for
         // 2500 ATK wants to type 2500, not press a button twenty-five times.
-        y += chipH;
-        levelMin = band(rightX + pad + 44, y, EditorState.query().minLevel(), 0);
-        levelMax = band(rightX + pad + 96, y, EditorState.query().maxLevel(), 0);
-        y += 20;
-        attackMin = band(rightX + pad + 44, y, EditorState.query().minAttack(), -1);
-        attackMax = band(rightX + pad + 96, y, EditorState.query().maxAttack(), -1);
-        y += 20;
-        defenceMin = band(rightX + pad + 44, y, EditorState.query().minDefence(), -1);
-        defenceMax = band(rightX + pad + 96, y, EditorState.query().maxDefence(), -1);
+        int bandsTop = y;
+        int bandY = y + FRAME_HEADING + 4;
+        levelMin = band(rightX + pad + 48, bandY, EditorState.query().minLevel(), 0);
+        levelMax = band(rightX + pad + 100, bandY, EditorState.query().maxLevel(), 0);
+        bandY += 20;
+        attackMin = band(rightX + pad + 48, bandY, EditorState.query().minAttack(), -1);
+        attackMax = band(rightX + pad + 100, bandY, EditorState.query().maxAttack(), -1);
+        bandY += 20;
+        defenceMin = band(rightX + pad + 48, bandY, EditorState.query().minDefence(), -1);
+        defenceMax = band(rightX + pad + 100, bandY, EditorState.query().maxDefence(), -1);
+        int bandsHeight = (bandY + 20) - bandsTop;
+        filterSections.add(new Section("Numbers", rightX + pad, bandsTop,
+            rightW - pad * 2 - 6, bandsHeight));
+
+        filterContentHeight = (bandsTop + bandsHeight) - contentTop;
+        int room = filterViewBottom() - top;
+        int limit = Math.max(0, filterContentHeight - room);
+        if(filterScroll > limit)
+        {
+            // The contents shrank -- a category collapsed onto fewer rows --
+            // and the old offset is now past the end, so it is pulled back and
+            // the layout redone from the corrected position.
+            filterScroll = limit;
+            buildFilterDrawer(top);
+        }
+    }
+
+    private int filterViewTop()
+    {
+        return trunkGridTop() - 4;
+    }
+
+    private int filterViewBottom()
+    {
+        return panelTop + panelH - pad - Layout.of(LAYOUT).i("panel.controls", 28);
+    }
+
+    private int maxFilterScroll()
+    {
+        return Math.max(0, filterContentHeight - (filterViewBottom() - filterViewTop() - 4));
     }
 
     /**
@@ -421,38 +460,64 @@ public class DeckEditorScreen extends Screen
         java.util.function.Predicate<String> lit, java.util.function.Consumer<String> toggle,
         int chipW)
     {
-        int labelW = 56;
-        int x = rightX + pad + labelW;
-        int y = top;
-        int right = rightX + rightW - pad;
+        // The heading sits on the frame's own top edge, so the chips get the
+        // full width of the box beneath it rather than sharing the row.
+        int inset = 4;
+        int left = rightX + pad;
+        int right = rightX + rightW - pad - 6;
+        int chipsTop = top + FRAME_HEADING + inset;
+        int x = left + inset;
+        int y = chipsTop;
         for(String value : values)
         {
-            if(x + chipW > right)
+            if(x + chipW > right - inset)
             {
-                x = rightX + pad + labelW;
+                x = left + inset;
                 y += chipH + rowGap;
             }
             String target = value;
-            addRenderableWidget(new ChipButton(x, y, chipW, chipH, Component.literal(value),
+            ChipButton chip = new ChipButton(x, y, chipW, chipH, Component.literal(value),
                 () -> lit.test(target), pressed ->
             {
                 toggle.accept(target);
                 EditorState.invalidate();
                 trunkScroll = 0;
                 rebuildControls();
-            }));
+            });
+            // A widget draws itself wherever it is put, and the drawer's
+            // scissor cannot reach it, so one scrolled out of the strip is
+            // hidden instead. That also stops it being clicked through the bar
+            // above, which a merely-clipped chip still could be.
+            chip.visible = inFilterView(y, chipH);
+            chip.active = chip.visible;
+            addRenderableWidget(chip);
             x += chipW + 2;
         }
-        filterHeadings.add(new Heading(heading, rightX + pad, top + (chipH - 8) / 2));
-        return y + chipH + rowGap + 2;
+        int height = (y + chipH + inset) - top;
+        filterSections.add(new Section(heading, left, top, right - left, height));
+        return top + height + FRAME_GAP;
     }
 
-    /** A heading drawn beside a chip row; collected while the rows are built. */
-    private record Heading(String text, int x, int y)
+    /** Whether a row of the drawer is inside the strip the drawer occupies. */
+    private boolean inFilterView(int y, int height)
+    {
+        return y >= filterViewTop() && y + height <= filterViewBottom();
+    }
+
+    /** Room above a frame's contents for its heading, and between frames. */
+    private static final int FRAME_HEADING = 11;
+    private static final int FRAME_GAP = 5;
+
+    /**
+     * One filter category: its frame and its heading. Collected while the chips
+     * are built, because only then is it known how many rows a category wrapped
+     * onto and therefore how tall its frame is.
+     */
+    private record Section(String heading, int x, int y, int width, int height)
     {
     }
 
-    private final List<Heading> filterHeadings = new java.util.ArrayList<>();
+    private final List<Section> filterSections = new java.util.ArrayList<>();
 
     /**
      * One end of a numeric band.
@@ -995,20 +1060,41 @@ public class DeckEditorScreen extends Screen
     }
 
     /** True when the click landed on a menu row and was consumed. */
+    /**
+     * Rows the menu shows: Add, then Remove when the click was on a card in the
+     * deck, then Favourite. Worked out in one place so the click test and the
+     * drawing cannot disagree about how tall the menu is.
+     */
+    private int menuRows()
+    {
+        return menuPart == null ? 2 : 3;
+    }
+
+    private int favouriteRow()
+    {
+        return menuRows() - 1;
+    }
+
     private boolean handleMenuClick(double mouseX, double mouseY)
     {
-        int rows = menuPart == null ? 1 : 2;
+        int rows = menuRows();
         if(mouseX < menuX || mouseX > menuX + MENU_W
             || mouseY < menuY || mouseY > menuY + rows * MENU_ROW)
         {
             return false;
         }
         int row = (int)((mouseY - menuY) / MENU_ROW);
+        int favourite = favouriteRow();
         Properties target = menuCard;
         DeckList.Part part = menuPart;
         int index = menuIndex;
         closeMenu();
 
+        if(row == favourite)
+        {
+            EditorState.toggleFavourite((int)target.getId());
+            return true;
+        }
         if(row == 0)
         {
             // Add one, into the part it belongs in.
@@ -1126,6 +1212,14 @@ public class DeckEditorScreen extends Screen
                 deckScroll - (int)Math.signum(delta) * (cardH + gap)));
             return true;
         }
+        if(filtersOpen && mouseX >= rightX && mouseY >= filterViewTop()
+            && mouseY < filterViewBottom())
+        {
+            filterScroll = Math.max(0, Math.min(maxFilterScroll(),
+                filterScroll - (int)Math.signum(delta) * 12));
+            rebuildControls();
+            return true;
+        }
         if(mouseX >= rightX)
         {
             int rows = (EditorState.visible().size() + trunkColumns - 1) / trunkColumns;
@@ -1203,7 +1297,10 @@ public class DeckEditorScreen extends Screen
             for(EditBox box : List.of(levelMin, levelMax, attackMin, attackMax,
                 defenceMin, defenceMax))
             {
-                box.render(poseStack, mouseX, mouseY, partialTick);
+                if(inFilterView(box.y - 2, 16))
+                {
+                    box.render(poseStack, mouseX, mouseY, partialTick);
+                }
             }
         }
         if(rename != null)
@@ -1511,14 +1608,21 @@ public class DeckEditorScreen extends Screen
      */
     private void renderFilterDrawer(PoseStack poseStack)
     {
-        int top = trunkGridTop() - 4;
-        int bottom = panelTop + panelH - pad - Layout.of(LAYOUT).i("panel.controls", 28);
+        int top = filterViewTop();
+        int bottom = filterViewBottom();
         NineSlice.draw(poseStack, HubTextures.PANEL_INSET, rightX + pad - 2, top,
             rightW - pad * 2 + 4, Math.max(20, bottom - top));
 
-        for(Heading heading : filterHeadings)
+        // The chips are widgets and have already drawn themselves anywhere on
+        // screen; the frames are clipped so a category scrolled past the top
+        // does not paint over the chip row above the drawer.
+        clipToFilterView(true);
+        for(Section section : filterSections)
         {
-            font.drawShadow(poseStack, heading.text(), heading.x(), heading.y(), 0xFFC2C9D6);
+            NineSlice.draw(poseStack, HubTextures.PANEL, section.x(), section.y(),
+                section.width(), section.height());
+            font.drawShadow(poseStack, section.heading(), section.x() + 5,
+                section.y() + 2, 0xFFF4D089);
         }
 
         // The bands read as "Level  [min] [max]", so the captions sit against
@@ -1529,12 +1633,44 @@ public class DeckEditorScreen extends Screen
             band(poseStack, "ATK", attackMin, attackMax);
             band(poseStack, "DEF", defenceMin, defenceMax);
         }
+        clipToFilterView(false);
+
+        int overflow = maxFilterScroll();
+        if(overflow > 0)
+        {
+            int trackX = rightX + rightW - pad - 2;
+            int trackH = bottom - top - 4;
+            int thumbH = Math.max(16, trackH * trackH / Math.max(1, filterContentHeight));
+            int thumbY = top + 2 + (trackH - thumbH) * filterScroll / overflow;
+            NineSlice.draw(poseStack, HubTextures.PANEL_INSET, trackX, top + 2, 4, trackH);
+            NineSlice.draw(poseStack, HubTextures.PANEL, trackX, thumbY, 4, thumbH);
+        }
+    }
+
+    /** As {@link #clipToDeckView}, for the filter drawer's strip. */
+    private void clipToFilterView(boolean on)
+    {
+        if(!on)
+        {
+            RenderSystem.disableScissor();
+            return;
+        }
+        double scale = minecraft.getWindow().getGuiScale();
+        int top = filterViewTop();
+        int bottom = filterViewBottom();
+        RenderSystem.enableScissor((int)(rightX * scale),
+            (int)(minecraft.getWindow().getHeight() - bottom * scale),
+            (int)(rightW * scale), (int)((bottom - top) * scale));
     }
 
     private void band(PoseStack poseStack, String caption, EditBox min, EditBox max)
     {
         int y = min.y - 2;
-        font.drawShadow(poseStack, caption, rightX + pad, y + 4, 0xFFC2C9D6);
+        if(!inFilterView(y, 16))
+        {
+            return;
+        }
+        font.drawShadow(poseStack, caption, rightX + pad + 5, y + 4, 0xFFC2C9D6);
         NineSlice.draw(poseStack, HubTextures.SEARCH_FIELD, min.x - 2, y, 48, 16);
         NineSlice.draw(poseStack, HubTextures.SEARCH_FIELD, max.x - 2, y, 48, 16);
         font.drawShadow(poseStack, "-", min.x + 46, y + 4, 0xFF7A8090);
@@ -1628,13 +1764,25 @@ public class DeckEditorScreen extends Screen
         RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getPositionTexShader);
         RenderSystem.enableBlend();
         RenderSystem.setShaderColor(1F, 1F, 1F, alpha);
-        CardRenderUtil.bindMainResourceLocation(card, (byte)0);
+        // Fetched at twice the size it is drawn at, and filtered on the way
+        // down, so the art is legible rather than a 64-pixel image stretched
+        // across a 40-pixel icon.
+        DuelTextures.bindSmooth(DuelTextures.card(card, (byte)0, DuelTextures.ICON_CARD_SIZE));
         // Passing a nominal file size of 1 lets the window be given as the
         // fractions DuelTextures already measured.
         DdBlitUtil.blit(poseStack, x, y, w, h,
             DuelTextures.CARD_U0, DuelTextures.CARD_V0,
             DuelTextures.CARD_U1 - DuelTextures.CARD_U0,
             DuelTextures.CARD_V1 - DuelTextures.CARD_V0, 1, 1);
+
+        if(EditorState.isFavourite((int)card.getId()))
+        {
+            // A fraction of the card rather than a fixed size, so it stays in
+            // proportion however small the icons get.
+            int mark = Math.max(6, w / 3);
+            RenderSystem.setShaderTexture(0, HubTextures.STAR);
+            DdBlitUtil.blit(poseStack, x + w - mark - 1, y + 1, mark, mark, 0, 0, 1, 1, 1, 1);
+        }
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
     }
 

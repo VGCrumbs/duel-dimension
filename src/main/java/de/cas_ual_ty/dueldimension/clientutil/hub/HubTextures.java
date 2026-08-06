@@ -26,6 +26,8 @@ public final class HubTextures
     public static final ResourceLocation HEADER = gui("deckeditor/header.png");
     /** The dark band the open deck's name sits in, above the grids. */
     public static final ResourceLocation TITLE_RIBBON = gui("deckeditor/title_ribbon.png");
+    /** Marks a favourited card, drawn in the corner of its icon. */
+    public static final ResourceLocation STAR = gui("deckeditor/star.png");
     /** The recessed search field the trunk is filtered with. */
     public static final ResourceLocation SEARCH_FIELD = gui("deckeditor/search_field.png");
     /** Filter chip; three rows, the third being lit rather than disabled. */

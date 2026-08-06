@@ -205,6 +205,28 @@ def header_bar(width=CELL):
     return im
 
 
+def star(size=16):
+    """The mark on a favourited card: a filled star with a dark outline.
+
+    Outlined rather than plain, because it is drawn over card art of any colour
+    and a gold star on gold art would disappear.
+    """
+    scale = 8
+    big = Image.new('RGBA', (size * scale, size * scale), (0, 0, 0, 0))
+    d = ImageDraw.Draw(big)
+    cx = cy = size * scale / 2
+    outer = size * scale * 0.46
+    inner = outer * 0.42
+    points = []
+    for i in range(10):
+        angle = math.radians(-90 + i * 36)
+        r = outer if i % 2 == 0 else inner
+        points.append((cx + r * math.cos(angle), cy + r * math.sin(angle)))
+    d.polygon(points, fill=GOLD + (255,), outline=(12, 13, 17, 255))
+    # Drawn large and reduced, so the points are smooth rather than stepped.
+    return big.resize((size, size), Image.LANCZOS)
+
+
 def title_ribbon():
     """A dark band under the deck's name, separating it from the grids.
 
@@ -262,6 +284,7 @@ if __name__ == '__main__':
     print('deckeditor/')
     write(header_bar(), 'deckeditor', 'header.png')
     write(title_ribbon(), 'deckeditor', 'title_ribbon.png')
+    write(star(), 'deckeditor', 'star.png')
     write(search_field(), 'deckeditor', 'search_field.png')
     write(states(chip_state), 'deckeditor', 'chip.png')
     write(scrollbar(), 'deckeditor', 'scrollbar.png')

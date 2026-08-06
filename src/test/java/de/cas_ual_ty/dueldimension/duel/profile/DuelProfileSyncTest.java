@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -92,5 +93,37 @@ class DuelProfileSyncTest
         assertTrue(empty.decks().isEmpty());
         assertEquals("", empty.activeDeck());
         assertNull(empty.deckNamed("anything"));
+    }
+
+    @Test
+    void favouritesSurviveTheRoundTrip()
+    {
+        DuelProfile before = populated();
+        before.toggleFavourite(55144522);
+        before.toggleFavourite(46986414);
+
+        DuelProfile after = DuelProfile.load(before.save());
+        assertTrue(after.isFavourite(55144522));
+        assertTrue(after.isFavourite(46986414));
+        assertEquals(2, after.favourites().size());
+    }
+
+    @Test
+    void starringTwiceUnstars()
+    {
+        DuelProfile profile = populated();
+        assertTrue(profile.toggleFavourite(55144522), "the first press stars it");
+        assertFalse(profile.toggleFavourite(55144522), "the second press takes it back off");
+        assertTrue(profile.favourites().isEmpty());
+    }
+
+    @Test
+    void aProfileWithNoFavouritesLoadsCleanly()
+    {
+        // The tag predates the field, so an old save has no Favourites entry
+        // at all and must not come back with a phantom one.
+        DuelProfile after = DuelProfile.load(new DuelProfile().save());
+        assertTrue(after.favourites().isEmpty());
+        assertFalse(after.isFavourite(46986414));
     }
 }

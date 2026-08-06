@@ -183,6 +183,25 @@ public final class ProfileMessages
         }
     }
 
+    /** Client to server: star this card, or unstar it. */
+    public record ToggleFavourite(int passcode)
+    {
+        public static void encode(ToggleFavourite message, FriendlyByteBuf buffer)
+        {
+            buffer.writeVarInt(message.passcode());
+        }
+
+        public static ToggleFavourite decode(FriendlyByteBuf buffer)
+        {
+            return new ToggleFavourite(buffer.readVarInt());
+        }
+
+        public static void handle(ToggleFavourite message, Supplier<NetworkEvent.Context> context)
+        {
+            server(context, player -> DeckEdits.toggleFavourite(player, message.passcode()));
+        }
+    }
+
     /**
      * Runs a change on the server thread for the player who asked, and tells
      * them the result. Every client-to-server message here does exactly this,

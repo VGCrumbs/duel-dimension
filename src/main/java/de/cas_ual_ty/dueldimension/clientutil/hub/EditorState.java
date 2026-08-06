@@ -502,6 +502,19 @@ public final class EditorState
         return deck.name() + "|" + deck.main() + deck.extra() + deck.side();
     }
 
+    public static boolean isFavourite(int passcode)
+    {
+        return profile.isFavourite(passcode);
+    }
+
+    /** Stars a card, or unstars it. Applied here and asked for over the wire. */
+    public static void toggleFavourite(int passcode)
+    {
+        profile.toggleFavourite(passcode);
+        dirty = true;
+        send(new ProfileMessages.ToggleFavourite(passcode));
+    }
+
     /** Tells the server which deck this player duels with. */
     public static void setActiveDeck(String name)
     {

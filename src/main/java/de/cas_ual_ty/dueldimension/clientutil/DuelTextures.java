@@ -128,6 +128,17 @@ public final class DuelTextures
     /** The preview panel draws a card several hundred pixels tall. */
     public static final int PREVIEW_CARD_SIZE = 512;
 
+    /**
+     * The size card icons are fetched at in the deck editor's grids.
+     * <p>
+     * Twice the 64 the rest of the mod uses for its "main" images, and drawn at
+     * the same size on screen: the grids show a card at around forty pixels
+     * across, and a 64-pixel source has barely more detail than that to give.
+     * Fetching at 128 and letting the GPU scale it down costs a little memory
+     * and makes the art legible.
+     */
+    public static final int ICON_CARD_SIZE = 128;
+
     /** EDOPro's cover.png is 480x700; keep that ratio wherever we draw a card. */
     public static final float CARD_ASPECT = 480F / 700F;
 
