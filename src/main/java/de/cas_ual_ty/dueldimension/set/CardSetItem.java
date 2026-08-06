@@ -54,6 +54,18 @@ public class CardSetItem extends CardSetBaseItem
         // reports what was drawn rather than drawing it again -- a second roll
         // would show the player cards they did not get.
         boolean revealing = announcePull(getCardSet(itemStack), newStack, player);
+        if(revealing && !player.level.isClientSide)
+        {
+            // The reveal is the opening, so the cards go straight to the player
+            // and the spent wrapper goes away. Leaving an empty pack in hand to
+            // be emptied by hand afterwards made the reveal a preview of work
+            // still to do rather than the opening itself.
+            for(ItemStack card : de.cas_ual_ty.dueldimension.set.OpenedCardSetItem.contentsOf(newStack))
+            {
+                player.getInventory().placeItemBackInInventory(card.copy());
+            }
+            player.setItemInHand(hand, ItemStack.EMPTY);
+        }
         
         if(itemStack.getCount() > 1)
         {

@@ -78,8 +78,39 @@ public class PackOpeningScreen extends Screen
             EditorState.trunk().add(code, 1);
         }
         EditorState.invalidate();
+        // Ask the image pipeline for every card NOW rather than when each one
+        // turns. It fetches asynchronously and yields placeholder art until it
+        // has the file, so requesting at reveal time meant the card was turned
+        // over to show a placeholder and only became itself a moment later.
+        requestArt();
         addRenderableWidget(new HubWidgets.TextureButton(width - 96, height - 30, 84, 20,
             Component.literal("Skip"), pressed -> toSummary()));
+    }
+
+    /**
+     * Nudges the image pipeline for every card in the pull.
+     * <p>
+     * Called from init and again each tick: a request that is still in flight
+     * returns the placeholder, so asking repeatedly is how the real art is
+     * picked up once it lands. The calls are cheap after the first, since the
+     * pipeline caches per card and size.
+     */
+    private void requestArt()
+    {
+        for(int code : codes)
+        {
+            Properties card = DdDatabase.PROPERTIES_LIST.get((long)code);
+            if(card != null)
+            {
+                DuelTextures.card(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE);
+            }
+        }
+    }
+
+    @Override
+    public void tick()
+    {
+        requestArt();
     }
 
     private long elapsed()
