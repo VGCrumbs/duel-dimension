@@ -59,12 +59,16 @@ public final class ShopStock
     /**
      * One purchasable product.
      *
-     * @param deck true for a structure or starter deck, which has fixed
-     *             contents rather than a random pull -- the shop shows that
-     *             difference rather than pretending everything is a booster
+     * @param deck     true for a structure or starter deck, which has fixed
+     *                 contents rather than a random pull -- the shop shows that
+     *                 difference rather than pretending everything is a booster
+     * @param released when the set was printed, in epoch milliseconds, or 0 for
+     *                 a set whose data carries no date. Sent as the instant
+     *                 rather than as text so the client can write it the way
+     *                 its own locale writes a date.
      */
     public record Pack(String code, String name, String type, int price, int cardsPerPack,
-        int distinctCards, String description, boolean deck)
+        int distinctCards, String description, boolean deck, long released)
     {
         public void write(FriendlyByteBuf buffer)
         {
@@ -76,13 +80,14 @@ public final class ShopStock
             buffer.writeVarInt(distinctCards);
             buffer.writeUtf(description, 256);
             buffer.writeBoolean(deck);
+            buffer.writeLong(released);
         }
 
         public static Pack read(FriendlyByteBuf buffer)
         {
             return new Pack(buffer.readUtf(32), buffer.readUtf(128), buffer.readUtf(64),
                 buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(), buffer.readUtf(256),
-                buffer.readBoolean());
+                buffer.readBoolean(), buffer.readLong());
         }
     }
 
@@ -126,7 +131,8 @@ public final class ShopStock
             boolean deck = set.type != null
                 && (set.type.contains("Structure Deck") || set.type.contains("Starter Deck"));
             packs.add(new Pack(set.code, set.name, set.type == null ? "" : set.type,
-                priceOf(set), cardsPerPack(set), distinctCards(set), describe(set), deck));
+                priceOf(set), cardsPerPack(set), distinctCards(set), describe(set), deck,
+                set.date == null ? 0L : set.date.getTime()));
         }
         packs.sort((left, right) -> right.code().compareTo(left.code()));
         // Shared and long-lived, so it is handed out read-only rather than

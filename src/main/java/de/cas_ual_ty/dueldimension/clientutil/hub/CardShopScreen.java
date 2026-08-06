@@ -241,6 +241,40 @@ public class CardShopScreen extends Screen
         String price = isCreative() ? "FREE (creative)" : pack.price() + " DP";
         font.drawShadow(poseStack, price, pad + 8, y + 12,
             isCreative() ? 0xFF7CE38B : 0xFFF4D089);
+
+        // The grid runs newest first, so the date is what tells a player where
+        // in the run of sets they are looking. Dimmer than the price because it
+        // is context rather than a thing to act on, and omitted rather than
+        // written as "unknown" when a set carries no date -- an absent line
+        // says the same thing without occupying one.
+        String released = releaseDate(pack);
+        if(released != null)
+        {
+            font.drawShadow(poseStack, released, pad + 8, y + 24, 0xFF7A8090);
+        }
+    }
+
+    /**
+     * A set's release date, written the way the player's own locale writes one,
+     * or null when the set data carries no date.
+     */
+    private static String releaseDate(ShopStock.Pack pack)
+    {
+        if(pack.released() <= 0L)
+        {
+            return null;
+        }
+        try
+        {
+            java.time.LocalDate date = java.time.Instant.ofEpochMilli(pack.released())
+                .atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+            return date.format(java.time.format.DateTimeFormatter
+                .ofLocalizedDate(java.time.format.FormatStyle.MEDIUM));
+        }
+        catch(RuntimeException unreadable)
+        {
+            return null;
+        }
     }
 
     /** Centre: every pack, the highlighted one ringed. */
