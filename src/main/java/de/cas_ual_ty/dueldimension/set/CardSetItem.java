@@ -25,10 +25,14 @@ public class CardSetItem extends CardSetBaseItem
         
         if(player.getItemInHand(hand) == stack)
         {
-            unseal(stack, player, hand);
+            boolean revealing = unseal(stack, player, hand);
             
-            if(!world.isClientSide)
+            if(!world.isClientSide && !revealing)
             {
+                // Only fall through to the opened pack's own screen when there
+                // is no reveal to watch. Chaining into it unconditionally meant
+                // the container was opened in the same click and replaced the
+                // reveal before a single card had turned.
                 return player.getItemInHand(hand).getItem().use(world, player, hand);
             }
         }
@@ -36,14 +40,20 @@ public class CardSetItem extends CardSetBaseItem
         return super.use(world, player, hand);
     }
     
-    public void unseal(ItemStack itemStack, Player player, InteractionHand hand)
+    /**
+     * Opens the pack.
+     *
+     * @return true if a reveal was sent, so the caller should leave the screen
+     *         to it rather than opening the pack's container over the top
+     */
+    public boolean unseal(ItemStack itemStack, Player player, InteractionHand hand)
     {
         ItemStack newStack = DdItems.OPENED_SET.get().createItemForSet(getCardSet(itemStack));
         player.setItemInHand(hand, newStack);
         // The pull has already happened and is written onto the stack, so this
         // reports what was drawn rather than drawing it again -- a second roll
         // would show the player cards they did not get.
-        announcePull(getCardSet(itemStack), newStack, player);
+        boolean revealing = announcePull(getCardSet(itemStack), newStack, player);
         
         if(itemStack.getCount() > 1)
         {
@@ -54,6 +64,7 @@ public class CardSetItem extends CardSetBaseItem
                 player.getInventory().placeItemBackInInventory(itemStack);
             }
         }
+        return revealing;
     }
     
     public ItemStack createItemForSet(CardSet set)
@@ -96,12 +107,16 @@ public class CardSetItem extends CardSetBaseItem
         }
     }
 
-    /** Sends the reveal to the player who opened it. */
-    private static void announcePull(CardSet set, ItemStack openedStack, Player player)
+    /**
+     * Sends the reveal to the player who opened it.
+     *
+     * @return true if there was something to reveal
+     */
+    private static boolean announcePull(CardSet set, ItemStack openedStack, Player player)
     {
         if(!(player instanceof net.minecraft.server.level.ServerPlayer serverPlayer))
         {
-            return;
+            return false;
         }
         java.util.List<Integer> codes = new java.util.ArrayList<>();
         java.util.List<String> rarities = new java.util.ArrayList<>();
@@ -121,11 +136,12 @@ public class CardSetItem extends CardSetBaseItem
         }
         if(codes.isEmpty())
         {
-            return;
+            return false;
         }
         de.cas_ual_ty.dueldimension.DuelDimension.channel.send(
             net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> serverPlayer),
             new de.cas_ual_ty.dueldimension.set.PackMessages.OpenPack(
                 set == null ? "Card Pack" : set.name, codes, rarities));
+        return true;
     }
 }
