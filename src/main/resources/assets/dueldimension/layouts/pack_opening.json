@@ -1,0 +1,12 @@
+{
+  "card.width": 128,
+  "card.aspect": 0.6857,
+
+  "deal.ms": 260,
+  "flip.ms": 320,
+  "shine.ms": 700,
+
+  "summary.columns": 5,
+  "summary.cardWidth": 62,
+  "summary.gap": 6
+}

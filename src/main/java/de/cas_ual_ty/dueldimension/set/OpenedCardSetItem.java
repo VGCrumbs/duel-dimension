@@ -81,6 +81,31 @@ public class OpenedCardSetItem extends CardSetBaseItem
     {
         return itemStack.getCapability(DuelDimension.CARD_ITEM_INVENTORY);
     }
+
+    /**
+     * What is inside an opened pack, in pull order.
+     * <p>
+     * Read rather than re-rolled: the contents were decided when the pack was
+     * unsealed and written onto this stack, so drawing again would show the
+     * player cards they did not actually get.
+     */
+    public static List<ItemStack> contentsOf(ItemStack openedStack)
+    {
+        List<ItemStack> cards = new java.util.ArrayList<>();
+        openedStack.getCapability(DuelDimension.CARD_ITEM_INVENTORY).ifPresent(handler ->
+        {
+            handler.load();
+            for(int slot = 0; slot < handler.getSlots(); slot++)
+            {
+                ItemStack card = handler.getStackInSlot(slot);
+                if(!card.isEmpty())
+                {
+                    cards.add(card);
+                }
+            }
+        });
+        return cards;
+    }
     
     public ItemStack createItemForSet(CardSet set, YDMItemHandler itemHandler)
     {

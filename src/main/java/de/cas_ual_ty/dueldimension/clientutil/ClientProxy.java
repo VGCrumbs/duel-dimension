@@ -792,4 +792,12 @@ public class ClientProxy implements ISidedProxy
     {
         return ClientProxy.getMinecraft().player;
     }
+
+    @Override
+    public void openPackReveal(String setName, java.util.List<Integer> codes,
+        java.util.List<String> rarities)
+    {
+        Minecraft.getInstance().setScreen(
+            new de.cas_ual_ty.dueldimension.clientutil.hub.PackOpeningScreen(setName, codes, rarities));
+    }
 }

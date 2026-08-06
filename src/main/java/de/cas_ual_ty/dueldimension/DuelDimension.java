@@ -186,6 +186,7 @@ public class DuelDimension
         int index = 0;
         DuelDimension.channel.registerMessage(index++, CardBinderMessages.ChangePage.class, CardBinderMessages.ChangePage::encode, CardBinderMessages.ChangePage::decode, CardBinderMessages.ChangePage::handle);
         DuelDimension.channel.registerMessage(index++, CardBinderMessages.ChangeSearch.class, CardBinderMessages.ChangeSearch::encode, CardBinderMessages.ChangeSearch::decode, CardBinderMessages.ChangeSearch::handle);
+        DuelDimension.channel.registerMessage(index++, de.cas_ual_ty.dueldimension.set.PackMessages.OpenPack.class, de.cas_ual_ty.dueldimension.set.PackMessages.OpenPack::encode, de.cas_ual_ty.dueldimension.set.PackMessages.OpenPack::decode, de.cas_ual_ty.dueldimension.set.PackMessages.OpenPack::handle);
         DuelDimension.channel.registerMessage(index++, CardBinderMessages.UpdatePage.class, CardBinderMessages.UpdatePage::encode, CardBinderMessages.UpdatePage::decode, CardBinderMessages.UpdatePage::handle);
         DuelDimension.channel.registerMessage(index++, CardBinderMessages.UpdateList.class, CardBinderMessages.UpdateList::encode, CardBinderMessages.UpdateList::decode, CardBinderMessages.UpdateList::handle);
         DuelDimension.channel.registerMessage(index++, CardBinderMessages.IndexClicked.class, CardBinderMessages.IndexClicked::encode, CardBinderMessages.IndexClicked::decode, CardBinderMessages.IndexClicked::handle);

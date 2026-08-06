@@ -125,4 +125,13 @@ public interface ISidedProxy
     {
     
     }
+
+    /**
+     * Shows the pack-opening reveal. Client only; the server has nothing to
+     * show, so it is a no-op there rather than a side check at the call site.
+     */
+    default void openPackReveal(String setName, java.util.List<Integer> codes,
+        java.util.List<String> rarities)
+    {
+    }
 }

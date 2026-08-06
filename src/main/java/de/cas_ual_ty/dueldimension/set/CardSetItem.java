@@ -40,6 +40,10 @@ public class CardSetItem extends CardSetBaseItem
     {
         ItemStack newStack = DdItems.OPENED_SET.get().createItemForSet(getCardSet(itemStack));
         player.setItemInHand(hand, newStack);
+        // The pull has already happened and is written onto the stack, so this
+        // reports what was drawn rather than drawing it again -- a second roll
+        // would show the player cards they did not get.
+        announcePull(getCardSet(itemStack), newStack, player);
         
         if(itemStack.getCount() > 1)
         {
@@ -90,5 +94,38 @@ public class CardSetItem extends CardSetBaseItem
         {
             return ItemStack.EMPTY;
         }
+    }
+
+    /** Sends the reveal to the player who opened it. */
+    private static void announcePull(CardSet set, ItemStack openedStack, Player player)
+    {
+        if(!(player instanceof net.minecraft.server.level.ServerPlayer serverPlayer))
+        {
+            return;
+        }
+        java.util.List<Integer> codes = new java.util.ArrayList<>();
+        java.util.List<String> rarities = new java.util.ArrayList<>();
+        for(ItemStack card : de.cas_ual_ty.dueldimension.set.OpenedCardSetItem.contentsOf(openedStack))
+        {
+            if(card.isEmpty() || !(card.getItem() instanceof de.cas_ual_ty.dueldimension.card.CardItem item))
+            {
+                continue;
+            }
+            de.cas_ual_ty.dueldimension.card.CardHolder holder = item.getCardHolder(card);
+            if(holder == null || holder.getCard() == null)
+            {
+                continue;
+            }
+            codes.add((int)holder.getCard().getId());
+            rarities.add(holder.getRarity() == null ? "" : holder.getRarity());
+        }
+        if(codes.isEmpty())
+        {
+            return;
+        }
+        de.cas_ual_ty.dueldimension.DuelDimension.channel.send(
+            net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> serverPlayer),
+            new de.cas_ual_ty.dueldimension.set.PackMessages.OpenPack(
+                set == null ? "Card Pack" : set.name, codes, rarities));
     }
 }
