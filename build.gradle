@@ -66,16 +66,46 @@ minecraft {
 
         // Alpha is the primary client, Omega the secondary. Two named seats
         // rather than "client1/client2" because the names are what you type:
-        // /duel Omega. Both state their own size rather than inheriting it,
-        // so neither can drift from 920p if the base config is edited.
+        // /duel Omega.
+        //
+        // Spelled out rather than using `parent runs.client`. That inherits the
+        // properties but NOT the main class, so a parented run config fails
+        // with "No main class specified and classpath is not an executable jar"
+        // -- which is what the old client1/client2 would have done had anyone
+        // launched them. Being explicit also means neither can drift from 920p
+        // if the base config is edited.
         alpha {
-            parent runs.client
+            // ForgeGradle infers the main class only for configs NAMED
+            // client/server/data, so a custom name has to state it.
+            main 'cpw.mods.bootstraplauncher.BootstrapLauncher'
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            property 'forge.enabledGameTestNamespaces', 'dueldimension'
             args '--username', 'Alpha', '--width', '1634', '--height', '920'
+
+            mods {
+                dueldimension {
+                    source sourceSets.main
+                }
+            }
         }
 
         omega {
-            parent runs.client
+            main 'cpw.mods.bootstraplauncher.BootstrapLauncher'
+            // Its own run directory: two clients sharing one would fight over
+            // options.txt and the saves folder.
+            workingDirectory project.file('run-omega')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            property 'forge.enabledGameTestNamespaces', 'dueldimension'
             args '--username', 'Omega', '--width', '1634', '--height', '920'
+
+            mods {
+                dueldimension {
+                    source sourceSets.main
+                }
+            }
         }
 
         server {

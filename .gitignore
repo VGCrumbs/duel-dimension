@@ -40,3 +40,4 @@ src/generated
 # to rebuild the core is preserved even though its output is not.
 /ocgcore-build/build/
 run/
+run-omega/

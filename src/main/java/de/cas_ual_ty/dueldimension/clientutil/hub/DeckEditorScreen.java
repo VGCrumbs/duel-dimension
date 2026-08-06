@@ -7,6 +7,7 @@ import de.cas_ual_ty.dueldimension.clientutil.CardRenderUtil;
 import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
 import de.cas_ual_ty.dueldimension.duel.profile.CardQuery;
 import de.cas_ual_ty.dueldimension.duel.profile.DeckLimits;
+import de.cas_ual_ty.dueldimension.clientutil.layout.Layout;
 import de.cas_ual_ty.dueldimension.duel.profile.DeckList;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -31,16 +32,23 @@ import java.util.List;
  */
 public class DeckEditorScreen extends Screen
 {
-    /** Card slots, at the printed card's ratio. */
-    private static final int CARD_W = 30;
-    private static final int CARD_H = 44;
-    private static final int GAP = 2;
-    private static final int MAIN_COLUMNS = 10;
-    private static final int TRUNK_COLUMNS = 8;
-    private static final int PAD = 8;
-    private static final int HEADER_H = 14;
+    /** The tunables, read fresh every layout pass so a hot reload takes effect. */
+    private static final String LAYOUT = "deck_editor";
 
     private final Screen parent;
+
+    // Resolved once per init() from the layout file and the window size.
+    private int cardW;
+    private int cardH;
+    private int gap;
+    private int pad;
+    private int mainColumns;
+    private int extraColumns;
+    private int trunkColumns;
+    private int titleH;
+    private int headerH;
+    private int sectionGap;
+    private int mainRows;
 
     private EditBox search;
     private int leftX;
@@ -68,15 +76,49 @@ public class DeckEditorScreen extends Screen
     @Override
     protected void init()
     {
-        panelTop = 40;
-        panelH = height - panelTop - 34;
-        leftX = PAD;
-        leftW = (width - PAD * 3) * 58 / 100;
-        rightX = leftX + leftW + PAD;
-        rightW = width - rightX - PAD;
+        Layout layout = Layout.of(LAYOUT);
+        pad = layout.i("panel.pad", 8);
+        gap = layout.i("card.gap", 2);
+        mainColumns = Math.max(1, layout.i("deck.mainColumns", 10));
+        extraColumns = Math.max(1, layout.i("deck.extraColumns", 15));
+        trunkColumns = Math.max(1, layout.i("trunk.columns", 8));
+        titleH = layout.i("deck.titleHeight", 14);
+        headerH = layout.i("deck.headerHeight", 12);
+        sectionGap = layout.i("deck.sectionGap", 6);
 
-        search = new EditBox(font, rightX + PAD + 2, panelTop + PAD + 2,
-            rightW - PAD * 2 - 74, 14, Component.literal("Search"));
+        panelTop = layout.i("panel.top", 34);
+        panelH = height - panelTop - layout.i("panel.bottom", 30);
+        leftX = pad;
+        leftW = (width - pad * 3) * Math.max(20, Math.min(80, layout.i("panel.leftPercent", 58))) / 100;
+        rightX = leftX + leftW + layout.i("panel.gap", 8);
+        rightW = width - rightX - pad;
+
+        // Card size is DERIVED, not fixed. The width that makes the main deck
+        // columns fill the panel decides it, and the height follows from the
+        // card's own aspect -- so art is never stretched, whatever the window.
+        int cellFromWidth = Math.max(6, (leftW - pad * 2) / mainColumns - gap);
+        int cellFromTrunk = Math.max(6, (rightW - pad * 2) / trunkColumns - gap);
+        float aspect = layout.f("card.aspect", 480F / 700F);
+        cardW = Math.min(layout.i("card.width", 30), Math.min(cellFromWidth, cellFromTrunk));
+        cardH = Math.max(8, Math.round(cardW / aspect));
+
+        // Then the main deck takes whatever rows are left after Extra, Side
+        // and their headings, so nothing can run off the bottom.
+        int deckSpace = panelH - titleH - pad * 2
+            - (headerH + sectionGap) * 3
+            - (cardH + gap) * 2;
+        mainRows = Math.max(1, deckSpace / (cardH + gap));
+        // If even one row will not fit, shrink the card until it does.
+        while(mainRows * (cardH + gap) + (cardH + gap) * 2 + titleH + (headerH + sectionGap) * 3
+            + pad * 2 > panelH && cardH > 10)
+        {
+            cardW = Math.max(6, cardW - 2);
+            cardH = Math.max(8, Math.round(cardW / aspect));
+        }
+
+        search = new EditBox(font, rightX + pad + 2, panelTop + pad + 2,
+            Math.max(40, rightW - pad * 2 - layout.i("trunk.sortWidth", 56)
+                - layout.i("trunk.dirWidth", 30) - 12), 14, Component.literal("Search"));
         search.setResponder(value ->
         {
             EditorState.query().setText(value);
@@ -94,14 +136,18 @@ public class DeckEditorScreen extends Screen
         clearWidgets();
         addWidget(search);
 
-        int chipY = panelTop + PAD + 20;
-        int chipX = rightX + PAD;
+        Layout layout = Layout.of(LAYOUT);
+        int rowH = layout.i("trunk.searchHeight", 16) + 4;
+        int chipY = panelTop + pad + rowH;
+        int chipX = rightX + pad;
+        int chipW = layout.i("trunk.chipWidth", 42);
+        int chipH = layout.i("trunk.chipHeight", 14);
         // Kind chips. A chip is on or off, never disabled, so its third atlas
         // row is the lit state rather than a greyed one.
         for(CardQuery.Kind kind : CardQuery.Kind.values())
         {
             CardQuery.Kind target = kind;
-            addRenderableWidget(new ChipButton(chipX, chipY, 44, 14,
+            addRenderableWidget(new ChipButton(chipX, chipY, chipW, chipH,
                 Component.literal(label(kind)),
                 () -> EditorState.query().kinds().contains(target), pressed ->
             {
@@ -109,19 +155,21 @@ public class DeckEditorScreen extends Screen
                 EditorState.invalidate();
                 trunkScroll = 0;
             }));
-            chipX += 46;
+            chipX += chipW + 2;
         }
 
         // Sort cycles through the offered orders; the arrow flips direction.
-        addRenderableWidget(new HubWidgets.TextureButton(rightX + rightW - PAD - 92, panelTop + PAD,
-            64, 16, Component.literal(EditorState.query().sort().label()), pressed ->
+        int sortW = layout.i("trunk.sortWidth", 56);
+        int dirW = layout.i("trunk.dirWidth", 30);
+        addRenderableWidget(new HubWidgets.TextureButton(rightX + rightW - pad - sortW - dirW - 2,
+            panelTop + pad, sortW, 16, Component.literal(EditorState.query().sort().label()), pressed ->
         {
             EditorState.query().setSort(EditorState.query().sort().next());
             EditorState.invalidate();
             rebuildControls();
         }));
-        addRenderableWidget(new HubWidgets.TextureButton(rightX + rightW - PAD - 26, panelTop + PAD,
-            26, 16, Component.literal(EditorState.query().descending() ? "DESC" : "ASC"), pressed ->
+        addRenderableWidget(new HubWidgets.TextureButton(rightX + rightW - pad - dirW, panelTop + pad,
+            dirW, 16, Component.literal(EditorState.query().descending() ? "DESC" : "ASC"), pressed ->
         {
             EditorState.query().setDescending(!EditorState.query().descending());
             EditorState.invalidate();
@@ -131,7 +179,7 @@ public class DeckEditorScreen extends Screen
         // Clear Filters: greyed out when there is nothing to clear, so the
         // button itself reports whether anything is narrowing.
         HubWidgets.TextureButton clear = new HubWidgets.TextureButton(
-            rightX + rightW - PAD - 92, chipY - 2, 92, 16,
+            rightX + pad, chipY + chipH + 3, Math.min(92, rightW - pad * 2), 16,
             Component.literal("Clear Filters"), pressed ->
         {
             EditorState.query().clear();
@@ -143,7 +191,7 @@ public class DeckEditorScreen extends Screen
         clear.active = !EditorState.query().isClear();
         addRenderableWidget(clear);
 
-        addRenderableWidget(new HubWidgets.TextureButton(width - PAD - 80, height - 26, 80, 20,
+        addRenderableWidget(new HubWidgets.TextureButton(width - pad - 80, height - 26, 80, 20,
             Component.literal("Done"), pressed -> onClose()));
     }
 
@@ -161,22 +209,24 @@ public class DeckEditorScreen extends Screen
 
     private int mainTop()
     {
-        return panelTop + PAD + HEADER_H;
+        // Below the deck NAME as well as the section heading; these two used to
+        // be drawn at the same y and overlapped.
+        return panelTop + pad + titleH + headerH + sectionGap;
     }
 
     private int mainRows()
     {
-        return 6;
+        return mainRows;
     }
 
     private int extraTop()
     {
-        return mainTop() + mainRows() * (CARD_H + GAP) + HEADER_H + 4;
+        return mainTop() + mainRows * (cardH + gap) + headerH + sectionGap;
     }
 
     private int sideTop()
     {
-        return extraTop() + (CARD_H + GAP) + HEADER_H + 4;
+        return extraTop() + (cardH + gap) + headerH + sectionGap;
     }
 
     private int partTop(DeckList.Part part)
@@ -191,7 +241,7 @@ public class DeckEditorScreen extends Screen
 
     private int partColumns(DeckList.Part part)
     {
-        return part == DeckList.Part.MAIN ? MAIN_COLUMNS : 15;
+        return part == DeckList.Part.MAIN ? mainColumns : extraColumns;
     }
 
     /** Which slot of which part a point falls in, or null. */
@@ -200,9 +250,9 @@ public class DeckEditorScreen extends Screen
         for(DeckList.Part part : DeckList.Part.values())
         {
             int top = partTop(part);
-            int rows = part == DeckList.Part.MAIN ? mainRows() : 1;
-            if(mouseX >= leftX + PAD && mouseX < leftX + leftW - PAD
-                && mouseY >= top && mouseY < top + rows * (CARD_H + GAP))
+            int rows = part == DeckList.Part.MAIN ? mainRows : 1;
+            if(mouseX >= leftX + pad && mouseX < leftX + leftW - pad
+                && mouseY >= top && mouseY < top + rows * (cardH + gap))
             {
                 return part;
             }
@@ -213,9 +263,9 @@ public class DeckEditorScreen extends Screen
     private int slotIndexAt(DeckList.Part part, double mouseX, double mouseY)
     {
         int columns = partColumns(part);
-        int cellW = Math.max(8, (leftW - PAD * 2) / columns);
-        int column = (int)((mouseX - (leftX + PAD)) / cellW);
-        int row = (int)((mouseY - partTop(part)) / (CARD_H + GAP));
+        int cellW = Math.max(8, (leftW - pad * 2) / columns);
+        int column = (int)((mouseX - (leftX + pad)) / cellW);
+        int row = (int)((mouseY - partTop(part)) / (cardH + gap));
         if(column < 0 || column >= columns || row < 0)
         {
             return -1;
@@ -223,21 +273,29 @@ public class DeckEditorScreen extends Screen
         return row * columns + column;
     }
 
+    /** Below the search row, the chip row and the Clear row. */
+    private int trunkGridTop()
+    {
+        Layout layout = Layout.of(LAYOUT);
+        int rowH = layout.i("trunk.searchHeight", 16) + 4;
+        return panelTop + pad + rowH + layout.i("trunk.chipHeight", 14) + 3 + 16 + 6;
+    }
+
     private int trunkIndexAt(double mouseX, double mouseY)
     {
-        int gridTop = panelTop + PAD + 40;
-        int cellW = Math.max(8, (rightW - PAD * 2) / TRUNK_COLUMNS);
-        if(mouseX < rightX + PAD || mouseX >= rightX + rightW - PAD || mouseY < gridTop)
+        int gridTop = trunkGridTop();
+        int cellW = Math.max(8, (rightW - pad * 2) / trunkColumns);
+        if(mouseX < rightX + pad || mouseX >= rightX + rightW - pad || mouseY < gridTop)
         {
             return -1;
         }
-        int column = (int)((mouseX - (rightX + PAD)) / cellW);
-        int row = (int)((mouseY - gridTop) / (CARD_H + GAP));
-        if(column < 0 || column >= TRUNK_COLUMNS || row < 0)
+        int column = (int)((mouseX - (rightX + pad)) / cellW);
+        int row = (int)((mouseY - gridTop) / (cardH + gap));
+        if(column < 0 || column >= trunkColumns || row < 0)
         {
             return -1;
         }
-        return (row + trunkScroll) * TRUNK_COLUMNS + column;
+        return (row + trunkScroll) * trunkColumns + column;
     }
 
     // ---- interaction ----
@@ -369,8 +427,8 @@ public class DeckEditorScreen extends Screen
     {
         if(mouseX >= rightX)
         {
-            int rows = (EditorState.visible().size() + TRUNK_COLUMNS - 1) / TRUNK_COLUMNS;
-            int visibleRows = Math.max(1, (panelH - 48) / (CARD_H + GAP));
+            int rows = (EditorState.visible().size() + trunkColumns - 1) / trunkColumns;
+            int visibleRows = Math.max(1, (panelH - 48) / (cardH + gap));
             trunkScroll = Math.max(0, Math.min(Math.max(0, rows - visibleRows),
                 trunkScroll - (int)Math.signum(delta)));
             return true;
@@ -424,14 +482,14 @@ public class DeckEditorScreen extends Screen
         // The carried card rides the cursor, as an inventory stack does.
         if(carried != null)
         {
-            drawCard(poseStack, carried, mouseX - CARD_W / 2, mouseY - CARD_H / 2, 1F);
+            drawCard(poseStack, carried, mouseX - cardW / 2, mouseY - cardH / 2, 1F);
         }
     }
 
     private void renderDeckSide(PoseStack poseStack, int mouseX, int mouseY)
     {
         DeckList deck = EditorState.deck();
-        font.drawShadow(poseStack, deck.name(), leftX + PAD, panelTop + PAD, 0xFFF4D089);
+        font.drawShadow(poseStack, deck.name(), leftX + pad, panelTop + pad, 0xFFF4D089);
 
         for(DeckList.Part part : DeckList.Part.values())
         {
@@ -448,19 +506,19 @@ public class DeckEditorScreen extends Screen
             boolean ok = part != DeckList.Part.MAIN
                 || (cards.size() >= 40 && cards.size() <= 60);
             font.drawShadow(poseStack, heading + "  " + cards.size() + " / " + part.capacity(),
-                leftX + PAD, top - HEADER_H + 3, ok ? 0xFFC2C9D6 : 0xFFFF8A80);
+                leftX + pad, top - headerH + 3, ok ? 0xFFC2C9D6 : 0xFFFF8A80);
 
             int columns = partColumns(part);
-            int cellW = Math.max(8, (leftW - PAD * 2) / columns);
-            int rows = part == DeckList.Part.MAIN ? mainRows() : 1;
+            int cellW = Math.max(8, (leftW - pad * 2) / columns);
+            int rows = part == DeckList.Part.MAIN ? mainRows : 1;
             for(int row = 0; row < rows; row++)
             {
                 for(int column = 0; column < columns; column++)
                 {
                     int index = row * columns + column;
-                    int x = leftX + PAD + column * cellW;
-                    int y = top + row * (CARD_H + GAP);
-                    NineSlice.image(poseStack, HubTextures.SLOT, x, y, CARD_W, CARD_H);
+                    int x = leftX + pad + column * cellW;
+                    int y = top + row * (cardH + gap);
+                    NineSlice.draw(poseStack, HubTextures.SLOT, x, y, cardW, cardH);
                     if(index < cards.size())
                     {
                         Properties card = card(cards.get(index));
@@ -476,22 +534,22 @@ public class DeckEditorScreen extends Screen
 
     private void renderTrunkSide(PoseStack poseStack, int mouseX, int mouseY)
     {
-        NineSlice.draw(poseStack, HubTextures.SEARCH_FIELD, rightX + PAD, panelTop + PAD,
-            rightW - PAD * 2 - 96, 18);
+        NineSlice.draw(poseStack, HubTextures.SEARCH_FIELD, rightX + pad, panelTop + pad,
+            search.getWidth() + 6, Layout.of(LAYOUT).i("trunk.searchHeight", 16) + 2);
 
         List<Properties> shown = EditorState.visible();
-        int gridTop = panelTop + PAD + 40;
-        int cellW = Math.max(8, (rightW - PAD * 2) / TRUNK_COLUMNS);
-        int visibleRows = Math.max(1, (panelTop + panelH - gridTop - PAD) / (CARD_H + GAP));
+        int gridTop = trunkGridTop();
+        int cellW = Math.max(8, (rightW - pad * 2) / trunkColumns);
+        int visibleRows = Math.max(1, (panelTop + panelH - gridTop - pad) / (cardH + gap));
 
         for(int row = 0; row < visibleRows; row++)
         {
-            for(int column = 0; column < TRUNK_COLUMNS; column++)
+            for(int column = 0; column < trunkColumns; column++)
             {
-                int index = (row + trunkScroll) * TRUNK_COLUMNS + column;
-                int x = rightX + PAD + column * cellW;
-                int y = gridTop + row * (CARD_H + GAP);
-                NineSlice.image(poseStack, HubTextures.SLOT, x, y, CARD_W, CARD_H);
+                int index = (row + trunkScroll) * trunkColumns + column;
+                int x = rightX + pad + column * cellW;
+                int y = gridTop + row * (cardH + gap);
+                NineSlice.draw(poseStack, HubTextures.SLOT, x, y, cardW, cardH);
                 if(index >= shown.size())
                 {
                     continue;
@@ -506,13 +564,13 @@ public class DeckEditorScreen extends Screen
                 if(inDeck > 0)
                 {
                     String count = inDeck + "/" + max;
-                    font.drawShadow(poseStack, count, x + CARD_W - font.width(count),
-                        y + CARD_H - 8, inDeck >= max ? 0xFFFF8A80 : 0xFFF4D089);
+                    font.drawShadow(poseStack, count, x + cardW - font.width(count),
+                        y + cardH - 8, inDeck >= max ? 0xFFFF8A80 : 0xFFF4D089);
                 }
             }
         }
 
-        font.drawShadow(poseStack, shown.size() + " cards", rightX + PAD,
+        font.drawShadow(poseStack, shown.size() + " cards", rightX + pad,
             panelTop + panelH - 12, 0xFF7A8090);
     }
 
@@ -527,7 +585,7 @@ public class DeckEditorScreen extends Screen
         RenderSystem.enableBlend();
         RenderSystem.setShaderColor(1F, 1F, 1F, alpha);
         CardRenderUtil.bindMainResourceLocation(card, (byte)0);
-        DdBlitUtil.fullBlit(poseStack, x, y, CARD_W, CARD_H);
+        DdBlitUtil.fullBlit(poseStack, x, y, cardW, cardH);
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
     }
 

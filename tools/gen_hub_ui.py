@@ -96,17 +96,13 @@ def tab_state(state):
 
 
 def slot():
-    """A card slot: a recessed square with a faint inner shadow."""
-    size = 32
-    im = Image.new('RGBA', (size, size), (0, 0, 0, 0))
-    d = ImageDraw.Draw(im)
-    d.rounded_rectangle([0, 0, size - 1, size - 1], radius=3, fill=(22, 24, 30, 255))
-    d.rounded_rectangle([1, 1, size - 2, size - 2], radius=3, outline=(58, 63, 74, 255), width=1)
-    shadow = Image.new('RGBA', (size, size), (0, 0, 0, 0))
-    ImageDraw.Draw(shadow).rounded_rectangle([2, 2, size - 3, size - 6], radius=2,
-                                             fill=(0, 0, 0, 90))
-    im.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(1.5)))
-    return im
+    """A card slot, as a NINE-SLICE tile rather than a fixed square.
+
+    It was a 32x32 square, which meant drawing it into a card-shaped 30x44 rect
+    stretched its rounded corners into ovals and thickened the bottom border.
+    As a nine-slice its corners keep their size at any slot dimensions.
+    """
+    return panel((26, 28, 35), (18, 20, 25), (64, 70, 82), inset=True)
 
 
 def colour_wheel(size=192):
