@@ -2,12 +2,12 @@
   "pad": 8,
   "left.width": 120,
   "bottom.height": 62,
-
   "pack.aspect": 1.0,
-
   "grid.maxColumns": 12,
   "grid.rows": 4,
   "grid.cellWidth": 46,
   "grid.gap": 4,
-  "grid.top": 22
+  "grid.top": 22,
+  "close.width": 70,
+  "close.gap": 4
 }

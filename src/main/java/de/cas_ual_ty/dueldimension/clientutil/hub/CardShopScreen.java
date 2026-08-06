@@ -125,8 +125,21 @@ public class CardShopScreen extends Screen
 
         addRenderableWidget(new HubWidgets.TextureButton(pad, height - layout.i("bottom.height", 62) - 30,
             buyW, 20, Component.literal("Buy"), pressed -> buy()));
-        addRenderableWidget(new HubWidgets.TextureButton(width - pad - 70, height - 26, 70, 20,
-            Component.literal("Close"), pressed -> onClose()));
+        addRenderableWidget(new HubWidgets.TextureButton(closeLeft(), height - 26,
+            layout.i("close.width", 70), 20, Component.literal("Close"), pressed -> onClose()));
+    }
+
+    /**
+     * Where the Close button starts.
+     * <p>
+     * Asked for by the button that is placed there AND by the blurb box that
+     * has to stop short of it, so the two cannot drift apart -- which is how
+     * the button came to be sitting on top of the box in the first place.
+     */
+    private int closeLeft()
+    {
+        Layout layout = layout();
+        return width - layout.i("pad", 8) - layout.i("close.width", 70);
     }
 
     private void buy()
@@ -272,7 +285,12 @@ public class CardShopScreen extends Screen
     {
         int pad = layout().i("pad", 8);
         int y = height - bottomH - 4;
-        NineSlice.draw(poseStack, HubTextures.PANEL, pad, y, width - pad * 2, bottomH);
+        // The box stops where the Close button starts. It used to run the full
+        // width of the screen and the button sat on top of it, so the two read
+        // as one piece of furniture with a button embedded in its corner; they
+        // are separate things and now look it.
+        int right = closeLeft() - layout().i("close.gap", 4);
+        NineSlice.draw(poseStack, HubTextures.PANEL, pad, y, right - pad, bottomH);
 
         ShopStock.Pack pack = current();
         if(pack == null)
@@ -290,7 +308,9 @@ public class CardShopScreen extends Screen
         String cards = "x " + pack.cardsPerPack();
         String price = isCreative() ? "FREE" : pack.price() + " DP";
         String complete = completion(pack) + "%";
-        int metricsX = width - pad - 8;
+        // Measured from the box's own edge rather than the screen's, so the
+        // metrics stay inside it now that it is shorter.
+        int metricsX = right - 8;
         metricsX -= font.width(complete);
         font.drawShadow(poseStack, complete, metricsX, textY, 0xFF9FD4FF);
         metricsX -= font.width(price) + 12;
@@ -301,12 +321,15 @@ public class CardShopScreen extends Screen
         NineSlice.image(poseStack, DuelTextures.COVER, metricsX - 9, textY - 1, 5, 8);
 
         int descriptionY = textY + 14;
-        NineSlice.draw(poseStack, HubTextures.PANEL_INSET, pad + 6, descriptionY - 3,
-            width - pad * 2 - 12, bottomH - 22);
+        // Inset within the box, which is itself already clear of the button.
+        int descriptionX = pad + 6;
+        int descriptionW = Math.max(40, right - 6 - descriptionX);
+        NineSlice.draw(poseStack, HubTextures.PANEL_INSET, descriptionX, descriptionY - 3,
+            descriptionW, bottomH - 22);
         for(net.minecraft.util.FormattedCharSequence line
-            : font.split(Component.literal(pack.description()), width - pad * 2 - 24))
+            : font.split(Component.literal(pack.description()), descriptionW - 12))
         {
-            font.draw(poseStack, line, pad + 12, descriptionY, 0xFFC2C9D6);
+            font.draw(poseStack, line, descriptionX + 6, descriptionY, 0xFFC2C9D6);
             descriptionY += 10;
         }
 
