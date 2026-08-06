@@ -363,8 +363,8 @@ public class PackOpeningScreen extends Screen
         String progress = (focus + 1) + " / " + codes.size();
         font.drawShadow(poseStack, progress, centreX - font.width(progress) / 2F, 30, 0xFF9FA6B4);
 
-        String hint = allTurned() ? "Swipe past the end for the summary"
-            : "Swipe, scroll or press Space";
+        String hint = allTurned() ? "Click past the end for the summary"
+            : "Click, scroll or press Space";
         font.drawShadow(poseStack, hint, centreX - font.width(hint) / 2F, height - 22, 0xFF7A8090);
 
         super.render(poseStack, mouseX, mouseY, partialTick);
@@ -421,7 +421,12 @@ public class PackOpeningScreen extends Screen
         int centreY = height / 2 - 6;
         float spacing = spacing();
         float shrink = layout.f("strip.shrink", 0.26F);
-        int reach = layout.i("strip.reach", 5);
+        // Far enough that the last card drawn is already past the edge of the
+        // window. A fixed count was fine while distance faded a card out before
+        // it was culled; with solid cards, anything culled while still on
+        // screen pops out of existence, so the reach follows the window.
+        int reach = Math.max(layout.i("strip.reach", 5),
+            Mth.ceil((width / 2F + cardW) / Math.max(1F, spacing)));
 
         List<Integer> order = new ArrayList<>();
         for(int i = 0; i < codes.size(); i++)
@@ -439,13 +444,17 @@ public class PackOpeningScreen extends Screen
             float offset = index - position;
             float distance = Math.abs(offset);
             float scale = 1F / (1F + distance * shrink);
-            float alpha = Mth.clamp(1F - distance / (reach + 1F), 0.15F, 1F);
             int drawW = Math.round(cardW * scale);
             int drawH = Math.round(cardH * scale);
             int x = Math.round(centreX + offset * spacing);
             int y = centreY - drawH / 2;
 
-            drawCard(poseStack, index, x, y, drawW, drawH, alpha);
+            // Solid, however far down the strip it is. Fading the distant ones
+            // made the backs look like ghosts of cards rather than cards
+            // waiting their turn; size alone carries the depth, and the reach
+            // is set so the furthest one is already at the screen edge, which
+            // is what keeps it from popping in.
+            drawCard(poseStack, index, x, y, drawW, drawH, 1F);
         }
     }
 
