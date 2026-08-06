@@ -235,28 +235,67 @@ public class CardShopScreen extends Screen
         int artH = Math.round(artW / layout().f("pack.aspect", 1F));
         drawPackArt(poseStack, pack, pad + 8, pad + 8, artW, artH);
 
-        int y = pad + 8 + artH + 6;
-        String quantity = pack.deck() ? "1 DECK" : "1 PACK";
-        font.drawShadow(poseStack, quantity, pad + 8, y, 0xFFC2C9D6);
-        String price = isCreative() ? "FREE (creative)" : pack.price() + " DP";
-        font.drawShadow(poseStack, price, pad + 8, y + 12,
-            isCreative() ? 0xFF7CE38B : 0xFFF4D089);
-
-        // The grid runs newest first, so the date is what tells a player where
-        // in the run of sets they are looking. Dimmer than the price because it
-        // is context rather than a thing to act on, and omitted rather than
-        // written as "unknown" when a set carries no date -- an absent line
-        // says the same thing without occupying one.
+        // The facts about the product, as a label-and-value list rather than
+        // three sentences stacked up. Labels down the left in one weight,
+        // values down the right in another: the eye reads either column on its
+        // own, which is what makes a list of unrelated facts scannable.
         String released = releaseDate(pack);
+        int rows = released == null ? 2 : 3;
+        int rowH = 12;
+        int boxX = pad + 6;
+        int boxW = leftW - 12;
+        int boxY = pad + 8 + artH + 6;
+        int boxH = rows * rowH + 7;
+        NineSlice.draw(poseStack, HubTextures.PANEL_INSET, boxX, boxY, boxW, boxH);
+
+        int rowY = boxY + 5;
+        detail(poseStack, boxX, boxW, rowY, "Contents", pack.deck() ? "1 DECK" : "1 PACK",
+            0xFFC2C9D6);
+        rowY += rowH;
+        detail(poseStack, boxX, boxW, rowY, "Price",
+            isCreative() ? "FREE" : pack.price() + " DP",
+            isCreative() ? 0xFF7CE38B : 0xFFF4D089);
+        // The grid runs newest first, so the date is what tells a player where
+        // in the run of sets they are looking. Omitted rather than written as
+        // "unknown" when a set carries no date -- an absent row says the same
+        // thing without occupying one, and the box shrinks to match.
         if(released != null)
         {
-            font.drawShadow(poseStack, released, pad + 8, y + 24, 0xFF7A8090);
+            rowY += rowH;
+            detail(poseStack, boxX, boxW, rowY, "Released", released, 0xFF9AA2B2);
         }
     }
 
     /**
-     * A set's release date, written the way the player's own locale writes one,
-     * or null when the set data carries no date.
+     * One row of the preview's fact list: its label against the left edge, its
+     * value against the right.
+     * <p>
+     * The value is shortened from the front rather than clipped, so a value too
+     * wide for the column loses its beginning and keeps the part that
+     * distinguishes it -- a year, or the last digits of a price.
+     */
+    private void detail(PoseStack poseStack, int x, int width, int y, String label,
+        String value, int colour)
+    {
+        font.drawShadow(poseStack, label, x + 6, y, 0xFF6E7686);
+        int room = width - 12 - font.width(label) - 6;
+        String shown = value;
+        while(font.width(shown) > room && shown.length() > 1)
+        {
+            shown = shown.substring(1);
+        }
+        font.drawShadow(poseStack, shown, x + width - 6 - font.width(shown), y, colour);
+    }
+
+    /**
+     * A set's release month, or null when the set data carries no date.
+     * <p>
+     * Month and year rather than the full date. The day a set was printed is
+     * not how anyone identifies one -- sets are spoken of by the month they
+     * came out -- and a localised full date ("September 24, 2017") is wider
+     * than the column beside its label, so keeping it would mean either
+     * truncating it or giving it a row to itself. The month name is
+     * abbreviated by the player's own locale rather than by cutting it.
      */
     private static String releaseDate(ShopStock.Pack pack)
     {
@@ -268,8 +307,7 @@ public class CardShopScreen extends Screen
         {
             java.time.LocalDate date = java.time.Instant.ofEpochMilli(pack.released())
                 .atZone(java.time.ZoneId.systemDefault()).toLocalDate();
-            return date.format(java.time.format.DateTimeFormatter
-                .ofLocalizedDate(java.time.format.FormatStyle.MEDIUM));
+            return date.format(java.time.format.DateTimeFormatter.ofPattern("MMM yyyy"));
         }
         catch(RuntimeException unreadable)
         {
