@@ -35,7 +35,7 @@ minecraft {
     // These can be tweaked, removed, or duplicated as needed.
     runs {
         client {
-            workingDirectory project.file('run')
+            workingDirectory project.file(project.findProperty('mcrun') ?: 'run')
 
             // Recommended logging data for a userdev environment
             // The markers can be added/remove as needed separated by commas.
@@ -55,51 +55,16 @@ minecraft {
             // The duel screen is laid out in logical GUI pixels, so the window
             // size decides how much board there is to lay out on. Fixing it at
             // 920p means what is seen here is what was designed against.
-            args '--width', '1634', '--height', '920'
-
-            mods {
-                dueldimension {
-                    source sourceSets.main
-                }
-            }
-        }
-
-        // Alpha is the primary client, Omega the secondary. Two named seats
-        // rather than "client1/client2" because the names are what you type:
-        // /duel Omega.
-        //
-        // Spelled out rather than using `parent runs.client`. That inherits the
-        // properties but NOT the main class, so a parented run config fails
-        // with "No main class specified and classpath is not an executable jar"
-        // -- which is what the old client1/client2 would have done had anyone
-        // launched them. Being explicit also means neither can drift from 920p
-        // if the base config is edited.
-        alpha {
-            // ForgeGradle infers the main class only for configs NAMED
-            // client/server/data, so a custom name has to state it.
-            main 'cpw.mods.bootstraplauncher.BootstrapLauncher'
-            workingDirectory project.file('run')
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
-            property 'forge.enabledGameTestNamespaces', 'dueldimension'
-            args '--username', 'Alpha', '--width', '1634', '--height', '920'
-
-            mods {
-                dueldimension {
-                    source sourceSets.main
-                }
-            }
-        }
-
-        omega {
-            main 'cpw.mods.bootstraplauncher.BootstrapLauncher'
-            // Its own run directory: two clients sharing one would fight over
-            // options.txt and the saves folder.
-            workingDirectory project.file('run-omega')
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
-            property 'forge.enabledGameTestNamespaces', 'dueldimension'
-            args '--username', 'Omega', '--width', '1634', '--height', '920'
+            //
+            // Alpha and Omega are this same config with a different username and
+            // run directory, chosen by property:
+            //     runClient -Pmcuser=Omega -Pmcrun=run-omega
+            // They are NOT separate run configs. ForgeGradle only assigns a main
+            // class and a run type to configs named client/server/data, so a
+            // config named "alpha" fails with "No main class specified" however
+            // it is otherwise set up -- including with `parent runs.client`.
+            args '--width', '1634', '--height', '920',
+                '--username', (project.findProperty('mcuser') ?: 'Alpha')
 
             mods {
                 dueldimension {

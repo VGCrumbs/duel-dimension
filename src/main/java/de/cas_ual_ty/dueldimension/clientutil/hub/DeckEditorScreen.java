@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import de.cas_ual_ty.dueldimension.card.properties.Properties;
 import de.cas_ual_ty.dueldimension.clientutil.CardRenderUtil;
 import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
+import de.cas_ual_ty.dueldimension.clientutil.DuelTextures;
 import de.cas_ual_ty.dueldimension.duel.profile.CardQuery;
 import de.cas_ual_ty.dueldimension.duel.profile.DeckLimits;
 import de.cas_ual_ty.dueldimension.clientutil.layout.Layout;
@@ -479,10 +480,87 @@ public class DeckEditorScreen extends Screen
             font.drawShadow(poseStack, refusal, width / 2F - textWidth / 2F, height - 47, 0xFFFF8A80);
         }
 
+        // A hovered card is previewed large, with its name and effect text.
+        // Skipped while carrying, since the cursor already has a card on it.
+        if(carried == null)
+        {
+            Properties hovered = cardAt(mouseX, mouseY);
+            if(hovered != null)
+            {
+                drawPreview(poseStack, hovered, mouseX, mouseY);
+            }
+        }
+
         // The carried card rides the cursor, as an inventory stack does.
         if(carried != null)
         {
             drawCard(poseStack, carried, mouseX - cardW / 2, mouseY - cardH / 2, 1F);
+        }
+    }
+
+    /** Whatever card is under the cursor, in either panel. */
+    private Properties cardAt(double mouseX, double mouseY)
+    {
+        DeckList.Part part = partAt(mouseX, mouseY);
+        if(part != null)
+        {
+            List<Integer> cards = EditorState.deck().partFor(part);
+            int index = slotIndexAt(part, mouseX, mouseY);
+            return index >= 0 && index < cards.size() ? card(cards.get(index)) : null;
+        }
+        int trunkIndex = trunkIndexAt(mouseX, mouseY);
+        List<Properties> shown = EditorState.visible();
+        return trunkIndex >= 0 && trunkIndex < shown.size() ? shown.get(trunkIndex) : null;
+    }
+
+    /**
+     * The preview panel: art at full size, then name and effect text.
+     * <p>
+     * Anchored to whichever side of the cursor has room and clamped to the
+     * screen, so it can never be the thing that overflows. The text is wrapped
+     * to the panel rather than drawn as one line, and truncated with an ellipsis
+     * if the card's text is longer than the space allows.
+     */
+    private void drawPreview(PoseStack poseStack, Properties card, int mouseX, int mouseY)
+    {
+        Layout layout = Layout.of(LAYOUT);
+        int artW = layout.i("preview.width", 104);
+        int artH = Math.round(artW / layout.f("card.aspect", 480F / 700F));
+        int inner = 6;
+        int panelW = artW + inner * 2;
+
+        List<net.minecraft.util.FormattedCharSequence> lines =
+            font.split(Component.literal(card.getText() == null ? "" : card.getText()), panelW - inner * 2);
+        int maxLines = layout.i("preview.maxLines", 8);
+        boolean clipped = lines.size() > maxLines;
+        int shownLines = Math.min(lines.size(), maxLines);
+        int panelH = inner * 2 + artH + 4 + 10 + shownLines * 9 + (clipped ? 9 : 0);
+
+        // Prefer the side the cursor is not heading into, then clamp.
+        int x = mouseX + 14;
+        if(x + panelW > width - 4)
+        {
+            x = mouseX - 14 - panelW;
+        }
+        x = Math.max(4, Math.min(x, width - panelW - 4));
+        int y = Math.max(4, Math.min(mouseY - panelH / 2, height - panelH - 4));
+
+        NineSlice.draw(poseStack, HubTextures.PANEL, x, y, panelW, panelH);
+        drawCard(poseStack, card, x + inner, y + inner, artW, artH, 1F);
+
+        int textY = y + inner + artH + 4;
+        String name = card.getName() == null ? "" : card.getName();
+        font.drawShadow(poseStack, font.plainSubstrByWidth(name, panelW - inner * 2),
+            x + inner, textY, 0xFFF4D089);
+        textY += 11;
+        for(int i = 0; i < shownLines; i++)
+        {
+            font.draw(poseStack, lines.get(i), x + inner, textY, 0xFFC2C9D6);
+            textY += 9;
+        }
+        if(clipped)
+        {
+            font.drawShadow(poseStack, "...", x + inner, textY, 0xFF7A8090);
         }
     }
 
@@ -511,21 +589,25 @@ public class DeckEditorScreen extends Screen
             int columns = partColumns(part);
             int cellW = Math.max(8, (leftW - pad * 2) / columns);
             int rows = part == DeckList.Part.MAIN ? mainRows : 1;
+            // One rectangle for the whole area rather than a frame per card:
+            // a grid of empty slots is a lot of visual noise for something the
+            // cards themselves already make obvious.
+            NineSlice.draw(poseStack, HubTextures.PANEL_INSET, leftX + pad - 2, top - 2,
+                leftW - pad * 2 + 4, rows * (cardH + gap) + 4);
             for(int row = 0; row < rows; row++)
             {
                 for(int column = 0; column < columns; column++)
                 {
                     int index = row * columns + column;
-                    int x = leftX + pad + column * cellW;
-                    int y = top + row * (cardH + gap);
-                    NineSlice.draw(poseStack, HubTextures.SLOT, x, y, cardW, cardH);
-                    if(index < cards.size())
+                    if(index >= cards.size())
                     {
-                        Properties card = card(cards.get(index));
-                        if(card != null)
-                        {
-                            drawCard(poseStack, card, x, y, 1F);
-                        }
+                        continue;
+                    }
+                    Properties card = card(cards.get(index));
+                    if(card != null)
+                    {
+                        drawCard(poseStack, card, leftX + pad + column * cellW,
+                            top + row * (cardH + gap), 1F);
                     }
                 }
             }
@@ -540,7 +622,9 @@ public class DeckEditorScreen extends Screen
         List<Properties> shown = EditorState.visible();
         int gridTop = trunkGridTop();
         int cellW = Math.max(8, (rightW - pad * 2) / trunkColumns);
-        int visibleRows = Math.max(1, (panelTop + panelH - gridTop - pad) / (cardH + gap));
+        int visibleRows = Math.max(1, (panelTop + panelH - gridTop - pad - 12) / (cardH + gap));
+        NineSlice.draw(poseStack, HubTextures.PANEL_INSET, rightX + pad - 2, gridTop - 2,
+            rightW - pad * 2 + 4, visibleRows * (cardH + gap) + 4);
 
         for(int row = 0; row < visibleRows; row++)
         {
@@ -549,7 +633,6 @@ public class DeckEditorScreen extends Screen
                 int index = (row + trunkScroll) * trunkColumns + column;
                 int x = rightX + pad + column * cellW;
                 int y = gridTop + row * (cardH + gap);
-                NineSlice.draw(poseStack, HubTextures.SLOT, x, y, cardW, cardH);
                 if(index >= shown.size())
                 {
                     continue;
@@ -581,11 +664,31 @@ public class DeckEditorScreen extends Screen
 
     private void drawCard(PoseStack poseStack, Properties card, int x, int y, float alpha)
     {
+        drawCard(poseStack, card, x, y, cardW, cardH, alpha);
+    }
+
+    /**
+     * Draws a card at its true proportions.
+     * <p>
+     * The mod stores card art letterboxed inside a SQUARE image, with the card
+     * occupying u 0.199..0.801 and v 0.0625..0.9375 (see DuelTextures). Blitting
+     * the whole square into a card-shaped rect therefore squeezes the art
+     * horizontally, which is the stretch that was visible on every card in both
+     * panels. Sampling the letterbox window instead keeps it true.
+     */
+    private void drawCard(PoseStack poseStack, Properties card, int x, int y,
+        int w, int h, float alpha)
+    {
         RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getPositionTexShader);
         RenderSystem.enableBlend();
         RenderSystem.setShaderColor(1F, 1F, 1F, alpha);
         CardRenderUtil.bindMainResourceLocation(card, (byte)0);
-        DdBlitUtil.fullBlit(poseStack, x, y, cardW, cardH);
+        // Passing a nominal file size of 1 lets the window be given as the
+        // fractions DuelTextures already measured.
+        DdBlitUtil.blit(poseStack, x, y, w, h,
+            DuelTextures.CARD_U0, DuelTextures.CARD_V0,
+            DuelTextures.CARD_U1 - DuelTextures.CARD_U0,
+            DuelTextures.CARD_V1 - DuelTextures.CARD_V0, 1, 1);
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
     }
 

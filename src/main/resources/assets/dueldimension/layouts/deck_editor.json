@@ -22,5 +22,8 @@
   "trunk.chipWidth": 42,
   "trunk.chipHeight": 14,
   "trunk.sortWidth": 56,
-  "trunk.dirWidth": 30
+  "trunk.dirWidth": 30,
+
+  "preview.width": 104,
+  "preview.maxLines": 8
 }

@@ -17,6 +17,10 @@ rem  until the game window closes, so two launches that both tried to compile
 rem  would have the second sitting behind the first for the whole session.
 rem  Building first means both launches find everything up to date.
 rem
+rem  Alpha and Omega are the SAME run config with different -P properties:
+rem  ForgeGradle only gives client/server/data a main class, so a config named
+rem  "alpha" cannot launch at all.
+rem
 rem  Omega additionally runs with its own --project-cache-dir. That lock is
 rem  taken on the cache directory, so without a second one Omega would simply
 rem  wait for Alpha to exit instead of starting alongside it.
@@ -58,21 +62,21 @@ goto :both
 
 :alpha
 echo   Launching Alpha at 1634x920...
-call "%GRADLEW%" runAlpha --console=plain
+call "%GRADLEW%" runClient -Pmcuser=Alpha -Pmcrun=run --console=plain
 exit /b %errorlevel%
 
 :omega
 echo   Launching Omega at 1634x920...
-call "%GRADLEW%" runOmega --project-cache-dir .gradle-omega --console=plain
+call "%GRADLEW%" runClient -Pmcuser=Omega -Pmcrun=run-omega --project-cache-dir .gradle-omega --console=plain
 exit /b %errorlevel%
 
 :both
 echo   Launching Alpha and Omega at 1634x920...
-start "Duel Dimension - Alpha" cmd /c ""%GRADLEW%" runAlpha --console=plain"
+start "Duel Dimension - Alpha" cmd /c ""%GRADLEW%" runClient -Pmcuser=Alpha -Pmcrun=run --console=plain"
 rem  Let Alpha take the project lock and get moving before Omega starts, so the
 rem  two do not race over the run directory while it is being prepared.
 timeout /t 5 /nobreak >nul
-start "Duel Dimension - Omega" cmd /c ""%GRADLEW%" runOmega --project-cache-dir .gradle-omega --console=plain"
+start "Duel Dimension - Omega" cmd /c ""%GRADLEW%" runClient -Pmcuser=Omega -Pmcrun=run-omega --project-cache-dir .gradle-omega --console=plain"
 echo.
 echo   Both launched. Each has its own window; close a window to stop that client.
 echo   In game: /duel Omega   (from Alpha)
