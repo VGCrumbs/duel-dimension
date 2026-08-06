@@ -2,9 +2,12 @@
   "card.width": 128,
   "card.aspect": 0.6857,
 
-  "deal.ms": 260,
-  "flip.ms": 320,
-  "shine.ms": 700,
+  "strip.spacing": 0.62,
+  "strip.shrink": 0.26,
+  "strip.reach": 5,
+  "strip.glide": 0.28,
+  "flip.speed": 0.12,
+  "shine.speed": 0.035,
 
   "summary.cardWidth": 62,
   "summary.gap": 6,
