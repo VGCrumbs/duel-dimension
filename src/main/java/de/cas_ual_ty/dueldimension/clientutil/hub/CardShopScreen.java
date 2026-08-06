@@ -215,7 +215,7 @@ public class CardShopScreen extends Screen
 
         renderPreview(poseStack, pad, leftW, bottomH);
         renderGrid(poseStack, mouseX, mouseY);
-        renderDetails(poseStack, bottomH);
+        renderDetails(poseStack, bottomH, mouseX, mouseY);
         renderBalance(poseStack);
 
         super.render(poseStack, mouseX, mouseY, partialTick);
@@ -281,7 +281,7 @@ public class CardShopScreen extends Screen
     }
 
     /** Bottom: name, cards per pack, price, completion, and the blurb. */
-    private void renderDetails(PoseStack poseStack, int bottomH)
+    private void renderDetails(PoseStack poseStack, int bottomH, int mouseX, int mouseY)
     {
         int pad = layout().i("pad", 8);
         int y = height - bottomH - 4;
@@ -307,12 +307,20 @@ public class CardShopScreen extends Screen
         // bar does: how many cards, what it costs, how much of it you have.
         String cards = "x " + pack.cardsPerPack();
         String price = isCreative() ? "FREE" : pack.price() + " DP";
-        String complete = completion(pack) + "%";
+        int owned = ownedIn(pack);
+        int total = Math.max(0, pack.distinctCards());
+        String complete = percentage(owned, total) + "%";
         // Measured from the box's own edge rather than the screen's, so the
         // metrics stay inside it now that it is shorter.
         int metricsX = right - 8;
         metricsX -= font.width(complete);
         font.drawShadow(poseStack, complete, metricsX, textY, 0xFF9FD4FF);
+        // A percentage says how close you are and not how far there is to go.
+        // The counts behind it are what a collector actually wants, so they are
+        // one hover away rather than taking a permanent place on the row.
+        boolean overCompletion = mouseX >= metricsX && mouseX < metricsX + font.width(complete)
+            && mouseY >= textY - 2 && mouseY < textY + 10;
+        String ratio = overCompletion ? owned + " of " + total : null;
         metricsX -= font.width(price) + 12;
         font.drawShadow(poseStack, price, metricsX, textY, isCreative() ? 0xFF7CE38B : 0xFFF4D089);
         metricsX -= font.width(cards) + 12;
@@ -335,7 +343,17 @@ public class CardShopScreen extends Screen
 
         if(!notice.isEmpty())
         {
-            font.drawShadow(poseStack, notice, pad + 12, height - 16, 0xFFFF8A80);
+            font.drawShadow(poseStack, notice, pad + 12, height - 18, 0xFFFF8A80);
+        }
+
+        // Last, so it is over the blurb it is standing on rather than under it.
+        if(ratio != null)
+        {
+            int tipW = font.width(ratio) + 12;
+            int tipX = Math.min(metricsX - tipW / 2, width - tipW - 2);
+            int tipY = textY - 16;
+            NineSlice.draw(poseStack, HubTextures.PANEL, tipX, tipY, tipW, 14);
+            font.drawShadow(poseStack, ratio, tipX + 6, tipY + 3, 0xFF9FD4FF);
         }
     }
 
@@ -352,13 +370,9 @@ public class CardShopScreen extends Screen
         font.drawShadow(poseStack, value, x + w - 6 - font.width(value), pad + 5, 0xFFFFFFFF);
     }
 
-    /** How much of this pack's card list the player owns. */
-    private int completion(ShopStock.Pack pack)
+    /** How many distinct cards of this pack's list the player owns. */
+    private int ownedIn(ShopStock.Pack pack)
     {
-        if(pack.distinctCards() <= 0)
-        {
-            return 0;
-        }
         var set = ShopStock.setOf(pack.code());
         if(set == null)
         {
@@ -372,7 +386,19 @@ public class CardShopScreen extends Screen
                 owned++;
             }
         }
-        return Math.round(owned * 100F / pack.distinctCards());
+        return owned;
+    }
+
+    /** The figure shown beside the count, from the same two numbers. */
+    private static int percentage(int owned, int total)
+    {
+        return total <= 0 ? 0 : Math.round(owned * 100F / total);
+    }
+
+    /** How much of this pack's card list the player owns, as a percentage. */
+    private int completion(ShopStock.Pack pack)
+    {
+        return percentage(ownedIn(pack), pack.distinctCards());
     }
 
     /**
