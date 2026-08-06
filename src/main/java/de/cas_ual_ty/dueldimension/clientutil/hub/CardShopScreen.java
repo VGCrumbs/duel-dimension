@@ -82,9 +82,17 @@ public class CardShopScreen extends Screen
         return layout().i("grid.cellWidth", 40);
     }
 
+    /**
+     * Cell height from the width and the art's aspect.
+     * <p>
+     * The pipeline stores every set image in a SQUARE, fitting the art inside
+     * with a margin and preserving its proportions. Drawing that square into a
+     * tall cell squashed it horizontally, which is what made the packs look
+     * thin; a square cell shows the art as stored.
+     */
     private int cellH()
     {
-        return Math.round(cellW() / layout().f("pack.aspect", 0.68F));
+        return Math.round(cellW() / layout().f("pack.aspect", 1F));
     }
 
     private int gridRows()
@@ -202,7 +210,7 @@ public class CardShopScreen extends Screen
             return;
         }
         int artW = leftW - 16;
-        int artH = Math.round(artW / layout().f("pack.aspect", 0.68F));
+        int artH = Math.round(artW / layout().f("pack.aspect", 1F));
         drawPackArt(poseStack, pack, pad + 8, pad + 8, artW, artH);
 
         int y = pad + 8 + artH + 6;

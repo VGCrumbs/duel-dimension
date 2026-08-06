@@ -397,6 +397,7 @@ public class DuelDimension
     {
         DdCommand.registerCommand(event.getDispatcher());
         de.cas_ual_ty.dueldimension.duel.match.DuelCommand.register(event.getDispatcher());
+        de.cas_ual_ty.dueldimension.shop.DuelPointsCommand.register(event.getDispatcher());
     }
     
     private void modConfig(ModConfigEvent event)
