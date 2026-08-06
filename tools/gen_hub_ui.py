@@ -205,6 +205,23 @@ def header_bar(width=CELL):
     return im
 
 
+def title_ribbon():
+    """A dark band under the deck's name, separating it from the grids.
+
+    Darker than the panel it sits on rather than lighter, so it reads as a
+    recess the name sits in rather than another raised element competing with
+    the sections below it. Gold hairline along the bottom to tie it to the
+    section headers, which use the same accent.
+    """
+    im = Image.new('RGBA', (CELL, CELL), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 0, CELL - 1, CELL - 1], fill=(15, 16, 21, 255))
+    vgrad(d, (0, 1, CELL, CELL - 2), (26, 28, 35), (16, 17, 22))
+    d.line([(0, 0), (CELL, 0)], fill=EDGE_DARK + (255,), width=1)
+    d.line([(0, CELL - 1), (CELL, CELL - 1)], fill=GOLD_DIM + (200,), width=1)
+    return im
+
+
 def search_field():
     """A recessed text field; the caret and text are drawn by the game."""
     return panel((16, 17, 22), (22, 24, 30), (96, 104, 118), inset=True)
@@ -244,6 +261,7 @@ if __name__ == '__main__':
 
     print('deckeditor/')
     write(header_bar(), 'deckeditor', 'header.png')
+    write(title_ribbon(), 'deckeditor', 'title_ribbon.png')
     write(search_field(), 'deckeditor', 'search_field.png')
     write(states(chip_state), 'deckeditor', 'chip.png')
     write(scrollbar(), 'deckeditor', 'scrollbar.png')

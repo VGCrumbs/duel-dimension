@@ -314,6 +314,26 @@ public class DeckEditorScreen extends Screen
      * sorted the trunk by ATK gets a deck sorted by ATK -- one idea of "in
      * order" rather than two.
      */
+    /**
+     * How a deck is ordered: monsters, then spells, then traps, and each of
+     * those alphabetically.
+     * <p>
+     * This is how a physical deck is laid out and how every list of one is
+     * printed, so it is the order a player is looking for when they press the
+     * button. It deliberately does NOT follow the trunk's sort control, which
+     * it used to: that control is for finding a card among ten thousand, and
+     * the answer to "where is my Mirror Force" is a different question from
+     * "what shape is my deck".
+     */
+    private static final java.util.Comparator<Properties> DECK_ORDER =
+        java.util.Comparator.comparingInt((Properties card) -> switch(card.getType())
+        {
+            case SPELL -> 1;
+            case TRAP -> 2;
+            default -> 0;
+        }).thenComparing(card -> card.getName() == null ? "" : card.getName(),
+            String.CASE_INSENSITIVE_ORDER);
+
     private void sortDeck()
     {
         DeckList deck = EditorState.deck();
@@ -334,7 +354,8 @@ public class DeckEditorScreen extends Screen
                     cards.add(card);
                 }
             }
-            List<Properties> sorted = EditorState.query().sortOnly(cards);
+            List<Properties> sorted = new java.util.ArrayList<>(cards);
+            sorted.sort(DECK_ORDER);
             codes.clear();
             for(Properties card : sorted)
             {
@@ -427,6 +448,26 @@ public class DeckEditorScreen extends Screen
         deckScroll = Math.max(0, Math.min(deckScroll, maxDeckScroll()));
     }
 
+    /**
+     * Whether a point is over one of the widgets rather than over a grid.
+     * <p>
+     * Asked before the grids are, so a control drawn on top of a card grid is
+     * also clicked before it. Uses the widgets' own bounds rather than a
+     * rectangle repeated here, so moving a button cannot leave this behind.
+     */
+    private boolean overControl(double mouseX, double mouseY)
+    {
+        for(net.minecraft.client.gui.components.events.GuiEventListener child : children())
+        {
+            if(child instanceof net.minecraft.client.gui.components.AbstractWidget widget
+                && widget.visible && widget.isMouseOver(mouseX, mouseY))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** The strip of the left panel the deck's sections are drawn in. */
     private int deckViewTop()
     {
@@ -510,6 +551,20 @@ public class DeckEditorScreen extends Screen
         return row * columns + column;
     }
 
+    /**
+     * How many rows of the trunk are on screen.
+     * <p>
+     * Stops short of the controls, which since the panels reach the bottom of
+     * the screen are drawn OVER the grid rather than below it. A row hidden
+     * behind the Done button is a row a player cannot click.
+     */
+    private int trunkVisibleRows()
+    {
+        int bottom = panelTop + panelH - pad - 12
+            - Layout.of(LAYOUT).i("panel.controls", 28);
+        return Math.max(1, (bottom - trunkGridTop()) / (cardH + gap));
+    }
+
     /** Below the search row, the chip row and the Clear row. */
     private int trunkGridTop()
     {
@@ -554,6 +609,16 @@ public class DeckEditorScreen extends Screen
         if(button == 1)
         {
             return openMenu(mouseX, mouseY);
+        }
+        // A button gets the click before the grid underneath it. The panels
+        // now reach the bottom of the screen, so the controls sit OVER the
+        // card grids rather than below them -- and the grid was being asked
+        // first, which is why pressing Done picked up whatever card happened
+        // to be behind it.
+        if(carried == null && overControl(mouseX, mouseY)
+            && super.mouseClicked(mouseX, mouseY, button))
+        {
+            return true;
         }
         refusal = "";
         boolean shift = hasShiftDown();
@@ -825,7 +890,7 @@ public class DeckEditorScreen extends Screen
         if(mouseX >= rightX)
         {
             int rows = (EditorState.visible().size() + trunkColumns - 1) / trunkColumns;
-            int visibleRows = Math.max(1, (panelH - 48) / (cardH + gap));
+            int visibleRows = trunkVisibleRows();
             trunkScroll = Math.max(0, Math.min(Math.max(0, rows - visibleRows),
                 trunkScroll - (int)Math.signum(delta)));
             return true;
@@ -1076,6 +1141,13 @@ public class DeckEditorScreen extends Screen
     private void renderDeckSide(PoseStack poseStack, int mouseX, int mouseY)
     {
         DeckList deck = EditorState.deck();
+
+        // The band the open deck's name sits in, drawn before the name so the
+        // name is on top of it, and sized to the title strip so the first
+        // section heading starts immediately beneath.
+        NineSlice.draw(poseStack, HubTextures.TITLE_RIBBON, leftX + pad - 2, panelTop + pad - 2,
+            leftW - pad * 2 + 4, titleH);
+
         if(rename == null)
         {
             String title = deck.name();
@@ -1088,7 +1160,9 @@ public class DeckEditorScreen extends Screen
             {
                 title += "  [structure]";
             }
-            font.drawShadow(poseStack, title, leftX + pad, panelTop + pad, 0xFFF4D089);
+            // Centred in the ribbon rather than sitting on its top edge.
+            font.drawShadow(poseStack, title, leftX + pad + 2,
+                panelTop + pad + (titleH - font.lineHeight) / 2F, 0xFFF4D089);
         }
 
         // The sections scroll, so they are clipped to their own strip. Without
@@ -1191,7 +1265,7 @@ public class DeckEditorScreen extends Screen
         trunkColumns = Math.max(1, (rightW - pad * 2 + gap) / (cardW + gap));
         int gridTop = trunkGridTop();
         int cellW = cardW + gap;
-        int visibleRows = Math.max(1, (panelTop + panelH - gridTop - pad - 12) / (cardH + gap));
+        int visibleRows = trunkVisibleRows();
         NineSlice.draw(poseStack, HubTextures.PANEL_INSET, rightX + pad - 2, gridTop - 2,
             rightW - pad * 2 + 4, visibleRows * (cardH + gap) + 4);
 

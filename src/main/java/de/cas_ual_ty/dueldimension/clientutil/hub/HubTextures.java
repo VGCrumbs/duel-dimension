@@ -24,6 +24,8 @@ public final class HubTextures
 
     /** Section header for the editor's grids. */
     public static final ResourceLocation HEADER = gui("deckeditor/header.png");
+    /** The dark band the open deck's name sits in, above the grids. */
+    public static final ResourceLocation TITLE_RIBBON = gui("deckeditor/title_ribbon.png");
     /** The recessed search field the trunk is filtered with. */
     public static final ResourceLocation SEARCH_FIELD = gui("deckeditor/search_field.png");
     /** Filter chip; three rows, the third being lit rather than disabled. */
