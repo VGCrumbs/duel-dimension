@@ -69,6 +69,23 @@ public class DeckEditorScreen extends Screen
     private String refusal = "";
     private int trunkScroll;
 
+    /**
+     * Where the mouse went down, so a press-drag-release can be told from a
+     * click. A card picked up by pressing is dropped when the button is
+     * RELEASED somewhere else; a card picked up by a click-and-let-go stays on
+     * the cursor until the next click. Both gestures work, which is what a
+     * Minecraft player expects of an inventory.
+     */
+    private boolean pressedOnCard;
+    private double pressX;
+    private double pressY;
+    /** Past this many pixels a press counts as a drag rather than a click. */
+    private static final double DRAG_SLOP = 4;
+
+    /** How far the hovered card's description is scrolled, and whose it is. */
+    private int previewScroll;
+    private long previewCard = -1;
+
     /** The rename field, present only while renaming. */
     private EditBox rename;
 
@@ -140,7 +157,6 @@ public class DeckEditorScreen extends Screen
     {
         clearWidgets();
         addWidget(search);
-        buildDeckBar();
 
         Layout layout = Layout.of(LAYOUT);
         int rowH = layout.i("trunk.searchHeight", 16) + 4;
@@ -432,6 +448,9 @@ public class DeckEditorScreen extends Screen
                 carried = card(cards.remove(index));
                 carriedFrom = part;
                 carriedIndex = index;
+                pressedOnCard = true;
+                pressX = mouseX;
+                pressY = mouseY;
                 return true;
             }
             return true;
@@ -455,6 +474,9 @@ public class DeckEditorScreen extends Screen
                     carried = picked;
                     carriedFrom = null;
                     carriedIndex = -1;
+                    pressedOnCard = true;
+                    pressX = mouseX;
+                    pressY = mouseY;
                 }
                 return true;
             }
@@ -526,9 +548,57 @@ public class DeckEditorScreen extends Screen
         return true;
     }
 
+    /**
+     * Releasing the button drops the carried card where the cursor is, but only
+     * if the mouse actually travelled. Without the distance test a plain click
+     * would pick a card up and immediately put it back down, so click-to-carry
+     * would be impossible.
+     */
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button)
+    {
+        if(carried != null && pressedOnCard)
+        {
+            boolean dragged = Math.abs(mouseX - pressX) > DRAG_SLOP
+                || Math.abs(mouseY - pressY) > DRAG_SLOP;
+            pressedOnCard = false;
+            if(dragged)
+            {
+                DeckList.Part part = partAt(mouseX, mouseY);
+                if(part != null)
+                {
+                    place(part);
+                }
+                else if(trunkIndexAt(mouseX, mouseY) >= 0)
+                {
+                    // Dropped back on the trunk: the deck simply loses it, and
+                    // the trunk never lost it in the first place.
+                    carried = null;
+                    carriedFrom = null;
+                    carriedIndex = -1;
+                }
+                else
+                {
+                    returnCarried();
+                }
+                return true;
+            }
+        }
+        pressedOnCard = false;
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta)
     {
+        // A card under the cursor takes the wheel: its description is the thing
+        // the player is looking at, and the trunk is still scrollable anywhere
+        // else in the panel.
+        if(carried == null && cardAt(mouseX, mouseY) != null)
+        {
+            previewScroll = Math.max(0, previewScroll - (int)Math.signum(delta));
+            return true;
+        }
         if(mouseX >= rightX)
         {
             int rows = (EditorState.visible().size() + trunkColumns - 1) / trunkColumns;
@@ -667,9 +737,19 @@ public class DeckEditorScreen extends Screen
         int panelW = Math.max(artW, layout.i("preview.textWidth", 132)) + inner * 2;
         int textW = panelW - inner * 2;
 
-        // The card's own summary: [Type / Race], level, attribute, ATK/DEF.
-        // addHeader leads with the name, which is drawn separately below, so
-        // that first entry is dropped rather than printed twice.
+        // Text is drawn at half size, so it is wrapped to twice the width and
+        // its line height is halved to match.
+        float scale = layout.f("preview.textScale", 0.5F);
+        int wrapW = Math.round(textW / scale);
+        int lineH = Math.max(1, Math.round(9 * scale));
+
+        if(previewCard != card.getId())
+        {
+            // A different card starts at the top of its own description.
+            previewCard = card.getId();
+            previewScroll = 0;
+        }
+
         java.util.List<Component> header = new java.util.ArrayList<>();
         card.addHeader(header);
         if(!header.isEmpty())
@@ -680,21 +760,22 @@ public class DeckEditorScreen extends Screen
             new java.util.ArrayList<>();
         for(Component component : header)
         {
-            headerLines.addAll(font.split(component, textW));
+            headerLines.addAll(font.split(component, wrapW));
         }
-
         java.util.List<net.minecraft.util.FormattedCharSequence> nameLines =
-            font.split(Component.literal(card.getName() == null ? "" : card.getName()), textW);
+            font.split(Component.literal(card.getName() == null ? "" : card.getName()), wrapW);
         java.util.List<net.minecraft.util.FormattedCharSequence> textLines =
-            font.split(Component.literal(card.getText() == null ? "" : card.getText()), textW);
-        int maxLines = layout.i("preview.maxLines", 7);
-        boolean clipped = textLines.size() > maxLines;
-        int shownLines = Math.min(textLines.size(), maxLines);
+            font.split(Component.literal(card.getText() == null ? "" : card.getText()), wrapW);
+
+        int maxLines = layout.i("preview.maxLines", 10);
+        int maxScroll = Math.max(0, textLines.size() - maxLines);
+        previewScroll = Math.min(previewScroll, maxScroll);
+        int shownLines = Math.min(textLines.size() - previewScroll, maxLines);
 
         int panelH = inner * 2 + artH + 4
-            + nameLines.size() * 9 + 2
-            + headerLines.size() * 9 + 3
-            + shownLines * 9 + (clipped ? 9 : 0);
+            + nameLines.size() * lineH + 2
+            + headerLines.size() * lineH + 3
+            + shownLines * lineH + (maxScroll > 0 ? lineH + 2 : 0);
 
         int x = mouseX + 14;
         if(x + panelW > width - 4)
@@ -706,40 +787,46 @@ public class DeckEditorScreen extends Screen
 
         NineSlice.draw(poseStack, HubTextures.PANEL, x, y, panelW, panelH);
 
-        // Sharp art: the preview-sized image, filtered, sampled out of its
-        // letterbox window.
         RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
         RenderSystem.enableBlend();
         DuelTextures.bindSmooth(DuelTextures.card(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE));
-        int artX = x + (panelW - artW) / 2;
-        DdBlitUtil.blit(poseStack, artX, y + inner, artW, artH,
+        DdBlitUtil.blit(poseStack, x + (panelW - artW) / 2, y + inner, artW, artH,
             DuelTextures.CARD_U0, DuelTextures.CARD_V0,
             DuelTextures.CARD_U1 - DuelTextures.CARD_U0,
             DuelTextures.CARD_V1 - DuelTextures.CARD_V0, 1, 1);
 
-        int textY = y + inner + artH + 4;
+        // Everything below is half size. Coordinates are divided by the scale
+        // so the text still lands where the panel arithmetic put it.
+        poseStack.pushPose();
+        poseStack.scale(scale, scale, 1F);
+        float sx = (x + inner) / scale;
+        float sy = (y + inner + artH + 4) / scale;
+        float step = 9F;
+
         for(net.minecraft.util.FormattedCharSequence line : nameLines)
         {
-            font.drawShadow(poseStack, line, x + inner, textY, 0xFFF4D089);
-            textY += 9;
+            font.drawShadow(poseStack, line, sx, sy, 0xFFF4D089);
+            sy += step;
         }
-        textY += 2;
+        sy += 2F / scale;
         for(net.minecraft.util.FormattedCharSequence line : headerLines)
         {
-            font.draw(poseStack, line, x + inner, textY, 0xFF9FD4FF);
-            textY += 9;
+            font.draw(poseStack, line, sx, sy, 0xFF9FD4FF);
+            sy += step;
         }
-        textY += 3;
+        sy += 3F / scale;
         for(int i = 0; i < shownLines; i++)
         {
-            font.draw(poseStack, textLines.get(i), x + inner, textY, 0xFFC2C9D6);
-            textY += 9;
+            font.draw(poseStack, textLines.get(previewScroll + i), sx, sy, 0xFFC2C9D6);
+            sy += step;
         }
-        if(clipped)
+        if(maxScroll > 0)
         {
-            font.drawShadow(poseStack, "...", x + inner, textY, 0xFF7A8090);
+            font.drawShadow(poseStack, "scroll  " + (previewScroll + shownLines)
+                + "/" + textLines.size(), sx, sy + 2F / scale, 0xFF7A8090);
         }
+        poseStack.popPose();
     }
 
     private void renderDeckSide(PoseStack poseStack, int mouseX, int mouseY)

@@ -45,7 +45,13 @@ public final class DuelProfile
         return decks.stream().filter(deck -> deck.origin() == DeckList.Origin.SAVED).toList();
     }
 
-    /** Granted decks, for the "Structure Decks" half. */
+    /** Granted starter decks, for the "Starter Decks" recipe group. */
+    public List<DeckList> starterDecks()
+    {
+        return decks.stream().filter(deck -> deck.origin() == DeckList.Origin.STARTER).toList();
+    }
+
+    /** Granted structure decks, for the "Structure Decks" recipe group. */
     public List<DeckList> structureDecks()
     {
         return decks.stream().filter(deck -> deck.origin() == DeckList.Origin.STRUCTURE).toList();
@@ -102,6 +108,19 @@ public final class DuelProfile
     public boolean unlockStructureDeck(String id, String displayName,
         List<Integer> main, List<Integer> extra, List<Integer> side)
     {
+        return unlockDeck(id, displayName, DeckList.Origin.STRUCTURE, main, extra, side);
+    }
+
+    /** A starter deck grants exactly as a structure deck does; only the group differs. */
+    public boolean unlockStarterDeck(String id, String displayName,
+        List<Integer> main, List<Integer> extra, List<Integer> side)
+    {
+        return unlockDeck(id, displayName, DeckList.Origin.STARTER, main, extra, side);
+    }
+
+    private boolean unlockDeck(String id, String displayName, DeckList.Origin origin,
+        List<Integer> main, List<Integer> extra, List<Integer> side)
+    {
         for(List<Integer> part : List.of(main, extra, side))
         {
             trunk.addAll(part);
@@ -110,7 +129,7 @@ public final class DuelProfile
         {
             return false;
         }
-        decks.add(new DeckList(displayName, DeckList.Origin.STRUCTURE, main, extra, side));
+        decks.add(new DeckList(displayName, origin, main, extra, side));
         // A player with no deck yet should be able to duel straight away with
         // what they just opened.
         if(activeDeck.isEmpty())

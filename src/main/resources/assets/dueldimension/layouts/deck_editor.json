@@ -26,5 +26,6 @@
 
   "preview.width": 78,
   "preview.textWidth": 132,
-  "preview.maxLines": 7
+  "preview.maxLines": 10,
+  "preview.textScale": 0.5
 }

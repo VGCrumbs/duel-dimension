@@ -26,8 +26,20 @@ public final class DeckList
     {
         /** Built by the player in the editor. */
         SAVED,
-        /** Granted by unlocking a structure deck; loadable as a recipe. */
-        STRUCTURE
+        /** Granted by a starter deck; loadable as a recipe. */
+        STARTER,
+        /** Granted by a structure deck; loadable as a recipe. */
+        STRUCTURE;
+
+        /**
+         * Whether this is a granted product rather than one of the player's own
+         * builds. Granted decks are the record of what was opened, so they are
+         * loadable but never edited or deleted in place.
+         */
+        public boolean isGranted()
+        {
+            return this != SAVED;
+        }
     }
 
     private String name;

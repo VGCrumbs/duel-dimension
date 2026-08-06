@@ -48,6 +48,7 @@ class DuelProfileTest
 
         // 3. the recipe, which is the same object under its origin
         assertEquals(DeckList.Origin.STRUCTURE, granted.origin());
+        assertTrue(granted.origin().isGranted());
         assertEquals(1, profile.structureDecks().size());
         assertTrue(profile.savedRecipes().isEmpty(), "a granted deck is not one of the player's builds");
         assertTrue(profile.unlockedStructures().contains("sdj"));

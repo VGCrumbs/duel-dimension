@@ -120,9 +120,23 @@ public final class EditorState
         return PROFILE;
     }
 
+    /** The player's own builds -- what the Decks view lists. */
+    public static List<DeckList> ownDecks()
+    {
+        decks();
+        List<DeckList> own = new ArrayList<>(PROFILE.savedRecipes());
+        if(own.isEmpty())
+        {
+            PROFILE.addDeck(new DeckList("New Deck", DeckList.Origin.SAVED));
+            own = new ArrayList<>(PROFILE.savedRecipes());
+        }
+        return own;
+    }
+
     /** Every deck, in the order they were made. */
     public static List<DeckList> decks()
     {
+        ensureStarterDecks();
         if(PROFILE.decks().isEmpty())
         {
             // A player always has somewhere to put cards, so the editor is
@@ -130,6 +144,51 @@ public final class EditorState
             PROFILE.addDeck(new DeckList("New Deck", DeckList.Origin.SAVED));
         }
         return PROFILE.decks();
+    }
+
+    /**
+     * Starter decks ARE structure decks: opening one grants its cards, the deck
+     * itself ready to play, and the recipe. They are granted here for now
+     * because pack opening is not wired to a profile yet — the same stand-in as
+     * the seeded trunk, and the same single call
+     * ({@link DuelProfile#unlockStructureDeck}) the real opening will make.
+     */
+    private static boolean startersGranted;
+
+    private static void ensureStarterDecks()
+    {
+        if(startersGranted)
+        {
+            return;
+        }
+        startersGranted = true;
+        for(de.cas_ual_ty.dueldimension.ocg.deck.StarterDecks.Entry entry
+            : de.cas_ual_ty.dueldimension.ocg.deck.StarterDecks.ALL)
+        {
+            try
+            {
+                de.cas_ual_ty.dueldimension.ocg.deck.YdkDeck deck = entry.load();
+                ensureSeeded();
+                PROFILE.unlockStarterDeck(entry.id(), entry.displayName(),
+                    deck.main(), deck.extra(), deck.side());
+            }
+            catch(Exception unavailable)
+            {
+                // A missing deck list is not worth failing the editor over.
+            }
+        }
+    }
+
+    /**
+     * Grants a structure deck: its cards into the trunk, the deck itself, and
+     * its recipe. This is the call an opened product makes.
+     */
+    public static void unlockStructureDeck(String id, String displayName,
+        List<Integer> main, List<Integer> extra, List<Integer> side)
+    {
+        ensureSeeded();
+        PROFILE.unlockStructureDeck(id, displayName, main, extra, side);
+        dirty = true;
     }
 
     /** The deck being edited. */
@@ -167,6 +226,52 @@ public final class EditorState
     }
 
     /**
+     * Copies a deck as a new build of the player's own and switches to it.
+     * <p>
+     * A copy of a granted structure deck becomes SAVED rather than STRUCTURE:
+     * it is the player's build from that point, editable and deletable, while
+     * the original stays as the record of what was opened.
+     */
+    public static DeckList duplicate(int index)
+    {
+        List<DeckList> all = decks();
+        DeckList source = all.get(Math.max(0, Math.min(index, all.size() - 1)));
+        String name = source.name() + " copy";
+        for(int suffix = 2; PROFILE.deckNamed(name) != null; suffix++)
+        {
+            name = source.name() + " copy " + suffix;
+        }
+        DeckList copy = source.copy(name, DeckList.Origin.SAVED);
+        PROFILE.addDeck(copy);
+        current = PROFILE.decks().size() - 1;
+        return copy;
+    }
+
+    /**
+     * Builds a new deck from a recipe and switches to it.
+     * <p>
+     * Named after the recipe, which is what a player expects, but suffixed if
+     * that name is already taken -- the recipe itself still holds it, and two
+     * decks alike could not be told apart. The assigned name is what the rename
+     * prompt is pre-filled with, so the default shown is the one that will
+     * actually be kept.
+     */
+    public static DeckList useRecipe(int index)
+    {
+        List<DeckList> all = decks();
+        DeckList source = all.get(Math.max(0, Math.min(index, all.size() - 1)));
+        String name = source.name();
+        for(int suffix = 2; PROFILE.deckNamed(name) != null; suffix++)
+        {
+            name = source.name() + " " + suffix;
+        }
+        DeckList made = source.copy(name, DeckList.Origin.SAVED);
+        PROFILE.addDeck(made);
+        current = PROFILE.decks().size() - 1;
+        return made;
+    }
+
+    /**
      * Renames the current deck. Refused if the name is blank or taken, since
      * decks are found by name and two alike could not be told apart.
      */
@@ -196,9 +301,9 @@ public final class EditorState
     public static String deleteCurrent()
     {
         DeckList target = deck();
-        if(target.origin() == DeckList.Origin.STRUCTURE)
+        if(target.origin().isGranted())
         {
-            return "Structure decks cannot be deleted";
+            return "Granted decks cannot be deleted";
         }
         if(PROFILE.savedRecipes().size() <= 1)
         {

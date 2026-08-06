@@ -42,8 +42,8 @@ public class DuelHubScreen extends Screen
         }
     }
 
-    private static final int WIDTH = 420;
-    private static final int HEIGHT = 260;
+    private static final int WIDTH = 460;
+    private static final int HEIGHT = 280;
     private static final int TAB_W = 92;
     private static final int TAB_H = 22;
     private static final int PAD = 10;
@@ -54,6 +54,45 @@ public class DuelHubScreen extends Screen
     private int left;
     private int top;
     private MatColourPicker matPicker;
+
+    /** The row being renamed, and its field. Only one at a time. */
+    private int renamingIndex = -1;
+    private net.minecraft.client.gui.components.EditBox renameField;
+    /** First visible row, so a long deck list can be scrolled. */
+    private int deckScroll;
+    /** Why the last action was refused. */
+    private String notice = "";
+
+    /** The Decks tab has two views; this is which one. */
+    private enum DeckView
+    {
+        DECKS("Decks"),
+        RECIPES("Recipes");
+
+        private final String label;
+
+        DeckView(String label)
+        {
+            this.label = label;
+        }
+    }
+
+    private static DeckView deckView = DeckView.DECKS;
+
+    /** One group of recipes, with the heading it is listed under. */
+    private record RecipeGroup(String heading, java.util.List<
+        de.cas_ual_ty.dueldimension.duel.profile.DeckList> decks)
+    {
+    }
+
+    private java.util.List<RecipeGroup> recipeGroups()
+    {
+        EditorState.decks();
+        return java.util.List.of(
+            new RecipeGroup("Saved", EditorState.profile().savedRecipes()),
+            new RecipeGroup("Starter Decks", EditorState.profile().starterDecks()),
+            new RecipeGroup("Structure Decks", EditorState.profile().structureDecks()));
+    }
 
     public DuelHubScreen()
     {
@@ -102,14 +141,37 @@ public class DuelHubScreen extends Screen
         else if(section == Section.DECKS)
         {
             matPicker = null;
-            addRenderableWidget(new HubWidgets.TextureButton(left + PAD + 6, top + HEIGHT - 32,
-                120, 20, Component.literal("Edit Deck"), pressed ->
+            int viewX = left + PAD + 4;
+            for(DeckView candidate : DeckView.values())
             {
-                if(minecraft != null)
+                DeckView targetView = candidate;
+                addRenderableWidget(new HubWidgets.TabButton(viewX, bodyTop + 3, 68, 16,
+                    Component.literal(candidate.label), () -> deckView == targetView, pressed ->
                 {
-                    minecraft.setScreen(new DeckEditorScreen(this));
-                }
-            }));
+                    deckView = targetView;
+                    cancelRename();
+                    deckScroll = 0;
+                    notice = "";
+                    rebuild();
+                }));
+                viewX += 70;
+            }
+            if(deckView == DeckView.DECKS)
+            {
+                buildDeckRows(bodyTop + 22);
+                addRenderableWidget(new HubWidgets.TextureButton(left + PAD + 6, top + HEIGHT - 32,
+                    96, 20, Component.literal("New Deck"), pressed ->
+                {
+                    EditorState.newDeck();
+                    cancelRename();
+                    notice = "";
+                    rebuild();
+                }));
+            }
+            else
+            {
+                buildRecipeRows(bodyTop + 22);
+            }
         }
         else
         {
@@ -118,6 +180,284 @@ public class DuelHubScreen extends Screen
 
         addRenderableWidget(new HubWidgets.TextureButton(left + WIDTH - PAD - 80,
             top + HEIGHT - 32, 80, 20, Component.literal("Close"), pressed -> onClose()));
+    }
+
+    /** Height of one deck row, and how many fit in the body. */
+    private static final int ROW_H = 20;
+
+    private int deckRowsVisible()
+    {
+        int bodyHeight = HEIGHT - (PAD + TAB_H + 8) - 40;
+        return Math.max(1, (bodyHeight - 26) / ROW_H);
+    }
+
+    /**
+     * The recipe list: three groups under their headings, flattened into rows
+     * so one scroll position covers the lot.
+     * <p>
+     * A recipe's action is Duplicate As rather than an edit. Loading a recipe
+     * means taking a copy of it -- the original is the record of what was
+     * saved or opened, and editing it in place would destroy that.
+     */
+    private void buildRecipeRows(int bodyTop)
+    {
+        int visible = deckRowsVisible();
+        java.util.List<Object> flat = new java.util.ArrayList<>();
+        for(RecipeGroup group : recipeGroups())
+        {
+            flat.add(group.heading());
+            flat.addAll(group.decks());
+            if(group.decks().isEmpty())
+            {
+                flat.add("");
+            }
+        }
+        deckScroll = Math.max(0, Math.min(deckScroll, Math.max(0, flat.size() - visible)));
+
+        int rowX = left + PAD + 4;
+        int rowW = WIDTH - PAD * 2 - 8;
+        int duplicateW = 90;
+
+        for(int row = 0; row < visible; row++)
+        {
+            int index = row + deckScroll;
+            if(index >= flat.size())
+            {
+                break;
+            }
+            Object entry = flat.get(index);
+            int y = bodyTop + 2 + row * ROW_H;
+            if(entry instanceof de.cas_ual_ty.dueldimension.duel.profile.DeckList recipe)
+            {
+                // Saved recipes are the player's own, so they can be edited and
+                // removed. A granted deck is the record of what was opened, so
+                // it offers Use and nothing else -- there is no Delete to press
+                // and be refused by.
+                boolean own = recipe.origin() == de.cas_ual_ty.dueldimension.duel.profile
+                    .DeckList.Origin.SAVED;
+                int useW = 34;
+                int editW = 34;
+                int deleteW = 46;
+                int gap = 3;
+                int actions = own ? useW + editW + deleteW + gap * 3 : useW + gap;
+                int nameW = Math.max(60, rowW - actions - 10);
+                int x = rowX + 10;
+
+
+                addRenderableWidget(new HubWidgets.TextureButton(x, y, nameW, ROW_H - 2,
+                    Component.literal(recipe.name() + "  (" + recipe.main().size() + ")"),
+                    pressed -> useRecipe(recipe)));
+                x += nameW + gap;
+
+                addRenderableWidget(new HubWidgets.TextureButton(x, y, useW, ROW_H - 2,
+                    Component.literal("Use"), pressed -> useRecipe(recipe)));
+                x += useW + gap;
+
+                if(own)
+                {
+                    addRenderableWidget(new HubWidgets.TextureButton(x, y, editW, ROW_H - 2,
+                        Component.literal("Edit"), pressed ->
+                    {
+                        EditorState.select(EditorState.decks().indexOf(recipe));
+                        if(minecraft != null)
+                        {
+                            minecraft.setScreen(new DeckEditorScreen(this));
+                        }
+                    }));
+                    x += editW + gap;
+                    addRenderableWidget(new HubWidgets.TextureButton(x, y, deleteW, ROW_H - 2,
+                        Component.literal("Delete"), pressed ->
+                    {
+                        EditorState.select(EditorState.decks().indexOf(recipe));
+                        String error = EditorState.deleteCurrent();
+                        notice = error == null ? "" : error;
+                        rebuild();
+                    }));
+                }
+            }
+        }
+    }
+
+    /** Use: a new deck from the recipe, then name it. */
+    private void useRecipe(de.cas_ual_ty.dueldimension.duel.profile.DeckList recipe)
+    {
+        EditorState.useRecipe(EditorState.decks().indexOf(recipe));
+        deckView = DeckView.DECKS;
+        deckScroll = 0;
+        notice = "";
+        startRename(EditorState.currentIndex());
+    }
+
+    /** Draws the headings and empty markers the recipe rows sit between. */
+    private void renderRecipeHeadings(PoseStack poseStack, int bodyTop)
+    {
+        int visible = deckRowsVisible();
+        java.util.List<Object> flat = new java.util.ArrayList<>();
+        for(RecipeGroup group : recipeGroups())
+        {
+            flat.add(group.heading());
+            flat.addAll(group.decks());
+            if(group.decks().isEmpty())
+            {
+                flat.add("");
+            }
+        }
+        for(int row = 0; row < visible; row++)
+        {
+            int index = row + deckScroll;
+            if(index >= flat.size())
+            {
+                break;
+            }
+            Object entry = flat.get(index);
+            int y = bodyTop + 2 + row * ROW_H;
+            if(entry instanceof String heading)
+            {
+                font.drawShadow(poseStack, heading.isEmpty() ? "   (none)" : heading,
+                    left + PAD + 6, y + 5, heading.isEmpty() ? 0xFF7A8090 : 0xFFF4D089);
+            }
+        }
+    }
+
+    /**
+     * One row per deck: the name, then what can be done to it.
+     * <p>
+     * The name is a button rather than a label because opening the editor is
+     * the most likely thing to want from a deck, and giving it its own column
+     * would push the actions off the panel.
+     */
+    private void buildDeckRows(int bodyTop)
+    {
+        java.util.List<de.cas_ual_ty.dueldimension.duel.profile.DeckList> decks = EditorState.ownDecks();
+        int visible = deckRowsVisible();
+        deckScroll = Math.max(0, Math.min(deckScroll, Math.max(0, decks.size() - visible)));
+
+        int rowX = left + PAD + 4;
+        int rowW = WIDTH - PAD * 2 - 8;
+        int useW = 32;
+        int renameW = 52;
+        int duplicateW = 76;
+        int deleteW = 46;
+        int gap = 3;
+        int actionsW = useW + renameW + duplicateW + deleteW + gap * 4;
+        int nameW = Math.max(60, rowW - actionsW);
+
+        for(int row = 0; row < visible; row++)
+        {
+            int index = row + deckScroll;
+            if(index >= decks.size())
+            {
+                break;
+            }
+            de.cas_ual_ty.dueldimension.duel.profile.DeckList deck = decks.get(index);
+            int y = bodyTop + 4 + row * ROW_H;
+            int x = rowX;
+
+            if(index == renamingIndex && renameField != null)
+            {
+                renameField.x = x + 2;
+                renameField.y = y + 3;
+                renameField.setWidth(nameW - 6);
+                addWidget(renameField);
+                setFocused(renameField);
+                renameField.setFocus(true);
+            }
+            else
+            {
+                // Active deck is marked, so "Use" has visible consequence.
+                boolean active = deck.name().equals(EditorState.profile().activeDeck());
+                String label = (active ? "\u25B8 " : "") + deck.name()
+                    + "  (" + deck.main().size() + ")";
+                int target = index;
+                addRenderableWidget(new HubWidgets.TextureButton(x, y, nameW, ROW_H - 2,
+                    Component.literal(label), pressed ->
+                {
+                    EditorState.select(EditorState.decks().indexOf(decks.get(target)));
+                    if(minecraft != null)
+                    {
+                        minecraft.setScreen(new DeckEditorScreen(this));
+                    }
+                }));
+            }
+            x += nameW + gap;
+
+            int useIndex = index;
+            HubWidgets.TextureButton use = new HubWidgets.TextureButton(x, y, useW, ROW_H - 2,
+                Component.literal("Use"), pressed ->
+            {
+                EditorState.profile().setActiveDeck(decks.get(useIndex).name());
+                notice = "";
+                rebuild();
+            });
+            use.active = !deck.name().equals(EditorState.profile().activeDeck());
+            addRenderableWidget(use);
+            x += useW + gap;
+
+            int renameIndex = index;
+            addRenderableWidget(new HubWidgets.TextureButton(x, y, renameW, ROW_H - 2,
+                Component.literal("Rename"), pressed ->
+                    startRename(EditorState.decks().indexOf(decks.get(renameIndex)))));
+            x += renameW + gap;
+
+            int duplicateIndex = index;
+            addRenderableWidget(new HubWidgets.TextureButton(x, y, duplicateW, ROW_H - 2,
+                Component.literal("Duplicate As"), pressed ->
+            {
+                // Duplicating drops straight into renaming the copy: the point
+                // of "as" is that the copy gets its own name.
+                EditorState.duplicate(EditorState.decks().indexOf(decks.get(duplicateIndex)));
+                startRename(EditorState.currentIndex());
+            }));
+            x += duplicateW + gap;
+
+            int deleteIndex = index;
+            HubWidgets.TextureButton delete = new HubWidgets.TextureButton(x, y, deleteW, ROW_H - 2,
+                Component.literal("Delete"), pressed ->
+            {
+                EditorState.select(EditorState.decks().indexOf(decks.get(deleteIndex)));
+                String error = EditorState.deleteCurrent();
+                notice = error == null ? "" : error;
+                cancelRename();
+                rebuild();
+            });
+            // A granted structure deck is the record of what was opened, so it
+            // reports that by being disabled rather than failing when pressed.
+            delete.active = deck.origin()
+                != de.cas_ual_ty.dueldimension.duel.profile.DeckList.Origin.STRUCTURE;
+            addRenderableWidget(delete);
+        }
+    }
+
+    private void startRename(int index)
+    {
+        renamingIndex = index;
+        renameField = new net.minecraft.client.gui.components.EditBox(font, 0, 0, 100, 14,
+            Component.literal("Deck name"));
+        renameField.setMaxLength(40);
+        renameField.setValue(EditorState.decks().get(index).name());
+        rebuild();
+    }
+
+    private void cancelRename()
+    {
+        renamingIndex = -1;
+        renameField = null;
+    }
+
+    /** Applies a pending rename. Commits on Enter or on clicking away. */
+    private void commitRename()
+    {
+        if(renamingIndex < 0 || renameField == null)
+        {
+            return;
+        }
+        EditorState.select(renamingIndex);
+        if(!EditorState.rename(renameField.getValue()))
+        {
+            notice = "That name is already used";
+        }
+        cancelRename();
+        rebuild();
     }
 
     private void applyMat()
@@ -173,20 +513,27 @@ public class DuelHubScreen extends Screen
 
     private void renderDecks(PoseStack poseStack, int bodyTop)
     {
-        int x = left + PAD + 10;
-        int y = bodyTop + 10;
-        font.drawShadow(poseStack, "Decks", x, y, 0xFFF4D089);
-        y += 16;
-        font.drawShadow(poseStack, "Saved Recipes", x, y, 0xFFE6EAF2);
-        y += 12;
-        font.drawShadow(poseStack, "  (none yet)", x, y, 0xFF7A8090);
-        y += 16;
-        font.drawShadow(poseStack, "Structure Decks", x, y, 0xFFE6EAF2);
-        y += 12;
-        font.drawShadow(poseStack, "  (none unlocked)", x, y, 0xFF7A8090);
-        y += 18;
-        font.drawShadow(poseStack, "Editing: " + EditorState.deck().name()
-            + "  (" + EditorState.deck().main().size() + " main)", x, y, 0xFF7A8090);
+        if(renameField != null)
+        {
+            renameField.render(poseStack, 0, 0, 0F);
+        }
+        if(deckView == DeckView.RECIPES)
+        {
+            renderRecipeHeadings(poseStack, bodyTop + 22);
+            return;
+        }
+        int count = EditorState.ownDecks().size();
+        int visible = deckRowsVisible();
+        if(count > visible)
+        {
+            font.drawShadow(poseStack, (deckScroll + 1) + "-"
+                + Math.min(count, deckScroll + visible) + " of " + count,
+                left + PAD + 4, top + HEIGHT - 28, 0xFF7A8090);
+        }
+        if(!notice.isEmpty())
+        {
+            font.drawShadow(poseStack, notice, left + PAD + 110, top + HEIGHT - 26, 0xFFFF8A80);
+        }
     }
 
     private void renderSettings(PoseStack poseStack, int bodyTop)
@@ -211,7 +558,60 @@ public class DuelHubScreen extends Screen
         {
             return true;
         }
+        if(renameField != null && !renameField.isMouseOver(mouseX, mouseY))
+        {
+            commitRename();
+        }
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean keyPressed(int key, int scan, int modifiers)
+    {
+        if(renameField != null && renameField.isFocused())
+        {
+            if(key == org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER || key == org.lwjgl.glfw.GLFW.GLFW_KEY_KP_ENTER)
+            {
+                commitRename();
+                return true;
+            }
+            if(key == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE)
+            {
+                cancelRename();
+                rebuild();
+                return true;
+            }
+            if(renameField.keyPressed(key, scan, modifiers))
+            {
+                return true;
+            }
+        }
+        return super.keyPressed(key, scan, modifiers);
+    }
+
+    @Override
+    public boolean charTyped(char typed, int modifiers)
+    {
+        if(renameField != null && renameField.isFocused() && renameField.charTyped(typed, modifiers))
+        {
+            return true;
+        }
+        return super.charTyped(typed, modifiers);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta)
+    {
+        if(section == Section.DECKS)
+        {
+            int max = Math.max(0, (deckView == DeckView.RECIPES
+                ? EditorState.decks().size() + 3 : EditorState.ownDecks().size())
+                - deckRowsVisible());
+            deckScroll = Math.max(0, Math.min(max, deckScroll - (int)Math.signum(delta)));
+            rebuild();
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, delta);
     }
 
     @Override
