@@ -70,6 +70,15 @@ public class DeckEditorScreen extends Screen
     private int trunkScroll;
     /** How far the deck's three sections are scrolled, in pixels. */
     private int deckScroll;
+    /** Whether the extra filters are showing; they cover the trunk grid. */
+    private boolean filtersOpen;
+    /** The four numeric bands, kept as text so a half-typed number is allowed. */
+    private EditBox levelMin;
+    private EditBox levelMax;
+    private EditBox attackMin;
+    private EditBox attackMax;
+    private EditBox defenceMin;
+    private EditBox defenceMax;
 
     /**
      * Where the mouse went down, so a press-drag-release can be told from a
@@ -201,16 +210,37 @@ public class DeckEditorScreen extends Screen
         clear.active = !EditorState.query().isClear();
         addRenderableWidget(clear);
 
+        // The rest of the filters live behind this rather than on the bar:
+        // there are sixty of them, which is what the official editors offer and
+        // far more than fits beside a search box.
+        int clearW = Math.min(92, rightW - pad * 2);
+        addRenderableWidget(new ChipButton(rightX + pad + clearW + 3, chipY + chipH + 3,
+            72, 16, Component.literal(filtersOpen ? "Filters -" : "Filters +"),
+            () -> filtersOpen, pressed ->
+        {
+            filtersOpen = !filtersOpen;
+            rebuildControls();
+        }));
+
+        if(filtersOpen)
+        {
+            buildFilterDrawer(chipY + chipH + 3 + 20);
+        }
+
         // Sorting a deck is the same idea as sorting the trunk, so it reuses
         // the trunk's chosen order rather than inventing a second one.
-        addRenderableWidget(new HubWidgets.TextureButton(leftX + pad, height - 26, 92, 20,
+        // Both sit INSIDE their panel's padding rather than against the window
+        // edge. Done was placed from the window width, which put its right
+        // edge on the panel's border now that the panel reaches the bottom.
+        int controlsY = panelTop + panelH - pad - 20;
+        addRenderableWidget(new HubWidgets.TextureButton(leftX + pad, controlsY, 92, 20,
             Component.literal("Sort Deck"), pressed ->
         {
             sortDeck();
             refusal = "";
         }));
-        addRenderableWidget(new HubWidgets.TextureButton(width - pad - 80, height - 26, 80, 20,
-            Component.literal("Done"), pressed -> onClose()));
+        addRenderableWidget(new HubWidgets.TextureButton(rightX + rightW - pad - 80, controlsY,
+            80, 20, Component.literal("Done"), pressed -> onClose()));
     }
 
     /**
@@ -333,6 +363,199 @@ public class DeckEditorScreen extends Screen
             default -> 0;
         }).thenComparing(card -> card.getName() == null ? "" : card.getName(),
             String.CASE_INSENSITIVE_ORDER);
+
+
+    /**
+     * The extra filters, laid out in rows of chips over the trunk grid.
+     * <p>
+     * The categories are the ones every Yu-Gi-Oh editor offers, official and
+     * fan alike: attribute, the card's own sub-type, monster abilities, the
+     * monster's type, and bands for level, ATK and DEF. All of them come from
+     * the card model's own enums rather than a list typed out here, so a card
+     * property the database gains is a filter this gains with it.
+     */
+    private void buildFilterDrawer(int top)
+    {
+        Layout layout = Layout.of(LAYOUT);
+        int chipH = layout.i("trunk.chipHeight", 14);
+        int rowGap = 3;
+        int y = top;
+        filterHeadings.clear();
+
+        y = chipRow(y, chipH, rowGap, "Attribute", attributeNames(),
+            value -> EditorState.query().attributes().contains(value),
+            value -> EditorState.query().toggleAttribute(value), 52);
+
+        y = chipRow(y, chipH, rowGap, "Card Type", subTypeNames(),
+            value -> EditorState.query().subTypes().contains(value),
+            value -> EditorState.query().toggleSubType(value), 58);
+
+        y = chipRow(y, chipH, rowGap, "Ability", abilityNames(),
+            value -> EditorState.query().abilities().contains(value),
+            value -> EditorState.query().toggleAbility(value), 54);
+
+        y = chipRow(y, chipH, rowGap, "Type", speciesNames(),
+            value -> EditorState.query().species().contains(value),
+            value -> EditorState.query().toggleSpecies(value), 64);
+
+        // The bands. Text rather than steppers because a player filtering for
+        // 2500 ATK wants to type 2500, not press a button twenty-five times.
+        y += chipH;
+        levelMin = band(rightX + pad + 44, y, EditorState.query().minLevel(), 0);
+        levelMax = band(rightX + pad + 96, y, EditorState.query().maxLevel(), 0);
+        y += 20;
+        attackMin = band(rightX + pad + 44, y, EditorState.query().minAttack(), -1);
+        attackMax = band(rightX + pad + 96, y, EditorState.query().maxAttack(), -1);
+        y += 20;
+        defenceMin = band(rightX + pad + 44, y, EditorState.query().minDefence(), -1);
+        defenceMax = band(rightX + pad + 96, y, EditorState.query().maxDefence(), -1);
+    }
+
+    /**
+     * One labelled row of chips, wrapping onto further rows when the row is
+     * wider than the panel -- which it is for the twenty-seven monster types.
+     *
+     * @return the y the next row starts at
+     */
+    private int chipRow(int top, int chipH, int rowGap, String heading, List<String> values,
+        java.util.function.Predicate<String> lit, java.util.function.Consumer<String> toggle,
+        int chipW)
+    {
+        int labelW = 56;
+        int x = rightX + pad + labelW;
+        int y = top;
+        int right = rightX + rightW - pad;
+        for(String value : values)
+        {
+            if(x + chipW > right)
+            {
+                x = rightX + pad + labelW;
+                y += chipH + rowGap;
+            }
+            String target = value;
+            addRenderableWidget(new ChipButton(x, y, chipW, chipH, Component.literal(value),
+                () -> lit.test(target), pressed ->
+            {
+                toggle.accept(target);
+                EditorState.invalidate();
+                trunkScroll = 0;
+                rebuildControls();
+            }));
+            x += chipW + 2;
+        }
+        filterHeadings.add(new Heading(heading, rightX + pad, top + (chipH - 8) / 2));
+        return y + chipH + rowGap + 2;
+    }
+
+    /** A heading drawn beside a chip row; collected while the rows are built. */
+    private record Heading(String text, int x, int y)
+    {
+    }
+
+    private final List<Heading> filterHeadings = new java.util.ArrayList<>();
+
+    /**
+     * One end of a numeric band.
+     *
+     * @param unset the value that means "no bound", shown as an empty field
+     */
+    private EditBox band(int x, int y, int value, int unset)
+    {
+        EditBox box = new EditBox(font, x + 2, y + 2, 44, 12, Component.literal(""));
+        box.setValue(value == unset ? "" : String.valueOf(value));
+        // Digits only, and short: the field is a number, so a letter typed
+        // into it is refused rather than parsed and quietly ignored.
+        box.setFilter(text -> text.isEmpty() || text.matches("\\d{1,5}"));
+        box.setResponder(text -> applyBands());
+        addWidget(box);
+        return box;
+    }
+
+    /** Reads the six band fields back into the query. */
+    private void applyBands()
+    {
+        EditorState.query().setLevelRange(number(levelMin, 0), number(levelMax, 0));
+        EditorState.query().setAttackRange(number(attackMin, -1), number(attackMax, -1));
+        EditorState.query().setDefenceRange(number(defenceMin, -1), number(defenceMax, -1));
+        EditorState.invalidate();
+        trunkScroll = 0;
+    }
+
+    private int number(EditBox box, int unset)
+    {
+        if(box == null || box.getValue().isEmpty())
+        {
+            return unset;
+        }
+        try
+        {
+            return Integer.parseInt(box.getValue());
+        }
+        catch(NumberFormatException halfTyped)
+        {
+            return unset;
+        }
+    }
+
+    private static List<String> attributeNames()
+    {
+        return java.util.Arrays.stream(
+                de.cas_ual_ty.dueldimension.card.properties.Attribute.values())
+            .map(value -> value.name).toList();
+    }
+
+    /**
+     * Every sub-type a card can carry, monsters first, then spells, then traps
+     * -- the order the kind chips above are in.
+     */
+    private static List<String> subTypeNames()
+    {
+        List<String> names = new java.util.ArrayList<>(List.of("Normal", "Effect"));
+        for(de.cas_ual_ty.dueldimension.card.properties.MonsterType type
+            : de.cas_ual_ty.dueldimension.card.properties.MonsterType.values())
+        {
+            names.add(type.name);
+        }
+        for(de.cas_ual_ty.dueldimension.card.properties.SpellType type
+            : de.cas_ual_ty.dueldimension.card.properties.SpellType.values())
+        {
+            // Normal and Continuous name a spell type AND a trap type, and the
+            // filter matches by name, so listing them twice would be two chips
+            // that do the same thing.
+            if(!names.contains(type.name))
+            {
+                names.add(type.name);
+            }
+        }
+        for(de.cas_ual_ty.dueldimension.card.properties.TrapType type
+            : de.cas_ual_ty.dueldimension.card.properties.TrapType.values())
+        {
+            if(!names.contains(type.name))
+            {
+                names.add(type.name);
+            }
+        }
+        return names;
+    }
+
+    private static List<String> abilityNames()
+    {
+        List<String> names = new java.util.ArrayList<>(
+            java.util.Arrays.stream(de.cas_ual_ty.dueldimension.card.properties.Ability.values())
+                .map(value -> value.name).toList());
+        names.add(EditorState.PENDULUM);
+        return names;
+    }
+
+    private static List<String> speciesNames()
+    {
+        // All of them, including the two custom-card species: the enum records
+        // no flag to tell them apart -- its constructor takes one and throws it
+        // away -- so filtering them out here would mean hardcoding their names.
+        return java.util.Arrays.stream(
+                de.cas_ual_ty.dueldimension.card.properties.Species.values())
+            .map(value -> value.name).toList();
+    }
 
     private void sortDeck()
     {
@@ -575,16 +798,27 @@ public class DeckEditorScreen extends Screen
 
     private int trunkIndexAt(double mouseX, double mouseY)
     {
+        if(filtersOpen)
+        {
+            // The grid is not drawn while the drawer is open, so nothing in it
+            // is under the cursor either.
+            return -1;
+        }
         trunkColumns = Math.max(1, (rightW - pad * 2 + gap) / (cardW + gap));
         int gridTop = trunkGridTop();
+        int visibleRows = trunkVisibleRows();
         int cellW = cardW + gap;
-        if(mouseX < rightX + pad || mouseX >= rightX + rightW - pad || mouseY < gridTop)
+        // Bounded at the BOTTOM as well as the top. It was not, so the strip
+        // below the last row still resolved to a row number, and hovering over
+        // the card count previewed a card that was not on screen at all.
+        if(mouseX < rightX + pad || mouseX >= rightX + pad + trunkColumns * cellW
+            || mouseY < gridTop || mouseY >= gridTop + visibleRows * (cardH + gap))
         {
             return -1;
         }
         int column = (int)((mouseX - (rightX + pad)) / cellW);
         int row = (int)((mouseY - gridTop) / (cardH + gap));
-        if(column < 0 || column >= trunkColumns || row < 0)
+        if(column < 0 || column >= trunkColumns || row < 0 || row >= visibleRows)
         {
             return -1;
         }
@@ -959,6 +1193,14 @@ public class DeckEditorScreen extends Screen
 
         super.render(poseStack, mouseX, mouseY, partialTick);
         search.render(poseStack, mouseX, mouseY, partialTick);
+        if(filtersOpen && levelMin != null)
+        {
+            for(EditBox box : List.of(levelMin, levelMax, attackMin, attackMax,
+                defenceMin, defenceMax))
+            {
+                box.render(poseStack, mouseX, mouseY, partialTick);
+            }
+        }
         if(rename != null)
         {
             rename.render(poseStack, mouseX, mouseY, partialTick);
@@ -1255,11 +1497,55 @@ public class DeckEditorScreen extends Screen
             (int)(leftW * scale), (int)((bottom - top) * scale));
     }
 
+    /**
+     * The drawer's backing and its labels. The chips are widgets and draw
+     * themselves; what is left is the panel behind them, the row headings and
+     * the captions on the three bands.
+     */
+    private void renderFilterDrawer(PoseStack poseStack)
+    {
+        int top = trunkGridTop() - 4;
+        int bottom = panelTop + panelH - pad - Layout.of(LAYOUT).i("panel.controls", 28);
+        NineSlice.draw(poseStack, HubTextures.PANEL_INSET, rightX + pad - 2, top,
+            rightW - pad * 2 + 4, Math.max(20, bottom - top));
+
+        for(Heading heading : filterHeadings)
+        {
+            font.drawShadow(poseStack, heading.text(), heading.x(), heading.y(), 0xFFC2C9D6);
+        }
+
+        // The bands read as "Level  [min] [max]", so the captions sit against
+        // the fields rather than in the heading column with the chip rows.
+        if(levelMin != null)
+        {
+            band(poseStack, "Level", levelMin, levelMax);
+            band(poseStack, "ATK", attackMin, attackMax);
+            band(poseStack, "DEF", defenceMin, defenceMax);
+        }
+    }
+
+    private void band(PoseStack poseStack, String caption, EditBox min, EditBox max)
+    {
+        int y = min.y - 2;
+        font.drawShadow(poseStack, caption, rightX + pad, y + 4, 0xFFC2C9D6);
+        NineSlice.draw(poseStack, HubTextures.SEARCH_FIELD, min.x - 2, y, 48, 16);
+        NineSlice.draw(poseStack, HubTextures.SEARCH_FIELD, max.x - 2, y, 48, 16);
+        font.drawShadow(poseStack, "-", min.x + 46, y + 4, 0xFF7A8090);
+    }
+
     private void renderTrunkSide(PoseStack poseStack, int mouseX, int mouseY)
     {
         Layout layout = Layout.of(LAYOUT);
         NineSlice.draw(poseStack, HubTextures.SEARCH_FIELD, rightX + pad, panelTop + pad,
             search.getWidth() + 6, layout.i("trunk.searchHeight", 16) + 2);
+
+        if(filtersOpen)
+        {
+            renderFilterDrawer(poseStack);
+            font.drawShadow(poseStack, EditorState.visible().size() + " cards", rightX + pad,
+                panelTop + panelH - pad - 34, 0xFF7A8090);
+            return;
+        }
 
         List<Properties> shown = EditorState.visible();
         trunkColumns = Math.max(1, (rightW - pad * 2 + gap) / (cardW + gap));

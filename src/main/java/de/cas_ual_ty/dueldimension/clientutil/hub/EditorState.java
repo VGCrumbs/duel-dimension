@@ -115,7 +115,64 @@ public final class EditorState
         {
             return card.getId();
         }
+
+        /**
+         * How the official editors group a card within its kind. A monster
+         * with no explicit type is Normal or Effect depending on whether it
+         * has one, which is the distinction those editors draw.
+         */
+        @Override
+        public String subType(Properties card)
+        {
+            if(card instanceof MonsterProperties monster)
+            {
+                de.cas_ual_ty.dueldimension.card.properties.MonsterType type = monster.getMonsterType();
+                if(type != null)
+                {
+                    return type.name;
+                }
+                return monster.hasEffect ? "Effect" : "Normal";
+            }
+            if(card instanceof de.cas_ual_ty.dueldimension.card.properties.SpellProperties spell)
+            {
+                return spell.spellType == null ? null : spell.spellType.name;
+            }
+            if(card instanceof de.cas_ual_ty.dueldimension.card.properties.TrapProperties trap)
+            {
+                return trap.trapType == null ? null : trap.trapType.name;
+            }
+            return null;
+        }
+
+        /**
+         * Pendulum is carried here beside Flip, Gemini and the rest. It is a
+         * flag on the card rather than one of the ability names, but a player
+         * looking for pendulums is doing the same thing as one looking for
+         * toons, so it belongs in the same row.
+         */
+        @Override
+        public java.util.Set<String> abilities(Properties card)
+        {
+            if(!(card instanceof MonsterProperties monster))
+            {
+                return java.util.Set.of();
+            }
+            java.util.Set<String> carried = new java.util.LinkedHashSet<>();
+            String ability = monster.getAbility();
+            if(ability != null && !ability.isEmpty())
+            {
+                carried.add(ability);
+            }
+            if(monster.getIsPendulum())
+            {
+                carried.add(PENDULUM);
+            }
+            return carried;
+        }
     };
+
+    /** Not one of the ability names, but filtered alongside them. */
+    public static final String PENDULUM = "Pendulum";
 
     /**
      * Takes the profile the server just sent.

@@ -79,6 +79,20 @@ public final class CardQuery<C>
         /** Level, rank or link rating; 0 when the card has none. */
         int level(C card);
 
+        /**
+         * The card's own sub-type, as the official editors group them: a
+         * monster's Fusion/Synchro/Xyz/Link/Ritual, a spell's Quick-Play or
+         * Field, a trap's Counter. Null when it has none, which is what a
+         * plain Normal monster has.
+         */
+        String subType(C card);
+
+        /**
+         * Abilities a monster carries -- Flip, Gemini, Spirit, Toon, Union.
+         * Empty for anything else. A set because a card can hold more than one.
+         */
+        java.util.Set<String> abilities(C card);
+
         int attack(C card);
 
         int defence(C card);
@@ -95,6 +109,17 @@ public final class CardQuery<C>
     /** Inclusive level band; 0 on either end means "unbounded that way". */
     private int minLevel;
     private int maxLevel;
+    private final Set<String> subTypes = new java.util.LinkedHashSet<>();
+    private final Set<String> abilities = new java.util.LinkedHashSet<>();
+    /**
+     * Inclusive ATK and DEF bands. -1 means unbounded that way rather than 0,
+     * because 0 is a real attack value and "at least 0" is a filter a player
+     * can reasonably set.
+     */
+    private int minAttack = -1;
+    private int maxAttack = -1;
+    private int minDefence = -1;
+    private int maxDefence = -1;
     private Sort sort = Sort.NAME;
     private boolean descending;
 
@@ -154,6 +179,64 @@ public final class CardQuery<C>
         }
     }
 
+    public Set<String> subTypes()
+    {
+        return java.util.Collections.unmodifiableSet(subTypes);
+    }
+
+    public void toggleSubType(String value)
+    {
+        if(!subTypes.remove(value))
+        {
+            subTypes.add(value);
+        }
+    }
+
+    public Set<String> abilities()
+    {
+        return java.util.Collections.unmodifiableSet(abilities);
+    }
+
+    public void toggleAbility(String value)
+    {
+        if(!abilities.remove(value))
+        {
+            abilities.add(value);
+        }
+    }
+
+    public void setAttackRange(int min, int max)
+    {
+        minAttack = min;
+        maxAttack = max;
+    }
+
+    public int minAttack()
+    {
+        return minAttack;
+    }
+
+    public int maxAttack()
+    {
+        return maxAttack;
+    }
+
+    public void setDefenceRange(int min, int max)
+    {
+        minDefence = min;
+        maxDefence = max;
+    }
+
+    public int minDefence()
+    {
+        return minDefence;
+    }
+
+    public int maxDefence()
+    {
+        return maxDefence;
+    }
+
     public void setLevelRange(int min, int max)
     {
         minLevel = Math.max(0, min);
@@ -201,15 +284,23 @@ public final class CardQuery<C>
         kinds.clear();
         attributes.clear();
         species.clear();
+        subTypes.clear();
+        abilities.clear();
         minLevel = 0;
         maxLevel = 0;
+        minAttack = -1;
+        maxAttack = -1;
+        minDefence = -1;
+        maxDefence = -1;
     }
 
     /** True when nothing is narrowing, so the UI can grey out Clear. */
     public boolean isClear()
     {
         return text.isEmpty() && kinds.isEmpty() && attributes.isEmpty()
-            && species.isEmpty() && minLevel == 0 && maxLevel == 0;
+            && species.isEmpty() && subTypes.isEmpty() && abilities.isEmpty()
+            && minLevel == 0 && maxLevel == 0
+            && minAttack < 0 && maxAttack < 0 && minDefence < 0 && maxDefence < 0;
     }
 
     // ---- applying ----
@@ -268,7 +359,51 @@ public final class CardQuery<C>
                 return false;
             }
         }
+        if(!subTypes.isEmpty())
+        {
+            String value = facets.subType(card);
+            if(value == null || !subTypes.contains(value))
+            {
+                return false;
+            }
+        }
+        if(!abilities.isEmpty())
+        {
+            java.util.Set<String> carried = facets.abilities(card);
+            // Any one of the chosen abilities is enough, matching how the
+            // other chip rows read: chips widen, rows narrow.
+            if(carried == null || carried.stream().noneMatch(abilities::contains))
+            {
+                return false;
+            }
+        }
+        if(!withinBand(facets.attack(card), minAttack, maxAttack, facets.kind(card)))
+        {
+            return false;
+        }
+        if(!withinBand(facets.defence(card), minDefence, maxDefence, facets.kind(card)))
+        {
+            return false;
+        }
         return true;
+    }
+
+    /**
+     * An ATK or DEF band. A spell has neither, so once a band is set a spell is
+     * excluded rather than treated as having zero -- the same rule the level
+     * band follows, and for the same reason.
+     */
+    private boolean withinBand(int value, int min, int max, Kind kind)
+    {
+        if(min < 0 && max < 0)
+        {
+            return true;
+        }
+        if(kind != Kind.MONSTER)
+        {
+            return false;
+        }
+        return (min < 0 || value >= min) && (max < 0 || value <= max);
     }
 
     /** Everything matching, in the chosen order. */
