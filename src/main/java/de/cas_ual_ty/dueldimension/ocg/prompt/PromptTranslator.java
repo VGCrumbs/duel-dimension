@@ -126,9 +126,12 @@ public class PromptTranslator
             List<EnginePrompt.Option> options = new ArrayList<>();
             for(int pos : positionsOf(position.positions()))
             {
-                options.add(new EnginePrompt.Option(positionName(pos), cardName(position.code()), position.code()));
+                // The posture rides in `zone`: see EnginePrompt.Kind.POSITION.
+                options.add(new EnginePrompt.Option(positionName(pos), cardName(position.code()),
+                    position.code(), pos, 0, -1, 0, -1));
             }
-            return new EnginePrompt(EnginePrompt.Kind.CHOOSE, "Choose a position", options, 1, 1, false, field);
+            return new EnginePrompt(EnginePrompt.Kind.POSITION, "Choose a position",
+                options, 1, 1, false, field);
         }
 
         if(message instanceof DuelMessage.SelectPlace place)
@@ -214,7 +217,9 @@ public class PromptTranslator
         {
             List<EnginePrompt.Option> options = new ArrayList<>();
             sort.cards().forEach(card -> options.add(
-                new EnginePrompt.Option(cardName(card.code()), "", card.code())));
+                new EnginePrompt.Option(cardName(card.code()), where(card.controller(),
+                    card.location(), card.sequence()), card.code(),
+                    card.controller(), card.location(), card.sequence())));
             return new EnginePrompt(EnginePrompt.Kind.SORT,
                 sort.chain() ? "Order the chain" : "Order the cards", options,
                 options.size(), options.size(), true, field);
@@ -681,6 +686,11 @@ public class PromptTranslator
     {
         String name = text.cardName(code);
         return name.startsWith("?") ? "Card " + code : name;
+    }
+
+    private static String where(int controller, int location, int sequence)
+    {
+        return where(new CardLocation(controller, location, sequence, 0));
     }
 
     private static String where(CardLocation location)

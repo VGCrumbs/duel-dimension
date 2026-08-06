@@ -335,7 +335,21 @@ public class EngineDuelScreen extends Screen
         List<Integer> found = new ArrayList<>();
         for(int i = 0; i < prompt.options().size(); i++)
         {
-            EnginePrompt.Option option = prompt.options().get(i);
+            found.add(i);
+        }
+        // Ordering a list and counting counters are jobs the board cannot do:
+        // the board shows where a card IS, and these ask about something else
+        // -- what order it goes in, how many markers come off it. Both open
+        // the picker wherever their cards happen to sit, including the field.
+        if(prompt.kind() == EnginePrompt.Kind.SORT
+            || prompt.kind() == EnginePrompt.Kind.COUNTERS
+            || prompt.kind() == EnginePrompt.Kind.POSITION)
+        {
+            return found.isEmpty() ? null : found;
+        }
+
+        for(EnginePrompt.Option option : prompt.options())
+        {
             if(option.command() != 0 || option.cardCode() == 0 || !option.hasSlot())
             {
                 return null;
@@ -345,7 +359,6 @@ public class EngineDuelScreen extends Screen
                 // Anything on the field is chosen by pointing at it.
                 return null;
             }
-            found.add(i);
         }
         return found.size() > 1 ? found : null;
     }
@@ -437,36 +450,47 @@ public class EngineDuelScreen extends Screen
             }
 
             Properties card = DdDatabase.PROPERTIES_LIST.get((long)option.cardCode());
-            ScreenUtil.white();
-            if(card != null)
-            {
-                DuelTextures.bindSmooth(
-                    DuelTextures.card(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE));
-                DdBlitUtil.blit(poseStack, cardX, cardY, at.cardW(), at.cardH(),
-                    DuelTextures.CARD_U0, DuelTextures.CARD_V0,
-                    DuelTextures.CARD_U1 - DuelTextures.CARD_U0,
-                    DuelTextures.CARD_V1 - DuelTextures.CARD_V0, 1, 1);
-            }
-            else
-            {
-                // The label is all we have for a card the database lacks; the
-                // back at least keeps it the same shape as its neighbours.
-                DuelTextures.bindSmooth(DuelTextures.COVER);
-                DdBlitUtil.fullBlit(poseStack, cardX, cardY, at.cardW(), at.cardH());
-            }
+            drawPickerCard(poseStack, prompt, option, card, cardX, cardY, at);
 
-            String name = card != null ? card.getName() : option.label();
+            // For a position choice the card is the same every time; the label
+            // is the answer, so it leads. Everywhere else the card is the
+            // answer and its name is the caption.
+            String name = prompt.kind() == EnginePrompt.Kind.POSITION || card == null
+                ? option.label() : card.getName();
             String shown = font.plainSubstrByWidth(name == null ? "" : name, at.cardW());
             font.drawShadow(poseStack, shown, cardX + (at.cardW() - font.width(shown)) / 2F,
                 cardY + at.cardH() + 2, picked ? 0xFFFFE9B0 : 0xFFC2C9D6);
+
+            drawPickerBadge(poseStack, prompt, picker.get(index), cardX, cardY, at);
         }
 
         int footerY = at.y() + at.height() - PICKER_FOOTER + 5;
-        String need = prompt.isSingleChoice() ? "Click a card"
-            : "Choose " + prompt.minSelect()
-                + (prompt.maxSelect() > prompt.minSelect() ? " to " + prompt.maxSelect() : "")
-                + "   (" + selected.size() + " picked)";
+        String need = switch(prompt.kind())
+        {
+            case SORT -> "Click them in order   (" + sortOrder.size()
+                + " of " + prompt.options().size() + ")";
+            case COUNTERS -> "Click a card to take one off   (" + countersChosen()
+                + " of " + prompt.minSelect() + ")";
+            case POSITION -> "Choose a position";
+            default -> prompt.isSingleChoice() ? "Click a card"
+                : "Choose " + prompt.minSelect()
+                    + (prompt.maxSelect() > prompt.minSelect() ? " to " + prompt.maxSelect() : "")
+                    + "   (" + selected.size() + " picked)";
+        };
         font.drawShadow(poseStack, need, at.x() + PICKER_PAD, footerY, 0xFF9FA6B4);
+
+        for(FooterButton button : pickerFooter(prompt, at))
+        {
+            boolean over = mouseX >= button.x() && mouseX < button.x() + FOOTER_W
+                && mouseY >= button.y() && mouseY < button.y() + FOOTER_H;
+            de.cas_ual_ty.dueldimension.clientutil.hub.NineSlice.draw(poseStack,
+                de.cas_ual_ty.dueldimension.clientutil.hub.HubTextures.BUTTON,
+                button.x(), button.y(), FOOTER_W, FOOTER_H,
+                !button.enabled() ? 2 : over ? 1 : 0, 3);
+            font.drawShadow(poseStack, button.label(),
+                button.x() + (FOOTER_W - font.width(button.label())) / 2F, button.y() + 5,
+                button.enabled() ? 0xFFE6EAF2 : 0xFF6A7080);
+        }
         if(maxScroll > 0)
         {
             String more = "scroll  " + Math.min(picker.size(),
@@ -474,6 +498,142 @@ public class EngineDuelScreen extends Screen
             font.drawShadow(poseStack, more,
                 at.x() + at.width() - PICKER_PAD - font.width(more), footerY, 0xFF7A8090);
         }
+    }
+
+    /**
+     * One card of the picker, drawn the way its prompt wants it.
+     * <p>
+     * A position choice shows the same card in each posture it is being offered
+     * in — face down, or turned on its side for defence — because the posture
+     * IS the question. Everything else draws the card straight.
+     */
+    private void drawPickerCard(PoseStack poseStack, EnginePrompt prompt,
+        EnginePrompt.Option option, Properties card, int cardX, int cardY, PickerLayout at)
+    {
+        ScreenUtil.white();
+        boolean faceDown = prompt.kind() == EnginePrompt.Kind.POSITION
+            && (option.zone() & OcgConstants.POS_FACEDOWN) != 0;
+        boolean defence = prompt.kind() == EnginePrompt.Kind.POSITION
+            && (option.zone() & OcgConstants.POS_DEFENSE) != 0;
+
+        if(card == null || faceDown)
+        {
+            // The back: for a face-down position because that is what it will
+            // look like, and for a card the database lacks because it at least
+            // keeps the cell the same shape as its neighbours.
+            DuelTextures.bindSmooth(DuelTextures.COVER);
+        }
+        else
+        {
+            DuelTextures.bindSmooth(DuelTextures.card(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE));
+        }
+
+        poseStack.pushPose();
+        if(defence)
+        {
+            // Turned a quarter about the cell's own middle, as a defending
+            // card lies on the table.
+            poseStack.translate(cardX + at.cardW() / 2F, cardY + at.cardH() / 2F, 0);
+            poseStack.mulPose(com.mojang.math.Vector3f.ZP.rotationDegrees(90F));
+            poseStack.translate(-(cardX + at.cardW() / 2F), -(cardY + at.cardH() / 2F), 0);
+        }
+        if(card == null || faceDown)
+        {
+            DdBlitUtil.fullBlit(poseStack, cardX, cardY, at.cardW(), at.cardH());
+        }
+        else
+        {
+            DdBlitUtil.blit(poseStack, cardX, cardY, at.cardW(), at.cardH(),
+                DuelTextures.CARD_U0, DuelTextures.CARD_V0,
+                DuelTextures.CARD_U1 - DuelTextures.CARD_U0,
+                DuelTextures.CARD_V1 - DuelTextures.CARD_V0, 1, 1);
+        }
+        poseStack.popPose();
+    }
+
+    /**
+     * The mark in a card's corner: its place in the order being built, or how
+     * many counters are coming off it.
+     */
+    private void drawPickerBadge(PoseStack poseStack, EnginePrompt prompt, int optionIndex,
+        int cardX, int cardY, PickerLayout at)
+    {
+        String badge = null;
+        if(prompt.kind() == EnginePrompt.Kind.SORT)
+        {
+            int place = sortOrder.indexOf(optionIndex);
+            badge = place < 0 ? null : Integer.toString(place + 1);
+        }
+        else if(prompt.kind() == EnginePrompt.Kind.COUNTERS)
+        {
+            badge = counterAmounts[optionIndex] + " / " + prompt.options().get(optionIndex).max();
+        }
+        if(badge == null)
+        {
+            return;
+        }
+        int badgeW = font.width(badge) + 6;
+        int badgeX = cardX + at.cardW() - badgeW - 2;
+        int badgeY = cardY + 2;
+        fill(poseStack, badgeX, badgeY, badgeX + badgeW, badgeY + 11, 0xD0000000);
+        font.drawShadow(poseStack, badge, badgeX + 3, badgeY + 2, 0xFFFFE9B0);
+    }
+
+    /** A button along the bottom of the picker. */
+    private record FooterButton(String label, int x, int y, boolean enabled, Runnable action)
+    {
+    }
+
+    private static final int FOOTER_W = 74;
+    private static final int FOOTER_H = 16;
+
+    /**
+     * Confirm and Cancel, belonging to the picker rather than to the screen.
+     * <p>
+     * The screen's own pair sit along the bottom edge, which the picker covers.
+     * Rather than move them and have their position depend on whether a picker
+     * happens to be open, the picker carries its own.
+     */
+    private List<FooterButton> pickerFooter(EnginePrompt prompt, PickerLayout at)
+    {
+        List<FooterButton> buttons = new ArrayList<>();
+        int y = at.y() + at.height() - FOOTER_H - 3;
+        int x = at.x() + at.width() - PICKER_PAD - FOOTER_W;
+
+        if(prompt.cancelable())
+        {
+            buttons.add(new FooterButton(
+                prompt.kind() == EnginePrompt.Kind.SORT ? "Keep order" : "Cancel",
+                x, y, true, () -> answer(new int[0], 0)));
+            x -= FOOTER_W + 4;
+        }
+        boolean needsConfirm = switch(prompt.kind())
+        {
+            case MULTI -> !prompt.isSingleChoice();
+            case SORT, COUNTERS -> true;
+            default -> false;
+        };
+        if(needsConfirm)
+        {
+            boolean ready = switch(prompt.kind())
+            {
+                case SORT -> sortOrder.size() == prompt.options().size();
+                case COUNTERS -> countersChosen() == prompt.minSelect();
+                default -> selected.size() >= prompt.minSelect();
+            };
+            buttons.add(new FooterButton("Confirm", x, y, ready, this::confirm));
+        }
+        return buttons;
+    }
+
+    private int countersChosen()
+    {
+        int total = 0;
+        for(int amount : counterAmounts)
+        {
+            total += amount;
+        }
+        return total;
     }
 
     /** A click on the picker, or false if it fell outside one. */
@@ -485,6 +645,15 @@ public class EngineDuelScreen extends Screen
             return false;
         }
         PickerLayout at = pickerLayout();
+        for(FooterButton button : pickerFooter(prompt, at))
+        {
+            if(button.enabled() && mouseX >= button.x() && mouseX < button.x() + FOOTER_W
+                && mouseY >= button.y() && mouseY < button.y() + FOOTER_H)
+            {
+                button.action().run();
+                return true;
+            }
+        }
         for(int cell = 0; cell < at.columns() * at.rows(); cell++)
         {
             int index = cell + pickerScroll * at.columns();
@@ -499,7 +668,20 @@ public class EngineDuelScreen extends Screen
             if(mouseX >= cardX && mouseX < cardX + at.cardW()
                 && mouseY >= cardY && mouseY < cardY + at.cardH())
             {
-                choose(picker.get(index));
+                int option = picker.get(index);
+                if(prompt.kind() == EnginePrompt.Kind.COUNTERS)
+                {
+                    // One more off this card per click, back to none past its
+                    // stock: overshooting costs one more click rather than
+                    // needing a second gesture nobody was told about.
+                    int stock = Math.max(0, prompt.options().get(option).max());
+                    counterAmounts[option] = counterAmounts[option] >= stock
+                        ? 0 : counterAmounts[option] + 1;
+                }
+                else
+                {
+                    choose(option);
+                }
                 return true;
             }
         }

@@ -32,7 +32,16 @@ public record EnginePrompt(Kind kind, String title, List<Option> options, int mi
         /** Distribute a total over the options; each has a stock (option max). */
         COUNTERS,
         /** Type/search a card name; the answer is a card code. */
-        DECLARE_CARD
+        DECLARE_CARD,
+        /**
+         * Pick the position one card is placed in.
+         * <p>
+         * Every option is the same card in a different posture, so the option's
+         * {@code zone} carries the POS_* bit rather than a board highlight —
+         * nothing highlights the board for this prompt, and the drawing needs
+         * to know which way up to show the card.
+         */
+        POSITION
     }
 
     /**
