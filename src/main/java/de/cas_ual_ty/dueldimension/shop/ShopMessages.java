@@ -120,8 +120,14 @@ public final class ShopMessages
             {
                 return;
             }
-            int price = ShopStock.priceOf(set);
-            if(!DuelPoints.spend(player, price))
+            // Creative mode already hands out anything for nothing, so a shop
+            // that still charged would be the one place in the game where it
+            // did not. Checked on the SERVER against the player's real game
+            // mode rather than taken from the client, which could simply claim
+            // to be creative.
+            boolean free = player.isCreative();
+            int price = free ? 0 : ShopStock.priceOf(set);
+            if(!free && !DuelPoints.spend(player, price))
             {
                 player.sendSystemMessage(Component.literal("Not enough DP.")
                     .withStyle(ChatFormatting.RED));
@@ -133,8 +139,12 @@ public final class ShopMessages
             {
                 // Nothing came out, so nothing is charged. Refunding rather
                 // than failing silently means a broken set costs the player
-                // nothing.
-                DuelPoints.award(player, price);
+                // nothing. A creative player was never charged, so there is
+                // nothing to give back.
+                if(!free)
+                {
+                    DuelPoints.award(player, price);
+                }
                 player.sendSystemMessage(Component.literal("That pack is empty; you were not charged.")
                     .withStyle(ChatFormatting.RED));
                 return;

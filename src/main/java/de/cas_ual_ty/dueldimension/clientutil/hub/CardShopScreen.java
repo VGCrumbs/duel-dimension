@@ -53,6 +53,12 @@ public class CardShopScreen extends Screen
         this.packs = new ArrayList<>(packs);
     }
 
+    /** Whether this player pays for packs at all. */
+    private boolean isCreative()
+    {
+        return minecraft != null && minecraft.player != null && minecraft.player.isCreative();
+    }
+
     private ShopStock.Pack current()
     {
         return packs.isEmpty() ? null : packs.get(Math.max(0, Math.min(selected, packs.size() - 1)));
@@ -130,7 +136,10 @@ public class CardShopScreen extends Screen
         {
             return;
         }
-        if(points < pack.price())
+        // A creative player pays nothing, so the affordability check would
+        // otherwise block a purchase the server would happily allow. The server
+        // decides either way; this only avoids refusing the click locally.
+        if(!isCreative() && points < pack.price())
         {
             notice = "Not enough DP";
             return;
@@ -216,8 +225,9 @@ public class CardShopScreen extends Screen
         int y = pad + 8 + artH + 6;
         String quantity = pack.deck() ? "1 DECK" : "1 PACK";
         font.drawShadow(poseStack, quantity, pad + 8, y, 0xFFC2C9D6);
-        String price = pack.price() + " DP";
-        font.drawShadow(poseStack, price, pad + 8, y + 12, 0xFFF4D089);
+        String price = isCreative() ? "FREE (creative)" : pack.price() + " DP";
+        font.drawShadow(poseStack, price, pad + 8, y + 12,
+            isCreative() ? 0xFF7CE38B : 0xFFF4D089);
     }
 
     /** Centre: every pack, the highlighted one ringed. */
@@ -278,13 +288,13 @@ public class CardShopScreen extends Screen
         // The metrics run along the right of the title row, as the reference's
         // bar does: how many cards, what it costs, how much of it you have.
         String cards = "x " + pack.cardsPerPack();
-        String price = pack.price() + " DP";
+        String price = isCreative() ? "FREE" : pack.price() + " DP";
         String complete = completion(pack) + "%";
         int metricsX = width - pad - 8;
         metricsX -= font.width(complete);
         font.drawShadow(poseStack, complete, metricsX, textY, 0xFF9FD4FF);
         metricsX -= font.width(price) + 12;
-        font.drawShadow(poseStack, price, metricsX, textY, 0xFFF4D089);
+        font.drawShadow(poseStack, price, metricsX, textY, isCreative() ? 0xFF7CE38B : 0xFFF4D089);
         metricsX -= font.width(cards) + 12;
         font.drawShadow(poseStack, cards, metricsX, textY, 0xFFC2C9D6);
         // A card glyph before the count, standing in for the reference's icon.
