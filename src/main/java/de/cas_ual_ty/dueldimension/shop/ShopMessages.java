@@ -88,16 +88,24 @@ public final class ShopMessages
      * — the price, the balance, the contents — is looked up here, so the packet
      * cannot be used to buy cheaply or to choose what comes out.
      */
-    public record Buy(String code)
+    public record Buy(String code, int count)
     {
+        /**
+         * The most packs one press can buy. A limit at all matters because the
+         * count arrives from the client: without one, a single packet could ask
+         * for two billion pack rolls on the server thread.
+         */
+        public static final int MAX_AT_ONCE = 10;
+
         public static void encode(Buy message, FriendlyByteBuf buffer)
         {
             buffer.writeUtf(message.code(), 32);
+            buffer.writeVarInt(message.count());
         }
 
         public static Buy decode(FriendlyByteBuf buffer)
         {
-            return new Buy(buffer.readUtf(32));
+            return new Buy(buffer.readUtf(32), buffer.readVarInt());
         }
 
         public static void handle(Buy message, Supplier<NetworkEvent.Context> context)
@@ -109,25 +117,31 @@ public final class ShopMessages
                 {
                     return;
                 }
-                sell(player, message.code());
+                sell(player, message.code(), message.count());
             });
             context.get().setPacketHandled(true);
         }
 
-        private static void sell(ServerPlayer player, String code)
+        private static void sell(ServerPlayer player, String code, int requested)
         {
             CardSet set = ShopStock.setOf(code);
             if(set == null || !set.isIndependentAndItem())
             {
                 return;
             }
+            // Clamped rather than refused: a count outside the range is a
+            // client sending nonsense, and the sane reading of "buy 0" or "buy
+            // a million" is one pack and ten respectively.
+            int count = Math.max(1, Math.min(MAX_AT_ONCE, requested));
+
             // Creative mode already hands out anything for nothing, so a shop
             // that still charged would be the one place in the game where it
             // did not. Checked on the SERVER against the player's real game
             // mode rather than taken from the client, which could simply claim
             // to be creative.
             boolean free = player.isCreative();
-            int price = free ? 0 : ShopStock.priceOf(set);
+            int each = free ? 0 : ShopStock.priceOf(set);
+            int price = each * count;
             if(!free && !DuelPoints.spend(player, price))
             {
                 player.sendSystemMessage(Component.literal("Not enough DP.")
@@ -135,8 +149,19 @@ public final class ShopMessages
                 return;
             }
 
-            List<ItemStack> pulled = set.open(new Random());
-            if(pulled == null || pulled.isEmpty())
+            // Every pack rolled separately, so ten packs are ten independent
+            // pulls rather than one pull shown ten times.
+            List<ItemStack> pulled = new ArrayList<>();
+            Random random = new Random();
+            for(int i = 0; i < count; i++)
+            {
+                List<ItemStack> one = set.open(random);
+                if(one != null)
+                {
+                    pulled.addAll(one);
+                }
+            }
+            if(pulled.isEmpty())
             {
                 // Nothing came out, so nothing is charged. Refunding rather
                 // than failing silently means a broken set costs the player

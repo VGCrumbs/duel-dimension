@@ -11,5 +11,6 @@
   "sort.width": 62,
   "dir.width": 30,
   "close.width": 70,
-  "close.gap": 4
+  "close.gap": 4,
+  "bulk.width": 34
 }

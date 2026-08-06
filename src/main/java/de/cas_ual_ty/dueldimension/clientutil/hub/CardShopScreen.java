@@ -56,6 +56,14 @@ public class CardShopScreen extends Screen
     private boolean descending;
 
     /**
+     * How many packs one press buys. The offered steps rather than a free
+     * number: a stepper to reach ten is nine presses, and these are the counts
+     * anyone actually wants.
+     */
+    private static final int[] BULK = {1, 3, 5, 10};
+    private int bulk = 1;
+
+    /**
      * The orders the shop offers, alphabetical first because that is the one a
      * player can navigate without knowing anything about the catalogue: with
      * three hundred sets, finding one you can name beats browsing by date.
@@ -200,12 +208,40 @@ public class CardShopScreen extends Screen
             rebuild();
         }));
 
-        addRenderableWidget(new HubWidgets.TextureButton(pad, height - layout.i("bottom.height", 62) - 30,
-            buyW, 20, Component.literal("Buy"), pressed -> buy()));
+        // The button carries the whole cost rather than the unit price: buying
+        // ten is the one time a player wants to know the total before pressing.
+        ShopStock.Pack shownPack = current();
+        int bulkW = layout.i("bulk.width", 34);
+        int buyLabelW = buyW - bulkW - 2;
+        String cost = shownPack == null ? "Buy"
+            : isCreative() ? "Buy (free)"
+            : "Buy  " + shownPack.price() * bulk;
+        int buyY = height - layout.i("bottom.height", 62) - 30;
+        addRenderableWidget(new HubWidgets.TextureButton(pad, buyY, buyLabelW, 20,
+            Component.literal(cost), pressed -> buy()));
+        addRenderableWidget(new HubWidgets.TextureButton(pad + buyLabelW + 2, buyY, bulkW, 20,
+            Component.literal("x" + bulk), pressed ->
+        {
+            bulk = nextBulk();
+            rebuild();
+        }));
         addRenderableWidget(new HubWidgets.TextureButton(closeLeft(), height - 26,
             layout.i("close.width", 70), 20, Component.literal("Close"), pressed -> onClose()));
 
         refresh();
+    }
+
+    /** The next offered quantity, wrapping back to one after the largest. */
+    private int nextBulk()
+    {
+        for(int i = 0; i < BULK.length; i++)
+        {
+            if(BULK[i] == bulk)
+            {
+                return BULK[(i + 1) % BULK.length];
+            }
+        }
+        return BULK[0];
     }
 
     /** Rebuilds the widgets so a button's own label can change. */
@@ -316,15 +352,16 @@ public class CardShopScreen extends Screen
         // A creative player pays nothing, so the affordability check would
         // otherwise block a purchase the server would happily allow. The server
         // decides either way; this only avoids refusing the click locally.
-        if(!isCreative() && points < pack.price())
+        if(!isCreative() && points < pack.price() * bulk)
         {
             notice = "Not enough DP";
             return;
         }
         notice = "";
-        // Only the pack is named. Price, contents and the balance check are the
-        // server's, so this cannot ask for a discount.
-        DuelDimension.channel.sendToServer(new ShopMessages.Buy(pack.code()));
+        // Only the pack and how many are named. Price, contents and the balance
+        // check are the server's, so this cannot ask for a discount -- and the
+        // count is clamped there too, since this is a number from a client.
+        DuelDimension.channel.sendToServer(new ShopMessages.Buy(pack.code(), bulk));
     }
 
     // ---- input ----
@@ -332,14 +369,23 @@ public class CardShopScreen extends Screen
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button)
     {
+        // Widgets first. The grid covers most of the screen, and a control
+        // drawn over it should be the thing that receives a click on it.
+        if(super.mouseClicked(mouseX, mouseY, button))
+        {
+            return true;
+        }
         int index = packAt(mouseX, mouseY);
         if(index >= 0)
         {
             selected = index;
             notice = "";
+            // The Buy button carries this pack's price, so it is rebuilt with
+            // the selection rather than showing the last pack's cost.
+            rebuild();
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return false;
     }
 
     @Override
@@ -380,9 +426,17 @@ public class CardShopScreen extends Screen
         int cellW = cellW();
         int cellH = cellH();
         int gap = layout().i("grid.gap", 4);
+        // Bounded BEFORE the divide. A cast to int truncates toward zero, so a
+        // click above the grid gave (int)(-0.36) == 0 rather than something
+        // negative, the row < 0 guard never fired, and pressing the search box
+        // selected whatever pack was in the top-left.
+        if(mouseX < gridLeft() || mouseY < gridTop())
+        {
+            return -1;
+        }
         int column = (int)((mouseX - gridLeft()) / (cellW + gap));
         int row = (int)((mouseY - gridTop()) / (cellH + gap));
-        if(column < 0 || column >= columns || row < 0 || row >= gridRows())
+        if(column >= columns || row >= gridRows())
         {
             return -1;
         }
@@ -444,6 +498,7 @@ public class CardShopScreen extends Screen
         int rowY = boxY + 5;
         detail(poseStack, boxX, boxW, rowY, "Contents", pack.deck() ? "1 DECK" : "1 PACK",
             0xFFC2C9D6);
+        rowY += rowH;
         // How many cards actually come out, which is what the price is per.
         detail(poseStack, boxX, boxW, rowY, "Cards",
             Integer.toString(pack.cardsPerPack()), 0xFFC2C9D6);
@@ -523,7 +578,11 @@ public class CardShopScreen extends Screen
         String count = shown.size() == packs.size()
             ? packs.size() + " packs"
             : shown.size() + " of " + packs.size();
-        font.drawShadow(poseStack, count, gridLeft(), gridTop() - 12, 0xFF7A8090);
+        // Under the grid rather than above it: above put it behind the search
+        // field, which is drawn later and covered it.
+        int gap = layout().i("grid.gap", 4);
+        int below = gridTop() + gridRows() * (cellH() + gap) + 2;
+        font.drawShadow(poseStack, count, gridLeft(), below, 0xFF7A8090);
     }
 
     /** Centre: every pack, the highlighted one ringed. */
