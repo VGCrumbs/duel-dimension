@@ -186,12 +186,27 @@ public class BoardRenderer extends GuiComponent
     {
         mats = new PlayMats[] {self == null ? PlayMats.CLASSIC : self,
             opponent == null ? PlayMats.CLASSIC : opponent};
+        matColours = new int[] {DuelClientState.matColour(), DuelClientState.opponentMatColour};
     }
 
+    /**
+     * Both mats are now the same neutral texture, tinted per side. One
+     * greyscale source multiplied by a colour is what lets a player pick any
+     * colour at all instead of choosing from six files.
+     */
     private ResourceLocation mat(int controller)
     {
-        return mats[controller].texture();
+        return de.cas_ual_ty.dueldimension.clientutil.hub.HubTextures.CUSTOM_MAT;
     }
+
+    /** The colour this side's mat and bare zones are drawn in. */
+    private int matColour(int controller)
+    {
+        return matColours[controller];
+    }
+
+    /** Per-side mat colours, mirroring {@link #mats}. */
+    private int[] matColours = {DuelClientState.DEFAULT_MAT_COLOUR, DuelClientState.DEFAULT_MAT_COLOUR};
 
     /**
      * How many quarter turns a card of this controller's is drawn at.
@@ -380,8 +395,11 @@ public class BoardRenderer extends GuiComponent
         // demonstrably does.
         for(int controller = 0; controller <= 1; controller++)
         {
+            // One neutral mat texture, multiplied by this side's chosen colour.
+            int tint = matColour(controller);
             FieldQuad.drawProjected(poseStack, mat(controller), projection,
-                FieldLayout.zoneBand(controller), 10, controller == 0 ? 0 : 2, 0F, 0F, 1F, 1F);
+                FieldLayout.zoneBand(controller), 10, controller == 0 ? 0 : 2, 0F, 0F, 1F, 1F,
+                (tint >> 16 & 0xFF) / 255F, (tint >> 8 & 0xFF) / 255F, (tint & 0xFF) / 255F, 1F);
         }
 
         // The zones outside the mat block: the two extra monster zones and the
@@ -448,7 +466,7 @@ public class BoardRenderer extends GuiComponent
         }
         // Every bare zone wears its owner's mat colour, so a duelist's whole
         // side of the table is themed rather than just the mat block.
-        int accent = mats[controller].accent();
+        int accent = matColour(controller);
         float red = (accent >> 16 & 0xFF) / 255F;
         float green = (accent >> 8 & 0xFF) / 255F;
         float blue = (accent & 0xFF) / 255F;

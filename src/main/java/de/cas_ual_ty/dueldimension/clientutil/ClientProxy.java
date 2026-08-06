@@ -97,6 +97,7 @@ public class ClientProxy implements ISidedProxy
         bus.addListener(this::modelRegistry);
         bus.addListener(this::modelBake);
         bus.addListener(this::modConfig);
+        bus.addListener(de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds::register);
     }
     
     @Override
@@ -106,6 +107,7 @@ public class ClientProxy implements ISidedProxy
         bus.addListener(this::renderGameOverlayPost);
         bus.addListener(this::clientChatReceived);
         bus.addListener(this::clientTick);
+        bus.addListener(de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds::onKeyInput);
     }
     
     /**
@@ -328,6 +330,9 @@ public class ClientProxy implements ISidedProxy
     public void setOpponentPlayMat(String matId)
     {
         DuelClientState.opponentMat = PlayMats.byId(matId);
+        // The id may be a colour now rather than a mat name.
+        DuelClientState.opponentMatColour =
+            DuelClientState.parseMatColour(matId, DuelClientState.DEFAULT_MAT_COLOUR);
     }
 
     @Override

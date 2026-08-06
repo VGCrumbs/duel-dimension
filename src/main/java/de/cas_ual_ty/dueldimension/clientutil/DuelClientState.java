@@ -154,16 +154,78 @@ public final class DuelClientState
             .resolve("dueldimension-playmat.txt");
     }
 
+    /**
+     * The mat colour. One greyscale mat texture is multiplied by this, so any
+     * colour is possible without shipping a file per hue.
+     */
+    public static final int DEFAULT_MAT_COLOUR = 0x8FA3B8;
+    private static volatile int matColour = DEFAULT_MAT_COLOUR;
+
+    /** The other duelist's chosen colour, drawn on their half of the table. */
+    public static volatile int opponentMatColour = DEFAULT_MAT_COLOUR;
+
+    public static int matColour()
+    {
+        return matColour;
+    }
+
+    public static void setMatColour(int rgb)
+    {
+        matColour = rgb & 0xFFFFFF;
+        savePlayMat();
+    }
+
+    /**
+     * The colour as the id that travels to the server, which forwards it to the
+     * other duelist so they draw your half of the table correctly. Prefixed so
+     * the older named mats still parse.
+     */
+    public static String matColourId()
+    {
+        return String.format("custom:%06X", matColour);
+    }
+
+    /** The deck the hub reports; deck storage is not wired yet. */
+    public static String activeDeckName()
+    {
+        return "Starter";
+    }
+
     public static void savePlayMat()
     {
         try
         {
-            java.nio.file.Files.writeString(playMatFile(), selfMat.id());
+            java.nio.file.Files.writeString(playMatFile(), matColourId());
         }
         catch(java.io.IOException e)
         {
             // A cosmetic preference is not worth crashing over.
         }
+    }
+
+    /** Reads a stored id, tolerating both the new colour form and an old mat name. */
+    public static int parseMatColour(String id, int fallback)
+    {
+        if(id == null)
+        {
+            return fallback;
+        }
+        String text = id.strip();
+        if(text.startsWith("custom:"))
+        {
+            try
+            {
+                return Integer.parseInt(text.substring(7), 16) & 0xFFFFFF;
+            }
+            catch(NumberFormatException malformed)
+            {
+                return fallback;
+            }
+        }
+        // An id saved before the picker existed names one of the old mats; its
+        // accent is the closest thing it had to a colour.
+        PlayMats named = PlayMats.byId(text);
+        return named == null ? fallback : named.accent();
     }
 
     static
@@ -173,7 +235,8 @@ public final class DuelClientState
             java.nio.file.Path file = playMatFile();
             if(java.nio.file.Files.isRegularFile(file))
             {
-                selfMat = PlayMats.byId(java.nio.file.Files.readString(file).strip());
+                String stored = java.nio.file.Files.readString(file).strip();
+                matColour = parseMatColour(stored, DEFAULT_MAT_COLOUR);
             }
         }
         catch(java.io.IOException e)

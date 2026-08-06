@@ -106,9 +106,9 @@ public class EngineDuelScreen extends Screen
     @Override
     protected void init()
     {
-        // The saved mat choice, told to the server so the opponent sees it.
+        // The saved mat colour, told to the server so the opponent sees it.
         DuelDimension.channel.sendToServer(
-            new PromptMessages.SetPlayMat(DuelClientState.selfMat.id()));
+            new PromptMessages.SetPlayMat(DuelClientState.matColourId()));
         rebuild();
     }
 
@@ -168,17 +168,9 @@ public class EngineDuelScreen extends Screen
             DuelDimension.channel.sendToServer(new PromptMessages.SetChainPreference(chainPreference));
             rebuild();
         }));
-        // Surrender and Close live on the deck's own menu. This row picks your
-        // playmat, which the other duelist sees on your half of the table.
-        addRenderableWidget(new Button(SIDEBAR_PAD, height - 24, SIDEBAR_W - SIDEBAR_PAD * 2, 18,
-            Component.literal("Mat: " + DuelClientState.selfMat.displayName()), pressed ->
-        {
-            DuelClientState.selfMat = DuelClientState.selfMat.next();
-            DuelClientState.savePlayMat();
-            DuelDimension.channel.sendToServer(
-                new PromptMessages.SetPlayMat(DuelClientState.selfMat.id()));
-            rebuild();
-        }));
+        // The mat used to be cycled from here. It is chosen in the Duel Hub
+        // (Y) now: a setting reachable from two places has no single source of
+        // truth, and mid-duel is the worse of the two moments to offer it.
 
         if(prompt == null)
         {
