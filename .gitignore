@@ -16,6 +16,8 @@ out
 # gradle
 build
 .gradle
+# Omega runs with its own project cache so it can start alongside Alpha
+.gradle-omega
 
 # other
 eclipse

@@ -64,14 +64,18 @@ minecraft {
             }
         }
 
-        client1 {
+        // Alpha is the primary client, Omega the secondary. Two named seats
+        // rather than "client1/client2" because the names are what you type:
+        // /duel Omega. Both state their own size rather than inheriting it,
+        // so neither can drift from 920p if the base config is edited.
+        alpha {
             parent runs.client
-            args '--username', 'Duelist1'
+            args '--username', 'Alpha', '--width', '1634', '--height', '920'
         }
 
-        client2 {
+        omega {
             parent runs.client
-            args '--username', 'Duelist2'
+            args '--username', 'Omega', '--width', '1634', '--height', '920'
         }
 
         server {
