@@ -286,6 +286,14 @@ public final class CardQuery<C>
         return result;
     }
 
+    /** Orders without filtering: for sorting a deck, where nothing is hidden. */
+    public List<C> sortOnly(List<C> cards)
+    {
+        List<C> result = new ArrayList<>(cards);
+        result.sort(comparator());
+        return result;
+    }
+
     private Comparator<C> comparator()
     {
         Comparator<C> byChosen = switch(sort)

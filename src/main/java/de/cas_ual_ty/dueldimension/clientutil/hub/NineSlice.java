@@ -53,8 +53,15 @@ public final class NineSlice
     public static void draw(PoseStack poseStack, ResourceLocation texture,
         int x, int y, int width, int height, int row, int rows)
     {
+        draw(poseStack, texture, x, y, width, height, row, rows, 1F);
+    }
+
+    /** As above, at an alpha. Used for panels that should not hide what is behind them. */
+    public static void draw(PoseStack poseStack, ResourceLocation texture,
+        int x, int y, int width, int height, int row, int rows, float alpha)
+    {
         RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+        RenderSystem.setShaderColor(1F, 1F, 1F, alpha);
         RenderSystem.enableBlend();
         RenderSystem.setShaderTexture(0, texture);
 
@@ -94,6 +101,7 @@ public final class NineSlice
         {
             blit(poseStack, x + edge, y + edge, midW, midH, BORDER, v0 + BORDER, texMid, texMid, fileHeight);
         }
+        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
     }
 
     private static void blit(PoseStack poseStack, int x, int y, int w, int h,

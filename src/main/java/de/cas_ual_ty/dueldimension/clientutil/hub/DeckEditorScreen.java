@@ -82,6 +82,13 @@ public class DeckEditorScreen extends Screen
     /** Past this many pixels a press counts as a drag rather than a click. */
     private static final double DRAG_SLOP = 4;
 
+    /** The right-click menu: what it is on, and where it opened. */
+    private Properties menuCard;
+    private DeckList.Part menuPart;
+    private int menuIndex = -1;
+    private int menuX;
+    private int menuY;
+
     /** How far the hovered card's description is scrolled, and whose it is. */
     private int previewScroll;
     private long previewCard = -1;
@@ -115,28 +122,28 @@ public class DeckEditorScreen extends Screen
         rightX = leftX + leftW + layout.i("panel.gap", 8);
         rightW = width - rightX - pad;
 
-        // Card size is DERIVED, not fixed. The width that makes the main deck
-        // columns fill the panel decides it, and the height follows from the
-        // card's own aspect -- so art is never stretched, whatever the window.
+        // The card size is DERIVED from the rows the deck REQUIRES, not from
+        // whatever rows happen to fit. Sizing the card first and then asking
+        // how many rows were left is what hid 26 of a 46-card deck: at a
+        // comfortable card size only two rows fitted, so the rest simply were
+        // not drawn.
+        float aspect = layout.f("card.aspect", 480F / 700F);
+        int mainRowsNeeded = (int)Math.ceil(DeckList.Part.MAIN.capacity() / (double)mainColumns);
+        int extraRowsNeeded = (int)Math.ceil(DeckList.Part.EXTRA.capacity() / (double)extraColumns);
+        int sideRowsNeeded = (int)Math.ceil(DeckList.Part.SIDE.capacity() / (double)extraColumns);
+        int rowsNeeded = mainRowsNeeded + extraRowsNeeded + sideRowsNeeded;
+
+        int spaceForRows = panelH - titleH - pad * 2 - (headerH + sectionGap) * 3;
+        int cellFromHeight = Math.max(8, spaceForRows / Math.max(1, rowsNeeded) - gap);
         int cellFromWidth = Math.max(6, (leftW - pad * 2) / mainColumns - gap);
         int cellFromTrunk = Math.max(6, (rightW - pad * 2) / trunkColumns - gap);
-        float aspect = layout.f("card.aspect", 480F / 700F);
-        cardW = Math.min(layout.i("card.width", 30), Math.min(cellFromWidth, cellFromTrunk));
-        cardH = Math.max(8, Math.round(cardW / aspect));
 
-        // Then the main deck takes whatever rows are left after Extra, Side
-        // and their headings, so nothing can run off the bottom.
-        int deckSpace = panelH - titleH - pad * 2
-            - (headerH + sectionGap) * 3
-            - (cardH + gap) * 2;
-        mainRows = Math.max(1, deckSpace / (cardH + gap));
-        // If even one row will not fit, shrink the card until it does.
-        while(mainRows * (cardH + gap) + (cardH + gap) * 2 + titleH + (headerH + sectionGap) * 3
-            + pad * 2 > panelH && cardH > 10)
-        {
-            cardW = Math.max(6, cardW - 2);
-            cardH = Math.max(8, Math.round(cardW / aspect));
-        }
+        // Whichever constraint bites hardest decides, so every row of every
+        // part is on screen and the art still keeps its own proportions.
+        cardH = Math.max(10, Math.min(cellFromHeight,
+            Math.round(Math.min(cellFromWidth, cellFromTrunk) / aspect)));
+        cardW = Math.max(8, Math.round(cardH * aspect));
+        mainRows = mainRowsNeeded;
 
         search = new EditBox(font, rightX + pad + 2, panelTop + pad + 2,
             Math.max(40, rightW - pad * 2 - layout.i("trunk.sortWidth", 56)
@@ -213,6 +220,14 @@ public class DeckEditorScreen extends Screen
         clear.active = !EditorState.query().isClear();
         addRenderableWidget(clear);
 
+        // Sorting a deck is the same idea as sorting the trunk, so it reuses
+        // the trunk's chosen order rather than inventing a second one.
+        addRenderableWidget(new HubWidgets.TextureButton(leftX + pad, height - 26, 92, 20,
+            Component.literal("Sort Deck"), pressed ->
+        {
+            sortDeck();
+            refusal = "";
+        }));
         addRenderableWidget(new HubWidgets.TextureButton(width - pad - 80, height - 26, 80, 20,
             Component.literal("Done"), pressed -> onClose()));
     }
@@ -311,6 +326,45 @@ public class DeckEditorScreen extends Screen
         rebuildControls();
     }
 
+    /**
+     * Orders every part of the deck by the trunk's current sort.
+     * <p>
+     * The same comparator the right-hand panel is using, so a player who has
+     * sorted the trunk by ATK gets a deck sorted by ATK -- one idea of "in
+     * order" rather than two.
+     */
+    private void sortDeck()
+    {
+        DeckList deck = EditorState.deck();
+        for(DeckList.Part part : DeckList.Part.values())
+        {
+            List<Integer> codes = deck.partFor(part);
+            List<Properties> cards = new java.util.ArrayList<>();
+            List<Integer> unknown = new java.util.ArrayList<>();
+            for(int code : codes)
+            {
+                Properties card = card(code);
+                if(card == null)
+                {
+                    unknown.add(code);
+                }
+                else
+                {
+                    cards.add(card);
+                }
+            }
+            List<Properties> sorted = EditorState.query().sortOnly(cards);
+            codes.clear();
+            for(Properties card : sorted)
+            {
+                codes.add((int)card.getId());
+            }
+            // A card the database does not know still belongs to the deck, so
+            // it is kept rather than dropped by the sort.
+            codes.addAll(unknown);
+        }
+    }
+
     private static String label(CardQuery.Kind kind)
     {
         return switch(kind)
@@ -337,12 +391,18 @@ public class DeckEditorScreen extends Screen
 
     private int extraTop()
     {
-        return mainTop() + mainRows * (cardH + gap) + headerH + sectionGap;
+        return mainTop() + rowsFor(DeckList.Part.MAIN) * (cardH + gap) + headerH + sectionGap;
     }
 
     private int sideTop()
     {
-        return extraTop() + (cardH + gap) + headerH + sectionGap;
+        return extraTop() + rowsFor(DeckList.Part.EXTRA) * (cardH + gap) + headerH + sectionGap;
+    }
+
+    /** How many rows a part needs to show everything it can hold. */
+    private int rowsFor(DeckList.Part part)
+    {
+        return (int)Math.ceil(part.capacity() / (double)partColumns(part));
     }
 
     private int partTop(DeckList.Part part)
@@ -366,7 +426,7 @@ public class DeckEditorScreen extends Screen
         for(DeckList.Part part : DeckList.Part.values())
         {
             int top = partTop(part);
-            int rows = part == DeckList.Part.MAIN ? mainRows : 1;
+            int rows = rowsFor(part);
             if(mouseX >= leftX + pad && mouseX < leftX + leftW - pad
                 && mouseY >= top && mouseY < top + rows * (cardH + gap))
             {
@@ -419,9 +479,19 @@ public class DeckEditorScreen extends Screen
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button)
     {
-        if(rename != null && !rename.isMouseOver(mouseX, mouseY))
+        // An open menu takes the click before anything else, so choosing from
+        // it cannot also pick up the card underneath.
+        if(menuCard != null)
         {
-            commitRename();
+            if(handleMenuClick(mouseX, mouseY))
+            {
+                return true;
+            }
+            closeMenu();
+        }
+        if(button == 1)
+        {
+            return openMenu(mouseX, mouseY);
         }
         refusal = "";
         boolean shift = hasShiftDown();
@@ -532,6 +602,91 @@ public class DeckEditorScreen extends Screen
         }
         carriedFrom = null;
         carriedIndex = -1;
+    }
+
+    /** Menu row height and width; small, since it holds two choices. */
+    private static final int MENU_ROW = 14;
+    private static final int MENU_W = 74;
+
+    /** Right-click opens a menu on whatever card is under the cursor. */
+    private boolean openMenu(double mouseX, double mouseY)
+    {
+        Properties target = cardAt(mouseX, mouseY);
+        if(target == null)
+        {
+            closeMenu();
+            return false;
+        }
+        menuCard = target;
+        menuPart = partAt(mouseX, mouseY);
+        menuIndex = menuPart == null ? -1 : slotIndexAt(menuPart, mouseX, mouseY);
+        menuX = (int)mouseX;
+        menuY = (int)mouseY;
+        refusal = "";
+        return true;
+    }
+
+    private void closeMenu()
+    {
+        menuCard = null;
+        menuPart = null;
+        menuIndex = -1;
+    }
+
+    /** True when the click landed on a menu row and was consumed. */
+    private boolean handleMenuClick(double mouseX, double mouseY)
+    {
+        int rows = menuPart == null ? 1 : 2;
+        if(mouseX < menuX || mouseX > menuX + MENU_W
+            || mouseY < menuY || mouseY > menuY + rows * MENU_ROW)
+        {
+            return false;
+        }
+        int row = (int)((mouseY - menuY) / MENU_ROW);
+        Properties target = menuCard;
+        DeckList.Part part = menuPart;
+        int index = menuIndex;
+        closeMenu();
+
+        if(row == 0)
+        {
+            // Add one, into the part it belongs in.
+            DeckList.Part destination = part != null ? part
+                : target.getIsInExtraDeck() ? DeckList.Part.EXTRA : DeckList.Part.MAIN;
+            add(target, destination);
+            return true;
+        }
+        if(part != null && index >= 0)
+        {
+            List<Integer> cards = EditorState.deck().partFor(part);
+            if(index < cards.size())
+            {
+                cards.remove(index);
+            }
+        }
+        return true;
+    }
+
+    /** Draws the menu, and greys "Add 1" when the rules refuse another copy. */
+    private void drawMenu(PoseStack poseStack, int mouseX, int mouseY)
+    {
+        DeckList.Part destination = menuPart != null ? menuPart
+            : menuCard.getIsInExtraDeck() ? DeckList.Part.EXTRA : DeckList.Part.MAIN;
+        DeckLimits.Verdict verdict = DeckLimits.canAdd(EditorState.deck(), destination,
+            (int)menuCard.getId(), EditorState.trunk(), EditorState.banlist());
+        int rows = menuPart == null ? 1 : 2;
+
+        NineSlice.draw(poseStack, HubTextures.PANEL, menuX, menuY, MENU_W, rows * MENU_ROW + 2);
+        boolean onAdd = mouseX >= menuX && mouseX <= menuX + MENU_W
+            && mouseY >= menuY && mouseY < menuY + MENU_ROW;
+        font.drawShadow(poseStack, "Add 1", menuX + 6, menuY + 4,
+            !verdict.allowed() ? 0xFF6A7080 : onAdd ? 0xFFFFE9B0 : 0xFFE6EAF2);
+        if(rows > 1)
+        {
+            boolean onRemove = mouseY >= menuY + MENU_ROW && mouseY < menuY + MENU_ROW * 2;
+            font.drawShadow(poseStack, "Remove", menuX + 6, menuY + MENU_ROW + 4,
+                onRemove ? 0xFFFFB0A8 : 0xFFE6EAF2);
+        }
     }
 
     /** Adds a card if every rule allows it, else records why not. */
@@ -682,13 +837,28 @@ public class DeckEditorScreen extends Screen
 
         // A hovered card is previewed large, with its name and effect text.
         // Skipped while carrying, since the cursor already has a card on it.
-        if(carried == null)
+        if(carried == null && menuCard == null)
         {
             Properties hovered = cardAt(mouseX, mouseY);
             if(hovered != null)
             {
+                // Raised above everything already drawn. Font rendering batches
+                // into a buffer that flushes at the end of the frame, so text
+                // drawn EARLIER can otherwise appear on top of a panel drawn
+                // later -- which is why the deck headings were showing through
+                // the preview. Vanilla tooltips solve it the same way.
+                poseStack.pushPose();
+                poseStack.translate(0, 0, 400);
                 drawPreview(poseStack, hovered, mouseX, mouseY);
+                poseStack.popPose();
             }
+        }
+        if(menuCard != null)
+        {
+            poseStack.pushPose();
+            poseStack.translate(0, 0, 400);
+            drawMenu(poseStack, mouseX, mouseY);
+            poseStack.popPose();
         }
 
         // The carried card rides the cursor, as an inventory stack does.
@@ -785,7 +955,9 @@ public class DeckEditorScreen extends Screen
         x = Math.max(4, Math.min(x, width - panelW - 4));
         int y = Math.max(4, Math.min(mouseY - panelH / 2, height - panelH - 4));
 
-        NineSlice.draw(poseStack, HubTextures.PANEL, x, y, panelW, panelH);
+        // Half transparent, so the board behind stays readable while pointing.
+        NineSlice.draw(poseStack, HubTextures.PANEL, x, y, panelW, panelH,
+            NineSlice.IDLE, 1, layout.f("preview.opacity", 0.5F));
 
         RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
