@@ -59,6 +59,12 @@ public class PackOpeningScreen extends Screen
     /** How far the shine has swept, so a rare pull reads as special. */
     private float shine;
 
+    /** First visible row of the summary grid. */
+    private int summaryScroll;
+
+    /** Hidden once everything is revealed: there is nothing left to skip. */
+    private HubWidgets.TextureButton skip;
+
     public PackOpeningScreen(String setName, List<Integer> codes, List<String> rarities)
     {
         super(Component.literal("Opening " + setName));
@@ -83,8 +89,9 @@ public class PackOpeningScreen extends Screen
         // has the file, so requesting at reveal time meant the card was turned
         // over to show a placeholder and only became itself a moment later.
         requestArt();
-        addRenderableWidget(new HubWidgets.TextureButton(width - 96, height - 30, 84, 20,
-            Component.literal("Skip"), pressed -> toSummary()));
+        skip = new HubWidgets.TextureButton(width - 96, height - 30, 84, 20,
+            Component.literal("Skip"), pressed -> toSummary());
+        addRenderableWidget(skip);
     }
 
     /**
@@ -127,6 +134,7 @@ public class PackOpeningScreen extends Screen
     private void toSummary()
     {
         index = codes.size();
+        summaryScroll = 0;
         enter(Stage.SUMMARY);
     }
 
@@ -163,6 +171,22 @@ public class PackOpeningScreen extends Screen
         }
         advance();
         return true;
+    }
+
+    /**
+     * The wheel scrolls the summary. It does nothing during the reveal, where
+     * there is only ever one card on screen and scrolling would have nothing
+     * to move.
+     */
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta)
+    {
+        if(stage == Stage.SUMMARY)
+        {
+            summaryScroll = Math.max(0, summaryScroll - (int)Math.signum(delta));
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, delta);
     }
 
     @Override
@@ -227,6 +251,10 @@ public class PackOpeningScreen extends Screen
     {
         renderBackground(poseStack);
         Layout layout = Layout.of(LAYOUT);
+        if(skip != null)
+        {
+            skip.visible = stage != Stage.SUMMARY;
+        }
 
         int cardW = layout.i("card.width", 128);
         int cardH = Math.round(cardW / layout.f("card.aspect", DuelTextures.CARD_ASPECT));
@@ -319,41 +347,80 @@ public class PackOpeningScreen extends Screen
         font.drawShadow(poseStack, hint, centreX - font.width(hint) / 2F, height - 44, 0xFF7A8090);
     }
 
+    /**
+     * The whole pull, sized to the width and scrolled if it is tall.
+     * <p>
+     * Card size is DERIVED from the space rather than fixed: a big set can pull
+     * over a hundred cards, and a fixed size laid most of them off the bottom
+     * of the screen with no way to reach them. Columns fill the width at a
+     * comfortable card size, then the card shrinks until the rows that remain
+     * are reachable by scrolling rather than lost.
+     */
     private void renderSummary(PoseStack poseStack, Layout layout)
     {
-        int columns = Math.max(1, layout.i("summary.columns", 5));
-        int cardW = layout.i("summary.cardWidth", 62);
-        int cardH = Math.round(cardW / layout.f("card.aspect", DuelTextures.CARD_ASPECT));
+        int pad = layout.i("summary.pad", 14);
         int gap = layout.i("summary.gap", 6);
+        int top = layout.i("summary.top", 46);
+        int bottom = layout.i("summary.bottom", 40);
+
+        int usableW = width - pad * 2;
+        int usableH = height - top - bottom;
+
+        // As many columns as fit at the preferred size, then the card width is
+        // recomputed so the row fills the space exactly instead of leaving a
+        // ragged margin.
+        int preferred = layout.i("summary.cardWidth", 62);
+        int columns = Math.max(1, (usableW + gap) / (preferred + gap));
+        int cardW = Math.max(16, (usableW - (columns - 1) * gap) / columns);
+        int cardH = Math.round(cardW / layout.f("card.aspect", DuelTextures.CARD_ASPECT));
+
         int rows = (codes.size() + columns - 1) / columns;
+        int visibleRows = Math.max(1, (usableH + gap) / (cardH + gap));
+        int maxScroll = Math.max(0, rows - visibleRows);
+        summaryScroll = Math.max(0, Math.min(summaryScroll, maxScroll));
 
         int gridW = columns * cardW + (columns - 1) * gap;
-        int gridH = rows * cardH + (rows - 1) * gap;
         int startX = (width - gridW) / 2;
-        int startY = Math.max(46, (height - gridH) / 2 - 6);
 
-        for(int i = 0; i < codes.size(); i++)
+        for(int row = 0; row < visibleRows; row++)
         {
-            int x = startX + (i % columns) * (cardW + gap);
-            int y = startY + (i / columns) * (cardH + gap);
-            Properties card = cardAt(i);
-            if(card == null)
+            for(int column = 0; column < columns; column++)
             {
-                continue;
-            }
-            drawFace(poseStack, card, x, y, cardW, cardH);
-            if(isRare(i))
-            {
-                // A still highlight rather than a sweep: several at once would
-                // be a light show, and the point is only to pick them out.
-                NineSlice.draw(poseStack, HubTextures.PANEL, x - 3, y - 3, cardW + 6, cardH + 6,
-                    NineSlice.HOVER, 3, 0.55F);
+                int index = (row + summaryScroll) * columns + column;
+                if(index >= codes.size())
+                {
+                    break;
+                }
+                Properties card = cardAt(index);
+                if(card == null)
+                {
+                    continue;
+                }
+                int x = startX + column * (cardW + gap);
+                int y = top + row * (cardH + gap);
                 drawFace(poseStack, card, x, y, cardW, cardH);
+                if(isRare(index))
+                {
+                    // A still highlight rather than a sweep: several at once
+                    // would be a light show, and the point is only to pick
+                    // them out.
+                    NineSlice.draw(poseStack, HubTextures.PANEL, x - 3, y - 3, cardW + 6, cardH + 6,
+                        NineSlice.HOVER, 3, 0.55F);
+                    drawFace(poseStack, card, x, y, cardW, cardH);
+                }
             }
         }
 
+        // Only claim there is more when there is, and say how much.
+        if(maxScroll > 0)
+        {
+            String position = "scroll  " + Math.min(codes.size(),
+                (summaryScroll + visibleRows) * columns) + " / " + codes.size();
+            font.drawShadow(poseStack, position, width / 2F - font.width(position) / 2F,
+                height - 30, 0xFF7A8090);
+        }
         String hint = "Click to close";
-        font.drawShadow(poseStack, hint, width / 2F - font.width(hint) / 2F, height - 44, 0xFF7A8090);
+        font.drawShadow(poseStack, hint, width / 2F - font.width(hint) / 2F, height - 18, 0xFF9FA6B4);
     }
 
     /** One card, squashed horizontally by {@code squash}, face up or down. */

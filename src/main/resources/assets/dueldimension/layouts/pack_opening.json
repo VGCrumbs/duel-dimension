@@ -6,7 +6,9 @@
   "flip.ms": 320,
   "shine.ms": 700,
 
-  "summary.columns": 5,
   "summary.cardWidth": 62,
-  "summary.gap": 6
+  "summary.gap": 6,
+  "summary.pad": 14,
+  "summary.top": 46,
+  "summary.bottom": 40
 }
