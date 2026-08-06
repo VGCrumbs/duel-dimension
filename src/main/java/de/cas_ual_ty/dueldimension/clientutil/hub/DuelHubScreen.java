@@ -55,8 +55,15 @@ public class DuelHubScreen extends Screen
     private int top;
     private MatColourPicker matPicker;
 
-    /** The row being renamed, and its field. Only one at a time. */
-    private int renamingIndex = -1;
+    /**
+     * The deck being renamed, held by identity rather than by index.
+     * <p>
+     * It was an index, which silently pointed at the wrong row: the rows
+     * iterate the player's own decks while the index addressed the full list,
+     * so the field was placed against whichever deck happened to share that
+     * position -- usually none, so nothing appeared to happen at all.
+     */
+    private de.cas_ual_ty.dueldimension.duel.profile.DeckList renaming;
     private net.minecraft.client.gui.components.EditBox renameField;
     /** First visible row, so a long deck list can be scrolled. */
     private int deckScroll;
@@ -353,7 +360,7 @@ public class DuelHubScreen extends Screen
             int y = bodyTop + 4 + row * ROW_H;
             int x = rowX;
 
-            if(index == renamingIndex && renameField != null)
+            if(deck == renaming && renameField != null)
             {
                 renameField.x = x + 2;
                 renameField.y = y + 3;
@@ -389,7 +396,12 @@ public class DuelHubScreen extends Screen
                 notice = "";
                 rebuild();
             });
-            use.active = !deck.name().equals(EditorState.profile().activeDeck());
+            // Saving an unfinished deck is fine -- building one is a process --
+            // but it cannot be USED until it is legal, so Use reports that by
+            // being disabled rather than by failing at the duel.
+            boolean legal = de.cas_ual_ty.dueldimension.duel.profile.DeckLimits
+                .validate(deck, EditorState.trunk(), EditorState.banlist()).isEmpty();
+            use.active = legal && !deck.name().equals(EditorState.profile().activeDeck());
             addRenderableWidget(use);
             x += useW + gap;
 
@@ -430,28 +442,52 @@ public class DuelHubScreen extends Screen
 
     private void startRename(int index)
     {
-        renamingIndex = index;
+        java.util.List<de.cas_ual_ty.dueldimension.duel.profile.DeckList> all = EditorState.decks();
+        startRename(all.get(Math.max(0, Math.min(index, all.size() - 1))));
+    }
+
+    /**
+     * Turns that deck's name button into an editable field until it is
+     * confirmed. Deck management is in the Decks view, so renaming switches
+     * there rather than leaving the field somewhere the player cannot see it.
+     */
+    private void startRename(de.cas_ual_ty.dueldimension.duel.profile.DeckList deck)
+    {
+        deckView = DeckView.DECKS;
+        renaming = deck;
         renameField = new net.minecraft.client.gui.components.EditBox(font, 0, 0, 100, 14,
             Component.literal("Deck name"));
         renameField.setMaxLength(40);
-        renameField.setValue(EditorState.decks().get(index).name());
+        renameField.setValue(deck.name());
+        renameField.moveCursorToEnd();
+        // Scrolled to, or a rename on an off-screen row would edit something
+        // the player cannot see.
+        int row = EditorState.ownDecks().indexOf(deck);
+        if(row >= 0)
+        {
+            int visible = deckRowsVisible();
+            if(row < deckScroll || row >= deckScroll + visible)
+            {
+                deckScroll = Math.max(0, row - visible / 2);
+            }
+        }
         rebuild();
     }
 
     private void cancelRename()
     {
-        renamingIndex = -1;
+        renaming = null;
         renameField = null;
     }
 
     /** Applies a pending rename. Commits on Enter or on clicking away. */
     private void commitRename()
     {
-        if(renamingIndex < 0 || renameField == null)
+        if(renaming == null || renameField == null)
         {
             return;
         }
-        EditorState.select(renamingIndex);
+        EditorState.select(EditorState.decks().indexOf(renaming));
         if(!EditorState.rename(renameField.getValue()))
         {
             notice = "That name is already used";
