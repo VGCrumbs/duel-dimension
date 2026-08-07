@@ -111,16 +111,39 @@ public class ClientProxy implements ISidedProxy
         bus.addListener(de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds::onKeyInput);
         bus.addListener(this::leftServer);
         bus.addListener(this::hideBodyUnderOutfit);
+        bus.addListener(this::renderOutfitArm);
         bus.addListener(this::showBodyAgain);
     }
 
     /**
-     * Takes the player's own body away while they are wearing an outfit.
+     * The first-person hand, in the outfit.
      * <p>
-     * An outfit is a whole body, so leaving the original under it does not
-     * hide it: a classic body is a pixel wider at each arm than an Alex outfit,
-     * and that pixel stuck out. Inflating the outfit far enough to swallow it
-     * would have made every outfit look padded, so the body goes instead.
+     * First person does not go through the layer at all: it calls
+     * {@code PlayerRenderer.renderRightHand}, which draws one arm of the base
+     * model directly and runs no layers, so a duelist wearing an outfit saw
+     * everyone else's sleeves and their own bare wrist. Forge fires
+     * {@code RenderArmEvent} from exactly that call. Cancelled rather than
+     * added to, because vanilla would otherwise draw the bare arm underneath.
+     */
+    private void renderOutfitArm(net.minecraftforge.client.event.RenderArmEvent event)
+    {
+        if(!OutfitLayer.takesOver(event.getPlayer()))
+        {
+            return;
+        }
+        OutfitLayer.renderArm(event.getPoseStack(), event.getMultiBufferSource(),
+            event.getPackedLight(), event.getPlayer(),
+            event.getArm() == net.minecraft.world.entity.HumanoidArm.RIGHT);
+        event.setCanceled(true);
+    }
+
+    /**
+     * Takes the player's own body away when this mod is drawing them instead.
+     * <p>
+     * Either because they are wearing an outfit — a classic body is a pixel
+     * wider at each arm than an Alex outfit, and that pixel stuck out from
+     * under it — or because this mod supplies their skin, which the game has no
+     * way to fetch in an offline client.
      * <p>
      * This has to happen here rather than in the layer. Forge fires
      * {@code RenderPlayerEvent.Pre} after {@code PlayerRenderer.setModelProperties},
@@ -130,8 +153,8 @@ public class ClientProxy implements ISidedProxy
      */
     private void hideBodyUnderOutfit(net.minecraftforge.client.event.RenderPlayerEvent.Pre event)
     {
-        if(de.cas_ual_ty.dueldimension.duel.outfit.WornOutfits
-            .of(event.getEntity().getUUID()).texture() != null)
+        if(event.getEntity() instanceof net.minecraft.client.player.AbstractClientPlayer drawn
+            && OutfitLayer.takesOver(drawn))
         {
             event.getRenderer().getModel().setAllVisible(false);
         }
@@ -143,8 +166,8 @@ public class ClientProxy implements ISidedProxy
      */
     private void showBodyAgain(net.minecraftforge.client.event.RenderPlayerEvent.Post event)
     {
-        if(de.cas_ual_ty.dueldimension.duel.outfit.WornOutfits
-            .of(event.getEntity().getUUID()).texture() != null)
+        if(event.getEntity() instanceof net.minecraft.client.player.AbstractClientPlayer drawn
+            && OutfitLayer.takesOver(drawn))
         {
             event.getRenderer().getModel().setAllVisible(true);
         }

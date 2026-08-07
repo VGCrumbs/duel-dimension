@@ -16,7 +16,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Draws a duelist's outfit over their own skin.
+ * Draws a duelist: their own skin, and their outfit over it.
  * <p>
  * The same approach the Crysis mod uses for its suit pieces: not armour models
  * bolted onto the body, but a second player model wearing the outfit as a skin.
@@ -25,11 +25,14 @@ import net.minecraft.resources.ResourceLocation;
  * instead of geometry.
  * <p>
  * The player's own body is hidden for the frame (see
- * {@code ClientProxy.hideBodyUnderOutfit}) and redrawn here on the outfit's
- * body type, with the outfit over it. That is the point of taking it away: a
- * classic body is a pixel wider at each arm than an Alex outfit and stuck out
- * from under it, and the fix is to draw the player on the body their clothes
- * were cut for rather than to lose the player.
+ * {@code ClientProxy.hideBodyUnderOutfit}) and redrawn here. Two reasons to
+ * take it over rather than let it draw itself: a classic body is a pixel wider
+ * at each arm than an Alex outfit and stuck out from under it, so the player
+ * has to be drawn on the body their clothes were cut for; and a skin this mod
+ * supplies ({@link PlayerSkins}) is not one the game knows how to fetch.
+ * <p>
+ * So this runs for anyone with either, and draws whichever of the two passes
+ * applies.
  * <p>
  * A layer rather than an override of the player's skin, which would need a
  * mixin into {@code AbstractClientPlayer} and a build set up to run one.
@@ -55,15 +58,32 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
      * wearing it, so the outfit carries it — and the player underneath is drawn
      * on that same body, which is what stops anything sticking out.
      */
-    private final PlayerModel<AbstractClientPlayer> classicSkin;
-    private final PlayerModel<AbstractClientPlayer> classicOutfit;
-    private final PlayerModel<AbstractClientPlayer> alexSkin;
-    private final PlayerModel<AbstractClientPlayer> alexOutfit;
+    private static PlayerModel<AbstractClientPlayer> classicSkin;
+    private static PlayerModel<AbstractClientPlayer> classicOutfit;
+    private static PlayerModel<AbstractClientPlayer> alexSkin;
+    private static PlayerModel<AbstractClientPlayer> alexOutfit;
 
     public OutfitLayer(RenderLayerParent<AbstractClientPlayer,
         PlayerModel<AbstractClientPlayer>> parent, EntityModelSet models)
     {
         super(parent);
+        models();
+    }
+
+    /**
+     * Shared by every player renderer, and by the first-person hand.
+     * <p>
+     * Static because the hand is drawn from an event that does not say which
+     * renderer it came from, and because a model holds no state between draws
+     * beyond the pose each draw sets. Four of them: two body types, and for
+     * each the skin and the outfit over it.
+     */
+    private static void models()
+    {
+        if(classicSkin != null)
+        {
+            return;
+        }
         classicSkin = bake(false, 0F);
         classicOutfit = bake(false, INFLATE);
         alexSkin = bake(true, 0F);
@@ -87,21 +107,90 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
         AbstractClientPlayer player, float limbSwing, float limbSwingAmount, float partialTick,
         float age, float yaw, float pitch)
     {
-        Outfits.Outfit worn = WornOutfits.of(player.getUUID());
-        ResourceLocation texture = worn.texture();
-        if(texture == null || player.isInvisible() || player.isSpectator())
+        if(!takesOver(player) || player.isInvisible() || player.isSpectator())
         {
             return;
         }
+        Outfits.Outfit worn = WornOutfits.of(player.getUUID());
+        PlayerSkins.Skin skin = PlayerSkins.resolve(player);
+        // The outfit decides the body when there is one, because its sleeves
+        // are cut for a particular pair of arms; otherwise the skin does.
+        boolean slim = worn.texture() != null ? worn.slim() : skin.slim();
 
         // The player first, then their clothes: an outfit leaves gaps -- a bare
         // forearm, a face -- and what shows through them should be the person
         // wearing it.
         draw(poseStack, buffer, light, player, limbSwing, limbSwingAmount, partialTick,
-            age, yaw, pitch, worn.slim() ? alexSkin : classicSkin,
-            player.getSkinTextureLocation());
-        draw(poseStack, buffer, light, player, limbSwing, limbSwingAmount, partialTick,
-            age, yaw, pitch, worn.slim() ? alexOutfit : classicOutfit, texture);
+            age, yaw, pitch, slim ? alexSkin : classicSkin, skin.texture());
+        if(worn.texture() != null)
+        {
+            draw(poseStack, buffer, light, player, limbSwing, limbSwingAmount, partialTick,
+                age, yaw, pitch, slim ? alexOutfit : classicOutfit, worn.texture());
+        }
+    }
+
+    /**
+     * Whether this mod is drawing this player rather than the game.
+     * <p>
+     * Asked in one place so the layer and the code that hides the vanilla body
+     * cannot disagree — disagreeing in either direction is a player rendered
+     * twice or not at all.
+     */
+    public static boolean takesOver(AbstractClientPlayer player)
+    {
+        return WornOutfits.of(player.getUUID()).texture() != null
+            || PlayerSkins.of(player) != null;
+    }
+
+    /**
+     * The same two passes, on one arm, for the hand you see in first person.
+     * <p>
+     * First person does not go through this layer at all: it calls
+     * {@code PlayerRenderer.renderRightHand}, which draws one arm of the base
+     * model directly and runs no layers. So a duelist wearing an outfit saw
+     * everyone else's sleeves and their own bare wrist. Forge fires
+     * {@code RenderArmEvent} from exactly that call, and this answers it.
+     *
+     * @param right which arm, because each has its own model part
+     */
+    public static void renderArm(PoseStack poseStack, MultiBufferSource buffer, int light,
+        AbstractClientPlayer player, boolean right)
+    {
+        models();
+        Outfits.Outfit worn = WornOutfits.of(player.getUUID());
+        PlayerSkins.Skin skin = PlayerSkins.resolve(player);
+        boolean slim = worn.texture() != null ? worn.slim() : skin.slim();
+
+        arm(poseStack, buffer, light, player,
+            slim ? alexSkin : classicSkin, skin.texture(), right);
+        if(worn.texture() != null)
+        {
+            arm(poseStack, buffer, light, player,
+                slim ? alexOutfit : classicOutfit, worn.texture(), right);
+        }
+    }
+
+    private static void arm(PoseStack poseStack, MultiBufferSource buffer, int light,
+        AbstractClientPlayer player, PlayerModel<AbstractClientPlayer> model,
+        ResourceLocation texture, boolean right)
+    {
+        // The pose vanilla's own first-person arm uses: no swing, standing, and
+        // the arm straight down the screen.
+        model.attackTime = 0F;
+        model.crouching = false;
+        model.swimAmount = 0F;
+        model.setupAnim(player, 0F, 0F, 0F, 0F, 0F);
+        net.minecraft.client.model.geom.ModelPart limb = right ? model.rightArm : model.leftArm;
+        net.minecraft.client.model.geom.ModelPart sleeve =
+            right ? model.rightSleeve : model.leftSleeve;
+        limb.xRot = 0F;
+        sleeve.xRot = 0F;
+        limb.visible = true;
+        sleeve.visible = true;
+        limb.render(poseStack, buffer.getBuffer(RenderType.entityCutoutNoCull(texture)), light,
+            OverlayTexture.NO_OVERLAY);
+        sleeve.render(poseStack, buffer.getBuffer(RenderType.entityTranslucent(texture)), light,
+            OverlayTexture.NO_OVERLAY);
     }
 
     private void draw(PoseStack poseStack, MultiBufferSource buffer, int light,
