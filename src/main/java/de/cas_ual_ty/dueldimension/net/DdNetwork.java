@@ -142,8 +142,12 @@ public final class DdNetwork
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
             MenuData.TYPE, (payload, context) -> MenuData.receive(payload.data()));
 
-        // The rest of the client receivers land with the screens they feed:
-        // a profile sync has nowhere to go until there is an editor to show it.
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            ProfilePayloads.Sync.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.clientutil.hub.EditorState
+                .accept(payload.profile()));
+
+        // The rest of the client receivers land with the screens they feed.
     }
 
     // ---- helpers the payload classes share ----

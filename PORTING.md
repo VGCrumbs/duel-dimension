@@ -220,10 +220,23 @@ is usually the larger half of the work, not Forge-vs-Fabric.
    `DdBlitUtil`.** Everything in that last group builds its own quads, and
    there is nothing to build them with any more.
 
-   Across so far: `HubTextures`, `NineSlice`, `HubWidgets`, `HubKeybinds`, and
-   a `DuelHubScreen` frame. **Y opens the hub; the panel, tab strip and buttons
-   are the Forge build's own art, drawn through the new API.** Each tab says
-   what it is waiting for rather than showing an empty body.
+   Across so far: `HubTextures`, `NineSlice`, `HubWidgets`, `HubKeybinds`,
+   `PlayerSkins`, `EditorState`, and `DuelHubScreen`. **Y opens the hub, and
+   Profile and Decks show the player's real collection** — what they own, the
+   decks they have built, the active one, whether free mode is on. Outfit and
+   Settings still say what they are waiting for.
+
+   `EditorState` cost almost nothing: 687 lines whose only loader dependency
+   was `send()`. Forge's `channel.sendToServer(Object)` became
+   `ClientPlayNetworking.send(payload)`, which is typed — a message that was
+   never registered is a compile error now rather than a packet that vanishes.
+   And `accept` takes a `DuelProfile` instead of unpacking a `CompoundTag`,
+   because the sync and the disk share one Codec, so the client cannot read the
+   format differently from the way the server wrote it.
+
+   Nothing in the hub yet CHANGES a deck — use, rename, duplicate, delete and
+   the editor all need `DeckEditorScreen` or the confirmation dialogue. Buttons
+   that do nothing would be worse than no buttons.
 
    The client also has a mixin config now (`dueldimension.mixins.json`), which
    the Forge tree never needed. `PlayerSkins` is why: a dev client is offline,
