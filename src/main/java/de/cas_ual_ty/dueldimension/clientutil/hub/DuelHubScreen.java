@@ -396,47 +396,176 @@ public class DuelHubScreen extends Screen
         font.drawShadow(poseStack, "This cannot be undone.", boxX + 12, boxY + 36, 0xFFFF6B6B);
     }
 
+    /** How wide one preview tile is, and how tall the figure inside it stands. */
+    private static final int TILE_W = 78;
+    private static final int TILE_H = 118;
+
+    /** First tile shown, when there are more outfits than fit across. */
+    private int outfitScroll;
+
+    private int outfitStripX()
+    {
+        return left + PAD + 6;
+    }
+
+    private int outfitTiles()
+    {
+        return Math.max(1, (WIDTH - PAD * 2 - 12) / TILE_W);
+    }
+
+    private static java.util.List<de.cas_ual_ty.dueldimension.duel.outfit.Outfits.Outfit> outfits()
+    {
+        return de.cas_ual_ty.dueldimension.duel.outfit.Outfits.ALL;
+    }
+
     /**
-     * The wardrobe: one row per outfit, the worn one marked.
+     * The wardrobe: a row of figures wearing the clothes, the worn one marked.
      * <p>
-     * What the player is wearing is the server's to say, so the row asks for a
-     * change and the row's mark follows the profile that comes back — pressing
-     * a row does not colour it in and hope.
+     * A list of names tells a player nothing about what they are choosing.
+     * These are clothes, and "what does it look like" is the only question
+     * being asked, so each one is worn by a turning figure rather than written
+     * down.
+     * <p>
+     * What the player is wearing is the server's to say, so a tile asks for a
+     * change and the mark follows the profile that comes back.
      */
     private void buildOutfitRows(int bodyTop)
     {
-        int x = left + PAD + 6;
-        int rowW = WIDTH - PAD * 2 - 12;
-        String worn = EditorState.profile().outfit();
+        int across = outfitTiles();
+        outfitScroll = Math.max(0, Math.min(outfitScroll, Math.max(0, outfits().size() - across)));
 
-        for(int i = 0; i < de.cas_ual_ty.dueldimension.duel.outfit.Outfits.ALL.size(); i++)
+        String worn = EditorState.profile().outfit();
+        for(int slot = 0; slot < across && slot + outfitScroll < outfits().size(); slot++)
         {
             de.cas_ual_ty.dueldimension.duel.outfit.Outfits.Outfit outfit =
-                de.cas_ual_ty.dueldimension.duel.outfit.Outfits.ALL.get(i);
+                outfits().get(slot + outfitScroll);
             boolean on = outfit.id().equals(worn);
-            int y = bodyTop + 24 + i * (ROW_H + 2);
-            HubWidgets.TextureButton row = new HubWidgets.TextureButton(x, y, rowW, ROW_H - 2,
-                Component.literal((on ? "▸ " : "") + outfit.name()), pressed ->
+            int x = outfitStripX() + slot * TILE_W;
+            // The whole tile is the button, with the figure drawn over it: a
+            // player picking clothes aims at the clothes.
+            HubWidgets.TextureButton tile = new HubWidgets.TextureButton(x, bodyTop + 22,
+                TILE_W - 6, TILE_H, Component.literal(""), pressed ->
             {
                 EditorState.wear(outfit.id());
                 rebuild();
             });
-            row.active = !on;
+            tile.active = !on;
             if(!outfit.credit().isEmpty())
             {
-                // Attribution on the thing itself, where somebody choosing it
-                // will actually see it.
-                row.setTooltipLines(java.util.List.of(outfit.name(), outfit.credit()));
+                // Attribution where somebody choosing it will actually see it.
+                tile.setTooltipLines(java.util.List.of(outfit.name(), outfit.credit()));
             }
-            addRenderableWidget(row);
+            addRenderableWidget(tile);
         }
+
+        // ---- the under-skin editor ----
+        int editorY = bodyTop + 22 + TILE_H + 8;
+        boolean wearing = !worn.isEmpty();
+        HubWidgets.TextureButton pick = new HubWidgets.TextureButton(outfitStripX(), editorY,
+            110, 20, Component.literal("Import PNG..."), pressed -> importUnderSkin());
+        pick.active = wearing;
+        pick.setTooltipLines(wearing
+            ? java.util.List.of("Your own skin, edited",
+                "Take off the sleeves or hood that poke out from under this outfit")
+            : java.util.List.of("Only used under an outfit",
+                "With none on you are drawn with your real skin"));
+        addRenderableWidget(pick);
+
+        HubWidgets.TextureButton clear = new HubWidgets.TextureButton(outfitStripX() + 116,
+            editorY, 96, 20, Component.literal("Use Real Skin"), pressed ->
+        {
+            de.cas_ual_ty.dueldimension.clientutil.UnderSkin.clear();
+            notice = "";
+            rebuild();
+        });
+        clear.active = de.cas_ual_ty.dueldimension.clientutil.UnderSkin.present();
+        clear.setTooltipLines(java.util.List.of("Forget the imported skin"));
+        addRenderableWidget(clear);
+    }
+
+    /**
+     * Asks the system for a PNG.
+     * <p>
+     * Through LWJGL's file dialog, which Minecraft already ships, so the player
+     * picks a file the way they would in any other program. If that is missing
+     * -- it is a native library, and a native library can be absent -- the
+     * known path is read instead and the player is told where it is.
+     */
+    private void importUnderSkin()
+    {
+        java.nio.file.Path chosen;
+        try
+        {
+            org.lwjgl.PointerBuffer filters = org.lwjgl.BufferUtils.createPointerBuffer(1);
+            filters.put(org.lwjgl.system.MemoryUtil.memUTF8("*.png"));
+            filters.flip();
+            String path = org.lwjgl.util.tinyfd.TinyFileDialogs.tinyfd_openFileDialog(
+                "Choose your under-skin (64x64 PNG)", "", filters, "PNG image", false);
+            if(path == null)
+            {
+                return; // cancelled, which is an answer
+            }
+            chosen = java.nio.file.Path.of(path);
+        }
+        catch(Throwable unavailable)
+        {
+            chosen = de.cas_ual_ty.dueldimension.clientutil.UnderSkin.file();
+            notice = "No file chooser here; reading " + chosen;
+        }
+        String refusal = de.cas_ual_ty.dueldimension.clientutil.UnderSkin.importFrom(chosen);
+        if(refusal != null)
+        {
+            notice = refusal;
+        }
+        rebuild();
     }
 
     private void renderOutfit(PoseStack poseStack, int bodyTop)
     {
-        font.drawShadow(poseStack, "Outfit", left + PAD + 6, bodyTop + 8, 0xFFF4D089);
-        font.drawShadow(poseStack, "What other duelists see you in.",
-            left + PAD + 6, bodyTop + 8 + font.lineHeight + 2, 0xFF8A93A3);
+        int across = outfitTiles();
+        String worn = EditorState.profile().outfit();
+        // One clock for the whole row, so the figures turn together rather than
+        // each starting from whenever its tile happened to be built.
+        long time = net.minecraft.Util.getMillis();
+
+        for(int slot = 0; slot < across && slot + outfitScroll < outfits().size(); slot++)
+        {
+            de.cas_ual_ty.dueldimension.duel.outfit.Outfits.Outfit outfit =
+                outfits().get(slot + outfitScroll);
+            int x = outfitStripX() + slot * TILE_W;
+            boolean on = outfit.id().equals(worn);
+
+            NineSlice.draw(poseStack, HubTextures.PANEL_INSET, x, bodyTop + 22,
+                TILE_W - 6, TILE_H);
+            OutfitPreview.draw(poseStack, x + (TILE_W - 6) / 2, bodyTop + 22 + TILE_H - 20,
+                2.6F, outfit, time);
+
+            String name = font.plainSubstrByWidth(outfit.name(), TILE_W - 12);
+            font.drawShadow(poseStack, name, x + (TILE_W - 6 - font.width(name)) / 2,
+                bodyTop + 22 + TILE_H - 12, on ? 0xFFF4D089 : 0xFFC2C9D6);
+        }
+
+        if(outfits().size() > across)
+        {
+            font.drawShadow(poseStack, (outfitScroll + 1) + "-"
+                    + Math.min(outfits().size(), outfitScroll + across)
+                    + " of " + outfits().size(),
+                outfitStripX(), bodyTop + 10, 0xFF7A8090);
+        }
+
+        int editorY = bodyTop + 22 + TILE_H + 8;
+        String state = worn.isEmpty()
+            ? "No outfit: drawn with your own skin."
+            : de.cas_ual_ty.dueldimension.clientutil.UnderSkin.present()
+                ? "Under-skin: your imported edit."
+                : "Under-skin: your own skin.";
+        font.drawShadow(poseStack, state, outfitStripX() + 218, editorY + 6,
+            worn.isEmpty() ? 0xFF7A8090 : 0xFFC2C9D6);
+        if(!notice.isEmpty())
+        {
+            font.drawShadow(poseStack, font.plainSubstrByWidth(notice, WIDTH - PAD * 2 - 12),
+                outfitStripX(), editorY + 26, 0xFFFF8A80);
+        }
     }
 
     /** Draws each column's heading, its scrollbar, and its empty marker. */
@@ -862,6 +991,13 @@ public class DuelHubScreen extends Screen
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta)
     {
+        if(section == Section.OUTFIT)
+        {
+            int max = Math.max(0, outfits().size() - outfitTiles());
+            outfitScroll = Math.max(0, Math.min(max, outfitScroll - (int)Math.signum(delta)));
+            rebuild();
+            return true;
+        }
         if(section == Section.DECKS && deckView == DeckView.RECIPES)
         {
             // The column under the cursor, so three lists side by side scroll

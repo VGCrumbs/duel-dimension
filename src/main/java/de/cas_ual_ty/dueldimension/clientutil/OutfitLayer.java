@@ -121,12 +121,38 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
         // forearm, a face -- and what shows through them should be the person
         // wearing it.
         draw(poseStack, buffer, light, player, limbSwing, limbSwingAmount, partialTick,
-            age, yaw, pitch, slim ? alexSkin : classicSkin, skin.texture());
+            age, yaw, pitch, slim ? alexSkin : classicSkin, baseSkin(player, worn, skin));
         if(worn.texture() != null)
         {
             draw(poseStack, buffer, light, player, limbSwing, limbSwingAmount, partialTick,
                 age, yaw, pitch, slim ? alexOutfit : classicOutfit, worn.texture());
         }
+    }
+
+    /**
+     * What to draw under the outfit.
+     * <p>
+     * The player's edited skin if they supplied one and are actually wearing
+     * something, otherwise their real one. The edit exists to stop a hoodie or
+     * a long sleeve poking through an outfit's gaps, so with no outfit on there
+     * is nothing for it to solve and the player is simply themselves.
+     * <p>
+     * Local to this client and never sent: everyone else sees the real skin
+     * under the same outfit, which is the honest thing for a cosmetic that
+     * only its owner has edited.
+     */
+    private static ResourceLocation baseSkin(AbstractClientPlayer player, Outfits.Outfit worn,
+        PlayerSkins.Skin skin)
+    {
+        if(worn.texture() != null && player == net.minecraft.client.Minecraft.getInstance().player)
+        {
+            ResourceLocation edited = UnderSkin.texture();
+            if(edited != null)
+            {
+                return edited;
+            }
+        }
+        return skin.texture();
     }
 
     /**
@@ -162,7 +188,7 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
         boolean slim = worn.texture() != null ? worn.slim() : skin.slim();
 
         arm(poseStack, buffer, light, player,
-            slim ? alexSkin : classicSkin, skin.texture(), right);
+            slim ? alexSkin : classicSkin, baseSkin(player, worn, skin), right);
         if(worn.texture() != null)
         {
             arm(poseStack, buffer, light, player,
