@@ -36,6 +36,13 @@ public final class OutfitPreview
     /** A full turn every this many milliseconds — slow enough to look at. */
     private static final float SPIN_MS = 9000F;
 
+    /**
+     * How tall a player model is in its own units: head top at 0, feet at 1.5.
+     * The parts are stored in blocks, so this is the number that turns a height
+     * in pixels into a scale.
+     */
+    private static final float BODY_BLOCKS = 1.5F;
+
     private static PlayerModel<AbstractClientPlayer> classicSkin;
     private static PlayerModel<AbstractClientPlayer> classicOutfit;
     private static PlayerModel<AbstractClientPlayer> alexSkin;
@@ -65,13 +72,19 @@ public final class OutfitPreview
 
     /**
      * Draws one figure, centred on {@code x} with its feet at {@code footY}.
+     * <p>
+     * The transform is worked out rather than borrowed from
+     * {@code InventoryScreen}, which drives a whole entity renderer and applies
+     * its own conventions on the way. A bare {@link PlayerModel} is simpler
+     * than that: its parts are stored in blocks, and its y axis runs downward —
+     * head at 0, feet at 1.5 — which is the same direction a screen's does. So
+     * the model needs no flipping at all, only placing and scaling.
      *
-     * @param scale pixels per model unit; a player is 32 units tall, so 3 gives
-     *              a figure about ninety pixels high
-     * @param time  milliseconds, for the turn and the walk. Passed in rather
-     *              than read here so every tile on a row is in step.
+     * @param height how tall the figure should stand, in pixels
+     * @param time   milliseconds, for the turn and the walk. Passed in rather
+     *               than read here so every tile on a row is in step.
      */
-    public static void draw(PoseStack poseStack, int x, int footY, float scale,
+    public static void draw(PoseStack poseStack, int x, int footY, int height,
         Outfits.Outfit outfit, long time)
     {
         models();
@@ -89,19 +102,16 @@ public final class OutfitPreview
         // reads as a statue on a turntable rather than as someone wearing
         // something. The swing is small -- this is a fitting room, not a march.
         float limbSwing = time / 220F;
-        float limbSwingAmount = 0.55F;
+        float limbSwingAmount = 0.5F;
 
         poseStack.pushPose();
-        poseStack.translate(x, footY, 200);
-        poseStack.scale(scale, scale, scale);
-        // Y down in a GUI, Y up in the world.
-        poseStack.mulPose(Vector3f.ZP.rotationDegrees(180F));
-        poseStack.mulPose(Vector3f.YP.rotationDegrees(spin));
-        // The model's origin is the top of the head, so drop it a body's height
-        // to stand the figure on the line asked for.
-        poseStack.translate(0, -24 / 16F, 0);
-        poseStack.scale(-1F, -1F, 1F);
-        poseStack.translate(0, -1.5F, 0);
+        // Head-top to the top of where the figure should stand, since that is
+        // where the model's own origin is.
+        poseStack.translate(x, footY - height, 250);
+        poseStack.scale(height / BODY_BLOCKS, height / BODY_BLOCKS, height / BODY_BLOCKS);
+        // Half a turn on top of the spin: a player model faces -Z, and -Z is
+        // away from whoever is looking at the screen.
+        poseStack.mulPose(Vector3f.YP.rotationDegrees(180F + spin));
 
         com.mojang.blaze3d.platform.Lighting.setupForEntityInInventory();
         MultiBufferSource.BufferSource buffer = minecraft.renderBuffers().bufferSource();

@@ -535,10 +535,8 @@ public class DuelHubScreen extends Screen
             int x = outfitStripX() + slot * TILE_W;
             boolean on = outfit.id().equals(worn);
 
-            NineSlice.draw(poseStack, HubTextures.PANEL_INSET, x, bodyTop + 22,
-                TILE_W - 6, TILE_H);
-            OutfitPreview.draw(poseStack, x + (TILE_W - 6) / 2, bodyTop + 22 + TILE_H - 20,
-                2.6F, outfit, time);
+            OutfitPreview.draw(poseStack, x + (TILE_W - 6) / 2, bodyTop + 22 + TILE_H - 18,
+                86, outfit, time);
 
             String name = font.plainSubstrByWidth(outfit.name(), TILE_W - 12);
             font.drawShadow(poseStack, name, x + (TILE_W - 6 - font.width(name)) / 2,
@@ -850,11 +848,20 @@ public class DuelHubScreen extends Screen
         {
             case PROFILE -> renderProfile(poseStack, bodyTop);
             case DECKS -> renderDecks(poseStack, bodyTop);
-            case OUTFIT -> renderOutfit(poseStack, bodyTop);
+            // OUTFIT draws after the widgets; see below.
+            case OUTFIT -> { }
             case SETTINGS -> renderSettings(poseStack, bodyTop);
         }
 
         super.render(poseStack, mouseX, mouseY, partialTick);
+        if(section == Section.OUTFIT)
+        {
+            // After the widgets, not before. Each preview tile IS a button, and
+            // a button paints its whole face -- drawing the figure first put it
+            // underneath its own tile, which is why the wardrobe came out as a
+            // row of empty panels.
+            renderOutfit(poseStack, bodyTop);
+        }
         // Why a red row cannot be used, on the row itself.
         for(net.minecraft.client.gui.components.events.GuiEventListener child : children())
         {
