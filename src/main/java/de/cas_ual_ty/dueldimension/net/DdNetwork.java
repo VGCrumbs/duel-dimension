@@ -80,6 +80,9 @@ public final class DdNetwork
             de.cas_ual_ty.dueldimension.shop.ShopMessages.Buy.CODEC);
         clientbound(de.cas_ual_ty.dueldimension.set.PackMessages.OpenPack.TYPE,
             de.cas_ual_ty.dueldimension.set.PackMessages.OpenPack.CODEC);
+
+        // What a menu's constructor needs, sent one packet ahead of the menu.
+        clientbound(MenuData.TYPE, MenuData.CODEC);
     }
 
     /** Registers the server's side of every message a client may send. */

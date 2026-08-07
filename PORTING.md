@@ -217,7 +217,7 @@ is usually the larger half of the work, not Forge-vs-Fabric.
 7. **Parity audit** against the Forge branch; only then does this branch
    take over.
 
-## The one open design question: menus with extra data
+## Menus with extra data — resolved
 
 Four of this mod's containers were opened with Forge's `IContainerFactory`,
 which hands the menu a `FriendlyByteBuf` of extra data written at the moment
@@ -240,12 +240,29 @@ honest options:
   and it does not work for everything — the duel menu genuinely needs to be
   told which duel.
 
-Not decided yet, deliberately: the screens are the other half of it and they
-are unported, so the choice belongs with the client phase where both ends can
-be changed together. Parked as one unit with it: `DdContainerTypes`, the six
-containers, the blocks (`DuelBlock`, `CardShopBlock`, `CardSupplyBlock`), the
-block entities, `CardSupplyMessages`, the older `duel/network` messages, and
-the item classes that open them.
+**Decided: send the data as its own payload, one packet *ahead* of the menu.**
+`net/MenuData` implements it, with four tests.
+
+The deciding fact is that `DuelBlockContainer` looks up a block entity from its
+position *while constructing* — so anything arriving after construction
+(`ContainerData`, a second payload, a slot sync) is too late by construction
+rather than merely by timing. Deriving the data server side was the other
+candidate; it covers the two block menus and cannot cover the duel menu, which
+genuinely has to be told which duel. One mechanism for all four beats two that
+each cover some.
+
+Sending it *before* rather than after is what makes it safe: a play connection
+is a single Netty channel, so packets arrive in the order they were sent. The
+data is already there when the constructor runs — no race to lose, and no frame
+where the screen is open and empty. It also leans on nothing but vanilla and
+this mod's own payload registration, which matters after watching two Fabric
+helpers vanish (`FabricItemGroup`, `ExtendedScreenHandlerType`) in this very
+port.
+
+Still parked as one unit, but on work rather than on a question:
+`DdContainerTypes`, the six containers, the blocks (`DuelBlock`,
+`CardShopBlock`, `CardSupplyBlock`), the block entities, `CardSupplyMessages`,
+the older `duel/network` messages, and the item classes that open them.
 
 ## A bug the port found
 
