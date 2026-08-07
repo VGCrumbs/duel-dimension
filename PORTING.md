@@ -1,9 +1,9 @@
 # Fabric fork — porting status
 
 This branch is the Fabric fork of Duel Dimension, targeting the current
-Fabric stack. The Forge tree it forks from is kept in-tree at `forge-src/`
-(moved, so git history follows it) and stays the canonical, playable mod
-until this fork reaches parity.
+Fabric stack. The Forge project stays in its own folder next door at
+`../CrumbyDueling` and remains the canonical, playable mod until this fork
+reaches parity. Nothing here writes to it; the porting tools read from it.
 
 ## Toolchain
 
@@ -19,6 +19,34 @@ until this fork reaches parity.
 Build and test:
 
     .\gradlew25.cmd test
+
+## API drift worth knowing before you port anything
+
+Measured off the 26.2 jars with `javap`, not guessed. These bite every phase:
+
+- **`ResourceLocation` is `Identifier` again** (`net.minecraft.resources.Identifier`),
+  built with `Identifier.fromNamespaceAndPath(namespace, path)`.
+- **`CompoundTag` getters return `Optional`.** `getString(k)` is
+  `Optional<String>`; the old behaviour is `getStringOr(k, "")`. Likewise
+  `getIntOr`, `getBooleanOr`, `getCompoundOrEmpty`, `getListOrEmpty`.
+  `contains(k)` no longer takes a type. `ListTag` reads went the same way.
+- **`SavedData` is Codec-driven.** No `save(CompoundTag)` override; you
+  declare a `SavedDataType<>(Identifier, constructor, Codec, DataFixTypes)`
+  and ask the storage to `computeIfAbsent(TYPE)`.
+- **Fabric attachments persist via Codec too**, not NBT.
+
+Which is why phase 1 replaced the hand-written `save()`/`load()` pairs with
+Codecs rather than translating them: both places a profile now persists ask
+for a Codec, and a class that has one *and* hand-writes its own NBT has two
+descriptions of its own shape to keep in step. The field names are unchanged,
+so a world written by the Forge build reads here.
+
+One trap worth stating: **register attachments from a nested holder class,
+not a static field of the class itself.** A static `AttachmentType` means
+merely loading the class initialises Fabric's registry, which needs a running
+game — and a unit test asking a pure question (what does a win pay?) dies on
+`NoClassDefFoundError` before it gets there. `DuelPoints.Storage` and
+`DuelProfiles.Storage` show the shape.
 
 ## What is across (phase 0 — done)
 
@@ -43,10 +71,14 @@ removals are the phase lists below (`build/prune-*.txt` has the raw lists).
 Ordered so each phase unblocks the next. The version gap (1.19.2 → 26.2)
 is usually the larger half of the work, not Forge-vs-Fabric.
 
-1. **Profile & shop data** — `DeckList`, `Trunk`, `DeckLimits`, `DeckEdits`,
-   `DuelProfile(s)`, `DuelPoints`, and their five test classes. NBT-based;
-   check `CompoundTag`'s API drift. Forge's `PERSISTED_NBT_TAG` becomes the
-   Fabric Data Attachment API (persistent, `copyOnDeath`).
+1. ~~**Profile & shop data**~~ — **done.** `DeckList`, `Trunk`, `DeckLimits`,
+   `DeckEdits`, `DuelProfile`, `DuelProfiles`, `FreeMode`, `DuelPoints` and
+   five test classes; **121 tests green**. Forge's `PERSISTED_NBT_TAG` became
+   persistent, `copyOnDeath` data attachments; `FreeMode` became a
+   `SavedDataType`. `DuelProfiles` lost its `Map<UUID, DuelProfile>` cache —
+   the attachment *is* the storage, so a read gives the live object and there
+   is no flush to remember. Two assertions are parked here that measure a
+   reward against `ShopStock.BASE_PRICE`; restore them with phase 2.
 2. **Registries & content** — items, blocks, entities (`DuelistEntity`),
    sounds; `DeferredRegister` → direct `Registry.register`, creative tabs,
    `FabricEntityTypeBuilder`, upstream YgoDuelingMod content.

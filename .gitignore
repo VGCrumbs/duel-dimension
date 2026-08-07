@@ -1,46 +1,4 @@
-# eclipse
-bin
-*.launch
-.settings
-.metadata
-.classpath
-.project
-
-# idea
-out
-*.ipr
-*.iws
-*.iml
-.idea
-
-# gradle
-build
-.gradle
-# Omega runs with its own project cache so it can start alongside Alpha
-.gradle-omega
-
-# other
-eclipse
-run
-
-# Files from Forge MDK
-forge*changelog.txt
-
-# runData
-src/generated
-
-# The built ocgcore IS committed, as native/ocgcore.dll. build.gradle loads
-# exactly that path by default (ocg.lib), so a fresh clone can compile and run
-# the engine-backed tests without rebuilding the core from source first.
-#
-# ocgcore-build/build stays out. Its 72 MB is 69 MB of MSVC .obj intermediates
-# that any rebuild regenerates, and the Release/ocgcore.dll in it is
-# byte-identical to the copy above; the remaining .lib/.exp are link artifacts
-# nothing in this project consumes. CMakeLists.txt is tracked, so the recipe
-# to rebuild the core is preserved even though its output is not.
-/ocgcore-build/build/
+.gradle/
+build/
 run/
-run-omega/
-# The dedicated dev server's own world, logs and downloaded database.
-run-server/
-.gradle-server/
+*.log

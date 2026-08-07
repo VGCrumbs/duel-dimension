@@ -7,6 +7,10 @@ point of this slice is a core that compiles under a toolchain with no Forge
 in it at all.
 """
 import io
+
+# The Forge project this one ports from: its own folder, its own build,
+# left exactly as it is. Nothing here writes to it.
+FORGE = "C:/Users/Admin/Desktop/YGO/CrumbyDueling"
 import os
 import re
 import shutil
@@ -33,8 +37,8 @@ def sweep(src_root, dst_root):
                 skipped.append(rel.replace("\\", "/"))
     return copied, skipped
 
-main_c, main_s = sweep("forge-src/main/java", "src/main/java")
-test_c, test_s = sweep("forge-src/test/java", "src/test/java")
+main_c, main_s = sweep(FORGE + "/src/main/java", "src/main/java")
+test_c, test_s = sweep(FORGE + "/src/test/java", "src/test/java")
 print("main: %d copied, %d left for later phases" % (len(main_c), len(main_s)))
 print("test: %d copied, %d left" % (len(test_c), len(test_s)))
 print("\ncopied packages (main):")

@@ -1,6 +1,0 @@
-#!/bin/sh
-# Gradle 7.3.3 needs JDK <= 17 to run; the system default here is newer.
-# Override with JAVA17_HOME if the Temurin path differs on your machine.
-JAVA_HOME="${JAVA17_HOME:-C:/Program Files/Eclipse Adoptium/jdk-17.0.20.8-hotspot}"
-export JAVA_HOME
-exec "$(dirname "$0")/gradlew" "$@"

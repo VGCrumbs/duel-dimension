@@ -6,6 +6,10 @@ rejects goes back to its porting phase, and the removals are recorded so
 PORTING.md can list them honestly.
 """
 import io
+
+# The Forge project this one ports from: its own folder, its own build,
+# left exactly as it is. Nothing here writes to it.
+FORGE = "C:/Users/Admin/Desktop/YGO/CrumbyDueling"
 import os
 import re
 import subprocess
