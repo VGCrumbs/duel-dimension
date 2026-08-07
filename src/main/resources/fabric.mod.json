@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "dueldimension",
+  "version": "${version}",
+  "name": "Duel Dimension",
+  "description": "Yu-Gi-Oh! duelling on the real ygopro-core rules engine. Fabric fork of the Forge original.",
+  "authors": ["VGCrumbs"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["de.cas_ual_ty.dueldimension.fabric.DuelDimensionFabric"],
+    "client": ["de.cas_ual_ty.dueldimension.fabric.DuelDimensionFabricClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.0",
+    "fabric-api": "*",
+    "minecraft": ">=26.2",
+    "java": ">=25"
+  }
+}
