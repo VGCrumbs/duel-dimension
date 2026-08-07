@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -95,8 +97,55 @@ class DuelProfileTest
         assertEquals(MAIN, profile.deckNamed("Starter Deck: Joey").main(),
             "editing the copy must not touch the recipe it came from");
 
-        assertEquals(1, profile.savedRecipes().size());
+        assertEquals(1, profile.ownDecks().size(), "the copy is one of the player's decks");
+        assertEquals(0, profile.savedRecipes().size(),
+            "and a deck, not a recipe: publishing is something the player says");
         assertEquals(1, profile.structureDecks().size());
+    }
+
+    @Test
+    void aDeckBecomesARecipeOnlyWhenItIsPublished()
+    {
+        DuelProfile profile = new DuelProfile();
+        DeckList mine = new DeckList("Mine", DeckList.Origin.SAVED, MAIN, List.of(), List.of());
+        profile.addDeck(mine);
+        assertEquals(0, profile.savedRecipes().size(), "making a deck does not make a recipe");
+
+        mine.publish(true);
+        assertEquals(1, profile.savedRecipes().size());
+        assertEquals(1, profile.ownDecks().size(), "and it is still a deck");
+
+        // Through the save and back, because the flag is the whole feature.
+        DuelProfile back = DuelProfile.load(profile.save());
+        assertEquals(1, back.savedRecipes().size(), "publication survives a reload");
+
+        mine.publish(false);
+        assertEquals(0, profile.savedRecipes().size(), "and can be withdrawn");
+    }
+
+    @Test
+    void aDeckMayShareItsNameWithAGrantedRecipe()
+    {
+        // The bug: using the "Starter Deck: Joey" recipe made a deck of that
+        // name, and every later edit to it was refused as a name already taken
+        // -- by the recipe it was copied from. Own decks and granted recipes
+        // are separate namespaces.
+        DuelProfile profile = openJoey(new DuelProfile());
+        assertNull(profile.savedNamed("Starter Deck: Joey"),
+            "the granted recipe is not one of the player's decks");
+
+        DeckList mine = new DeckList("Starter Deck: Joey", DeckList.Origin.SAVED,
+            MAIN, List.of(), List.of());
+        profile.addDeck(mine);
+        assertSame(mine, profile.savedNamed("Starter Deck: Joey"));
+        assertSame(mine, profile.deckNamed("Starter Deck: Joey"),
+            "asked for either, the player's own deck is the one they can change");
+        assertEquals(1, profile.structureDecks().size(), "and the recipe is untouched");
+
+        // Removing the deck must not take the recipe with it.
+        assertTrue(profile.removeDeck("Starter Deck: Joey"));
+        assertEquals(1, profile.structureDecks().size());
+        assertNotNull(profile.deckNamed("Starter Deck: Joey"));
     }
 
     @Test
@@ -110,7 +159,8 @@ class DuelProfileTest
         assertEquals(2, back.trunk().countOf(46986414));
         assertEquals(2, back.decks().size());
         assertEquals(1, back.structureDecks().size());
-        assertEquals(1, back.savedRecipes().size());
+        assertEquals(1, back.ownDecks().size());
+        assertEquals(0, back.savedRecipes().size(), "an unpublished deck is not a recipe");
         assertTrue(back.unlockedStructures().contains("sdj"),
             "without this a second copy would grant a duplicate deck after a reload");
         assertEquals("Mine", back.activeDeck());

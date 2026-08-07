@@ -43,6 +43,15 @@ public final class DeckList
     }
 
     private String name;
+    /**
+     * Whether the player has offered this deck as a recipe.
+     * <p>
+     * Off by default, which is the point: making a deck used to put it in the
+     * recipe list as well, so a player with six decks had six recipes they
+     * never asked for. A recipe is something you choose to keep as a starting
+     * point, so it is now something you say.
+     */
+    private boolean published;
     private final List<Integer> main = new ArrayList<>();
     private final List<Integer> extra = new ArrayList<>();
     private final List<Integer> side = new ArrayList<>();
@@ -75,6 +84,17 @@ public final class DeckList
     public Origin origin()
     {
         return origin;
+    }
+
+    /** Granted decks are recipes by their nature; the player's are by choice. */
+    public boolean published()
+    {
+        return origin.isGranted() || published;
+    }
+
+    public void publish(boolean asRecipe)
+    {
+        published = asRecipe;
     }
 
     public List<Integer> main()
@@ -175,6 +195,12 @@ public final class DeckList
         CompoundTag tag = new CompoundTag();
         tag.putString("Name", name);
         tag.putString("Origin", origin.name());
+        if(published)
+        {
+            // Written only when set, so an existing save stays byte-identical
+            // and an old one loads as what it was: not a recipe.
+            tag.putBoolean("Recipe", true);
+        }
         tag.put("Main", codes(main));
         tag.put("Extra", codes(extra));
         tag.put("Side", codes(side));
@@ -193,6 +219,7 @@ public final class DeckList
             origin = Origin.SAVED;
         }
         DeckList deck = new DeckList(tag.getString("Name"), origin);
+        deck.published = tag.getBoolean("Recipe");
         read(tag.getList("Main", Tag.TAG_INT), deck.main);
         read(tag.getList("Extra", Tag.TAG_INT), deck.extra);
         read(tag.getList("Side", Tag.TAG_INT), deck.side);

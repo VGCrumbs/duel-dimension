@@ -45,10 +45,23 @@ public final class DuelProfile
         return Collections.unmodifiableList(decks);
     }
 
-    /** The player's own builds, for the "Saved Recipes" half of the list. */
-    public List<DeckList> savedRecipes()
+    /** The player's own builds: everything the deck list shows. */
+    public List<DeckList> ownDecks()
     {
         return decks.stream().filter(deck -> deck.origin() == DeckList.Origin.SAVED).toList();
+    }
+
+    /**
+     * The player's own builds that they chose to offer as recipes.
+     * <p>
+     * Not simply "their decks". Every saved deck used to appear here, which
+     * made the recipe list a second copy of the deck list.
+     */
+    public List<DeckList> savedRecipes()
+    {
+        return decks.stream()
+            .filter(deck -> deck.origin() == DeckList.Origin.SAVED && deck.published())
+            .toList();
     }
 
     /** Granted starter decks, for the "Starter Decks" recipe group. */
@@ -103,8 +116,41 @@ public final class DuelProfile
         activeDeck = name == null ? "" : name;
     }
 
+    /**
+     * A deck of the player's own by that name, or null.
+     * <p>
+     * The lookup that every edit uses, and deliberately blind to granted decks.
+     * A player's decks and the recipes they were given are separate namespaces:
+     * using the "Yugi Muto" starter recipe should produce a deck called "Yugi
+     * Muto", and asking one list whether a name was taken said it was, because
+     * the recipe itself held it.
+     */
+    public DeckList savedNamed(String name)
+    {
+        for(DeckList deck : decks)
+        {
+            if(deck.origin() == DeckList.Origin.SAVED && deck.name().equals(name))
+            {
+                return deck;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Any deck by that name, the player's own first.
+     * <p>
+     * For the callers that mean "whatever holds this name" — copying a recipe,
+     * reading the active deck. Own decks win, so a name held in both namespaces
+     * resolves to the one the player can change.
+     */
     public DeckList deckNamed(String name)
     {
+        DeckList own = savedNamed(name);
+        if(own != null)
+        {
+            return own;
+        }
         for(DeckList deck : decks)
         {
             if(deck.name().equals(name))
@@ -120,9 +166,11 @@ public final class DuelProfile
         decks.add(deck);
     }
 
+    /** Removes one of the player's own decks; granted decks are not theirs to remove. */
     public boolean removeDeck(String name)
     {
-        return decks.removeIf(deck -> deck.name().equals(name));
+        return decks.removeIf(deck -> deck.origin() == DeckList.Origin.SAVED
+            && deck.name().equals(name));
     }
 
     /**

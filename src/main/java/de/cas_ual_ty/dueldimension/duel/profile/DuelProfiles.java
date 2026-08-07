@@ -127,9 +127,59 @@ public final class DuelProfiles
     public static void save(ServerPlayer player)
     {
         DuelProfile profile = CACHE.get(player.getUUID());
-        if(profile != null)
+        if(profile == null)
         {
-            persisted(player).put(KEY, profile.save());
+            return;
+        }
+        persisted(player).put(KEY, profile.save());
+        writeThrough(player, false);
+    }
+
+    /**
+     * How long a change may sit in memory before the next one forces a write.
+     * <p>
+     * A player rearranging a deck produces a change a tick, and writing player
+     * files twenty times a second to record forty cards being reordered would
+     * be a stutter in exchange for nothing. Two seconds bounds the loss to the
+     * last couple of edits, which the following edit then writes anyway.
+     */
+    private static final long WRITE_GAP_NANOS = 2_000_000_000L;
+
+    private static long lastWriteNanos;
+
+    /**
+     * Puts the player's saved data on disk.
+     * <p>
+     * The tag alone is not enough. Putting the profile in the player's NBT only
+     * queues it for whenever the world next saves — the autosave, or a clean
+     * shutdown. Anything that ends the process without one takes the collection
+     * with it, which is the exact failure {@link #save} claims to prevent.
+     *
+     * @param force write now, whatever the throttle says: for a player leaving,
+     *              where there is no next change to carry the write
+     */
+    private static void writeThrough(ServerPlayer player, boolean force)
+    {
+        if(player.getServer() != null)
+        {
+            long now = System.nanoTime();
+            if(!force && now - lastWriteNanos < WRITE_GAP_NANOS)
+            {
+                return;
+            }
+            lastWriteNanos = now;
+            try
+            {
+                player.getServer().getPlayerList().saveAll();
+            }
+            catch(Exception unwritable)
+            {
+                // A profile that could not be written is worth a line in the
+                // log and not worth dropping the player's session over; it is
+                // still in memory and the next change will try again.
+                DuelDimension.log("Could not write profile for " + player.getGameProfile().getName()
+                    + ": " + unwritable.getMessage());
+            }
         }
     }
 
@@ -147,9 +197,19 @@ public final class DuelProfiles
         sync(player);
     }
 
-    /** Forgets the cached copy; the saved data is untouched. */
+    /**
+     * Forgets the cached copy; the saved data is untouched.
+     * <p>
+     * The last write is forced on the way out. A player who edits a deck and
+     * immediately disconnects has no next change to carry the throttled write,
+     * and leaving is exactly when the loss would be noticed.
+     */
     public static void forget(Player player)
     {
+        if(player instanceof ServerPlayer leaving && CACHE.containsKey(player.getUUID()))
+        {
+            writeThrough(leaving, true);
+        }
         CACHE.remove(player.getUUID());
     }
 

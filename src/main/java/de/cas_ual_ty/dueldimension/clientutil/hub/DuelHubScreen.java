@@ -163,6 +163,13 @@ public class DuelHubScreen extends Screen
                 }));
                 viewX += 70;
             }
+            if(confirmDelete != null)
+            {
+                // Its two answers are the only widgets, so a click cannot reach
+                // the row it is asking about -- or the four other rows near it.
+                buildDeleteConfirm();
+                return;
+            }
             if(deckView == DeckView.DECKS)
             {
                 buildDeckRows(bodyTop + 22);
@@ -336,6 +343,66 @@ public class DuelHubScreen extends Screen
         startRename(EditorState.currentIndex());
     }
 
+    /**
+     * The deck a Delete press is waiting on confirmation for, if any.
+     * <p>
+     * Held rather than acted on: deleting is the one row action that cannot be
+     * undone, and it sits between Duplicate and the edge of the panel.
+     */
+    private de.cas_ual_ty.dueldimension.duel.profile.DeckList confirmDelete;
+
+    /** Draws the confirmation over the list, and the two answers to it. */
+    private void buildDeleteConfirm()
+    {
+        if(confirmDelete == null)
+        {
+            return;
+        }
+        int boxW = 240;
+        int boxH = 74;
+        int boxX = left + (WIDTH - boxW) / 2;
+        int boxY = top + (HEIGHT - boxH) / 2;
+        de.cas_ual_ty.dueldimension.duel.profile.DeckList doomed = confirmDelete;
+        addRenderableWidget(new HubWidgets.TextureButton(boxX + 12, boxY + boxH - 26, 100, 20,
+            Component.literal("Delete"), pressed ->
+        {
+            confirmDelete = null;
+            EditorState.select(EditorState.indexOf(doomed));
+            String error = EditorState.deleteCurrent();
+            notice = error == null ? "" : error;
+            cancelRename();
+            rebuild();
+        }));
+        addRenderableWidget(new HubWidgets.TextureButton(boxX + boxW - 112, boxY + boxH - 26,
+            100, 20, Component.literal("Cancel"), pressed ->
+        {
+            confirmDelete = null;
+            rebuild();
+        }));
+    }
+
+    private void renderDeleteConfirm(PoseStack poseStack)
+    {
+        if(confirmDelete == null)
+        {
+            return;
+        }
+        int boxW = 240;
+        int boxH = 74;
+        int boxX = left + (WIDTH - boxW) / 2;
+        int boxY = top + (HEIGHT - boxH) / 2;
+        // Over the rows it is asking about, and dark enough that the list
+        // behind it cannot be mistaken for something still clickable.
+        fill(poseStack, left, top, left + WIDTH, top + HEIGHT, 0xC0000000);
+        NineSlice.draw(poseStack, HubTextures.PANEL, boxX, boxY, boxW, boxH);
+        font.drawShadow(poseStack, "Delete this deck?", boxX + 12, boxY + 10, 0xFFF4D089);
+        String named = "\"" + confirmDelete.name() + "\"  ("
+            + confirmDelete.main().size() + " cards)";
+        font.drawShadow(poseStack, font.plainSubstrByWidth(named, boxW - 24),
+            boxX + 12, boxY + 24, 0xFFE6EAF2);
+        font.drawShadow(poseStack, "This cannot be undone.", boxX + 12, boxY + 36, 0xFFFF6B6B);
+    }
+
     /** Draws the headings and empty markers the recipe rows sit between. */
     private void renderRecipeHeadings(PoseStack poseStack, int bodyTop)
     {
@@ -385,9 +452,10 @@ public class DuelHubScreen extends Screen
         int useW = 32;
         int renameW = 52;
         int duplicateW = 76;
+        int recipeW = 50;
         int deleteW = 46;
         int gap = 3;
-        int actionsW = useW + renameW + duplicateW + deleteW + gap * 4;
+        int actionsW = useW + renameW + duplicateW + recipeW + deleteW + gap * 5;
         int nameW = Math.max(60, rowW - actionsW);
 
         for(int row = 0; row < visible; row++)
@@ -471,14 +539,30 @@ public class DuelHubScreen extends Screen
             }));
             x += duplicateW + gap;
 
+            // Offering a deck as a recipe is now something the player says.
+            // Making a deck used to publish it automatically, which turned the
+            // recipe list into a second copy of the deck list.
+            HubWidgets.TextureButton recipe = new HubWidgets.TextureButton(x, y, recipeW,
+                ROW_H - 2, Component.literal("Recipe"), pressed ->
+            {
+                EditorState.publish(deck, !deck.published());
+                rebuild();
+            });
+            recipe.setLabelColour(deck.published() ? 0xFFF4D089 : 0xFF8A93A3);
+            recipe.setTooltipLines(deck.published()
+                ? java.util.List.of("Shown in the recipe list", "Click to withdraw it")
+                : java.util.List.of("Not offered as a recipe", "Click to add it to the list"));
+            addRenderableWidget(recipe);
+            x += recipeW + gap;
+
             int deleteIndex = index;
             HubWidgets.TextureButton delete = new HubWidgets.TextureButton(x, y, deleteW, ROW_H - 2,
                 Component.literal("Delete"), pressed ->
             {
-                EditorState.select(EditorState.indexOf(decks.get(deleteIndex)));
-                String error = EditorState.deleteCurrent();
-                notice = error == null ? "" : error;
-                cancelRename();
+                // Asked first. A deck is a long evening's work and the button
+                // sits next to four that are not destructive.
+                confirmDelete = decks.get(deleteIndex);
+                notice = "";
                 rebuild();
             });
             // A granted structure deck is the record of what was opened, so it
@@ -611,6 +695,11 @@ public class DuelHubScreen extends Screen
 
     private void renderDecks(PoseStack poseStack, int bodyTop)
     {
+        if(confirmDelete != null)
+        {
+            renderDeleteConfirm(poseStack);
+            return;
+        }
         if(renameField != null)
         {
             renameField.render(poseStack, 0, 0, 0F);
@@ -666,6 +755,14 @@ public class DuelHubScreen extends Screen
     @Override
     public boolean keyPressed(int key, int scan, int modifiers)
     {
+        if(confirmDelete != null && key == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE)
+        {
+            // Escape answers the question rather than leaving the hub, which is
+            // the safe reading of it while a delete is waiting.
+            confirmDelete = null;
+            rebuild();
+            return true;
+        }
         if(renameField != null && renameField.isFocused())
         {
             if(key == org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER || key == org.lwjgl.glfw.GLFW.GLFW_KEY_KP_ENTER)

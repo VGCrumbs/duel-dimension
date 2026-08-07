@@ -183,6 +183,27 @@ public final class ProfileMessages
         }
     }
 
+    /** Client to server: offer this deck as a recipe, or withdraw it. */
+    public record PublishRecipe(String name, boolean asRecipe)
+    {
+        public static void encode(PublishRecipe message, FriendlyByteBuf buffer)
+        {
+            buffer.writeUtf(message.name(), NAME_LIMIT);
+            buffer.writeBoolean(message.asRecipe());
+        }
+
+        public static PublishRecipe decode(FriendlyByteBuf buffer)
+        {
+            return new PublishRecipe(buffer.readUtf(NAME_LIMIT), buffer.readBoolean());
+        }
+
+        public static void handle(PublishRecipe message, Supplier<NetworkEvent.Context> context)
+        {
+            server(context, player -> DeckEdits.publishRecipe(player, message.name(),
+                message.asRecipe()));
+        }
+    }
+
     /** Client to server: star this card, or unstar it. */
     public record ToggleFavourite(int passcode)
     {

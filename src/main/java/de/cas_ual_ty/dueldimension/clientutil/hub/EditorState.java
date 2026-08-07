@@ -225,7 +225,7 @@ public final class EditorState
     /** The player's own builds -- what the Decks view lists. */
     public static List<DeckList> ownDecks()
     {
-        return new ArrayList<>(profile.savedRecipes());
+        return new ArrayList<>(profile.ownDecks());
     }
 
     /** Every deck, in the order they were made. */
@@ -311,7 +311,7 @@ public final class EditorState
     public static DeckList newDeck()
     {
         String name = "New Deck";
-        for(int suffix = 2; profile.deckNamed(name) != null; suffix++)
+        for(int suffix = 2; profile.savedNamed(name) != null; suffix++)
         {
             name = "New Deck " + suffix;
         }
@@ -334,7 +334,7 @@ public final class EditorState
         List<DeckList> all = decks();
         DeckList source = all.get(Math.max(0, Math.min(index, all.size() - 1)));
         String name = source.name() + " copy";
-        for(int suffix = 2; profile.deckNamed(name) != null; suffix++)
+        for(int suffix = 2; profile.savedNamed(name) != null; suffix++)
         {
             name = source.name() + " copy " + suffix;
         }
@@ -370,7 +370,7 @@ public final class EditorState
         List<DeckList> all = decks();
         DeckList source = all.get(Math.max(0, Math.min(index, all.size() - 1)));
         String name = source.name();
-        for(int suffix = 2; profile.deckNamed(name) != null; suffix++)
+        for(int suffix = 2; profile.savedNamed(name) != null; suffix++)
         {
             name = source.name() + " " + suffix;
         }
@@ -392,7 +392,7 @@ public final class EditorState
         {
             return false;
         }
-        DeckList existing = profile.deckNamed(trimmed);
+        DeckList existing = profile.savedNamed(trimmed);
         if(existing != null && existing != deck())
         {
             return false;
@@ -642,6 +642,22 @@ public final class EditorState
         java.util.Set<Long> stars = new java.util.LinkedHashSet<>();
         profile.favourites().forEach(code -> stars.add((long)(int)code));
         query().setFavourites(stars);
+    }
+
+    /**
+     * Offers a deck as a recipe, or withdraws it.
+     * <p>
+     * Applied here and asked for over the wire, like every other edit: the
+     * list redraws on the click rather than on the round trip.
+     */
+    public static void publish(DeckList deck, boolean asRecipe)
+    {
+        if(deck == null || deck.origin().isGranted())
+        {
+            return;
+        }
+        deck.publish(asRecipe);
+        send(new ProfileMessages.PublishRecipe(deck.name(), asRecipe));
     }
 
     /** Tells the server which deck this player duels with. */

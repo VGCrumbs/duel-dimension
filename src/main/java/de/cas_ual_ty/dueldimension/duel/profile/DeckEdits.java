@@ -50,16 +50,18 @@ public final class DeckEdits
         }
 
         DuelProfile profile = DuelProfiles.get(player);
-        DeckList existing = profile.deckNamed(clean);
-        if(existing != null && existing.origin().isGranted())
-        {
-            // A granted deck is the record of what was opened. Editing it would
-            // quietly rewrite history, and the editor offers "use" -- which
-            // copies it -- for exactly this reason.
-            return "\"" + clean + "\" is a granted deck and cannot be edited. Use it to make a copy.";
-        }
+        // Own decks only. A granted deck is the record of what was opened and
+        // is never edited in place -- the editor offers "use", which copies it.
+        // Looking it up here at all is what made a deck named after the recipe
+        // it came from unsaveable.
+        DeckList existing = profile.savedNamed(clean);
 
         DeckList candidate = new DeckList(clean, DeckList.Origin.SAVED, main, extra, side);
+        if(existing != null)
+        {
+            // Saving a deck does not withdraw it from the recipe list.
+            candidate.publish(existing.published());
+        }
         String refusal = refusalFor(profile.trunk(), candidate, banlist(),
             FreeMode.isEnabled(player));
         if(refusal != null)
@@ -83,7 +85,7 @@ public final class DeckEdits
             return "A deck needs a name.";
         }
         DuelProfile profile = DuelProfiles.get(player);
-        if(profile.deckNamed(clean) != null)
+        if(profile.savedNamed(clean) != null)
         {
             return "You already have a deck called \"" + clean + "\".";
         }
@@ -100,7 +102,7 @@ public final class DeckEdits
         }
 
         DuelProfile profile = DuelProfiles.get(player);
-        DeckList deck = profile.deckNamed(from);
+        DeckList deck = profile.savedNamed(from);
         if(deck == null)
         {
             return "You have no deck called \"" + from + "\".";
@@ -109,7 +111,7 @@ public final class DeckEdits
         {
             return "A granted deck keeps its name.";
         }
-        if(!from.equals(cleanTo) && profile.deckNamed(cleanTo) != null)
+        if(!from.equals(cleanTo) && profile.savedNamed(cleanTo) != null)
         {
             return "You already have a deck called \"" + cleanTo + "\".";
         }
@@ -128,14 +130,10 @@ public final class DeckEdits
     public static String deleteDeck(ServerPlayer player, String name)
     {
         DuelProfile profile = DuelProfiles.get(player);
-        DeckList deck = profile.deckNamed(name);
+        DeckList deck = profile.savedNamed(name);
         if(deck == null)
         {
             return "You have no deck called \"" + name + "\".";
-        }
-        if(deck.origin().isGranted())
-        {
-            return "A granted deck cannot be deleted.";
         }
         profile.removeDeck(name);
         if(profile.activeDeck().equals(name))
@@ -153,7 +151,7 @@ public final class DeckEdits
             return "A deck needs a name.";
         }
         DuelProfile profile = DuelProfiles.get(player);
-        if(profile.deckNamed(clean) != null)
+        if(profile.savedNamed(clean) != null)
         {
             return "You already have a deck called \"" + clean + "\".";
         }
@@ -161,8 +159,34 @@ public final class DeckEdits
         {
             return "You have no recipe called \"" + recipe + "\".";
         }
-        return profile.copyAsRecipe(recipe, clean) == null
-            ? "That recipe could not be copied." : null;
+        DeckList made = profile.copyAsRecipe(recipe, clean);
+        if(made == null)
+        {
+            return "That recipe could not be copied.";
+        }
+        // A copy is a deck, not another recipe. Publishing is the player's to
+        // say, and saying it once for the source should not say it for every
+        // deck ever built from it.
+        made.publish(false);
+        return null;
+    }
+
+    /**
+     * Offers one of the player's decks as a recipe, or withdraws it.
+     * <p>
+     * Granted decks are refused rather than ignored: they are recipes already,
+     * and a button that appeared to turn one off would be lying.
+     */
+    public static String publishRecipe(ServerPlayer player, String name, boolean asRecipe)
+    {
+        DuelProfile profile = DuelProfiles.get(player);
+        DeckList deck = profile.savedNamed(name);
+        if(deck == null)
+        {
+            return "You have no deck called \"" + name + "\".";
+        }
+        deck.publish(asRecipe);
+        return null;
     }
 
     public static String setActive(ServerPlayer player, String name)

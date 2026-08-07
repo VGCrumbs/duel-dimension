@@ -281,6 +281,11 @@ public class DuelDimension
                 de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.DeleteDeck::decode,
                 de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.DeleteDeck::handle);
         DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.PublishRecipe.class,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.PublishRecipe::encode,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.PublishRecipe::decode,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.PublishRecipe::handle);
+        DuelDimension.channel.registerMessage(index++,
                 de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.CopyRecipe.class,
                 de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.CopyRecipe::encode,
                 de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.CopyRecipe::decode,
