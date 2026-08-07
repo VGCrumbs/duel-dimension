@@ -65,11 +65,7 @@ public final class HubKeybinds
         }
         if(pressed)
         {
-            // The hub screen itself is the next piece of the client phase.
-            // Until it lands this says so out loud, rather than opening nothing
-            // and leaving a player wondering whether the key is even bound.
-            minecraft.player.sendSystemMessage(net.minecraft.network.chat.Component
-                .literal("Duel Dimension: the duel hub is not ported to Fabric yet."));
+            minecraft.setScreenAndShow(new DuelHubScreen());
         }
     }
 }

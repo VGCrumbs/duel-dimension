@@ -206,7 +206,41 @@ is usually the larger half of the work, not Forge-vs-Fabric.
 5. **Server events & commands** — login/logout/respawn hooks →
    `ServerPlayConnectionEvents` etc.; command registration; `FreeMode`
    SavedData; duel lifecycle driving (`DuelistDuels`).
-6. **Client** — the big one: every screen (hub, editor, shop, pack opening,
+6. **Client — started. Read this before continuing.**
+
+   `GuiGraphics` **does not exist in 26.2.** The GUI is retained-mode: a screen
+   no longer draws itself, it *describes* itself to a `GuiGraphicsExtractor`
+   and the game draws everything afterwards in one pass. So the client is not
+   a `PoseStack` → `GuiGraphics` translation (the 1.20 change) — it is two
+   generations of rework, and the second one removed immediate-mode drawing
+   altogether.
+
+   What that costs, measured across the 22,295 lines of client code:
+   **59 files use `PoseStack`, 37 use `RenderSystem.setShader`, 17 use
+   `DdBlitUtil`.** Everything in that last group builds its own quads, and
+   there is nothing to build them with any more.
+
+   Across so far: `HubTextures`, `NineSlice`, `HubWidgets`, `HubKeybinds`, and
+   a `DuelHubScreen` frame. **Y opens the hub; the panel, tab strip and buttons
+   are the Forge build's own art, drawn through the new API.** Each tab says
+   what it is waiting for rather than showing an empty body.
+
+   Two facts worth having up front:
+
+   - A **screen** implements `extractRenderState` (`Renderable`'s single
+     method); a **widget** implements `extractContents`. Swapping them compiles
+     as a new method and silently draws nothing.
+   - Retained mode draws in the order described, so a screen's background must
+     be described **before** `super.extractRenderState`, not after.
+
+   Encouragingly, `NineSlice` came out *shorter* than the Forge version: a
+   nine-slice is a UV window and the extractor's blit takes one directly, so
+   the hand-rolled quad building simply went away. The parts that will not go
+   that way are `FieldQuad`, `BoardRenderer` and `DuelAnimations`, which
+   project card quads onto a duel field in 3D — that is genuine geometry and
+   needs redesign, not translation.
+
+7. **Client, the rest** — the big one: every screen (hub, editor, shop, pack opening,
    card info, lobby, `EngineDuelScreen`), `FieldQuad`/`BoardRenderer`,
    `DuelAnimations`, textures/mipmapping, `OutfitLayer`/`PlayerSkins`
    (entity render state refactor landed since 1.21.2; no
@@ -214,7 +248,7 @@ is usually the larger half of the work, not Forge-vs-Fabric.
    renderer replace them), `HitchWatch`, keybinds. Expect
    `PoseStack`-era GUI code → `GuiGraphics`-era plus the newer render
    pipeline work.
-7. **Parity audit** against the Forge branch; only then does this branch
+8. **Parity audit** against the Forge branch; only then does this branch
    take over.
 
 ## Menus with extra data — resolved
