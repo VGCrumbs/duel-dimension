@@ -110,6 +110,44 @@ public class ClientProxy implements ISidedProxy
         bus.addListener(this::clientTick);
         bus.addListener(de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds::onKeyInput);
         bus.addListener(this::leftServer);
+        bus.addListener(this::hideBodyUnderOutfit);
+        bus.addListener(this::showBodyAgain);
+    }
+
+    /**
+     * Takes the player's own body away while they are wearing an outfit.
+     * <p>
+     * An outfit is a whole body, so leaving the original under it does not
+     * hide it: a classic body is a pixel wider at each arm than an Alex outfit,
+     * and that pixel stuck out. Inflating the outfit far enough to swallow it
+     * would have made every outfit look padded, so the body goes instead.
+     * <p>
+     * This has to happen here rather than in the layer. Forge fires
+     * {@code RenderPlayerEvent.Pre} after {@code PlayerRenderer.setModelProperties},
+     * which is the call that turns every part back on each frame, so this is
+     * the first moment in the frame where hiding a part survives; a layer, by
+     * contrast, runs after the body has already been drawn.
+     */
+    private void hideBodyUnderOutfit(net.minecraftforge.client.event.RenderPlayerEvent.Pre event)
+    {
+        if(de.cas_ual_ty.dueldimension.duel.outfit.WornOutfits
+            .of(event.getEntity().getUUID()).texture() != null)
+        {
+            event.getRenderer().getModel().setAllVisible(false);
+        }
+    }
+
+    /**
+     * And puts it back, so the same shared model draws the next player -- and
+     * this player's own first-person hand -- as itself.
+     */
+    private void showBodyAgain(net.minecraftforge.client.event.RenderPlayerEvent.Post event)
+    {
+        if(de.cas_ual_ty.dueldimension.duel.outfit.WornOutfits
+            .of(event.getEntity().getUUID()).texture() != null)
+        {
+            event.getRenderer().getModel().setAllVisible(true);
+        }
     }
 
     /**
