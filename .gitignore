@@ -44,3 +44,6 @@ run-omega/
 # The dedicated dev server's own world, logs and downloaded database.
 run-server/
 .gradle-server/
+logs/
+crash-reports/
+*.log.gz

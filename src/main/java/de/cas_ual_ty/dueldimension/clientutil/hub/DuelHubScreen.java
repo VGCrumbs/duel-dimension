@@ -459,28 +459,34 @@ public class DuelHubScreen extends Screen
         }
 
         // ---- the under-skin editor ----
-        int editorY = bodyTop + 22 + TILE_H + 8;
+        // A label and two verbs. It was three lines of explanation and two
+        // sentences on a button, which is a lot of screen for "the skin under
+        // the clothes"; the tooltips still carry the why for anyone who asks.
+        int editorY = bodyTop + 22 + TILE_H + 10;
+        int labelW = font.width("Underskin") + 8;
         boolean wearing = !worn.isEmpty();
-        HubWidgets.TextureButton pick = new HubWidgets.TextureButton(outfitStripX(), editorY,
-            110, 20, Component.literal("Import PNG..."), pressed -> importUnderSkin());
-        pick.active = wearing;
-        pick.setTooltipLines(wearing
-            ? java.util.List.of("Your own skin, edited",
-                "Take off the sleeves or hood that poke out from under this outfit")
-            : java.util.List.of("Only used under an outfit",
-                "With none on you are drawn with your real skin"));
-        addRenderableWidget(pick);
 
-        HubWidgets.TextureButton clear = new HubWidgets.TextureButton(outfitStripX() + 116,
-            editorY, 96, 20, Component.literal("Use Real Skin"), pressed ->
+        HubWidgets.TextureButton load = new HubWidgets.TextureButton(
+            outfitStripX() + labelW, editorY, 54, 18,
+            Component.literal("Load"), pressed -> importUnderSkin());
+        load.active = wearing;
+        load.setTooltipLines(wearing
+            ? java.util.List.of("Import a 64x64 PNG",
+                "Your own skin with whatever pokes out from under this outfit removed")
+            : java.util.List.of("Only used under an outfit"));
+        addRenderableWidget(load);
+
+        HubWidgets.TextureButton reset = new HubWidgets.TextureButton(
+            outfitStripX() + labelW + 58, editorY, 54, 18,
+            Component.literal("Reset"), pressed ->
         {
             de.cas_ual_ty.dueldimension.clientutil.UnderSkin.clear();
             notice = "";
             rebuild();
         });
-        clear.active = de.cas_ual_ty.dueldimension.clientutil.UnderSkin.present();
-        clear.setTooltipLines(java.util.List.of("Forget the imported skin"));
-        addRenderableWidget(clear);
+        reset.active = de.cas_ual_ty.dueldimension.clientutil.UnderSkin.present();
+        reset.setTooltipLines(java.util.List.of("Back to your real skin"));
+        addRenderableWidget(reset);
     }
 
     /**
@@ -553,18 +559,13 @@ public class DuelHubScreen extends Screen
                 outfitStripX(), bodyTop + 10, 0xFF7A8090);
         }
 
-        int editorY = bodyTop + 22 + TILE_H + 8;
-        String state = worn.isEmpty()
-            ? "No outfit: drawn with your own skin."
-            : de.cas_ual_ty.dueldimension.clientutil.UnderSkin.present()
-                ? "Under-skin: your imported edit."
-                : "Under-skin: your own skin.";
-        font.drawShadow(poseStack, state, outfitStripX() + 218, editorY + 6,
-            worn.isEmpty() ? 0xFF7A8090 : 0xFFC2C9D6);
+        int editorY = bodyTop + 22 + TILE_H + 10;
+        font.drawShadow(poseStack, "Underskin", outfitStripX(), editorY + 5,
+            worn.isEmpty() ? 0xFF6E7686 : 0xFFF4D089);
         if(!notice.isEmpty())
         {
             font.drawShadow(poseStack, font.plainSubstrByWidth(notice, WIDTH - PAD * 2 - 12),
-                outfitStripX(), editorY + 26, 0xFFFF8A80);
+                outfitStripX(), editorY + 22, 0xFFFF8A80);
         }
     }
 

@@ -52,6 +52,7 @@ minecraft {
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             property 'forge.enabledGameTestNamespaces', 'dueldimension'
 
+
             // The duel screen is laid out in logical GUI pixels, so the window
             // size decides how much board there is to lay out on. Fixing it at
             // 920p means what is seen here is what was designed against.
@@ -147,6 +148,13 @@ repositories {
     // Put repositories for dependencies here
     // ForgeGradle automatically adds the Forge maven and Maven Central for you
 
+    // Modrinth's Maven, for the published mods this workspace runs alongside.
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
+
     // If you have mod jar dependencies in ./libs, you can declare them as a repository like so:
     // flatDir {
     //     dir 'libs'
@@ -164,6 +172,23 @@ dependencies {
     // is only pinned explicitly for compilation and for the standalone ocgSpike
     // task; it is intentionally not bundled into the mod jar.
     implementation 'net.java.dev.jna:jna:5.10.0'
+
+    // Mods the dev client runs alongside. NOT dropped into run/mods: a
+    // published mod is compiled against SRG names and this workspace runs on
+    // named (Parchment) ones, so a jar copied in there dies at startup on a
+    // NoSuchMethodError for a field nobody can see. fg.deobf is the supported
+    // way round it -- ForgeGradle remaps each mod, refmaps included, into this
+    // workspace's mappings and puts it on the run classpath.
+    //
+    // runtimeOnly, because none of them is compiled against. Nothing here is
+    // shipped: the built jar does not depend on any of it.
+    //
+    // Mod Menu is deliberately absent. It is a Fabric mod with no Forge build,
+    // and Forge has had its own Mods screen since forever.
+    runtimeOnly fg.deobf('maven.modrinth:3dskinlayers:1.11.2')
+    runtimeOnly fg.deobf('maven.modrinth:embeddium:0.3.18.1+mc1.19.2')
+    runtimeOnly fg.deobf('maven.modrinth:entityculling:1.6.1')
+    runtimeOnly fg.deobf('maven.modrinth:memoryleakfix:v1.1.5')
 
     // SQLite driver for reading BabelCDB card databases (cards.cdb).
     // minecraftLibrary (not implementation) so it lands on the mod's runtime
