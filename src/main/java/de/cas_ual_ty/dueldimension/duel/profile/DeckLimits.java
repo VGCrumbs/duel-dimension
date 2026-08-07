@@ -92,25 +92,54 @@ public final class DeckLimits
      */
     public static int maxCopies(int passcode, Trunk trunk, Banlist banlist)
     {
+        return maxCopies(passcode, trunk, banlist, false);
+    }
+
+    /**
+     * As above, but ignoring the collection when free mode is on.
+     * <p>
+     * The banlist still applies: free mode is about what a player owns, not
+     * about what the rules allow, and a list that stopped being enforced
+     * because cards were free would make the setting a way to cheat rather
+     * than a way to build.
+     */
+    public static int maxCopies(int passcode, Trunk trunk, Banlist banlist, boolean freeMode)
+    {
         int banlistLimit = banlist == null ? MAX_COPIES : banlist.limitFor(passcode);
-        return Math.max(0, Math.min(Math.min(MAX_COPIES, banlistLimit), trunk.countOf(passcode)));
+        int allowed = Math.min(MAX_COPIES, banlistLimit);
+        return Math.max(0, freeMode ? allowed : Math.min(allowed, trunk.countOf(passcode)));
     }
 
     /** Whether a deck is legal to duel with, reusing the banlist's own rules. */
     public static java.util.List<String> validate(DeckList deck, Trunk trunk, Banlist banlist)
     {
+        return validate(deck, trunk, banlist, false);
+    }
+
+    /**
+     * As above. In free mode the ownership half is skipped, which is what makes
+     * a deck built with cards nobody owns playable — and what makes it stop
+     * being playable the moment the setting goes off, without the deck itself
+     * changing at all.
+     */
+    public static java.util.List<String> validate(DeckList deck, Trunk trunk, Banlist banlist,
+        boolean freeMode)
+    {
         java.util.List<String> problems = new java.util.ArrayList<>(
             (banlist == null ? Banlist.none() : banlist)
                 .validate(deck.main(), deck.extra(), deck.side()));
         // The banlist knows nothing about ownership, so that is checked here.
-        deck.counts().forEach((code, count) ->
+        if(!freeMode)
         {
-            int owned = trunk.countOf(code);
-            if(count > owned)
+            deck.counts().forEach((code, count) ->
             {
-                problems.add("Deck uses " + count + " of card " + code + " but you own " + owned);
-            }
-        });
+                int owned = trunk.countOf(code);
+                if(count > owned)
+                {
+                    problems.add("Deck uses " + count + " of card " + code + " but you own " + owned);
+                }
+            });
+        }
         return problems;
     }
 

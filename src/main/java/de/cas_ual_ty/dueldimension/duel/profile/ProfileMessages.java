@@ -202,6 +202,26 @@ public final class ProfileMessages
         }
     }
 
+    /** Server to client: whether the deck builder ignores ownership. */
+    public record SyncFreeMode(boolean enabled)
+    {
+        public static void encode(SyncFreeMode message, FriendlyByteBuf buffer)
+        {
+            buffer.writeBoolean(message.enabled());
+        }
+
+        public static SyncFreeMode decode(FriendlyByteBuf buffer)
+        {
+            return new SyncFreeMode(buffer.readBoolean());
+        }
+
+        public static void handle(SyncFreeMode message, Supplier<NetworkEvent.Context> context)
+        {
+            context.get().enqueueWork(() -> FreeMode.setClientBelief(message.enabled()));
+            context.get().setPacketHandled(true);
+        }
+    }
+
     /**
      * Runs a change on the server thread for the player who asked, and tells
      * them the result. Every client-to-server message here does exactly this,

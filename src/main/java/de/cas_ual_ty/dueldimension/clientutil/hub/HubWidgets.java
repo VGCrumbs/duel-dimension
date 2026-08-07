@@ -21,9 +21,29 @@ public final class HubWidgets
     /** A button whose surface is {@link HubTextures#BUTTON}. */
     public static class TextureButton extends Button
     {
+        /** Overrides the label's colour, for a row that is reporting a state. */
+        private Integer labelColour;
+        /** Shown while hovered, when a button needs to explain itself. */
+        private java.util.List<String> tooltip = java.util.List.of();
+
         public TextureButton(int x, int y, int width, int height, Component label, OnPress onPress)
         {
             super(x, y, width, height, label, onPress);
+        }
+
+        public void setLabelColour(int colour)
+        {
+            labelColour = colour;
+        }
+
+        public void setTooltipLines(java.util.List<String> lines)
+        {
+            tooltip = lines == null ? java.util.List.of() : lines;
+        }
+
+        public java.util.List<String> tooltipLines()
+        {
+            return tooltip;
         }
 
         @Override
@@ -32,7 +52,9 @@ public final class HubWidgets
             int row = !active ? NineSlice.DISABLED
                 : isHoveredOrFocused() ? NineSlice.HOVER : NineSlice.IDLE;
             NineSlice.draw(poseStack, HubTextures.BUTTON, x, y, width, height, row, 3);
-            drawLabel(poseStack, active ? isHoveredOrFocused() ? 0xFFF4D089 : 0xFFE6EAF2 : 0xFF6A7080);
+            int colour = labelColour != null ? labelColour
+                : active ? isHoveredOrFocused() ? 0xFFF4D089 : 0xFFE6EAF2 : 0xFF6A7080;
+            drawLabel(poseStack, colour);
         }
 
         void drawLabel(PoseStack poseStack, int colour)

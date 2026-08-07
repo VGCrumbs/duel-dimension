@@ -1208,7 +1208,7 @@ public class DeckEditorScreen extends Screen
         DeckList.Part destination = menuPart != null ? menuPart
             : menuCard.getIsInExtraDeck() ? DeckList.Part.EXTRA : DeckList.Part.MAIN;
         DeckLimits.Verdict verdict = DeckLimits.canAdd(EditorState.deck(), destination,
-            (int)menuCard.getId(), EditorState.trunk(), EditorState.banlist());
+            (int)menuCard.getId(), pool(), EditorState.banlist());
         int rows = menuPart == null ? 1 : 2;
 
         NineSlice.draw(poseStack, HubTextures.PANEL, menuX, menuY, MENU_W, rows * MENU_ROW + 2);
@@ -1216,19 +1216,29 @@ public class DeckEditorScreen extends Screen
             && mouseY >= menuY && mouseY < menuY + MENU_ROW;
         font.drawShadow(poseStack, "Add 1", menuX + 6, menuY + 4,
             !verdict.allowed() ? 0xFF6A7080 : onAdd ? 0xFFFFE9B0 : 0xFFE6EAF2);
-        if(rows > 1)
+        // Remove belongs only to a card that is IN the deck. Drawn from
+        // menuPart rather than from the row count: with the favourite row
+        // added, a trunk card also has more than one row, and keying off the
+        // count put "Remove" where the favourite row actually was.
+        if(menuPart != null)
         {
             boolean onRemove = mouseY >= menuY + MENU_ROW && mouseY < menuY + MENU_ROW * 2;
             font.drawShadow(poseStack, "Remove", menuX + 6, menuY + MENU_ROW + 4,
                 onRemove ? 0xFFFFB0A8 : 0xFFE6EAF2);
         }
+        int favouriteY = menuY + favouriteRow() * MENU_ROW;
+        boolean onFavourite = mouseX >= menuX && mouseX <= menuX + MENU_W
+            && mouseY >= favouriteY && mouseY < favouriteY + MENU_ROW;
+        boolean starred = EditorState.isFavourite((int)menuCard.getId());
+        font.drawShadow(poseStack, starred ? "Unstar" : "Favourite", menuX + 6, favouriteY + 4,
+            onFavourite ? 0xFFFFE9B0 : 0xFFE6EAF2);
     }
 
     /** Adds a card if every rule allows it, else records why not. */
     private boolean add(Properties card, DeckList.Part part)
     {
         DeckLimits.Verdict verdict = DeckLimits.canAdd(EditorState.deck(), part,
-            (int)card.getId(), EditorState.trunk(), EditorState.banlist());
+            (int)card.getId(), pool(), EditorState.banlist());
         if(!verdict.allowed())
         {
             refusal = verdict.reason();
@@ -1839,7 +1849,7 @@ public class DeckEditorScreen extends Screen
                 Properties card = shown.get(index);
                 int inDeck = EditorState.deck().copiesOf((int)card.getId());
                 int max = DeckLimits.maxCopies((int)card.getId(), EditorState.trunk(),
-                    EditorState.banlist());
+                    EditorState.banlist(), EditorState.freeMode());
                 // A card already at its limit is dimmed, so the trunk shows
                 // what is still available at a glance rather than on refusal.
                 drawCard(poseStack, card, x, y, inDeck >= max ? 0.35F : 1F);
@@ -1892,6 +1902,34 @@ public class DeckEditorScreen extends Screen
         font.draw(poseStack, text, 0, 0, colour);
     }
 
+    /**
+     * The collection the editor's limits are measured against.
+     * <p>
+     * In free mode a trunk that holds three of everything, so the rules that
+     * ask "how many do you own" answer generously without any of them needing
+     * to know why. The banlist is untouched, so free mode widens what a player
+     * has and not what the game allows.
+     */
+    private static de.cas_ual_ty.dueldimension.duel.profile.Trunk pool()
+    {
+        if(!EditorState.freeMode())
+        {
+            return EditorState.trunk();
+        }
+        de.cas_ual_ty.dueldimension.duel.profile.Trunk everything =
+            new de.cas_ual_ty.dueldimension.duel.profile.Trunk();
+        for(Properties card : EditorState.visible())
+        {
+            everything.add((int)card.getId(), DeckLimits.MAX_COPIES);
+        }
+        // The deck may already hold cards the pool no longer lists, so they are
+        // added too: a limit that reported zero for a card already in the deck
+        // would call a legal deck illegal.
+        EditorState.deck().counts().forEach((code, count) ->
+            everything.add(code, DeckLimits.MAX_COPIES));
+        return everything;
+    }
+
     private static Properties card(int code)
     {
         return de.cas_ual_ty.dueldimension.DdDatabase.PROPERTIES_LIST.get((long)code);
@@ -1927,6 +1965,23 @@ public class DeckEditorScreen extends Screen
             DuelTextures.CARD_U0, DuelTextures.CARD_V0,
             DuelTextures.CARD_U1 - DuelTextures.CARD_U0,
             DuelTextures.CARD_V1 - DuelTextures.CARD_V0, 1, 1);
+
+        // A card the deck uses more of than the player owns pulses red. Only
+        // while free mode is OFF: with it on there is nothing wrong to mark,
+        // and the same deck is perfectly playable.
+        if(!EditorState.freeMode() && EditorState.isShortOf((int)card.getId()))
+        {
+            // Sine rather than a flash, so several at once read as a state the
+            // deck is in rather than an alarm going off.
+            float pulse = 0.35F + 0.35F * net.minecraft.util.Mth.sin(
+                System.currentTimeMillis() / 320F);
+            RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getPositionTexShader);
+            RenderSystem.enableBlend();
+            RenderSystem.setShaderColor(1F, 0.25F, 0.25F, pulse);
+            RenderSystem.setShaderTexture(0, DuelTextures.WHITE);
+            DdBlitUtil.fullBlit(poseStack, x, y, w, h);
+            RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+        }
 
         if(EditorState.isFavourite((int)card.getId()))
         {

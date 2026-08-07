@@ -442,19 +442,76 @@ public final class EditorState
     {
         if(dirty)
         {
-            List<Properties> owned = new ArrayList<>();
-            for(int code : trunk().all().keySet())
-            {
-                Properties card = DdDatabase.PROPERTIES_LIST.get((long)code);
-                if(card != null)
-                {
-                    owned.add(card);
-                }
-            }
-            visible = query().apply(owned);
+            visible = query().apply(pool());
             dirty = false;
         }
         return visible;
+    }
+
+    /**
+     * What the editor may build from: the whole database in free mode, and the
+     * player's own cards otherwise.
+     * <p>
+     * Free mode shows every legal card rather than every row in the database --
+     * an illegal card is not something the game will let anyone play, free mode
+     * or not, so offering it would only produce decks that cannot be used.
+     */
+    private static List<Properties> pool()
+    {
+        List<Properties> pool = new ArrayList<>();
+        if(freeMode())
+        {
+            for(Properties card : DdDatabase.PROPERTIES_LIST)
+            {
+                if(card != null && card.getId() > 0 && !card.getIllegal())
+                {
+                    pool.add(card);
+                }
+            }
+            return pool;
+        }
+        for(int code : trunk().all().keySet())
+        {
+            Properties card = DdDatabase.PROPERTIES_LIST.get((long)code);
+            if(card != null)
+            {
+                pool.add(card);
+            }
+        }
+        return pool;
+    }
+
+    /** Whether the server has free mode on. */
+    public static boolean freeMode()
+    {
+        return de.cas_ual_ty.dueldimension.duel.profile.FreeMode.clientBelief();
+    }
+
+    /**
+     * Whether the player is short of this card for the deck they have built.
+     * <p>
+     * Counts the whole deck rather than asking whether the card is owned at
+     * all: two copies of a card owned once is the same problem as one copy of
+     * a card owned never, and the editor should mark both.
+     */
+    public static boolean isShortOf(int passcode)
+    {
+        int used = deck().copiesOf(passcode);
+        return used > trunk().countOf(passcode);
+    }
+
+    /** Cards in this deck the player does not have enough of. */
+    public static java.util.List<Integer> missingFrom(DeckList deck)
+    {
+        java.util.List<Integer> missing = new ArrayList<>();
+        deck.counts().forEach((code, count) ->
+        {
+            if(count > trunk().countOf(code))
+            {
+                missing.add(code);
+            }
+        });
+        return missing;
     }
 
     /**

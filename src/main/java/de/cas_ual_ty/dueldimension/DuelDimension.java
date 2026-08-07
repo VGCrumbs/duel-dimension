@@ -316,6 +316,11 @@ public class DuelDimension
                 de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Leave::decode,
                 de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Leave::handle);
         DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.SyncFreeMode.class,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.SyncFreeMode::encode,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.SyncFreeMode::decode,
+                de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.SyncFreeMode::handle);
+        DuelDimension.channel.registerMessage(index++,
                 de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.ToggleFavourite.class,
                 de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.ToggleFavourite::encode,
                 de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.ToggleFavourite::decode,
@@ -443,6 +448,8 @@ public class DuelDimension
         if(event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player)
         {
             de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.saveAndSync(player);
+            // Told on join, so the editor knows before it draws anything.
+            de.cas_ual_ty.dueldimension.duel.profile.FreeMode.sync(player);
             DuelDimension.channel.send(
                 net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
                 new de.cas_ual_ty.dueldimension.shop.ShopMessages.SyncPoints(
@@ -521,6 +528,7 @@ public class DuelDimension
         DdCommand.registerCommand(event.getDispatcher());
         de.cas_ual_ty.dueldimension.duel.match.DuelCommand.register(event.getDispatcher());
         de.cas_ual_ty.dueldimension.shop.DuelPointsCommand.register(event.getDispatcher());
+        de.cas_ual_ty.dueldimension.duel.profile.FreeModeCommand.register(event.getDispatcher());
     }
     
     private void modConfig(ModConfigEvent event)

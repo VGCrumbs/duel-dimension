@@ -5,7 +5,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
@@ -87,5 +90,53 @@ class DeckEditsTest
         Trunk trunk = owning(DARK_MAGICIAN, 6);
         assertNotNull(DeckEdits.refusalFor(trunk, deckOf(
             List.of(DARK_MAGICIAN, DARK_MAGICIAN, DARK_MAGICIAN, DARK_MAGICIAN)), Banlist.none()));
+    }
+
+    // ---- free mode ----
+
+    @Test
+    void freeModeAllowsCardsNobodyOwns()
+    {
+        Trunk empty = new Trunk();
+        assertNull(DeckEdits.refusalFor(empty,
+            deckOf(List.of(BLUE_EYES, BLUE_EYES, BLUE_EYES)), Banlist.none(), true),
+            "free mode is the whole point: build with anything");
+    }
+
+    @Test
+    void freeModeStillObeysTheBanlist()
+    {
+        // Free mode widens what a player HAS, not what the rules allow. A
+        // four-of is illegal however generous the collection is.
+        Trunk empty = new Trunk();
+        assertNotNull(DeckEdits.refusalFor(empty, deckOf(
+            List.of(BLUE_EYES, BLUE_EYES, BLUE_EYES, BLUE_EYES)), Banlist.none(), true));
+    }
+
+    @Test
+    void turningFreeModeOffMakesTheSameDeckUnusableWithoutChangingIt()
+    {
+        // A legal-SIZE deck of cards nobody owns. Size is not what free mode
+        // relaxes -- a two-card deck is illegal either way -- so the deck has
+        // to clear the forty-card minimum for ownership to be the only thing
+        // left to fail on.
+        List<Integer> main = new java.util.ArrayList<>();
+        for(int i = 0; i < 40; i++)
+        {
+            main.add(BLUE_EYES + i);
+        }
+        Trunk empty = new Trunk();
+        DeckList built = deckOf(main);
+
+        assertTrue(DeckEdits.problemsUnder(built, empty, Banlist.none(), true).isEmpty(),
+            "free mode: a deck of cards nobody owns is playable");
+
+        List<String> refused = DeckEdits.problemsUnder(built, empty, Banlist.none(), false);
+        assertFalse(refused.isEmpty(), "free mode off: the same deck is refused");
+        assertTrue(refused.get(0).contains("own"), "and refused for OWNERSHIP: " + refused.get(0));
+        assertEquals(40, built.main().size(), "the deck itself must not be altered");
+
+        // Back on, and it plays again with no repair needed.
+        assertTrue(DeckEdits.problemsUnder(built, empty, Banlist.none(), true).isEmpty());
     }
 }

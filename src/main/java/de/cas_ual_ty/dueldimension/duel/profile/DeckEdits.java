@@ -60,7 +60,8 @@ public final class DeckEdits
         }
 
         DeckList candidate = new DeckList(clean, DeckList.Origin.SAVED, main, extra, side);
-        String refusal = refusalFor(profile.trunk(), candidate, banlist());
+        String refusal = refusalFor(profile.trunk(), candidate, banlist(),
+            FreeMode.isEnabled(player));
         if(refusal != null)
         {
             return refusal;
@@ -202,7 +203,14 @@ public final class DeckEdits
      */
     public static List<String> problemsUnder(DeckList deck, Trunk trunk, Banlist banlist)
     {
-        return DeckLimits.validate(deck, trunk, banlist == null ? Banlist.none() : banlist);
+        return problemsUnder(deck, trunk, banlist, false);
+    }
+
+    public static List<String> problemsUnder(DeckList deck, Trunk trunk, Banlist banlist,
+        boolean freeMode)
+    {
+        return DeckLimits.validate(deck, trunk, banlist == null ? Banlist.none() : banlist,
+            freeMode);
     }
 
     /**
@@ -218,7 +226,7 @@ public final class DeckEdits
         {
             return List.of("You have no deck called \"" + name + "\".");
         }
-        return DeckLimits.validate(deck, profile.trunk(), banlist());
+        return DeckLimits.validate(deck, profile.trunk(), banlist(), FreeMode.isEnabled(player));
     }
 
     /** Trims and collapses whitespace, so " " is not a deck name. */
@@ -241,10 +249,16 @@ public final class DeckEdits
      */
     public static String refusalFor(Trunk trunk, DeckList deck, Banlist banlist)
     {
+        return refusalFor(trunk, deck, banlist, false);
+    }
+
+    /** As above; free mode drops the ownership half of the check. */
+    public static String refusalFor(Trunk trunk, DeckList deck, Banlist banlist, boolean freeMode)
+    {
         for(Map.Entry<Integer, Integer> entry : deck.counts().entrySet())
         {
             int used = entry.getValue();
-            int allowed = DeckLimits.maxCopies(entry.getKey(), trunk, banlist);
+            int allowed = DeckLimits.maxCopies(entry.getKey(), trunk, banlist, freeMode);
             if(used > allowed)
             {
                 int owned = trunk.countOf(entry.getKey());

@@ -402,7 +402,8 @@ public class DuelHubScreen extends Screen
             // but it cannot be USED until it is legal, so Use reports that by
             // being disabled rather than by failing at the duel.
             boolean legal = de.cas_ual_ty.dueldimension.duel.profile.DeckLimits
-                .validate(deck, EditorState.trunk(), EditorState.banlist()).isEmpty();
+                .validate(deck, EditorState.trunk(), EditorState.banlist(),
+                    EditorState.freeMode()).isEmpty();
             use.active = legal && !deck.name().equals(EditorState.profile().activeDeck());
             addRenderableWidget(use);
             x += useW + gap;
@@ -530,6 +531,19 @@ public class DuelHubScreen extends Screen
         }
 
         super.render(poseStack, mouseX, mouseY, partialTick);
+        // Why a red row cannot be used, on the row itself.
+        for(net.minecraft.client.gui.components.events.GuiEventListener child : children())
+        {
+            if(child instanceof HubWidgets.TextureButton button && button.visible
+                && button.isMouseOver(mouseX, mouseY) && !button.tooltipLines().isEmpty())
+            {
+                renderComponentTooltip(poseStack, button.tooltipLines().stream()
+                    .map(net.minecraft.network.chat.Component::literal)
+                    .map(line -> (net.minecraft.network.chat.Component)line).toList(),
+                    mouseX, mouseY);
+                break;
+            }
+        }
     }
 
     private void renderProfile(PoseStack poseStack, int bodyTop)
