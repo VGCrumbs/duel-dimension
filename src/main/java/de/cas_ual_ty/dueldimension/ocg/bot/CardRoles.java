@@ -30,6 +30,33 @@ import java.util.Map;
  */
 public final class CardRoles
 {
+    /**
+     * Equips that may only be put on a monster of one type, by that type's
+     * {@code RACE_*} bit.
+     * <p>
+     * WindBot hangs a predicate off each passcode as well as a role
+     * ({@code exec.Func}), and this is what those three need: the engine offers
+     * the activation whenever ANY legal target exists, and for a restricted
+     * equip that can be the opponent's monster and none of ours. The bot then
+     * has no way to decline at the target prompt, so a +300 boost was handed
+     * across the table. Read off the same card text the role is:
+     * <pre>
+     * Book of Secret Arts : "A Spellcaster-Type monster equipped with this card..."
+     * Dark Energy         : "A Fiend-Type monster equipped with this card..."
+     * Dragon Treasure     : "A Dragon-Type monster equipped with this card..."
+     * </pre>
+     */
+    private static final Map<Integer, Long> EQUIP_RACE = Map.of(
+        91595718, de.cas_ual_ty.dueldimension.ocg.OcgConstants.RACE_SPELLCASTER,
+        4614116, de.cas_ual_ty.dueldimension.ocg.OcgConstants.RACE_FIEND,
+        1435851, de.cas_ual_ty.dueldimension.ocg.OcgConstants.RACE_DRAGON);
+
+    /** The type a card may only be equipped to, or 0 if it has no such rule. */
+    public static long equipRace(int code)
+    {
+        return EQUIP_RACE.getOrDefault(code, 0L);
+    }
+
     public enum Role
     {
         /** Destroys every monster on both sides: only good when behind. */

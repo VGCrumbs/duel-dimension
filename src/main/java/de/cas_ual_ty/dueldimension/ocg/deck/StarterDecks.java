@@ -4,9 +4,10 @@ import java.util.List;
 
 /**
  * The decks a new player picks from, and the loaner decks NPC duelists can
- * offer. All three are the real 2002/2003 TCG starter decks, generated from
- * the card database's own set data — so every card in them is obtainable in
- * game, and a starting deck doubles as a legitimate collection.
+ * offer. Every one is a real TCG starter deck, generated from the card
+ * database's own set data by {@code tools/gen_starter_deck.py} — so every card
+ * in them is obtainable in game, and a starting deck doubles as a legitimate
+ * collection. One deck per era, from the original three through to Zexal.
  */
 public final class StarterDecks
 {
@@ -36,7 +37,14 @@ public final class StarterDecks
     public static final Entry JOEY = new Entry("joey", "Starter Deck: Joey", "SDJ",
         "Warriors and swarm tactics, built around Red-Eyes Black Dragon.");
 
-    public static final List<Entry> ALL = List.of(YUGI, KAIBA, JOEY);
+    public static final Entry JADEN = new Entry("jaden", "Starter Deck: Jaden Yuki", "YSDJ",
+        "GX era: Elemental HEROes and the fusions they make.");
+    public static final Entry YUSEI = new Entry("yusei", "Starter Deck: Yu-Gi-Oh! 5D's", "5DS1",
+        "5D's era: tuners, and the synchro monsters they summon.");
+    public static final Entry YUMA = new Entry("yuma", "Starter Deck: Dawn of the Xyz", "YS11",
+        "Zexal era: stacking levels to build xyz monsters.");
+
+    public static final List<Entry> ALL = List.of(YUGI, KAIBA, JOEY, JADEN, YUSEI, YUMA);
 
     private StarterDecks()
     {

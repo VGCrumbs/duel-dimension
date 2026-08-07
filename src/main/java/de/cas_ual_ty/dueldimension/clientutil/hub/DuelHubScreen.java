@@ -205,91 +205,78 @@ public class DuelHubScreen extends Screen
         return Math.max(1, (bodyHeight - 26) / ROW_H);
     }
 
+    /** One scroll position per recipe column. */
+    private final int[] recipeScroll = new int[3];
+
+    /** Gap between the three columns, and the width the scrollbar sits in. */
+    private static final int COLUMN_GAP = 6;
+    private static final int BAR_W = 6;
+
+    private int recipeColumnW()
+    {
+        return (WIDTH - PAD * 2 - 8 - COLUMN_GAP * 2) / 3;
+    }
+
+    private int recipeColumnX(int column)
+    {
+        return left + PAD + 4 + column * (recipeColumnW() + COLUMN_GAP);
+    }
+
+    private int recipeRowsVisible()
+    {
+        // One row shorter than the deck list's: the heading takes the top of
+        // each column rather than a row of the single flattened list.
+        return Math.max(1, deckRowsVisible() - 1);
+    }
+
     /**
-     * The recipe list: three groups under their headings, flattened into rows
-     * so one scroll position covers the lot.
+     * The recipe list: three lists side by side, one per source.
      * <p>
-     * A recipe's action is Duplicate As rather than an edit. Loading a recipe
-     * means taking a copy of it -- the original is the record of what was
-     * saved or opened, and editing it in place would destroy that.
+     * Flattened into a single scrolling column, the starter decks sat below
+     * however many saved recipes the player had, so finding one meant scrolling
+     * past the others. Three columns each scroll on their own and each say how
+     * far down they are.
+     * <p>
+     * A recipe's action is to be used, which takes a copy of it: the original
+     * is the record of what was saved or opened, and editing it in place would
+     * destroy that. Editing a saved recipe is done from the deck list, where
+     * the deck it was published from lives.
      */
     private void buildRecipeRows(int bodyTop)
     {
-        int visible = deckRowsVisible();
-        java.util.List<Object> flat = new java.util.ArrayList<>();
-        for(RecipeGroup group : recipeGroups())
+        java.util.List<RecipeGroup> groups = recipeGroups();
+        int visible = recipeRowsVisible();
+        int columnW = recipeColumnW();
+        int nameW = columnW - BAR_W - 2;
+
+        for(int column = 0; column < groups.size() && column < recipeScroll.length; column++)
         {
-            flat.add(group.heading());
-            flat.addAll(group.decks());
-            if(group.decks().isEmpty())
+            java.util.List<de.cas_ual_ty.dueldimension.duel.profile.DeckList> decks =
+                groups.get(column).decks();
+            recipeScroll[column] = Math.max(0, Math.min(recipeScroll[column],
+                Math.max(0, decks.size() - visible)));
+            int x = recipeColumnX(column);
+
+            for(int row = 0; row < visible; row++)
             {
-                flat.add("");
-            }
-        }
-        deckScroll = Math.max(0, Math.min(deckScroll, Math.max(0, flat.size() - visible)));
-
-        int rowX = left + PAD + 4;
-        int rowW = WIDTH - PAD * 2 - 8;
-        int duplicateW = 90;
-
-        for(int row = 0; row < visible; row++)
-        {
-            int index = row + deckScroll;
-            if(index >= flat.size())
-            {
-                break;
-            }
-            Object entry = flat.get(index);
-            int y = bodyTop + 2 + row * ROW_H;
-            if(entry instanceof de.cas_ual_ty.dueldimension.duel.profile.DeckList recipe)
-            {
-                // Saved recipes are the player's own, so they can be edited and
-                // removed. A granted deck is the record of what was opened, so
-                // it offers Use and nothing else -- there is no Delete to press
-                // and be refused by.
-                boolean own = recipe.origin() == de.cas_ual_ty.dueldimension.duel.profile
-                    .DeckList.Origin.SAVED;
-                int useW = 34;
-                int editW = 34;
-                int deleteW = 46;
-                int gap = 3;
-                int actions = own ? useW + editW + deleteW + gap * 3 : useW + gap;
-                int nameW = Math.max(60, rowW - actions - 10);
-                int x = rowX + 10;
-
-
+                int index = row + recipeScroll[column];
+                if(index >= decks.size())
+                {
+                    break;
+                }
+                de.cas_ual_ty.dueldimension.duel.profile.DeckList recipe = decks.get(index);
+                int y = bodyTop + 14 + row * ROW_H;
                 HubWidgets.TextureButton recipeName = new HubWidgets.TextureButton(x, y, nameW,
-                    ROW_H - 2, Component.literal(recipe.name() + "  (" + recipe.main().size() + ")"),
+                    ROW_H - 2, Component.literal(font.plainSubstrByWidth(
+                        recipe.name() + "  (" + recipe.main().size() + ")", nameW - 8)),
                     pressed -> useRecipe(recipe));
                 markUnusable(recipeName, recipe);
-                addRenderableWidget(recipeName);
-                x += nameW + gap;
-
-                addRenderableWidget(new HubWidgets.TextureButton(x, y, useW, ROW_H - 2,
-                    Component.literal("Use"), pressed -> useRecipe(recipe)));
-                x += useW + gap;
-
-                if(own)
+                if(recipeName.tooltipLines().isEmpty())
                 {
-                    addRenderableWidget(new HubWidgets.TextureButton(x, y, editW, ROW_H - 2,
-                        Component.literal("Edit"), pressed ->
-                    {
-                        EditorState.select(EditorState.indexOf(recipe));
-                        if(minecraft != null)
-                        {
-                            minecraft.setScreen(new DeckEditorScreen(this));
-                        }
-                    }));
-                    x += editW + gap;
-                    addRenderableWidget(new HubWidgets.TextureButton(x, y, deleteW, ROW_H - 2,
-                        Component.literal("Delete"), pressed ->
-                    {
-                        EditorState.select(EditorState.indexOf(recipe));
-                        String error = EditorState.deleteCurrent();
-                        notice = error == null ? "" : error;
-                        rebuild();
-                    }));
+                    recipeName.setTooltipLines(java.util.List.of(recipe.name(),
+                        "Makes a new deck from this recipe"));
                 }
+                addRenderableWidget(recipeName);
             }
         }
     }
@@ -403,35 +390,63 @@ public class DuelHubScreen extends Screen
         font.drawShadow(poseStack, "This cannot be undone.", boxX + 12, boxY + 36, 0xFFFF6B6B);
     }
 
-    /** Draws the headings and empty markers the recipe rows sit between. */
+    /** Draws each column's heading, its scrollbar, and its empty marker. */
     private void renderRecipeHeadings(PoseStack poseStack, int bodyTop)
     {
-        int visible = deckRowsVisible();
-        java.util.List<Object> flat = new java.util.ArrayList<>();
-        for(RecipeGroup group : recipeGroups())
+        java.util.List<RecipeGroup> groups = recipeGroups();
+        int visible = recipeRowsVisible();
+        int columnW = recipeColumnW();
+
+        for(int column = 0; column < groups.size() && column < recipeScroll.length; column++)
         {
-            flat.add(group.heading());
-            flat.addAll(group.decks());
+            RecipeGroup group = groups.get(column);
+            int x = recipeColumnX(column);
+            font.drawShadow(poseStack, font.plainSubstrByWidth(group.heading(), columnW),
+                x, bodyTop + 2, 0xFFF4D089);
             if(group.decks().isEmpty())
             {
-                flat.add("");
+                font.drawShadow(poseStack, "(none)", x, bodyTop + 18, 0xFF7A8090);
+                continue;
+            }
+            scrollbar(poseStack, x + columnW - BAR_W, bodyTop + 14, visible * ROW_H,
+                group.decks().size(), visible, recipeScroll[column]);
+            if(group.decks().size() > visible)
+            {
+                font.drawShadow(poseStack, (recipeScroll[column] + 1) + "-"
+                        + Math.min(group.decks().size(), recipeScroll[column] + visible)
+                        + " of " + group.decks().size(),
+                    x, bodyTop + 14 + visible * ROW_H + 2, 0xFF7A8090);
             }
         }
-        for(int row = 0; row < visible; row++)
+    }
+
+    /** The same bar the editor draws, over a count of rows. */
+    private void scrollbar(PoseStack poseStack, int x, int y, int height,
+        int total, int visible, int offset)
+    {
+        int overflow = Math.max(0, total - visible);
+        if(overflow <= 0 || height <= 0)
         {
-            int index = row + deckScroll;
-            if(index >= flat.size())
+            return;
+        }
+        NineSlice.draw(poseStack, HubTextures.SCROLLBAR, x, y, 4, height, 0, 2);
+        int thumbH = Math.max(12, height * visible / Math.max(1, total));
+        int thumbY = y + (height - thumbH) * offset / overflow;
+        NineSlice.draw(poseStack, HubTextures.SCROLLBAR, x, thumbY, 4, thumbH, 1, 2);
+    }
+
+    /** Which recipe column the cursor is over, or -1. */
+    private int recipeColumnAt(double mouseX)
+    {
+        for(int column = 0; column < recipeScroll.length; column++)
+        {
+            int x = recipeColumnX(column);
+            if(mouseX >= x && mouseX < x + recipeColumnW())
             {
-                break;
-            }
-            Object entry = flat.get(index);
-            int y = bodyTop + 2 + row * ROW_H;
-            if(entry instanceof String heading)
-            {
-                font.drawShadow(poseStack, heading.isEmpty() ? "   (none)" : heading,
-                    left + PAD + 6, y + 5, heading.isEmpty() ? 0xFF7A8090 : 0xFFF4D089);
+                return column;
             }
         }
+        return -1;
     }
 
     /**
@@ -797,11 +812,26 @@ public class DuelHubScreen extends Screen
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta)
     {
+        if(section == Section.DECKS && deckView == DeckView.RECIPES)
+        {
+            // The column under the cursor, so three lists side by side scroll
+            // independently rather than together.
+            int column = recipeColumnAt(mouseX);
+            if(column < 0)
+            {
+                return true;
+            }
+            java.util.List<RecipeGroup> groups = recipeGroups();
+            int total = column < groups.size() ? groups.get(column).decks().size() : 0;
+            int max = Math.max(0, total - recipeRowsVisible());
+            recipeScroll[column] = Math.max(0,
+                Math.min(max, recipeScroll[column] - (int)Math.signum(delta)));
+            rebuild();
+            return true;
+        }
         if(section == Section.DECKS)
         {
-            int max = Math.max(0, (deckView == DeckView.RECIPES
-                ? EditorState.decks().size() + 3 : EditorState.ownDecks().size())
-                - deckRowsVisible());
+            int max = Math.max(0, EditorState.ownDecks().size() - deckRowsVisible());
             deckScroll = Math.max(0, Math.min(max, deckScroll - (int)Math.signum(delta)));
             rebuild();
             return true;

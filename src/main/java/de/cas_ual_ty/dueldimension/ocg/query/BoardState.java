@@ -78,6 +78,32 @@ public record BoardState(int viewer, boolean omniscient, PlayerBoard self, Playe
             return best;
         }
 
+        /**
+         * Whether any monster of this side could declare an attack.
+         * <p>
+         * WindBot's {@code ClientField.HasAttackingMonster()}:
+         * <pre>
+         *     foreach (ClientCard card in MonsterZone)
+         *         if (card != null &amp;&amp; card.IsAttack()) return true;
+         *     return false;
+         * </pre>
+         * Existence, not size. {@link #strongestAttacker()} answers a different
+         * question — how hard we can hit — and using it for this one made a
+         * zero-attack monster look like no monster at all, so the bot spent a
+         * boost in Main 1 and then ended the turn without swinging.
+         */
+        public boolean hasAttackPositionMonster()
+        {
+            for(CardView card : monsters)
+            {
+                if(card != null && card.isFaceUp() && card.isAttackPosition())
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         /** The monster occupying a monster zone sequence, or null. */
         public CardView monsterAt(int sequence)
         {

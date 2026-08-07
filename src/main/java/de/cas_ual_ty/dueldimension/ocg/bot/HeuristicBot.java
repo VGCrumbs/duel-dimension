@@ -359,7 +359,12 @@ public class HeuristicBot implements ResponseSource
         // already have a winning attack" -- the rule this replaces -- is what
         // made the bot buff a monster in Main 1 and then end its turn without
         // swinging, wasting the card it had just spent.
-        if(idle.toBattle() && state.self().strongestAttacker() > 0)
+        //
+        // HasAttackingMonster is existence, not size. Asking for the strongest
+        // attacker to be above zero -- which is what this asked next -- reads
+        // the same until the monster in attack position has no attack of its
+        // own, which is exactly the monster a boost was spent on.
+        if(idle.toBattle() && state.self().hasAttackPositionMonster())
         {
             return Responses.idleToBattle();
         }
@@ -396,7 +401,7 @@ public class HeuristicBot implements ResponseSource
             case HITS_OPPONENT_MONSTER -> oppCount == 0 ? -1 : 260 + oppBest / 10.0;
             case HITS_BACKROW ->
                 backrow(state.opponent()) == 0 ? -1 : 220 + backrow(state.opponent()) * 15;
-            case BUFFS_OWN_MONSTER -> buffScore(state);
+            case BUFFS_OWN_MONSTER -> canEquip(state, code) ? buffScore(state) : -1;
             case REVIVES_FROM_GRAVE ->
             {
                 int best = Math.max(bestGraveAttack(state.self()), bestGraveAttack(state.opponent()));
@@ -491,6 +496,38 @@ public class HeuristicBot implements ResponseSource
      * something out there already beats or ties our best attacker, the boost
      * has a job. When we already beat everything, it has none.
      */
+    /**
+     * Whether a type-restricted equip has one of OUR monsters to go on.
+     * <p>
+     * The engine offers the activation whenever any legal target exists, which
+     * for these cards includes the opponent's monsters of that type. Once
+     * activated there is no declining the target prompt, so the check has to
+     * happen here — this is the per-card predicate WindBot hangs off a
+     * passcode, and its absence is how a +300 boost ended up on the opponent's
+     * Dragon in a fuzz duel.
+     */
+    private boolean canEquip(BoardState state, int code)
+    {
+        long required = CardRoles.equipRace(code);
+        if(required == 0)
+        {
+            return true;
+        }
+        for(CardView card : state.self().monsters())
+        {
+            if(card == null || !card.isFaceUp())
+            {
+                continue;
+            }
+            OcgCard known = cards.get(card.code());
+            if(known != null && (known.race() & required) != 0)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private double buffScore(BoardState state)
     {
         int ours = state.self().strongestAttacker();

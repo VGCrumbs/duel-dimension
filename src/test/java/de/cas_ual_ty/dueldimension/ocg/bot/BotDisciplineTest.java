@@ -131,6 +131,12 @@ class BotDisciplineTest
         int buffedTurnsWithoutBattle = 0;
         boolean buffedThisTurn = false;
         boolean battledThisTurn = false;
+        // Whose turn it is, because the misplay being counted is "boosted my
+        // own attacker and then did not swing". A boost by the DEFENDING
+        // player during the opponent's turn is a battle trick, and whether the
+        // turn player entered battle says nothing about it -- counting those
+        // reported four misplays that were nobody's.
+        int turnPlayer = -1;
         List<String> selfHarming = new ArrayList<>();
         List<String> misaimedBuffs = new ArrayList<>();
         // Who activated what, so a later target message can be attributed to
@@ -139,7 +145,7 @@ class BotDisciplineTest
 
         for(DuelMessage message : stream)
         {
-            if(message instanceof DuelMessage.NewTurn)
+            if(message instanceof DuelMessage.NewTurn newTurn)
             {
                 if(buffedThisTurn)
                 {
@@ -151,6 +157,7 @@ class BotDisciplineTest
                 }
                 buffedThisTurn = false;
                 battledThisTurn = false;
+                turnPlayer = newTurn.player();
             }
             else if(message instanceof DuelMessage.NewPhase phase)
             {
@@ -164,7 +171,8 @@ class BotDisciplineTest
             if(message instanceof DuelMessage.Chaining chaining)
             {
                 activations++;
-                if(CardRoles.of(chaining.code()) == CardRoles.Role.BUFFS_OWN_MONSTER)
+                if(CardRoles.of(chaining.code()) == CardRoles.Role.BUFFS_OWN_MONSTER
+                    && chaining.card().controller() == turnPlayer)
                 {
                     buffedThisTurn = true;
                 }
