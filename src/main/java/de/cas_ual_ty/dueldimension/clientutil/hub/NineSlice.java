@@ -105,15 +105,24 @@ public final class NineSlice
     /**
      * One cell of the nine, given its place in the texture in pixels.
      * <p>
-     * The extractor wants a UV window in 0..1 rather than pixels, so the
-     * conversion happens here — once, in the only place that knows both the
-     * cell's pixel bounds and the file's size.
+     * Two conversions happen here, and both are easy to get wrong.
+     * <p>
+     * The extractor wants a UV window in 0..1 rather than pixels, so the file's
+     * size is divided out — this is the only place that knows both the cell's
+     * pixel bounds and the file's dimensions.
+     * <p>
+     * And its blit takes <em>corners</em>, not a size: the arguments after the
+     * texture are {@code x0, y0, x1, y1}, which is not obvious from the
+     * signature — every one of them is an {@code int} and the older API in the
+     * same position meant width and height. Passing a size draws each cell from
+     * its corner to a point measured from the screen origin, which is why the
+     * first attempt at this came out as garbage rather than as a panel.
      */
     private static void cell(GuiGraphicsExtractor graphics, Identifier texture,
         int x, int y, int width, int height,
         int u, int v, int uw, int vh, int fileHeight)
     {
-        graphics.blit(texture, x, y, width, height,
+        graphics.blit(texture, x, y, x + width, y + height,
             u / (float)TILE, (u + uw) / (float)TILE,
             v / (float)fileHeight, (v + vh) / (float)fileHeight);
     }
@@ -122,6 +131,6 @@ public final class NineSlice
     public static void image(GuiGraphicsExtractor graphics, Identifier texture,
         int x, int y, int width, int height)
     {
-        graphics.blit(texture, x, y, width, height, 0F, 1F, 0F, 1F);
+        graphics.blit(texture, x, y, x + width, y + height, 0F, 1F, 0F, 1F);
     }
 }
