@@ -120,6 +120,15 @@ public final class CardQuery<C>
     private int maxAttack = -1;
     private int minDefence = -1;
     private int maxDefence = -1;
+    /**
+     * Narrow to starred cards only, and the stars to check against.
+     * <p>
+     * The set is handed in rather than reached for: this class deliberately
+     * knows nothing about profiles, which is what lets it be tested without
+     * one.
+     */
+    private boolean favouritesOnly;
+    private Set<Long> favourites = java.util.Set.of();
     private Sort sort = Sort.NAME;
     private boolean descending;
 
@@ -237,6 +246,22 @@ public final class CardQuery<C>
         return maxDefence;
     }
 
+    public boolean favouritesOnly()
+    {
+        return favouritesOnly;
+    }
+
+    public void setFavouritesOnly(boolean value)
+    {
+        favouritesOnly = value;
+    }
+
+    /** The starred cards, as ids. Replaced whenever the profile changes. */
+    public void setFavourites(Set<Long> value)
+    {
+        favourites = value == null ? java.util.Set.of() : value;
+    }
+
     public void setLevelRange(int min, int max)
     {
         minLevel = Math.max(0, min);
@@ -286,6 +311,7 @@ public final class CardQuery<C>
         species.clear();
         subTypes.clear();
         abilities.clear();
+        favouritesOnly = false;
         minLevel = 0;
         maxLevel = 0;
         minAttack = -1;
@@ -297,7 +323,7 @@ public final class CardQuery<C>
     /** True when nothing is narrowing, so the UI can grey out Clear. */
     public boolean isClear()
     {
-        return text.isEmpty() && kinds.isEmpty() && attributes.isEmpty()
+        return text.isEmpty() && !favouritesOnly && kinds.isEmpty() && attributes.isEmpty()
             && species.isEmpty() && subTypes.isEmpty() && abilities.isEmpty()
             && minLevel == 0 && maxLevel == 0
             && minAttack < 0 && maxAttack < 0 && minDefence < 0 && maxDefence < 0;
@@ -358,6 +384,10 @@ public final class CardQuery<C>
             {
                 return false;
             }
+        }
+        if(favouritesOnly && !favourites.contains(facets.id(card)))
+        {
+            return false;
         }
         if(!subTypes.isEmpty())
         {

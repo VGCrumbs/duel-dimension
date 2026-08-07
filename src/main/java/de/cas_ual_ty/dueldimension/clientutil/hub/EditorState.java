@@ -202,6 +202,7 @@ public final class EditorState
         }
         // What we now hold came from the server, so there is nothing to send.
         agreed = contentsOf(deck());
+        syncFavourites();
         dirty = true;
     }
 
@@ -511,8 +512,23 @@ public final class EditorState
     public static void toggleFavourite(int passcode)
     {
         profile.toggleFavourite(passcode);
+        syncFavourites();
         dirty = true;
         send(new ProfileMessages.ToggleFavourite(passcode));
+    }
+
+    /**
+     * Hands the query the current stars.
+     * <p>
+     * Copied rather than shared: the query filters against what it was told,
+     * and a set that changed underneath it mid-render would show a card the
+     * filter had already rejected.
+     */
+    private static void syncFavourites()
+    {
+        java.util.Set<Long> stars = new java.util.LinkedHashSet<>();
+        profile.favourites().forEach(code -> stars.add((long)(int)code));
+        query().setFavourites(stars);
     }
 
     /** Tells the server which deck this player duels with. */

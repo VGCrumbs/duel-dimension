@@ -184,6 +184,18 @@ public class DeckEditorScreen extends Screen
             chipX += chipW + 2;
         }
 
+        // Starred-only, beside the kind chips because it narrows the pool the
+        // same way. Drawn as the star itself rather than the word "Favourites":
+        // it is the same mark that appears on the cards.
+        addRenderableWidget(new StarChip(chipX, chipY, chipH + 6, chipH,
+            () -> EditorState.query().favouritesOnly(), pressed ->
+        {
+            EditorState.query().setFavouritesOnly(!EditorState.query().favouritesOnly());
+            EditorState.invalidate();
+            trunkScroll = 0;
+            rebuildControls();
+        }));
+
         // Sort cycles through the offered orders; the arrow flips direction.
         int sortW = layout.i("trunk.sortWidth", 56);
         int dirW = layout.i("trunk.dirWidth", 30);
@@ -970,6 +982,15 @@ public class DeckEditorScreen extends Screen
         }
         if(filtersOpen && clickOpenList(mouseX, mouseY))
         {
+            return true;
+        }
+        if(button == 1 && search != null && search.isMouseOver(mouseX, mouseY))
+        {
+            // Right-click empties a search box. Selecting the text and deleting
+            // it works, but clearing a filter is common enough to deserve one
+            // gesture rather than three.
+            search.setValue("");
+            search.setFocus(true);
             return true;
         }
         if(button == 1)
@@ -2084,6 +2105,43 @@ public class DeckEditorScreen extends Screen
 
     /** How many rows of a selector's list are shown before it scrolls. */
     private static final int LIST_ROWS = 12;
+
+    /**
+     * The favourites chip: the star, lit when only starred cards are showing.
+     * <p>
+     * Its own class rather than a ChipButton with a label, because the mark on
+     * a favourited card is a picture and the chip that filters by it should be
+     * the same picture.
+     */
+    private static class StarChip extends HubWidgets.TextureButton
+    {
+        private final java.util.function.BooleanSupplier lit;
+
+        StarChip(int x, int y, int width, int height,
+            java.util.function.BooleanSupplier lit, OnPress onPress)
+        {
+            super(x, y, width, height, Component.literal(""), onPress);
+            this.lit = lit;
+        }
+
+        @Override
+        public void renderButton(PoseStack poseStack, int mouseX, int mouseY, float partialTick)
+        {
+            boolean on = lit.getAsBoolean();
+            int row = on ? NineSlice.SELECTED : isHoveredOrFocused() ? NineSlice.HOVER : NineSlice.IDLE;
+            NineSlice.draw(poseStack, HubTextures.CHIP, x, y, width, height, row, 3);
+            int mark = Math.min(width, height) - 4;
+            RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getPositionTexShader);
+            RenderSystem.enableBlend();
+            // Dimmed when off, so the chip reads as a switch rather than as a
+            // decoration that happens to be there.
+            RenderSystem.setShaderColor(1F, 1F, 1F, on ? 1F : 0.45F);
+            RenderSystem.setShaderTexture(0, HubTextures.STAR);
+            DdBlitUtil.blit(poseStack, x + (width - mark) / 2, y + (height - mark) / 2,
+                mark, mark, 0, 0, 1, 1, 1, 1);
+            RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+        }
+    }
 
     /** A filter chip: lit when its filter is on. */
     private static class ChipButton extends HubWidgets.TextureButton

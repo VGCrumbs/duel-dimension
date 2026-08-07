@@ -369,6 +369,13 @@ public class CardShopScreen extends Screen
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button)
     {
+        if(button == 1 && search != null && search.isMouseOver(mouseX, mouseY))
+        {
+            // Right-click empties a search box, here as in the deck editor.
+            search.setValue("");
+            search.setFocus(true);
+            return true;
+        }
         // Widgets first. The grid covers most of the screen, and a control
         // drawn over it should be the thing that receives a click on it.
         if(super.mouseClicked(mouseX, mouseY, button))
@@ -583,6 +590,23 @@ public class CardShopScreen extends Screen
         int gap = layout().i("grid.gap", 4);
         int below = gridTop() + gridRows() * (cellH() + gap) + 2;
         font.drawShadow(poseStack, count, gridLeft(), below, 0xFF7A8090);
+
+        // The grid has always scrolled and never said so. The thumb's length
+        // reports how much of the catalogue is on screen and its position
+        // where in it you are.
+        int rows = (shown.size() + gridColumns() - 1) / gridColumns();
+        int visible = gridRows();
+        int overflow = Math.max(0, rows - visible);
+        if(overflow > 0)
+        {
+            int trackX = gridLeft() + gridColumns() * (cellW() + gap) + 2;
+            int trackY = gridTop();
+            int trackH = visible * (cellH() + gap) - gap;
+            int thumbH = Math.max(12, trackH * visible / Math.max(1, rows));
+            int thumbY = trackY + (trackH - thumbH) * scroll / overflow;
+            NineSlice.draw(poseStack, HubTextures.SCROLLBAR, trackX, trackY, 4, trackH, 0, 2);
+            NineSlice.draw(poseStack, HubTextures.SCROLLBAR, trackX, thumbY, 4, thumbH, 1, 2);
+        }
     }
 
     /** Centre: every pack, the highlighted one ringed. */

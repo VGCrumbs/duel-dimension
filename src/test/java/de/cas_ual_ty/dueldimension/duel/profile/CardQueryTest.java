@@ -339,4 +339,37 @@ class CardQueryTest
         assertTrue(query.isClear(), "a filter left behind by clear is a filter a player cannot switch off");
         assertEquals(everything().size(), query.apply(everything()).size());
     }
+
+    @Test
+    void theFavouritesFilterNarrowsToStarredCards()
+    {
+        CardQuery<Card> query = new CardQuery<>(FACETS);
+        // Starred cards drawn from everything(), and the result comes back in
+        // the chosen order, which defaults to name.
+        query.setFavourites(java.util.Set.of(BLUE_EYES.id(), MIRROR_FORCE.id()));
+        query.setFavouritesOnly(true);
+        assertEquals(List.of(BLUE_EYES, MIRROR_FORCE), query.apply(everything()));
+    }
+
+    @Test
+    void starringNothingAndFilteringShowsNothing()
+    {
+        // Not an empty filter meaning "do not narrow": asking for favourites
+        // when none are starred genuinely has no answer, and showing the whole
+        // trunk instead would look like the filter had failed.
+        CardQuery<Card> query = new CardQuery<>(FACETS);
+        query.setFavouritesOnly(true);
+        assertTrue(query.apply(everything()).isEmpty());
+    }
+
+    @Test
+    void theFavouritesFilterCountsAsNarrowing()
+    {
+        CardQuery<Card> query = new CardQuery<>(FACETS);
+        query.setFavouritesOnly(true);
+        assertFalse(query.isClear(), "Clear Filters must be offered while it is on");
+        query.clear();
+        assertTrue(query.isClear());
+        assertFalse(query.favouritesOnly(), "clearing must switch it off");
+    }
 }
