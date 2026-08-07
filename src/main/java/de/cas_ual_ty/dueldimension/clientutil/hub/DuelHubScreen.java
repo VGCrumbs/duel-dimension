@@ -27,6 +27,7 @@ public class DuelHubScreen extends Screen
     {
         PROFILE("Profile"),
         DECKS("Decks"),
+        OUTFIT("Outfit"),
         SETTINGS("Settings");
 
         private final String label;
@@ -132,7 +133,12 @@ public class DuelHubScreen extends Screen
         }
 
         int bodyTop = top + PAD + TAB_H + 8;
-        if(section == Section.SETTINGS)
+        if(section == Section.OUTFIT)
+        {
+            matPicker = null;
+            buildOutfitRows(bodyTop);
+        }
+        else if(section == Section.SETTINGS)
         {
             matPicker = new MatColourPicker(left + PAD + 6, bodyTop + 26, 120, 14,
                 DuelClientState.matColour());
@@ -388,6 +394,49 @@ public class DuelHubScreen extends Screen
         font.drawShadow(poseStack, font.plainSubstrByWidth(named, boxW - 24),
             boxX + 12, boxY + 24, 0xFFE6EAF2);
         font.drawShadow(poseStack, "This cannot be undone.", boxX + 12, boxY + 36, 0xFFFF6B6B);
+    }
+
+    /**
+     * The wardrobe: one row per outfit, the worn one marked.
+     * <p>
+     * What the player is wearing is the server's to say, so the row asks for a
+     * change and the row's mark follows the profile that comes back — pressing
+     * a row does not colour it in and hope.
+     */
+    private void buildOutfitRows(int bodyTop)
+    {
+        int x = left + PAD + 6;
+        int rowW = WIDTH - PAD * 2 - 12;
+        String worn = EditorState.profile().outfit();
+
+        for(int i = 0; i < de.cas_ual_ty.dueldimension.duel.outfit.Outfits.ALL.size(); i++)
+        {
+            de.cas_ual_ty.dueldimension.duel.outfit.Outfits.Outfit outfit =
+                de.cas_ual_ty.dueldimension.duel.outfit.Outfits.ALL.get(i);
+            boolean on = outfit.id().equals(worn);
+            int y = bodyTop + 24 + i * (ROW_H + 2);
+            HubWidgets.TextureButton row = new HubWidgets.TextureButton(x, y, rowW, ROW_H - 2,
+                Component.literal((on ? "▸ " : "") + outfit.name()), pressed ->
+            {
+                EditorState.wear(outfit.id());
+                rebuild();
+            });
+            row.active = !on;
+            if(!outfit.credit().isEmpty())
+            {
+                // Attribution on the thing itself, where somebody choosing it
+                // will actually see it.
+                row.setTooltipLines(java.util.List.of(outfit.name(), outfit.credit()));
+            }
+            addRenderableWidget(row);
+        }
+    }
+
+    private void renderOutfit(PoseStack poseStack, int bodyTop)
+    {
+        font.drawShadow(poseStack, "Outfit", left + PAD + 6, bodyTop + 8, 0xFFF4D089);
+        font.drawShadow(poseStack, "What other duelists see you in.",
+            left + PAD + 6, bodyTop + 8 + font.lineHeight + 2, 0xFF8A93A3);
     }
 
     /** Draws each column's heading, its scrollbar, and its empty marker. */
@@ -672,6 +721,7 @@ public class DuelHubScreen extends Screen
         {
             case PROFILE -> renderProfile(poseStack, bodyTop);
             case DECKS -> renderDecks(poseStack, bodyTop);
+            case OUTFIT -> renderOutfit(poseStack, bodyTop);
             case SETTINGS -> renderSettings(poseStack, bodyTop);
         }
 

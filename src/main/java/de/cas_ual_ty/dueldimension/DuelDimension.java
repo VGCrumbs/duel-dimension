@@ -286,6 +286,16 @@ public class DuelDimension
                 de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.PublishRecipe::decode,
                 de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.PublishRecipe::handle);
         DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Wear.class,
+                de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Wear::encode,
+                de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Wear::decode,
+                de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Wear::handle);
+        DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Worn.class,
+                de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Worn::encode,
+                de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Worn::decode,
+                de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Worn::handle);
+        DuelDimension.channel.registerMessage(index++,
                 de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.CopyRecipe.class,
                 de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.CopyRecipe::encode,
                 de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.CopyRecipe::decode,
@@ -455,6 +465,9 @@ public class DuelDimension
             de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.saveAndSync(player);
             // Told on join, so the editor knows before it draws anything.
             de.cas_ual_ty.dueldimension.duel.profile.FreeMode.sync(player);
+            // Both directions: this client has never heard of anyone, and
+            // nobody has heard of this player.
+            de.cas_ual_ty.dueldimension.duel.outfit.WornOutfits.announce(player);
             DuelDimension.channel.send(
                 net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
                 new de.cas_ual_ty.dueldimension.shop.ShopMessages.SyncPoints(
@@ -477,6 +490,9 @@ public class DuelDimension
             de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.abandon(player);
             de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.save(player);
             de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.forget(player);
+            DuelDimension.channel.send(net.minecraftforge.network.PacketDistributor.ALL.noArg(),
+                new de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Worn(
+                    player.getUUID(), ""));
         }
     }
 

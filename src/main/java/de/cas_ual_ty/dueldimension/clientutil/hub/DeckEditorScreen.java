@@ -1163,8 +1163,7 @@ public class DeckEditorScreen extends Screen
 
     /**
      * The labels this menu is showing, in the order they are drawn: Favourite,
-     * Card Info, Add, then Remove when the click was on a card already in the
-     * deck.
+     * Card Info, +1, then -1 when the click was on a card already in the deck.
      * <p>
      * One list rather than a row count and a set of draw calls that each know
      * their own index: adding "Card Info" to a menu sized by a fixed constant
@@ -1177,10 +1176,10 @@ public class DeckEditorScreen extends Screen
         labels.add(menuCard != null && EditorState.isFavourite((int)menuCard.getId())
             ? "Unstar" : "Favourite");
         labels.add("Card Info");
-        labels.add("Add 1");
+        labels.add("+1");
         if(menuPart != null)
         {
-            labels.add("Remove");
+            labels.add("-1");
         }
         return labels;
     }
@@ -1307,7 +1306,7 @@ public class DeckEditorScreen extends Screen
             {
                 colour = 0xFF6A7080;
             }
-            else if("Remove".equals(label))
+            else if("-1".equals(label))
             {
                 colour = over ? 0xFFFFB0A8 : 0xFFE6EAF2;
             }

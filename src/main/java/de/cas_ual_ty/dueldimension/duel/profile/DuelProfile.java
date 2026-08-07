@@ -34,6 +34,8 @@ public final class DuelProfile
      */
     private final Set<Integer> favourites = new LinkedHashSet<>();
     private String activeDeck = "";
+    /** The outfit this duelist is seen in; empty means their own skin. */
+    private String outfit = "";
 
     public Trunk trunk()
     {
@@ -104,6 +106,16 @@ public final class DuelProfile
         }
         favourites.add(passcode);
         return true;
+    }
+
+    public String outfit()
+    {
+        return outfit;
+    }
+
+    public void setOutfit(String id)
+    {
+        outfit = id == null ? "" : id;
     }
 
     public String activeDeck()
@@ -245,6 +257,12 @@ public final class DuelProfile
         // numbers travelling on every profile sync.
         tag.putIntArray("Favourites", new ArrayList<>(favourites));
         tag.putString("Active", activeDeck);
+        if(!outfit.isEmpty())
+        {
+            // Written only when worn, so a profile that never touched the
+            // wardrobe saves exactly as it did before.
+            tag.putString("Outfit", outfit);
+        }
         return tag;
     }
 
@@ -268,6 +286,7 @@ public final class DuelProfile
             profile.favourites.add(passcode);
         }
         profile.activeDeck = tag.getString("Active");
+        profile.outfit = tag.getString("Outfit");
         return profile;
     }
 }

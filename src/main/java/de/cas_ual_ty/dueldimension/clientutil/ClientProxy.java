@@ -93,6 +93,7 @@ public class ClientProxy implements ISidedProxy
     public void registerModEventListeners(IEventBus bus)
     {
         bus.addListener(this::entityRenderers);
+        bus.addListener(this::addLayers);
         bus.addListener(this::textureStitchPre);
         bus.addListener(this::modelRegistry);
         bus.addListener(this::modelBake);
@@ -108,6 +109,19 @@ public class ClientProxy implements ISidedProxy
         bus.addListener(this::clientChatReceived);
         bus.addListener(this::clientTick);
         bus.addListener(de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds::onKeyInput);
+        bus.addListener(this::leftServer);
+    }
+
+    /**
+     * Forgets who was wearing what.
+     * <p>
+     * Outfits are keyed by player id, and ids are only unique within a server.
+     * Carrying one world's answers into the next is how a player ends up in
+     * somebody else's jacket.
+     */
+    private void leftServer(net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut event)
+    {
+        de.cas_ual_ty.dueldimension.duel.outfit.WornOutfits.clear();
     }
     
     /**
@@ -391,6 +405,28 @@ public class ClientProxy implements ISidedProxy
         Minecraft.getInstance().setScreen(new InspectCardScreen(card));
     }
     
+    /**
+     * Hangs the outfit layer on both player renderers.
+     * <p>
+     * Two of them, "default" and "slim", because vanilla registers one per arm
+     * width. Missing the second is how a cosmetic ends up working for some
+     * players and not others with no pattern anyone can see.
+     */
+    private void addLayers(EntityRenderersEvent.AddLayers event)
+    {
+        for(String skin : event.getSkins())
+        {
+            net.minecraft.client.renderer.entity.player.PlayerRenderer renderer =
+                event.getSkin(skin);
+            if(renderer == null)
+            {
+                continue;
+            }
+            renderer.addLayer(new OutfitLayer(renderer, event.getEntityModels(),
+                "slim".equals(skin)));
+        }
+    }
+
     private void entityRenderers(EntityRenderersEvent.RegisterRenderers event)
     {
         event.registerEntityRenderer(DdEntityTypes.DUEL.get(), DuelEntityRenderer::new);
