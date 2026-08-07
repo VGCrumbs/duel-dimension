@@ -113,20 +113,38 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
         }
         Outfits.Outfit worn = WornOutfits.of(player.getUUID());
         PlayerSkins.Skin skin = PlayerSkins.resolve(player);
-        // The outfit decides the body when there is one, because its sleeves
-        // are cut for a particular pair of arms; otherwise the skin does.
-        boolean slim = worn.texture() != null ? worn.slim() : skin.slim();
 
-        // The player first, then their clothes: an outfit leaves gaps -- a bare
-        // forearm, a face -- and what shows through them should be the person
-        // wearing it.
+        // Each texture on the body it was drawn for -- see bodyForSkin.
         draw(poseStack, buffer, light, player, limbSwing, limbSwingAmount, partialTick,
-            age, yaw, pitch, slim ? alexSkin : classicSkin, baseSkin(player, worn, skin));
+            age, yaw, pitch, bodyForSkin(worn, skin) ? alexSkin : classicSkin,
+            baseSkin(player, worn, skin));
         if(worn.texture() != null)
         {
             draw(poseStack, buffer, light, player, limbSwing, limbSwingAmount, partialTick,
-                age, yaw, pitch, slim ? alexOutfit : classicOutfit, worn.texture());
+                age, yaw, pitch, worn.slim() ? alexOutfit : classicOutfit, worn.texture());
         }
+    }
+
+    /**
+     * Which body the skin UNDER the outfit is drawn on.
+     * <p>
+     * Its own, normally: the two layouts put the arm faces at different
+     * offsets, so a skin on the wrong body samples a neighbouring face down the
+     * edge of the hand — a stray column that cannot be erased, because it is
+     * not in the part of the texture anyone would think to erase.
+     * <p>
+     * The exception is a slim outfit over a classic skin. The outfit is the
+     * outer surface and has to contain what is under it; a three-pixel sleeve
+     * cannot contain a four-pixel arm, and that arm pokes out. A classic outfit
+     * over a slim skin has no such problem, which is why the rule is one-sided.
+     */
+    private static boolean bodyForSkin(Outfits.Outfit worn, PlayerSkins.Skin skin)
+    {
+        if(worn.texture() != null && worn.slim())
+        {
+            return true;
+        }
+        return skin.slim();
     }
 
     /**
@@ -185,14 +203,14 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
         models();
         Outfits.Outfit worn = WornOutfits.of(player.getUUID());
         PlayerSkins.Skin skin = PlayerSkins.resolve(player);
-        boolean slim = worn.texture() != null ? worn.slim() : skin.slim();
 
         arm(poseStack, buffer, light, player,
-            slim ? alexSkin : classicSkin, baseSkin(player, worn, skin), right);
+            bodyForSkin(worn, skin) ? alexSkin : classicSkin,
+            baseSkin(player, worn, skin), right);
         if(worn.texture() != null)
         {
             arm(poseStack, buffer, light, player,
-                slim ? alexOutfit : classicOutfit, worn.texture(), right);
+                worn.slim() ? alexOutfit : classicOutfit, worn.texture(), right);
         }
     }
 

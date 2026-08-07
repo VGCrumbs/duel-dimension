@@ -31,10 +31,19 @@ public final class Outfits
      *                the attribution travels with the thing it is for.
      * @param slim    drawn for the Alex body -- three-pixel arms, and a
      *                different arm layout in the texture. A property of the
-     *                skin, not of the player wearing it: putting an Alex skin
-     *                on a Steve model misplaces the sleeves, so the outfit says
-     *                which body it was drawn for and is rendered on that one
-     *                whoever is wearing it.
+     *                skin, not of the player wearing it: the two layouts put
+     *                the arm faces at different offsets, so a skin drawn on the
+     *                wrong one samples a neighbouring face down the edge of the
+     *                hand.
+     *                <p>
+     *                Not something to infer from the pixels. A slim skin is
+     *                supposed to leave the last two columns of each arm band
+     *                empty, but one exported from a classic template keeps
+     *                whatever was there -- Kaiba's has paint in exactly that
+     *                dead space. Guessing from it called a slim skin classic,
+     *                which put those leftovers back on the arm as a stray
+     *                column nobody could erase. What the skin's author says it
+     *                is, is what it is.
      */
     public record Outfit(String id, String name, ResourceLocation texture, String credit,
         boolean slim)
@@ -51,7 +60,7 @@ public final class Outfits
     public static final Outfit NONE = new Outfit("", "None", null, "", false);
 
     public static final Outfit YUSEI = new Outfit("yusei", "Yusei's Outfit", skin("yusei"),
-        "Credit: Daiosity (PlanetMinecraft)", true);
+        "Credit: Daiosity (PlanetMinecraft)", false);
 
     public static final Outfit KAIBA = new Outfit("kaiba", "Seto Kaiba's Outfit", skin("kaiba"),
         "Credit: XyaMorph (PlanetMinecraft)", true);

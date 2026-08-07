@@ -104,8 +104,11 @@ public final class OutfitPreview
             return;
         }
 
-        boolean slim = outfit.texture() != null ? outfit.slim()
-            : PlayerSkins.resolve(player).slim();
+        PlayerSkins.Skin skin = PlayerSkins.resolve(player);
+        // As in the world: each texture on the body it was drawn for, and the
+        // skin forced onto the outfit's body only when a slim outfit would
+        // otherwise fail to cover a classic arm.
+        boolean skinSlim = outfit.texture() != null && outfit.slim() ? true : skin.slim();
         float spin = (time % (long)SPIN_MS) / SPIN_MS * 360F;
         // A slow walk, so the arms and legs move: a figure that only turns
         // reads as a statue on a turntable rather than as someone wearing
@@ -128,12 +131,12 @@ public final class OutfitPreview
 
         ResourceLocation under = outfit.texture() != null && UnderSkin.texture() != null
             ? UnderSkin.texture() : PlayerSkins.resolve(player).texture();
-        pass(poseStack, buffer, player, slim ? alexSkin : classicSkin, under,
+        pass(poseStack, buffer, player, skinSlim ? alexSkin : classicSkin, under,
             limbSwing, limbSwingAmount);
         if(outfit.texture() != null)
         {
-            pass(poseStack, buffer, player, slim ? alexOutfit : classicOutfit, outfit.texture(),
-                limbSwing, limbSwingAmount);
+            pass(poseStack, buffer, player, outfit.slim() ? alexOutfit : classicOutfit,
+                outfit.texture(), limbSwing, limbSwingAmount);
         }
 
         buffer.endBatch();
