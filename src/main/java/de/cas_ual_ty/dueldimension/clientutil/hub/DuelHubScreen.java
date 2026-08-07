@@ -84,6 +84,28 @@ public class DuelHubScreen extends Screen
 
         addRenderableWidget(new HubWidgets.TextureButton(left + WIDTH - PAD - 80,
             top + HEIGHT - 32, 80, 20, Component.literal("Close"), pressed -> onClose()));
+
+        // One row per deck, over the names the panel draws. The editor is real
+        // now, so a deck is something a player can open rather than only read.
+        if(section == Section.DECKS && EditorState.isSynced() && minecraft != null)
+        {
+            int bodyTop = top + PAD + TAB_H + 8;
+            java.util.List<de.cas_ual_ty.dueldimension.duel.profile.DeckList> decks =
+                EditorState.ownDecks();
+            int rows = Math.min(decks.size(), (HEIGHT - (PAD + TAB_H + 8) - 70) / 12);
+            for(int i = 0; i < rows; i++)
+            {
+                int index = i;
+                HubWidgets.TextureButton row = new HubWidgets.TextureButton(left + PAD + 6,
+                    bodyTop + 24 + i * 12, WIDTH - PAD * 2 - 12, 12,
+                    Component.literal(""), pressed ->
+                {
+                    EditorState.select(EditorState.indexOf(decks.get(index)));
+                    minecraft.setScreenAndShow(new DeckEditorScreen(this));
+                });
+                addRenderableWidget(row);
+            }
+        }
     }
 
     /**
@@ -207,8 +229,7 @@ public class DuelHubScreen extends Screen
                 x, y, 0xFF7A8090, true);
             y += 12;
         }
-        graphics.text(font, "Editing needs the deck editor screen.",
-            x, y + 4, 0xFF7A8090, true);
+        graphics.text(font, "Click a deck to edit it.", x, y + 4, 0xFF7A8090, true);
     }
 
     @Override

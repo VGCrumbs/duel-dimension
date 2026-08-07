@@ -250,6 +250,26 @@ is usually the larger half of the work, not Forge-vs-Fabric.
    `PlayerSkin.Patch` replaces only the fields named, so capes and elytra
    textures survive.
 
+   **`DeckEditorScreen` is across** — 2,371 lines, the largest client file.
+   `tools/port_screen.py` does the mechanical half and is worth reusing for the
+   screens that follow; what it deliberately leaves alone is
+   `RenderSystem.setShaderColor` and the raw blits, because a tint is an
+   argument to a blit now and working out *which* blit a colour was modifying
+   is reading code, not matching a pattern.
+
+   Three more things changed that the hub was too small to reveal:
+
+   - **Input is objects.** `mouseClicked(double, double, int)` is
+     `mouseClicked(MouseButtonEvent, boolean)`; likewise `KeyEvent` and
+     `CharacterEvent`. A genuine improvement — `hasShiftDown` used to be a
+     static on `Screen` reaching for global state and is now carried by the
+     event that needs it.
+   - **The GUI matrix is 2D** (`Matrix3x2f`). `poseStack.translate(0, 0, 400)`
+     — the trick that lifted text above a panel drawn later — has no
+     equivalent and needs none: retained mode draws in the order described.
+   - `AbstractWidget.x`/`y` are private; `Button.onPress` takes the input that
+     caused it.
+
    Two facts worth having up front:
 
    - A **screen** implements `extractRenderState` (`Renderable`'s single
