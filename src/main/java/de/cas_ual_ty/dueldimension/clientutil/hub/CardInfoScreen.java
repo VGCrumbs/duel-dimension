@@ -57,6 +57,15 @@ public class CardInfoScreen extends Screen
      */
     private HubWidgets.TextureButton addButton;
 
+    /**
+     * Which kinds of card the related grid shows. Empty means all of them, the
+     * same convention the trunk's filter uses: a filter nobody has touched
+     * narrows nothing.
+     */
+    private final java.util.EnumSet<de.cas_ual_ty.dueldimension.duel.profile.CardQuery.Kind>
+        relatedKinds = java.util.EnumSet.noneOf(
+            de.cas_ual_ty.dueldimension.duel.profile.CardQuery.Kind.class);
+
     private List<FormattedCharSequence> textLines = List.of();
     private int textScroll;
     private int sourceScroll;
@@ -101,6 +110,30 @@ public class CardInfoScreen extends Screen
             () -> EditorState.isFavourite((int)card.getId()),
             pressed -> EditorState.toggleFavourite((int)card.getId())));
 
+        // Monster / Spell / Trap, the same three chips the trunk uses, because
+        // narrowing a hundred archetype members to the traps is the same act.
+        int chipW = 40;
+        int chipH = 12;
+        int chipX = width / 2 + pad() + font.width("Related cards  (000)") + 8;
+        for(de.cas_ual_ty.dueldimension.duel.profile.CardQuery.Kind kind
+            : de.cas_ual_ty.dueldimension.duel.profile.CardQuery.Kind.values())
+        {
+            de.cas_ual_ty.dueldimension.duel.profile.CardQuery.Kind target = kind;
+            addRenderableWidget(new DeckEditorScreen.ChipButton(chipX, sourcesTop() - 15,
+                chipW, chipH, Component.literal(DeckEditorScreen.label(kind)),
+                () -> relatedKinds.contains(target), pressed ->
+            {
+                if(!relatedKinds.remove(target))
+                {
+                    relatedKinds.add(target);
+                }
+                // Back to the top: the card under the cursor is not the card
+                // that was there before the list got shorter.
+                relatedScroll = 0;
+            }));
+            chipX += chipW + 2;
+        }
+
         // Following related cards is how a player finds the card they wanted;
         // making them walk back to the editor and search for it by name to put
         // it in the deck is the one step that page was meant to remove.
@@ -111,6 +144,43 @@ public class CardInfoScreen extends Screen
             addRenderableWidget(addButton);
             refreshAddButton();
         }
+    }
+
+    /**
+     * The related cards this page is currently showing.
+     * <p>
+     * An archetype runs to a hundred members and a player looking for its trap
+     * should not have to scroll past sixty monsters to find it. Everything that
+     * draws, scrolls or hit-tests the grid asks this rather than the full list,
+     * so the filter cannot move the cards out from under the click.
+     */
+    private List<Properties> shownRelated()
+    {
+        if(relatedKinds.isEmpty())
+        {
+            return related;
+        }
+        List<Properties> kept = new ArrayList<>();
+        for(Properties card : related)
+        {
+            if(relatedKinds.contains(kindOf(card)))
+            {
+                kept.add(card);
+            }
+        }
+        return kept;
+    }
+
+    private static de.cas_ual_ty.dueldimension.duel.profile.CardQuery.Kind kindOf(Properties card)
+    {
+        de.cas_ual_ty.dueldimension.card.properties.Type type = card.getType();
+        if(type == de.cas_ual_ty.dueldimension.card.properties.Type.SPELL)
+        {
+            return de.cas_ual_ty.dueldimension.duel.profile.CardQuery.Kind.SPELL;
+        }
+        return type == de.cas_ual_ty.dueldimension.card.properties.Type.TRAP
+            ? de.cas_ual_ty.dueldimension.duel.profile.CardQuery.Kind.TRAP
+            : de.cas_ual_ty.dueldimension.duel.profile.CardQuery.Kind.MONSTER;
     }
 
     /** Width of the add button; the count is right-aligned to its left edge. */
@@ -467,8 +537,8 @@ public class CardInfoScreen extends Screen
 
     private int maxRelatedScroll()
     {
-        int perPage = relatedColumns() * relatedRows();
-        int rows = (related.size() + relatedColumns() - 1) / relatedColumns();
+        int columns = relatedColumns();
+        int rows = (shownRelated().size() + columns - 1) / columns;
         return Math.max(0, rows - relatedRows());
     }
 
@@ -489,8 +559,9 @@ public class CardInfoScreen extends Screen
         {
             return null;
         }
+        List<Properties> shown = shownRelated();
         int index = (row + relatedScroll) * columns + column;
-        return index >= 0 && index < related.size() ? related.get(index) : null;
+        return index >= 0 && index < shown.size() ? shown.get(index) : null;
     }
 
     @Override
@@ -627,10 +698,14 @@ public class CardInfoScreen extends Screen
     {
         int x = width / 2 + pad();
         int y = sourcesTop();
-        font.drawShadow(poseStack, "Related cards  (" + related.size() + ")", x, y - 13, 0xFFF4D089);
-        if(related.isEmpty())
+        List<Properties> shown = shownRelated();
+        font.drawShadow(poseStack, "Related cards  (" + shown.size() + ")", x, y - 13, 0xFFF4D089);
+        if(shown.isEmpty())
         {
-            font.drawShadow(poseStack, "Nothing names this card", x, y + 1, 0xFF6E7686);
+            font.drawShadow(poseStack, related.isEmpty()
+                    ? "Nothing names this card"
+                    : "None of those, under this filter",
+                x, y + 1, 0xFF6E7686);
             return;
         }
 
@@ -642,10 +717,10 @@ public class CardInfoScreen extends Screen
         relatedScroll = Math.max(0, Math.min(relatedScroll, maxRelatedScroll()));
 
         int first = relatedScroll * columns;
-        for(int slot = 0; slot < columns * rows && first + slot < related.size(); slot++)
+        for(int slot = 0; slot < columns * rows && first + slot < shown.size(); slot++)
         {
             int i = first + slot;
-            Properties other = related.get(i);
+            Properties other = shown.get(i);
             int cx = x + (slot % columns) * (cardW + 4);
             int cy = top + (slot / columns) * (cardH + 4);
             boolean hovered = mouseX >= cx && mouseX < cx + cardW
@@ -665,8 +740,8 @@ public class CardInfoScreen extends Screen
 
         if(maxRelatedScroll() > 0)
         {
-            String more = Math.min(related.size(), (relatedScroll + rows) * columns)
-                + " / " + related.size();
+            String more = Math.min(shown.size(), (relatedScroll + rows) * columns)
+                + " / " + shown.size();
             font.drawShadow(poseStack, more, width - pad() - 4 - font.width(more), y - 13,
                 0xFF6E7686);
         }

@@ -185,10 +185,18 @@ public final class DuelClientState
         return String.format("custom:%06X", matColour);
     }
 
-    /** The deck the hub reports; deck storage is not wired yet. */
+    /**
+     * The deck the player duels with, as the server has it.
+     * <p>
+     * This returned the word "Starter" from when deck storage did not exist.
+     * It does now, and the hub was printing a fixed string underneath a list
+     * that marks a different deck as active.
+     */
     public static String activeDeckName()
     {
-        return "Starter";
+        String active = de.cas_ual_ty.dueldimension.clientutil.hub.EditorState.profile()
+            .activeDeck();
+        return active == null || active.isEmpty() ? "none chosen" : active;
     }
 
     public static void savePlayMat()

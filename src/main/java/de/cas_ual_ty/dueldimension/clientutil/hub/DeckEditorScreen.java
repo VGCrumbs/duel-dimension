@@ -736,7 +736,7 @@ public class DeckEditorScreen extends Screen
         }
     }
 
-    private static String label(CardQuery.Kind kind)
+    static String label(CardQuery.Kind kind)
     {
         return switch(kind)
         {
@@ -2348,7 +2348,8 @@ public class DeckEditorScreen extends Screen
     }
 
     /** A filter chip: lit when its filter is on. */
-    private static class ChipButton extends HubWidgets.TextureButton
+    /** Package-private so the card info page's related filter is the same chip. */
+    static class ChipButton extends HubWidgets.TextureButton
     {
         private final java.util.function.BooleanSupplier lit;
 

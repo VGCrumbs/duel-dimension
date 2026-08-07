@@ -264,8 +264,17 @@ def title_ribbon():
 
 
 def search_field():
-    """A recessed text field; the caret and text are drawn by the game."""
-    return panel((16, 17, 22), (22, 24, 30), (96, 104, 118), inset=True)
+    """The ground a search bar's text sits on: black, and nothing else.
+
+    No frame and no gradient. The bevelled rectangle read as a second panel
+    inside the panel it already sits in, and boxing a line of text that is
+    already the only thing on that row told the player nothing they could not
+    see. The caret and the text are drawn by the game.
+    """
+    im = Image.new('RGBA', (CELL, CELL), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle([0, 0, CELL - 1, CELL - 1], radius=BORDER - 2, fill=(0, 0, 0, 255))
+    return im
 
 
 def chip_state(state):

@@ -732,7 +732,9 @@ public class CardShopScreen extends Screen
         int w = font.width(value) + 34;
         int x = width - pad - w;
         NineSlice.draw(poseStack, HubTextures.PANEL, x, pad, w, 18);
-        font.drawShadow(poseStack, "DP", x + 6, pad + 5, 0xFF9FA6B4);
+        // Gold letters, white figure: the same split the section headers use,
+        // so the label reads as a label and the balance as the number.
+        font.drawShadow(poseStack, "DP", x + 6, pad + 5, 0xFFF4D089);
         font.drawShadow(poseStack, value, x + w - 6 - font.width(value), pad + 5, 0xFFFFFFFF);
     }
 

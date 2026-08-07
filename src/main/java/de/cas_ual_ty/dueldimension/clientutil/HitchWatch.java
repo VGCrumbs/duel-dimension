@@ -37,6 +37,19 @@ public final class HitchWatch
     private static long lastReport;
     private static int reports;
 
+    /**
+     * The thread that ticks the client, remembered so it can be sampled.
+     * <p>
+     * Set from {@link #tick()}, which runs on it.
+     */
+    private static volatile Thread client;
+
+    /** When that thread last got through a tick, for the watchdog to compare against. */
+    private static volatile long lastTickNanos;
+
+    private static volatile boolean sampled;
+    private static Thread watchdog;
+
     private HitchWatch()
     {
     }
@@ -44,6 +57,11 @@ public final class HitchWatch
     /** Called once per client tick. */
     public static void tick()
     {
+        client = Thread.currentThread();
+        lastTickNanos = System.nanoTime();
+        sampled = false;
+        startWatchdog();
+
         long now = System.currentTimeMillis();
         long previous = lastTick;
         lastTick = now;
@@ -69,6 +87,69 @@ public final class HitchWatch
             CardRenderUtil.infoTextureBinder == null ? -1 : CardRenderUtil.infoTextureBinder.loaded(),
             CardRenderUtil.mainTextureBinder == null ? -1 : CardRenderUtil.mainTextureBinder.loaded(),
             reports);
+    }
+
+    /**
+     * Watches from outside, and takes the stack while the thread is still in it.
+     * <p>
+     * The report above can only run once the tick has finished, by which time
+     * whatever caused the stall has returned and left nothing behind. Three
+     * rounds of reasoning about which of this mod's systems could be
+     * responsible produced three wrong answers, so this stops reasoning and
+     * takes the evidence: a daemon thread that notices the client has not
+     * ticked for too long and captures its stack at that moment.
+     * <p>
+     * The sample is a snapshot of a running thread, so the top frame may be a
+     * method that is merely quick and often called. The frames beneath it are
+     * the ones worth reading — they say which system the time is being spent
+     * in, which is the question.
+     */
+    private static synchronized void startWatchdog()
+    {
+        if(watchdog != null)
+        {
+            return;
+        }
+        watchdog = new Thread(() ->
+        {
+            while(true)
+            {
+                try
+                {
+                    Thread.sleep(20);
+                }
+                catch(InterruptedException stop)
+                {
+                    return;
+                }
+                Thread stuck = client;
+                if(stuck == null || sampled)
+                {
+                    continue;
+                }
+                long stalled = (System.nanoTime() - lastTickNanos) / 1_000_000L;
+                if(stalled < THRESHOLD_MS
+                    || System.currentTimeMillis() - lastReport < QUIET_MS)
+                {
+                    continue;
+                }
+                // Once per stall: a long one would otherwise print the same
+                // stack every twenty milliseconds until it ended.
+                sampled = true;
+                StackTraceElement[] frames = stuck.getStackTrace();
+                StringBuilder where = new StringBuilder();
+                for(int i = 0; i < Math.min(frames.length, 24); i++)
+                {
+                    where.append("\n    at ").append(frames[i]);
+                }
+                LOG.warn("[hitch] client thread stalled {} ms, caught in:{}", stalled, where);
+            }
+        }, "dueldimension-hitch-watch");
+        watchdog.setDaemon(true);
+        // Below the game's own threads: this must never be the reason a frame
+        // is late, and it has nothing to do that cannot wait.
+        watchdog.setPriority(Thread.MIN_PRIORITY);
+        watchdog.start();
     }
 
     private static int queuedTasks()
