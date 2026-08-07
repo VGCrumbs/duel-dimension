@@ -60,8 +60,21 @@ TAG_EMPTIES = {"getCompound": "getCompoundOrEmpty", "getList": "getListOrEmpty"}
 FIELD_TO_METHOD = ["isClientSide"]
 
 # Fields that became a longer expression rather than a same-named accessor.
-# Applied with the same per-line import guard, for the same reason.
-FIELD_TO_EXPRESSION = {"server": "level().getServer()"}
+#
+# Both patterns anchor the RECEIVER with `(?<![.\w])`, meaning it is not itself
+# preceded by a dot. That is what keeps them off package paths:
+# `net.minecraft.server.MinecraftServer` has `minecraft` before `server`, and
+# `minecraft` is preceded by a dot, so it never matches.
+#
+# `.level.` additionally requires a trailing dot -- something is being called on
+# it. That is the guard that lets `level` be automated at all: a card in this
+# mod has a level, but it is an int and is never dereferenced, so
+# `PATREON_001_PROPERTIES.level = 12` cannot match while
+# `player.level.getGameTime()` does.
+FIELD_TO_EXPRESSION = [
+    (re.compile(r"(?<![.\w])(\w+)\.server\b(?!\s*\()"), r"\1.level().getServer()"),
+    (re.compile(r"(?<![.\w])(\w+)\.level\.(?=\w)"), r"\1.level()."),
+]
 
 MISC = [
     # GameProfile became a record: getName/getId are name/id. Anchored on
@@ -75,6 +88,17 @@ MISC = [
                 r"(?:net\.minecraftforge\.network\.)?PacketDistributor\.PLAYER"
                 r"\.with\(\(\)\s*->\s*([^)]+)\),\s*", re.S),
      r"net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(\1, "),
+    # CommandSourceStack.sendSuccess takes a Supplier<Component>, so the
+    # message is only built when someone is actually listening. Wrapping the
+    # existing argument in a lambda is the whole change.
+    (re.compile(r"\.sendSuccess\(\s*(?!\(\s*\)\s*->)", re.S), ".sendSuccess(() -> "),
+    # Permission levels became named checks. Level 2 -- vanilla's bar for a
+    # cheat, and what every one of this mod's operator commands asked for -- is
+    # LEVEL_GAMEMASTERS. The whole `.requires(source -> source.hasPermission(2))`
+    # lambda collapses into the check itself.
+    (re.compile(r"\.requires\(\s*\(?\s*\w+\s*\)?\s*->\s*\w+\.hasPermission\("
+                r"(?:2|CHEAT_LEVEL)[^)]*\)\s*\)"),
+     ".requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))"),
     # contains(key, type) lost its type argument; the type test is now the
     # getter returning an empty Optional.
     (re.compile(r"\.contains\((\"[^\"]*\"|[A-Za-z_][\w.]*)\s*,\s*[^)]+\)"), r".contains(\1)"),
@@ -186,8 +210,8 @@ def rewrite_field_accessors(src):
                 # A dot, the name, and something that is not already a call and
                 # not a further member access (`server.level.ServerLevel`).
                 line = re.sub(r"\.%s\b(?!\s*\()(?!\s*\.)" % field, ".%s()" % field, line)
-            for field, expression in FIELD_TO_EXPRESSION.items():
-                line = re.sub(r"\.%s\b(?!\s*\()(?!\s*\.)" % field, "." + expression, line)
+            for pattern, replacement in FIELD_TO_EXPRESSION:
+                line = pattern.sub(replacement, line)
         out.append(line)
     return "\n".join(out)
 

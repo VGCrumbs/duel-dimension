@@ -84,6 +84,13 @@ public final class DuelProfiles
         player.setAttached(Storage.PROFILE, get(player));
     }
 
+    /** Saves and then tells the client, which is what every change wants. */
+    public static void saveAndSync(ServerPlayer player)
+    {
+        save(player);
+        de.cas_ual_ty.dueldimension.net.ProfilePayloads.sync(player);
+    }
+
     /**
      * What a player begins with: the starter decks, cards and all.
      * <p>

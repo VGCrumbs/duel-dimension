@@ -63,6 +63,18 @@ Measured off the 26.2 jars with `javap`, not guessed. These bite every phase:
   Codecs that touch no registry (`ByteBufCodecs.VAR_INT` and friends) are
   typed on plain `ByteBuf` and need `.cast()` to widen.
 - `PayloadTypeRegistry` methods are `serverboundPlay()`/`clientboundPlay()`.
+- `CommandSourceStack.sendSuccess` takes a `Supplier<Component>` — the message
+  is only built if someone is listening.
+- Permission levels became named checks:
+  `.requires(source -> source.hasPermission(2))` is
+  `.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))`.
+- `ClickEvent`/`HoverEvent` are sealed interfaces with a record per action, so
+  the action is the *type*: `new ClickEvent.RunCommand(cmd)`. An event that
+  cannot carry the right payload for its action is now unrepresentable.
+- Entities: `defineSynchedData(SynchedEntityData.Builder)`; save/load use
+  `ValueOutput`/`ValueInput`, not `CompoundTag`; `hurt` is `hurtServer(level,
+  source, amount)`; `canBeLeashed()` takes no player;
+  `InteractionResult.sidedSuccess(isClient)` is gone — `SUCCESS` is side-aware.
 
 Which is why phase 1 replaced the hand-written `save()`/`load()` pairs with
 Codecs rather than translating them: both places a profile now persists ask
@@ -178,8 +190,12 @@ is usually the larger half of the work, not Forge-vs-Fabric.
    out so the body survives as the record of what the message is for, and the
    logic moves to `DdNetwork.registerServerHandlers` by hand.
 
-   Remaining: `ShopMessages`, `PromptMessages`, `CardSupplyMessages`,
-   `PackMessages` and the duel messages — about 20 more, all the same shape.
+   `ShopMessages`, `PromptMessages` and `PackMessages` followed, and with them
+   the duel-session layer: `DuelistDuels`, `DuelistEntity`, `DuelInvites`, the
+   commands, `ShopStock` purchases. **140 classes, 128 tests green.**
+
+   Remaining: `CardSupplyMessages` and the older `duel/network` messages —
+   both tied to containers, so they go with that phase.
 5. **Server events & commands** — login/logout/respawn hooks →
    `ServerPlayConnectionEvents` etc.; command registration; `FreeMode`
    SavedData; duel lifecycle driving (`DuelistDuels`).

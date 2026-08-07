@@ -70,6 +70,16 @@ public final class DdNetwork
             de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Ready.CODEC);
         serverbound(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Leave.TYPE,
             de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Leave.CODEC);
+
+        // The card shop, and the pack a purchase opens.
+        clientbound(de.cas_ual_ty.dueldimension.shop.ShopMessages.SyncPoints.TYPE,
+            de.cas_ual_ty.dueldimension.shop.ShopMessages.SyncPoints.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.shop.ShopMessages.OpenShop.TYPE,
+            de.cas_ual_ty.dueldimension.shop.ShopMessages.OpenShop.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.shop.ShopMessages.Buy.TYPE,
+            de.cas_ual_ty.dueldimension.shop.ShopMessages.Buy.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.set.PackMessages.OpenPack.TYPE,
+            de.cas_ual_ty.dueldimension.set.PackMessages.OpenPack.CODEC);
     }
 
     /** Registers the server's side of every message a client may send. */

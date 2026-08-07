@@ -117,6 +117,29 @@ public final class DuelPoints
     }
 
     /**
+     * Awards points, tells the player, and tells their client the new balance.
+     * <p>
+     * The three things that always go together when a player earns something.
+     * {@link #award} alone changes a number on the server that the client is
+     * still holding the old copy of, which is how a balance ends up looking
+     * wrong until the next shop visit.
+     */
+    public static void reward(net.minecraft.server.level.ServerPlayer player, int points,
+        String why)
+    {
+        if(points <= 0)
+        {
+            return;
+        }
+        award(player, points);
+        player.sendSystemMessage(net.minecraft.network.chat.Component
+            .literal(why + "  +" + points + " DP")
+            .withStyle(net.minecraft.ChatFormatting.GOLD));
+        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
+            new ShopMessages.SyncPoints(get(player)));
+    }
+
+    /**
      * Whether a balance covers a cost. Pure, so the rule can be checked without
      * a player: a free item is affordable, a negative price is not a gift.
      */
