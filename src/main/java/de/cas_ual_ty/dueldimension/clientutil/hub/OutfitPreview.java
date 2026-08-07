@@ -37,11 +37,19 @@ public final class OutfitPreview
     private static final float SPIN_MS = 9000F;
 
     /**
-     * How tall a player model is in its own units: head top at 0, feet at 1.5.
+     * How tall a player model is in its own units, head to feet: two blocks.
+     * <p>
      * The parts are stored in blocks, so this is the number that turns a height
-     * in pixels into a scale.
+     * in pixels into a scale. Note where the zero is — the head box runs from
+     * -0.5 to 0 and the legs end at 1.5, so the model's origin is the base of
+     * the skull, not the top of the head. Scaling by 1.5 instead, as if the
+     * origin were the top, made every figure a third too big and pushed its
+     * head out through the lid of its tile.
      */
-    private static final float BODY_BLOCKS = 1.5F;
+    private static final float BODY_BLOCKS = 2F;
+
+    /** Where the top of the head sits relative to the model's origin. */
+    private static final float HEAD_ABOVE_ORIGIN = 0.5F;
 
     private static PlayerModel<AbstractClientPlayer> classicSkin;
     private static PlayerModel<AbstractClientPlayer> classicOutfit;
@@ -80,11 +88,12 @@ public final class OutfitPreview
      * head at 0, feet at 1.5 — which is the same direction a screen's does. So
      * the model needs no flipping at all, only placing and scaling.
      *
-     * @param height how tall the figure should stand, in pixels
+     * @param topY   where the top of the head goes
+     * @param height how tall the figure should stand, head to feet, in pixels
      * @param time   milliseconds, for the turn and the walk. Passed in rather
      *               than read here so every tile on a row is in step.
      */
-    public static void draw(PoseStack poseStack, int x, int footY, int height,
+    public static void draw(PoseStack poseStack, int x, int topY, int height,
         Outfits.Outfit outfit, long time)
     {
         models();
@@ -104,11 +113,12 @@ public final class OutfitPreview
         float limbSwing = time / 220F;
         float limbSwingAmount = 0.5F;
 
+        float scale = height / BODY_BLOCKS;
         poseStack.pushPose();
-        // Head-top to the top of where the figure should stand, since that is
-        // where the model's own origin is.
-        poseStack.translate(x, footY - height, 250);
-        poseStack.scale(height / BODY_BLOCKS, height / BODY_BLOCKS, height / BODY_BLOCKS);
+        // The model's origin is the base of the skull, so it goes half a head
+        // below the line the top of the head should sit on.
+        poseStack.translate(x, topY + HEAD_ABOVE_ORIGIN * scale, 250);
+        poseStack.scale(scale, scale, scale);
         // Half a turn on top of the spin: a player model faces -Z, and -Z is
         // away from whoever is looking at the screen.
         poseStack.mulPose(Vector3f.YP.rotationDegrees(180F + spin));

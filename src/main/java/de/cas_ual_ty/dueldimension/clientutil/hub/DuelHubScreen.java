@@ -535,8 +535,10 @@ public class DuelHubScreen extends Screen
             int x = outfitStripX() + slot * TILE_W;
             boolean on = outfit.id().equals(worn);
 
-            OutfitPreview.draw(poseStack, x + (TILE_W - 6) / 2, bodyTop + 22 + TILE_H - 18,
-                86, outfit, time);
+            // Inside the tile with room left for the name under it, rather
+            // than filling the tile and standing on its own label.
+            OutfitPreview.draw(poseStack, x + (TILE_W - 6) / 2, bodyTop + 22 + 8,
+                TILE_H - 28, outfit, time);
 
             String name = font.plainSubstrByWidth(outfit.name(), TILE_W - 12);
             font.drawShadow(poseStack, name, x + (TILE_W - 6 - font.width(name)) / 2,
