@@ -1155,10 +1155,15 @@ public class DeckEditorScreen extends Screen
      */
     private int menuRows()
     {
-        return menuPart == null ? 2 : 3;
+        return menuPart == null ? 3 : 4;
     }
 
     private int favouriteRow()
+    {
+        return menuRows() - 2;
+    }
+
+    private int infoRow()
     {
         return menuRows() - 1;
     }
@@ -1173,11 +1178,23 @@ public class DeckEditorScreen extends Screen
         }
         int row = (int)((mouseY - menuY) / MENU_ROW);
         int favourite = favouriteRow();
+        int info = infoRow();
         Properties target = menuCard;
         DeckList.Part part = menuPart;
         int index = menuIndex;
         closeMenu();
 
+        if(row == info)
+        {
+            // The editor is the way back, so closing the page returns to the
+            // deck rather than to the world.
+            EditorState.flush();
+            if(minecraft != null)
+            {
+                minecraft.setScreen(new CardInfoScreen(this, target));
+            }
+            return true;
+        }
         if(row == favourite)
         {
             EditorState.toggleFavourite((int)target.getId());
@@ -1232,6 +1249,12 @@ public class DeckEditorScreen extends Screen
         boolean starred = EditorState.isFavourite((int)menuCard.getId());
         font.drawShadow(poseStack, starred ? "Unstar" : "Favourite", menuX + 6, favouriteY + 4,
             onFavourite ? 0xFFFFE9B0 : 0xFFE6EAF2);
+
+        int infoY = menuY + infoRow() * MENU_ROW;
+        boolean onInfo = mouseX >= menuX && mouseX <= menuX + MENU_W
+            && mouseY >= infoY && mouseY < infoY + MENU_ROW;
+        font.drawShadow(poseStack, "Card Info", menuX + 6, infoY + 4,
+            onInfo ? 0xFFFFE9B0 : 0xFFE6EAF2);
     }
 
     /** Adds a card if every rule allows it, else records why not. */
