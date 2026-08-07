@@ -15,6 +15,10 @@ import java.util.List;
  * <p>
  * Both sides read this class: the server to validate what a client claims to be
  * wearing, the client to draw it and to list it in the hub.
+ * <p>
+ * Every skin here is somebody else's work. The credit line sits on the outfit
+ * rather than in a readme so it is shown to the player choosing it; the links
+ * are in {@code textures/entity/outfit/credits.nfo} beside the files.
  */
 public final class Outfits
 {
@@ -42,7 +46,10 @@ public final class Outfits
     public static final Outfit YUSEI = new Outfit("yusei", "Yusei's Outfit", skin("yusei"),
         "Credit: Daiosity (PlanetMinecraft)");
 
-    public static final List<Outfit> ALL = List.of(NONE, YUSEI);
+    public static final Outfit KAIBA = new Outfit("kaiba", "Seto Kaiba's Outfit", skin("kaiba"),
+        "Credit: XyaMorph (PlanetMinecraft)");
+
+    public static final List<Outfit> ALL = List.of(NONE, YUSEI, KAIBA);
 
     private Outfits()
     {
