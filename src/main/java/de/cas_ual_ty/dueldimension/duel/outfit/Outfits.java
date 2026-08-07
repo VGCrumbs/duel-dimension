@@ -29,8 +29,15 @@ public final class Outfits
      * @param credit  who made it, shown on hover; empty when there is nobody to
      *                credit. Kept beside the outfit rather than in a readme, so
      *                the attribution travels with the thing it is for.
+     * @param slim    drawn for the Alex body -- three-pixel arms, and a
+     *                different arm layout in the texture. A property of the
+     *                skin, not of the player wearing it: putting an Alex skin
+     *                on a Steve model misplaces the sleeves, so the outfit says
+     *                which body it was drawn for and is rendered on that one
+     *                whoever is wearing it.
      */
-    public record Outfit(String id, String name, ResourceLocation texture, String credit)
+    public record Outfit(String id, String name, ResourceLocation texture, String credit,
+        boolean slim)
     {
     }
 
@@ -41,13 +48,13 @@ public final class Outfits
     }
 
     /** No outfit: the player's own skin, unchanged. */
-    public static final Outfit NONE = new Outfit("", "None", null, "");
+    public static final Outfit NONE = new Outfit("", "None", null, "", false);
 
     public static final Outfit YUSEI = new Outfit("yusei", "Yusei's Outfit", skin("yusei"),
-        "Credit: Daiosity (PlanetMinecraft)");
+        "Credit: Daiosity (PlanetMinecraft)", true);
 
     public static final Outfit KAIBA = new Outfit("kaiba", "Seto Kaiba's Outfit", skin("kaiba"),
-        "Credit: XyaMorph (PlanetMinecraft)");
+        "Credit: XyaMorph (PlanetMinecraft)", true);
 
     public static final List<Outfit> ALL = List.of(NONE, YUSEI, KAIBA);
 

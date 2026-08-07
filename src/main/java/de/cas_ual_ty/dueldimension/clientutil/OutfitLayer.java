@@ -40,20 +40,35 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
      */
     private static final float INFLATE = 0.28F;
 
-    private final PlayerModel<AbstractClientPlayer> outfit;
+    /**
+     * One model per body type, chosen by the OUTFIT rather than by the player.
+     * <p>
+     * An Alex skin lays its arms out differently from a Steve skin, so drawing
+     * one on the other model puts the sleeve texture in the wrong place. Which
+     * body a skin was drawn for is a fact about the skin, not about whoever is
+     * wearing it, so the outfit carries it and both models are kept ready.
+     */
+    private final PlayerModel<AbstractClientPlayer> classic;
+    private final PlayerModel<AbstractClientPlayer> alex;
 
     public OutfitLayer(RenderLayerParent<AbstractClientPlayer,
-        PlayerModel<AbstractClientPlayer>> parent, EntityModelSet models, boolean slim)
+        PlayerModel<AbstractClientPlayer>> parent, EntityModelSet models)
     {
         super(parent);
-        // Built from the PLAYER mesh with an inflation rather than borrowed
-        // from the outer-armour layer: that layer's boxes are laid out for an
-        // armour texture, so a skin drawn on it would come out scrambled. The
-        // slim and classic renderers each get their own, because the arms are a
-        // different width and one model cannot be both.
+        classic = bake(false);
+        alex = bake(true);
+    }
+
+    /**
+     * Built from the PLAYER mesh with an inflation rather than borrowed from
+     * the outer-armour layer: that layer's boxes are laid out for an armour
+     * texture, so a skin drawn on it would come out scrambled.
+     */
+    private static PlayerModel<AbstractClientPlayer> bake(boolean slim)
+    {
         LayerDefinition inflated = LayerDefinition.create(
             PlayerModel.createMesh(new CubeDeformation(INFLATE), slim), 64, 64);
-        outfit = new PlayerModel<>(inflated.bakeRoot(), slim);
+        return new PlayerModel<>(inflated.bakeRoot(), slim);
     }
 
     @Override
@@ -68,6 +83,7 @@ public class OutfitLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
             return;
         }
 
+        PlayerModel<AbstractClientPlayer> outfit = worn.slim() ? alex : classic;
         getParentModel().copyPropertiesTo(outfit);
         outfit.prepareMobModel(player, limbSwing, limbSwingAmount, partialTick);
         outfit.setupAnim(player, limbSwing, limbSwingAmount, age, yaw, pitch);

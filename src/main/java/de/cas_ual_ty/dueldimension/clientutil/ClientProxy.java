@@ -410,7 +410,9 @@ public class ClientProxy implements ISidedProxy
      * <p>
      * Two of them, "default" and "slim", because vanilla registers one per arm
      * width. Missing the second is how a cosmetic ends up working for some
-     * players and not others with no pattern anyone can see.
+     * players and not others with no pattern anyone can see. The layer itself
+     * is the same either way: which body an outfit is drawn on follows the
+     * outfit, not the player under it.
      */
     private void addLayers(EntityRenderersEvent.AddLayers event)
     {
@@ -422,8 +424,7 @@ public class ClientProxy implements ISidedProxy
             {
                 continue;
             }
-            renderer.addLayer(new OutfitLayer(renderer, event.getEntityModels(),
-                "slim".equals(skin)));
+            renderer.addLayer(new OutfitLayer(renderer, event.getEntityModels()));
         }
     }
 
