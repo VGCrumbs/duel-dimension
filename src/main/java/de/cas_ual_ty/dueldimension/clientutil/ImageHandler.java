@@ -39,6 +39,18 @@ public class ImageHandler
     private static final String SET_FAILED = "set_failed";
     //    private static final String FAILED_IMAGE = "blanc_card";
     
+    /**
+     * Image jobs still outstanding across every list, for the hitch watchdog.
+     * A number rather than the lists themselves: the caller only wants to know
+     * whether the pipeline was busy when the game stumbled.
+     */
+    public static int inFlight()
+    {
+        return RAW_IMAGE_LIST.inProgressCount()
+            + ADJUSTED_IMAGE_LIST.inProgressCount()
+            + RARITY_IMAGE_LIST.inProgressCount();
+    }
+
     public static ImageList RAW_IMAGE_LIST = new ImageList();
     public static ImageList ADJUSTED_IMAGE_LIST = new ImageList();
     public static ImageList RARITY_IMAGE_LIST = new ImageList();
@@ -567,6 +579,14 @@ public class ImageHandler
             failedList = new DNCList<>((s) -> s, (s1, s2) -> s1.compareTo(s2));
         }
         
+        public int inProgressCount()
+        {
+            synchronized(inProgressList)
+            {
+                return inProgressList.size();
+            }
+        }
+
         public void setInProgress(String imagePathName)
         {
             synchronized(inProgressList)

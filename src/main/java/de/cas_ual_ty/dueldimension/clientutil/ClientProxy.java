@@ -121,6 +121,7 @@ public class ClientProxy implements ISidedProxy
         if(event.phase == net.minecraftforge.event.TickEvent.Phase.END)
         {
             DuelClientState.tickPlayback();
+            HitchWatch.tick();
         }
     }
 

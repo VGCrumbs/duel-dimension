@@ -26,8 +26,8 @@ public class CardRenderUtil
 {
     public static final ResourceLocation MASK_RL = new ResourceLocation(DuelDimension.MOD_ID, "textures/gui/rarity_mask.png");
     
-    private static LimitedTextureBinder infoTextureBinder;
-    private static LimitedTextureBinder mainTextureBinder;
+    static LimitedTextureBinder infoTextureBinder;
+    static LimitedTextureBinder mainTextureBinder;
     
     // called from ClientProxy
     public static void init(int maxInfoImages, int maxMainImages)
