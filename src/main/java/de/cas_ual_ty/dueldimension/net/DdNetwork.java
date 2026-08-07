@@ -121,6 +121,31 @@ public final class DdNetwork
             (message, player) -> de.cas_ual_ty.dueldimension.duel.match.DuelLobby.leave(player));
     }
 
+    /**
+     * The client's side of every message a server may send.
+     * <p>
+     * Called from the client initialiser, and only from there: a receiver
+     * registered on a server would be a handler for a packet that never comes.
+     */
+    public static void registerClientHandlers()
+    {
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Worn.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.duel.outfit.WornOutfits
+                .set(payload.player(), payload.outfit()));
+
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            ProfilePayloads.SyncFreeMode.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.duel.profile.FreeMode
+                .setClientBelief(payload.enabled()));
+
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            MenuData.TYPE, (payload, context) -> MenuData.receive(payload.data()));
+
+        // The rest of the client receivers land with the screens they feed:
+        // a profile sync has nowhere to go until there is an editor to show it.
+    }
+
     // ---- helpers the payload classes share ----
 
     /**

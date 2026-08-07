@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_master_peace",
+  "textures": {
+    "layer0": "dueldimension:item/512/sleeves_master_peace"
+  }
+}

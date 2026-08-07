@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_black",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_black"
+  }
+}
