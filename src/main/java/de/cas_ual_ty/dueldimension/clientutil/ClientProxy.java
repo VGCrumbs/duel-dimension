@@ -821,4 +821,29 @@ public class ClientProxy implements ISidedProxy
     {
         de.cas_ual_ty.dueldimension.clientutil.hub.EditorState.accept(profile);
     }
+
+    @Override
+    public void openDuelLobby(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.OpenLobby room)
+    {
+        Minecraft minecraft = Minecraft.getInstance();
+        // Every change re-sends the whole room, so an open lobby is updated in
+        // place rather than replaced: rebuilding the screen would drop focus
+        // and flicker on every click either player made.
+        if(minecraft.screen instanceof de.cas_ual_ty.dueldimension.clientutil.hub.DuelLobbyScreen open)
+        {
+            open.update(room);
+            return;
+        }
+        minecraft.setScreen(new de.cas_ual_ty.dueldimension.clientutil.hub.DuelLobbyScreen(room));
+    }
+
+    @Override
+    public void closeDuelLobby()
+    {
+        Minecraft minecraft = Minecraft.getInstance();
+        if(minecraft.screen instanceof de.cas_ual_ty.dueldimension.clientutil.hub.DuelLobbyScreen)
+        {
+            minecraft.setScreen(null);
+        }
+    }
 }

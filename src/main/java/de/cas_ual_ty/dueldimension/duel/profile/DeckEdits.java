@@ -194,6 +194,18 @@ public final class DeckEdits
     }
 
     /**
+     * Why this deck will not do under this banlist, empty if it will.
+     * <p>
+     * Takes the list rather than reaching for one, because the lobby asks about
+     * a list nobody has committed to yet: the whole point of showing it is to
+     * find out before anyone does.
+     */
+    public static List<String> problemsUnder(DeckList deck, Trunk trunk, Banlist banlist)
+    {
+        return DeckLimits.validate(deck, trunk, banlist == null ? Banlist.none() : banlist);
+    }
+
+    /**
      * Whether a deck is fit to duel with, as opposed to merely saveable.
      *
      * @return the reasons it is not, empty if it is

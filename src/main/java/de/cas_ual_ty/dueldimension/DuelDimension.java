@@ -291,6 +291,31 @@ public class DuelDimension
                 de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.SetActiveDeck::decode,
                 de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.SetActiveDeck::handle);
         DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.OpenLobby.class,
+                de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.OpenLobby::encode,
+                de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.OpenLobby::decode,
+                de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.OpenLobby::handle);
+        DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CloseLobby.class,
+                de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CloseLobby::encode,
+                de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CloseLobby::decode,
+                de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CloseLobby::handle);
+        DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Configure.class,
+                de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Configure::encode,
+                de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Configure::decode,
+                de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Configure::handle);
+        DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Ready.class,
+                de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Ready::encode,
+                de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Ready::decode,
+                de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Ready::handle);
+        DuelDimension.channel.registerMessage(index++,
+                de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Leave.class,
+                de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Leave::encode,
+                de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Leave::decode,
+                de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Leave::handle);
+        DuelDimension.channel.registerMessage(index++,
                 de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.ToggleFavourite.class,
                 de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.ToggleFavourite::encode,
                 de.cas_ual_ty.dueldimension.duel.profile.ProfileMessages.ToggleFavourite::decode,
@@ -436,6 +461,7 @@ public class DuelDimension
     {
         if(event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player)
         {
+            de.cas_ual_ty.dueldimension.duel.match.DuelLobby.forget(player);
             de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.abandon(player);
             de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.save(player);
             de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.forget(player);

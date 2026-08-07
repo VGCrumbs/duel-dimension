@@ -153,4 +153,15 @@ public interface ISidedProxy
     default void setDuelProfile(net.minecraft.nbt.CompoundTag profile)
     {
     }
+
+    /** Opens or refreshes the duel lobby. Client only. */
+    default void openDuelLobby(
+        de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.OpenLobby room)
+    {
+    }
+
+    /** Shuts the lobby: the duel started, or someone left. Client only. */
+    default void closeDuelLobby()
+    {
+    }
 }

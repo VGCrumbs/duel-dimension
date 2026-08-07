@@ -168,7 +168,8 @@ public final class DuelistDuels
         // player who has not chosen one or whose choice will not do, is a
         // starter deck that is not the one the NPC is already using.
         ChosenDeck playerDeck = deckFor(serverPlayer,
-            npcDeck == StarterDecks.YUGI ? StarterDecks.KAIBA : StarterDecks.YUGI);
+            npcDeck == StarterDecks.YUGI ? StarterDecks.KAIBA : StarterDecks.YUGI,
+            de.cas_ual_ty.dueldimension.duel.match.Banlist.none());
 
         long seed = serverPlayer.level.getGameTime() ^ serverPlayer.getUUID().getLeastSignificantBits();
         long[] seeds = {seed | 1, seed * 31 + 7, seed * 131 + 17, ~seed};
@@ -233,6 +234,13 @@ public final class DuelistDuels
      */
     public static String startPlayerDuel(ServerPlayer first, ServerPlayer second)
     {
+        return startPlayerDuel(first, second,
+            de.cas_ual_ty.dueldimension.duel.match.MatchConfig.DEFAULT);
+    }
+
+    public static String startPlayerDuel(ServerPlayer first, ServerPlayer second,
+        de.cas_ual_ty.dueldimension.duel.match.MatchConfig config)
+    {
         for(ServerPlayer player : new ServerPlayer[] {first, second})
         {
             RunningDuel busy = ACTIVE.get(Watcher.of(player));
@@ -257,8 +265,10 @@ public final class DuelistDuels
         // Each player brings their own deck. The fallbacks differ so that two
         // players who have both chosen nothing still get a duel rather than a
         // mirror match neither asked for.
-        ChosenDeck deckA = deckFor(first, StarterDecks.YUGI);
-        ChosenDeck deckB = deckFor(second, StarterDecks.KAIBA);
+        de.cas_ual_ty.dueldimension.duel.match.Banlist banlist =
+            de.cas_ual_ty.dueldimension.duel.match.Banlists.byId(config.banlistId());
+        ChosenDeck deckA = deckFor(first, StarterDecks.YUGI, banlist);
+        ChosenDeck deckB = deckFor(second, StarterDecks.KAIBA, banlist);
         HeadlessDuelRunner.Deck deck0 = deckA.cards();
         HeadlessDuelRunner.Deck deck1 = deckB.cards();
 
@@ -411,7 +421,8 @@ public final class DuelistDuels
     {
     }
 
-    private static ChosenDeck deckFor(ServerPlayer player, StarterDecks.Entry fallback)
+    private static ChosenDeck deckFor(ServerPlayer player, StarterDecks.Entry fallback,
+        de.cas_ual_ty.dueldimension.duel.match.Banlist banlist)
     {
         de.cas_ual_ty.dueldimension.duel.profile.DuelProfile profile =
             de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.get(player);
@@ -419,8 +430,11 @@ public final class DuelistDuels
         if(!active.isEmpty())
         {
             de.cas_ual_ty.dueldimension.duel.profile.DeckList chosen = profile.deckNamed(active);
-            java.util.List<String> problems = de.cas_ual_ty.dueldimension.duel.profile.DeckEdits
-                .duelReadiness(player, active);
+            // Judged against the list this duel is being played under, which
+            // is the whole reason the lobby chose one.
+            java.util.List<String> problems = chosen == null ? java.util.List.of()
+                : de.cas_ual_ty.dueldimension.duel.profile.DeckEdits.problemsUnder(chosen,
+                    profile.trunk(), banlist);
             if(chosen != null && problems.isEmpty())
             {
                 return new ChosenDeck(
