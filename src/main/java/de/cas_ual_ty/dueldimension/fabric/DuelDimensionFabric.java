@@ -33,6 +33,7 @@ public class DuelDimensionFabric implements ModInitializer
         de.cas_ual_ty.dueldimension.DdItems.register();
         de.cas_ual_ty.dueldimension.DdItemGroup.register();
         de.cas_ual_ty.dueldimension.DdSounds.register();
+        de.cas_ual_ty.dueldimension.DdEntityTypes.register();
 
         // Every message is declared before anything can send one, and the
         // server's handlers with them: a payload registered without a receiver

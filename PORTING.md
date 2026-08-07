@@ -150,7 +150,14 @@ is usually the larger half of the work, not Forge-vs-Fabric.
    and a block that cannot open one is not worth registering. Blocks now also
    need a `MapCodec` (`codec()`), which is new since 1.19.
 
-3. **Registries & content** — items, blocks, entities (`DuelistEntity`),
+3. **Registries & content — mostly done.** Items, components, creative tabs,
+   sounds and entities all register; `DdEntityTypes` includes the duelist's
+   attributes, which Fabric asks for directly rather than through an event.
+
+   What is left here is one cluster, and it is blocked on a **decision, not on
+   drift** — see below.
+
+4. **Registries & content (was 3)** — items, blocks, entities (`DuelistEntity`),
    sounds; `DeferredRegister` → direct `Registry.register`, creative tabs,
    `FabricEntityTypeBuilder`, upstream YgoDuelingMod content.
 4. **Networking — started; the pattern is proved end to end.** `DdNetwork`
@@ -209,6 +216,36 @@ is usually the larger half of the work, not Forge-vs-Fabric.
    pipeline work.
 7. **Parity audit** against the Forge branch; only then does this branch
    take over.
+
+## The one open design question: menus with extra data
+
+Four of this mod's containers were opened with Forge's `IContainerFactory`,
+which hands the menu a `FriendlyByteBuf` of extra data written at the moment
+it opens — which duel, which card set, which supply block.
+
+**There is no equivalent to port them onto.** Vanilla's `MenuType` offers only
+`create(int, Inventory)`, and `ServerPlayer.openMenu` takes a bare
+`MenuProvider`; neither carries extra data. Fabric API used to fill that gap
+with `ExtendedScreenHandlerType`, and **that module is not in Fabric API
+0.156.0+26.2** — the same disappearance as `FabricItemGroup`.
+
+So this is a design choice rather than a translation, and there are two
+honest options:
+
+- **Send the data as its own payload** immediately after opening the menu, and
+  have the screen wait for it. Keeps the menus as they are; adds a frame where
+  the screen is open and empty.
+- **Derive the data server-side** from what the menu already knows (the block
+  position, the held stack), so nothing needs sending. Cleaner where it works,
+  and it does not work for everything — the duel menu genuinely needs to be
+  told which duel.
+
+Not decided yet, deliberately: the screens are the other half of it and they
+are unported, so the choice belongs with the client phase where both ends can
+be changed together. Parked as one unit with it: `DdContainerTypes`, the six
+containers, the blocks (`DuelBlock`, `CardShopBlock`, `CardSupplyBlock`), the
+block entities, `CardSupplyMessages`, the older `duel/network` messages, and
+the item classes that open them.
 
 ## A bug the port found
 
