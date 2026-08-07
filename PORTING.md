@@ -22,8 +22,8 @@ Build and test:
 
 ## What is across (phase 0 — done)
 
-The loader-agnostic core: **75 main classes, 27 test classes, 86 tests
-green**, including the native-core duels — `native/ocgcore.dll` is tracked,
+The loader-agnostic core: **74 main classes (72 ported + 2 entrypoints), 26 test
+classes, 86 tests green**, including the native-core duels — `native/ocgcore.dll` is tracked,
 so `BotDisciplineTest` and friends run the real ygopro-core engine inside
 the Fabric workspace.
 
