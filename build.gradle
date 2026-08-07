@@ -16,6 +16,23 @@ loom {
             sourceSet sourceSets.main
         }
     }
+
+    runs {
+        client {
+            // The same account name the Forge workspace runs under, so a
+            // screenshot from either tree is recognisably the same player --
+            // and so PlayerSkins can resolve a skin for it. See that class:
+            // a dev client is offline, so the game has nowhere to fetch one
+            // from and every dev player is Steve unless the mod supplies it.
+            programArgs "--username", "Alpha"
+
+            // The duel screen is laid out in logical GUI pixels, so the window
+            // size decides how much board there is to lay out on. The Forge
+            // workspace fixes it at 920p for that reason; matching it means a
+            // layout checked in one tree is the layout in the other.
+            programArgs "--width", "1634", "--height", "920"
+        }
+    }
 }
 
 repositories {

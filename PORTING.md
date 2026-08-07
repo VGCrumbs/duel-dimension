@@ -225,6 +225,18 @@ is usually the larger half of the work, not Forge-vs-Fabric.
    are the Forge build's own art, drawn through the new API.** Each tab says
    what it is waiting for rather than showing an empty body.
 
+   The client also has a mixin config now (`dueldimension.mixins.json`), which
+   the Forge tree never needed. `PlayerSkins` is why: a dev client is offline,
+   so the game has nowhere to fetch a skin from and every dev player is Steve.
+   On Forge that took two hooks and a compromise — `RenderPlayerEvent.Pre` to
+   hide the real body and a render layer to draw a replacement over it, because
+   the skin itself could not be changed. Fabric has neither event, so a mixin
+   patches `AbstractClientPlayer.getSkin` at the source instead, and the proper
+   fix is the smaller one: every part of the game that draws a player, the
+   3D-skin-layers mod included, picks it up without knowing anything happened.
+   `PlayerSkin.Patch` replaces only the fields named, so capes and elytra
+   textures survive.
+
    Two facts worth having up front:
 
    - A **screen** implements `extractRenderState` (`Renderable`'s single

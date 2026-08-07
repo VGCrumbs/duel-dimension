@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "de.cas_ual_ty.dueldimension.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [],
+  "client": [
+    "client.AbstractClientPlayerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
