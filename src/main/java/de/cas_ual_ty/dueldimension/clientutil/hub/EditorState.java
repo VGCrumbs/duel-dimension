@@ -526,6 +526,28 @@ public final class EditorState
      * Called from the editor's tick and when it closes, so a burst of clicks
      * costs one message rather than one each.
      */
+    /**
+     * Sends the open deck whether or not it looks changed.
+     * <p>
+     * What "Save and Exit" means. {@link #flush()} is the autosave and skips a
+     * deck that matches what the server acknowledged, which is the right thing
+     * for a tick and the wrong thing for a button a player pressed on purpose.
+     */
+    public static void save()
+    {
+        if(!synced)
+        {
+            return;
+        }
+        DeckList open = deck();
+        if(open == PLACEHOLDER)
+        {
+            return;
+        }
+        agreed = contentsOf(open);
+        send(new ProfileMessages.SaveDeck(open.name(), open.main(), open.extra(), open.side()));
+    }
+
     public static void flush()
     {
         if(!synced)

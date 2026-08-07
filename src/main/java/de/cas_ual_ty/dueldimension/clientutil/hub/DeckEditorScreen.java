@@ -260,8 +260,13 @@ public class DeckEditorScreen extends Screen
             sortDeck();
             refusal = "";
         }));
-        addRenderableWidget(new HubWidgets.TextureButton(rightX + rightW - pad - 80, controlsY,
-            80, 20, Component.literal("Done"), pressed -> onClose()));
+        // Named for what it does rather than for being finished with: the deck
+        // is written to the server on the way out, and a player leaving an
+        // editor should not have to guess whether that happened.
+        Component leave = Component.literal("Save and Exit");
+        int leaveW = Math.max(80, font.width(leave) + 16);
+        addRenderableWidget(new HubWidgets.TextureButton(rightX + rightW - pad - leaveW,
+            controlsY, leaveW, 20, leave, pressed -> saveAndExit()));
     }
 
     /**
@@ -2124,6 +2129,29 @@ public class DeckEditorScreen extends Screen
         EditorState.flush();
     }
 
+    /**
+     * Writes the deck out and leaves.
+     * <p>
+     * The save is unconditional rather than left to the tick that normally
+     * notices edits: that tick only sends when the contents differ from what
+     * the server last acknowledged, which is right for an autosave and wrong
+     * for a button whose label promises a save. An edit made and undone in the
+     * same visit still ends with the server holding this deck.
+     */
+    private void saveAndExit()
+    {
+        EditorState.save();
+        if(minecraft != null)
+        {
+            minecraft.setScreen(parent);
+        }
+    }
+
+    /**
+     * Escape saves too. The editor has autosaved all along, so losing the work
+     * on the way out would be a new behaviour and a worse one -- the button
+     * makes the saving visible, it does not make it optional.
+     */
     @Override
     public void onClose()
     {
