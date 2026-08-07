@@ -52,6 +52,7 @@ public class CardInfoScreen extends Screen
     private List<FormattedCharSequence> textLines = List.of();
     private int textScroll;
     private int sourceScroll;
+    private int relatedScroll;
 
     public CardInfoScreen(Screen parent, Properties card)
     {
@@ -72,6 +73,19 @@ public class CardInfoScreen extends Screen
 
         addRenderableWidget(new HubWidgets.TextureButton(pad(), pad(), 60, 18,
             Component.literal("Back"), pressed -> onClose()));
+        // Only once there is a chain to escape. At the first page Back already
+        // leaves, so a second button doing the same thing would be furniture.
+        if(parent instanceof CardInfoScreen)
+        {
+            addRenderableWidget(new HubWidgets.TextureButton(pad() + 66, pad(), 60, 18,
+                Component.literal("Exit"), pressed ->
+            {
+                if(minecraft != null)
+                {
+                    minecraft.setScreen(root());
+                }
+            }));
+        }
 
         // The star is the same mark the grids use, so toggling it here and
         // toggling it from the menu are visibly the same act.
@@ -83,6 +97,20 @@ public class CardInfoScreen extends Screen
     private int pad()
     {
         return 10;
+    }
+
+    /**
+     * The screen this chain started from — the editor, however many cards deep
+     * the player has followed.
+     */
+    private Screen root()
+    {
+        Screen at = parent;
+        while(at instanceof CardInfoScreen page)
+        {
+            at = page.parent;
+        }
+        return at;
     }
 
     /**
@@ -115,29 +143,112 @@ public class CardInfoScreen extends Screen
     }
 
     /**
-     * Cards that go with this one.
+     * Archetype names, discovered from the card text rather than listed here.
      * <p>
-     * Two relationships, in the order a player cares about them: cards whose
-     * NAME contains this one's — which is what an archetype looks like, Dark
-     * Magician to Dark Magician Girl — and then cards whose TEXT names this
-     * one, which is what support looks like.
+     * Yu-Gi-Oh text quotes the things it refers to — {@code (This card is
+     * always treated as an "Archfiend" card.)} — so the quoted strings across
+     * the whole database are a vocabulary of archetypes that the data supplies
+     * itself. A hand-written list would look smarter and go stale with the next
+     * set; this cannot, because it is derived from the same files the cards
+     * come from.
      * <p>
-     * Both are substring searches over the whole database rather than anything
-     * cleverer. The card data carries no archetype field, so the name is the
-     * only honest signal available; inventing a list of archetypes here would
-     * be a guess that went stale with the next set.
+     * Two filters separate an archetype from a one-off reference to a specific
+     * card: the term has to be quoted by several cards, AND appear inside more
+     * than one card's name. "Archfiend" passes both; the name of a single
+     * searcher target passes neither.
+     */
+    private static volatile Set<String> archetypeTerms;
+
+    /** Quoted runs of 3 to 30 characters: shorter is noise, longer is a sentence. */
+    private static final java.util.regex.Pattern QUOTED =
+        java.util.regex.Pattern.compile("\"([^\"]{3,30})\"");
+
+    private static Set<String> vocabulary()
+    {
+        Set<String> known = archetypeTerms;
+        if(known != null)
+        {
+            return known;
+        }
+        Map<String, Integer> quoted = new LinkedHashMap<>();
+        List<String> names = new ArrayList<>();
+        for(Properties card : DdDatabase.PROPERTIES_LIST)
+        {
+            if(card == null || card.getId() <= 0)
+            {
+                continue;
+            }
+            if(card.getName() != null)
+            {
+                names.add(card.getName().toLowerCase(Locale.ROOT));
+            }
+            String text = card.getText();
+            if(text == null)
+            {
+                continue;
+            }
+            java.util.regex.Matcher matcher = QUOTED.matcher(text);
+            while(matcher.find())
+            {
+                quoted.merge(matcher.group(1), 1, Integer::sum);
+            }
+        }
+
+        Set<String> vocab = new LinkedHashSet<>();
+        quoted.forEach((term, mentions) ->
+        {
+            if(mentions < 3)
+            {
+                return;
+            }
+            String lower = term.toLowerCase(Locale.ROOT);
+            int inNames = 0;
+            for(String name : names)
+            {
+                if(name.contains(lower) && ++inNames >= 2)
+                {
+                    vocab.add(term);
+                    return;
+                }
+            }
+        });
+        archetypeTerms = vocab;
+        return vocab;
+    }
+
+    /** The archetypes this card belongs to: named in it, or quoted by it. */
+    private static Set<String> archetypesOf(Properties card)
+    {
+        String name = card.getName() == null ? "" : card.getName().toLowerCase(Locale.ROOT);
+        String text = card.getText() == null ? "" : card.getText().toLowerCase(Locale.ROOT);
+        Set<String> mine = new LinkedHashSet<>();
+        for(String term : vocabulary())
+        {
+            String lower = term.toLowerCase(Locale.ROOT);
+            if(name.contains(lower) || text.contains('"' + lower + '"'))
+            {
+                mine.add(term);
+            }
+        }
+        return mine;
+    }
+
+    /**
+     * Cards that go with this one: anything sharing an archetype with it, then
+     * anything that names it outright.
+     * <p>
+     * Matching on the whole name alone was not enough. It worked for a card
+     * whose name IS an archetype — Dark Magician finds Dark Magician Girl — and
+     * found nothing at all for a card with a long specific name, so following a
+     * related card led to a page with no relations of its own.
      */
     private static List<Properties> findRelated(Properties card)
     {
-        String name = card.getName();
-        if(name == null || name.isBlank())
-        {
-            return List.of();
-        }
-        String needle = name.toLowerCase(Locale.ROOT);
-        Set<Properties> byName = new LinkedHashSet<>();
-        Set<Properties> byText = new LinkedHashSet<>();
+        Set<String> mine = archetypesOf(card);
+        String needle = card.getName() == null ? "" : card.getName().toLowerCase(Locale.ROOT);
 
+        List<Properties> shared = new ArrayList<>();
+        List<Properties> mentions = new ArrayList<>();
         for(Properties other : DdDatabase.PROPERTIES_LIST)
         {
             if(other == null || other.getId() == card.getId() || other.getId() <= 0
@@ -145,29 +256,24 @@ public class CardInfoScreen extends Screen
             {
                 continue;
             }
-            String otherName = other.getName();
-            if(otherName != null && otherName.toLowerCase(Locale.ROOT).contains(needle))
+            if(!mine.isEmpty() && !java.util.Collections.disjoint(archetypesOf(other), mine))
             {
-                byName.add(other);
+                shared.add(other);
                 continue;
             }
-            String text = other.getText();
-            if(text != null && text.toLowerCase(Locale.ROOT).contains(needle))
+            String otherName = other.getName();
+            String otherText = other.getText();
+            if(!needle.isEmpty()
+                && ((otherName != null && otherName.toLowerCase(Locale.ROOT).contains(needle))
+                    || (otherText != null && otherText.toLowerCase(Locale.ROOT).contains(needle))))
             {
-                byText.add(other);
+                mentions.add(other);
             }
         }
 
-        List<Properties> found = new ArrayList<>(byName);
-        for(Properties support : byText)
-        {
-            if(found.size() >= RELATED_LIMIT)
-            {
-                break;
-            }
-            found.add(support);
-        }
-        return List.copyOf(found.size() > RELATED_LIMIT ? found.subList(0, RELATED_LIMIT) : found);
+        List<Properties> found = new ArrayList<>(shared);
+        found.addAll(mentions);
+        return List.copyOf(found);
     }
 
     @Override
@@ -178,6 +284,14 @@ public class CardInfoScreen extends Screen
         {
             sourceScroll = Math.max(0, Math.min(Math.max(0, sources.size() - sourceRows()),
                 sourceScroll - step));
+            return true;
+        }
+        if(mouseY >= sourcesTop())
+        {
+            // The related grid scrolls too. An archetype can have a hundred
+            // members and showing the first five was not "related cards", it
+            // was a sample.
+            relatedScroll = Math.max(0, Math.min(maxRelatedScroll(), relatedScroll - step));
             return true;
         }
         textScroll = Math.max(0, Math.min(Math.max(0, textLines.size() - textRows()),
@@ -213,9 +327,14 @@ public class CardInfoScreen extends Screen
         return Math.round(artW() / DuelTextures.CARD_ASPECT);
     }
 
+    /**
+     * Where the two lists begin: below the art AND below its heading, with room
+     * for the heading itself. The heading used to be drawn twelve pixels above
+     * this line, which put it back over the bottom of the card.
+     */
     private int sourcesTop()
     {
-        return pad() + 24 + artH() + 10;
+        return pad() + 24 + artH() + 22;
     }
 
     private int sourceRows()
@@ -239,19 +358,37 @@ public class CardInfoScreen extends Screen
         return Math.max(1, room / (relatedCardW() + 4));
     }
 
+    private int relatedRows()
+    {
+        int cardH = Math.round(relatedCardW() / DuelTextures.CARD_ASPECT);
+        return Math.max(1, (height - sourcesTop() - pad()) / (cardH + 4));
+    }
+
+    private int maxRelatedScroll()
+    {
+        int perPage = relatedColumns() * relatedRows();
+        int rows = (related.size() + relatedColumns() - 1) / relatedColumns();
+        return Math.max(0, rows - relatedRows());
+    }
+
     private Properties relatedAt(double mouseX, double mouseY)
     {
         int cardW = relatedCardW();
         int cardH = Math.round(cardW / DuelTextures.CARD_ASPECT);
         int left = width / 2 + pad();
-        int top = sourcesTop() + 14;
-        int column = (int)((mouseX - left) / (cardW + 4));
-        int row = (int)((mouseY - top) / (cardH + 4));
-        if(mouseX < left || mouseY < top || column < 0 || column >= relatedColumns() || row < 0)
+        int top = sourcesTop();
+        int columns = relatedColumns();
+        if(mouseX < left || mouseY < top)
         {
             return null;
         }
-        int index = row * relatedColumns() + column;
+        int column = (int)((mouseX - left) / (cardW + 4));
+        int row = (int)((mouseY - top) / (cardH + 4));
+        if(column < 0 || column >= columns || row < 0 || row >= relatedRows())
+        {
+            return null;
+        }
+        int index = (row + relatedScroll) * columns + column;
         return index >= 0 && index < related.size() ? related.get(index) : null;
     }
 
@@ -307,12 +444,6 @@ public class CardInfoScreen extends Screen
             line += i == 0 ? 14 : 11;
         }
 
-        String stats = statsLine();
-        if(!stats.isEmpty())
-        {
-            font.drawShadow(poseStack, stats, x, line, 0xFF9FD4FF);
-            line += 14;
-        }
 
         // The effect, in a recessed box so it reads as the card's own words.
         int boxY = line;
@@ -335,36 +466,12 @@ public class CardInfoScreen extends Screen
         }
     }
 
-    /** ATK, DEF, level and attribute, for the cards that have them. */
-    private String statsLine()
-    {
-        if(!(card instanceof de.cas_ual_ty.dueldimension.card.properties.MonsterProperties monster))
-        {
-            return "";
-        }
-        StringBuilder line = new StringBuilder();
-        if(monster.getAttribute() != null)
-        {
-            line.append(monster.getAttribute());
-        }
-        if(card instanceof de.cas_ual_ty.dueldimension.card.properties.LevelMonsterProperties levelled)
-        {
-            line.append(line.length() > 0 ? "   " : "").append("Level ").append(levelled.level);
-        }
-        line.append(line.length() > 0 ? "   " : "").append("ATK ").append(monster.getAtk());
-        if(card instanceof de.cas_ual_ty.dueldimension.card.properties.DefMonsterProperties def)
-        {
-            line.append(" / DEF ").append(def.def);
-        }
-        return line.toString();
-    }
-
     private void renderSources(PoseStack poseStack)
     {
         int x = pad() + 4;
         int y = sourcesTop();
         int w = width / 2 - x - pad();
-        font.drawShadow(poseStack, "Obtained from  (" + sources.size() + ")", x, y - 12, 0xFFF4D089);
+        font.drawShadow(poseStack, "Obtained from  (" + sources.size() + ")", x, y - 13, 0xFFF4D089);
         int rows = sourceRows();
         NineSlice.draw(poseStack, HubTextures.PANEL_INSET, x - 3, y - 3, w + 6, rows * 11 + 6);
 
@@ -394,7 +501,7 @@ public class CardInfoScreen extends Screen
     {
         int x = width / 2 + pad();
         int y = sourcesTop();
-        font.drawShadow(poseStack, "Related cards  (" + related.size() + ")", x, y - 12, 0xFFF4D089);
+        font.drawShadow(poseStack, "Related cards  (" + related.size() + ")", x, y - 13, 0xFFF4D089);
         if(related.isEmpty())
         {
             font.drawShadow(poseStack, "Nothing names this card", x, y + 1, 0xFF6E7686);
@@ -404,14 +511,17 @@ public class CardInfoScreen extends Screen
         int cardW = relatedCardW();
         int cardH = Math.round(cardW / DuelTextures.CARD_ASPECT);
         int columns = relatedColumns();
-        int top = y + 14;
-        int rows = Math.max(1, (height - top - pad()) / (cardH + 4));
+        int top = y;
+        int rows = relatedRows();
+        relatedScroll = Math.max(0, Math.min(relatedScroll, maxRelatedScroll()));
 
-        for(int i = 0; i < related.size() && i < columns * rows; i++)
+        int first = relatedScroll * columns;
+        for(int slot = 0; slot < columns * rows && first + slot < related.size(); slot++)
         {
+            int i = first + slot;
             Properties other = related.get(i);
-            int cx = x + (i % columns) * (cardW + 4);
-            int cy = top + (i / columns) * (cardH + 4);
+            int cx = x + (slot % columns) * (cardW + 4);
+            int cy = top + (slot / columns) * (cardH + 4);
             boolean hovered = mouseX >= cx && mouseX < cx + cardW
                 && mouseY >= cy && mouseY < cy + cardH;
             if(hovered)
@@ -425,6 +535,13 @@ public class CardInfoScreen extends Screen
                 DuelTextures.CARD_U0, DuelTextures.CARD_V0,
                 DuelTextures.CARD_U1 - DuelTextures.CARD_U0,
                 DuelTextures.CARD_V1 - DuelTextures.CARD_V0, 1, 1);
+        }
+
+        if(maxRelatedScroll() > 0)
+        {
+            String more = "scroll  " + Math.min(related.size(), (relatedScroll + rows) * columns)
+                + " / " + related.size();
+            font.drawShadow(poseStack, more, x, y - 12 + (height - y) - 10, 0xFF6E7686);
         }
 
         Properties hovered = relatedAt(mouseX, mouseY);

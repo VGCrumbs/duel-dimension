@@ -251,9 +251,11 @@ public class DuelHubScreen extends Screen
                 int x = rowX + 10;
 
 
-                addRenderableWidget(new HubWidgets.TextureButton(x, y, nameW, ROW_H - 2,
-                    Component.literal(recipe.name() + "  (" + recipe.main().size() + ")"),
-                    pressed -> useRecipe(recipe)));
+                HubWidgets.TextureButton recipeName = new HubWidgets.TextureButton(x, y, nameW,
+                    ROW_H - 2, Component.literal(recipe.name() + "  (" + recipe.main().size() + ")"),
+                    pressed -> useRecipe(recipe));
+                markUnusable(recipeName, recipe);
+                addRenderableWidget(recipeName);
                 x += nameW + gap;
 
                 addRenderableWidget(new HubWidgets.TextureButton(x, y, useW, ROW_H - 2,
@@ -286,6 +288,45 @@ public class DuelHubScreen extends Screen
     }
 
     /** Use: a new deck from the recipe, then name it. */
+    /**
+     * Why this deck cannot be duelled with, empty if it can.
+     * <p>
+     * Shared by every list that shows a deck. Two lists each deciding this for
+     * themselves is how one of them ended up saying nothing.
+     */
+    private static java.util.List<String> unusableReasons(
+        de.cas_ual_ty.dueldimension.duel.profile.DeckList deck)
+    {
+        java.util.List<String> why = new java.util.ArrayList<>();
+        // Size is not something free mode relaxes: a deck under forty is
+        // illegal however generous the collection is.
+        if(deck.main().size() < de.cas_ual_ty.dueldimension.duel.match.Banlist.MAIN_MIN)
+        {
+            why.add("A deck requires 40 or more cards to use");
+        }
+        java.util.List<Integer> missing = EditorState.freeMode()
+            ? java.util.List.of() : EditorState.missingFrom(deck);
+        if(!missing.isEmpty())
+        {
+            why.add("Cannot be duelled with: " + missing.size()
+                + (missing.size() == 1 ? " card" : " cards") + " you do not own");
+            why.add("Earn them, take them out, or turn free mode on");
+        }
+        return why;
+    }
+
+    /** Reddens a deck row and says why, or leaves it alone. */
+    private static void markUnusable(HubWidgets.TextureButton row,
+        de.cas_ual_ty.dueldimension.duel.profile.DeckList deck)
+    {
+        java.util.List<String> why = unusableReasons(deck);
+        if(!why.isEmpty())
+        {
+            row.setLabelColour(0xFFFF6B6B);
+            row.setTooltipLines(why);
+        }
+    }
+
     private void useRecipe(de.cas_ual_ty.dueldimension.duel.profile.DeckList recipe)
     {
         EditorState.useRecipe(EditorState.decks().indexOf(recipe));

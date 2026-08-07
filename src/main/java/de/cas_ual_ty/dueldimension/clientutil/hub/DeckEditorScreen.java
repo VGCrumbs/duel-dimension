@@ -15,6 +15,7 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -1120,7 +1121,8 @@ public class DeckEditorScreen extends Screen
 
     /** Menu row height and width; small, since it holds two choices. */
     private static final int MENU_ROW = 14;
-    private static final int MENU_W = 74;
+    /** Breathing room either side of the widest row. */
+    private static final int MENU_PAD = 12;
 
     /** Right-click opens a menu on whatever card is under the cursor. */
     private boolean openMenu(double mouseX, double mouseY)
@@ -1153,6 +1155,38 @@ public class DeckEditorScreen extends Screen
      * deck, then Favourite. Worked out in one place so the click test and the
      * drawing cannot disagree about how tall the menu is.
      */
+    /**
+     * The labels this menu is showing, in the order they are drawn.
+     * <p>
+     * One list rather than a row count and a set of draw calls that each know
+     * their own index: adding "Card Info" to a menu sized by a fixed constant
+     * is what pushed it out of its own box.
+     */
+    private List<String> menuLabels()
+    {
+        List<String> labels = new ArrayList<>();
+        labels.add("Add 1");
+        if(menuPart != null)
+        {
+            labels.add("Remove");
+        }
+        labels.add(menuCard != null && EditorState.isFavourite((int)menuCard.getId())
+            ? "Unstar" : "Favourite");
+        labels.add("Card Info");
+        return labels;
+    }
+
+    /** Wide enough for the widest row, whatever the rows happen to be. */
+    private int menuWidth()
+    {
+        int widest = 0;
+        for(String label : menuLabels())
+        {
+            widest = Math.max(widest, font.width(label));
+        }
+        return widest + MENU_PAD * 2;
+    }
+
     private int menuRows()
     {
         return menuPart == null ? 3 : 4;
@@ -1171,7 +1205,7 @@ public class DeckEditorScreen extends Screen
     private boolean handleMenuClick(double mouseX, double mouseY)
     {
         int rows = menuRows();
-        if(mouseX < menuX || mouseX > menuX + MENU_W
+        if(mouseX < menuX || mouseX > menuX + menuWidth()
             || mouseY < menuY || mouseY > menuY + rows * MENU_ROW)
         {
             return false;
@@ -1228,33 +1262,34 @@ public class DeckEditorScreen extends Screen
             (int)menuCard.getId(), pool(), EditorState.banlist());
         int rows = menuPart == null ? 1 : 2;
 
-        NineSlice.draw(poseStack, HubTextures.PANEL, menuX, menuY, MENU_W, rows * MENU_ROW + 2);
-        boolean onAdd = mouseX >= menuX && mouseX <= menuX + MENU_W
-            && mouseY >= menuY && mouseY < menuY + MENU_ROW;
-        font.drawShadow(poseStack, "Add 1", menuX + 6, menuY + 4,
-            !verdict.allowed() ? 0xFF6A7080 : onAdd ? 0xFFFFE9B0 : 0xFFE6EAF2);
-        // Remove belongs only to a card that is IN the deck. Drawn from
-        // menuPart rather than from the row count: with the favourite row
-        // added, a trunk card also has more than one row, and keying off the
-        // count put "Remove" where the favourite row actually was.
-        if(menuPart != null)
-        {
-            boolean onRemove = mouseY >= menuY + MENU_ROW && mouseY < menuY + MENU_ROW * 2;
-            font.drawShadow(poseStack, "Remove", menuX + 6, menuY + MENU_ROW + 4,
-                onRemove ? 0xFFFFB0A8 : 0xFFE6EAF2);
-        }
-        int favouriteY = menuY + favouriteRow() * MENU_ROW;
-        boolean onFavourite = mouseX >= menuX && mouseX <= menuX + MENU_W
-            && mouseY >= favouriteY && mouseY < favouriteY + MENU_ROW;
-        boolean starred = EditorState.isFavourite((int)menuCard.getId());
-        font.drawShadow(poseStack, starred ? "Unstar" : "Favourite", menuX + 6, favouriteY + 4,
-            onFavourite ? 0xFFFFE9B0 : 0xFFE6EAF2);
+        // Sized to its contents, top and bottom included, so a row added to
+        // the menu cannot fall outside the box drawn behind it.
+        List<String> labels = menuLabels();
+        int menuW = menuWidth();
+        NineSlice.draw(poseStack, HubTextures.PANEL, menuX, menuY, menuW,
+            labels.size() * MENU_ROW + MENU_ROW / 2);
 
-        int infoY = menuY + infoRow() * MENU_ROW;
-        boolean onInfo = mouseX >= menuX && mouseX <= menuX + MENU_W
-            && mouseY >= infoY && mouseY < infoY + MENU_ROW;
-        font.drawShadow(poseStack, "Card Info", menuX + 6, infoY + 4,
-            onInfo ? 0xFFFFE9B0 : 0xFFE6EAF2);
+        for(int i = 0; i < labels.size(); i++)
+        {
+            int rowY = menuY + i * MENU_ROW;
+            boolean over = mouseX >= menuX && mouseX <= menuX + menuW
+                && mouseY >= rowY && mouseY < rowY + MENU_ROW;
+            String label = labels.get(i);
+            int colour;
+            if(i == 0 && !verdict.allowed())
+            {
+                colour = 0xFF6A7080;
+            }
+            else if("Remove".equals(label))
+            {
+                colour = over ? 0xFFFFB0A8 : 0xFFE6EAF2;
+            }
+            else
+            {
+                colour = over ? 0xFFFFE9B0 : 0xFFE6EAF2;
+            }
+            font.drawShadow(poseStack, label, menuX + MENU_PAD, rowY + 4, colour);
+        }
     }
 
     /** Adds a card if every rule allows it, else records why not. */
