@@ -778,6 +778,7 @@ public final class DuelistDuels
                 announceToBoth(server, duel, Component.literal("Match over  "
                     + duel.wins[0] + " - " + duel.wins[1]).withStyle(ChatFormatting.GOLD));
             }
+            payOut(server, duel);
             return;
         }
 
@@ -818,6 +819,48 @@ public final class DuelistDuels
             next.wins[1] = carried[1];
             next.gameNumber = nextGame;
             machine.tryMoveTo(de.cas_ual_ty.dueldimension.duel.match.MatchState.DUELING);
+        }
+    }
+
+    /**
+     * Pays both duellists once the contest is over.
+     * <p>
+     * Once per contest, not once per game: a match is one duel played as
+     * several, and paying per game would make a best-of-three worth three times
+     * a single duel for the same evening's work.
+     * <p>
+     * Only against another player. A duelist NPC will sit there and lose all
+     * day, so paying for that would make the shop a button rather than a
+     * reward, and one seat of an NPC duel is empty anyway.
+     */
+    private static void payOut(net.minecraft.server.MinecraftServer server, RunningDuel duel)
+    {
+        if(!duel.isTwoPlayer())
+        {
+            return;
+        }
+        // A draw pays both the losing rate. Nobody won it, and the alternative
+        // -- paying nobody -- punishes two players for a game that ran long.
+        boolean drawn = duel.wins[0] == duel.wins[1];
+        for(int seat = 0; seat < duel.seats.length; seat++)
+        {
+            Watcher watcher = duel.seats[seat];
+            if(watcher == null || watcher.console())
+            {
+                continue;
+            }
+            ServerPlayer player = server.getPlayerList().getPlayer(watcher.playerId());
+            if(player == null)
+            {
+                // Left before the end. Their opponent is still paid: they won
+                // the duel that was actually played.
+                continue;
+            }
+            boolean won = duel.wins[seat] > duel.wins[1 - seat];
+            de.cas_ual_ty.dueldimension.shop.DuelPoints.reward(player,
+                de.cas_ual_ty.dueldimension.shop.DuelPoints
+                    .rewardFor(duel.wins[seat], duel.wins[1 - seat]),
+                won ? "You won the duel." : drawn ? "The duel was a draw." : "You lost the duel.");
         }
     }
 
