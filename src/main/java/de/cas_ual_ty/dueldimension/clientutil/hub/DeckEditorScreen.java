@@ -1122,7 +1122,14 @@ public class DeckEditorScreen extends Screen
     /** Menu row height and width; small, since it holds two choices. */
     private static final int MENU_ROW = 14;
     /** Breathing room either side of the widest row. */
-    private static final int MENU_PAD = 12;
+    private static final int MENU_PAD = 7;
+
+    /**
+     * Space above the first row and below the last. Equal at both ends: the box
+     * used to be a row and a half taller than its rows with all the slack at
+     * the bottom, which read as a menu sagging inside an oversized frame.
+     */
+    private static final int MENU_EDGE = 5;
 
     /** Right-click opens a menu on whatever card is under the cursor. */
     private boolean openMenu(double mouseX, double mouseY)
@@ -1149,30 +1156,27 @@ public class DeckEditorScreen extends Screen
         menuIndex = -1;
     }
 
-    /** True when the click landed on a menu row and was consumed. */
     /**
-     * Rows the menu shows: Add, then Remove when the click was on a card in the
-     * deck, then Favourite. Worked out in one place so the click test and the
-     * drawing cannot disagree about how tall the menu is.
-     */
-    /**
-     * The labels this menu is showing, in the order they are drawn.
+     * The labels this menu is showing, in the order they are drawn: Favourite,
+     * Card Info, Add, then Remove when the click was on a card already in the
+     * deck.
      * <p>
      * One list rather than a row count and a set of draw calls that each know
      * their own index: adding "Card Info" to a menu sized by a fixed constant
-     * is what pushed it out of its own box.
+     * is what pushed it out of its own box. The row numbers below are read off
+     * this list for the same reason.
      */
     private List<String> menuLabels()
     {
         List<String> labels = new ArrayList<>();
+        labels.add(menuCard != null && EditorState.isFavourite((int)menuCard.getId())
+            ? "Unstar" : "Favourite");
+        labels.add("Card Info");
         labels.add("Add 1");
         if(menuPart != null)
         {
             labels.add("Remove");
         }
-        labels.add(menuCard != null && EditorState.isFavourite((int)menuCard.getId())
-            ? "Unstar" : "Favourite");
-        labels.add("Card Info");
         return labels;
     }
 
@@ -1192,27 +1196,47 @@ public class DeckEditorScreen extends Screen
         return menuPart == null ? 3 : 4;
     }
 
+    private int menuHeight()
+    {
+        return menuRows() * MENU_ROW + MENU_EDGE * 2;
+    }
+
     private int favouriteRow()
     {
-        return menuRows() - 2;
+        return 0;
     }
 
     private int infoRow()
     {
-        return menuRows() - 1;
+        return 1;
+    }
+
+    private int addRow()
+    {
+        return 2;
+    }
+
+    /** Only present when the card clicked was one already in the deck. */
+    private int removeRow()
+    {
+        return menuPart == null ? -1 : 3;
     }
 
     private boolean handleMenuClick(double mouseX, double mouseY)
     {
         int rows = menuRows();
         if(mouseX < menuX || mouseX > menuX + menuWidth()
-            || mouseY < menuY || mouseY > menuY + rows * MENU_ROW)
+            || mouseY < menuY || mouseY > menuY + menuHeight())
         {
             return false;
         }
-        int row = (int)((mouseY - menuY) / MENU_ROW);
+        // Clamped rather than bounds-checked: a click in the padding at either
+        // end belongs to the row nearest it, not to nothing.
+        int row = Math.max(0, Math.min(rows - 1,
+            (int)((mouseY - menuY - MENU_EDGE) / MENU_ROW)));
         int favourite = favouriteRow();
         int info = infoRow();
+        int remove = removeRow();
         Properties target = menuCard;
         DeckList.Part part = menuPart;
         int index = menuIndex;
@@ -1234,7 +1258,7 @@ public class DeckEditorScreen extends Screen
             EditorState.toggleFavourite((int)target.getId());
             return true;
         }
-        if(row == 0)
+        if(row == addRow())
         {
             // Add one, into the part it belongs in.
             DeckList.Part destination = part != null ? part
@@ -1242,7 +1266,7 @@ public class DeckEditorScreen extends Screen
             add(target, destination);
             return true;
         }
-        if(part != null && index >= 0)
+        if(row == remove && part != null && index >= 0)
         {
             List<Integer> cards = EditorState.deck().partFor(part);
             if(index < cards.size())
@@ -1260,23 +1284,21 @@ public class DeckEditorScreen extends Screen
             : menuCard.getIsInExtraDeck() ? DeckList.Part.EXTRA : DeckList.Part.MAIN;
         DeckLimits.Verdict verdict = DeckLimits.canAdd(EditorState.deck(), destination,
             (int)menuCard.getId(), pool(), EditorState.banlist());
-        int rows = menuPart == null ? 1 : 2;
 
         // Sized to its contents, top and bottom included, so a row added to
         // the menu cannot fall outside the box drawn behind it.
         List<String> labels = menuLabels();
         int menuW = menuWidth();
-        NineSlice.draw(poseStack, HubTextures.PANEL, menuX, menuY, menuW,
-            labels.size() * MENU_ROW + MENU_ROW / 2);
+        NineSlice.draw(poseStack, HubTextures.PANEL, menuX, menuY, menuW, menuHeight());
 
         for(int i = 0; i < labels.size(); i++)
         {
-            int rowY = menuY + i * MENU_ROW;
+            int rowY = menuY + MENU_EDGE + i * MENU_ROW;
             boolean over = mouseX >= menuX && mouseX <= menuX + menuW
                 && mouseY >= rowY && mouseY < rowY + MENU_ROW;
             String label = labels.get(i);
             int colour;
-            if(i == 0 && !verdict.allowed())
+            if(i == addRow() && !verdict.allowed())
             {
                 colour = 0xFF6A7080;
             }
@@ -1288,11 +1310,11 @@ public class DeckEditorScreen extends Screen
             {
                 colour = over ? 0xFFFFE9B0 : 0xFFE6EAF2;
             }
-            font.drawShadow(poseStack, label, menuX + MENU_PAD, rowY + 4, colour);
+            font.drawShadow(poseStack, label, menuX + MENU_PAD,
+                rowY + (MENU_ROW - font.lineHeight) / 2F + 1, colour);
         }
     }
 
-    /** Adds a card if every rule allows it, else records why not. */
     /**
      * The part a card goes in when nobody said: extra deck monsters to the
      * extra deck, everything else to the main.
@@ -1333,6 +1355,7 @@ public class DeckEditorScreen extends Screen
         return DeckLimits.maxCopies((int)card.getId(), pool(), EditorState.banlist());
     }
 
+    /** Adds a card if every rule allows it, else records why not. */
     private boolean add(Properties card, DeckList.Part part)
     {
         DeckLimits.Verdict verdict = DeckLimits.canAdd(EditorState.deck(), part,

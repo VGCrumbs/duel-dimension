@@ -217,9 +217,73 @@ public final class DuelTextures
      */
     public static void bindSmooth(ResourceLocation texture)
     {
-        net.minecraft.client.Minecraft.getInstance().getTextureManager()
-            .getTexture(texture).setFilter(true, false);
+        net.minecraft.client.renderer.texture.AbstractTexture loaded =
+            net.minecraft.client.Minecraft.getInstance().getTextureManager().getTexture(texture);
+        boolean mipmapped = mipmap(loaded);
+        loaded.setFilter(true, mipmapped);
         com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, texture);
+    }
+
+    /**
+     * Textures that already have their mip levels, by identity.
+     * <p>
+     * Keyed on the texture object rather than its name, and weakly, because
+     * card textures are evicted and reloaded as the player scrolls. A released
+     * texture takes its GL object with it, so the reload gets a fresh instance
+     * that is correctly absent from this set — a name would still be here and
+     * the new texture would never get its levels built.
+     */
+    private static final java.util.Set<net.minecraft.client.renderer.texture.AbstractTexture>
+        MIPMAPPED = java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
+
+    /**
+     * How far down to build. Four levels take a 512-pixel card to 32, past the
+     * smallest a preview is ever drawn at, and stopping there rather than at
+     * 1x1 keeps the letterbox bars either side of the art from bleeding into it
+     * at the coarsest levels.
+     */
+    private static final int MIP_LEVELS = 4;
+
+    /**
+     * Gives a texture its mip levels, once.
+     * <p>
+     * Bilinear filtering alone does not fix a minified card. It samples four
+     * texels whatever the scale, so a 512-pixel card image drawn forty pixels
+     * wide in a deck grid takes four samples out of every hundred and sixty and
+     * comes out sharp and speckled — pixellation that moves as the card moves.
+     * The fix for minification is a mip chain, so the GPU has a version of the
+     * image at roughly the size being asked for.
+     * <p>
+     * Minecraft's {@code SimpleTexture} uploads level zero and nothing else, so
+     * the levels are generated here from the image already on the card. Irrlicht
+     * builds them by default for every texture EDOPro loads, so this matches the
+     * reference as well as looking better.
+     *
+     * @return whether the texture has levels to filter between
+     */
+    private static boolean mipmap(net.minecraft.client.renderer.texture.AbstractTexture texture)
+    {
+        if(MIPMAPPED.contains(texture))
+        {
+            return true;
+        }
+        if(!com.mojang.blaze3d.systems.RenderSystem.isOnRenderThread())
+        {
+            // Off thread there is no context to build them in. Bilinear only,
+            // and the next frame on the render thread will do it properly.
+            return false;
+        }
+        // Unit zero explicitly: bind() goes to whichever unit is active, and
+        // the shader selects its own units at draw time regardless, so leaving
+        // zero selected is both deterministic and what the next draw expects.
+        com.mojang.blaze3d.systems.RenderSystem.activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
+        texture.bind();
+        com.mojang.blaze3d.platform.GlStateManager._texParameter(
+            org.lwjgl.opengl.GL11.GL_TEXTURE_2D,
+            org.lwjgl.opengl.GL12.GL_TEXTURE_MAX_LEVEL, MIP_LEVELS);
+        org.lwjgl.opengl.GL30.glGenerateMipmap(org.lwjgl.opengl.GL11.GL_TEXTURE_2D);
+        MIPMAPPED.add(texture);
+        return true;
     }
 
     /**
