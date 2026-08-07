@@ -33,8 +33,14 @@ class DuelPointsTest
         assertFalse(DuelPoints.canAfford(1000, -50), "a negative price must not be treated as a gift");
     }
 
-    // Parked with phase 2 (registries and content): both assertions measure a
-    // reward against ShopStock.BASE_PRICE, and ShopStock reaches the whole card
-    // database, which has not been ported. Restore them with it -- the numbers
-    // they check are the point of the numbers above.
+    @Test
+    void everyPackHasAPriceAPlayerCouldReach()
+    {
+        // The floor matters: a pack priced at zero would be an infinite source
+        // of cards, and the starting balance has to buy at least one pack or
+        // the shop is a locked door on day one.
+        assertTrue(ShopStock.BASE_PRICE > 0);
+        assertTrue(DuelPoints.STARTING_POINTS >= ShopStock.BASE_PRICE,
+            "a new player must be able to afford a pack");
+    }
 }

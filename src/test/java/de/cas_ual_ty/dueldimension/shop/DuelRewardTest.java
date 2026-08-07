@@ -43,8 +43,13 @@ class DuelRewardTest
         assertTrue(DuelPoints.WIN_REWARD > DuelPoints.LOSS_REWARD);
     }
 
-    // Parked with phase 2 (registries and content): both assertions measure a
-    // reward against ShopStock.BASE_PRICE, and ShopStock reaches the whole card
-    // database, which has not been ported. Restore them with it -- the numbers
-    // they check are the point of the numbers above.
+    @Test
+    void aWinBuysMoreThanALoss()
+    {
+        // The reward only means something against what it buys, so it is
+        // measured against the shop's price rather than left as a bare number:
+        // a win is six packs and a loss three, at the reference's 150 DP.
+        assertEquals(6, DuelPoints.WIN_REWARD / ShopStock.BASE_PRICE);
+        assertEquals(3, DuelPoints.LOSS_REWARD / ShopStock.BASE_PRICE);
+    }
 }

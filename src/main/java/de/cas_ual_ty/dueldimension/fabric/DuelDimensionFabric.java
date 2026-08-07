@@ -16,7 +16,12 @@ import org.slf4j.LoggerFactory;
  */
 public class DuelDimensionFabric implements ModInitializer
 {
-    public static final String MOD_ID = "dueldimension";
+    /**
+     * Both forwarded to {@link de.cas_ual_ty.dueldimension.DuelDimension}, which
+     * is where the rest of the mod reads them from. Two names for one id is one
+     * too many, and the shared one is the one already written in every file.
+     */
+    public static final String MOD_ID = de.cas_ual_ty.dueldimension.DuelDimension.MOD_ID;
     public static final Logger LOG = LoggerFactory.getLogger(MOD_ID);
 
     @Override

@@ -41,6 +41,11 @@ dependencies {
     implementation 'org.xerial:sqlite-jdbc:3.42.0.0'
     include 'org.xerial:sqlite-jdbc:3.42.0.0'
 
+    // javax.annotation.Nullable, which the upstream mod's sources use
+    // throughout. Compile-only: it is documentation for javac, not something
+    // the mod needs at runtime.
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
+
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
