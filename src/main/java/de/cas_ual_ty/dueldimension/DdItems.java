@@ -18,9 +18,10 @@ import java.util.function.Function;
  * <ul>
  * <li>No {@code DeferredRegister}. Registries are open while a mod initialiser
  *     runs, so an item is registered by calling {@link Registry#register}.</li>
- * <li>No {@code RegistryObject} to unwrap. The field IS the item, so
- *     {@code DdItems.CARD.get()} becomes {@code DdItems.CARD} — the
- *     indirection existed because Forge could not hand you the object yet.</li>
+ * <li>No {@code RegistryObject} to unwrap. The field IS the item, so a call
+ *     that read {@code DdItems.CARD.get()} is now just {@code DdItems.CARD} —
+ *     the indirection existed because Forge could not hand you the object
+ *     yet.</li>
  * <li>No {@code .tab(...)}. An item does not choose its creative tab any more;
  *     a tab chooses its items. See {@link DdItemGroup}.</li>
  * </ul>

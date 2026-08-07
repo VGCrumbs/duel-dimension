@@ -56,6 +56,13 @@ Measured off the 26.2 jars with `javap`, not guessed. These bite every phase:
 - **Fabric API dropped `FabricItemGroup`** for 26.2 — the module is not even a
   dependency of the umbrella any more. Use vanilla's
   `CreativeModeTab.builder(Row, int)`.
+- `Material`/`MaterialColor` were removed. A block states its map colour,
+  sound and strength separately; blocks need `setId` like items.
+- `new SoundEvent(location)` became `SoundEvent.createVariableRangeEvent(id)`.
+- Play packets travel on `RegistryFriendlyByteBuf`, not `FriendlyByteBuf`.
+  Codecs that touch no registry (`ByteBufCodecs.VAR_INT` and friends) are
+  typed on plain `ByteBuf` and need `.cast()` to widen.
+- `PayloadTypeRegistry` methods are `serverboundPlay()`/`clientboundPlay()`.
 
 Which is why phase 1 replaced the hand-written `save()`/`load()` pairs with
 Codecs rather than translating them: both places a profile now persists ask
@@ -120,19 +127,40 @@ is usually the larger half of the work, not Forge-vs-Fabric.
    instead, and since a component is immutable it has to put a fresh one back
    rather than mutate in place.
 
+   `DdSounds` is across too — all seventeen duel effects.
+
    Still to do in this phase: `CardSleevesItem`/`Type`,
    `CardSetItem`/`BaseItem`/`Opened`, the three `CardPuller`s and `PullType`,
-   `CardSetContainer`(`Contents`), `YDMItemHandler`, `ICooldownHolder`,
-   `DdUtil`'s two command-executing methods, and blocks/entities/sounds/
-   containers. Each is parked with a comment saying so rather than deleted.
+   `YDMItemHandler`, `ICooldownHolder`, `DdUtil`'s two command-executing
+   methods, and **the block layer** — `DuelBlock`, `CardShopBlock`,
+   `CardSupplyBlock` and their block entities. The blocks are parked as one
+   unit with the containers below, because each of them exists to open a menu
+   and a block that cannot open one is not worth registering. Blocks now also
+   need a `MapCodec` (`codec()`), which is new since 1.19.
 
 3. **Registries & content** — items, blocks, entities (`DuelistEntity`),
    sounds; `DeferredRegister` → direct `Registry.register`, creative tabs,
    `FabricEntityTypeBuilder`, upstream YgoDuelingMod content.
-4. **Networking** — the ~30 message records in `ProfileMessages`,
-   `LobbyMessages`, `OutfitMessages`, `ShopMessages`, duel messages.
-   SimpleChannel → `CustomPacketPayload` + `StreamCodec` +
-   `PayloadTypeRegistry`/`ServerPlayNetworking`.
+4. **Networking — started; the pattern is proved end to end.** `DdNetwork`
+   plus `ProfilePayloads`: all ten profile messages, registered by direction,
+   with the server handlers and a join hook that syncs a player's profile.
+   **124 classes, 128 tests green, jar builds.**
+
+   Forge gave every mod a `SimpleChannel` with a hand-assigned integer per
+   message. Minecraft grew its own version and it is stricter in the ways that
+   matter: a message is a `CustomPacketPayload` with a `Type` naming it, a
+   `StreamCodec`, and a registration that says which *direction* it may travel
+   — no ids to keep in step, and a message registered the wrong way round is
+   refused rather than mis-parsed.
+
+   One improvement fell out for free: the Forge `Sync` sent a profile as a raw
+   `CompoundTag` and trusted both ends to agree what was in it. A profile has a
+   Codec now, so the message carries a `DuelProfile` and the wire format is the
+   one thing neither side can get wrong.
+
+   Remaining: `ShopMessages`, `LobbyMessages`, `OutfitMessages`,
+   `PromptMessages`, `CardSupplyMessages`, `PackMessages` and the duel
+   messages — about 27 more, all following the shape `ProfilePayloads` sets.
 5. **Server events & commands** — login/logout/respawn hooks →
    `ServerPlayConnectionEvents` etc.; command registration; `FreeMode`
    SavedData; duel lifecycle driving (`DuelistDuels`).

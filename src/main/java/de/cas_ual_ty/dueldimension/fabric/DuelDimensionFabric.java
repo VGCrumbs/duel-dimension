@@ -32,8 +32,20 @@ public class DuelDimensionFabric implements ModInitializer
         de.cas_ual_ty.dueldimension.DdComponents.register();
         de.cas_ual_ty.dueldimension.DdItems.register();
         de.cas_ual_ty.dueldimension.DdItemGroup.register();
+        de.cas_ual_ty.dueldimension.DdSounds.register();
 
-        LOG.info("Duel Dimension (Fabric fork): engine core and items loaded;"
-            + " remaining phases per PORTING.md");
+        // Every message is declared before anything can send one, and the
+        // server's handlers with them: a payload registered without a receiver
+        // is a packet that arrives and is dropped.
+        de.cas_ual_ty.dueldimension.net.DdNetwork.register();
+        de.cas_ual_ty.dueldimension.net.DdNetwork.registerServerHandlers();
+
+        // A joining player is told what they own before they can open an editor.
+        net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register(
+            (handler, sender, server) ->
+                de.cas_ual_ty.dueldimension.net.ProfilePayloads.sync(handler.getPlayer()));
+
+        LOG.info("Duel Dimension (Fabric fork): engine core, items, sounds and the"
+            + " profile network are up; remaining phases per PORTING.md");
     }
 }
