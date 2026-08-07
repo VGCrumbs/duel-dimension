@@ -267,7 +267,7 @@ public class DuelHubScreen extends Screen
                     addRenderableWidget(new HubWidgets.TextureButton(x, y, editW, ROW_H - 2,
                         Component.literal("Edit"), pressed ->
                     {
-                        EditorState.select(EditorState.decks().indexOf(recipe));
+                        EditorState.select(EditorState.indexOf(recipe));
                         if(minecraft != null)
                         {
                             minecraft.setScreen(new DeckEditorScreen(this));
@@ -277,7 +277,7 @@ public class DuelHubScreen extends Screen
                     addRenderableWidget(new HubWidgets.TextureButton(x, y, deleteW, ROW_H - 2,
                         Component.literal("Delete"), pressed ->
                     {
-                        EditorState.select(EditorState.decks().indexOf(recipe));
+                        EditorState.select(EditorState.indexOf(recipe));
                         String error = EditorState.deleteCurrent();
                         notice = error == null ? "" : error;
                         rebuild();
@@ -329,7 +329,7 @@ public class DuelHubScreen extends Screen
 
     private void useRecipe(de.cas_ual_ty.dueldimension.duel.profile.DeckList recipe)
     {
-        EditorState.useRecipe(EditorState.decks().indexOf(recipe));
+        EditorState.useRecipe(EditorState.indexOf(recipe));
         deckView = DeckView.DECKS;
         deckScroll = 0;
         notice = "";
@@ -417,15 +417,20 @@ public class DuelHubScreen extends Screen
                 String label = (active ? "\u25B8 " : "") + deck.name()
                     + "  (" + deck.main().size() + ")";
                 int target = index;
-                addRenderableWidget(new HubWidgets.TextureButton(x, y, nameW, ROW_H - 2,
-                    Component.literal(label), pressed ->
+                HubWidgets.TextureButton name = new HubWidgets.TextureButton(x, y, nameW,
+                    ROW_H - 2, Component.literal(label), pressed ->
                 {
-                    EditorState.select(EditorState.decks().indexOf(decks.get(target)));
+                    EditorState.select(EditorState.indexOf(decks.get(target)));
                     if(minecraft != null)
                     {
                         minecraft.setScreen(new DeckEditorScreen(this));
                     }
-                }));
+                });
+                // The player's own decks are the ones that end up short or full
+                // of cards they no longer own, so this list needs the warning
+                // more than the recipe list does -- and only had it there.
+                markUnusable(name, deck);
+                addRenderableWidget(name);
             }
             x += nameW + gap;
 
@@ -452,7 +457,7 @@ public class DuelHubScreen extends Screen
             int renameIndex = index;
             addRenderableWidget(new HubWidgets.TextureButton(x, y, renameW, ROW_H - 2,
                 Component.literal("Rename"), pressed ->
-                    startRename(EditorState.decks().indexOf(decks.get(renameIndex)))));
+                    startRename(EditorState.indexOf(decks.get(renameIndex)))));
             x += renameW + gap;
 
             int duplicateIndex = index;
@@ -461,7 +466,7 @@ public class DuelHubScreen extends Screen
             {
                 // Duplicating drops straight into renaming the copy: the point
                 // of "as" is that the copy gets its own name.
-                EditorState.duplicate(EditorState.decks().indexOf(decks.get(duplicateIndex)));
+                EditorState.duplicate(EditorState.indexOf(decks.get(duplicateIndex)));
                 startRename(EditorState.currentIndex());
             }));
             x += duplicateW + gap;
@@ -470,7 +475,7 @@ public class DuelHubScreen extends Screen
             HubWidgets.TextureButton delete = new HubWidgets.TextureButton(x, y, deleteW, ROW_H - 2,
                 Component.literal("Delete"), pressed ->
             {
-                EditorState.select(EditorState.decks().indexOf(decks.get(deleteIndex)));
+                EditorState.select(EditorState.indexOf(decks.get(deleteIndex)));
                 String error = EditorState.deleteCurrent();
                 notice = error == null ? "" : error;
                 cancelRename();
@@ -531,7 +536,7 @@ public class DuelHubScreen extends Screen
         {
             return;
         }
-        EditorState.select(EditorState.decks().indexOf(renaming));
+        EditorState.select(EditorState.indexOf(renaming));
         if(!EditorState.rename(renameField.getValue()))
         {
             notice = "That name is already used";

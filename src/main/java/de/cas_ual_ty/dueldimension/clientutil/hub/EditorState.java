@@ -259,12 +259,46 @@ public final class EditorState
         return current;
     }
 
+    /**
+     * Where a deck sits in the profile's list, or -1.
+     * <p>
+     * By identity first, then by name. A screen holds the deck objects it built
+     * its rows from, and a profile sync replaces every one of them with a fresh
+     * object carrying the same deck — so a row built before the sync and
+     * clicked after it was looking up an object no longer in the list. That
+     * returned -1, which {@link #select(int)} used to clamp to zero, and the
+     * player got the first deck instead of the one they clicked.
+     */
+    public static int indexOf(DeckList deck)
+    {
+        List<DeckList> all = decks();
+        int at = all.indexOf(deck);
+        if(at >= 0)
+        {
+            return at;
+        }
+        for(int i = 0; i < all.size(); i++)
+        {
+            if(all.get(i).origin() == deck.origin() && all.get(i).name().equals(deck.name()))
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     public static void select(int index)
     {
         List<DeckList> all = decks();
         if(all.isEmpty())
         {
             current = 0;
+            return;
+        }
+        if(index < 0)
+        {
+            // "No such deck" is not "the first deck". Clamping a failed lookup
+            // up to zero is how a click on one deck opened another.
             return;
         }
         // Leaving a deck is the last chance to save what was done to it.

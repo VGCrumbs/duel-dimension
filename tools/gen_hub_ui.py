@@ -205,24 +205,43 @@ def header_bar(width=CELL):
     return im
 
 
-def star(size=16):
-    """The mark on a favourited card: a filled star with a dark outline.
+def star(size=32):
+    """The mark on a favourited card: a filled star with a black outline.
 
     Outlined rather than plain, because it is drawn over card art of any colour
     and a gold star on gold art would disappear.
+
+    The outline is a stroked path, not `polygon(outline=...)`. That draws one
+    pixel wide, and one pixel of an image built at eight times the final size
+    is an eighth of a pixel once it is reduced -- an outline that was in the
+    file and invisible on screen. Stroked at scale it survives the reduction.
+
+    Drawn at 32 rather than 16 for the same reason the card icons were doubled:
+    the deck grids draw this at around ten pixels and the card info page at
+    seventeen, and a 16-pixel source has no detail to give the larger one.
     """
     scale = 8
     big = Image.new('RGBA', (size * scale, size * scale), (0, 0, 0, 0))
     d = ImageDraw.Draw(big)
     cx = cy = size * scale / 2
-    outer = size * scale * 0.46
+    # Room for the stroke: it straddles the path, so half of it lies outside
+    # the star and would be clipped by the edge of the canvas otherwise.
+    stroke = scale * 3
+    outer = size * scale * 0.46 - stroke / 2
     inner = outer * 0.42
     points = []
     for i in range(10):
         angle = math.radians(-90 + i * 36)
         r = outer if i % 2 == 0 else inner
         points.append((cx + r * math.cos(angle), cy + r * math.sin(angle)))
-    d.polygon(points, fill=GOLD + (255,), outline=(12, 13, 17, 255))
+    # Stroke first and fill over it, so the half of the stroke that falls
+    # inside the star is covered and the gold keeps its full area.
+    d.line(points + [points[0]], fill=(0, 0, 0, 255), width=stroke, joint='curve')
+    for point in points:
+        # The joins at the ten points, which a stroked polyline leaves notched.
+        d.ellipse([point[0] - stroke / 2, point[1] - stroke / 2,
+                   point[0] + stroke / 2, point[1] + stroke / 2], fill=(0, 0, 0, 255))
+    d.polygon(points, fill=GOLD + (255,))
     # Drawn large and reduced, so the points are smooth rather than stepped.
     return big.resize((size, size), Image.LANCZOS)
 
