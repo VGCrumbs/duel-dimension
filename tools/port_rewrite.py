@@ -49,6 +49,16 @@ TAG_GETTERS = {
 # These two have named empties rather than a default argument.
 TAG_EMPTIES = {"getCompound": "getCompoundOrEmpty", "getList": "getListOrEmpty"}
 
+# Fields that became accessor methods.
+#
+# `isClientSide` only exists on Level, so rewriting it on sight is safe.
+# `Entity.level` is deliberately NOT here even though it moved the same way: a
+# card in this mod has a level too, and the rule rewrote
+# `PATREON_001_PROPERTIES.level = 12` into a call to a method that does not
+# exist. Its few genuine sites are done by hand. A name this common is not
+# worth automating -- the same lesson the tag getters taught.
+FIELD_TO_METHOD = ["isClientSide"]
+
 MISC = [
     # contains(key, type) lost its type argument; the type test is now the
     # getter returning an empty Optional.
@@ -152,11 +162,25 @@ def rewrite_tag_getters(src):
     return src
 
 
+def rewrite_field_accessors(src):
+    """obj.level -> obj.level(), but never inside an import or a declaration."""
+    out = []
+    for line in src.split("\n"):
+        if not line.lstrip().startswith(("import ", "package ")):
+            for field in FIELD_TO_METHOD:
+                # A dot, the name, and something that is not already a call and
+                # not a further member access (`server.level.ServerLevel`).
+                line = re.sub(r"\.%s\b(?!\s*\()(?!\s*\.)" % field, ".%s()" % field, line)
+        out.append(line)
+    return "\n".join(out)
+
+
 def rewrite(path):
     src = io.open(path, encoding="utf-8").read()
     before = src
     for pattern, replacement in RENAMES:
         src = re.sub(pattern, replacement, src)
+    src = rewrite_field_accessors(src)
     src = rewrite_identifier_ctor(src)
     src = rewrite_tag_getters(src)
     for pattern, replacement in MISC:

@@ -75,11 +75,6 @@ public class DdUtil
         return java.util.UUID.randomUUID();
     }
     
-    /**
-     * Forge's NonNullSupplier was a capability-system nicety; a plain Supplier
-     * says exactly as much. Kept because the callers read better for it, even
-     * though Fabric has no capabilities to be null.
-     */
     public static java.util.function.Supplier<IllegalArgumentException> throwNullCapabilityException()
     {
         return () -> new IllegalArgumentException("[" + DuelDimension.MOD_ID + "] Capability can not be null!");
@@ -144,13 +139,12 @@ public class DdUtil
     /*
      * Parked with the cooldown phase. Both of these hang off Forge's
      * COOLDOWN_HOLDER capability, which becomes a data attachment when the
-     * cooldown system ports; the bodies are kept verbatim so that port is a
-     * matter of swapping how the holder is reached, not rewriting the rules.
+     * cooldown system ports. The bodies are kept verbatim so that port is a
+     * matter of changing how the holder is reached, not rewriting the rules.
      *
-     * Note the .get() calls below: upstream two of the four branches in each
-     * block called ConfigValue.getPath(), which returns the config file path
-     * rather than the configured commands. It compiled because both are
-     * List<String>. Fixed here; the Forge tree still has it.
+     * The .get() calls below were .getPath() upstream in two of the four
+     * branches of each block -- the config file path, not the commands. It
+     * compiled because both are List<String>. Fixed here; Forge still has it.
      *     public static void executeAdmitDefeatCommands(Player winner, Player loser)
      *     {
      *         if(winner.level() instanceof ServerLevel)
@@ -169,12 +163,12 @@ public class DdUtil
      *                         if(cdLoser.isOffCooldown())
      *                         {
      *                             // both off CD
-     *                             commands = DuelDimension.commonConfig().defeatBothOffCDCommands.get();
+     *                             commands = DuelDimension.commonConfig.defeatBothOffCDCommands.get();
      *                         }
      *                         else
      *                         {
      *                             // winner off CD
-     *                             commands = DuelDimension.commonConfig().defeatWinnerOffCDCommands.get();
+     *                             commands = DuelDimension.commonConfig.defeatWinnerOffCDCommands.get();
      *                         }
      *                     }
      *                     else
@@ -182,23 +176,23 @@ public class DdUtil
      *                         if(cdLoser.isOffCooldown())
      *                         {
      *                             // loser off CD
-     *                             commands = DuelDimension.commonConfig().defeatLoserOffCDCommands.get();
+     *                             commands = DuelDimension.commonConfig.defeatLoserOffCDCommands.get();
      *                         }
      *                         else
      *                         {
      *                             // both on CD
-     *                             commands = DuelDimension.commonConfig().defeatBothOnCDCommands.get();
+     *                             commands = DuelDimension.commonConfig.defeatBothOnCDCommands.get();
      *                         }
      *                     }
      *                     
      *                     if(cdWinner.isOffCooldown())
      *                     {
-     *                         cdWinner.setCooldown(DuelDimension.commonConfig().winnerCooldown.get());
+     *                         cdWinner.setCooldown(DuelDimension.commonConfig.winnerCooldown.get());
      *                     }
      *                     
      *                     if(cdLoser.isOffCooldown())
      *                     {
-     *                         cdLoser.setCooldown(DuelDimension.commonConfig().loserCooldown.get());
+     *                         cdLoser.setCooldown(DuelDimension.commonConfig.loserCooldown.get());
      *                     }
      *                     
      *                     for(String command : commands)
@@ -224,13 +218,12 @@ public class DdUtil
     /*
      * Parked with the cooldown phase. Both of these hang off Forge's
      * COOLDOWN_HOLDER capability, which becomes a data attachment when the
-     * cooldown system ports; the bodies are kept verbatim so that port is a
-     * matter of swapping how the holder is reached, not rewriting the rules.
+     * cooldown system ports. The bodies are kept verbatim so that port is a
+     * matter of changing how the holder is reached, not rewriting the rules.
      *
-     * Note the .get() calls below: upstream two of the four branches in each
-     * block called ConfigValue.getPath(), which returns the config file path
-     * rather than the configured commands. It compiled because both are
-     * List<String>. Fixed here; the Forge tree still has it.
+     * The .get() calls below were .getPath() upstream in two of the four
+     * branches of each block -- the config file path, not the commands. It
+     * compiled because both are List<String>. Fixed here; Forge still has it.
      *     public static void executeDrawCommands(Player player1, Player player2)
      *     {
      *         if(player1.level() instanceof ServerLevel)
@@ -249,12 +242,12 @@ public class DdUtil
      *                         if(cd2.isOffCooldown())
      *                         {
      *                             // both off CD
-     *                             commands = DuelDimension.commonConfig().drawBothOffCDCommands.get();
+     *                             commands = DuelDimension.commonConfig.drawBothOffCDCommands.get();
      *                         }
      *                         else
      *                         {
      *                             // p1 off CD
-     *                             commands = DuelDimension.commonConfig().drawPlayer1OffCDCommands.get();
+     *                             commands = DuelDimension.commonConfig.drawPlayer1OffCDCommands.get();
      *                         }
      *                     }
      *                     else
@@ -262,23 +255,23 @@ public class DdUtil
      *                         if(cd2.isOffCooldown())
      *                         {
      *                             // p2 off CD
-     *                             commands = DuelDimension.commonConfig().drawPlayer2OffCDCommands.get();
+     *                             commands = DuelDimension.commonConfig.drawPlayer2OffCDCommands.get();
      *                         }
      *                         else
      *                         {
      *                             // both on CD
-     *                             commands = DuelDimension.commonConfig().drawBothOnCDCommands.get();
+     *                             commands = DuelDimension.commonConfig.drawBothOnCDCommands.get();
      *                         }
      *                     }
      *                     
      *                     if(cd1.isOffCooldown())
      *                     {
-     *                         cd1.setCooldown(DuelDimension.commonConfig().drawCooldown.get());
+     *                         cd1.setCooldown(DuelDimension.commonConfig.drawCooldown.get());
      *                     }
      *                     
      *                     if(cd2.isOffCooldown())
      *                     {
-     *                         cd2.setCooldown(DuelDimension.commonConfig().drawCooldown.get());
+     *                         cd2.setCooldown(DuelDimension.commonConfig.drawCooldown.get());
      *                     }
      *                     
      *                     for(String command : commands)

@@ -27,6 +27,13 @@ public class DuelDimensionFabric implements ModInitializer
     @Override
     public void onInitialize()
     {
-        LOG.info("Duel Dimension (Fabric fork): engine core loaded; game-facing phases per PORTING.md");
+        // Order matters exactly once here: the creative tabs name items, so the
+        // items have to exist first. Everything else is independent.
+        de.cas_ual_ty.dueldimension.DdComponents.register();
+        de.cas_ual_ty.dueldimension.DdItems.register();
+        de.cas_ual_ty.dueldimension.DdItemGroup.register();
+
+        LOG.info("Duel Dimension (Fabric fork): engine core and items loaded;"
+            + " remaining phases per PORTING.md");
     }
 }

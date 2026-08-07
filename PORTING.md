@@ -44,6 +44,18 @@ Measured off the 26.2 jars with `javap`, not guessed. These bite every phase:
 - Forge's capability system has no equivalent; `ItemStackHandler`,
   `INBTSerializable` and `getCapability` all need replacing with attachments
   or plain fields.
+- `Item.Properties.setId(ResourceKey<Item>)` is now **required** — an item has
+  to know its own registry id before it is constructed.
+- `Item.Properties.tab(...)` is gone and so is `fillItemCategory`. A tab
+  supplies its own contents; an item says nothing about tabs.
+- `appendHoverText` takes `(stack, TooltipContext, TooltipDisplay,
+  Consumer<Component>, TooltipFlag)` — lines are fed to a consumer, not added
+  to a list.
+- `Item.use` returns `InteractionResult`; `InteractionResultHolder` is gone.
+- `Level.isClientSide` is a method.
+- **Fabric API dropped `FabricItemGroup`** for 26.2 — the module is not even a
+  dependency of the umbrella any more. Use vanilla's
+  `CreativeModeTab.builder(Row, int)`.
 
 Which is why phase 1 replaced the hand-written `save()`/`load()` pairs with
 Codecs rather than translating them: both places a profile now persists ask
@@ -89,20 +101,30 @@ is usually the larger half of the work, not Forge-vs-Fabric.
    the attachment *is* the storage, so a read gives the live object and there
    is no flush to remember. Two assertions are parked here that measure a
    reward against `ShopStock.BASE_PRICE`; restore them with phase 2.
-2. **In progress — the card data layer is across.** `DdDatabase`, `Properties`
+2. **In progress — the card data layer and the item foundation are across.** `DdDatabase`, `Properties`
    and the whole `card/properties` package, `CardHolder`, `CardSet`, the
    rarity and set data, `DNCList`, the task workers, `ShopStock`, the sided
    proxy, and a JSON-file `CommonConfig` replacing `ForgeConfigSpec` — which
    kept the `Value.get()` shape so three dozen call sites did not have to
    change. **128 tests green.**
 
-   Still to do in this phase, and all of it blocked on the same two things —
-   there are no items and no registries yet:
-   `CardItem`, `CardSleevesItem`/`Type`, `CardSetItem`/`BaseItem`/`Opened`,
-   `ItemStackCardHolder`, the three `CardPuller`s and `PullType`,
-   `CardSetContainer`(`Contents`), `YDMItemHandler`, `ICooldownHolder`, and
-   `DdUtil`'s two command-executing methods. Each is parked with a comment
-   saying so rather than deleted.
+   Registration now works end to end: `DdComponents` (the card component),
+   `DdItems` (registry + `setId`), `DdItemGroup` (two creative tabs),
+   `CardItem`, `CosmeticItem`, `ItemStackCardHolder`. **128 tests green, 121
+   classes.**
+
+   The interesting piece is `DdComponents`. `ItemStack` has no NBT at all, so
+   the four values the Forge build wrote into a stack's tag — card id, artwork
+   index, rarity, print code — became a typed component with a Codec for disk
+   and a stream codec for the wire. `ItemStackCardHolder` reads and writes that
+   instead, and since a component is immutable it has to put a fresh one back
+   rather than mutate in place.
+
+   Still to do in this phase: `CardSleevesItem`/`Type`,
+   `CardSetItem`/`BaseItem`/`Opened`, the three `CardPuller`s and `PullType`,
+   `CardSetContainer`(`Contents`), `YDMItemHandler`, `ICooldownHolder`,
+   `DdUtil`'s two command-executing methods, and blocks/entities/sounds/
+   containers. Each is parked with a comment saying so rather than deleted.
 
 3. **Registries & content** — items, blocks, entities (`DuelistEntity`),
    sounds; `DeferredRegister` → direct `Registry.register`, creative tabs,
