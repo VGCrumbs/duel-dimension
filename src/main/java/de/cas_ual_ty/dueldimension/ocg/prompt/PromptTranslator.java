@@ -116,9 +116,12 @@ public class PromptTranslator
                 option.loc() == null ? -1 : option.loc().controller(),
                 option.loc() == null ? 0 : option.loc().location(),
                 option.loc() == null ? -1 : option.loc().sequence())));
-            return new EnginePrompt(EnginePrompt.Kind.CHOOSE,
+            EnginePrompt window = new EnginePrompt(EnginePrompt.Kind.CHOOSE,
                 chain.forced() ? "You must respond" : "Respond to the chain?",
                 options, chain.forced() ? 1 : 0, 1, !chain.forced(), field);
+            // A forced response is not a window anyone may skip: the core will
+            // refuse an empty answer, so it is deliberately not marked.
+            return chain.forced() ? window : window.asChainWindow();
         }
 
         if(message instanceof DuelMessage.SelectPosition position)

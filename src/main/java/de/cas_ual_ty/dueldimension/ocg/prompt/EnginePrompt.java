@@ -17,8 +17,25 @@ import java.util.List;
  * forge an illegal play.
  */
 public record EnginePrompt(Kind kind, String title, List<Option> options, int minSelect, int maxSelect,
-    boolean cancelable, BoardSnapshot field)
+    boolean cancelable, BoardSnapshot field, boolean chainWindow)
 {
+    /**
+     * Every prompt except a chain window, which is the overwhelming majority
+     * of them. Kept so the eighteen places that build a prompt do not each have
+     * to say "not a chain window".
+     */
+    public EnginePrompt(Kind kind, String title, List<Option> options, int minSelect, int maxSelect,
+        boolean cancelable, BoardSnapshot field)
+    {
+        this(kind, title, options, minSelect, maxSelect, cancelable, field, false);
+    }
+
+    /** The same prompt, marked as a chain window. */
+    public EnginePrompt asChainWindow()
+    {
+        return new EnginePrompt(kind, title, options, minSelect, maxSelect, cancelable, field, true);
+    }
+
     public enum Kind
     {
         /** Pick exactly one option. */
@@ -123,6 +140,7 @@ public record EnginePrompt(Kind kind, String title, List<Option> options, int mi
         buffer.writeVarInt(minSelect);
         buffer.writeVarInt(maxSelect);
         buffer.writeBoolean(cancelable);
+        buffer.writeBoolean(chainWindow);
         field.write(buffer);
     }
 
@@ -136,15 +154,20 @@ public record EnginePrompt(Kind kind, String title, List<Option> options, int mi
         {
             options.add(Option.read(buffer));
         }
-        return new EnginePrompt(kind, title, options, buffer.readVarInt(), buffer.readVarInt(),
-            buffer.readBoolean(), BoardSnapshot.read(buffer));
+        int min = buffer.readVarInt();
+        int max = buffer.readVarInt();
+        boolean cancelable = buffer.readBoolean();
+        boolean chainWindow = buffer.readBoolean();
+        return new EnginePrompt(kind, title, options, min, max, cancelable,
+            BoardSnapshot.read(buffer), chainWindow);
     }
 
     /** True when exactly one option is expected — the common case, one click. */
     /** The same prompt under a different heading. */
     public EnginePrompt withTitle(String replacement)
     {
-        return new EnginePrompt(kind, replacement, options, minSelect, maxSelect, cancelable, field);
+        return new EnginePrompt(kind, replacement, options, minSelect, maxSelect, cancelable,
+            field, chainWindow);
     }
 
     public boolean isSingleChoice()

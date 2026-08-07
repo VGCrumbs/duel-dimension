@@ -123,6 +123,20 @@ public class EngineDuelScreen extends Screen
         rebuild();
     }
 
+    /**
+     * Whether the right mouse button is down right now.
+     * <p>
+     * Asked of the window rather than tracked from click events: the button may
+     * already have been held when the prompt arrived, and a press that happened
+     * before this screen existed produces no event for it to have seen.
+     */
+    private boolean rightButtonHeld()
+    {
+        return minecraft != null && org.lwjgl.glfw.GLFW.glfwGetMouseButton(
+            minecraft.getWindow().getWindow(),
+            org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
+    }
+
     @Override
     public void tick()
     {
@@ -135,6 +149,20 @@ public class EngineDuelScreen extends Screen
             onClose();
             return;
         }
+        // Holding the right button waves chain windows through. A long chain
+        // asks the same question after every link, and a player who has decided
+        // not to respond to any of it should be able to say so once by holding
+        // rather than clicking through each in turn. Only skippable windows go:
+        // a forced response is not a question, and the core would refuse an
+        // empty answer to it.
+        EnginePrompt open = shownPrompt;
+        if(open != null && open.chainWindow() && open.cancelable() && !answered
+            && rightButtonHeld())
+        {
+            answer(new int[0], 0);
+            return;
+        }
+
         // No gate needed here any more: the prompt is only ever set by a
         // zero-length step in the playback queue, behind every event that
         // preceded it, so by the time it changes the board has caught up.
@@ -1509,6 +1537,12 @@ public class EngineDuelScreen extends Screen
         if(prompt.maxSelect() > 1)
         {
             text = text + "  (" + selected.size() + "/" + prompt.maxSelect() + ")";
+        }
+        if(prompt.chainWindow() && prompt.cancelable())
+        {
+            // Named, because holding a button is not a thing anyone tries by
+            // accident and a long chain is exactly when it is worth knowing.
+            text = text + "   [hold right-click to pass]";
         }
 
         int textWidth = font.width(text);
