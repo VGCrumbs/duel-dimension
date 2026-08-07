@@ -51,12 +51,61 @@ public final class DdNetwork
     public static void register()
     {
         ProfilePayloads.register();
+
+        // Outfits: what a duellist is wearing. The wear request is a client's
+        // to make, the answer everybody's to see.
+        serverbound(de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Wear.TYPE,
+            de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Wear.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Worn.TYPE,
+            de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Worn.CODEC);
+
+        // The duel lobby.
+        clientbound(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.OpenLobby.TYPE,
+            de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.OpenLobby.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CloseLobby.TYPE,
+            de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CloseLobby.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Configure.TYPE,
+            de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Configure.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Ready.TYPE,
+            de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Ready.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Leave.TYPE,
+            de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Leave.CODEC);
     }
 
     /** Registers the server's side of every message a client may send. */
     public static void registerServerHandlers()
     {
         ProfilePayloads.registerServerHandlers();
+
+        onServer(de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Wear.TYPE,
+            (message, player) ->
+        {
+            // Checked against the catalogue rather than stored as sent: an id
+            // the server does not know would be a texture path a client chose,
+            // which is not a client's to choose.
+            if(!de.cas_ual_ty.dueldimension.duel.outfit.Outfits.exists(message.outfit()))
+            {
+                player.sendSystemMessage(net.minecraft.network.chat.Component
+                    .literal("No such outfit.")
+                    .withStyle(net.minecraft.ChatFormatting.RED));
+                return;
+            }
+            de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.get(player)
+                .setOutfit(message.outfit());
+            de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.save(player);
+            ProfilePayloads.sync(player);
+            de.cas_ual_ty.dueldimension.duel.outfit.WornOutfits.broadcast(player);
+        });
+
+        onServer(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Configure.TYPE,
+            (message, player) ->
+                de.cas_ual_ty.dueldimension.duel.match.DuelLobby.configure(player,
+                    message.config()));
+        onServer(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Ready.TYPE,
+            (message, player) ->
+                de.cas_ual_ty.dueldimension.duel.match.DuelLobby.ready(player, message.ready()));
+        onServer(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Leave.TYPE,
+            (message, player) -> de.cas_ual_ty.dueldimension.duel.match.DuelLobby.leave(player));
     }
 
     // ---- helpers the payload classes share ----

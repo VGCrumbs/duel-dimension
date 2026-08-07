@@ -59,7 +59,22 @@ TAG_EMPTIES = {"getCompound": "getCompoundOrEmpty", "getList": "getListOrEmpty"}
 # worth automating -- the same lesson the tag getters taught.
 FIELD_TO_METHOD = ["isClientSide"]
 
+# Fields that became a longer expression rather than a same-named accessor.
+# Applied with the same per-line import guard, for the same reason.
+FIELD_TO_EXPRESSION = {"server": "level().getServer()"}
+
 MISC = [
+    # GameProfile became a record: getName/getId are name/id. Anchored on
+    # getGameProfile() so this cannot touch any other getName in the codebase.
+    (re.compile(r"(getGameProfile\(\))\.getName\(\)"), r"\1.name()"),
+    (re.compile(r"(getGameProfile\(\))\.getId\(\)"), r"\1.id()"),
+    # Forge's channel.send(PacketDistributor.PLAYER.with(() -> p), msg) is
+    # Fabric's ServerPlayNetworking.send(p, msg). Written as one rule because
+    # the pattern is identical everywhere it appears, down to the lambda.
+    (re.compile(r"(?:\w+\.)*DuelDimension\.channel\.send\(\s*"
+                r"(?:net\.minecraftforge\.network\.)?PacketDistributor\.PLAYER"
+                r"\.with\(\(\)\s*->\s*([^)]+)\),\s*", re.S),
+     r"net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(\1, "),
     # contains(key, type) lost its type argument; the type test is now the
     # getter returning an empty Optional.
     (re.compile(r"\.contains\((\"[^\"]*\"|[A-Za-z_][\w.]*)\s*,\s*[^)]+\)"), r".contains(\1)"),
@@ -171,6 +186,8 @@ def rewrite_field_accessors(src):
                 # A dot, the name, and something that is not already a call and
                 # not a further member access (`server.level.ServerLevel`).
                 line = re.sub(r"\.%s\b(?!\s*\()(?!\s*\.)" % field, ".%s()" % field, line)
+            for field, expression in FIELD_TO_EXPRESSION.items():
+                line = re.sub(r"\.%s\b(?!\s*\()(?!\s*\.)" % field, "." + expression, line)
         out.append(line)
     return "\n".join(out)
 

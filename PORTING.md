@@ -158,9 +158,28 @@ is usually the larger half of the work, not Forge-vs-Fabric.
    Codec now, so the message carries a `DuelProfile` and the wire format is the
    one thing neither side can get wrong.
 
-   Remaining: `ShopMessages`, `LobbyMessages`, `OutfitMessages`,
-   `PromptMessages`, `CardSupplyMessages`, `PackMessages` and the duel
-   messages — about 27 more, all following the shape `ProfilePayloads` sets.
+   `OutfitMessages` and `LobbyMessages` followed, with the outfit and match
+   layers under them (`Outfits`, `WornOutfits`, `MatchConfig`, `DuelLobby`).
+   **130 classes, 128 tests green.**
+
+   Those two were nearly free, and the reason is worth writing down.
+   `tools/port_payloads.py` converts a Forge message record in place, because
+   the Forge records were already the right shape and nobody planned it that
+   way: each carries `static void encode(T, FriendlyByteBuf)` and
+   `static T decode(FriendlyByteBuf)`, which are exactly
+   `StreamMemberEncoder.encode(T, B)` and `StreamDecoder.decode(B)`. So
+   `CustomPacketPayload.codec(X::encode, X::decode)` reuses the existing
+   methods verbatim — the wire format is never retyped, which is how a port
+   quietly changes one. Each record gains a `Type`, that codec, and `type()`.
+
+   What the tool does **not** do is handlers: `handle(msg, Supplier<Context>)`
+   has no equivalent, since Fabric hands the payload and the sender to a
+   receiver registered by direction. `tools/park_handlers.py` comments each one
+   out so the body survives as the record of what the message is for, and the
+   logic moves to `DdNetwork.registerServerHandlers` by hand.
+
+   Remaining: `ShopMessages`, `PromptMessages`, `CardSupplyMessages`,
+   `PackMessages` and the duel messages — about 20 more, all the same shape.
 5. **Server events & commands** — login/logout/respawn hooks →
    `ServerPlayConnectionEvents` etc.; command registration; `FreeMode`
    SavedData; duel lifecycle driving (`DuelistDuels`).
