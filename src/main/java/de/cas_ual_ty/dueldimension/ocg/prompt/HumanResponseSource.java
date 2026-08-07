@@ -35,6 +35,12 @@ public class HumanResponseSource implements ResponseSource
 
     private final PromptTranslator translator;
     private final BiConsumer<EnginePrompt, HumanResponseSource> sendPrompt;
+    /**
+     * Set when the core refused the last answer. Read and cleared by the next
+     * prompt, which says so rather than reappearing unchanged -- a question
+     * asked twice with no explanation reads as a dropped click.
+     */
+    private volatile boolean rejected;
     private final SynchronousQueue<Answer> answers = new SynchronousQueue<>();
 
     private BoardObserver board;
@@ -100,6 +106,12 @@ public class HumanResponseSource implements ResponseSource
     }
 
     @Override
+    public void onAnswerRejected()
+    {
+        rejected = true;
+    }
+
+    @Override
     public byte[] respond(RawMessage prompt)
     {
         DuelMessage decoded = DuelMessage.decode(prompt);
@@ -119,6 +131,14 @@ public class HumanResponseSource implements ResponseSource
             // them rather than opening a screen with no buttons. If even that
             // is impossible, refuse instead of guessing on their behalf.
             return translator.autoAnswer(decoded, chainPreference);
+        }
+
+        if(rejected)
+        {
+            rejected = false;
+            payload = payload.withTitle(payload.title().isBlank()
+                ? "That move was not allowed"
+                : "Not allowed: " + payload.title());
         }
 
         try

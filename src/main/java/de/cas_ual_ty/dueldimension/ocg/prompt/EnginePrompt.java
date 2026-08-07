@@ -141,6 +141,12 @@ public record EnginePrompt(Kind kind, String title, List<Option> options, int mi
     }
 
     /** True when exactly one option is expected — the common case, one click. */
+    /** The same prompt under a different heading. */
+    public EnginePrompt withTitle(String replacement)
+    {
+        return new EnginePrompt(kind, replacement, options, minSelect, maxSelect, cancelable, field);
+    }
+
     public boolean isSingleChoice()
     {
         return kind == Kind.CHOOSE || (kind == Kind.MULTI && maxSelect <= 1);

@@ -182,6 +182,63 @@ public class DuelAnimations
      * and the wait before the next event starts, which is exactly what
      * WaitFrameSignal does in the reference.
      */
+    /** How long a revealed card stays on screen. */
+    private static final long REVEAL_MS = 2200;
+
+    /** Cards an effect is currently showing this player. */
+    private final List<Playing> reveals = new ArrayList<>();
+
+    /**
+     * Cards an effect is showing, laid across the middle of the screen.
+     * <p>
+     * Drawn as a row rather than at the zone each card came from: a reveal
+     * often names cards in a deck or a face-down hand, which have no place on
+     * the board to point at, and a player being shown something wants to read
+     * it rather than hunt for it.
+     */
+    public void renderReveals(PoseStack poseStack, net.minecraft.client.gui.Font font,
+        int screenWidth, int screenHeight, long now)
+    {
+        reveals.removeIf(playing -> playing.done(now));
+        if(reveals.isEmpty())
+        {
+            return;
+        }
+        int cardW = 68;
+        int cardH = Math.round(cardW / DuelTextures.CARD_ASPECT);
+        int gap = 6;
+        int total = reveals.size() * cardW + (reveals.size() - 1) * gap;
+        int x = (screenWidth - total) / 2;
+        int y = (screenHeight - cardH) / 2 - 20;
+
+        String caption = reveals.size() == 1 ? "Revealed" : "Revealed " + reveals.size() + " cards";
+        net.minecraft.client.gui.GuiComponent.fill(poseStack, 0, y - 18, screenWidth,
+            y + cardH + 8, 0x88000000);
+        font.drawShadow(poseStack, caption, screenWidth / 2F - font.width(caption) / 2F,
+            y - 14, 0xFFF4D089);
+
+        for(Playing playing : reveals)
+        {
+            Properties card = DdDatabase.PROPERTIES_LIST.get((long)playing.event().code());
+            ScreenUtil.white();
+            if(card == null)
+            {
+                DuelTextures.bindSmooth(DuelTextures.COVER);
+                DdBlitUtil.fullBlit(poseStack, x, y, cardW, cardH);
+            }
+            else
+            {
+                DuelTextures.bindSmooth(
+                    DuelTextures.card(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE));
+                DdBlitUtil.blit(poseStack, x, y, cardW, cardH,
+                    DuelTextures.CARD_U0, DuelTextures.CARD_V0,
+                    DuelTextures.CARD_U1 - DuelTextures.CARD_U0,
+                    DuelTextures.CARD_V1 - DuelTextures.CARD_V0, 1, 1);
+            }
+            x += cardW + gap;
+        }
+    }
+
     private long duration(DuelEvent event)
     {
         long base = switch(event.kind())
@@ -203,6 +260,9 @@ public class DuelAnimations
             // MSG_TOSS_COIN and MSG_TOSS_DICE both hold 40 frames in
             // duelclient.cpp, the same beat as a phase change.
             case COIN, DICE -> TOSS_MS;
+            // A reveal is read, not watched: it holds long enough to take in a
+            // card name rather than for the length of an animation.
+            case REVEAL -> REVEAL_MS;
             case WIN -> WIN_MS;
         };
         return Math.max(FLOOR_MS, Math.round(base * backlogScale()));
@@ -269,6 +329,7 @@ public class DuelAnimations
             case DAMAGE, RECOVER -> flashes.add(new Playing(event, now, duration));
             case ATTACK -> attacks.add(new Playing(event, now, duration));
             case CHAINING, BECOME_TARGET -> overlays.add(new Playing(event, now, duration));
+            case REVEAL -> reveals.add(new Playing(event, now, duration));
             case COIN, DICE -> tosses.add(new Playing(event, now, duration));
             default ->
             {

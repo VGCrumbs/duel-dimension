@@ -156,6 +156,17 @@ public sealed interface DuelMessage
     {
     }
 
+    /**
+     * MSG_CONFIRM_CARDS / MSG_CONFIRM_DECKTOP / MSG_CONFIRM_EXTRATOP: cards an
+     * effect is showing to one player.
+     * <p>
+     * {@code player} is who is being SHOWN them, not who owns them -- "look at
+     * your opponent's hand" shows the looker cards they do not control.
+     */
+    record ConfirmCards(int player, List<CardLocation> cards, List<Integer> codes) implements DuelMessage
+    {
+    }
+
     /** MSG_SORT_CARD / MSG_SORT_CHAIN. Location is a u32 here, not the usual loc_info. */
     record SortableCard(int code, int controller, int location, int sequence)
     {
@@ -415,6 +426,31 @@ public sealed interface DuelMessage
                     chains.add(new ChainOption(in.u32(), in.loc(), in.u64(), in.u8()));
                 }
                 yield new SelectChain(player, specialCount, forced, hintSelf, hintOther, chains);
+            }
+            // Layout measured off a live core rather than assumed:
+            //   player u8, count u32, then per card code u32, controller u8,
+            //   location u8, sequence u32
+            // -- five bytes of header and ten per card, which is what makes a
+            // one-card reveal fifteen bytes long. Guessing it as u8 count and
+            // u8 sequence left exactly six bytes over on every message.
+            //
+            // Only MSG_CONFIRM_CARDS is decoded here. The DECKTOP and EXTRATOP
+            // forms never appeared in the duels sampled, so their layout is
+            // unmeasured and they are left undecoded rather than guessed at.
+            case OcgConstants.MSG_CONFIRM_CARDS ->
+            {
+                int player = in.u8();
+                int count = in.u32();
+                List<CardLocation> where = new java.util.ArrayList<>(Math.max(0, count));
+                List<Integer> codes = new java.util.ArrayList<>(Math.max(0, count));
+                for(int i = 0; i < count; i++)
+                {
+                    codes.add(in.u32());
+                    int controller = in.u8();
+                    int location = in.u8();
+                    where.add(new CardLocation(controller, location, in.u32(), 0));
+                }
+                yield new ConfirmCards(player, where, codes);
             }
             case OcgConstants.MSG_SELECT_PLACE -> new SelectPlace(in.u8(), in.u8(), in.u32() & 0xFFFFFFFFL, false);
             case OcgConstants.MSG_SELECT_DISFIELD -> new SelectPlace(in.u8(), in.u8(), in.u32() & 0xFFFFFFFFL, true);

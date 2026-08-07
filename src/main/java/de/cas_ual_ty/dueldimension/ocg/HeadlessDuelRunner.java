@@ -306,9 +306,17 @@ public class HeadlessDuelRunner
         return new java.util.Random(mixed);
     }
 
+    /** Rejections of one question before the duel is given up on. */
+    private static final int MAX_REJECTIONS = 32;
+
     private void pump(OcgDuel duel, DuelTrace trace, int maxSteps)
     {
         RawMessage lastMessage = null;
+        // Consecutive rejections of the same question. A human corrects
+        // themselves and a bot may not, so this is bounded rather than trusted
+        // to end: without it a bot that keeps giving the same illegal answer
+        // spins the duel thread forever.
+        int rejections = 0;
 
         for(trace.steps = 0; trace.steps < maxSteps; trace.steps++)
         {
@@ -318,7 +326,24 @@ public class HeadlessDuelRunner
             {
                 RawMessage message = RawMessage.of(bytes);
                 trace.messages.add(message);
+                if(message.type() == OcgConstants.MSG_RETRY)
+                {
+                    // NOT the message to answer. MSG_RETRY says the previous
+                    // answer was refused and the previous QUESTION still
+                    // stands, so the prompt being responded to is left alone --
+                    // treating the rejection itself as the prompt asked the
+                    // responder to answer a message it cannot read, and its
+                    // first payload byte, meaning nothing, chose which player
+                    // was asked.
+                    rejections++;
+                    for(ResponseSource responder : config.responders)
+                    {
+                        responder.onAnswerRejected();
+                    }
+                    continue;
+                }
                 lastMessage = message;
+                rejections = 0;
 
                 if(message.type() == OcgConstants.MSG_WIN && message.payload().length >= 2)
                 {
@@ -349,6 +374,13 @@ public class HeadlessDuelRunner
                 if(lastMessage == null)
                 {
                     return; // AWAITING with no prompt: corrupt state, abort
+                }
+                if(rejections > MAX_REJECTIONS)
+                {
+                    // The same question refused this many times running means
+                    // nobody here can answer it; ending is better than a thread
+                    // that never returns.
+                    return;
                 }
                 byte[] response = config.responders[lastMessage.promptedPlayer() & 1].respond(lastMessage);
                 if(response == null)

@@ -79,11 +79,29 @@ public final class DuelistDuels
         final DuelSession session;
         /** Indexed by the core's seat number; null where a bot sits. */
         final Watcher[] seats;
+        /**
+         * The match this duel is one game of, or null for a one-off.
+         * <p>
+         * The machine was created per invitation and then forgotten the moment
+         * the duel started, so nothing carried a match past its first game.
+         * Holding it here is what lets the end of a duel be the start of the
+         * next one.
+         */
+        de.cas_ual_ty.dueldimension.duel.match.MatchStateMachine machine;
+        de.cas_ual_ty.dueldimension.duel.match.MatchConfig config;
+        /** Games won, by seat. */
+        final int[] wins = new int[2];
+        int gameNumber = 1;
 
         RunningDuel(DuelSession session, Watcher seat0, Watcher seat1)
         {
             this.session = session;
             this.seats = new Watcher[] {seat0, seat1};
+        }
+
+        boolean isMatch()
+        {
+            return machine != null && config != null && config.format().maxDuels() > 1;
         }
 
         boolean isTwoPlayer()
@@ -683,6 +701,7 @@ public final class DuelistDuels
 
             if(!session.isRunning())
             {
+                concludeGame(server, duel, winner[0]);
                 for(Watcher watcher : duel.seats)
                 {
                     if(watcher != null)
@@ -700,6 +719,117 @@ public final class DuelistDuels
             }
         }
         finished.forEach(ACTIVE::remove);
+    }
+
+    /**
+     * Scores a finished game and, in a match, starts the next one.
+     * <p>
+     * Called once per duel that ends. A one-off duel simply finishes; a match
+     * tallies the win, tells both players the running score, and either
+     * declares the match or plays the next game.
+     * <p>
+     * Side decking belongs between those games — INTERMISSION is the state for
+     * it — and there is no screen for it yet, so the next game starts with the
+     * same decks. That is stated here rather than left as a silent gap.
+     */
+    private static void concludeGame(net.minecraft.server.MinecraftServer server,
+        RunningDuel duel, int winnerSeat)
+    {
+        if(duel.machine == null || duel.config == null)
+        {
+            return;
+        }
+        if(!duel.machine.tryMoveTo(de.cas_ual_ty.dueldimension.duel.match.MatchState.GAME_OVER))
+        {
+            return;
+        }
+        if(winnerSeat == 0 || winnerSeat == 1)
+        {
+            duel.wins[winnerSeat]++;
+        }
+
+        int needed = duel.config.format().winsNeeded();
+        boolean decided = duel.wins[0] >= needed || duel.wins[1] >= needed;
+        // A draw takes a game off the count without giving anyone a win, so a
+        // match of draws still ends rather than running forever.
+        boolean exhausted = duel.gameNumber >= duel.config.format().maxDuels();
+
+        if(!duel.isMatch() || decided || exhausted)
+        {
+            duel.machine.finish(decided
+                ? "match won " + duel.wins[0] + "-" + duel.wins[1]
+                : "match ended " + duel.wins[0] + "-" + duel.wins[1]);
+            if(duel.isMatch())
+            {
+                announceToBoth(server, duel, Component.literal("Match over  "
+                    + duel.wins[0] + " - " + duel.wins[1]).withStyle(ChatFormatting.GOLD));
+            }
+            return;
+        }
+
+        duel.machine.moveTo(de.cas_ual_ty.dueldimension.duel.match.MatchState.INTERMISSION);
+        announceToBoth(server, duel, Component.literal("Game " + duel.gameNumber + " over  "
+            + duel.wins[0] + " - " + duel.wins[1] + "   starting game " + (duel.gameNumber + 1))
+            .withStyle(ChatFormatting.GOLD));
+
+        ServerPlayer first = server.getPlayerList().getPlayer(duel.seats[0].playerId());
+        ServerPlayer second = server.getPlayerList().getPlayer(duel.seats[1].playerId());
+        if(first == null || second == null)
+        {
+            duel.machine.cancel("a player left between games");
+            return;
+        }
+
+        int[] carried = {duel.wins[0], duel.wins[1]};
+        int nextGame = duel.gameNumber + 1;
+        de.cas_ual_ty.dueldimension.duel.match.MatchStateMachine machine = duel.machine;
+        de.cas_ual_ty.dueldimension.duel.match.MatchConfig config = duel.config;
+
+        String error = startPlayerDuel(first, second);
+        if(error != null)
+        {
+            machine.cancel(error);
+            announceToBoth(server, duel, Component.literal(error).withStyle(ChatFormatting.RED));
+            return;
+        }
+        // The new duel is a fresh RunningDuel, so the match travels across by
+        // hand: the score and the game number belong to the match, not to any
+        // one game of it.
+        RunningDuel next = ACTIVE.get(Watcher.of(first));
+        if(next != null)
+        {
+            next.machine = machine;
+            next.config = config;
+            next.wins[0] = carried[0];
+            next.wins[1] = carried[1];
+            next.gameNumber = nextGame;
+            machine.tryMoveTo(de.cas_ual_ty.dueldimension.duel.match.MatchState.DUELING);
+        }
+    }
+
+    private static void announceToBoth(net.minecraft.server.MinecraftServer server,
+        RunningDuel duel, Component line)
+    {
+        for(Watcher watcher : duel.seats)
+        {
+            if(watcher != null)
+            {
+                watcher.send(server, line);
+            }
+        }
+    }
+
+    /** Attaches a match to the duel these two players just started. */
+    public static void attachMatch(ServerPlayer first,
+        de.cas_ual_ty.dueldimension.duel.match.MatchStateMachine machine,
+        de.cas_ual_ty.dueldimension.duel.match.MatchConfig config)
+    {
+        RunningDuel duel = ACTIVE.get(Watcher.of(first));
+        if(duel != null)
+        {
+            duel.machine = machine;
+            duel.config = config;
+        }
     }
 
     /** Turns an engine message into a chat line, or null for the noisy ones. */
@@ -795,6 +925,33 @@ public final class DuelistDuels
             return List.of(new DuelEvent(DuelEvent.Kind.CHAINING, chaining.code(),
                 -1, zoneOf(chaining.card(), viewer), 0, side(chaining.card().controller(), viewer)));
         }
+        // A reveal goes to the seat being shown it and to nobody else. This is
+        // the one message whose entire purpose is to hand information to one
+        // side, so sending it to both would leak exactly what it exists to
+        // control.
+        if(message instanceof DuelMessage.ConfirmCards confirm)
+        {
+            if(confirm.player() != viewer)
+            {
+                return List.of();
+            }
+            List<DuelEvent> revealed = new ArrayList<>();
+            for(int i = 0; i < confirm.codes().size(); i++)
+            {
+                int code = confirm.codes().get(i);
+                if(code == 0)
+                {
+                    // A face-down the core names as zero: there is nothing to
+                    // show, and drawing a blank would read as a broken card.
+                    continue;
+                }
+                de.cas_ual_ty.dueldimension.ocg.msg.CardLocation at = confirm.cards().get(i);
+                revealed.add(new DuelEvent(DuelEvent.Kind.REVEAL, code, -1,
+                    zoneOf(at, viewer), i, side(at.controller(), viewer)));
+            }
+            return revealed;
+        }
+
         if(message instanceof DuelMessage.BecomeTarget target)
         {
             List<DuelEvent> events = new ArrayList<>();

@@ -111,8 +111,8 @@ public final class DuelInvites
 
         PENDING.remove(target.getUUID());
 
-        // No lobby yet, so the configuration step is skipped and the duel
-        // starts on defaults. When the lobby lands it goes here, between
+        // No lobby yet, so the configuration step is skipped and the match
+        // runs on defaults. When the lobby lands it goes here, between
         // CONFIGURING and COIN_FLIP.
         invite.machine.moveTo(MatchState.COIN_FLIP);
         invite.machine.moveTo(MatchState.TURN_CHOICE);
@@ -124,6 +124,9 @@ public final class DuelInvites
             invite.machine.cancel(error);
             return error;
         }
+        // The machine follows the duel now instead of being dropped here, so
+        // the end of a game can be the start of the next one.
+        DuelistDuels.attachMatch(challenger, invite.machine, MatchConfig.DEFAULT);
         return null;
     }
 

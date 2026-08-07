@@ -47,6 +47,13 @@ public record DuelEvent(Kind kind, int code, int fromZone, int toZone, int amoun
         CHAINING,
         /** An effect picked this card as a target. */
         BECOME_TARGET,
+        /**
+         * A card an effect is showing to this player. Sent only to the seat
+         * being shown it: a reveal the opponent was not entitled to see is
+         * hidden information, and this is the one message whose whole purpose
+         * is to hand information to exactly one side.
+         */
+        REVEAL,
         PHASE,
         NEW_TURN,
         WIN

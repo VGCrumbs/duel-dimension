@@ -30,6 +30,19 @@ public interface ResponseSource
     }
 
     /**
+     * The core refused the last answer and is asking the same question again.
+     * <p>
+     * The core validates a response itself and emits MSG_RETRY when it does not
+     * accept one -- a tribute summon short a tribute, a sum that does not add
+     * up. A player who is simply asked again with no explanation would think
+     * the click was dropped, so this exists for the human path to say what
+     * happened. A bot needs nothing: it will be asked again regardless.
+     */
+    default void onAnswerRejected()
+    {
+    }
+
+    /**
      * Answers the prompt the core is AWAITING, in the core's response
      * encoding for that message type. Returning null aborts the duel run
      * (no legal responder available) — the runner treats that as a failed
