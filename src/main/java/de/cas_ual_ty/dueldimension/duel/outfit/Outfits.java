@@ -59,10 +59,10 @@ public final class Outfits
     /** No outfit: the player's own skin, unchanged. */
     public static final Outfit NONE = new Outfit("", "None", null, "", false);
 
-    public static final Outfit YUSEI = new Outfit("yusei", "Yusei's Outfit", skin("yusei"),
+    public static final Outfit YUSEI = new Outfit("yusei", "Yusei", skin("yusei"),
         "Credit: Daiosity (PlanetMinecraft)", false);
 
-    public static final Outfit KAIBA = new Outfit("kaiba", "Seto Kaiba's Outfit", skin("kaiba"),
+    public static final Outfit KAIBA = new Outfit("kaiba", "Kaiba", skin("kaiba"),
         "Credit: XyaMorph (PlanetMinecraft)", true);
 
     public static final List<Outfit> ALL = List.of(NONE, YUSEI, KAIBA);

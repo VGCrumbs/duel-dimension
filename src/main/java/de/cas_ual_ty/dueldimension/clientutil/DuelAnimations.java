@@ -70,8 +70,16 @@ public class DuelAnimations
      * here that is ours, stretched enough for the shards to read.
      */
     private static final long SHATTER_MS = frames(30);
-    /** Fragments per axis: the card breaks into SHARDS x SHARDS pieces. */
-    private static final int SHARDS = 3;
+    /**
+     * How many pieces a breaking card comes apart into, across and down.
+     * <p>
+     * Uneven on purpose — the cuts are not evenly spaced, so a five-by-four
+     * grid gives twenty shards of twenty different sizes. A square grid of
+     * equal squares reads as a card sliding apart into tiles, which is what
+     * this used to look like.
+     */
+    private static final int SHARD_COLUMNS = 5;
+    private static final int SHARD_ROWS = 4;
     /** However far behind we are, nothing flashes past faster than this. */
     private static final long FLOOR_MS = frames(5);
 
@@ -539,12 +547,24 @@ public class DuelAnimations
     private static final float LINE_HALF_WIDTH = 1.6F;
 
     /**
-     * A destroyed card breaking apart.
+     * A destroyed card breaking like glass.
      * <p>
-     * The card is cut into a grid of shards, each drawn from its own corner of
-     * the art (drawProjected already samples a UV window, which is what makes
-     * this possible), then thrown outwards from the centre and faded. Without
-     * it a destroyed card simply vanished into the graveyard count.
+     * Four things separate breaking glass from a picture coming apart, and the
+     * old effect — an even three-by-three grid drifting outward at a constant
+     * rate — had none of them:
+     * <ul>
+     * <li>the pieces are all different sizes, because a fracture does not
+     *     measure;</li>
+     * <li>they leave fast and slow down, rather than travelling at one speed
+     *     for the whole animation;</li>
+     * <li>they fall, because they weigh something;</li>
+     * <li>and they go out at once, from a point, with a flash of light at it.
+     * </ul>
+     * <p>
+     * Every piece of that comes out of {@link #shardNoise}, a hash of the card
+     * and the shard, rather than a random number generator: this runs once per
+     * frame and has to produce the same break each time, so the card that broke
+     * last frame is still breaking the same way this one.
      */
     public void renderShatters(PoseStack poseStack, FieldLayout.Projection projection, long now)
     {
@@ -563,44 +583,152 @@ public class DuelAnimations
                 continue;
             }
             float t = animation.progress(now);
-            float alpha = 1F - t * t;
+            int code = event.code();
             ResourceLocation texture = artFor(event.code());
 
-            float shardW = CARD_W / SHARDS;
-            float shardH = CARD_H / SHARDS;
             float centreX = rect.x() + rect.w() / 2F;
             float centreY = rect.y() + rect.h() / 2F;
+            float left = centreX - CARD_W / 2F;
+            float top = centreY - CARD_H / 2F;
 
-            for(int row = 0; row < SHARDS; row++)
+            // Where it broke: off centre, so the break is not symmetrical, but
+            // well inside the card so no shard starts on top of the impact.
+            float hitU = 0.3F + 0.4F * shardNoise(code, 0, 11);
+            float hitV = 0.3F + 0.4F * shardNoise(code, 0, 12);
+            float hitX = left + CARD_W * hitU;
+            float hitY = top + CARD_H * hitV;
+
+            // Out fast, then slowing: a fracture spends its energy at once.
+            float burst = 1F - (1F - t) * (1F - t);
+            // And down, because glass weighs something. Squared, since that is
+            // what falling does.
+            float fall = t * t * CARD_H * 0.55F;
+
+            float[] columns = shardCuts(code, SHARD_COLUMNS, 21);
+            float[] rows = shardCuts(code, SHARD_ROWS, 22);
+
+            for(int row = 0; row < SHARD_ROWS; row++)
             {
-                for(int column = 0; column < SHARDS; column++)
+                for(int column = 0; column < SHARD_COLUMNS; column++)
                 {
-                    // Where this shard starts, as a card-sized grid cell.
-                    float x = centreX - CARD_W / 2F + column * shardW;
-                    float y = centreY - CARD_H / 2F + row * shardH;
-                    // Thrown out from the middle, further the longer it runs.
-                    float awayX = (x + shardW / 2F) - centreX;
-                    float awayY = (y + shardH / 2F) - centreY;
-                    float drift = t * 1.9F;
+                    int index = row * SHARD_COLUMNS + column;
 
-                    // The matching window of the card's art.
+                    // The shard's own patch of the card, in 0..1 of the card.
+                    float fu0 = columns[column];
+                    float fu1 = columns[column + 1];
+                    float fv0 = rows[row];
+                    float fv1 = rows[row + 1];
+
+                    float shardW = CARD_W * (fu1 - fu0);
+                    float shardH = CARD_H * (fv1 - fv0);
+                    float x = left + CARD_W * fu0;
+                    float y = top + CARD_H * fv0;
+
+                    // Away from the impact, faster the closer it started to it.
+                    float awayX = (x + shardW / 2F) - hitX;
+                    float awayY = (y + shardH / 2F) - hitY;
+                    float reach = Math.max(0.001F, (float)Math.sqrt(awayX * awayX + awayY * awayY));
+                    float speed = (0.9F + 1.4F * shardNoise(code, index, 31))
+                        * (1F + CARD_W / (reach * 6F));
+
+                    // Shrinking as it goes: a shard tumbling edge-on catches
+                    // almost no light, and shrinking is the nearest thing to
+                    // that available to a quad that cannot turn.
+                    float shrink = 1F - 0.5F * t;
+                    float drawW = shardW * shrink;
+                    float drawH = shardH * shrink;
+
+                    // Each on its own schedule, so the group thins out instead
+                    // of every piece vanishing on the same frame.
+                    float fadeFrom = 0.3F + 0.35F * shardNoise(code, index, 41);
+                    float alpha = t <= fadeFrom ? 1F
+                        : Math.max(0F, 1F - (t - fadeFrom) / (1F - fadeFrom));
+                    if(alpha <= 0F)
+                    {
+                        continue;
+                    }
+
                     float u0 = DuelTextures.CARD_U0
-                        + (DuelTextures.CARD_U1 - DuelTextures.CARD_U0) * column / SHARDS;
+                        + (DuelTextures.CARD_U1 - DuelTextures.CARD_U0) * fu0;
                     float u1 = DuelTextures.CARD_U0
-                        + (DuelTextures.CARD_U1 - DuelTextures.CARD_U0) * (column + 1) / SHARDS;
+                        + (DuelTextures.CARD_U1 - DuelTextures.CARD_U0) * fu1;
                     float v0 = DuelTextures.CARD_V0
-                        + (DuelTextures.CARD_V1 - DuelTextures.CARD_V0) * row / SHARDS;
+                        + (DuelTextures.CARD_V1 - DuelTextures.CARD_V0) * fv0;
                     float v1 = DuelTextures.CARD_V0
-                        + (DuelTextures.CARD_V1 - DuelTextures.CARD_V0) * (row + 1) / SHARDS;
+                        + (DuelTextures.CARD_V1 - DuelTextures.CARD_V0) * fv1;
 
-                    com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1F, 1F, 1F, alpha);
+                    com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1F, 1F, 1F,
+                        alpha * alpha);
                     FieldQuad.drawProjected(poseStack, texture, projection,
-                        new FieldLayout.Rect(x + awayX * drift, y + awayY * drift, shardW, shardH),
+                        new FieldLayout.Rect(
+                            x + awayX * burst * speed + (shardW - drawW) / 2F,
+                            y + awayY * burst * speed + fall + (shardH - drawH) / 2F,
+                            drawW, drawH),
                         1, false, u0, v0, u1, v1);
                 }
             }
+
+            // The break itself: a flash over the card's last position, gone
+            // almost before it registers. It is what tells the eye the card was
+            // struck rather than that it decided to come apart.
+            if(t < FLASH_FRACTION)
+            {
+                float flash = 1F - t / FLASH_FRACTION;
+                com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1F, 1F, 1F,
+                    flash * flash * 0.8F);
+                FieldQuad.drawProjected(poseStack, DuelTextures.WHITE, projection,
+                    new FieldLayout.Rect(left, top, CARD_W, CARD_H), 1, false, 0F, 0F, 1F, 1F);
+            }
             com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
         }
+    }
+
+    /** How much of the animation the impact flash lasts. */
+    private static final float FLASH_FRACTION = 0.22F;
+
+    /**
+     * Where the cuts fall across one axis of a breaking card.
+     * <p>
+     * Widths between 0.6 and 1.6 of an even share, normalised so they still
+     * cover the card exactly. Returned as {@code pieces + 1} edges from 0 to 1,
+     * which is the form both the geometry and the texture window want.
+     */
+    private static float[] shardCuts(int code, int pieces, int salt)
+    {
+        float[] weight = new float[pieces];
+        float total = 0F;
+        for(int i = 0; i < pieces; i++)
+        {
+            weight[i] = 0.6F + shardNoise(code, i, salt);
+            total += weight[i];
+        }
+        float[] edge = new float[pieces + 1];
+        float at = 0F;
+        for(int i = 0; i < pieces; i++)
+        {
+            edge[i] = at;
+            at += weight[i] / total;
+        }
+        edge[pieces] = 1F;
+        return edge;
+    }
+
+    /**
+     * A number in 0..1 that depends only on the card, the shard and what is
+     * being asked.
+     * <p>
+     * Not a random number generator. This is called from a render pass that
+     * runs every frame of the animation, so drawing the same shard twice has to
+     * give the same answer twice — otherwise the card does not break, it
+     * seethes. A hash gives that for free and needs nothing remembered.
+     */
+    private static float shardNoise(int code, int index, int salt)
+    {
+        int hash = code * 0x9E3779B9 + index * 0x85EBCA6B + salt * 0xC2B2AE35;
+        hash ^= hash >>> 15;
+        hash *= 0x2545F491;
+        hash ^= hash >>> 13;
+        return (hash >>> 8) / (float)(1 << 24);
     }
 
     /**
