@@ -1258,11 +1258,7 @@ public class DeckEditorScreen extends Screen
             EditorState.flush();
             if(minecraft != null)
             {
-                // CardInfoScreen is its own piece of the client phase. Until it
-                // lands, the menu row does nothing rather than opening a screen
-                // that would be half a card.
-                de.cas_ual_ty.dueldimension.DuelDimension.log(
-                    "Card info is not ported to Fabric yet.");
+                minecraft.setScreenAndShow(new CardInfoScreen(this, target));
             }
             return true;
         }

@@ -1,6 +1,7 @@
 package de.cas_ual_ty.dueldimension.clientutil.hub;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
 import net.minecraft.resources.Identifier;
 
 /**
@@ -59,6 +60,20 @@ public final class NineSlice
     public static void draw(GuiGraphicsExtractor graphics, Identifier texture,
         int x, int y, int width, int height, int row, int rows)
     {
+        draw(graphics, texture, x, y, width, height, row, rows, 1F);
+    }
+
+    /**
+     * The same, fainter.
+     * <p>
+     * The Forge code said this with {@code RenderSystem.setShaderColor} before
+     * the draw. There is no draw-time colour any more, so the alpha travels
+     * down to each cell as part of the tint it is drawn with.
+     */
+    public static void draw(GuiGraphicsExtractor graphics, Identifier texture,
+        int x, int y, int width, int height, int row, int rows, float alpha)
+    {
+        int tint = DdBlitUtil.alpha(alpha);
         int fileHeight = TILE * rows;
         int v0 = row * TILE;
 
@@ -70,35 +85,35 @@ public final class NineSlice
         int texMid = TILE - BORDER * 2;
 
         // corners
-        cell(graphics, texture, x, y, edge, edge, 0, v0, BORDER, BORDER, fileHeight);
+        cell(graphics, texture, x, y, edge, edge, 0, v0, BORDER, BORDER, fileHeight, tint);
         cell(graphics, texture, x + width - edge, y, edge, edge,
-            TILE - BORDER, v0, BORDER, BORDER, fileHeight);
+            TILE - BORDER, v0, BORDER, BORDER, fileHeight, tint);
         cell(graphics, texture, x, y + height - edge, edge, edge,
-            0, v0 + TILE - BORDER, BORDER, BORDER, fileHeight);
+            0, v0 + TILE - BORDER, BORDER, BORDER, fileHeight, tint);
         cell(graphics, texture, x + width - edge, y + height - edge, edge, edge,
-            TILE - BORDER, v0 + TILE - BORDER, BORDER, BORDER, fileHeight);
+            TILE - BORDER, v0 + TILE - BORDER, BORDER, BORDER, fileHeight, tint);
 
         // edges
         if(midW > 0)
         {
             cell(graphics, texture, x + edge, y, midW, edge,
-                BORDER, v0, texMid, BORDER, fileHeight);
+                BORDER, v0, texMid, BORDER, fileHeight, tint);
             cell(graphics, texture, x + edge, y + height - edge, midW, edge,
-                BORDER, v0 + TILE - BORDER, texMid, BORDER, fileHeight);
+                BORDER, v0 + TILE - BORDER, texMid, BORDER, fileHeight, tint);
         }
         if(midH > 0)
         {
             cell(graphics, texture, x, y + edge, edge, midH,
-                0, v0 + BORDER, BORDER, texMid, fileHeight);
+                0, v0 + BORDER, BORDER, texMid, fileHeight, tint);
             cell(graphics, texture, x + width - edge, y + edge, edge, midH,
-                TILE - BORDER, v0 + BORDER, BORDER, texMid, fileHeight);
+                TILE - BORDER, v0 + BORDER, BORDER, texMid, fileHeight, tint);
         }
 
         // middle
         if(midW > 0 && midH > 0)
         {
             cell(graphics, texture, x + edge, y + edge, midW, midH,
-                BORDER, v0 + BORDER, texMid, texMid, fileHeight);
+                BORDER, v0 + BORDER, texMid, texMid, fileHeight, tint);
         }
     }
 
@@ -120,11 +135,11 @@ public final class NineSlice
      */
     private static void cell(GuiGraphicsExtractor graphics, Identifier texture,
         int x, int y, int width, int height,
-        int u, int v, int uw, int vh, int fileHeight)
+        int u, int v, int uw, int vh, int fileHeight, int tint)
     {
-        graphics.blit(texture, x, y, x + width, y + height,
-            u / (float)TILE, (u + uw) / (float)TILE,
-            v / (float)fileHeight, (v + vh) / (float)fileHeight);
+        DdBlitUtil.blit(graphics, texture, x, y, width, height,
+            u / (float)TILE, v / (float)fileHeight,
+            (u + uw) / (float)TILE, (v + vh) / (float)fileHeight, tint);
     }
 
     /** A plain stretched texture, for art that is not a frame. */

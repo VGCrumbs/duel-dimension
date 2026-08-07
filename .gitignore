@@ -2,3 +2,6 @@
 build/
 run/
 *.log
+logs/
+crash-reports/
+*.log.gz

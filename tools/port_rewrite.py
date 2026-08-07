@@ -23,6 +23,10 @@ import sys
 RENAMES = [
     (r"\bnet\.minecraft\.resources\.ResourceLocation\b", "net.minecraft.resources.Identifier"),
     (r"\bResourceLocation\b", "Identifier"),
+    # Util moved out of the root package into net.minecraft.util, where every
+    # other Util already lived. Only the fully qualified form is rewritten: the
+    # simple name is unchanged, so an import needs no help.
+    (r"\bnet\.minecraft\.Util\b", "net.minecraft.util.Util"),
 ]
 
 CALLS = [

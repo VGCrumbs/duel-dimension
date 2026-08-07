@@ -7,6 +7,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 
@@ -20,9 +21,15 @@ import net.minecraft.world.item.ItemStack;
  * {@code fillItemCategory} on the item.
  * <p>
  * Now a tab supplies its own contents, and an item says nothing about tabs at
- * all. Built with vanilla's own {@code CreativeModeTab.builder}: Fabric API
- * used to ship a {@code FabricItemGroup} helper for this and has dropped it,
- * because vanilla's builder now does the whole job.
+ * all.
+ * <p>
+ * Built with Fabric's builder rather than vanilla's, and that is not a
+ * preference. Vanilla's takes a row and a column, and its own fourteen tabs
+ * fill both rows of the strip completely -- there is no free slot to ask for.
+ * A mod tab given one anyway lands on top of a vanilla tab, which is what the
+ * first attempt did: the strip showed our title over the inventory's contents.
+ * Fabric's builder puts mod tabs on pages of their own and gives the screen the
+ * arrows to reach them, which is the only place they fit.
  * <p>
  * Which is the better way round for this mod in particular: the cards tab holds
  * one entry per card in a database that is read from disk after startup, so
@@ -46,7 +53,7 @@ public final class DdItemGroup
 
     public static void register()
     {
-        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, MAIN, CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0)
+        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, MAIN, FabricCreativeModeTab.builder()
             .icon(() -> new ItemStack(DdItems.MILLENIUM_PUZZLE))
             .title(Component.translatable("itemGroup." + DuelDimension.MOD_ID + ".main"))
             .displayItems((parameters, output) ->
@@ -64,7 +71,7 @@ public final class DdItemGroup
             })
             .build());
 
-        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, CARDS, CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0)
+        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, CARDS, FabricCreativeModeTab.builder()
             .icon(() -> new ItemStack(DdItems.CARD))
             .title(Component.translatable("itemGroup." + DuelDimension.MOD_ID + ".cards"))
             .displayItems((parameters, output) ->
