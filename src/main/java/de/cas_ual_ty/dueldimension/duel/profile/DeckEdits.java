@@ -177,18 +177,37 @@ public final class DeckEdits
     }
 
     /**
+     * How many cards one player may star. Not a game rule — a bound on what a
+     * client can make the server write to disk, now that ownership no longer
+     * bounds it.
+     */
+    public static final int MAX_FAVOURITES = 1024;
+
+    /**
      * Stars a card, or unstars one already starred.
      * <p>
-     * A player may only star a card they own. The list is meant to be a
-     * shortcut into their own collection, so a favourite they cannot see would
-     * be a filter that hides everything.
+     * Ownership is deliberately NOT required. Requiring it made the star on the
+     * card info page do nothing at all: that page is reached by following
+     * related cards, which are precisely the cards a player does not have yet,
+     * and the star would light up locally and then be undone by the next sync.
+     * A favourite is as much a wishlist as a shortcut, so an unowned card may be
+     * starred and simply waits in the filter until the player owns it.
      */
     public static String toggleFavourite(ServerPlayer player, int passcode)
     {
-        DuelProfile profile = DuelProfiles.get(player);
-        if(!profile.trunk().has(passcode) && !profile.isFavourite(passcode))
+        return toggleFavourite(DuelProfiles.get(player), passcode);
+    }
+
+    /** The rule itself, on a profile rather than a player, so it can be tested. */
+    public static String toggleFavourite(DuelProfile profile, int passcode)
+    {
+        if(passcode <= 0)
         {
-            return "You do not own that card.";
+            return "That is not a card.";
+        }
+        if(!profile.isFavourite(passcode) && profile.favourites().size() >= MAX_FAVOURITES)
+        {
+            return "You cannot star more than " + MAX_FAVOURITES + " cards.";
         }
         profile.toggleFavourite(passcode);
         return null;

@@ -1293,6 +1293,46 @@ public class DeckEditorScreen extends Screen
     }
 
     /** Adds a card if every rule allows it, else records why not. */
+    /**
+     * The part a card goes in when nobody said: extra deck monsters to the
+     * extra deck, everything else to the main.
+     */
+    static DeckList.Part homeFor(Properties card)
+    {
+        return card.getIsInExtraDeck() ? DeckList.Part.EXTRA : DeckList.Part.MAIN;
+    }
+
+    /**
+     * Whether another copy would be allowed, and why not if it would not.
+     * <p>
+     * Shared with {@link CardInfoScreen}, which offers the same one-click add
+     * and must refuse for exactly the same reasons the editor does — the pool
+     * and the banlist are read here rather than passed in so there is one
+     * answer to the question and not two that can drift apart.
+     */
+    static DeckLimits.Verdict roomFor(Properties card)
+    {
+        return DeckLimits.canAdd(EditorState.deck(), homeFor(card), (int)card.getId(),
+            pool(), EditorState.banlist());
+    }
+
+    /** Adds one copy if {@link #roomFor} allows it, and reports what happened. */
+    static DeckLimits.Verdict addOne(Properties card)
+    {
+        DeckLimits.Verdict verdict = roomFor(card);
+        if(verdict.allowed())
+        {
+            EditorState.deck().partFor(homeFor(card)).add((int)card.getId());
+        }
+        return verdict;
+    }
+
+    /** How many copies a card may reach at all, for "2 / 3" style counts. */
+    static int ceilingFor(Properties card)
+    {
+        return DeckLimits.maxCopies((int)card.getId(), pool(), EditorState.banlist());
+    }
+
     private boolean add(Properties card, DeckList.Part part)
     {
         DeckLimits.Verdict verdict = DeckLimits.canAdd(EditorState.deck(), part,

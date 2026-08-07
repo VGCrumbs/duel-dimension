@@ -94,6 +94,51 @@ class DeckEditsTest
 
     // ---- free mode ----
 
+    // ---- favourites ----
+
+    @Test
+    void aCardYouDoNotOwnMayStillBeStarred()
+    {
+        // The bug this covers: the card info page is reached by following
+        // related cards, which are the cards a player has NOT got yet. Refusing
+        // to star those made the star on that page appear to do nothing -- it
+        // lit up on the client and the next sync put it back.
+        DuelProfile profile = new DuelProfile();
+        assertNull(DeckEdits.toggleFavourite(profile, BLUE_EYES),
+            "starring a card you do not own is allowed");
+        assertTrue(profile.isFavourite(BLUE_EYES));
+
+        assertNull(DeckEdits.toggleFavourite(profile, BLUE_EYES), "and unstarring it");
+        assertFalse(profile.isFavourite(BLUE_EYES));
+    }
+
+    @Test
+    void aStarredCardIsNotAlsoGranted()
+    {
+        // Starring is a wishlist, not a purchase.
+        DuelProfile profile = new DuelProfile();
+        DeckEdits.toggleFavourite(profile, BLUE_EYES);
+        assertFalse(profile.trunk().has(BLUE_EYES));
+        assertNotNull(DeckEdits.refusalFor(profile.trunk(), deckOf(List.of(BLUE_EYES)),
+            Banlist.none()), "a starred card is still not an owned card");
+    }
+
+    @Test
+    void theFavouriteListIsBounded()
+    {
+        // Ownership used to bound what a client could make the server store.
+        // Nothing else did, so the cap replaces it.
+        DuelProfile profile = new DuelProfile();
+        for(int i = 0; i < DeckEdits.MAX_FAVOURITES; i++)
+        {
+            assertNull(DeckEdits.toggleFavourite(profile, BLUE_EYES + i));
+        }
+        assertNotNull(DeckEdits.toggleFavourite(profile, 1), "past the cap it is refused");
+        // Taking one back off is always allowed, cap or no cap.
+        assertNull(DeckEdits.toggleFavourite(profile, BLUE_EYES));
+        assertNull(DeckEdits.toggleFavourite(profile, 1));
+    }
+
     @Test
     void freeModeAllowsCardsNobodyOwns()
     {

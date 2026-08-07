@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import de.cas_ual_ty.dueldimension.DdDatabase;
 import de.cas_ual_ty.dueldimension.card.CardHolder;
 import de.cas_ual_ty.dueldimension.card.properties.Properties;
+import de.cas_ual_ty.dueldimension.duel.profile.DeckLimits;
 import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
 import de.cas_ual_ty.dueldimension.clientutil.DuelTextures;
 import de.cas_ual_ty.dueldimension.clientutil.ScreenUtil;
@@ -49,6 +50,13 @@ public class CardInfoScreen extends Screen
     private List<CardSet> sources = List.of();
     private List<Properties> related = List.of();
 
+    /**
+     * The one-click add, present only when this page was opened from the deck
+     * editor. Reached from anywhere else — the shop, a duel — there is no deck
+     * being edited for it to add to.
+     */
+    private HubWidgets.TextureButton addButton;
+
     private List<FormattedCharSequence> textLines = List.of();
     private int textScroll;
     private int sourceScroll;
@@ -92,6 +100,51 @@ public class CardInfoScreen extends Screen
         addRenderableWidget(new StarButton(width - pad() - 22, pad(), 22, 18,
             () -> EditorState.isFavourite((int)card.getId()),
             pressed -> EditorState.toggleFavourite((int)card.getId())));
+
+        // Following related cards is how a player finds the card they wanted;
+        // making them walk back to the editor and search for it by name to put
+        // it in the deck is the one step that page was meant to remove.
+        if(root() instanceof DeckEditorScreen)
+        {
+            addButton = new HubWidgets.TextureButton(width - pad() - 26 - ADD_WIDTH, pad(),
+                ADD_WIDTH, 18, Component.literal("Add to Deck"), pressed -> addToDeck());
+            addRenderableWidget(addButton);
+            refreshAddButton();
+        }
+    }
+
+    /** Width of the add button; the count is right-aligned to its left edge. */
+    private static final int ADD_WIDTH = 74;
+
+    private void addToDeck()
+    {
+        DeckEditorScreen.addOne(card);
+        refreshAddButton();
+    }
+
+    /**
+     * Greys the button and explains itself when another copy is not allowed —
+     * three already, a banlist limit, a full deck, or a card not owned outside
+     * free mode. The reason comes from the same check the editor uses, so the
+     * two cannot disagree about why.
+     */
+    private void refreshAddButton()
+    {
+        if(addButton == null)
+        {
+            return;
+        }
+        DeckLimits.Verdict verdict = DeckEditorScreen.roomFor(card);
+        addButton.setLabelColour(verdict.allowed() ? 0xFFE6EAF2 : 0xFF6A7080);
+        addButton.setTooltipLines(verdict.allowed()
+            ? List.of("Adds one copy to the deck")
+            : List.of(verdict.reason()));
+    }
+
+    /** How many copies of this card the deck being edited already holds. */
+    private int copiesInDeck()
+    {
+        return EditorState.deck().copiesOf((int)card.getId());
     }
 
     private int pad()
@@ -317,39 +370,88 @@ public class CardInfoScreen extends Screen
         return false;
     }
 
-    private int artW()
+    /**
+     * Where the upper half starts: under the Back and star row.
+     */
+    private int topSection()
     {
-        return Math.min(150, width / 5);
-    }
-
-    private int artH()
-    {
-        return Math.round(artW() / DuelTextures.CARD_ASPECT);
+        return pad() + 24;
     }
 
     /**
-     * Where the two lists begin: below the art AND below its heading, with room
-     * for the heading itself. The heading used to be drawn twelve pixels above
-     * this line, which put it back over the bottom of the card.
+     * How much height the two lists get.
+     * <p>
+     * Taken first, and as a share of the window rather than whatever the card
+     * art happens to leave over. Sizing the art to a constant and giving the
+     * lists the remainder is what reduced them to a single row on a wide, short
+     * window: the art was 219 tall whatever the window was.
+     */
+    private int listsHeight()
+    {
+        return Math.max(76, Math.round((height - topSection() - pad()) * 0.50F));
+    }
+
+    /**
+     * The art fills the height left above the lists, and is capped by width so
+     * it cannot crowd out the text beside it on a narrow window.
+     */
+    private int artH()
+    {
+        int room = height - topSection() - listsHeight() - pad() - 14;
+        int byWidth = Math.round(width / 4F / DuelTextures.CARD_ASPECT);
+        return Math.max(60, Math.min(room, byWidth));
+    }
+
+    private int artW()
+    {
+        return Math.round(artH() * DuelTextures.CARD_ASPECT);
+    }
+
+    /**
+     * Where the two lists begin: below the art AND below their heading, with
+     * room for the heading itself. The heading used to be drawn twelve pixels
+     * above this line, which put it back over the bottom of the card.
      */
     private int sourcesTop()
     {
-        return pad() + 24 + artH() + 22;
+        return height - pad() - listsHeight() + 14;
     }
 
     private int sourceRows()
     {
-        return Math.max(1, (height - sourcesTop() - pad() - 14) / 11);
+        return Math.max(1, (height - sourcesTop() - pad()) / 11);
     }
+
+    /**
+     * Rows of effect text on screen, remembered from the last frame that drew
+     * them. Scroll clamping and drawing have to agree on this, and the drawing
+     * side is the one that knows where the header ended.
+     */
+    private int textRowsShown = 1;
 
     private int textRows()
     {
-        return Math.max(1, (artH() - 62) / 10);
+        return textRowsShown;
+    }
+
+    /**
+     * How many rows of related cards to aim for. The card size is derived from
+     * this rather than the other way round: a fixed 44px card fits three rows in
+     * a tall window and one in a short one, and one row is not a grid.
+     */
+    private static final int RELATED_TARGET_ROWS = 3;
+
+    private int relatedCardH()
+    {
+        int room = height - sourcesTop() - pad();
+        // Bounded so the cards stay recognisable on a short window and stop
+        // growing on a tall one, where the extra height becomes another row.
+        return Math.max(34, Math.min(64, (room + 4) / RELATED_TARGET_ROWS - 4));
     }
 
     private int relatedCardW()
     {
-        return 44;
+        return Math.max(24, Math.round(relatedCardH() * DuelTextures.CARD_ASPECT));
     }
 
     private int relatedColumns()
@@ -360,8 +462,7 @@ public class CardInfoScreen extends Screen
 
     private int relatedRows()
     {
-        int cardH = Math.round(relatedCardW() / DuelTextures.CARD_ASPECT);
-        return Math.max(1, (height - sourcesTop() - pad()) / (cardH + 4));
+        return Math.max(1, (height - sourcesTop() - pad() + 4) / (relatedCardH() + 4));
     }
 
     private int maxRelatedScroll()
@@ -374,7 +475,7 @@ public class CardInfoScreen extends Screen
     private Properties relatedAt(double mouseX, double mouseY)
     {
         int cardW = relatedCardW();
-        int cardH = Math.round(cardW / DuelTextures.CARD_ASPECT);
+        int cardH = relatedCardH();
         int left = width / 2 + pad();
         int top = sourcesTop();
         int columns = relatedColumns();
@@ -413,6 +514,27 @@ public class CardInfoScreen extends Screen
             DuelTextures.CARD_U1 - DuelTextures.CARD_U0,
             DuelTextures.CARD_V1 - DuelTextures.CARD_V0, 1, 1);
 
+        if(addButton != null)
+        {
+            // Answers "have I already got some?" without leaving the page. Kept
+            // beside the button it qualifies, since it is the reason the button
+            // is greyed whenever the count has reached the ceiling.
+            int copies = copiesInDeck();
+            int ceiling = DeckEditorScreen.ceilingFor(card);
+            String count = "In deck  " + copies + " / " + ceiling;
+            int countX = addButton.x - 8 - font.width(count);
+            // Dropped rather than drawn over Back and Exit on a narrow window;
+            // the button's own tooltip still carries the reason it is greyed.
+            if(countX > pad() + (parent instanceof CardInfoScreen ? 132 : 66))
+            {
+                font.drawShadow(poseStack, count, countX, pad() + 5,
+                    copies > 0 ? 0xFFF4D089 : 0xFF8A93A3);
+            }
+            // Rechecked every frame: the deck can also change under this page,
+            // by the player walking back to the editor and returning.
+            refreshAddButton();
+        }
+
         int detailX = artX + artW() + 12;
         int detailW = width - detailX - pad() - 4;
         renderOverview(poseStack, detailX, artY, detailW);
@@ -447,11 +569,15 @@ public class CardInfoScreen extends Screen
 
         // The effect, in a recessed box so it reads as the card's own words.
         int boxY = line;
-        int boxH = Math.max(30, artH() + pad() + 24 - boxY + 4);
+        // Down to the lists rather than down to the art. On a narrow window the
+        // art is capped by width and stops well short, and measuring the box
+        // against it left a band of empty panel between the two halves.
+        int boxH = Math.max(30, sourcesTop() - 20 - boxY);
         NineSlice.draw(poseStack, HubTextures.PANEL_INSET, x - 3, boxY - 3, usableW + 6, boxH);
         textLines = font.split(Component.literal(card.getText() == null ? "" : card.getText()),
             usableW - 6);
         int rows = Math.max(1, (boxH - 8) / 10);
+        textRowsShown = rows;
         textScroll = Math.max(0, Math.min(textScroll, Math.max(0, textLines.size() - rows)));
         for(int i = 0; i < rows && i + textScroll < textLines.size(); i++)
         {
@@ -493,7 +619,7 @@ public class CardInfoScreen extends Screen
         if(sources.size() > rows)
         {
             String more = (sourceScroll + rows) + " / " + sources.size();
-            font.drawShadow(poseStack, more, x + w - font.width(more), y + rows * 11 - 8, 0xFF6E7686);
+            font.drawShadow(poseStack, more, x + w - font.width(more), y - 13, 0xFF6E7686);
         }
     }
 
@@ -509,7 +635,7 @@ public class CardInfoScreen extends Screen
         }
 
         int cardW = relatedCardW();
-        int cardH = Math.round(cardW / DuelTextures.CARD_ASPECT);
+        int cardH = relatedCardH();
         int columns = relatedColumns();
         int top = y;
         int rows = relatedRows();
@@ -539,9 +665,10 @@ public class CardInfoScreen extends Screen
 
         if(maxRelatedScroll() > 0)
         {
-            String more = "scroll  " + Math.min(related.size(), (relatedScroll + rows) * columns)
+            String more = Math.min(related.size(), (relatedScroll + rows) * columns)
                 + " / " + related.size();
-            font.drawShadow(poseStack, more, x, y - 12 + (height - y) - 10, 0xFF6E7686);
+            font.drawShadow(poseStack, more, width - pad() - 4 - font.width(more), y - 13,
+                0xFF6E7686);
         }
 
         Properties hovered = relatedAt(mouseX, mouseY);
