@@ -11,6 +11,11 @@ base {
 }
 
 loom {
+    // MenuType's constructor is private on 26.2 and Fabric's screen-handler
+    // helper is unusable here, so the mod widens the constructor to build its
+    // own menu types. See the file's header for the full reason.
+    accessWidenerPath = file("src/main/resources/dueldimension.accesswidener")
+
     mods {
         "dueldimension" {
             sourceSet sourceSets.main
@@ -94,4 +99,11 @@ test {
     systemProperty 'ocg.scripts', project.findProperty('ocgScripts') ?: 'C:/ProjectIgnis/script'
     systemProperty 'ocg.cdb', project.findProperty('ocgCdb') ?: 'C:/ProjectIgnis/expansions/cards.cdb'
     systemProperty 'ocg.strings', project.findProperty('ocgStrings') ?: 'C:/ProjectIgnis/config/strings.conf'
+}
+
+// javac stops at 100 errors by default, which hides how much is actually left
+// during a large port -- the count looked stuck at 100 for three passes running
+// while real progress was being made underneath it.
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs << '-Xmaxerrs' << '10000'
 }

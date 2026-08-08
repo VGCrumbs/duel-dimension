@@ -36,6 +36,23 @@ public final class DdSounds
     public static final SoundEvent DICE_ROLL = register("duel.diceroll");
     public static final SoundEvent EQUIP = register("duel.equip");
 
+    /**
+     * Pressing a phase on the phase bar.
+     * <p>
+     * Distinct from {@link #PHASE}, which is the engine announcing that the
+     * phase HAS changed (MSG_NEW_PHASE). This one is the button answering the
+     * press, in place of Minecraft's own click.
+     */
+    public static final SoundEvent PHASE_CHANGE = register("duel.phasechange");
+
+    /**
+     * Duel music. One entry per selectable track; {@code DuelMusic} is what
+     * decides which of them plays and remembers the choice.
+     */
+    public static final SoundEvent MUSIC_NORMAL = register("duel.music.normal");
+    public static final SoundEvent MUSIC_SOMETHING_EVIL =
+        register("duel.music.somethingevil");
+
     private DdSounds()
     {
     }

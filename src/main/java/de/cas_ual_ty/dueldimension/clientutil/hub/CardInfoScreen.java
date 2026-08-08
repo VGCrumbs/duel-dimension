@@ -103,6 +103,17 @@ public class CardInfoScreen extends Screen
             }));
         }
 
+        // Where to buy it, next to Back on the top row. Goes through
+        // ConfirmLinkScreen rather than opening the browser outright: vanilla
+        // shows the address and asks first for every link it offers, and a
+        // card database is no reason to be the exception.
+        Component shop = Component.literal("TCGplayer");
+        int shopW = Math.max(70, font.width(shop) + 14);
+        int shopX = parent instanceof CardInfoScreen ? pad() + 132 : pad() + 66;
+        addRenderableWidget(new HubWidgets.TextureButton(shopX, pad(), shopW, 18, shop,
+            pressed -> net.minecraft.client.gui.screens.ConfirmLinkScreen
+                .confirmLinkNow(this, tcgPlayerSearch(card))));
+
         // The star is the same mark the grids use, so toggling it here and
         // toggling it from the menu are visibly the same act.
         addRenderableWidget(new StarButton(width - pad() - 22, pad(), 22, 18,
@@ -570,7 +581,11 @@ public class CardInfoScreen extends Screen
     @Override
     public void extractRenderState(GuiGraphicsExtractor poseStack, int mouseX, int mouseY, float partialTick)
     {
-        extractBackground(poseStack, mouseX, mouseY, partialTick);
+        // The dim Forge's renderBackground drew, not extractBackground: that
+        // BLURS in 26.2, the blur is once-per-frame, and the frame a screen
+        // opens over another that already asked for it took the client down.
+        // Same decision as EngineDuelScreen, for the same crash.
+        poseStack.fillGradient(0, 0, width, height, 0xC0101010, 0xD0101010);
         if(card == null)
         {
             super.extractRenderState(poseStack, mouseX, mouseY, partialTick);
@@ -624,8 +639,11 @@ public class CardInfoScreen extends Screen
      */
     private void renderOverview(GuiGraphicsExtractor poseStack, int x, int y, int usableW)
     {
+        // Name first, because the loop below styles line 0 as the title, then
+        // the facts -- which is where a monster's species comes from.
         List<Component> information = new ArrayList<>();
-        card.addHeader(information);
+        information.add(Component.literal(card.getName() == null ? "" : card.getName()));
+        card.addFacts(information);
 
         int line = y;
         for(int i = 0; i < information.size(); i++)
@@ -755,6 +773,26 @@ public class CardInfoScreen extends Screen
     }
 
     /** The star, which is a button here rather than a mark. */
+    /**
+     * Where to buy this card, as a TCGplayer search.
+     * <p>
+     * A search rather than a product page, because the only identifier this
+     * mod holds is the passcode and TCGplayer indexes by printing, not by
+     * passcode — a search on the name lands on the card and its printings,
+     * which is what somebody pricing it wants anyway.
+     * <p>
+     * The name is URL-encoded: real card names carry spaces, apostrophes,
+     * ampersands and hyphens ("Harpie's Feather Duster", "D/D/D"), and any of
+     * them unescaped makes a broken link rather than a wrong one.
+     */
+    private static java.net.URI tcgPlayerSearch(Properties card)
+    {
+        String name = card.getName() == null ? "" : card.getName();
+        String query = java.net.URLEncoder.encode(name, java.nio.charset.StandardCharsets.UTF_8);
+        return java.net.URI.create(
+            "https://www.tcgplayer.com/search/yugioh/product?productLineName=yugioh&q=" + query);
+    }
+
     private static class StarButton extends HubWidgets.TextureButton
     {
         private final java.util.function.BooleanSupplier lit;

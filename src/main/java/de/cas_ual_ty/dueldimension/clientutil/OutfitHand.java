@@ -34,7 +34,8 @@ public final class OutfitHand
 
     /**
      * @param right  which arm, because each has its own model part
-     * @param sleeve whether the player has their jacket's sleeve layer enabled
+     * @param sleeve ignored: an equipped outfit is independent of the base
+     *               skin's cosmetic-part toggle
      */
     public static void draw(PoseStack poseStack, SubmitNodeCollector collector, int light,
         boolean right, boolean sleeve)
@@ -50,20 +51,23 @@ public final class OutfitHand
             return;
         }
 
-        PlayerModel model = OutfitLayer.model(worn);
+        PlayerModel model = OutfitLayer.handModel(worn);
         ModelPart arm = right ? model.rightArm : model.leftArm;
+        ModelPart outer = right ? model.rightSleeve : model.leftSleeve;
         arm.resetPose();
-        arm.visible = true;
-        model.leftSleeve.visible = sleeve;
-        model.rightSleeve.visible = sleeve;
         model.leftArm.zRot = -ROLL;
         model.rightArm.zRot = ROLL;
 
-        // Translucent, as the vanilla call is: the second skin layer is drawn
-        // this way so a hair fringe or a visor fades rather than cuts out, and
-        // a sleeve that sorted differently from the arm under it would flicker
-        // against it.
+        // The local player's vanilla arm uses the editable underskin. The
+        // outfit's base arm is therefore required here, followed by its true
+        // outer sleeve. Both use the mod's first-person voxel offsets when the
+        // compatibility bridge is active.
+        arm.visible = true;
         collector.submitModelPart(arm, poseStack, RenderTypes.entityTranslucent(worn.texture()),
+            light, OverlayTexture.NO_OVERLAY, null);
+        outer.loadPose(arm.storePose());
+        outer.visible = true;
+        collector.submitModelPart(outer, poseStack, RenderTypes.entityTranslucent(worn.texture()),
             light, OverlayTexture.NO_OVERLAY, null);
     }
 }

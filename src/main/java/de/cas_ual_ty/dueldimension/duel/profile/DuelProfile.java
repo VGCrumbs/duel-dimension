@@ -177,6 +177,32 @@ public final class DuelProfile
         decks.add(deck);
     }
 
+    /**
+     * A detached value for the player attachment.
+     * <p>
+     * Profiles are edited through mutable deck and collection lists. Storing
+     * the same instance again makes Fabric's attachment change check compare
+     * an object with itself and report no change. A deep snapshot gives the
+     * attachment a genuinely new value and prevents later client/server work
+     * from mutating the value that was handed to persistence.
+     */
+    public DuelProfile snapshot()
+    {
+        DuelProfile copy = new DuelProfile();
+        trunk.all().forEach(copy.trunk::add);
+        for(DeckList deck : decks)
+        {
+            DeckList deckCopy = deck.copy(deck.name(), deck.origin());
+            deckCopy.publish(deck.published());
+            copy.decks.add(deckCopy);
+        }
+        copy.unlockedStructures.addAll(unlockedStructures);
+        copy.favourites.addAll(favourites);
+        copy.activeDeck = activeDeck;
+        copy.outfit = outfit;
+        return copy;
+    }
+
     /** Removes one of the player's own decks; granted decks are not theirs to remove. */
     public boolean removeDeck(String name)
     {

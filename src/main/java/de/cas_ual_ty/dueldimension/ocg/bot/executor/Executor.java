@@ -271,6 +271,24 @@ public abstract class Executor
         return true;
     }
 
+    /**
+     * Whether to activate an optional effect no rule in the executor list
+     * covers.
+     * <p>
+     * <b>Not Windbot.</b> Upstream there is no such question: GameAI's
+     * OnSelectEffectYn returns false the moment the list runs out, so a card
+     * without a rule is always declined. This is the one place the duelists
+     * are allowed to differ, and the default here is the reference's answer --
+     * only {@code DuelistExecutor} says otherwise, and only for the case where
+     * declining cannot be the better play.
+     *
+     * @param location where the card is now, as a LOCATION_* constant
+     */
+    public boolean activateUnlistedOptional(BotCard card, int location)
+    {
+        return false;
+    }
+
     /** {@code OnSelectPosition}: 0 to let the engine's own default stand. */
     public int onSelectPosition(int cardId, int available)
     {

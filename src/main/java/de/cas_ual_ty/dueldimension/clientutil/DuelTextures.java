@@ -31,6 +31,14 @@ public final class DuelTextures
         Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "textures/duel/cover.png");
     public static final Identifier COVER_OPPONENT =
         Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "textures/duel/cover2.png");
+    /**
+     * The mute button's two states, side by side: cell 0 the speaker, cell 1
+     * the speaker crossed out. A 256x256 sheet because that is the size every
+     * widget texture here is and the one {@code DdBlitUtil} divides by.
+     */
+    public static final Identifier MUSIC_ICONS =
+        Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "textures/gui/duel/music.png");
+
     /** Fallback art for a card whose image is missing or still downloading. */
     public static final Identifier UNKNOWN =
         Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "textures/duel/unknown.png");
@@ -84,6 +92,22 @@ public final class DuelTextures
      */
     public static final Identifier COIN =
         Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "textures/duel/coin.png");
+    /**
+     * The marks on the two Spell/Trap zones that are also Pendulum Zones.
+     * <p>
+     * Under MR5 -- which is the mode every duel here runs -- ocgcore sets
+     * DUEL_PZONE without DUEL_SEPARATE_PZONE, so a scale occupies backrow zone
+     * 0 or 4 rather than a zone of its own. Nothing on the playmat says which
+     * two those are, so the zones say it.
+     * <p>
+     * One colour per zone, not both on both: blue is the left scale and red
+     * the right, the way a Pendulum card prints them.
+     */
+    public static final Identifier PENDULUM_ZONE_LEFT = Identifier.fromNamespaceAndPath(
+        DuelDimension.MOD_ID, "textures/duel/pendulum_zone_left.png");
+    public static final Identifier PENDULUM_ZONE_RIGHT = Identifier.fromNamespaceAndPath(
+        DuelDimension.MOD_ID, "textures/duel/pendulum_zone_right.png");
+
     /** The field spell zone's own square, marked with a compass rose. */
     public static final Identifier FIELD_SPELL =
         Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "textures/duel/field_spell.png");
@@ -197,33 +221,39 @@ public final class DuelTextures
     }
 
     /**
-     * Smooth filtering for card art: nothing to do here any more, and that is
-     * the honest answer rather than a silent gap.
-     * <p>
-     * The Forge version had a {@code bindSmooth} that bound a texture and set
-     * its GL filter to bilinear, plus a mip chain generated on first use --
-     * because bilinear alone still speckles when a 512-pixel card is drawn
-     * forty pixels wide, and card art is photographic rather than pixel art.
-     * <p>
-     * None of that can be done per draw now. The GUI is retained-mode: a screen
-     * hands {@code blit} an {@link Identifier} and the renderer binds the
-     * texture itself, so there is no moment at which a caller could set a
-     * filter. Filtering became a {@code GpuSampler} owned by the texture and
-     * chosen when it is created.
-     * <p>
-     * Which means the smoothing has to move to where the card textures are
-     * made -- {@link ImageHandler} -- or to a {@code .mcmeta} beside them. It
-     * is not done yet, so scaled-down card art will alias the way it did before
-     * that fix. Recorded in PORTING.md rather than left to be rediscovered by
-     * whoever notices the speckling.
-     */
-
-    /**
      * A card image at an explicit size. Requesting a size the pipeline has not
      * produced yet kicks off its generation and yields a placeholder in the
      * meantime, exactly as the rest of the mod behaves.
      */
     public static Identifier card(Properties properties, byte imageIndex, int size)
+    {
+        return card(properties, imageIndex, size, false);
+    }
+
+    /**
+     * The same cached card PNG through the resource pack's bilinear path.
+     * A separate identifier matters: samplers belong to loaded textures in
+     * 26.2, not to individual draws, so this keeps field cards crisp while a
+     * heavily downscaled preview uses linear minification.
+     */
+    public static Identifier cardSmooth(Properties properties, byte imageIndex, int size)
+    {
+        return card(properties, imageIndex, size, true);
+    }
+
+    /** Strongly desaturated card art for an unowned editor result or deck copy. */
+    public static Identifier cardUnowned(Properties properties, byte imageIndex, int size)
+    {
+        String image = ImageHandler.getReplacementImage(properties, imageIndex, size);
+        if(image.endsWith("card_loading") || image.endsWith("card_failed"))
+        {
+            return UNKNOWN;
+        }
+        return Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID,
+            DdCardResourcePack.UNOWNED_PATH_PREFIX + image + ".png");
+    }
+
+    private static Identifier card(Properties properties, byte imageIndex, int size, boolean smooth)
     {
         String image = ImageHandler.getReplacementImage(properties, imageIndex, size);
         // While the pipeline is still fetching (or gave up on) a card, show
@@ -233,6 +263,8 @@ public final class DuelTextures
         {
             return UNKNOWN;
         }
-        return Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "textures/item/" + image + ".png");
+        return Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID,
+            (smooth ? DdCardResourcePack.SMOOTH_PATH_PREFIX : DdCardResourcePack.PATH_PREFIX)
+                + image + ".png");
     }
 }

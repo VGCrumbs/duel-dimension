@@ -71,12 +71,52 @@ public final class Duelists
      */
     public static final class Joey extends DuelistExecutor
     {
+        private static final int TIME_WIZARD = 71625222;
+        private static final int DESPERATION_LIFE_POINTS = 2000;
+
         public Joey()
         {
+            // Joey's signature gamble. These precede generic play so he both
+            // puts Time Wizard face-up and uses it before choosing a safer,
+            // ordinary summon when the duel has turned against him.
+            addExecutor(ExecutorType.ACTIVATE, TIME_WIZARD, this::timeWizardDesperation);
+            addExecutor(ExecutorType.SUMMON_OR_SET, TIME_WIZARD, this::timeWizardDesperation);
             addExecutor(ExecutorType.SPELL_SET, this::defaultSpellSet);
             addReferenceCardRules();
             addHouseCardRules();
             addGenericPlay();
+        }
+
+        /**
+         * Take Time Wizard's coin toss when Joey has no favourable board and
+         * at least one concrete sign that ordinary play is unlikely to save
+         * him: apparent lethal damage, quarter life, or a two-monster deficit.
+         * The stronger-enemy requirement keeps him from gambling away a board
+         * he can already contest.
+         */
+        private boolean timeWizardDesperation()
+        {
+            if(duelPlayer() != 0 || enemy().getMonsters().isEmpty()
+                || util.getBestPower(enemy()) <= util.getBestPower(bot()))
+            {
+                return false;
+            }
+
+            boolean facingLethal = util.getTotalAttackingMonsterAttack(enemy()) >= bot().lifePoints;
+            boolean lowLife = bot().lifePoints <= DESPERATION_LIFE_POINTS;
+            boolean overwhelmed = enemy().getMonsterCount() >= bot().getMonsterCount() + 2;
+            return facingLethal || lowLife || overwhelmed;
+        }
+
+        /** Time Wizard must be face-up to turn the duel into a coin toss. */
+        @Override
+        public boolean onSelectMonsterSummonOrSet(BotCard card)
+        {
+            if(card != null && card.isCode(TIME_WIZARD) && timeWizardDesperation())
+            {
+                return false;
+            }
+            return super.onSelectMonsterSummonOrSet(card);
         }
     }
 

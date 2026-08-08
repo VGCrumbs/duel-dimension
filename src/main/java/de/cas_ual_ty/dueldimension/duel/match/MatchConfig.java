@@ -1,6 +1,6 @@
 package de.cas_ual_ty.dueldimension.duel.match;
 
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 
 /**
  * What the two players agreed to play. Set in the lobby, frozen when the match
@@ -84,7 +84,7 @@ public record MatchConfig(String banlistId, int lifePoints, Format format, int t
         return turnSeconds > 0;
     }
 
-    public void write(FriendlyByteBuf buffer)
+    public void write(RegistryFriendlyByteBuf buffer)
     {
         buffer.writeUtf(banlistId);
         buffer.writeVarInt(lifePoints);
@@ -92,7 +92,7 @@ public record MatchConfig(String banlistId, int lifePoints, Format format, int t
         buffer.writeVarInt(turnSeconds);
     }
 
-    public static MatchConfig read(FriendlyByteBuf buffer)
+    public static MatchConfig read(RegistryFriendlyByteBuf buffer)
     {
         return new MatchConfig(buffer.readUtf(), buffer.readVarInt(),
             buffer.readEnum(Format.class), buffer.readVarInt());

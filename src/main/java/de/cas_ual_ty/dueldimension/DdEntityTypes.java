@@ -20,6 +20,24 @@ import net.minecraft.world.entity.MobCategory;
 public final class DdEntityTypes
 {
     public static final ResourceKey<EntityType<?>> DUELIST_KEY = key("duelist");
+    public static final ResourceKey<EntityType<?>> DUEL_KEY = key("duel");
+
+    /**
+     * The duel itself, as an entity.
+     * <p>
+     * Not something anyone sees: it is a place for a {@code DuelManager} to
+     * live when two players duel with disks rather than at a table. Size zero,
+     * never saved, and immune to fire because none of that applies to a thing
+     * with no body.
+     */
+    public static final EntityType<de.cas_ual_ty.dueldimension.duel.dueldisk.DuelEntity> DUEL =
+        Registry.register(BuiltInRegistries.ENTITY_TYPE, DUEL_KEY,
+            EntityType.Builder.<de.cas_ual_ty.dueldimension.duel.dueldisk.DuelEntity>of(
+                    de.cas_ual_ty.dueldimension.duel.dueldisk.DuelEntity::new, MobCategory.MISC)
+                .noSave()
+                .sized(0F, 0F)
+                .fireImmune()
+                .build(DUEL_KEY));
 
     /** An NPC you can challenge. Player-shaped, so player-sized. */
     public static final EntityType<DuelistEntity> DUELIST = Registry.register(
@@ -50,7 +68,4 @@ public final class DdEntityTypes
         FabricDefaultAttributeRegistry.register(DUELIST, DuelistEntity.createAttributes());
     }
 
-    // The duel entity -- the invisible marker a duel runs on -- is parked with
-    // the container phase: it exists to carry a menu, and menus have not been
-    // ported.
 }

@@ -26,7 +26,10 @@ public final class QueryParser
         | OcgConstants.QUERY_TYPE | OcgConstants.QUERY_LEVEL | OcgConstants.QUERY_ATTACK
         | OcgConstants.QUERY_DEFENSE | OcgConstants.QUERY_BASE_ATTACK
         | OcgConstants.QUERY_BASE_DEFENSE | OcgConstants.QUERY_IS_PUBLIC
-        | OcgConstants.QUERY_EQUIP_CARD;
+        | OcgConstants.QUERY_EQUIP_CARD
+        // A pendulum card's CURRENT scale, which is not its printed one
+        // once an effect has moved it.
+        | OcgConstants.QUERY_LSCALE | OcgConstants.QUERY_RSCALE;
 
     private QueryParser()
     {
@@ -80,6 +83,9 @@ public final class QueryParser
         // printed one the way EDOPro's card info does.
         int baseAttack = -1;
         int baseDefense = -1;
+        // -1 for "not a pendulum card", as with the stats.
+        int leftScale = -1;
+        int rightScale = -1;
         boolean isPublic = false;
         CardView.Equip equip = null;
 
@@ -112,6 +118,8 @@ public final class QueryParser
                 case OcgConstants.QUERY_DEFENSE -> defense = buffer.getInt();
                 case OcgConstants.QUERY_BASE_ATTACK -> baseAttack = buffer.getInt();
                 case OcgConstants.QUERY_BASE_DEFENSE -> baseDefense = buffer.getInt();
+                case OcgConstants.QUERY_LSCALE -> leftScale = buffer.getInt();
+                case OcgConstants.QUERY_RSCALE -> rightScale = buffer.getInt();
                 case OcgConstants.QUERY_IS_PUBLIC -> isPublic = buffer.get() != 0;
                 case OcgConstants.QUERY_EQUIP_CARD ->
                 {
@@ -129,7 +137,7 @@ public final class QueryParser
                 case OcgConstants.QUERY_END ->
                 {
                     return new CardView(code, position, type, level, attack, defense,
-                        baseAttack, baseDefense, isPublic, false, equip);
+                        baseAttack, baseDefense, leftScale, rightScale, isPublic, false, equip);
                 }
                 default ->
                 {

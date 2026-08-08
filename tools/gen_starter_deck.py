@@ -21,9 +21,21 @@ DECKS = [
     ('SDY', 'yugi', 'Starter Deck: Yugi'),
     ('SDK', 'kaiba', 'Starter Deck: Kaiba'),
     ('SDJ', 'joey', 'Starter Deck: Joey'),
+    ('SDP', 'pegasus', 'Starter Deck: Pegasus'),
+    ('SYE', 'yugi_evolution', 'Starter Deck: Yugi Evolution'),
+    ('SKE', 'kaiba_evolution', 'Starter Deck: Kaiba Evolution'),
+    ('YSD', 'starter_2006', 'Starter Deck 2006'),
     ('YSDJ', 'jaden', 'Starter Deck: Jaden Yuki'),
+    ('YSDS', 'syrus', 'Starter Deck: Syrus Truesdale'),
     ('5DS1', 'yusei', "Starter Deck: Yu-Gi-Oh! 5D's"),
+    ('5DS2', 'starter_2009', "Starter Deck: Yu-Gi-Oh! 5D's 2009"),
     ('YS11', 'yuma', 'Starter Deck: Dawn of the Xyz'),
+    ('YSKR', 'kaiba_reloaded', 'Starter Deck: Kaiba Reloaded'),
+    ('YSYR', 'yugi_reloaded', 'Starter Deck: Yugi Reloaded'),
+    ('YS15', 'saber_force', 'Saber Force Starter Deck'),
+    ('YS16', 'yuya', 'Starter Deck: Yuya'),
+    ('YS17', 'link_strike', 'Starter Deck: Link Strike'),
+    ('YS18', 'codebreaker', 'Starter Deck: Codebreaker'),
 ]
 
 # Monster types that live in the extra deck. Read off the card's own

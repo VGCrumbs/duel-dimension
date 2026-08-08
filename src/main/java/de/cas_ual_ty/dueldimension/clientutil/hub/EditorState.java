@@ -43,6 +43,8 @@ public final class EditorState
     private static CardQuery<Properties> query;
     private static List<Properties> visible = new ArrayList<>();
     private static boolean dirty = true;
+    /** Include legal database cards absent from the player's collection. */
+    private static boolean showUnowned;
 
     private EditorState()
     {
@@ -496,7 +498,7 @@ public final class EditorState
     private static List<Properties> pool()
     {
         List<Properties> pool = new ArrayList<>();
-        if(freeMode())
+        if(freeMode() || showUnowned)
         {
             for(Properties card : DdDatabase.PROPERTIES_LIST)
             {
@@ -518,23 +520,29 @@ public final class EditorState
         return pool;
     }
 
+    public static boolean showUnowned()
+    {
+        return showUnowned;
+    }
+
+    public static void setShowUnowned(boolean value)
+    {
+        if(showUnowned != value)
+        {
+            showUnowned = value;
+            invalidate();
+        }
+    }
+
+    public static boolean owns(int passcode)
+    {
+        return trunk().countOf(passcode) > 0;
+    }
+
     /** Whether the server has free mode on. */
     public static boolean freeMode()
     {
         return de.cas_ual_ty.dueldimension.duel.profile.FreeMode.clientBelief();
-    }
-
-    /**
-     * Whether the player is short of this card for the deck they have built.
-     * <p>
-     * Counts the whole deck rather than asking whether the card is owned at
-     * all: two copies of a card owned once is the same problem as one copy of
-     * a card owned never, and the editor should mark both.
-     */
-    public static boolean isShortOf(int passcode)
-    {
-        int used = deck().copiesOf(passcode);
-        return used > trunk().countOf(passcode);
     }
 
     /** Cards in this deck the player does not have enough of. */

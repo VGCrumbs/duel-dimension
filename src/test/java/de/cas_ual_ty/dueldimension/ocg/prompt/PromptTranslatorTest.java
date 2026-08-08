@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -32,6 +33,15 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  */
 class PromptTranslatorTest
 {
+    @Test
+    void effectQuestionFillsEdoproWideStringPlaceholders()
+    {
+        assertEquals("Activate the Trigger Effect of \"Sangan\" from [Graveyard]?",
+            PromptTranslator.formatEffectQuestion(
+                "Activate the Trigger Effect of \"%ls\" from [%ls]?",
+                "Sangan", "Graveyard"));
+    }
+
     private static Path lib()
     {
         return Path.of(System.getProperty("ocg.lib", "native/ocgcore.dll"));

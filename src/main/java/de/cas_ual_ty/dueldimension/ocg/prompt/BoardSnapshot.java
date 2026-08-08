@@ -27,9 +27,17 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
 
     /** A card in a zone, or an empty zone when {@code present} is false. */
     public record Slot(boolean present, int code, boolean faceDown, boolean defence, int attack, int defense,
-        int baseAttack, int baseDefense, int overlays, CardView.Equip equip)
+        int baseAttack, int baseDefense, int leftScale, int rightScale, int overlays,
+        CardView.Equip equip)
     {
-        public static final Slot EMPTY = new Slot(false, 0, false, false, 0, 0, 0, 0, 0, null);
+        public static final Slot EMPTY =
+            new Slot(false, 0, false, false, 0, 0, 0, 0, -1, -1, 0, null);
+
+        /** Whether this slot holds a card the engine gave a pendulum scale. */
+        public boolean hasScale()
+        {
+            return present && !faceDown && leftScale >= 0 && rightScale >= 0;
+        }
 
         /**
          * True if an effect has moved this stat off its printed value. An
@@ -65,7 +73,8 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
             // -1 is the core's "you may not know this", and it is kept:
             // flattening it to 0 turned "unknown" into a stated 0 ATK.
             return new Slot(true, card.code(), !card.isFaceUp(), !card.isAttackPosition(),
-                card.attack(), card.defense(), card.baseAttack(), card.baseDefense(), 0, card.equip());
+                card.attack(), card.defense(), card.baseAttack(), card.baseDefense(),
+                card.leftScale(), card.rightScale(), 0, card.equip());
         }
 
         public void write(FriendlyByteBuf buffer)
@@ -81,6 +90,9 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
                 buffer.writeVarInt(defense + 1);
                 buffer.writeVarInt(baseAttack + 1);
                 buffer.writeVarInt(baseDefense + 1);
+                // Shifted like the stats, for the same -1 sentinel.
+                buffer.writeVarInt(leftScale + 1);
+                buffer.writeVarInt(rightScale + 1);
                 buffer.writeVarInt(overlays);
                 // An equip and the monster under it are both face up, so this
                 // relation is public knowledge and needs no concealment.
@@ -107,12 +119,14 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
             int defense = buffer.readVarInt() - 1;
             int baseAttack = buffer.readVarInt() - 1;
             int baseDefense = buffer.readVarInt() - 1;
+            int leftScale = buffer.readVarInt() - 1;
+            int rightScale = buffer.readVarInt() - 1;
             int overlays = buffer.readVarInt();
             CardView.Equip equip = buffer.readBoolean()
                 ? new CardView.Equip(buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt())
                 : null;
             return new Slot(true, code, faceDown, defence, attack, defense,
-                baseAttack, baseDefense, overlays, equip);
+                baseAttack, baseDefense, leftScale, rightScale, overlays, equip);
         }
     }
 

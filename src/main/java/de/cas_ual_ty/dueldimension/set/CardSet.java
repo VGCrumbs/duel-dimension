@@ -123,11 +123,7 @@ public class CardSet
             image = j.get(JsonKeys.IMAGE).getAsString();
         }
         
-        // Parked with the item phase: every pull strategy ends by building an
-        // ItemStack, and there are no items yet. What a set CONTAINS is read
-        // above and is what the rest of the mod asks a set for; what falls out
-        // of opening one is the part that needs items.
-        pull = null;
+        pull = PullType.createPull(j.get(JsonKeys.PULL_TYPE).getAsString(), j, this);
         
         if(!j.has(JsonKeys.CARDS))
         {

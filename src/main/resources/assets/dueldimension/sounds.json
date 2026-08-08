@@ -48,7 +48,7 @@
     "category": "player",
     "sounds": [
       {
-        "name": "dueldimension:duel/damage",
+        "name": "dueldimension:duel/num_red",
         "stream": false
       }
     ]
@@ -84,7 +84,7 @@
     "category": "player",
     "sounds": [
       {
-        "name": "dueldimension:duel/gainlp",
+        "name": "dueldimension:duel/num_green",
         "stream": false
       }
     ]
@@ -149,6 +149,33 @@
       {
         "name": "dueldimension:duel/equip",
         "stream": false
+      }
+    ]
+  },
+  "duel.music.normal": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/music/normal",
+        "stream": true
+      }
+    ]
+  },
+  "duel.phasechange": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/phasechange",
+        "stream": false
+      }
+    ]
+  },
+  "duel.music.somethingevil": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/music/something_evil",
+        "stream": true
       }
     ]
   }

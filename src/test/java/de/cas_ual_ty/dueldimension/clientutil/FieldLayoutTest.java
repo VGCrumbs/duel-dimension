@@ -1,0 +1,126 @@
+package de.cas_ual_ty.dueldimension.clientutil;
+
+import de.cas_ual_ty.dueldimension.ocg.OcgConstants;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * Pins the duel field's layout and projection maths — the half of the
+ * field-render port that is pure geometry and so can be checked with no GPU.
+ * The values are EDOPro's own (materials.cpp / game.h), so a regression here is
+ * a regression against the reference client, not against an invented number.
+ */
+class FieldLayoutTest
+{
+    private static final float EPS = 1.0e-4F;
+
+    @Test
+    void selfMonsterZonesSitOnTheColumnPitch()
+    {
+        // materials.cpp: first column at x 1.2, pitch 1.1, cells 1.1 x 1.2.
+        for(int seq = 0; seq < 5; seq++)
+        {
+            FieldLayout.Rect zone = FieldLayout.zone(0, OcgConstants.LOCATION_MZONE, seq);
+            assertEquals(1.2F + seq * 1.1F, zone.x(), EPS);
+            assertEquals(0.8F, zone.y(), EPS);
+            assertEquals(1.1F, zone.w(), EPS);
+            assertEquals(1.2F, zone.h(), EPS);
+        }
+    }
+
+    @Test
+    void extraMonsterZonesStraddleTheCentreLine()
+    {
+        FieldLayout.Rect left = FieldLayout.zone(0, OcgConstants.LOCATION_MZONE, 5);
+        FieldLayout.Rect right = FieldLayout.zone(0, OcgConstants.LOCATION_MZONE, 6);
+        assertEquals(2.3F, left.x(), EPS);
+        assertEquals(4.5F, right.x(), EPS);
+        assertEquals(-0.6F, left.y(), EPS);
+        assertEquals(-0.6F, right.y(), EPS);
+    }
+
+    @Test
+    void opponentSideIsThePointReflection()
+    {
+        // (x, y) -> (MIRROR_X - x - w, -y - h), MIRROR_X = 7.9, exactly as the
+        // opponent-side copies are listed in materials.cpp.
+        int[] locations = {OcgConstants.LOCATION_MZONE, OcgConstants.LOCATION_SZONE,
+            OcgConstants.LOCATION_DECK, OcgConstants.LOCATION_GRAVE};
+        for(int location : locations)
+        {
+            for(int seq = 0; seq < 5; seq++)
+            {
+                FieldLayout.Rect self = FieldLayout.zone(0, location, seq);
+                FieldLayout.Rect opp = FieldLayout.zone(1, location, seq);
+                if(self == null)
+                {
+                    assertNull(opp);
+                    continue;
+                }
+                assertEquals(7.9F - self.x() - self.w(), opp.x(), EPS);
+                assertEquals(-self.y() - self.h(), opp.y(), EPS);
+                assertEquals(self.w(), opp.w(), EPS);
+                assertEquals(self.h(), opp.h(), EPS);
+            }
+        }
+    }
+
+    @Test
+    void anUnknownLocationHasNoZone()
+    {
+        assertNull(FieldLayout.zone(0, OcgConstants.LOCATION_HAND, 0));
+    }
+
+    @Test
+    void theFrustumIsWiderThanItIsTall()
+    {
+        // r-l = 1.35, t-b = 0.84, so one NDC x unit is 1.607 NDC y units. A
+        // single scale for both axes is exactly the bug this guards against.
+        assertEquals(1.35F / 0.84F, FieldLayout.Projection.FRUSTUM_ASPECT, EPS);
+    }
+
+    @Test
+    void perspectiveNarrowsAZoneTowardsTheFarEdge()
+    {
+        FieldLayout.Projection projection = FieldLayout.fit(0, 0, 1634, 920);
+        FieldLayout.Rect zone = FieldLayout.zone(0, OcgConstants.LOCATION_MZONE, 2);
+        FieldQuad.Corners quad = projection.quad(zone);
+
+        // Corners are TL(far), TR(far), BR(near), BL(near). The near edge (the
+        // one closer to the viewer, lower on screen) must be wider.
+        float farWidth = quad.x1() - quad.x0();
+        float nearWidth = quad.x2() - quad.x3();
+        assertTrue(nearWidth > farWidth,
+            "near edge " + nearWidth + " should be wider than far edge " + farWidth);
+        // ...and the near edge is lower on the screen (greater y).
+        assertTrue(quad.y2() > quad.y0(), "near edge should sit below the far edge");
+    }
+
+    @Test
+    void screenYIncreasesAsTheTableComesForward()
+    {
+        // Larger field y is nearer the camera and lower on the screen.
+        FieldLayout.Projection projection = FieldLayout.fit(0, 0, 1634, 920);
+        assertTrue(projection.y(FieldLayout.FIELD_MAX_Y) > projection.y(FieldLayout.FIELD_MIN_Y));
+    }
+
+    @Test
+    void theFittedTableStaysInsideItsBox()
+    {
+        FieldLayout.Projection projection = FieldLayout.fit(0, 0, 1634, 920);
+        // The mat corners project inside the box (with a pixel of tolerance).
+        for(float fx : new float[] {FieldLayout.FIELD_MIN_X, FieldLayout.FIELD_MAX_X})
+        {
+            for(float fy : new float[] {FieldLayout.FIELD_MIN_Y, FieldLayout.FIELD_MAX_Y})
+            {
+                float x = projection.x(fx, fy);
+                float y = projection.y(fy);
+                assertTrue(x >= -1F && x <= 1635F, "x in box: " + x);
+                assertTrue(y >= -1F && y <= 921F, "y in box: " + y);
+            }
+        }
+    }
+}

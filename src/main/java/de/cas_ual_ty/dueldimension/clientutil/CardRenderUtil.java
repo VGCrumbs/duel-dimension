@@ -4,7 +4,12 @@ import de.cas_ual_ty.dueldimension.DdItems;
 import de.cas_ual_ty.dueldimension.DuelDimension;
 import de.cas_ual_ty.dueldimension.card.CardHolder;
 import de.cas_ual_ty.dueldimension.card.CardSleevesType;
+import de.cas_ual_ty.dueldimension.DdDatabase;
 import de.cas_ual_ty.dueldimension.card.properties.Properties;
+import de.cas_ual_ty.dueldimension.duel.playfield.CardPosition;
+import de.cas_ual_ty.dueldimension.duel.playfield.DuelCard;
+import de.cas_ual_ty.dueldimension.rarity.RarityEntry;
+import de.cas_ual_ty.dueldimension.rarity.RarityLayer;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
@@ -23,13 +28,10 @@ import java.util.List;
  * released while it is on screen, and they hand back the id for the caller to
  * draw with. The name is kept because every call site is a port of a call site.
  * <p>
- * <b>Not here yet:</b> the duel field's card rendering — the rotated blits, and
- * the rarity foils, which were drawn by masking one texture against another
- * with a colour mask and a second pass. Both belong to the duel screen, which
- * is not ported, and neither can be written honestly without it: a rotation is
- * a transform on a quad this API does not expose, and the mask needs a decision
- * about how a foil is composited that should be made while looking at the
- * field. See PORTING.md.
+ * The duel field's half is here too, now that the two things it waited on are
+ * settled: a card lying on its side turns the quad about its centre
+ * ({@link DdBlitUtil#fullBlitTurned}), and a foil glints through two blend
+ * passes ({@link FoilPipelines}) which were tested to survive batching.
  */
 public class CardRenderUtil
 {
@@ -193,6 +195,130 @@ public class CardRenderUtil
     {
         return Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID,
             "textures/item/" + ClientProxy.activeCardInfoImageSize + "/token_overlay.png");
+    }
+
+    /**
+     * A card on the duel field, with its rarity foil over it.
+     * <p>
+     * The foil is two draws: a soft mask at the cursor that writes only alpha,
+     * then the foil itself shown in proportion to that alpha. That is the Forge
+     * effect exactly -- the glint follows the mouse -- and the reason it can be
+     * written at all is that a retained-mode GUI turned out to preserve the
+     * order of the two passes.
+     */
+    public static void renderDuelCardAdvanced(GuiGraphicsExtractor ms, CardSleevesType back,
+        int mouseX, int mouseY, int x, int y, int width, int height, DuelCard card,
+        CardPosition position, DdBlitUtil.FullBlitMethod blitMethod)
+    {
+        renderDuelCardAdvanced(ms, back, mouseX, mouseY, x, y, width, height, card, position,
+            blitMethod, DdBlitUtil.NO_TINT);
+    }
+
+    /**
+     * As above, faded.
+     * <p>
+     * A zone widget fades in, and on Forge that was a shader colour set once
+     * before everything it drew -- including its cards. There is no such colour
+     * now, so the tint has to travel: the widget works it out, and it reaches
+     * the card face, the token overlay and the foil alike.
+     */
+    public static void renderDuelCardAdvanced(GuiGraphicsExtractor ms, CardSleevesType back,
+        int mouseX, int mouseY, int x, int y, int width, int height, DuelCard card,
+        CardPosition position, DdBlitUtil.FullBlitMethod blitMethod, int tint)
+    {
+        Identifier face = position.isFaceUp
+            ? bindMainResourceLocation(card.getCardHolder())
+            : back.getMainRL(ClientProxy.activeCardMainImageSize);
+        blitMethod.fullBlit(ms, face, x, y, width, height, tint);
+
+        if(card.getIsToken())
+        {
+            blitMethod.fullBlit(ms, getMainTokenOverlay(), x, y, width, height,
+                tint);
+        }
+
+        if(!position.isFaceUp || card.getIsToken())
+        {
+            return;
+        }
+
+        RarityEntry rarity = DdDatabase.getRarity(card.getCardHolder().getRarity());
+        if(rarity == null)
+        {
+            return;
+        }
+        for(RarityLayer layer : rarity.layers)
+        {
+            // The mask is drawn at the CURSOR, not at the card: that offset is
+            // the whole effect. It writes alpha only, so nothing of it shows.
+            ms.blit(FoilPipelines.MASK, MASK_RL, mouseX - width / 2, mouseY - height / 2,
+                0F, 0F, width, height, width, height, width, height, tint);
+            ms.blit(layer.type.invertedRendering ? FoilPipelines.FOIL_INVERTED
+                    : FoilPipelines.FOIL,
+                layer.getMainImageResourceLocation(), x, y,
+                0F, 0F, width, height, width, height, width, height, tint);
+        }
+    }
+
+    public static void renderDuelCardAdvanced(GuiGraphicsExtractor ms, CardSleevesType back,
+        int mouseX, int mouseY, int x, int y, int width, int height, DuelCard card,
+        DdBlitUtil.FullBlitMethod blitMethod, boolean forceFaceUp)
+    {
+        CardPosition position = card.getCardPosition();
+
+        // bind the texture depending on faceup or facedown
+        if(!card.getCardPosition().isFaceUp && forceFaceUp)
+        {
+            position = position.flip();
+        }
+
+        renderDuelCardAdvanced(ms, back, mouseX, mouseY, x, y, width, height, card, position,
+            blitMethod);
+    }
+
+    /** Upright, or on its side if the card is in defence. */
+    public static void renderDuelCard(GuiGraphicsExtractor ms, CardSleevesType back,
+        int mouseX, int mouseY, int x, int y, int width, int height, DuelCard card,
+        boolean forceFaceUp)
+    {
+        renderDuelCardAdvanced(ms, back, mouseX, mouseY, x, y, width, height, card,
+            card.getCardPosition().isStraight
+                ? DdBlitUtil::fullBlit
+                : DdBlitUtil::fullBlit90Degree, forceFaceUp);
+    }
+
+    /** The same, seen from the other side of the table. */
+    public static void renderDuelCardReversed(GuiGraphicsExtractor ms, CardSleevesType back,
+        int mouseX, int mouseY, int x, int y, int width, int height, DuelCard card,
+        boolean forceFaceUp)
+    {
+        renderDuelCardAdvanced(ms, back, mouseX, mouseY, x, y, width, height, card,
+            card.getCardPosition().isStraight
+                ? DdBlitUtil::fullBlit180Degree
+                : DdBlitUtil::fullBlit270Degree, forceFaceUp);
+    }
+
+    public static void renderDuelCardCentered(GuiGraphicsExtractor ms, CardSleevesType back,
+        int mouseX, int mouseY, int x, int y, int width, int height, DuelCard card,
+        boolean forceFaceUp)
+    {
+        // if width and height are more of a rectangle, this centers the texture
+        // horizontally -- and it is also what makes a quarter turn legal: a
+        // turned quad only covers the same pixels when the region is square.
+        x -= (height - width) / 2;
+        width = height;
+
+        renderDuelCard(ms, back, mouseX, mouseY, x, y, width, height, card, forceFaceUp);
+    }
+
+    public static void renderDuelCardReversedCentered(GuiGraphicsExtractor ms,
+        CardSleevesType back, int mouseX, int mouseY, int x, int y, int width, int height,
+        DuelCard card, boolean forceFaceUp)
+    {
+        x -= (height - width) / 2;
+        width = height;
+
+        renderDuelCardReversed(ms, back, mouseX, mouseY, x, y, width, height, card, forceFaceUp);
     }
 
     /**

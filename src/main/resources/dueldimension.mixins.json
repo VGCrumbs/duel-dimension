@@ -7,7 +7,9 @@
   "client": [
     "client.AbstractClientPlayerMixin",
     "client.AvatarRenderStateMixin",
-    "client.AvatarRendererMixin"
+    "client.AvatarRendererMixin",
+    "client.MinecraftPackMixin",
+    "client.GuiGraphicsExtractorAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

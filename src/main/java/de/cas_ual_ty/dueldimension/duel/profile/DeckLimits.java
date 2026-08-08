@@ -43,6 +43,85 @@ public final class DeckLimits
     }
 
     /**
+     * May one more copy go into a deck draft?
+     * <p>
+     * Ownership deliberately is not part of this answer. The editor is also a
+     * planning tool: missing cards may be saved in a deck, but
+     * {@link #validate} keeps that deck out of duels until the copies are owned
+     * or free mode is enabled.
+     */
+    /**
+     * Whether a card may go in that part of the deck at all.
+     * <p>
+     * Fusion, Synchro, Xyz and Link monsters live in the Extra Deck and
+     * nothing else may; the Main Deck takes the rest. The Side Deck takes
+     * either, because it is swapped into both halves between games.
+     * <p>
+     * Asked here rather than at each place a card can be put down, because
+     * there are several -- dropping one on a grid, the card menu's "Add 1",
+     * double-clicking in the pool -- and every one of them already comes
+     * through {@link #canAddToDraft}. The editor used the card's own home
+     * when it chose the part for you, but an explicit drop said where it
+     * went, so a Main Deck card dropped on the Extra grid stayed there.
+     * <p>
+     * A card the database cannot resolve is allowed through: an unknown
+     * passcode is a database problem and refusing it here would report it as
+     * a deck-building one.
+     */
+    public static Verdict belongsIn(DeckList.Part part, int passcode)
+    {
+        if(part == DeckList.Part.SIDE)
+        {
+            return Verdict.OK;
+        }
+        de.cas_ual_ty.dueldimension.card.properties.Properties card =
+            de.cas_ual_ty.dueldimension.DdDatabase.PROPERTIES_LIST.get((long)passcode);
+        if(card == null)
+        {
+            return Verdict.OK;
+        }
+        boolean extraCard = card.getIsInExtraDeck();
+        if(extraCard == (part == DeckList.Part.EXTRA))
+        {
+            return Verdict.OK;
+        }
+        return Verdict.no(extraCard
+            ? "Fusion, Synchro, Xyz and Link monsters go in the Extra Deck"
+            : "The Extra Deck only holds Fusion, Synchro, Xyz and Link monsters");
+    }
+
+    public static Verdict canAddToDraft(DeckList deck, DeckList.Part part, int passcode,
+        Banlist banlist)
+    {
+        Verdict belongs = belongsIn(part, passcode);
+        if(!belongs.allowed())
+        {
+            return belongs;
+        }
+
+        if(deck.partFor(part).size() >= part.capacity())
+        {
+            return Verdict.no(name(part) + " is full (" + part.capacity() + ")");
+        }
+
+        int inDeck = deck.copiesOf(passcode);
+        int banlistLimit = banlist == null ? MAX_COPIES : banlist.limitFor(passcode);
+        if(banlistLimit <= 0)
+        {
+            return Verdict.no("Forbidden by "
+                + (banlist == null ? Banlist.none() : banlist).displayName());
+        }
+        int allowed = Math.min(MAX_COPIES, banlistLimit);
+        if(inDeck >= allowed)
+        {
+            return Verdict.no(banlistLimit < MAX_COPIES
+                ? "Limited to " + banlistLimit + " by " + banlist.displayName()
+                : "Maximum " + MAX_COPIES + " copies per deck");
+        }
+        return Verdict.OK;
+    }
+
+    /**
      * May one more copy of this card go into this part of this deck?
      *
      * @param banlist the list in force, or {@link Banlist#none()} for none
@@ -50,40 +129,7 @@ public final class DeckLimits
     public static Verdict canAdd(DeckList deck, DeckList.Part part, int passcode,
         Trunk trunk, Banlist banlist)
     {
-        if(deck.partFor(part).size() >= part.capacity())
-        {
-            return Verdict.no(name(part) + " is full (" + part.capacity() + ")");
-        }
-
-        int inDeck = deck.copiesOf(passcode);
-        int owned = trunk.countOf(passcode);
-        if(owned <= 0)
-        {
-            return Verdict.no("You do not own this card");
-        }
-
-        int banlistLimit = banlist == null ? MAX_COPIES : banlist.limitFor(passcode);
-        if(banlistLimit <= 0)
-        {
-            return Verdict.no("Forbidden by " + banlist.displayName());
-        }
-
-        // The tightest of the three ceilings decides, and the message names
-        // whichever one actually bit.
-        int allowed = Math.min(Math.min(MAX_COPIES, banlistLimit), owned);
-        if(inDeck >= allowed)
-        {
-            if(allowed == owned && owned < Math.min(MAX_COPIES, banlistLimit))
-            {
-                return Verdict.no("You only own " + owned + " cop" + (owned == 1 ? "y" : "ies"));
-            }
-            if(banlistLimit < MAX_COPIES)
-            {
-                return Verdict.no("Limited to " + banlistLimit + " by " + banlist.displayName());
-            }
-            return Verdict.no("Maximum " + MAX_COPIES + " copies per deck");
-        }
-        return Verdict.OK;
+        return canAddToDraft(deck, part, passcode, banlist);
     }
 
     /**

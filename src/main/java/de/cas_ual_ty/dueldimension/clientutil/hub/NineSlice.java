@@ -142,6 +142,23 @@ public final class NineSlice
             (u + uw) / (float)TILE, (v + vh) / (float)fileHeight, tint);
     }
 
+    /**
+     * A plain stretched texture in a colour of its own.
+     * <p>
+     * The custom playmat is one texture recoloured per player, which the Forge
+     * code did with {@code RenderSystem.setShaderColor} before the draw. There
+     * is no draw-time colour any more, so the tint is the blit's argument.
+     */
+    public static void tinted(GuiGraphicsExtractor graphics, Identifier texture,
+        int x, int y, int width, int height, int tint)
+    {
+        // The callers pass a bare 0xRRGGBB -- Forge's setShaderColor took the
+        // three channels and an explicit alpha of 1. As an ARGB tint that same
+        // number carries alpha ZERO, and a fully transparent multiply draws
+        // nothing at all: the mat preview was invisible, not missing.
+        DdBlitUtil.fullBlit(graphics, texture, x, y, width, height, 0xFF000000 | tint);
+    }
+
     /** A plain stretched texture, for art that is not a frame. */
     public static void image(GuiGraphicsExtractor graphics, Identifier texture,
         int x, int y, int width, int height)

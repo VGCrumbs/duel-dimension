@@ -53,6 +53,56 @@ public final class PlayerSkins
     {
     }
 
+    /**
+     * A {@link net.minecraft.world.entity.player.PlayerSkin} for a texture this
+     * mod ships.
+     * <p>
+     * Built by patching the default skin rather than calling a constructor: a
+     * PlayerSkin also carries a cape, an elytra texture and a "secure" flag, and
+     * a patch leaves all of those at sensible values instead of making this
+     * class invent them.
+     * <p>
+     * Note what the id has to be. The one-argument {@code ResourceTexture}
+     * constructor takes an ASSET id and derives the file from it -- {@code ns:foo}
+     * becomes {@code ns:textures/foo.png} -- so a complete path handed to it is
+     * wrapped twice and the result does not exist. Everything here holds
+     * complete paths, so the id is worked back out of the path.
+     */
+    public static net.minecraft.world.entity.player.PlayerSkin skinFor(Identifier texture,
+        boolean slim)
+    {
+        return net.minecraft.client.resources.DefaultPlayerSkin.getDefaultSkin()
+            .with(new net.minecraft.world.entity.player.PlayerSkin.Patch(
+                java.util.Optional.of(asset(texture)),
+                java.util.Optional.empty(),
+                java.util.Optional.empty(),
+                java.util.Optional.of(slim
+                    ? net.minecraft.world.entity.player.PlayerModelType.SLIM
+                    : net.minecraft.world.entity.player.PlayerModelType.WIDE)));
+    }
+
+    /**
+     * A complete texture path, named the way a {@code ClientAsset} wants it.
+     * <p>
+     * The one-argument {@code ResourceTexture} constructor takes an ASSET id and
+     * derives the file from it -- {@code ns:foo} becomes
+     * {@code ns:textures/foo.png} -- so a path that is already complete gets
+     * wrapped a second time and the result does not exist. There is no warning
+     * for it; the player simply renders in missing-texture magenta. Everything
+     * in this mod holds complete paths, so the id is worked back out of the
+     * path and the two-argument constructor is used.
+     */
+    public static net.minecraft.core.ClientAsset.ResourceTexture asset(Identifier texture)
+    {
+        String path = texture.getPath();
+        if(path.startsWith("textures/") && path.endsWith(".png"))
+        {
+            path = path.substring("textures/".length(), path.length() - ".png".length());
+        }
+        return new net.minecraft.core.ClientAsset.ResourceTexture(
+            Identifier.fromNamespaceAndPath(texture.getNamespace(), path), texture);
+    }
+
     /** The skin this mod supplies for that player, or null to leave them alone. */
     public static Skin of(AbstractClientPlayer player)
     {

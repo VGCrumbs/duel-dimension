@@ -76,6 +76,28 @@ public record YdkDeck(String name, List<Integer> main, List<Integer> extra, List
         return new YdkDeck(name, List.copyOf(main), List.copyOf(extra), List.copyOf(side));
     }
 
+    /**
+     * The deck as a .ydk file's contents.
+     * <p>
+     * Section markers exactly as the format has them, including {@code !side}
+     * with a bang rather than a hash -- that inconsistency is the format's, and
+     * a file written with {@code #side} is read by other clients as more of the
+     * extra deck. A copy is one line, repeated, which is how every real file
+     * writes them.
+     */
+    public String toYdkText()
+    {
+        StringBuilder text = new StringBuilder();
+        text.append("#created by Duel Dimension\n");
+        text.append("#main\n");
+        main.forEach(code -> text.append(code).append('\n'));
+        text.append("#extra\n");
+        extra.forEach(code -> text.append(code).append('\n'));
+        text.append("!side\n");
+        side.forEach(code -> text.append(code).append('\n'));
+        return text.toString();
+    }
+
     public static YdkDeck load(Path file)
     {
         try

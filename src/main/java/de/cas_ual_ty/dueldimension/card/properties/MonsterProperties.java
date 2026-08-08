@@ -165,6 +165,21 @@ public class MonsterProperties extends Properties
         super.addHeader(list);
         addMonsterHeader(list);
     }
+
+    /**
+     * A monster leads with its species and subtypes -- "Spellcaster / Effect",
+     * "Dragon / Fusion / Effect" -- which is the line a printed card puts in
+     * brackets, and then its attribute, level and stats.
+     * <p>
+     * This replaces the plain card type rather than adding to it: "Spellcaster
+     * / Effect" already says everything "Effect Monster" did.
+     */
+    @Override
+    protected void addFactLines(List<Component> list)
+    {
+        addMonsterTextHeader(list);
+        addMonsterHeader(list);
+    }
     
     @Override
     public void addText(List<Component> list)

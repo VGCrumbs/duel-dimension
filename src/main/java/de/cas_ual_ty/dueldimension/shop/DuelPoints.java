@@ -23,18 +23,6 @@ public final class DuelPoints
     /** What a player starts with, so the shop is not a locked door on day one. */
     public static final int STARTING_POINTS = 500;
 
-    /** What a duel against another player pays the winner. */
-    public static final int WIN_REWARD = 1000;
-
-    /**
-     * And the loser.
-     * <p>
-     * Not nothing, deliberately. A game where losing pays zero is a game where
-     * the way to earn is to avoid opponents who might beat you, and the point
-     * of the reward is to get people duelling each other.
-     */
-    public static final int LOSS_REWARD = 500;
-
     /**
      * The attachment, held in a nested class so it is registered on first use
      * rather than on first mention of {@link DuelPoints}.
@@ -61,24 +49,23 @@ public final class DuelPoints
                 DuelDimensionFabric.MOD_ID, "duel_points"));
     }
 
+    /**
+     * Registers the attachment, and this has to be called before a world loads.
+     * <p>
+     * The type is a static field on a nested class, so it exists only once
+     * something touches that class -- and until then Fabric does not know the
+     * id. A world saved with it and loaded before it is registered has its data
+     * <b>discarded</b>, with one warning line: "Found unknown attachment type".
+     * That is how a player's whole collection went missing once.
+     * <p>
+     * Touching the field is the registration; the empty body is the point.
+     */
+    public static void register()
+    {
+        java.util.Objects.requireNonNull(Storage.POINTS);
+    }
     private DuelPoints()
     {
-    }
-
-    /**
-     * What a duellist is owed, given how the contest went.
-     * <p>
-     * Pure, so the rule can be checked without a server, two players and a
-     * running duel. A draw pays the losing rate: nobody won it, and the
-     * alternative -- paying nobody -- punishes two players for a game that ran
-     * long.
-     *
-     * @param myWins    games this seat took
-     * @param theirWins games the other seat took
-     */
-    public static int rewardFor(int myWins, int theirWins)
-    {
-        return myWins > theirWins ? WIN_REWARD : LOSS_REWARD;
     }
 
     public static int get(Player player)
@@ -114,29 +101,6 @@ public final class DuelPoints
         }
         set(player, get(player) - cost);
         return true;
-    }
-
-    /**
-     * Awards points, tells the player, and tells their client the new balance.
-     * <p>
-     * The three things that always go together when a player earns something.
-     * {@link #award} alone changes a number on the server that the client is
-     * still holding the old copy of, which is how a balance ends up looking
-     * wrong until the next shop visit.
-     */
-    public static void reward(net.minecraft.server.level.ServerPlayer player, int points,
-        String why)
-    {
-        if(points <= 0)
-        {
-            return;
-        }
-        award(player, points);
-        player.sendSystemMessage(net.minecraft.network.chat.Component
-            .literal(why + "  +" + points + " DP")
-            .withStyle(net.minecraft.ChatFormatting.GOLD));
-        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
-            new ShopMessages.SyncPoints(get(player)));
     }
 
     /**

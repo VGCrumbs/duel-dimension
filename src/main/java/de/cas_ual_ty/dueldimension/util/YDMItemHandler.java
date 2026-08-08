@@ -40,6 +40,15 @@ public class YDMItemHandler extends SimpleContainer
 
     protected Supplier<CompoundTag> nbtSupplier;
 
+    /**
+     * The stack this handler writes through to, or null for a free-standing one.
+     * When set, every change is persisted into the stack's
+     * {@link de.cas_ual_ty.dueldimension.DdComponents#CARD_INVENTORY} component —
+     * the component being immutable, this is what replaces the Forge capability
+     * that was itself the live storage.
+     */
+    protected ItemStack boundStack;
+
     public YDMItemHandler(Supplier<CompoundTag> nbtSupplier)
     {
         this(0, nbtSupplier);
@@ -62,6 +71,42 @@ public class YDMItemHandler extends SimpleContainer
         for(int slot = 0; slot < stacks.size(); slot++)
         {
             setItem(slot, stacks.get(slot));
+        }
+    }
+
+    /**
+     * A handler seeded from a stack's {@code CARD_INVENTORY} component that
+     * writes every subsequent change back into that stack. Seeding happens
+     * before the stack is bound, so it does not trigger a redundant write.
+     */
+    public static YDMItemHandler boundTo(ItemStack stack, int size)
+    {
+        YDMItemHandler handler = new YDMItemHandler(size);
+        java.util.List<ItemStack> stored =
+            stack.getOrDefault(de.cas_ual_ty.dueldimension.DdComponents.CARD_INVENTORY,
+                java.util.List.of());
+        for(int slot = 0; slot < size && slot < stored.size(); slot++)
+        {
+            handler.setItem(slot, stored.get(slot).copy());
+        }
+        handler.boundStack = stack;
+        return handler;
+    }
+
+    @Override
+    public void setChanged()
+    {
+        super.setChanged();
+        if(boundStack != null)
+        {
+            // Copy the stacks, not just the list: the component must not alias
+            // slots this handler will keep mutating in place.
+            java.util.List<ItemStack> snapshot = new java.util.ArrayList<>(getContainerSize());
+            for(ItemStack stack : getItems())
+            {
+                snapshot.add(stack.copy());
+            }
+            boundStack.set(de.cas_ual_ty.dueldimension.DdComponents.CARD_INVENTORY, snapshot);
         }
     }
 

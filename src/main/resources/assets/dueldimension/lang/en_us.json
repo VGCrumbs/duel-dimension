@@ -231,5 +231,6 @@
     "entity.dueldimension.duelist": "Duelist",
     "key.dueldimension.duel_hub": "Open Duel Hub",
     "key.categories.dueldimension": "Duel Dimension",
-    "block.dueldimension.card_shop": "Card Shop"
+    "block.dueldimension.card_shop": "Card Shop",
+    "key.dueldimension.foil_test": "Foil blend test (debug)"
 }

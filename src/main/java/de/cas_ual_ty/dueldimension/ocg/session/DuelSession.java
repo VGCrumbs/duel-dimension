@@ -41,6 +41,11 @@ public class DuelSession
         {
         }
 
+        /** A server-authoritative concession, distinct from an engine failure. */
+        record Forfeited(int winner) implements Event
+        {
+        }
+
         /**
          * A fresh view of the field, captured on the duel thread — one per
          * seat, because a board is not a fact but a point of view.
@@ -83,6 +88,9 @@ public class DuelSession
     private final HeadlessDuelRunner runner;
     private final ConcurrentLinkedQueue<Event> events = new ConcurrentLinkedQueue<>();
     private final AtomicBoolean running = new AtomicBoolean();
+    private final Object terminationLock = new Object();
+    /** Guarded by {@link #terminationLock}; -1 when no concession was accepted. */
+    private int forcedWinner = -1;
     private volatile Thread thread;
     private volatile HeadlessDuelRunner.DuelTrace trace;
 
@@ -144,19 +152,41 @@ public class DuelSession
         }
         thread = new Thread(() ->
         {
+            Throwable failure = null;
             try
             {
                 trace = runner.run(200000);
-                events.add(new Event.Finished(trace.result, trace.completed, trace.steps));
             }
             catch(Throwable e)
             {
-                events.add(new Event.Failed(e.toString()));
+                failure = e;
             }
-            finally
+            Event terminal;
+            synchronized(terminationLock)
             {
+                // Publish the stopped state before its terminal event. The
+                // server may drain immediately after the add below; it must
+                // never observe "finished" while isRunning still says true.
                 running.set(false);
+                if(trace != null && trace.completed && trace.result != null)
+                {
+                    terminal = new Event.Finished(trace.result, true, trace.steps);
+                }
+                else if(forcedWinner >= 0)
+                {
+                    terminal = new Event.Forfeited(forcedWinner);
+                }
+                else if(failure != null)
+                {
+                    terminal = new Event.Failed(failure.toString());
+                }
+                else
+                {
+                    terminal = new Event.Finished(trace == null ? null : trace.result,
+                        false, trace == null ? 0 : trace.steps);
+                }
             }
+            events.add(terminal);
         }, "duel-" + id);
         thread.setDaemon(true);
         thread.start();
@@ -195,6 +225,35 @@ public class DuelSession
         {
             current.interrupt();
         }
+    }
+
+    /**
+     * Ends this session as a concession and emits exactly one ordered terminal
+     * event once the engine thread has unwound.
+     *
+     * @return true only for the request which actually claimed the finish
+     */
+    public boolean forfeit(int winner)
+    {
+        if(winner < 0 || winner > 1)
+        {
+            throw new IllegalArgumentException("Winner seat must be 0 or 1");
+        }
+        Thread current;
+        synchronized(terminationLock)
+        {
+            if(!running.get() || forcedWinner >= 0)
+            {
+                return false;
+            }
+            forcedWinner = winner;
+            current = thread;
+        }
+        if(current != null)
+        {
+            current.interrupt();
+        }
+        return true;
     }
 
     /**

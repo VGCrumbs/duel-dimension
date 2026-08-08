@@ -7,17 +7,16 @@ import net.minecraft.network.chat.Component;
 /**
  * The duel hub: decks, profile, outfits, settings.
  * <p>
- * <b>Partly ported.</b> Profile and Decks show real data: {@link EditorState}
- * holds what the server sent, so the collection, the deck list and the active
- * deck are the player's own. Outfit and Settings do not, because the wardrobe
- * needs the outfit preview renderer and the mat picker needs a colour-picker
- * widget, and neither is ported.
+ * All four tabs are live. {@link EditorState} holds what the server sent, so
+ * the collection, the deck list and the active deck are the player's own; the
+ * wardrobe draws real figures wearing the outfits; and Settings carries the mat
+ * colour and the duel music.
  * <p>
- * Nothing here CHANGES a deck. Use, rename, duplicate, delete and the editor
- * itself all open {@code DeckEditorScreen} or need the confirmation dialogue,
- * and showing buttons that do nothing would be worse than showing none. A tab
- * with no body says what it is waiting for rather than leaving a blank panel
- * that could be mistaken for a bug.
+ * Deck management is the Forge screen's, whole: use, rename, duplicate,
+ * publish-as-recipe and delete (behind its confirmation), plus the recipe
+ * list in its three columns. The renames of the piece parts are the port's
+ * usual ones -- the extractor for the pose stack, an event object per mouse
+ * or key event -- and nothing else moved.
  */
 public class DuelHubScreen extends Screen
 {
@@ -41,7 +40,7 @@ public class DuelHubScreen extends Screen
         PROFILE("Profile", ""),
         DECKS("Decks", ""),
         OUTFIT("Outfit", ""),
-        SETTINGS("Settings", "the mat picker needs the colour-picker widget");
+        SETTINGS("Settings", "");
 
         private final String label;
         private final String waitingOn;
@@ -57,11 +56,57 @@ public class DuelHubScreen extends Screen
     private int left;
     private int top;
 
+    /** The two halves of the Decks tab: the player's decks, and recipes. */
+    private enum DeckView
+    {
+        DECKS("Decks"),
+        RECIPES("Recipes");
+
+        private final String label;
+
+        DeckView(String label)
+        {
+            this.label = label;
+        }
+    }
+
+    /** Static like the section used to be on Forge: reopening remembers. */
+    private static DeckView deckView = DeckView.DECKS;
+
+    /** First deck row shown, when there are more decks than fit. */
+    private int deckScroll;
+
+    /** One scroll position per recipe column. */
+    private final int[] recipeScroll = new int[3];
+
+    /** Height of one deck row. */
+    private static final int ROW_H = 20;
+
+    /** Gap between the three recipe columns, and the scrollbar's lane. */
+    private static final int COLUMN_GAP = 6;
+    private static final int BAR_W = 6;
+    private static final int RECIPE_INSET = 4;
+
+    /** The deck being renamed, held by identity rather than by index. */
+    private de.cas_ual_ty.dueldimension.duel.profile.DeckList renaming;
+    private net.minecraft.client.gui.components.EditBox renameField;
+
+    /**
+     * The deck a Delete press is waiting on confirmation for, if any.
+     * <p>
+     * Held rather than acted on: deleting is the one row action that cannot be
+     * undone, and it sits between Duplicate and the edge of the panel.
+     */
+    private de.cas_ual_ty.dueldimension.duel.profile.DeckList confirmDelete;
+
     /** First tile shown, when there are more outfits than fit across. */
     private int outfitScroll;
 
     /** What went wrong with the last under-skin import, shown under the row. */
     private String notice = "";
+
+    /** The mat colour wheel, built only while the settings tab is open. */
+    private MatColourPicker matPicker;
 
     public DuelHubScreen()
     {
@@ -92,6 +137,49 @@ public class DuelHubScreen extends Screen
             tabX += TAB_W + 4;
         }
 
+        int bodyTop = top + PAD + TAB_H + 8;
+        if(section == Section.DECKS && EditorState.isSynced())
+        {
+            int viewX = left + PAD + 4;
+            for(DeckView candidate : DeckView.values())
+            {
+                DeckView targetView = candidate;
+                addRenderableWidget(new HubWidgets.TabButton(viewX, bodyTop + 3, 68, 16,
+                    Component.literal(candidate.label), () -> deckView == targetView, pressed ->
+                {
+                    deckView = targetView;
+                    cancelRename();
+                    deckScroll = 0;
+                    notice = "";
+                    rebuild();
+                }));
+                viewX += 70;
+            }
+            if(confirmDelete != null)
+            {
+                // Its two answers are the only widgets, so a click cannot reach
+                // the row it is asking about -- or the four other rows near it.
+                buildDeleteConfirm();
+                return;
+            }
+            if(deckView == DeckView.DECKS)
+            {
+                buildDeckRows(bodyTop + 22);
+                addRenderableWidget(new HubWidgets.TextureButton(left + PAD + 6, top + HEIGHT - 32,
+                    96, 20, Component.literal("New Deck"), pressed ->
+                {
+                    EditorState.newDeck();
+                    cancelRename();
+                    notice = "";
+                    rebuild();
+                }));
+            }
+            else
+            {
+                buildRecipeRows(bodyTop + 22);
+            }
+        }
+
         addRenderableWidget(new HubWidgets.TextureButton(left + WIDTH - PAD - 80,
             top + HEIGHT - 32, 80, 20, Component.literal("Close"), pressed -> onClose()));
 
@@ -100,27 +188,77 @@ public class DuelHubScreen extends Screen
             buildOutfitRows(top + PAD + TAB_H + 8);
         }
 
-        // One row per deck, over the names the panel draws. The editor is real
-        // now, so a deck is something a player can open rather than only read.
-        if(section == Section.DECKS && EditorState.isSynced() && minecraft != null)
+        // The mat picker is rebuilt with the tab rather than kept, so it always
+        // opens showing the colour actually in force. Nulled on every other tab
+        // because render and the mouse handlers all key off it being non-null.
+        matPicker = null;
+        if(section == Section.SETTINGS)
         {
-            int bodyTop = top + PAD + TAB_H + 8;
-            java.util.List<de.cas_ual_ty.dueldimension.duel.profile.DeckList> decks =
-                EditorState.ownDecks();
-            int rows = Math.min(decks.size(), (HEIGHT - (PAD + TAB_H + 8) - 70) / 12);
-            for(int i = 0; i < rows; i++)
+            matPicker = new MatColourPicker(left + PAD + 6, bodyTop + 26, 120, 14,
+                de.cas_ual_ty.dueldimension.clientutil.DuelClientState.matColour());
+            addRenderableWidget(new HubWidgets.TextureButton(left + PAD + 6, top + HEIGHT - 32,
+                96, 20, Component.literal("Apply"), pressed -> applyMat()));
+            addRenderableWidget(new HubWidgets.TextureButton(left + PAD + 108, top + HEIGHT - 32,
+                96, 20, Component.literal("Reset"), pressed ->
             {
-                int index = i;
-                HubWidgets.TextureButton row = new HubWidgets.TextureButton(left + PAD + 6,
-                    bodyTop + 24 + i * 12, WIDTH - PAD * 2 - 12, 12,
-                    Component.literal(""), pressed ->
-                {
-                    EditorState.select(EditorState.indexOf(decks.get(index)));
-                    minecraft.setScreenAndShow(new DeckEditorScreen(this));
-                });
-                addRenderableWidget(row);
-            }
+                matPicker.setColour(de.cas_ual_ty.dueldimension.clientutil.DuelClientState.DEFAULT_MAT_COLOUR);
+                applyMat();
+            }));
+
+            // ---- duel music, under the mat ----
+            // Both take effect immediately rather than waiting on Apply: Apply
+            // is the mat's, because a colour is dragged and needs a moment to
+            // settle on, while these are single choices that are their own
+            // confirmation. Changing the track mid-duel swaps it there and then.
+            de.cas_ual_ty.dueldimension.clientutil.DuelMusic.Track current =
+                de.cas_ual_ty.dueldimension.clientutil.DuelMusic.track();
+            HubWidgets.TextureButton trackButton = new HubWidgets.TextureButton(
+                left + PAD + 168, bodyTop + 162, 130, 18,
+                Component.literal(current.label()), pressed ->
+            {
+                java.util.List<de.cas_ual_ty.dueldimension.clientutil.DuelMusic.Track> all =
+                    de.cas_ual_ty.dueldimension.clientutil.DuelMusic.TRACKS;
+                de.cas_ual_ty.dueldimension.clientutil.DuelMusic.setTrack(
+                    all.get((all.indexOf(de.cas_ual_ty.dueldimension.clientutil.DuelMusic.track())
+                        + 1) % all.size()));
+                rebuild();
+            });
+            // One track is not a choice, so the button says so rather than
+            // looking pressable and doing nothing.
+            trackButton.active =
+                de.cas_ual_ty.dueldimension.clientutil.DuelMusic.TRACKS.size() > 1;
+            trackButton.setTooltipLines(trackButton.active
+                ? java.util.List.of("The music a duel is played to")
+                : java.util.List.of("The music a duel is played to",
+                    "Only one track is installed"));
+            addRenderableWidget(trackButton);
+
+            boolean quiet = de.cas_ual_ty.dueldimension.clientutil.DuelMusic.muted();
+            HubWidgets.TextureButton muteButton = new HubWidgets.TextureButton(
+                left + PAD + 302, bodyTop + 162, 68, 18,
+                Component.literal(quiet ? "Muted" : "On"), pressed ->
+            {
+                de.cas_ual_ty.dueldimension.clientutil.DuelMusic.toggleMuted();
+                rebuild();
+            });
+            muteButton.setLabelColour(quiet ? 0xFF8A93A3 : 0xFFF4D089);
+            // If the game's own sliders are down, "On" is a lie by omission --
+            // so it says which slider, rather than leaving the player to
+            // wonder why an unmuted track makes no sound.
+            boolean silenced =
+                de.cas_ual_ty.dueldimension.clientutil.DuelMusic.silencedByGameVolume();
+            muteButton.setTooltipLines(quiet
+                ? java.util.List.of("Duels are played in silence",
+                    "The same switch as the one in a duel")
+                : silenced
+                    ? java.util.List.of("Music plays during a duel",
+                        "Silenced by Options > Music & Sounds",
+                        "Raise Jukebox/Note Blocks to hear it")
+                    : java.util.List.of("Music plays during a duel",
+                        "The same switch as the one in a duel"));
+            addRenderableWidget(muteButton);
         }
+
     }
 
     /**
@@ -149,12 +287,126 @@ public class DuelHubScreen extends Screen
         {
             case PROFILE -> profilePanel(graphics, bodyTop);
             case DECKS -> deckPanel(graphics, bodyTop);
-            case OUTFIT -> outfitPanel(graphics, bodyTop);
+            case SETTINGS -> settingsPanel(graphics, bodyTop);
             default -> waiting(graphics, bodyTop);
         }
 
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+
+        // The wardrobe goes AFTER the widgets, and that is not a detail. Each
+        // outfit's tile IS a button covering the whole cell, so a figure drawn
+        // before it is painted over by it -- which is exactly what happened:
+        // the previews were being drawn and then hidden. Forge ordered it the
+        // same way for the same reason, calling renderOutfit after super.render
+        // while Profile and Decks went before.
+        if(section == Section.OUTFIT)
+        {
+            outfitPanel(graphics, bodyTop);
+        }
+
         extractTooltip(graphics, mouseX, mouseY);
+    }
+
+    private void settingsPanel(GuiGraphicsExtractor graphics, int bodyTop)
+    {
+        int x = left + PAD + 10;
+        graphics.text(font, "Duel Mat", x, bodyTop + 10, 0xFFF4D089, true);
+        if(matPicker != null)
+        {
+            matPicker.render(graphics);
+            // The preview is the real mat texture under the chosen tint, so
+            // what is shown here is exactly what reaches the table.
+            matPicker.renderPreview(graphics, left + PAD + 168, bodyTop + 30, 210, 92);
+            String hex = String.format("#%06X", matPicker.colour());
+            graphics.text(font, hex, left + PAD + 168, bodyTop + 128, 0xFFC2C9D6, true);
+        }
+        // The heading its two buttons sit under. Drawn here rather than built
+        // as a widget because it is a label, and this panel draws its own.
+        graphics.text(font, "Duel Music", left + PAD + 168, bodyTop + 150, 0xFFF4D089, true);
+    }
+
+    private void applyMat()
+    {
+        if(matPicker == null)
+        {
+            return;
+        }
+        de.cas_ual_ty.dueldimension.clientutil.DuelClientState.setMatColour(matPicker.colour());
+        // The other duelist draws your mat on their far half, so the colour has
+        // to travel; it is a preference, not hidden information.
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+            new de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.SetPlayMat(
+                de.cas_ual_ty.dueldimension.clientutil.DuelClientState.matColourId()));
+    }
+
+    // The picker is not an AbstractWidget -- it is a wheel and a slider drawn
+    // directly -- so the three mouse events reach it by hand, and it gets first
+    // refusal ahead of the widgets so a drag across the wheel is not stolen.
+    @Override
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
+        boolean doubled)
+    {
+        if(matPicker != null && matPicker.mouseClicked(event.x(), event.y()))
+        {
+            return true;
+        }
+        if(renameField != null && !renameField.isMouseOver(event.x(), event.y()))
+        {
+            commitRename();
+        }
+        return super.mouseClicked(event, doubled);
+    }
+
+    @Override
+    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event,
+        double dragX, double dragY)
+    {
+        if(matPicker != null && matPicker.mouseDragged(event.x(), event.y()))
+        {
+            return true;
+        }
+        return super.mouseDragged(event, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event)
+    {
+        if(matPicker != null)
+        {
+            matPicker.mouseReleased();
+        }
+        return super.mouseReleased(event);
+    }
+
+    @Override
+    public boolean keyPressed(net.minecraft.client.input.KeyEvent event)
+    {
+        if(confirmDelete != null && event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE)
+        {
+            // Escape answers the question rather than leaving the hub, which is
+            // the safe reading of it while a delete is waiting.
+            confirmDelete = null;
+            rebuild();
+            return true;
+        }
+        if(renameField != null && renameField.isFocused())
+        {
+            if(event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER
+                || event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_KP_ENTER)
+            {
+                commitRename();
+                return true;
+            }
+            if(event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE)
+            {
+                cancelRename();
+                rebuild();
+                return true;
+            }
+            // The field is a real widget here, so its own editing keys reach it
+            // through super rather than needing the hand-forwarding Forge did.
+        }
+        return super.keyPressed(event);
     }
 
     /** A section whose body has not been ported, saying what it waits on. */
@@ -198,55 +450,521 @@ public class DuelHubScreen extends Screen
             + (EditorState.freeMode() ? "on" : "off"), x, y, 0xFFC2C9D6, true);
     }
 
-    /**
-     * The deck list, read-only for now.
-     * <p>
-     * The rows are here because {@code EditorState} is: what a player owns and
-     * has built is real. What is not here is anything that CHANGES a deck --
-     * use, rename, duplicate, delete, and the editor itself -- because those
-     * open {@code DeckEditorScreen} or need the confirmation dialogue, and
-     * neither is ported. Showing buttons that do nothing would be worse than
-     * showing none.
-     */
+    /** The deck panel's non-widget half: counters, notice, and the dialogs. */
     private void deckPanel(GuiGraphicsExtractor graphics, int bodyTop)
     {
-        int x = left + PAD + 10;
-        int y = bodyTop + 10;
-        graphics.text(font, "Decks", x, y, 0xFFF4D089, true);
-        y += 16;
-
         if(!EditorState.isSynced())
         {
-            graphics.text(font, "Waiting for the server...", x, y, 0xFF7A8090, true);
+            graphics.text(font, "Waiting for the server...", left + PAD + 10, bodyTop + 10,
+                0xFF7A8090, true);
             return;
         }
+        if(confirmDelete != null)
+        {
+            renderDeleteConfirm(graphics);
+            return;
+        }
+        if(deckView == DeckView.RECIPES)
+        {
+            renderRecipeHeadings(graphics, bodyTop + 22);
+            return;
+        }
+        int count = EditorState.ownDecks().size();
+        int visible = deckRowsVisible();
+        if(count > visible)
+        {
+            graphics.text(font, (deckScroll + 1) + "-"
+                + Math.min(count, deckScroll + visible) + " of " + count,
+                left + PAD + 4, top + HEIGHT - 28, 0xFF7A8090, true);
+        }
+        if(!notice.isEmpty())
+        {
+            graphics.text(font, notice, left + PAD + 110, top + HEIGHT - 26, 0xFFFF8A80, true);
+        }
+    }
 
+    private int deckRowsVisible()
+    {
+        int bodyHeight = HEIGHT - (PAD + TAB_H + 8) - 40;
+        return Math.max(1, (bodyHeight - 26) / ROW_H);
+    }
+
+    private int recipeRowsVisible()
+    {
+        // One row shorter than the deck list's: the heading takes the top of
+        // each column rather than a row of the single flattened list.
+        return Math.max(1, deckRowsVisible() - 1);
+    }
+
+    private int recipeColumnW()
+    {
+        return (WIDTH - PAD * 2 - 8 - COLUMN_GAP * 2) / 3;
+    }
+
+    private int recipeColumnX(int column)
+    {
+        return left + PAD + 4 + column * (recipeColumnW() + COLUMN_GAP);
+    }
+
+    private int recipeColumnAt(double mouseX)
+    {
+        for(int column = 0; column < recipeScroll.length; column++)
+        {
+            int x = recipeColumnX(column);
+            if(mouseX >= x && mouseX < x + recipeColumnW())
+            {
+                return column;
+            }
+        }
+        return -1;
+    }
+
+    /** One group of recipes, with the heading it is listed under. */
+    private record RecipeGroup(String heading, java.util.List<
+        de.cas_ual_ty.dueldimension.duel.profile.DeckList> decks)
+    {
+    }
+
+    private java.util.List<RecipeGroup> recipeGroups()
+    {
+        EditorState.decks();
+        return java.util.List.of(
+            new RecipeGroup("Saved", EditorState.profile().savedRecipes()),
+            new RecipeGroup("Starter Decks", EditorState.profile().starterDecks()),
+            new RecipeGroup("Structure Decks", EditorState.profile().structureDecks()));
+    }
+
+    private void buildDeckRows(int bodyTop)
+    {
         java.util.List<de.cas_ual_ty.dueldimension.duel.profile.DeckList> decks =
             EditorState.ownDecks();
-        if(decks.isEmpty())
+        int visible = deckRowsVisible();
+        deckScroll = Math.max(0, Math.min(deckScroll, Math.max(0, decks.size() - visible)));
+
+        int rowX = left + PAD + 4;
+        int rowW = WIDTH - PAD * 2 - 8;
+        int useW = 32;
+        int renameW = 52;
+        int duplicateW = 76;
+        int recipeW = 50;
+        int deleteW = 46;
+        int gap = 3;
+        int actionsW = useW + renameW + duplicateW + recipeW + deleteW + gap * 5;
+        int nameW = Math.max(60, rowW - actionsW);
+
+        for(int row = 0; row < visible; row++)
         {
-            graphics.text(font, "No decks yet.", x, y, 0xFF7A8090, true);
+            int index = row + deckScroll;
+            if(index >= decks.size())
+            {
+                break;
+            }
+            de.cas_ual_ty.dueldimension.duel.profile.DeckList deck = decks.get(index);
+            int y = bodyTop + 4 + row * ROW_H;
+            int x = rowX;
+
+            if(deck == renaming && renameField != null)
+            {
+                renameField.setX(x + 2);
+                renameField.setY(y + 3);
+                renameField.setWidth(nameW - 6);
+                // Renderable, not just a listener: an EditBox is a widget and
+                // extracts itself, where Forge drew it by hand in renderDecks.
+                addRenderableWidget(renameField);
+                setFocused(renameField);
+                renameField.setFocused(true);
+            }
+            else
+            {
+                // Active deck is marked, so "Use" has visible consequence.
+                boolean active = deck.name().equals(EditorState.profile().activeDeck());
+                String label = (active ? "▸ " : "") + deck.name()
+                    + "  (" + deck.main().size() + ")";
+                int target = index;
+                HubWidgets.TextureButton name = new HubWidgets.TextureButton(x, y, nameW,
+                    ROW_H - 2, Component.literal(label), pressed ->
+                {
+                    EditorState.select(EditorState.indexOf(decks.get(target)));
+                    if(minecraft != null)
+                    {
+                        minecraft.gui.setScreen(new DeckEditorScreen(this));
+                    }
+                });
+                // The player's own decks are the ones that end up short or full
+                // of cards they no longer own, so this list needs the warning
+                // more than the recipe list does -- and only had it there.
+                markUnusable(name, deck);
+                addRenderableWidget(name);
+            }
+            x += nameW + gap;
+
+            int useIndex = index;
+            HubWidgets.TextureButton use = new HubWidgets.TextureButton(x, y, useW, ROW_H - 2,
+                Component.literal("Use"), pressed ->
+            {
+                // Told to the server, which is what actually decides the deck
+                // a duel is played with.
+                EditorState.setActiveDeck(decks.get(useIndex).name());
+                notice = "";
+                rebuild();
+            });
+            // Saving an unfinished deck is fine -- building one is a process --
+            // but it cannot be USED until it is legal, so Use reports that by
+            // being disabled rather than by failing at the duel.
+            boolean legal = de.cas_ual_ty.dueldimension.duel.profile.DeckLimits
+                .validate(deck, EditorState.trunk(), EditorState.banlist(),
+                    EditorState.freeMode()).isEmpty();
+            use.active = legal && !deck.name().equals(EditorState.profile().activeDeck());
+            addRenderableWidget(use);
+            x += useW + gap;
+
+            int renameIndex = index;
+            addRenderableWidget(new HubWidgets.TextureButton(x, y, renameW, ROW_H - 2,
+                Component.literal("Rename"), pressed ->
+                    startRename(EditorState.indexOf(decks.get(renameIndex)))));
+            x += renameW + gap;
+
+            int duplicateIndex = index;
+            addRenderableWidget(new HubWidgets.TextureButton(x, y, duplicateW, ROW_H - 2,
+                Component.literal("Duplicate As"), pressed ->
+            {
+                // Duplicating drops straight into renaming the copy: the point
+                // of "as" is that the copy gets its own name.
+                EditorState.duplicate(EditorState.indexOf(decks.get(duplicateIndex)));
+                startRename(EditorState.currentIndex());
+            }));
+            x += duplicateW + gap;
+
+            // Offering a deck as a recipe is now something the player says.
+            // Making a deck used to publish it automatically, which turned the
+            // recipe list into a second copy of the deck list.
+            HubWidgets.TextureButton recipe = new HubWidgets.TextureButton(x, y, recipeW,
+                ROW_H - 2, Component.literal("Recipe"), pressed ->
+            {
+                EditorState.publish(deck, !deck.published());
+                rebuild();
+            });
+            recipe.setLabelColour(deck.published() ? 0xFFF4D089 : 0xFF8A93A3);
+            recipe.setTooltipLines(deck.published()
+                ? java.util.List.of("Shown in the recipe list", "Click to withdraw it")
+                : java.util.List.of("Not offered as a recipe", "Click to add it to the list"));
+            addRenderableWidget(recipe);
+            x += recipeW + gap;
+
+            int deleteIndex = index;
+            HubWidgets.TextureButton delete = new HubWidgets.TextureButton(x, y, deleteW, ROW_H - 2,
+                Component.literal("Delete"), pressed ->
+            {
+                // Asked first. A deck is a long evening's work and the button
+                // sits next to four that are not destructive.
+                confirmDelete = decks.get(deleteIndex);
+                notice = "";
+                rebuild();
+            });
+            // A granted structure deck is the record of what was opened, so it
+            // reports that by being disabled rather than failing when pressed.
+            delete.active = deck.origin()
+                != de.cas_ual_ty.dueldimension.duel.profile.DeckList.Origin.STRUCTURE;
+            addRenderableWidget(delete);
+        }
+    }
+
+    /**
+     * The recipe list: three lists side by side, one per source.
+     * <p>
+     * Flattened into a single scrolling column, the starter decks sat below
+     * however many saved recipes the player had, so finding one meant scrolling
+     * past the others. Three columns each scroll on their own and each say how
+     * far down they are.
+     * <p>
+     * A recipe's action is to be used, which takes a copy of it: the original
+     * is the record of what was saved or opened, and editing it in place would
+     * destroy that. Editing a saved recipe is done from the deck list, where
+     * the deck it was published from lives.
+     */
+    private void buildRecipeRows(int bodyTop)
+    {
+        java.util.List<RecipeGroup> groups = recipeGroups();
+        int visible = recipeRowsVisible();
+        int columnW = recipeColumnW();
+        int nameW = columnW - RECIPE_INSET * 2 - BAR_W - 2;
+
+        for(int column = 0; column < groups.size() && column < recipeScroll.length; column++)
+        {
+            java.util.List<de.cas_ual_ty.dueldimension.duel.profile.DeckList> decks =
+                groups.get(column).decks();
+            recipeScroll[column] = Math.max(0, Math.min(recipeScroll[column],
+                Math.max(0, decks.size() - visible)));
+            int x = recipeColumnX(column) + RECIPE_INSET;
+
+            for(int row = 0; row < visible; row++)
+            {
+                int index = row + recipeScroll[column];
+                if(index >= decks.size())
+                {
+                    break;
+                }
+                de.cas_ual_ty.dueldimension.duel.profile.DeckList recipe = decks.get(index);
+                int y = bodyTop + 14 + row * ROW_H;
+                String shownName = recipeDisplayName(recipe);
+                HubWidgets.TextureButton recipeName = new HubWidgets.TextureButton(x, y, nameW,
+                    ROW_H - 2, Component.literal(font.plainSubstrByWidth(
+                        shownName + "  (" + recipe.main().size() + ")", nameW - 8)),
+                    pressed -> useRecipe(recipe));
+                markUnusable(recipeName, recipe);
+                if(recipeName.tooltipLines().isEmpty())
+                {
+                    recipeName.setTooltipLines(java.util.List.of(shownName,
+                        "Makes a new deck from this recipe"));
+                }
+                addRenderableWidget(recipeName);
+            }
+        }
+    }
+
+    /** Product category belongs in the column heading, not every row. */
+    private static String recipeDisplayName(
+        de.cas_ual_ty.dueldimension.duel.profile.DeckList recipe)
+    {
+        String name = recipe.name();
+        return switch(recipe.origin())
+        {
+            case STARTER -> withoutProductWords(name, "Starter Deck");
+            case STRUCTURE -> withoutProductWords(name, "Structure Deck");
+            default -> name;
+        };
+    }
+
+    private static String withoutProductWords(String name, String product)
+    {
+        String shortened = name;
+        if(shortened.startsWith(product))
+        {
+            shortened = shortened.substring(product.length());
+        }
+        if(shortened.endsWith(product))
+        {
+            shortened = shortened.substring(0, shortened.length() - product.length());
+        }
+        shortened = shortened.strip();
+        if(shortened.startsWith(":"))
+        {
+            shortened = shortened.substring(1).strip();
+        }
+        return shortened.isEmpty() ? name : shortened;
+    }
+
+    /**
+     * Why this deck cannot be duelled with, empty if it can.
+     * <p>
+     * Shared by every list that shows a deck. Two lists each deciding this for
+     * themselves is how one of them ended up saying nothing.
+     */
+    private static java.util.List<String> unusableReasons(
+        de.cas_ual_ty.dueldimension.duel.profile.DeckList deck)
+    {
+        java.util.List<String> why = new java.util.ArrayList<>();
+        // Size is not something free mode relaxes: a deck under forty is
+        // illegal however generous the collection is.
+        if(deck.main().size() < de.cas_ual_ty.dueldimension.duel.match.Banlist.MAIN_MIN)
+        {
+            why.add("A deck requires 40 or more cards to use");
+        }
+        java.util.List<Integer> missing = EditorState.freeMode()
+            ? java.util.List.of() : EditorState.missingFrom(deck);
+        if(!missing.isEmpty())
+        {
+            why.add("Cannot be duelled with: " + missing.size()
+                + (missing.size() == 1 ? " card" : " cards") + " you do not own");
+            why.add("Earn them, take them out, or turn free mode on");
+        }
+        return why;
+    }
+
+    /** Reddens a deck row and says why, or leaves it alone. */
+    private static void markUnusable(HubWidgets.TextureButton row,
+        de.cas_ual_ty.dueldimension.duel.profile.DeckList deck)
+    {
+        java.util.List<String> why = unusableReasons(deck);
+        if(!why.isEmpty())
+        {
+            row.setLabelColour(0xFFFF6B6B);
+            row.setTooltipLines(why);
+        }
+    }
+
+    /** Use: a new deck from the recipe, then name it. */
+    private void useRecipe(de.cas_ual_ty.dueldimension.duel.profile.DeckList recipe)
+    {
+        EditorState.useRecipe(EditorState.indexOf(recipe));
+        deckView = DeckView.DECKS;
+        deckScroll = 0;
+        notice = "";
+        startRename(EditorState.currentIndex());
+    }
+
+    private void startRename(int index)
+    {
+        java.util.List<de.cas_ual_ty.dueldimension.duel.profile.DeckList> all = EditorState.decks();
+        startRename(all.get(Math.max(0, Math.min(index, all.size() - 1))));
+    }
+
+    /**
+     * Turns that deck's name button into an editable field until it is
+     * confirmed. Deck management is in the Decks view, so renaming switches
+     * there rather than leaving the field somewhere the player cannot see it.
+     */
+    private void startRename(de.cas_ual_ty.dueldimension.duel.profile.DeckList deck)
+    {
+        deckView = DeckView.DECKS;
+        renaming = deck;
+        renameField = new net.minecraft.client.gui.components.EditBox(font, 0, 0, 100, 14,
+            Component.literal("Deck name"));
+        renameField.setMaxLength(40);
+        renameField.setValue(deck.name());
+        // The boolean is "select to the cursor", grown since 1.19.2; false is
+        // the plain jump-to-end the Forge call was.
+        renameField.moveCursorToEnd(false);
+        // Scrolled to, or a rename on an off-screen row would edit something
+        // the player cannot see.
+        int row = EditorState.ownDecks().indexOf(deck);
+        if(row >= 0)
+        {
+            int visible = deckRowsVisible();
+            if(row < deckScroll || row >= deckScroll + visible)
+            {
+                deckScroll = Math.max(0, row - visible / 2);
+            }
+        }
+        rebuild();
+    }
+
+    private void cancelRename()
+    {
+        renaming = null;
+        renameField = null;
+    }
+
+    /** Applies a pending rename. Commits on Enter or on clicking away. */
+    private void commitRename()
+    {
+        if(renaming == null || renameField == null)
+        {
             return;
         }
+        EditorState.select(EditorState.indexOf(renaming));
+        if(!EditorState.rename(renameField.getValue()))
+        {
+            notice = "That name is already used";
+        }
+        cancelRename();
+        rebuild();
+    }
 
-        String active = EditorState.profile().activeDeck();
-        int rows = Math.min(decks.size(), (HEIGHT - (PAD + TAB_H + 8) - 70) / 12);
-        for(int i = 0; i < rows; i++)
+    /** The two answers to the delete question; the box is drawn by deckPanel. */
+    private void buildDeleteConfirm()
+    {
+        if(confirmDelete == null)
         {
-            de.cas_ual_ty.dueldimension.duel.profile.DeckList deck = decks.get(i);
-            boolean on = deck.name().equals(active);
-            graphics.text(font, (on ? "▸ " : "") + deck.name()
-                    + "  (" + deck.main().size() + ")",
-                x, y, on ? 0xFFF4D089 : 0xFFE6EAF2, true);
-            y += 12;
+            return;
         }
-        if(decks.size() > rows)
+        int boxW = 240;
+        int boxH = 74;
+        int boxX = left + (WIDTH - boxW) / 2;
+        int boxY = top + (HEIGHT - boxH) / 2;
+        de.cas_ual_ty.dueldimension.duel.profile.DeckList doomed = confirmDelete;
+        addRenderableWidget(new HubWidgets.TextureButton(boxX + 12, boxY + boxH - 26, 100, 20,
+            Component.literal("Delete"), pressed ->
         {
-            graphics.text(font, "...and " + (decks.size() - rows) + " more",
-                x, y, 0xFF7A8090, true);
-            y += 12;
+            confirmDelete = null;
+            EditorState.select(EditorState.indexOf(doomed));
+            String error = EditorState.deleteCurrent();
+            notice = error == null ? "" : error;
+            cancelRename();
+            rebuild();
+        }));
+        addRenderableWidget(new HubWidgets.TextureButton(boxX + boxW - 112, boxY + boxH - 26,
+            100, 20, Component.literal("Cancel"), pressed ->
+        {
+            confirmDelete = null;
+            rebuild();
+        }));
+    }
+
+    private void renderDeleteConfirm(GuiGraphicsExtractor graphics)
+    {
+        if(confirmDelete == null)
+        {
+            return;
         }
-        graphics.text(font, "Click a deck to edit it.", x, y + 4, 0xFF7A8090, true);
+        int boxW = 240;
+        int boxH = 74;
+        int boxX = left + (WIDTH - boxW) / 2;
+        int boxY = top + (HEIGHT - boxH) / 2;
+        // Over the rows it is asking about, and dark enough that the list
+        // behind it cannot be mistaken for something still clickable. The two
+        // answer buttons are widgets, described after this, so they sit on top.
+        graphics.fill(left, top, left + WIDTH, top + HEIGHT, 0xC0000000);
+        NineSlice.draw(graphics, HubTextures.PANEL, boxX, boxY, boxW, boxH);
+        graphics.text(font, "Delete this deck?", boxX + 12, boxY + 10, 0xFFF4D089, true);
+        String named = "\"" + confirmDelete.name() + "\"  ("
+            + confirmDelete.main().size() + " cards)";
+        graphics.text(font, font.plainSubstrByWidth(named, boxW - 24),
+            boxX + 12, boxY + 24, 0xFFE6EAF2, true);
+        graphics.text(font, "This cannot be undone.", boxX + 12, boxY + 36, 0xFFFF6B6B, true);
+    }
+
+    private void renderRecipeHeadings(GuiGraphicsExtractor graphics, int bodyTop)
+    {
+        java.util.List<RecipeGroup> groups = recipeGroups();
+        int visible = recipeRowsVisible();
+        int columnW = recipeColumnW();
+
+        for(int column = 0; column < groups.size() && column < recipeScroll.length; column++)
+        {
+            RecipeGroup group = groups.get(column);
+            int x = recipeColumnX(column);
+            int bubbleH = 14 + visible * ROW_H + 14;
+            NineSlice.draw(graphics, HubTextures.PANEL_INSET,
+                x - 2, bodyTop - 2, columnW + 4, bubbleH);
+            graphics.text(font, font.plainSubstrByWidth(group.heading(), columnW),
+                x + RECIPE_INSET, bodyTop + 2, 0xFFF4D089, true);
+            if(group.decks().isEmpty())
+            {
+                graphics.text(font, "(none)", x + RECIPE_INSET, bodyTop + 18, 0xFF7A8090, true);
+                scrollbar(graphics, x + columnW - BAR_W - 2, bodyTop + 14,
+                    visible * ROW_H, 0, visible, 0);
+                continue;
+            }
+            scrollbar(graphics, x + columnW - BAR_W - 2, bodyTop + 14, visible * ROW_H,
+                group.decks().size(), visible, recipeScroll[column]);
+            if(group.decks().size() > visible)
+            {
+                graphics.text(font, (recipeScroll[column] + 1) + "-"
+                        + Math.min(group.decks().size(), recipeScroll[column] + visible)
+                        + " of " + group.decks().size(),
+                    x + RECIPE_INSET, bodyTop + 14 + visible * ROW_H + 2, 0xFF7A8090, true);
+            }
+        }
+    }
+
+    private void scrollbar(GuiGraphicsExtractor graphics, int x, int y, int height,
+        int total, int visible, int offset)
+    {
+        if(height <= 0)
+        {
+            return;
+        }
+        NineSlice.draw(graphics, HubTextures.SCROLLBAR, x, y, 4, height, 0, 2);
+        if(total <= 0)
+        {
+            return;
+        }
+        int overflow = Math.max(0, total - visible);
+        int thumbH = Math.max(12, height * visible / Math.max(1, total));
+        thumbH = Math.min(height, thumbH);
+        int thumbY = overflow == 0 ? y : y + (height - thumbH) * offset / overflow;
+        NineSlice.draw(graphics, HubTextures.SCROLLBAR, x, thumbY, 4, thumbH, 1, 2);
     }
 
     private int outfitStripX()
@@ -469,6 +1187,30 @@ public class DuelHubScreen extends Screen
                 outfitScroll = moved;
                 rebuild();
             }
+            return true;
+        }
+        if(section == Section.DECKS && deckView == DeckView.RECIPES)
+        {
+            // The column under the cursor, so three lists side by side scroll
+            // independently rather than together.
+            int column = recipeColumnAt(mouseX);
+            if(column < 0)
+            {
+                return true;
+            }
+            java.util.List<RecipeGroup> groups = recipeGroups();
+            int total = column < groups.size() ? groups.get(column).decks().size() : 0;
+            int max = Math.max(0, total - recipeRowsVisible());
+            recipeScroll[column] = Math.max(0,
+                Math.min(max, recipeScroll[column] - (int)Math.signum(scrollY)));
+            rebuild();
+            return true;
+        }
+        if(section == Section.DECKS)
+        {
+            int max = Math.max(0, EditorState.ownDecks().size() - deckRowsVisible());
+            deckScroll = Math.max(0, Math.min(max, deckScroll - (int)Math.signum(scrollY)));
+            rebuild();
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);

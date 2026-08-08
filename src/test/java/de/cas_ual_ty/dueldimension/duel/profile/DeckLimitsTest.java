@@ -36,6 +36,87 @@ class DeckLimitsTest
         return new Banlist("test", "Test List", limits);
     }
 
+    /**
+     * Registers a card the database can resolve, since the part rule asks it
+     * what the card is. Removed again is unnecessary -- the list is keyed by
+     * passcode and these ids are not real cards.
+     */
+    private static int registerMonster(long passcode,
+        de.cas_ual_ty.dueldimension.card.properties.MonsterType monsterType)
+    {
+        de.cas_ual_ty.dueldimension.card.properties.LevelMonsterProperties card =
+            new de.cas_ual_ty.dueldimension.card.properties.LevelMonsterProperties();
+        card.id = passcode;
+        card.name = "Test " + passcode;
+        card.type = de.cas_ual_ty.dueldimension.card.properties.Type.MONSTER;
+        card.monsterType = monsterType;
+        card.species = "Warrior";
+        card.attribute = "DARK";
+        card.ability = "";
+        de.cas_ual_ty.dueldimension.DdDatabase.PROPERTIES_LIST.add(card);
+        return (int)passcode;
+    }
+
+    @Test
+    void theExtraDeckRefusesACardThatDoesNotBelongInIt()
+    {
+        int mainDeckMonster = registerMonster(90000001L, null);
+        DeckList deck = new DeckList("d", DeckList.Origin.SAVED);
+
+        DeckLimits.Verdict verdict = DeckLimits.canAddToDraft(deck, DeckList.Part.EXTRA,
+            mainDeckMonster, Banlist.none());
+
+        assertFalse(verdict.allowed());
+        assertTrue(verdict.reason().contains("Extra Deck"), verdict.reason());
+    }
+
+    @Test
+    void theMainDeckRefusesAnExtraDeckMonster()
+    {
+        int fusion = registerMonster(90000002L,
+            de.cas_ual_ty.dueldimension.card.properties.MonsterType.FUSION);
+        DeckList deck = new DeckList("d", DeckList.Origin.SAVED);
+
+        DeckLimits.Verdict verdict = DeckLimits.canAddToDraft(deck, DeckList.Part.MAIN,
+            fusion, Banlist.none());
+
+        assertFalse(verdict.allowed());
+        assertTrue(verdict.reason().contains("Extra Deck"), verdict.reason());
+    }
+
+    @Test
+    void eachKindIsAcceptedWhereItBelongs()
+    {
+        int mainDeckMonster = registerMonster(90000003L, null);
+        int synchro = registerMonster(90000004L,
+            de.cas_ual_ty.dueldimension.card.properties.MonsterType.SYNCHRO);
+        DeckList deck = new DeckList("d", DeckList.Origin.SAVED);
+
+        assertTrue(DeckLimits.canAddToDraft(deck, DeckList.Part.MAIN,
+            mainDeckMonster, Banlist.none()).allowed());
+        assertTrue(DeckLimits.canAddToDraft(deck, DeckList.Part.EXTRA,
+            synchro, Banlist.none()).allowed());
+    }
+
+    /**
+     * The Side Deck is swapped into both halves between games, so it holds
+     * either kind. Constraining it would make a perfectly legal side board
+     * impossible to build.
+     */
+    @Test
+    void theSideDeckTakesEitherKind()
+    {
+        int mainDeckMonster = registerMonster(90000005L, null);
+        int link = registerMonster(90000006L,
+            de.cas_ual_ty.dueldimension.card.properties.MonsterType.LINK);
+        DeckList deck = new DeckList("d", DeckList.Origin.SAVED);
+
+        assertTrue(DeckLimits.canAddToDraft(deck, DeckList.Part.SIDE,
+            mainDeckMonster, Banlist.none()).allowed());
+        assertTrue(DeckLimits.canAddToDraft(deck, DeckList.Part.SIDE,
+            link, Banlist.none()).allowed());
+    }
+
     @Test
     void aFourthCopyIsRefusedEvenWithNoBanlistAndPlentyOwned()
     {
@@ -87,11 +168,9 @@ class DeckLimitsTest
     }
 
     @Test
-    void owningFewerCopiesCapsTheDeckAndNamesThatReason()
+    void owningFewerCopiesDoesNotCapADeckDraft()
     {
-        // Own one, no banlist: the deck may hold exactly one, and the refusal
-        // must say it is ownership rather than a limit, since the remedy is
-        // completely different.
+        // Ownership is checked when the deck is used, not while it is planned.
         Trunk trunk = trunkOf(Map.of(FISSURE, 1));
         DeckList deck = new DeckList("d", DeckList.Origin.SAVED);
         assertTrue(DeckLimits.canAdd(deck, DeckList.Part.MAIN, FISSURE, trunk, Banlist.none()).allowed());
@@ -99,17 +178,15 @@ class DeckLimitsTest
 
         DeckLimits.Verdict second =
             DeckLimits.canAdd(deck, DeckList.Part.MAIN, FISSURE, trunk, Banlist.none());
-        assertFalse(second.allowed());
-        assertTrue(second.reason().contains("only own 1"), second.reason());
+        assertTrue(second.allowed());
     }
 
     @Test
-    void aCardYouDoNotOwnCannotBeAddedAtAll()
+    void aCardYouDoNotOwnCanBeAddedToADraft()
     {
         DeckLimits.Verdict verdict = DeckLimits.canAdd(new DeckList("d", DeckList.Origin.SAVED),
             DeckList.Part.MAIN, FISSURE, new Trunk(), Banlist.none());
-        assertFalse(verdict.allowed());
-        assertTrue(verdict.reason().contains("do not own"), verdict.reason());
+        assertTrue(verdict.allowed());
     }
 
     @Test

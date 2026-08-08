@@ -35,10 +35,9 @@ public final class DeckEdits
      * Stores a deck's contents, creating it if the player has no deck by that
      * name.
      * <p>
-     * The check is ownership, not legality: a deck may be saved half-built or
-     * over the limit, because a player mid-edit has not done anything wrong.
-     * What they may not do is put in a card they do not own. Whether the deck
-     * can be <em>duelled</em> with is asked later, when it is used.
+     * A deck may be saved half-built or with missing cards because the editor
+     * is also a planning tool. Draft limits still apply; ownership is checked
+     * later, when the deck is selected or used for a duel.
      */
     public static String saveDeck(ServerPlayer player, String name, List<Integer> main,
         List<Integer> extra, List<Integer> side)
@@ -61,6 +60,15 @@ public final class DeckEdits
         {
             // Saving a deck does not withdraw it from the recipe list.
             candidate.publish(existing.published());
+        }
+        for(int code : candidate.counts().keySet())
+        {
+            de.cas_ual_ty.dueldimension.card.properties.Properties card =
+                de.cas_ual_ty.dueldimension.DdDatabase.PROPERTIES_LIST.get((long)code);
+            if(card == null || card.getIllegal())
+            {
+                return "Card " + code + " is not available for deck building.";
+            }
         }
         String refusal = refusalFor(profile.trunk(), candidate, banlist(),
             FreeMode.isEnabled(player));
@@ -192,9 +200,19 @@ public final class DeckEdits
     public static String setActive(ServerPlayer player, String name)
     {
         DuelProfile profile = DuelProfiles.get(player);
-        if(!name.isEmpty() && profile.deckNamed(name) == null)
+        DeckList deck = name.isEmpty() ? null : profile.deckNamed(name);
+        if(!name.isEmpty() && deck == null)
         {
             return "You have no deck called \"" + name + "\".";
+        }
+        if(deck != null)
+        {
+            List<String> problems = DeckLimits.validate(deck, profile.trunk(), banlist(),
+                FreeMode.isEnabled(player));
+            if(!problems.isEmpty())
+            {
+                return "That deck cannot be used: " + problems.get(0);
+            }
         }
         profile.setActiveDeck(name);
         return null;
@@ -279,36 +297,33 @@ public final class DeckEdits
     }
 
     /**
-     * Why this deck may not be stored against this collection, or null if it
-     * may be.
+     * Why this draft may not be stored, or null if it may be.
      * <p>
-     * {@link DeckLimits#maxCopies} already caps at what the trunk holds, so a
-     * card owned zero times allows zero copies and this one check covers both
-     * "you do not have that card" and "you do not have that many".
-     * <p>
-     * Pure, and public for the same reason {@code DuelPoints.canAfford} is: it
-     * is the line between a player and cards they did not earn, so it is worth
-     * being able to check it directly rather than only through a live server.
+     * Ownership is intentionally absent here. It is a duel-readiness rule,
+     * enforced by {@link #duelReadiness} and the actual duel entry points.
      */
     public static String refusalFor(Trunk trunk, DeckList deck, Banlist banlist)
     {
         return refusalFor(trunk, deck, banlist, false);
     }
 
-    /** As above; free mode drops the ownership half of the check. */
+    /** Kept as an overload for callers that also know the current mode. */
     public static String refusalFor(Trunk trunk, DeckList deck, Banlist banlist, boolean freeMode)
     {
+        for(DeckList.Part part : DeckList.Part.values())
+        {
+            if(deck.partFor(part).size() > part.capacity())
+            {
+                return part + " exceeds its " + part.capacity() + " card capacity.";
+            }
+        }
         for(Map.Entry<Integer, Integer> entry : deck.counts().entrySet())
         {
             int used = entry.getValue();
-            int allowed = DeckLimits.maxCopies(entry.getKey(), trunk, banlist, freeMode);
+            int allowed = DeckLimits.maxCopies(entry.getKey(), trunk, banlist, true);
             if(used > allowed)
             {
-                int owned = trunk.countOf(entry.getKey());
-                return used > owned
-                    ? "That deck uses " + used + " of card " + entry.getKey()
-                        + " but you own " + owned + "."
-                    : "Card " + entry.getKey() + " is limited to " + allowed + " copies.";
+                return "Card " + entry.getKey() + " is limited to " + allowed + " copies.";
             }
         }
         return null;

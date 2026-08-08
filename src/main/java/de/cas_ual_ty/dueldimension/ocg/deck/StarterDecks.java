@@ -36,15 +36,43 @@ public final class StarterDecks
         "Big dragons and aggression, built around Blue-Eyes White Dragon.");
     public static final Entry JOEY = new Entry("joey", "Starter Deck: Joey", "SDJ",
         "Warriors and swarm tactics, built around Red-Eyes Black Dragon.");
+    public static final Entry PEGASUS = new Entry("pegasus", "Starter Deck: Pegasus", "SDP",
+        "Toons, rituals and control from Maximillion Pegasus.");
+    public static final Entry YUGI_EVOLUTION = new Entry("yugi_evolution",
+        "Starter Deck: Yugi Evolution", "SYE", "Yugi's evolved spellcaster strategy.");
+    public static final Entry KAIBA_EVOLUTION = new Entry("kaiba_evolution",
+        "Starter Deck: Kaiba Evolution", "SKE", "Kaiba's evolved dragon strategy.");
+    public static final Entry STARTER_2006 = new Entry("starter_2006", "Starter Deck 2006", "YSD",
+        "The first generation-neutral TCG starter deck.");
 
     public static final Entry JADEN = new Entry("jaden", "Starter Deck: Jaden Yuki", "YSDJ",
         "GX era: Elemental HEROes and the fusions they make.");
+    public static final Entry SYRUS = new Entry("syrus", "Starter Deck: Syrus Truesdale", "YSDS",
+        "GX machines built around Syrus's Vehicroids.");
     public static final Entry YUSEI = new Entry("yusei", "Starter Deck: Yu-Gi-Oh! 5D's", "5DS1",
         "5D's era: tuners, and the synchro monsters they summon.");
+    public static final Entry STARTER_2009 = new Entry("starter_2009",
+        "Starter Deck: Yu-Gi-Oh! 5D's 2009", "5DS2", "A second 5D's-era Synchro starter.");
     public static final Entry YUMA = new Entry("yuma", "Starter Deck: Dawn of the Xyz", "YS11",
         "Zexal era: stacking levels to build xyz monsters.");
+    public static final Entry KAIBA_RELOADED = new Entry("kaiba_reloaded",
+        "Starter Deck: Kaiba Reloaded", "YSKR", "A modernized Kaiba dragon deck.");
+    public static final Entry YUGI_RELOADED = new Entry("yugi_reloaded",
+        "Starter Deck: Yugi Reloaded", "YSYR", "A modernized Yugi spellcaster deck.");
+    public static final Entry SABER_FORCE = new Entry("saber_force", "Saber Force Starter Deck", "YS15",
+        "Light monsters and Pendulum Summoning.");
+    public static final Entry YUYA = new Entry("yuya", "Starter Deck: Yuya", "YS16",
+        "Yuya's Performapals and Pendulum monsters.");
+    public static final Entry LINK_STRIKE = new Entry("link_strike", "Starter Deck: Link Strike", "YS17",
+        "The first Link Summoning starter deck.");
+    public static final Entry CODEBREAKER = new Entry("codebreaker", "Starter Deck: Codebreaker", "YS18",
+        "Cyberse monsters and Link Summoning.");
 
-    public static final List<Entry> ALL = List.of(YUGI, KAIBA, JOEY, JADEN, YUSEI, YUMA);
+    public static final List<Entry> ALL = List.of(
+        YUGI, KAIBA, JOEY, PEGASUS, YUGI_EVOLUTION, KAIBA_EVOLUTION, STARTER_2006,
+        JADEN, SYRUS, YUSEI, STARTER_2009, YUMA,
+        KAIBA_RELOADED, YUGI_RELOADED, SABER_FORCE, YUYA, LINK_STRIKE,
+        CODEBREAKER);
 
     private StarterDecks()
     {

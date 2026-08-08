@@ -8,7 +8,84 @@ public class DuelDimensionFabricClient implements ClientModInitializer
     @Override
     public void onInitializeClient()
     {
+        // The client's proxy, FIRST. DuelDimension holds a ServerProxy until
+        // something replaces it, and every sided hook -- sending a duel
+        // message, wrapping a duel manager, opening the duel screen -- answers
+        // with the server's no-op until it is. Nothing below this line works
+        // without it.
+        de.cas_ual_ty.dueldimension.DuelDimension.proxy =
+            new de.cas_ual_ty.dueldimension.clientutil.ClientProxy();
+
+        // Settings first: the image pipeline and the animations read them.
+        de.cas_ual_ty.dueldimension.clientutil.ClientProxy.loadConfig();
+        de.cas_ual_ty.dueldimension.clientutil.ClientProxy.initClient();
+
+        // World chat, mirrored so a duel screen can show it beside duel chat.
+        // Both kinds: CHAT is a player talking, GAME is everything else
+        // (deaths, joins, /say), and the Forge event this replaces saw both.
+        net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents.CHAT.register(
+            (message, signed, sender, params, receptionTimestamp) ->
+                de.cas_ual_ty.dueldimension.clientutil.ClientProxy.rememberChatMessage(message));
+        net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents.GAME.register(
+            (message, overlay) ->
+            {
+                if(!overlay)
+                {
+                    de.cas_ual_ty.dueldimension.clientutil.ClientProxy
+                        .rememberChatMessage(message);
+                }
+            });
+
+        // Duel playback, every client tick. This is the heartbeat of a duel on
+        // the client: the queue that updates and prompts are put into is
+        // drained HERE, and the board snapshot the screen draws is only ever
+        // assigned from that drain. Without it a duel runs to completion on
+        // the server while the client shows an empty field and 0 life points
+        // -- the packets arrive, they just never get played.
+        //
+        // Deliberately not in render: playback has to survive the screen being
+        // closed, or reopening it loses every board commit still queued.
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK
+            .register(client ->
+        {
+            de.cas_ual_ty.dueldimension.clientutil.DuelClientState.tickPlayback();
+            de.cas_ual_ty.dueldimension.clientutil.HitchWatch.tick();
+        });
+
+        // Leaving a server forgets what everyone was wearing. The map is keyed
+        // by UUID and nothing else clears it, so without this the next server
+        // starts with the last one's outfits on strangers who share a UUID.
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT
+            .register((handler, client) ->
+            {
+                de.cas_ual_ty.dueldimension.duel.outfit.WornOutfits.clear();
+                // A duel interrupted by a disconnect never reports itself over,
+                // so nothing else would ever stop its music -- it would play on
+                // over the title screen.
+                de.cas_ual_ty.dueldimension.clientutil.DuelMusic.stopNow();
+            });
+
         de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds.register();
+
+        // The two entity renderers. Forge registered these from an event that
+        // fired once per entity type; Fabric takes them directly.
+        net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(
+            de.cas_ual_ty.dueldimension.DdEntityTypes.DUELIST,
+            de.cas_ual_ty.dueldimension.duel.npc.DuelistRenderer::new);
+        net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(
+            de.cas_ual_ty.dueldimension.DdEntityTypes.DUEL,
+            de.cas_ual_ty.dueldimension.clientutil.DuelEntityRenderer::new);
+
+        // The picture-in-picture region the board is drawn through. Without it
+        // nothing can draw a quad that is not an axis-aligned rectangle.
+        de.cas_ual_ty.dueldimension.clientutil.BoardPip.register();
+
+        // Bind each container menu to the screen that draws it.
+        de.cas_ual_ty.dueldimension.clientutil.DdScreens.register();
+
+        // Register the card and card-set item-model types so the card/set items
+        // can select them from their ClientItem JSON and show their card faces.
+        de.cas_ual_ty.dueldimension.clientutil.DdCardModels.register();
 
         // Told what everyone is wearing, and what the server holds for us.
         de.cas_ual_ty.dueldimension.net.DdNetwork.registerClientHandlers();

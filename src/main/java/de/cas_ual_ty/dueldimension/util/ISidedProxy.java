@@ -11,6 +11,44 @@ import javax.annotation.Nullable;
 
 public interface ISidedProxy
 {
+    /**
+     * How this side reaches a duel it has been told about.
+     * <p>
+     * Forge asked {@code DistExecutor.unsafeRunForDist} at every call site: the
+     * server talks to the manager directly, the client wraps it so updates also
+     * reach the screen. That is a question about which side is running, which is
+     * what this interface is for -- and unlike DistExecutor it cannot load a
+     * client class on a server by accident, because the two answers live in two
+     * classes that only their own side ever loads.
+     */
+    /**
+     * Sends a duel message to the server.
+     * <p>
+     * Only ever called from client code, but from classes that are common -- a
+     * container runs on both sides. Routing it through the proxy keeps Fabric's
+     * client networking class off a dedicated server's classpath, which is the
+     * same reason the rest of this interface exists.
+     */
+    default void sendDuelMessage(de.cas_ual_ty.dueldimension.duel.network.DuelMessage message)
+    {
+    }
+
+    /**
+     * How this side reaches a duel it has been told about.
+     * <p>
+     * Forge asked {@code DistExecutor.unsafeRunForDist} at every call site: the
+     * server talks to the manager directly, the client wraps it so updates also
+     * reach the screen. That is a question about which side is running, which is
+     * what this interface is for -- and unlike DistExecutor it cannot load a
+     * client class on a server by accident, because the two answers live in two
+     * classes that only their own side ever loads.
+     */
+    default de.cas_ual_ty.dueldimension.duel.network.IDuelManagerProvider duelProvider(
+        de.cas_ual_ty.dueldimension.duel.DuelManager duelManager)
+    {
+        return () -> duelManager;
+    }
+
     /** Client only: remember which mat the other duelist brought. */
     default void setOpponentPlayMat(String matId)
     {
@@ -22,10 +60,19 @@ public interface ISidedProxy
     }
 
     /** Applies a duel board/log update; server side does nothing. */
-    // Parked until the client phase; the type in its signature is not
-    // ported yet. Kept as a comment because this list IS the record of
-    // what the client still owes the rest of the mod.
-    // default void updateEngineDuel(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate update)
+    /**
+     * A new view of the board, from the engine.
+     * <p>
+     * No-op on the server, and no-op on the client too until
+     * {@code EngineDuelScreen} is ported -- it is the thing that would draw
+     * this. The hook exists now because the packets are real and arriving; a
+     * receiver that hands them to nobody is better than no receiver, which the
+     * game reports as "Unknown custom packet payload" every time one lands.
+     */
+    default void updateEngineDuel(
+        de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate update)
+    {
+    }
     // {
     // }
 
@@ -135,11 +182,10 @@ public interface ISidedProxy
     }
 
     /** Opens the card shop. Client only. */
-    // Parked until the client phase; see above.
-    // default void openCardShop(int points,
-    // java.util.List<de.cas_ual_ty.dueldimension.shop.ShopStock.Pack> packs)
-    // {
-    // }
+    default void openCardShop(int points,
+        java.util.List<de.cas_ual_ty.dueldimension.shop.ShopStock.Pack> packs)
+    {
+    }
 
     /** Records the player's DP balance for display. Client only. */
     default void setDuelPoints(int points)
@@ -155,11 +201,10 @@ public interface ISidedProxy
     }
 
     /** Opens or refreshes the duel lobby. Client only. */
-    // Parked until the client phase; see above.
-    // default void openDuelLobby(
-    // de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.OpenLobby room)
-    // {
-    // }
+    default void openDuelLobby(
+        de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.OpenLobby room)
+    {
+    }
 
     /** Shuts the lobby: the duel started, or someone left. Client only. */
     default void closeDuelLobby()

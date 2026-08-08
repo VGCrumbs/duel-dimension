@@ -1,0 +1,47 @@
+package de.cas_ual_ty.dueldimension.duel.action;
+
+import de.cas_ual_ty.dueldimension.duel.playfield.PlayField;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+
+
+public class CoinFlipAction extends RandomAction
+{
+    public boolean heads;
+    
+    public CoinFlipAction(ActionType actionType, boolean heads)
+    {
+        super(actionType);
+        this.heads = heads;
+    }
+    
+    public CoinFlipAction(ActionType actionType)
+    {
+        this(actionType, false);
+    }
+    
+    public CoinFlipAction(ActionType actionType, RegistryFriendlyByteBuf buf)
+    {
+        this(actionType, buf.readBoolean());
+    }
+    
+    @Override
+    public void writeToBuf(RegistryFriendlyByteBuf buf)
+    {
+        buf.writeBoolean(heads);
+    }
+    
+    @Override
+    public void initServer(PlayField playField)
+    {
+        heads = playField.getDuelManager().getRandom().nextBoolean();
+    }
+    
+    @Override
+    public MutableComponent getAnnouncement(Component playerName)
+    {
+        return Component.translatable(getAnnouncementLocalKey()).append(": ")
+                .append(Component.translatable(getAnnouncementLocalKey() + "." + (heads ? "heads" : "tails")));
+    }
+}

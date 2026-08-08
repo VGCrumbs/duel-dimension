@@ -51,6 +51,7 @@ public final class FreeModeCommand
     private static int set(CommandSourceStack source, boolean enabled)
     {
         FreeMode.set(source.getServer(), enabled);
+        de.cas_ual_ty.dueldimension.net.ProfilePayloads.syncFreeMode(source.getServer());
         // Announced to everyone, because it changes whether other players'
         // decks are legal and they would otherwise find out at a duel.
         source.getServer().getPlayerList().broadcastSystemMessage(

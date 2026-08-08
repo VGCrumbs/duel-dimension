@@ -182,8 +182,9 @@ public record BoardState(int viewer, boolean omniscient, PlayerBoard self, Playe
             return card;
         }
         // Keep the position (that a card is set there is public) but strip
-        // identity, including the base stats a set card must not reveal.
-        return new CardView(0, card.position(), 0, 0, -1, -1, -1, -1, false, true, null);
+        // identity, including the base stats a set card must not reveal -- and
+        // the scales, which would name a set pendulum card outright.
+        return new CardView(0, card.position(), 0, 0, -1, -1, -1, -1, -1, -1, false, true, null);
     }
 
     /**
@@ -203,7 +204,8 @@ public record BoardState(int viewer, boolean omniscient, PlayerBoard self, Playe
         int controller = equip.controller() == viewer ? 0 : 1;
         return controller == equip.controller() ? card
             : new CardView(card.code(), card.position(), card.type(), card.level(), card.attack(),
-                card.defense(), card.baseAttack(), card.baseDefense(), card.isPublic(), card.hidden(),
+                card.defense(), card.baseAttack(), card.baseDefense(),
+                card.leftScale(), card.rightScale(), card.isPublic(), card.hidden(),
                 new CardView.Equip(controller, equip.location(), equip.sequence()));
     }
 

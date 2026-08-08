@@ -25,5 +25,6 @@
   },
   "mixins": [
     "dueldimension.mixins.json"
-  ]
+  ],
+  "accessWidener": "dueldimension.accesswidener"
 }

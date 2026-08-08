@@ -195,7 +195,9 @@ public final class ShopMessages
          * }
          */
 
-        private static void sell(ServerPlayer player, String code, int requested)
+        // Public for the receiver in DdNetwork; the checks inside are what
+        // keep it safe, not the visibility.
+        public static void sell(ServerPlayer player, String code, int requested)
         {
             CardSet set = ShopStock.setOf(code);
             if(set == null || !set.isIndependentAndItem())

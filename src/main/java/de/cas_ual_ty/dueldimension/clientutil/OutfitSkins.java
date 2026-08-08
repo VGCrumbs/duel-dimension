@@ -4,7 +4,6 @@ import de.cas_ual_ty.dueldimension.duel.outfit.Outfits;
 import de.cas_ual_ty.dueldimension.duel.outfit.WornOutfits;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.core.ClientAsset;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.PlayerModelType;
 import net.minecraft.world.entity.player.PlayerSkin;
@@ -114,34 +113,10 @@ public final class OutfitSkins
             return null;
         }
         return new PlayerSkin.Patch(
-            texture == null ? Optional.empty() : Optional.of(asset(texture)),
+            texture == null ? Optional.empty() : Optional.of(PlayerSkins.asset(texture)),
             Optional.empty(),
             Optional.empty(),
             body == null ? Optional.empty() : Optional.of(body));
     }
 
-    /**
-     * A skin file, named the way a {@code ClientAsset} wants to be named.
-     * <p>
-     * The one-argument constructor takes an <em>asset id</em> and derives the
-     * file from it — {@code ns:foo} becomes {@code ns:textures/foo.png}. Handing
-     * it a path that is already complete wraps it a second time, and the result
-     * is a texture that does not exist: the player renders in the missing-texture
-     * magenta, which is exactly what happened.
-     * <p>
-     * Everything else in this mod holds full paths, because that is what a
-     * render layer draws with. So the two-argument constructor is used and the
-     * id is worked back out of the path, which keeps the pair consistent —
-     * the id is what the one-argument form would have been given.
-     */
-    private static ClientAsset.ResourceTexture asset(Identifier texture)
-    {
-        String path = texture.getPath();
-        if(path.startsWith("textures/") && path.endsWith(".png"))
-        {
-            path = path.substring("textures/".length(), path.length() - ".png".length());
-        }
-        return new ClientAsset.ResourceTexture(
-            Identifier.fromNamespaceAndPath(texture.getNamespace(), path), texture);
-    }
 }

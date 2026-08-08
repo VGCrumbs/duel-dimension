@@ -9,6 +9,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -166,6 +167,38 @@ class DuelProfileTest
         assertTrue(back.unlockedStructures().contains("sdj"),
             "without this a second copy would grant a duplicate deck after a reload");
         assertEquals("Mine", back.activeDeck());
+    }
+
+    @Test
+    void storageSnapshotKeepsCustomDecksAndIsDetached()
+    {
+        DuelProfile profile = openJoey(new DuelProfile());
+        DeckList mine = new DeckList("Custom", DeckList.Origin.SAVED,
+            MAIN, List.of(123), List.of(456));
+        mine.publish(true);
+        profile.addDeck(mine);
+        profile.setActiveDeck("Custom");
+        profile.setOutfit("red");
+        profile.toggleFavourite(46986414);
+
+        DuelProfile saved = profile.snapshot();
+        assertNotSame(profile, saved, "saving reused the mutable attachment instance");
+        assertEquals(MAIN, saved.savedNamed("Custom").main());
+        assertEquals(List.of(123), saved.savedNamed("Custom").extra());
+        assertEquals(List.of(456), saved.savedNamed("Custom").side());
+        assertTrue(saved.savedNamed("Custom").published());
+        assertEquals("Custom", saved.activeDeck());
+        assertEquals("red", saved.outfit());
+        assertTrue(saved.isFavourite(46986414));
+
+        // Later edits to the live profile must not alter what was handed to
+        // the persistent attachment.
+        mine.main().clear();
+        profile.trunk().add(46986414, 1);
+        profile.setOutfit("blue");
+        assertEquals(MAIN, saved.savedNamed("Custom").main());
+        assertEquals(2, saved.trunk().countOf(46986414));
+        assertEquals("red", saved.outfit());
     }
 
     /**

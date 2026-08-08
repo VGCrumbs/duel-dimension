@@ -45,26 +45,23 @@ class DeckEditsTest
     }
 
     @Test
-    void aCardYouDoNotOwnAtAllIsRefused()
+    void aCardYouDoNotOwnAtAllMayBeSavedInADraft()
     {
         Trunk trunk = owning(DARK_MAGICIAN, 3);
-        // The whole point: a client can put any card id in a packet.
-        assertNotNull(DeckEdits.refusalFor(trunk, deckOf(List.of(BLUE_EYES)), Banlist.none()),
-            "a deck may not contain a card the player has never owned");
+        assertNull(DeckEdits.refusalFor(trunk, deckOf(List.of(BLUE_EYES)), Banlist.none()));
     }
 
     @Test
-    void moreCopiesThanYouOwnIsRefused()
+    void moreCopiesThanYouOwnMayBeSavedButAreNotDuelReady()
     {
         Trunk trunk = owning(DARK_MAGICIAN, 1);
-        assertNotNull(DeckEdits.refusalFor(trunk,
-                deckOf(List.of(DARK_MAGICIAN, DARK_MAGICIAN)), Banlist.none()),
-            "owning one copy does not allow playing two");
+        assertNull(DeckEdits.refusalFor(trunk,
+            deckOf(List.of(DARK_MAGICIAN, DARK_MAGICIAN)), Banlist.none()));
         assertNull(DeckEdits.refusalFor(trunk, deckOf(List.of(DARK_MAGICIAN)), Banlist.none()));
     }
 
     @Test
-    void copiesAreCountedAcrossTheWholeDeckNotEachPart()
+    void ownershipValidationCountsCopiesAcrossTheWholeDeck()
     {
         Trunk trunk = owning(DARK_MAGICIAN, 2);
         // Two in the main deck and one in the side is three copies of one card
@@ -72,7 +69,7 @@ class DeckEditsTest
         // player field more of a card than they have by spreading it out.
         DeckList spread = new DeckList("Spread", DeckList.Origin.SAVED,
             List.of(DARK_MAGICIAN, DARK_MAGICIAN), List.of(), List.of(DARK_MAGICIAN));
-        assertNotNull(DeckEdits.refusalFor(trunk, spread, Banlist.none()));
+        assertFalse(DeckEdits.problemsUnder(spread, trunk, Banlist.none()).isEmpty());
     }
 
     @Test
@@ -119,8 +116,8 @@ class DeckEditsTest
         DuelProfile profile = new DuelProfile();
         DeckEdits.toggleFavourite(profile, BLUE_EYES);
         assertFalse(profile.trunk().has(BLUE_EYES));
-        assertNotNull(DeckEdits.refusalFor(profile.trunk(), deckOf(List.of(BLUE_EYES)),
-            Banlist.none()), "a starred card is still not an owned card");
+        assertFalse(DeckEdits.problemsUnder(deckOf(List.of(BLUE_EYES)), profile.trunk(),
+            Banlist.none()).isEmpty(), "a starred card is still not an owned card");
     }
 
     @Test

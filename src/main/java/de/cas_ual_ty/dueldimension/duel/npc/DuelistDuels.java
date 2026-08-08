@@ -92,11 +92,20 @@ public final class DuelistDuels
         /** Games won, by seat. */
         final int[] wins = new int[2];
         int gameNumber = 1;
+        final DuelRewardTracker rewards;
+        final UUID rewardId = UUID.randomUUID();
+        boolean paid;
+        boolean forfeit;
+        boolean concluded;
+        /** A player who concedes this contest can never receive its DP packet. */
+        final boolean[] rewardEligible = {true, true};
 
-        RunningDuel(DuelSession session, Watcher seat0, Watcher seat1)
+        RunningDuel(DuelSession session, Watcher seat0, Watcher seat1,
+            de.cas_ual_ty.dueldimension.ocg.CdbCardProvider cards)
         {
             this.session = session;
             this.seats = new Watcher[] {seat0, seat1};
+            this.rewards = new DuelRewardTracker(cards);
         }
 
         boolean isMatch()
@@ -107,6 +116,35 @@ public final class DuelistDuels
         boolean isTwoPlayer()
         {
             return seats[0] != null && seats[1] != null;
+        }
+
+        void disqualifyReward(int seat)
+        {
+            if(seat >= 0 && seat < rewardEligible.length)
+            {
+                rewardEligible[seat] = false;
+            }
+        }
+
+        boolean canReward(int seat)
+        {
+            return seat >= 0 && seat < rewardEligible.length && rewardEligible[seat];
+        }
+
+        void carryRewardEligibilityFrom(RunningDuel previous)
+        {
+            System.arraycopy(previous.rewardEligible, 0, rewardEligible, 0,
+                rewardEligible.length);
+        }
+
+        boolean beginConclusion()
+        {
+            if(concluded)
+            {
+                return false;
+            }
+            concluded = true;
+            return true;
         }
     }
 
@@ -206,7 +244,8 @@ public final class DuelistDuels
                 engine.cards(), engine.cards().all()));
 
         sessionHolder[0] = session;
-        ACTIVE.put(Watcher.of(serverPlayer), new RunningDuel(session, Watcher.of(serverPlayer), null));
+        ACTIVE.put(Watcher.of(serverPlayer), new RunningDuel(session,
+            Watcher.of(serverPlayer), null, engine.cards()));
 
         serverPlayer.sendSystemMessage(Component.literal("Duel started: ")
             .withStyle(ChatFormatting.GOLD)
@@ -309,7 +348,8 @@ public final class DuelistDuels
 
         // Both watchers point at the SAME RunningDuel: the session exists once
         // and the tick de-duplicates by identity before draining it.
-        RunningDuel duel = new RunningDuel(session, Watcher.of(first), Watcher.of(second));
+        RunningDuel duel = new RunningDuel(session, Watcher.of(first), Watcher.of(second),
+            engine.cards());
         ACTIVE.put(Watcher.of(first), duel);
         ACTIVE.put(Watcher.of(second), duel);
 
@@ -385,7 +425,22 @@ public final class DuelistDuels
         RunningDuel duel = ACTIVE.get(Watcher.of(player));
         if(duel != null && duel.session.isRunning())
         {
-            duel.session.stop();
+            int surrenderingSeat = -1;
+            for(int seat = 0; seat < duel.seats.length; seat++)
+            {
+                if(duel.seats[seat] != null
+                    && duel.seats[seat].playerId().equals(player.getUUID()))
+                {
+                    surrenderingSeat = seat;
+                    break;
+                }
+            }
+            if(surrenderingSeat < 0 || !duel.session.forfeit(1 - surrenderingSeat))
+            {
+                return;
+            }
+            duel.forfeit = true;
+            duel.disqualifyReward(surrenderingSeat);
             player.sendSystemMessage(Component.literal("You surrendered.").withStyle(ChatFormatting.RED));
             // The other seat is told, because a duel that simply stops looks
             // like a crash from the far side of the table.
@@ -401,6 +456,21 @@ public final class DuelistDuels
                     }
                 }
             }
+
+        }
+    }
+
+    /** Releases every registry entry owned by one duel, without touching a newer rematch. */
+    static void releaseSeats(RunningDuel duel)
+    {
+        for(Watcher watcher : duel.seats)
+        {
+            if(watcher == null)
+            {
+                continue;
+            }
+            ACTIVE.remove(watcher, duel);
+            SEATS.remove(watcher.playerId());
         }
     }
 
@@ -430,7 +500,8 @@ public final class DuelistDuels
             // is the whole reason the lobby chose one.
             java.util.List<String> problems = chosen == null ? java.util.List.of()
                 : de.cas_ual_ty.dueldimension.duel.profile.DeckEdits.problemsUnder(chosen,
-                    profile.trunk(), banlist);
+                    profile.trunk(), banlist,
+                    de.cas_ual_ty.dueldimension.duel.profile.FreeMode.isEnabled(player));
             if(chosen != null && problems.isEmpty())
             {
                 return new ChosenDeck(
@@ -516,7 +587,8 @@ public final class DuelistDuels
             StarterDecks.byId(deckB).load().toRunnerDeck(),
             new ExecutorBot(seed, Duelists.forProfile(deckA), engine.cards(), engine.cards().all()),
             new ExecutorBot(seed * 2 + 1, Duelists.forProfile(deckB), engine.cards(), engine.cards().all()));
-        ACTIVE.put(Watcher.forConsole(), new RunningDuel(session, Watcher.forConsole(), null));
+        ACTIVE.put(Watcher.forConsole(), new RunningDuel(session, Watcher.forConsole(), null,
+            engine.cards()));
         session.start();
         return null;
     }
@@ -559,7 +631,7 @@ public final class DuelistDuels
             java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
         duels.addAll(ACTIVE.values());
 
-        List<Watcher> finished = new ArrayList<>();
+        List<RunningDuel> finished = new ArrayList<>();
         for(RunningDuel duel : duels)
         {
             DuelSession session = duel.session;
@@ -573,6 +645,7 @@ public final class DuelistDuels
             List<DuelEvent>[] pending = new List[] {new ArrayList<>(), new ArrayList<>()};
             List<String> log = new ArrayList<>();
             boolean[] over = {false};
+            boolean[] completed = {false};
             int[] winner = {-2};
             String[] failure = {null};
 
@@ -580,6 +653,7 @@ public final class DuelistDuels
             {
                 if(event instanceof DuelSession.Event.Message message)
                 {
+                    duel.rewards.accept(DuelMessage.decode(message.message()));
                     for(int seat = 0; seat < 2; seat++)
                     {
                         if(duel.seats[seat] != null)
@@ -602,6 +676,9 @@ public final class DuelistDuels
                 }
                 else if(event instanceof DuelSession.Event.Board board)
                 {
+                    // seat0 is an absolute view for the server-side tracker:
+                    // its self is core seat 0 and its opponent core seat 1.
+                    duel.rewards.observe(board.forSeat(0));
                     for(int seat = 0; seat < 2; seat++)
                     {
                         if(duel.seats[seat] == null)
@@ -632,7 +709,14 @@ public final class DuelistDuels
                 else if(event instanceof DuelSession.Event.Finished done)
                 {
                     over[0] = true;
-                    winner[0] = done.completed() && done.result() != null ? done.result().winner() : -1;
+                    completed[0] = done.completed() && done.result() != null;
+                    winner[0] = completed[0] ? done.result().winner() : -2;
+                }
+                else if(event instanceof DuelSession.Event.Forfeited forfeited)
+                {
+                    over[0] = true;
+                    completed[0] = true;
+                    winner[0] = forfeited.winner();
                 }
                 else if(event instanceof DuelSession.Event.Failed failed)
                 {
@@ -705,15 +789,18 @@ public final class DuelistDuels
                 }
             }
 
-            if(!session.isRunning())
+            // A stopped thread and its queued terminal event are published in
+            // two operations. Only the event authorizes conclusion; observing
+            // isRunning=false in the tiny interval before the queue add must
+            // not finalize this duel with an invented empty result.
+            if(over[0])
             {
-                concludeGame(server, duel, winner[0]);
+                concludeGame(server, duel, winner[0], completed[0]);
+                finished.add(duel);
                 for(Watcher watcher : duel.seats)
                 {
                     if(watcher != null)
                     {
-                        finished.add(watcher);
-                        SEATS.remove(watcher.playerId());
                         if(selfTestMode && watcher.console())
                         {
                             org.apache.logging.log4j.LogManager.getLogger()
@@ -724,7 +811,7 @@ public final class DuelistDuels
                 }
             }
         }
-        finished.forEach(ACTIVE::remove);
+        finished.forEach(DuelistDuels::releaseSeats);
     }
 
     /**
@@ -739,10 +826,23 @@ public final class DuelistDuels
      * same decks. That is stated here rather than left as a silent gap.
      */
     private static void concludeGame(net.minecraft.server.MinecraftServer server,
-        RunningDuel duel, int winnerSeat)
+        RunningDuel duel, int winnerSeat, boolean completed)
     {
+        if(!duel.beginConclusion())
+        {
+            return;
+        }
+        duel.rewards.finishGame(winnerSeat);
         if(duel.machine == null || duel.config == null)
         {
+            if(winnerSeat == 0 || winnerSeat == 1)
+            {
+                duel.wins[winnerSeat]++;
+            }
+            if(completed)
+            {
+                payOut(server, duel);
+            }
             return;
         }
         if(!duel.machine.tryMoveTo(de.cas_ual_ty.dueldimension.duel.match.MatchState.GAME_OVER))
@@ -770,7 +870,10 @@ public final class DuelistDuels
                 announceToBoth(server, duel, Component.literal("Match over  "
                     + duel.wins[0] + " - " + duel.wins[1]).withStyle(ChatFormatting.GOLD));
             }
-            payOut(server, duel);
+            if(completed)
+            {
+                payOut(server, duel);
+            }
             return;
         }
 
@@ -810,6 +913,8 @@ public final class DuelistDuels
             next.wins[0] = carried[0];
             next.wins[1] = carried[1];
             next.gameNumber = nextGame;
+            next.rewards.carryFrom(duel.rewards);
+            next.carryRewardEligibilityFrom(duel);
             machine.tryMoveTo(de.cas_ual_ty.dueldimension.duel.match.MatchState.DUELING);
         }
     }
@@ -821,23 +926,24 @@ public final class DuelistDuels
      * several, and paying per game would make a best-of-three worth three times
      * a single duel for the same evening's work.
      * <p>
-     * Only against another player. A duelist NPC will sit there and lose all
-     * day, so paying for that would make the shop a button rather than a
-     * reward, and one seat of an NPC duel is empty anyway.
+     * NPC duels now participate in the same explained assessment at a reduced
+     * scale. They are the single-player progression loop; reducing every line
+     * keeps PvP the faster economy without making solo duels worthless.
      */
     private static void payOut(net.minecraft.server.MinecraftServer server, RunningDuel duel)
     {
-        if(!duel.isTwoPlayer())
+        if(duel.paid)
         {
             return;
         }
+        duel.paid = true;
         // A draw pays both the losing rate. Nobody won it, and the alternative
         // -- paying nobody -- punishes two players for a game that ran long.
         boolean drawn = duel.wins[0] == duel.wins[1];
         for(int seat = 0; seat < duel.seats.length; seat++)
         {
             Watcher watcher = duel.seats[seat];
-            if(watcher == null || watcher.console())
+            if(watcher == null || watcher.console() || !duel.canReward(seat))
             {
                 continue;
             }
@@ -849,10 +955,25 @@ public final class DuelistDuels
                 continue;
             }
             boolean won = duel.wins[seat] > duel.wins[1 - seat];
-            de.cas_ual_ty.dueldimension.shop.DuelPoints.reward(player,
-                de.cas_ual_ty.dueldimension.shop.DuelPoints
-                    .rewardFor(duel.wins[seat], duel.wins[1 - seat]),
-                won ? "You won the duel." : drawn ? "The duel was a draw." : "You lost the duel.");
+            de.cas_ual_ty.dueldimension.shop.DuelReward.Outcome outcome = won
+                ? de.cas_ual_ty.dueldimension.shop.DuelReward.Outcome.WIN
+                : drawn ? de.cas_ual_ty.dueldimension.shop.DuelReward.Outcome.DRAW
+                : de.cas_ual_ty.dueldimension.shop.DuelReward.Outcome.LOSS;
+            // NPCs are the repeatable single-player loop, so they do pay, but
+            // at a lower rate than a contest another person had to play.
+            double scale = duel.isTwoPlayer() ? 1D : 0.65D;
+            de.cas_ual_ty.dueldimension.shop.DuelReward.Breakdown reward =
+                de.cas_ual_ty.dueldimension.shop.DuelReward.calculate(outcome,
+                    duel.rewards.metrics(seat, duel.forfeit), scale);
+            int before = de.cas_ual_ty.dueldimension.shop.DuelPoints.get(player);
+            de.cas_ual_ty.dueldimension.shop.DuelPoints.award(player, reward.total());
+            int after = de.cas_ual_ty.dueldimension.shop.DuelPoints.get(player);
+            net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
+                new de.cas_ual_ty.dueldimension.shop.ShopMessages.SyncPoints(after));
+            net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
+                new de.cas_ual_ty.dueldimension.shop.DuelRewardMessages.Result(
+                    duel.rewardId, outcome, reward.lines(), reward.total(), before, after,
+                    duel.gameNumber, duel.wins[seat], duel.wins[1 - seat], !duel.isTwoPlayer()));
         }
     }
 

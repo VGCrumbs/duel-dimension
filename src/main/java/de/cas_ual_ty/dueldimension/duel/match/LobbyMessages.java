@@ -5,7 +5,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import de.cas_ual_ty.dueldimension.net.DdNetwork;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.ArrayList;
@@ -57,7 +57,7 @@ public final class LobbyMessages
             return TYPE;
         }
 
-        public static void encode(OpenLobby message, FriendlyByteBuf buffer)
+        public static void encode(OpenLobby message, RegistryFriendlyByteBuf buffer)
         {
             message.config().write(buffer);
             buffer.writeBoolean(message.host());
@@ -70,7 +70,7 @@ public final class LobbyMessages
             writeStrings(buffer, message.problems(), PROBLEM_LIMIT);
         }
 
-        public static OpenLobby decode(FriendlyByteBuf buffer)
+        public static OpenLobby decode(RegistryFriendlyByteBuf buffer)
         {
             return new OpenLobby(MatchConfig.read(buffer), buffer.readBoolean(),
                 buffer.readUtf(NAME_LIMIT), buffer.readUtf(NAME_LIMIT),
@@ -113,11 +113,11 @@ public final class LobbyMessages
             return TYPE;
         }
 
-        public static void encode(CloseLobby message, FriendlyByteBuf buffer)
+        public static void encode(CloseLobby message, RegistryFriendlyByteBuf buffer)
         {
         }
 
-        public static CloseLobby decode(FriendlyByteBuf buffer)
+        public static CloseLobby decode(RegistryFriendlyByteBuf buffer)
         {
             return new CloseLobby();
         }
@@ -156,12 +156,12 @@ public final class LobbyMessages
             return TYPE;
         }
 
-        public static void encode(Configure message, FriendlyByteBuf buffer)
+        public static void encode(Configure message, RegistryFriendlyByteBuf buffer)
         {
             message.config().write(buffer);
         }
 
-        public static Configure decode(FriendlyByteBuf buffer)
+        public static Configure decode(RegistryFriendlyByteBuf buffer)
         {
             return new Configure(MatchConfig.read(buffer));
         }
@@ -199,12 +199,12 @@ public final class LobbyMessages
             return TYPE;
         }
 
-        public static void encode(Ready message, FriendlyByteBuf buffer)
+        public static void encode(Ready message, RegistryFriendlyByteBuf buffer)
         {
             buffer.writeBoolean(message.ready());
         }
 
-        public static Ready decode(FriendlyByteBuf buffer)
+        public static Ready decode(RegistryFriendlyByteBuf buffer)
         {
             return new Ready(buffer.readBoolean());
         }
@@ -242,11 +242,11 @@ public final class LobbyMessages
             return TYPE;
         }
 
-        public static void encode(Leave message, FriendlyByteBuf buffer)
+        public static void encode(Leave message, RegistryFriendlyByteBuf buffer)
         {
         }
 
-        public static Leave decode(FriendlyByteBuf buffer)
+        public static Leave decode(RegistryFriendlyByteBuf buffer)
         {
             return new Leave();
         }
@@ -267,7 +267,7 @@ public final class LobbyMessages
     // every handler in enqueueWork and getSender, and DdNetwork.onServer
     // does both, so there is nothing left for it to do.
 
-    private static void writeStrings(FriendlyByteBuf buffer, List<String> values, int limit)
+    private static void writeStrings(RegistryFriendlyByteBuf buffer, List<String> values, int limit)
     {
         int count = Math.min(values.size(), limit);
         buffer.writeVarInt(count);
@@ -277,7 +277,7 @@ public final class LobbyMessages
         }
     }
 
-    private static List<String> readStrings(FriendlyByteBuf buffer, int limit)
+    private static List<String> readStrings(RegistryFriendlyByteBuf buffer, int limit)
     {
         int count = buffer.readVarInt();
         if(count < 0 || count > limit)

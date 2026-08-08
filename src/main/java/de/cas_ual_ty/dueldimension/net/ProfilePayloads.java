@@ -3,6 +3,7 @@ package de.cas_ual_ty.dueldimension.net;
 import de.cas_ual_ty.dueldimension.duel.profile.DeckEdits;
 import de.cas_ual_ty.dueldimension.duel.profile.DuelProfile;
 import de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles;
+import de.cas_ual_ty.dueldimension.duel.profile.FreeMode;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -262,13 +263,14 @@ public final class ProfilePayloads
     }
 
     /**
-     * Tells the player why an edit was refused, if it was, and then tells them
-     * what the server actually holds either way.
+     * Tells the player why an edit was refused and restores the authoritative
+     * profile only in that case.
      * <p>
-     * The "either way" is the point, and it is carried over unchanged from the
-     * Forge version: a refused change still ends with the client holding what
-     * the server holds, which is how an editor that guessed wrong corrects
-     * itself without anyone having to write correcting code.
+     * The editor applies accepted changes optimistically and therefore already
+     * holds exactly what the server stored. Echoing the whole profile after
+     * every successful autosave races with the next click: an older success
+     * can replace a newer local deck before that newer version is sent. A
+     * refusal still needs the full sync so an invalid client guess is undone.
      */
     private static void answer(ServerPlayer player, String refusal)
     {
@@ -277,7 +279,10 @@ public final class ProfilePayloads
             player.sendSystemMessage(Component.literal(refusal).withStyle(ChatFormatting.RED));
         }
         DuelProfiles.save(player);
-        sync(player);
+        if(refusal != null)
+        {
+            sync(player);
+        }
     }
 
     /** Sends the player their own profile, and only their own. */
@@ -285,5 +290,22 @@ public final class ProfilePayloads
     {
         net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
             new Sync(DuelProfiles.get(player)));
+        syncFreeMode(player);
+    }
+
+    /** Sends the world-wide free-mode switch to one client. */
+    public static void syncFreeMode(ServerPlayer player)
+    {
+        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
+            new SyncFreeMode(FreeMode.isEnabled(player)));
+    }
+
+    /** Updates every connected editor immediately after the switch changes. */
+    public static void syncFreeMode(net.minecraft.server.MinecraftServer server)
+    {
+        for(ServerPlayer player : server.getPlayerList().getPlayers())
+        {
+            syncFreeMode(player);
+        }
     }
 }

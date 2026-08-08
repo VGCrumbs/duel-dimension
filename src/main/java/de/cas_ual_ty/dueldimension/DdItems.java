@@ -1,6 +1,12 @@
 package de.cas_ual_ty.dueldimension;
 
 import de.cas_ual_ty.dueldimension.card.CardItem;
+import de.cas_ual_ty.dueldimension.cardbinder.CardBinderItem;
+import de.cas_ual_ty.dueldimension.deckbox.DeckBoxItem;
+import de.cas_ual_ty.dueldimension.deckbox.PatreonDeckBoxItem;
+import de.cas_ual_ty.dueldimension.set.CardSetItem;
+import de.cas_ual_ty.dueldimension.set.OpenedCardSetItem;
+import de.cas_ual_ty.dueldimension.simplebinder.SimpleBinderItem;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -37,6 +43,11 @@ public final class DdItems
     public static final Item CARD_BACK = register("card_back", CosmeticItem::new);
     public static final Item BLANC_SET = register("blanc_set", CosmeticItem::new);
 
+    public static final CardSetItem SET = register("set",
+        properties -> new CardSetItem(properties.stacksTo(1)));
+    public static final OpenedCardSetItem OPENED_SET = register("opened_set",
+        properties -> new OpenedCardSetItem(properties.stacksTo(1)));
+
     public static final Item MILLENIUM_EYE = register("millennium_eye", one(CosmeticItem::new));
     public static final Item MILLENIUM_KEY = register("millennium_key", one(CosmeticItem::new));
     public static final Item MILLENIUM_NECKLACE =
@@ -45,6 +56,25 @@ public final class DdItems
     public static final Item MILLENIUM_RING = register("millennium_ring", one(CosmeticItem::new));
     public static final Item MILLENIUM_ROD = register("millennium_rod", one(CosmeticItem::new));
     public static final Item MILLENIUM_SCALE = register("millennium_scale", one(CosmeticItem::new));
+
+    public static final DeckBoxItem DECK_BOX = register("deck_box",
+        properties -> new DeckBoxItem(properties.stacksTo(1)));
+    public static final PatreonDeckBoxItem PATREON_DECK_BOX = register("patreon_deck_box",
+        properties -> new PatreonDeckBoxItem(properties.stacksTo(1)));
+
+    public static final CardBinderItem CARD_BINDER = register("card_binder",
+        properties -> new CardBinderItem(properties.stacksTo(1)));
+
+    // A simple binder's size is six rows of nine per page, so binderSize is
+    // 6 * 9 * pages. The Forge SimpleBinderItem.makeItem factory set the tab and
+    // stack size; those are the register helper's job now (setId, tabs live in
+    // DdItemGroup), so the item just takes its size.
+    public static final SimpleBinderItem SIMPLE_BINDER_3 = register("simple_binder_3",
+        properties -> new SimpleBinderItem(properties.stacksTo(1), 6 * 9 * 3));
+    public static final SimpleBinderItem SIMPLE_BINDER_9 = register("simple_binder_9",
+        properties -> new SimpleBinderItem(properties.stacksTo(1), 6 * 9 * 9));
+    public static final SimpleBinderItem SIMPLE_BINDER_27 = register("simple_binder_27",
+        properties -> new SimpleBinderItem(properties.stacksTo(1), 6 * 9 * 27));
 
     private DdItems()
     {

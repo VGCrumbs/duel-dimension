@@ -10,6 +10,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -120,5 +122,44 @@ class SessionOrderingTest
         System.out.println("ordering: " + messages + " messages, " + boards + " board checkpoints");
         assertTrue(messages > 100, "duel produced too few messages to be meaningful: " + messages);
         assertTrue(boards > 10, "duel produced too few board checkpoints: " + boards);
+    }
+
+    @Test
+    void forfeitPublishesOneTerminalEventAfterSessionStops() throws Exception
+    {
+        assumeTrue(Files.isRegularFile(lib()), "native core not present");
+        assumeTrue(Files.isRegularFile(scripts().resolve("constant.lua")), "CardScripts not present");
+        assumeTrue(Files.isRegularFile(cdb()), "cards.cdb not present");
+
+        OcgApi api = OcgApi.load(lib());
+        CdbCardProvider cards = new CdbCardProvider(List.of(cdb()));
+        DuelSession session = DuelSession.create("forfeit", api, OcgConstants.DUEL_MODE_MR5,
+            new long[] {7717, 2213, 9973, 1013}, cards,
+            HeadlessDuelRunner.cardScriptsDirectory(scripts()),
+            StarterDecks.YUGI.load().toRunnerDeck(), StarterDecks.JOEY.load().toRunnerDeck(),
+            new HeuristicBot(41, cards, cards.all()),
+            new HeuristicBot(43, cards, cards.all()));
+
+        session.start();
+        assertTrue(session.forfeit(1));
+        assertFalse(session.forfeit(0), "a second concession must not claim another finish");
+
+        long deadline = System.nanoTime() + 10_000_000_000L;
+        while(session.isRunning() && System.nanoTime() < deadline)
+        {
+            Thread.sleep(2);
+        }
+        List<DuelSession.Event> seen = new ArrayList<>();
+        session.drainEvents(seen::add);
+        List<DuelSession.Event> terminal = seen.stream().filter(event ->
+            event instanceof DuelSession.Event.Finished
+                || event instanceof DuelSession.Event.Forfeited
+                || event instanceof DuelSession.Event.Failed).toList();
+
+        assertFalse(session.isRunning(), "terminal event must not precede the stopped state");
+        assertEquals(1, terminal.size(), "a concession must produce exactly one terminal event");
+        assertTrue(terminal.getFirst() instanceof DuelSession.Event.Forfeited forfeited
+                && forfeited.winner() == 1,
+            "the terminal event must preserve the server-authoritative winner");
     }
 }

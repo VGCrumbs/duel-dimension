@@ -45,6 +45,27 @@ import java.util.List;
 public abstract class DuelistExecutor extends DefaultExecutor
 {
     /**
+     * Use a trigger on a card that is already in the graveyard.
+     * <p>
+     * The card is spent whether or not the effect is used, so there is no copy
+     * being held back and no later moment being preferred: declining is
+     * strictly worse. That is what makes this safe to answer generally when
+     * Windbot would not, and why it is limited to the graveyard rather than
+     * applied to everything offered -- a trigger on a card still on the field
+     * or in the hand may well be worth saving, and answering yes to those
+     * would have the bot chain every trap the moment it could.
+     * <p>
+     * Mystic Tomato is the case that prompted it: destroyed by battle, sitting
+     * in the graveyard, offering a free body from the deck, and declined
+     * because no rule named it.
+     */
+    @Override
+    public boolean activateUnlistedOptional(BotCard card, int location)
+    {
+        return location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_GRAVE;
+    }
+
+    /**
      * The deck-agnostic clause every duelist wants last: summon what can be
      * summoned, set what cannot fight, keep the backrow stocked, and turn
      * monsters that are outclassed to defence.

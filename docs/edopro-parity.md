@@ -64,6 +64,62 @@ Three places where byte-for-byte copying is impossible or unwise, and what we do
 2. **Client-side rules state.** EDOPro's client keeps a full `ClientField` mirror and computes `cmdFlag` locally from the raw message stream. We compute the identical bitmask **server-side** and send only the resulting legal commands, because a Minecraft client is untrusted — see the note below.
 3. **UI assets.** EDOPro's textures and skins are its own project's assets under its own licence; the mod already ships a card-image pipeline for the same cards. We match layout and behaviour, not texture files.
 
+## Bot behaviour, verified against Windbot
+
+The duelists run a port of Windbot (`.wbsrc/windbot-master`), and its rules are
+followed rather than tuned. One that gets questioned often, recorded here so it
+is not re-investigated:
+
+**Monsters are summoned face-up even when badly outmatched.** That is Windbot's
+own rule, not a port defect. `DefaultExecutor.OnSelectMonsterSummonOrSet`
+(`ExecutorBase/Game/AI/DefaultExecutor.cs:563`) is
+
+```csharp
+return card.Level <= 4 && Bot.GetMonsters().Count(m => m.IsFaceup()) == 0
+    && Util.IsAllEnemyBetterThanValue(card.Attack, true);
+```
+
+which our `DefaultExecutor.onSelectMonsterSummonOrSet` reproduces exactly, as
+does `AIUtil.isAllEnemyBetterThanValue` (`AIUtil.cs:50`) and the main-phase loop
+that consults it (`GameAI.cs:524-541` → `ExecutorBot.idle`). Being outmatched is
+necessary but not sufficient; setting also needs
+
+* the card to be **Level 4 or lower**;
+* the bot to control **no face-up monster at all** — once it has one it never
+  sets again, however outclassed the next one is;
+* **every** enemy monster to out-power it *and be in attack position*, because
+  the `onlyATK` clause sits inside the `All(...)`. A single monster of yours in
+  defence makes the whole test false.
+
+`ExecutorType.MonsterSet` is likewise not missing: upstream, only per-deck AIs
+register it (`ABCExecutor`, `AlbazExecutor`, `BlackwingExecutor`, …), never
+`DefaultExecutor`. The sanctioned way to make a particular duelist set a
+particular card is a per-card `MonsterSet`/`SummonOrSet` rule in `Duelists`,
+which is exactly how Windbot's own deck AIs do it — not a change to the default.
+
+### The one deviation: free triggers
+
+Windbot activates only what a per-card rule names. `GameAI.OnSelectEffectYn`
+(`GameAI.cs:462-470`) returns false the moment the executor list runs out, and
+`DefaultExecutor` registers **four** `Activate` rules in total (Chicken Game,
+two Vaylantz, Santa Claws). A card it has never heard of is declined — Mystic
+Tomato is not mentioned anywhere in Windbot, decks included.
+
+The duelists differ in exactly one case: **a trigger on a card that is already
+in the graveyard is taken, listed or not.** The card is spent either way, so
+there is no copy being held back and no later moment being preferred;
+declining cannot be the better play.
+
+It is deliberately not "activate anything offered" — that would have the bot
+chain every trap at the first opportunity, which is worse than the behaviour it
+replaces. The condition is the location, which is the part that can actually be
+checked.
+
+`Executor.activateUnlistedOptional` defaults to Windbot's answer and is
+overridden only in `DuelistExecutor`, so **`DefaultExecutor` stays a faithful
+port** — `FreeTriggerRuleTest` pins that, along with the rule firing in the
+graveyard and nowhere else.
+
 ## Architecture note
 
 EDOPro resolves everything client-side from the raw message stream. We deliberately do not: prompts are flattened server-side into labelled options and the client answers with indices (plus a card code for the announce search, which the server re-validates against the same opcode filter the core uses). Hidden information never reaches the client, so interface parity does not reintroduce the cheating surface EDOPro accepts.

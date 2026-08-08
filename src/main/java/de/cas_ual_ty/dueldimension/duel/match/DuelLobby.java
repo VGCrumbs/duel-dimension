@@ -4,6 +4,7 @@ import de.cas_ual_ty.dueldimension.duel.profile.DeckEdits;
 import de.cas_ual_ty.dueldimension.duel.profile.DeckList;
 import de.cas_ual_ty.dueldimension.duel.profile.DuelProfile;
 import de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles;
+import de.cas_ual_ty.dueldimension.duel.profile.FreeMode;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -133,11 +134,7 @@ public final class DuelLobby
 
         if(room.bothReady())
         {
-            // Where the duel would begin. start() is parked below with the
-            // duel-session phase, so both players simply stay ready until it
-            // lands rather than the lobby pretending to have started one.
-            de.cas_ual_ty.dueldimension.DuelDimension.log(
-                "Both duellists are ready; starting a duel needs the session phase.");
+            start(player.level().getServer(), room);
         }
     }
 
@@ -186,52 +183,47 @@ public final class DuelLobby
         {
             return List.of("No deck chosen");
         }
-        return DeckEdits.problemsUnder(deck, profile.trunk(), Banlists.byId(config.banlistId()));
+        return DeckEdits.problemsUnder(deck, profile.trunk(), Banlists.byId(config.banlistId()),
+            FreeMode.isEnabled(player));
     }
 
-    /*
-     * Parked with the duel-session phase: starting a match hands off to
-     * DuelistDuels, which drives the engine and has not been ported. The
-     * lobby up to this point -- opening, configuring, readying, leaving --
-     * works without it.
-     *     private static void start(MinecraftServer server, Room room)
-     *     {
-     *         ServerPlayer host = server.getPlayerList().getPlayer(room.host);
-     *         ServerPlayer guest = server.getPlayerList().getPlayer(room.guest);
-     *         close(room);
-     *         if(host == null || guest == null)
-     *         {
-     *             room.machine.cancel("a player left the lobby");
-     *             return;
-     *         }
-     * 
-     *         for(ServerPlayer player : List.of(host, guest))
-     *         {
-     *             net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, new LobbyMessages.CloseLobby());
-     *         }
-     * 
-     *         // The coin flip and the turn choice are still walked through rather
-     *         // than played: they are the next thing to build, and the machine
-     *         // records that they happened so the states stay honest.
-     *         room.machine.tryMoveTo(MatchState.COIN_FLIP);
-     *         room.machine.tryMoveTo(MatchState.TURN_CHOICE);
-     *         room.machine.tryMoveTo(MatchState.DUELING);
-     * 
-     *         String error = de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels
-     *             .startPlayerDuel(host, guest, room.config);
-     *         if(error != null)
-     *         {
-     *             room.machine.cancel(error);
-     *             host.sendSystemMessage(net.minecraft.network.chat.Component.literal(error)
-     *                 .withStyle(net.minecraft.ChatFormatting.RED));
-     *             guest.sendSystemMessage(net.minecraft.network.chat.Component.literal(error)
-     *                 .withStyle(net.minecraft.ChatFormatting.RED));
-     *             return;
-     *         }
-     *         de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels
-     *             .attachMatch(host, room.machine, room.config);
-     *     }
-     */
+        private static void start(MinecraftServer server, Room room)
+        {
+            ServerPlayer host = server.getPlayerList().getPlayer(room.host);
+            ServerPlayer guest = server.getPlayerList().getPlayer(room.guest);
+            close(room);
+            if(host == null || guest == null)
+            {
+                room.machine.cancel("a player left the lobby");
+                return;
+            }
+
+            for(ServerPlayer player : List.of(host, guest))
+            {
+                net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, new LobbyMessages.CloseLobby());
+            }
+
+            // The coin flip and the turn choice are still walked through rather
+            // than played: they are the next thing to build, and the machine
+            // records that they happened so the states stay honest.
+            room.machine.tryMoveTo(MatchState.COIN_FLIP);
+            room.machine.tryMoveTo(MatchState.TURN_CHOICE);
+            room.machine.tryMoveTo(MatchState.DUELING);
+
+            String error = de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels
+                .startPlayerDuel(host, guest, room.config);
+            if(error != null)
+            {
+                room.machine.cancel(error);
+                host.sendSystemMessage(net.minecraft.network.chat.Component.literal(error)
+                    .withStyle(net.minecraft.ChatFormatting.RED));
+                guest.sendSystemMessage(net.minecraft.network.chat.Component.literal(error)
+                    .withStyle(net.minecraft.ChatFormatting.RED));
+                return;
+            }
+            de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels
+                .attachMatch(host, room.machine, room.config);
+        }
 
     private static void close(Room room)
     {

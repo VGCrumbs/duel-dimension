@@ -52,12 +52,40 @@ public final class DdNetwork
     {
         ProfilePayloads.register();
 
+        // The duel channel. This carries every message of an actual duel in
+        // both directions, and it lives in its own class because the Forge
+        // version had its own SimpleChannel. Leaving it out does not fail
+        // loudly -- the mod loads, a duel starts on the server, and then the
+        // first packet of it cannot be sent because its type was never declared.
+        de.cas_ual_ty.dueldimension.duel.network.DuelPayloads.register();
+
         // Outfits: what a duellist is wearing. The wear request is a client's
         // to make, the answer everybody's to see.
         serverbound(de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Wear.TYPE,
             de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Wear.CODEC);
         clientbound(de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Worn.TYPE,
             de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Worn.CODEC);
+
+        // The engine's prompts and board updates. These were declared with the
+        // engine phase but never registered -- nothing sent one until the
+        // duelist self-test was wired up, and an unregistered payload does not
+        // fail loudly: the id is unknown, so the game falls back to
+        // DiscardedPayload and the encoder throws a ClassCastException that
+        // reads as a netty problem rather than a missing registration.
+        clientbound(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.ShowPrompt.TYPE,
+            de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.ShowPrompt.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate.TYPE,
+            de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OpponentPlayMat.TYPE,
+            de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OpponentPlayMat.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.AnswerPrompt.TYPE,
+            de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.AnswerPrompt.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.SetChainPreference.TYPE,
+            de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.SetChainPreference.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.SetPlayMat.TYPE,
+            de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.SetPlayMat.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.Surrender.TYPE,
+            de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.Surrender.CODEC);
 
         // The duel lobby.
         clientbound(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.OpenLobby.TYPE,
@@ -74,6 +102,8 @@ public final class DdNetwork
         // The card shop, and the pack a purchase opens.
         clientbound(de.cas_ual_ty.dueldimension.shop.ShopMessages.SyncPoints.TYPE,
             de.cas_ual_ty.dueldimension.shop.ShopMessages.SyncPoints.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.shop.DuelRewardMessages.Result.TYPE,
+            de.cas_ual_ty.dueldimension.shop.DuelRewardMessages.Result.CODEC);
         clientbound(de.cas_ual_ty.dueldimension.shop.ShopMessages.OpenShop.TYPE,
             de.cas_ual_ty.dueldimension.shop.ShopMessages.OpenShop.CODEC);
         serverbound(de.cas_ual_ty.dueldimension.shop.ShopMessages.Buy.TYPE,
@@ -83,12 +113,66 @@ public final class DdNetwork
 
         // What a menu's constructor needs, sent one packet ahead of the menu.
         clientbound(MenuData.TYPE, MenuData.CODEC);
+
+        // Paged card-item inventories (binders, deck boxes, card sets): the
+        // server announces the page it moved to, the client asks to turn one.
+        clientbound(de.cas_ual_ty.dueldimension.carditeminventory.CIIMessages.SetPage.TYPE,
+            de.cas_ual_ty.dueldimension.carditeminventory.CIIMessages.SetPage.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.carditeminventory.CIIMessages.ChangePage.TYPE,
+            de.cas_ual_ty.dueldimension.carditeminventory.CIIMessages.ChangePage.CODEC);
+
+        // The creative card-supply block: a request to mint a card by id.
+        serverbound(de.cas_ual_ty.dueldimension.cardsupply.CardSupplyMessages.RequestCard.TYPE,
+            de.cas_ual_ty.dueldimension.cardsupply.CardSupplyMessages.RequestCard.CODEC);
+
+        // The card binder: the client turns pages, searches, picks and drops
+        // cards; the server announces the page and the cards on it. The binder's
+        // cards are a server-side collection, so these are the only traffic.
+        serverbound(de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages.ChangePage.TYPE,
+            de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages.ChangePage.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages.ChangeSearch.TYPE,
+            de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages.ChangeSearch.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages.IndexClicked.TYPE,
+            de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages.IndexClicked.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages.IndexDropped.TYPE,
+            de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages.IndexDropped.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages.UpdatePage.TYPE,
+            de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages.UpdatePage.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages.UpdateList.TYPE,
+            de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages.UpdateList.CODEC);
     }
 
     /** Registers the server's side of every message a client may send. */
     public static void registerServerHandlers()
     {
         ProfilePayloads.registerServerHandlers();
+        de.cas_ual_ty.dueldimension.duel.network.DuelPayloads.registerServerHandlers();
+
+        // The engine's four client-to-server messages. Each body is the Forge
+        // handler's, minus the enqueueWork and the null check: Fabric has
+        // already moved to the server thread and already knows the sender.
+        // The shop's one purchase message. The Forge handler unwrapped the
+        // sender and enqueued; onServer already did both.
+        onServer(de.cas_ual_ty.dueldimension.shop.ShopMessages.Buy.TYPE,
+            (message, player) -> de.cas_ual_ty.dueldimension.shop.ShopMessages.Buy
+                .sell(player, message.code(), message.count()));
+
+        onServer(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.AnswerPrompt.TYPE,
+            (message, player) ->
+                de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.submitAnswer(player,
+                    new de.cas_ual_ty.dueldimension.ocg.prompt.HumanResponseSource.Answer(
+                        message.chosen(), message.declaredCode(), message.serial())));
+        onServer(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.SetChainPreference.TYPE,
+            (message, player) ->
+                de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.setChainPreference(player,
+                    message.preference()));
+        onServer(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.SetPlayMat.TYPE,
+            (message, player) ->
+                de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.setPlayMat(player,
+                    message.matId()));
+        onServer(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.Surrender.TYPE,
+            (message, player) ->
+                de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.surrender(player));
 
         onServer(de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Wear.TYPE,
             (message, player) ->
@@ -119,6 +203,58 @@ public final class DdNetwork
                 de.cas_ual_ty.dueldimension.duel.match.DuelLobby.ready(player, message.ready()));
         onServer(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Leave.TYPE,
             (message, player) -> de.cas_ual_ty.dueldimension.duel.match.DuelLobby.leave(player));
+
+        onServer(de.cas_ual_ty.dueldimension.carditeminventory.CIIMessages.ChangePage.TYPE,
+            (message, player) -> de.cas_ual_ty.dueldimension.carditeminventory.CIIMessages
+                .doForContainer(player, container ->
+                {
+                    if(message.nextPage())
+                    {
+                        container.nextPage();
+                    }
+                    else
+                    {
+                        container.prevPage();
+                    }
+                }));
+
+        onServer(de.cas_ual_ty.dueldimension.cardsupply.CardSupplyMessages.RequestCard.TYPE,
+            (message, player) ->
+        {
+            de.cas_ual_ty.dueldimension.card.properties.Properties card =
+                de.cas_ual_ty.dueldimension.DdDatabase.PROPERTIES_LIST.get(message.cardId());
+            if(card != null && card != de.cas_ual_ty.dueldimension.card.properties.Properties.DUMMY)
+            {
+                de.cas_ual_ty.dueldimension.cardsupply.CardSupplyMessages.doForBinderContainer(player,
+                    container -> container.giveCard(card, message.imageIndex()));
+            }
+        });
+
+        onServer(de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages.ChangePage.TYPE,
+            (message, player) -> de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages
+                .doForBinderContainer(player, container ->
+                {
+                    if(message.nextPage())
+                    {
+                        container.nextPage();
+                    }
+                    else
+                    {
+                        container.prevPage();
+                    }
+                }));
+
+        onServer(de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages.ChangeSearch.TYPE,
+            (message, player) -> de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages
+                .doForBinderContainer(player, container -> container.updateSearch(message.search())));
+
+        onServer(de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages.IndexClicked.TYPE,
+            (message, player) -> de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages
+                .doForBinderContainer(player, container -> container.indexClicked(message.index())));
+
+        onServer(de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages.IndexDropped.TYPE,
+            (message, player) -> de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages
+                .doForBinderContainer(player, container -> container.indexDropped(message.index())));
     }
 
     /**
@@ -129,6 +265,8 @@ public final class DdNetwork
      */
     public static void registerClientHandlers()
     {
+        de.cas_ual_ty.dueldimension.duel.network.DuelPayloads.registerClientHandlers();
+
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
             de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Worn.TYPE,
             (payload, context) -> de.cas_ual_ty.dueldimension.duel.outfit.WornOutfits
@@ -136,16 +274,96 @@ public final class DdNetwork
 
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
             ProfilePayloads.SyncFreeMode.TYPE,
-            (payload, context) -> de.cas_ual_ty.dueldimension.duel.profile.FreeMode
-                .setClientBelief(payload.enabled()));
+            (payload, context) ->
+            {
+                de.cas_ual_ty.dueldimension.duel.profile.FreeMode
+                    .setClientBelief(payload.enabled());
+                // The visible collection is cached. Changing the belief
+                // without invalidating it leaves an already-open editor stuck
+                // on the old owned-only pool until some unrelated filter is
+                // changed.
+                de.cas_ual_ty.dueldimension.clientutil.hub.EditorState.invalidate();
+            });
 
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
             MenuData.TYPE, (payload, context) -> MenuData.receive(payload.data()));
+
+        // The PvP lobby. Sent on every change to the room, so the handler
+        // updates an open screen rather than replacing it; see the proxy.
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.OpenLobby.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
+                .openDuelLobby(payload));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CloseLobby.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
+                .closeDuelLobby());
+
+        // The shop: opened by the server (clicking the counter is answered
+        // with stock and balance), kept honest by it (every purchase comes
+        // back as a new balance), and the pack reveal rides the same flow.
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.shop.ShopMessages.OpenShop.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
+                .openCardShop(payload.points(), payload.packs()));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.shop.ShopMessages.SyncPoints.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
+                .setDuelPoints(payload.points()));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.shop.DuelRewardMessages.Result.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.clientutil.DuelClientState
+                .acceptReward(payload));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.set.PackMessages.OpenPack.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
+                .openPackReveal(payload.setName(), payload.codes(), payload.rarities()));
+
+        // The engine's three server-to-client messages. They arrive for real --
+        // a duel against a duelist runs and sends them -- but what draws them,
+        // EngineDuelScreen, is the last unported cluster. So these hand off to
+        // the proxy, whose client half currently does nothing with them.
+        //
+        // Registering them anyway is not busywork: without a receiver the game
+        // logs "Unknown custom packet payload" for every packet, which buries
+        // real problems and makes a working server look broken.
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.ShowPrompt.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
+                .showEnginePrompt(payload.prompt(), payload.serial()));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
+                .updateEngineDuel(payload));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OpponentPlayMat.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
+                .setOpponentPlayMat(payload.matId()));
 
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
             ProfilePayloads.Sync.TYPE,
             (payload, context) -> de.cas_ual_ty.dueldimension.clientutil.hub.EditorState
                 .accept(payload.profile()));
+
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.carditeminventory.CIIMessages.SetPage.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.carditeminventory.CIIMessages
+                .doForContainer(context.player(), container -> container.setPage(payload.page())));
+
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages.UpdatePage.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages
+                .doForBinderContainer(context.player(), container ->
+                {
+                    container.setClientPage(payload.page());
+                    container.setClientMaxPage(payload.maxPage());
+                }));
+
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages.UpdateList.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages
+                .doForBinderContainer(context.player(),
+                    container -> container.setClientList(payload.page(), payload.list())));
 
         // The rest of the client receivers land with the screens they feed.
     }

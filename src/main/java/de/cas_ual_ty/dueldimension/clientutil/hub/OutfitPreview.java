@@ -102,6 +102,20 @@ public final class OutfitPreview
                 minecraft.getEntityRenderDispatcher().getPlayerRenderer(player);
             AvatarRenderState state = renderer.createRenderState();
             renderer.extractRenderState(player, state, 1F);
+
+            // Said outright rather than left to the mixin. That mixin injects
+            // into extractRenderState(Entity, EntityRenderState, float) -- the
+            // erased signature the dispatcher calls through -- but the call
+            // above binds to the more specific
+            // extractRenderState(AvatarlikeEntity, AvatarRenderState, float),
+            // so the injection never runs for a preview. Outfits worked in the
+            // world and every tile here stood bare.
+            //
+            // Setting it here is also the more honest of the two: a preview
+            // knows exactly which outfit it is asking for, and does not need to
+            // route the answer through a static the layer reads back later.
+            ((de.cas_ual_ty.dueldimension.clientutil.OutfitCarrier)state)
+                .dueldimension$setOutfit(outfit);
             return state;
         }
         catch(Exception undrawable)
@@ -128,9 +142,19 @@ public final class OutfitPreview
     private static void pose(AvatarRenderState state, long time)
     {
         float spin = (time % (long)SPIN_MS) / SPIN_MS * 360F;
-        state.yRot = spin;
+        // bodyRot turns the figure; yRot is the head's yaw RELATIVE to it, not
+        // an absolute angle -- extractRenderState stores
+        // -wrapDegrees(headYaw - bodyRot) there. Giving both the spin therefore
+        // asked for a head turned a further `spin` degrees off the shoulders,
+        // which is why it wandered on its own while the body turned properly.
+        // Zero is "looking the way the body faces".
         state.bodyRot = spin;
+        state.yRot = 0F;
         state.xRot = 0F;
+        // A player caught mid-elytra would otherwise have that pitch applied
+        // on top of the turn.
+        state.shouldApplyFlyingYRot = false;
+        state.flyingYRot = 0F;
         state.walkAnimationPos = time / 220F;
         state.walkAnimationSpeed = 0.5F;
 

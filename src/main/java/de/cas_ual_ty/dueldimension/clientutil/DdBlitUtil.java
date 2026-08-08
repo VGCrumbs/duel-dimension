@@ -71,6 +71,29 @@ public final class DdBlitUtil
             SCALE, SCALE, tint);
     }
 
+    /**
+     * A rectangle of texels from a texture, the way {@code GuiComponent.blit}
+     * took them.
+     * <p>
+     * That method was everywhere in the duel screen: {@code blit(x, y, u, v, w,
+     * h)}, where the offsets are texels and the file is assumed to be 256x256.
+     * The assumption held -- every widget atlas in this mod is -- so the
+     * conversion is arithmetic, and doing it here keeps the call sites reading
+     * like the originals instead of growing four divisions each.
+     *
+     * @param u v the top-left texel of the region to draw
+     */
+    public static void blitTexels(GuiGraphicsExtractor graphics, Identifier texture,
+        int x, int y, int u, int v, int width, int height, int tint)
+    {
+        blit(graphics, texture, x, y, width, height,
+            u / (float)ATLAS, v / (float)ATLAS,
+            (u + width) / (float)ATLAS, (v + height) / (float)ATLAS, tint);
+    }
+
+    /** The size {@code GuiComponent.blit} assumed, and every atlas here is. */
+    private static final int ATLAS = 256;
+
     /** The whole texture, stretched into the rectangle. */
     public static void fullBlit(GuiGraphicsExtractor graphics, Identifier texture,
         int x, int y, int width, int height)
@@ -83,6 +106,82 @@ public final class DdBlitUtil
         int x, int y, int width, int height, int tint)
     {
         blit(graphics, texture, x, y, width, height, 0F, 0F, 1F, 1F, tint);
+    }
+
+    /**
+     * The whole texture, turned a quarter, half or three-quarter turn.
+     * <p>
+     * A card in defence position lies on its side, and a card on the far side
+     * of the field is upside down. Forge drew these by <b>permuting the four
+     * texture coordinates</b> of an axis-aligned quad — the rectangle stayed
+     * put and the art turned inside it.
+     * <p>
+     * That cannot be expressed here: the extractor's blit takes a UV
+     * <em>window</em> ({@code u0, u1, v0, v1}), which is axis-aligned by
+     * construction and has no way to say "this corner maps to that one". So the
+     * quad is turned instead, about its own centre.
+     * <p>
+     * <b>The two are the same picture, and it is worth being precise about
+     * why.</b> Turning a quad and permuting its UVs agree exactly when the
+     * region is square — otherwise a quarter turn would swap the rectangle's
+     * width and height and it would no longer cover the same pixels. Every
+     * caller that asks for a quarter or three-quarter turn goes through
+     * {@code renderDuelCardCentered}, which squares the region first
+     * ({@code x -= (height - width) / 2; width = height;}) precisely so the
+     * sideways card still fits its zone. So the condition holds wherever it
+     * matters, and a half turn is safe regardless.
+     *
+     * @param quarterTurns 1, 2 or 3; the same three cases Forge had methods for
+     */
+    public static void fullBlitTurned(GuiGraphicsExtractor graphics, Identifier texture,
+        int x, int y, int width, int height, int quarterTurns, int tint)
+    {
+        int turns = Math.floorMod(quarterTurns, 4);
+        if(turns == 0)
+        {
+            fullBlit(graphics, texture, x, y, width, height, tint);
+            return;
+        }
+
+        graphics.pose().pushMatrix();
+        graphics.pose().rotateAbout((float)(Math.PI / 2D) * turns,
+            x + width / 2F, y + height / 2F);
+        fullBlit(graphics, texture, x, y, width, height, tint);
+        graphics.pose().popMatrix();
+    }
+
+    /** A quarter turn, which is a card lying on its side. */
+    public static void fullBlit90Degree(GuiGraphicsExtractor graphics, Identifier texture,
+        int x, int y, int width, int height, int tint)
+    {
+        fullBlitTurned(graphics, texture, x, y, width, height, 1, tint);
+    }
+
+    /** A half turn, which is a card on the far side of the field. */
+    public static void fullBlit180Degree(GuiGraphicsExtractor graphics, Identifier texture,
+        int x, int y, int width, int height, int tint)
+    {
+        fullBlitTurned(graphics, texture, x, y, width, height, 2, tint);
+    }
+
+    /** Both at once: the opponent's card, in defence. */
+    public static void fullBlit270Degree(GuiGraphicsExtractor graphics, Identifier texture,
+        int x, int y, int width, int height, int tint)
+    {
+        fullBlitTurned(graphics, texture, x, y, width, height, 3, tint);
+    }
+
+    /**
+     * How a card is drawn, so a caller can pass "sideways" around as a value.
+     * <p>
+     * The Forge interface took a {@code PoseStack}; this takes the extractor and
+     * the texture, because a texture is an argument to a draw now rather than
+     * something bound before one.
+     */
+    public interface FullBlitMethod
+    {
+        void fullBlit(GuiGraphicsExtractor graphics, Identifier texture,
+            int x, int y, int width, int height, int tint);
     }
 
     /**

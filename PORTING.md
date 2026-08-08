@@ -296,6 +296,37 @@ is usually the larger half of the work, not Forge-vs-Fabric.
    - Retained mode draws in the order described, so a screen's background must
      be described **before** `super.extractRenderState`, not after.
 
+   **Container screens and widgets — the retained-mode shape (verified against
+   vanilla's own bytecode, not guessed).** An `AbstractContainerScreen` no
+   longer has `render`/`renderBg`/`renderLabels`. Reading vanilla's
+   `ContainerScreen`/`AbstractContainerScreen` in the 26.2 jar:
+   - `imageWidth`/`imageHeight` are **final** — pass them to the `super(menu,
+     inv, title, w, h)` constructor rather than assigning them.
+   - The **panel background** is an `extractBackground(extractor, mx, my, pt)`
+     override: call `super` (it darkens the world behind), then blit the panel
+     at absolute `leftPos, topPos` with `extractor.blit(RenderPipelines
+     .GUI_TEXTURED, texture, x, y, u, v, w, h, 256, 256)` (or `DdBlitUtil`).
+     This is exactly what vanilla's chest screen does.
+   - The base `extractContents` then `pose().translate(leftPos, topPos)` and
+     calls `extractLabels` + the slots, so **foreground text goes in an
+     `extractLabels(extractor, mx, my)` override in panel-local coordinates** —
+     the same 8,6 offsets the Forge `renderLabels` used. Slot rendering and the
+     hovered-slot highlight are the base's job; do not reimplement them.
+   - Buttons added with `addRenderableWidget` in `init()` are drawn for free.
+   - Input is objects: `keyPressed(KeyEvent)` (`keyEvent.key()` is the keycode),
+     `mouseClicked(MouseButtonEvent, boolean)`; `channel.send` →
+     `ClientPlayNetworking.send(payload)`.
+   `carditeminventory/CIIScreen` is the worked example.
+
+   **Widgets:** `Button` is **abstract** in 26.2 (its public constructor is gone
+   too). A button subclass calls `super(x, y, w, h, title, onPress,
+   DEFAULT_NARRATION)` and implements the abstract `extractContents(extractor,
+   mx, my, pt)` — `extractDefaultSprite(extractor)` draws the standard button
+   (the label is added around it by the base). A custom-look widget blits its
+   own texture there instead. The Forge `renderButton(PoseStack)` /
+   `OnTooltip`-constructor / `WIDGETS_LOCATION` sheet are all gone;
+   `clientutil/widget/ImprovedButton` is the worked example.
+
    Encouragingly, `NineSlice` came out *shorter* than the Forge version: a
    nine-slice is a UV window and the extractor's blit takes one directly, so
    the hand-rolled quad building simply went away. The parts that will not go
@@ -397,6 +428,22 @@ this mod's own payload registration, which matters after watching two Fabric
 helpers vanish (`FabricItemGroup`, `ExtendedScreenHandlerType`) in this very
 port.
 
+**Building the `MenuType` itself needs an access widener.** Vanilla's
+`MenuType` has a *private* constructor and only private `register(...)` helpers,
+and the one Fabric helper that used to hand mods a public path
+(`ExtendedScreenHandlerType`) is intermediary-mapped (`class_1703` …) and so
+unusable against the unobfuscated jar — the same disappearance again. So the mod
+carries `src/main/resources/dueldimension.accesswidener`, wired in `build.gradle`
+(`loom.accessWidenerPath`) and `fabric.mod.json` (`"accessWidener"`), widening
+the constructor and its package-private `MenuType$MenuSupplier`.
+`DdContainerTypes` then does `new MenuType<>(supplier, FeatureFlags.VANILLA_SET)`
+and `Registry.register(BuiltInRegistries.MENU, key, …)`, exactly like `DdItems`.
+Three traps, all found the hard way: loom 1.17 reads the **ClassTweaker**
+format, so the header is `classTweaker v1 official` — the token is `classTweaker`
+not `accessWidener`, the namespace is `official` not `named` (on an
+unobfuscated jar the two names coincide), and **the header must be the first
+line** (a leading comment block makes the reader reject it).
+
 Still parked as one unit, but on work rather than on a question:
 `DdContainerTypes`, the six containers, the blocks (`DuelBlock`,
 `CardShopBlock`, `CardSupplyBlock`), the block entities, `CardSupplyMessages`,
@@ -414,8 +461,143 @@ branches in each of its two command blocks called
 Fixed here. **The Forge tree still has it**, at
 `util/DdUtil.java` — four call sites, `grep -n "CDCommands.getPath()"`.
 
+## The duel screen — the two decisions everything else waits on
+
+The duel screen is **one unit of 34 files and ~9,700 lines**, and it does not
+chunk: the animations need the widgets, the widgets need `IDuelScreenContext`
+and `DuelScreenDueling`, and the screens need both. Before any of it can be
+written, two questions about how a card is drawn have to be settled, because
+every widget and animation in the cluster calls through them.
+
+### 1. A card lying on its side — settled: turn the quad
+
+Forge drew a rotated card by **permuting the four texture coordinates** of an
+axis-aligned quad: the rectangle stayed put and the art turned inside it
+(`blit90Degree` and friends).
+
+That cannot be expressed here. The extractor's blit takes a UV *window*
+(`u0, u1, v0, v1`), which is axis-aligned by construction and has no way to say
+"this corner maps to that one". So **the quad turns instead**, about its own
+centre, using `graphics.pose().rotateAbout(...)` on the 2D GUI matrix.
+
+The two agree exactly **when the region is square** — otherwise a quarter turn
+swaps the rectangle's width and height and it stops covering the same pixels.
+Every caller that asks for a quarter or three-quarter turn goes through
+`renderDuelCardCentered`, which squares the region first
+(`x -= (height - width) / 2; width = height;`) precisely so a sideways card
+still fits its zone. So the condition holds where it matters. **Done** —
+`DdBlitUtil.fullBlitTurned` and the three named wrappers.
+
+### 2. The rarity foil — SETTLED: the two-pass trick works
+
+This is the effect where a foil card glints as the cursor passes over it. Forge
+did it in two passes with the framebuffer's alpha channel as scratch space:
+draw a soft radial mask at the cursor with
+`blendFuncSeparate(ZERO, ONE, SRC_ALPHA, ZERO)` so it writes only alpha, then
+draw the foil with a blend that makes it visible only where that alpha is high.
+`RenderSystem.blendFuncSeparate` is gone.
+
+**It is still expressible.** `BlendFunction` has constructors taking the same
+`BlendFactor`s, and `RenderPipeline.Builder.withColorTargetState(new
+ColorTargetState(blendFunction))` puts one on a pipeline — and
+`GuiGraphicsExtractor.blit` takes a pipeline. So the two passes become two
+custom pipelines.
+
+**The risk was batching** — the second draw has to see what the first wrote, and
+a retained-mode GUI is free to reorder or merge draws. **Tested, and it holds.**
+`FoilTestScreen` (bound to J) draws the two-pass version beside a control that
+omits the mask pass: the two are plainly different, the glint is localised and
+follows the cursor, and the control is flat. So `FoilPipelines.MASK` then
+`FoilPipelines.FOIL` is the path, and `ADDITIVE` stays only as a fallback nobody
+needs.
+
+### 3. Arbitrary quads — BUILT
+
+A perspective field has no axis-aligned rectangles in it. The GUI can only blit
+those, so `FieldQuad`'s drawing half went missing in the first pass at this file.
+It is back, on `SubmitNodeCollector.submitCustomGeometry`, which hands over a
+`PoseStack.Pose` and a `VertexConsumer` — the same raw vertex sink the Forge code
+had.
+
+`submitCustomGeometry` only exists inside a render pass and a screen has none, so
+the board is drawn as a **picture-in-picture** region (`BoardPip`) — vanilla's own
+mechanism for the inventory entity and the lectern book. Fabric registers custom
+PiP *renderers* but does not expose the submission side and `guiRenderState` is
+private, so one accessor mixin bridges it.
+
+Two things that would otherwise cost an afternoon:
+
+- **Corner order is `0, 3, 2, 1`**, anticlockwise in screen coordinates. Wound
+  the other way the face points away and vanishes under back-face culling.
+- **An entity render type wants a full vertex** — colour, UV, overlay, light and
+  normal. The old GUI shader wanted position and UV only. Leaving one unset does
+  not fail; it reads whatever was in the buffer, which is how a quad comes out
+  black or invisible for no visible reason.
+
+`FieldQuad`'s draw methods therefore take `(PoseStack, SubmitNodeCollector, ...)`
+rather than a `GuiGraphicsExtractor`. Every call in `BoardRenderer` and
+`DuelAnimations` goes through them.
+
+## The duel screen — what nearly shipped broken
+
+Three defects that **compiled clean** and were found by adversarial review rather
+than by the compiler. All three are the same shape: an API whose replacement
+looks equivalent and is not.
+
+**Text on the board was invisible.** `FeatureRenderDispatcher.executeTranslucent`
+runs its phases in a fixed sequence within each order group:
+
+    shadows -> translucentModels -> seeThroughNameTags -> nameTags -> texts -> translucentCustomGeometry
+
+`FieldQuad` draws through `submitCustomGeometry`, so **text submitted at the same
+order is painted over by the board described after it**. ATK/DEF, the reveal
+caption and the number on a rolled die were all submitted and then buried. The
+lever is `collector.order(1)`: `submitsPerOrder` is a sorted map drained
+ascending, so a higher order runs strictly after. Every `submitText` in this mod
+goes through `order(TEXT_ORDER)` for that reason.
+
+**`setScreenAndShow` is not `setScreen`.** It is `gui.setScreen(s)` followed by a
+forced `renderFrame(false)`. `DuelClientState.openScreen` runs inside
+`tickPlayback`'s lock with the update batch half-drained, so the forced frame
+painted a half-applied board. `minecraft.gui.setScreen` is the true 1:1 for
+Forge's `setScreen`; reserve `setScreenAndShow` for blocking transitions, which
+is what vanilla does with it.
+
+**A picture-in-picture painter is deferred.** It is a callback the game runs
+after every screen's extract has returned. `BoardRenderer.render` both drew the
+board and built its hit rectangles, so moving it into the painter meant
+`hits()` was read a frame before the painter rebuilt it — hover, selection marks
+and the click test all working off the previous frame's board. The fix is the
+split the retained-mode refactor asks for everywhere: `layout(...)` computes
+every rectangle eagerly during extract, `render(pose, collector)` replays them
+inside the painter. Zones and piles share one ordered plan list because the
+original interleaves them per side and a nearer pile must paint over a further
+one.
+
 ## Decisions
 
+- **Duel rewards are a server-owned assessment, not a client animation or a
+  flat outcome constant.** `DuelRewardTracker` consumes the same absolute,
+  ordered OCGCore stream the server already drains, and `DuelReward` is a pure
+  evaluator whose visible lines sum to the committed amount. The balance is
+  changed before `DuelRewardMessages.Result` is sent. PvP uses the full preset;
+  repeatable NPC duels use 65%; a forfeit stops after outcome and elapsed-turn
+  lines so surrender cannot manufacture no-spell/no-trap/no-special bonuses.
+  The client holds that payload behind the outcome stinger, then opens a
+  PNG-nine-slice summary/detail screen. A match carries metrics across games
+  and pays once when the contest ends.
+- **A container-item's card slots are one `CARD_INVENTORY` component, written
+  through.** Forge kept them in a `CARD_ITEM_INVENTORY` capability attached to
+  the stack — live storage, so a menu mutating the handler persisted for free,
+  and `getShareTag`/`readShareTag` synced it. Neither survives: the slots are
+  now `DdComponents.CARD_INVENTORY` (a `List<ItemStack>`, `OPTIONAL_CODEC` for
+  disk, `OPTIONAL_LIST_STREAM_CODEC` for the wire — it syncs like any component,
+  no share-tag override). A component is immutable, so `YDMItemHandler.boundTo(
+  stack, size)` seeds a handler from it and overrides `setChanged()` to write
+  the handler back into the stack — restoring the capability's "the handler is
+  the storage" behaviour. The deck box, card set and simple binder all read
+  their slots this way; the card **binder** does not — its cards are a
+  server-side UUID-keyed collection, and only the binder's id sits on the stack.
 - **Forge's `IItemHandler` becomes vanilla's `Container`, not a Fabric
   equivalent.** Fabric has no capabilities, and `fabric-transfer-api-v1` is a
   different abstraction aimed at pipes rather than at menus. Vanilla's

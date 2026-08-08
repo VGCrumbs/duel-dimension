@@ -220,6 +220,36 @@ public class Properties
         addText(list);
     }
     
+    /**
+     * Everything the card IS, without its name: its classifications and its
+     * stats, in the order a printed card lists them.
+     * <p>
+     * Separate from {@link #addHeader} because that one is the tooltip's
+     * shape -- name first, then the type -- and because it leaves a monster's
+     * species out. The species lives in {@code addMonsterTextHeader}, which
+     * {@link #addText} calls, so anything that took its facts from the header
+     * and its body from {@code getText()} silently dropped "Spellcaster" and
+     * showed a monster as no more than "Effect Monster". Three screens did.
+     * <p>
+     * Overridden rather than instanceof-tested, so a card kind added later
+     * says what it is here and every preview picks it up.
+     */
+    public void addFacts(List<Component> list)
+    {
+        if(getCustom())
+        {
+            list.add(Component.literal("Custom Card")
+                .setStyle(Style.EMPTY.applyFormat(ChatFormatting.RED)));
+        }
+        addFactLines(list);
+    }
+
+    /** The classification and stat lines; see {@link #addFacts}. */
+    protected void addFactLines(List<Component> list)
+    {
+        addCardType(list);
+    }
+
     public void addHeader(List<Component> list)
     {
         list.add(Component.literal(getName()));

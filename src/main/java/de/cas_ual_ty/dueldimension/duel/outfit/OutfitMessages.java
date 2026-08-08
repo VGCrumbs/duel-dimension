@@ -5,7 +5,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import de.cas_ual_ty.dueldimension.net.DdNetwork;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -42,12 +42,12 @@ public final class OutfitMessages
             return TYPE;
         }
 
-        public static void encode(Wear message, FriendlyByteBuf buffer)
+        public static void encode(Wear message, RegistryFriendlyByteBuf buffer)
         {
             buffer.writeUtf(message.outfit(), ID_LIMIT);
         }
 
-        public static Wear decode(FriendlyByteBuf buffer)
+        public static Wear decode(RegistryFriendlyByteBuf buffer)
         {
             return new Wear(buffer.readUtf(ID_LIMIT));
         }
@@ -106,13 +106,13 @@ public final class OutfitMessages
             return TYPE;
         }
 
-        public static void encode(Worn message, FriendlyByteBuf buffer)
+        public static void encode(Worn message, RegistryFriendlyByteBuf buffer)
         {
             buffer.writeUUID(message.player());
             buffer.writeUtf(message.outfit(), ID_LIMIT);
         }
 
-        public static Worn decode(FriendlyByteBuf buffer)
+        public static Worn decode(RegistryFriendlyByteBuf buffer)
         {
             return new Worn(buffer.readUUID(), buffer.readUtf(ID_LIMIT));
         }

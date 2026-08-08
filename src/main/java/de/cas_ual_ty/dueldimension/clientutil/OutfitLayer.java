@@ -64,8 +64,9 @@ public class OutfitLayer extends RenderLayer<AvatarRenderState, PlayerModel>
      * skin was drawn for is a fact about the skin, not about whoever is wearing
      * it.
      */
-    private static PlayerModel classic;
-    private static PlayerModel slim;
+    private static final java.util.Map<String, PlayerModel> MODELS = new java.util.HashMap<>();
+    /** Kept separate because first-person voxel offsets differ from world offsets. */
+    private static final java.util.Map<String, PlayerModel> HAND_MODELS = new java.util.HashMap<>();
 
     public OutfitLayer(RenderLayerParent<AvatarRenderState, PlayerModel> parent)
     {
@@ -76,19 +77,24 @@ public class OutfitLayer extends RenderLayer<AvatarRenderState, PlayerModel>
     /** Shared with the first-person hand, which has no layer to go through. */
     static void models()
     {
-        if(classic != null)
-        {
-            return;
-        }
-        classic = bake(false);
-        slim = bake(true);
+        // Kept as the initialization hook used by the constructor. Models are
+        // now per outfit: their injected voxel meshes belong to one texture.
     }
 
     /** The model an outfit is drawn on. */
     static PlayerModel model(Outfits.Outfit outfit)
     {
-        models();
-        return outfit.slim() ? slim : classic;
+        PlayerModel model = MODELS.computeIfAbsent(outfit.id(), ignored -> bake(outfit.slim()));
+        SkinLayersCompat.applyOutfit(model, outfit.texture(), outfit.slim());
+        return model;
+    }
+
+    /** Dedicated retained model for first-person sleeves. */
+    static PlayerModel handModel(Outfits.Outfit outfit)
+    {
+        PlayerModel model = HAND_MODELS.computeIfAbsent(outfit.id(), ignored -> bake(outfit.slim()));
+        SkinLayersCompat.applyFirstPerson(model, outfit.texture(), outfit.slim());
+        return model;
     }
 
     /**
@@ -98,8 +104,29 @@ public class OutfitLayer extends RenderLayer<AvatarRenderState, PlayerModel>
      */
     private static PlayerModel bake(boolean thin)
     {
-        return new PlayerModel(LayerDefinition.create(
+        return new OutfitModel(LayerDefinition.create(
             PlayerModel.createMesh(new CubeDeformation(INFLATE), thin), 64, 64).bakeRoot(), thin);
+    }
+
+    /** An equipped outfit is visible independently of the base skin's part toggles. */
+    private static final class OutfitModel extends PlayerModel
+    {
+        private OutfitModel(net.minecraft.client.model.geom.ModelPart root, boolean slim)
+        {
+            super(root, slim);
+        }
+
+        @Override
+        public void setupAnim(AvatarRenderState state)
+        {
+            super.setupAnim(state);
+            hat.visible = true;
+            jacket.visible = true;
+            leftSleeve.visible = true;
+            rightSleeve.visible = true;
+            leftPants.visible = true;
+            rightPants.visible = true;
+        }
     }
 
     @Override

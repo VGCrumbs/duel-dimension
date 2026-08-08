@@ -136,161 +136,143 @@ public class DdUtil
         }
     }
     
-    /*
-     * Parked with the cooldown phase. Both of these hang off Forge's
-     * COOLDOWN_HOLDER capability, which becomes a data attachment when the
-     * cooldown system ports. The bodies are kept verbatim so that port is a
-     * matter of changing how the holder is reached, not rewriting the rules.
-     *
-     * The .get() calls below were .getPath() upstream in two of the four
-     * branches of each block -- the config file path, not the commands. It
-     * compiled because both are List<String>. Fixed here; Forge still has it.
-     *     public static void executeAdmitDefeatCommands(Player winner, Player loser)
-     *     {
-     *         if(winner.level() instanceof ServerLevel)
-     *         {
-     *             ServerLevel world = (ServerLevel) winner.level();
-     *             MinecraftServer server = world.getServer();
-     *             
-     *             winner.getCapability(DuelDimension.COOLDOWN_HOLDER).ifPresent(cdWinner ->
-     *             {
-     *                 loser.getCapability(DuelDimension.COOLDOWN_HOLDER).ifPresent(cdLoser ->
-     *                 {
-     *                     List<? extends String> commands;
-     *                     
-     *                     if(cdWinner.isOffCooldown())
-     *                     {
-     *                         if(cdLoser.isOffCooldown())
-     *                         {
-     *                             // both off CD
-     *                             commands = DuelDimension.commonConfig.defeatBothOffCDCommands.get();
-     *                         }
-     *                         else
-     *                         {
-     *                             // winner off CD
-     *                             commands = DuelDimension.commonConfig.defeatWinnerOffCDCommands.get();
-     *                         }
-     *                     }
-     *                     else
-     *                     {
-     *                         if(cdLoser.isOffCooldown())
-     *                         {
-     *                             // loser off CD
-     *                             commands = DuelDimension.commonConfig.defeatLoserOffCDCommands.get();
-     *                         }
-     *                         else
-     *                         {
-     *                             // both on CD
-     *                             commands = DuelDimension.commonConfig.defeatBothOnCDCommands.get();
-     *                         }
-     *                     }
-     *                     
-     *                     if(cdWinner.isOffCooldown())
-     *                     {
-     *                         cdWinner.setCooldown(DuelDimension.commonConfig.winnerCooldown.get());
-     *                     }
-     *                     
-     *                     if(cdLoser.isOffCooldown())
-     *                     {
-     *                         cdLoser.setCooldown(DuelDimension.commonConfig.loserCooldown.get());
-     *                     }
-     *                     
-     *                     for(String command : commands)
-     *                     {
-     *                         command = command.replace("%winner%", winner.getScoreboardName()).replace("%loser%", loser.getScoreboardName());
-     *                         
-     *                         try
-     *                         {
-     *                             server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), command);
-     *                         }
-     *                         catch(Exception e)
-     *                         {
-     *                             DuelDimension.log("Could not execute command triggered by duel defeat: " + command);
-     *                             e.printStackTrace();
-     *                         }
-     *                     }
-     *                 });
-     *             });
-     *         }
-     *     }
+    /**
+     * The commands a server runs when a duel is decided.
+     * <p>
+     * Which set depends on whether each player is off cooldown, so a server can
+     * pay out for a real duel and not for the tenth rematch in five minutes.
+     * The winner and loser are substituted into the command text by name.
      */
-    
-    /*
-     * Parked with the cooldown phase. Both of these hang off Forge's
-     * COOLDOWN_HOLDER capability, which becomes a data attachment when the
-     * cooldown system ports. The bodies are kept verbatim so that port is a
-     * matter of changing how the holder is reached, not rewriting the rules.
-     *
-     * The .get() calls below were .getPath() upstream in two of the four
-     * branches of each block -- the config file path, not the commands. It
-     * compiled because both are List<String>. Fixed here; Forge still has it.
-     *     public static void executeDrawCommands(Player player1, Player player2)
-     *     {
-     *         if(player1.level() instanceof ServerLevel)
-     *         {
-     *             ServerLevel world = (ServerLevel) player1.level();
-     *             MinecraftServer server = world.getServer();
-     *             
-     *             player1.getCapability(DuelDimension.COOLDOWN_HOLDER).ifPresent(cd1 ->
-     *             {
-     *                 player2.getCapability(DuelDimension.COOLDOWN_HOLDER).ifPresent(cd2 ->
-     *                 {
-     *                     List<? extends String> commands;
-     *                     
-     *                     if(cd1.isOffCooldown())
-     *                     {
-     *                         if(cd2.isOffCooldown())
-     *                         {
-     *                             // both off CD
-     *                             commands = DuelDimension.commonConfig.drawBothOffCDCommands.get();
-     *                         }
-     *                         else
-     *                         {
-     *                             // p1 off CD
-     *                             commands = DuelDimension.commonConfig.drawPlayer1OffCDCommands.get();
-     *                         }
-     *                     }
-     *                     else
-     *                     {
-     *                         if(cd2.isOffCooldown())
-     *                         {
-     *                             // p2 off CD
-     *                             commands = DuelDimension.commonConfig.drawPlayer2OffCDCommands.get();
-     *                         }
-     *                         else
-     *                         {
-     *                             // both on CD
-     *                             commands = DuelDimension.commonConfig.drawBothOnCDCommands.get();
-     *                         }
-     *                     }
-     *                     
-     *                     if(cd1.isOffCooldown())
-     *                     {
-     *                         cd1.setCooldown(DuelDimension.commonConfig.drawCooldown.get());
-     *                     }
-     *                     
-     *                     if(cd2.isOffCooldown())
-     *                     {
-     *                         cd2.setCooldown(DuelDimension.commonConfig.drawCooldown.get());
-     *                     }
-     *                     
-     *                     for(String command : commands)
-     *                     {
-     *                         command = command.replace("%player1%", player1.getScoreboardName()).replace("%player2%", player2.getScoreboardName());
-     *                         
-     *                         try
-     *                         {
-     *                             server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), command);
-     *                         }
-     *                         catch(Exception e)
-     *                         {
-     *                             DuelDimension.log("Could not execute command triggered by duel draw: " + command);
-     *                             e.printStackTrace();
-     *                         }
-     *                     }
-     *                 });
-     *             });
-     *         }
-     *     }
+    public static void executeAdmitDefeatCommands(Player winner, Player loser)
+    {
+        if(winner.level() instanceof ServerLevel world)
+        {
+            MinecraftServer server = world.getServer();
+
+            CooldownHolder cdWinner = Cooldowns.get(winner);
+            CooldownHolder cdLoser = Cooldowns.get(loser);
+
+            List<? extends String> commands;
+
+            if(cdWinner.isOffCooldown())
+            {
+                if(cdLoser.isOffCooldown())
+                {
+                    // both off CD
+                    commands = DuelDimension.commonConfig().defeatBothOffCDCommands.get();
+                }
+                else
+                {
+                    // winner off CD
+                    commands = DuelDimension.commonConfig().defeatWinnerOffCDCommands.get();
+                }
+            }
+            else
+            {
+                if(cdLoser.isOffCooldown())
+                {
+                    // loser off CD
+                    commands = DuelDimension.commonConfig().defeatLoserOffCDCommands.get();
+                }
+                else
+                {
+                    // both on CD
+                    commands = DuelDimension.commonConfig().defeatBothOnCDCommands.get();
+                }
+            }
+
+            if(cdWinner.isOffCooldown())
+            {
+                cdWinner.setCooldown(DuelDimension.commonConfig().winnerCooldown.get());
+            }
+
+            if(cdLoser.isOffCooldown())
+            {
+                cdLoser.setCooldown(DuelDimension.commonConfig().loserCooldown.get());
+            }
+
+            runCommands(server, commands, winner, loser);
+        }
+    }
+
+    /** The same, for a draw: neither player is the winner. */
+    public static void executeDrawCommands(Player player1, Player player2)
+    {
+        if(player1.level() instanceof ServerLevel world)
+        {
+            MinecraftServer server = world.getServer();
+
+            CooldownHolder cd1 = Cooldowns.get(player1);
+            CooldownHolder cd2 = Cooldowns.get(player2);
+
+            List<? extends String> commands;
+
+            if(cd1.isOffCooldown())
+            {
+                if(cd2.isOffCooldown())
+                {
+                    // both off CD
+                    commands = DuelDimension.commonConfig().drawBothOffCDCommands.get();
+                }
+                else
+                {
+                    // p1 off CD
+                    commands = DuelDimension.commonConfig().drawPlayer1OffCDCommands.get();
+                }
+            }
+            else
+            {
+                if(cd2.isOffCooldown())
+                {
+                    // p2 off CD
+                    commands = DuelDimension.commonConfig().drawPlayer2OffCDCommands.get();
+                }
+                else
+                {
+                    // both on CD
+                    commands = DuelDimension.commonConfig().drawBothOnCDCommands.get();
+                }
+            }
+
+            if(cd1.isOffCooldown())
+            {
+                cd1.setCooldown(DuelDimension.commonConfig().drawCooldown.get());
+            }
+
+            if(cd2.isOffCooldown())
+            {
+                cd2.setCooldown(DuelDimension.commonConfig().drawCooldown.get());
+            }
+
+            runCommands(server, commands, player1, player2);
+        }
+    }
+
+    /**
+     * Runs each command as the server, with the two players' names substituted.
+     * <p>
+     * Shared by the two above, which ran identical loops. A command that throws
+     * is logged and the rest still run: one bad line in a config should not cost
+     * a player the rest of their reward.
      */
+    private static void runCommands(MinecraftServer server, List<? extends String> commands,
+        Player winner, Player loser)
+    {
+        for(String command : commands)
+        {
+            command = command.replace("%winner%", winner.getScoreboardName())
+                .replace("%loser%", loser.getScoreboardName());
+
+            try
+            {
+                server.getCommands().performPrefixedCommand(server.createCommandSourceStack(),
+                    command);
+            }
+            catch(Exception e)
+            {
+                DuelDimension.log("Could not execute command triggered by duel defeat: " + command);
+                e.printStackTrace();
+            }
+        }
+    }
 }

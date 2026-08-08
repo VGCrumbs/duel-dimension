@@ -1,0 +1,16 @@
+{
+  "pad": 8,
+  "left.width": 141,
+  "bottom.height": 62,
+  "pack.aspect": 1.0,
+  "grid.maxColumns": 12,
+  "grid.cellWidth": 46,
+  "grid.gap": 4,
+  "controls.top": 0,
+  "grid.top": 22,
+  "sort.width": 62,
+  "dir.width": 30,
+  "close.width": 70,
+  "close.gap": 4,
+  "bulk.width": 34
+}

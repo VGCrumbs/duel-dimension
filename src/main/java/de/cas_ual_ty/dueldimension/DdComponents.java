@@ -77,6 +77,80 @@ public final class DdComponents
         .networkSynchronized(Card.STREAM_CODEC)
         .build();
 
+    /**
+     * The card slots a container-item (deck box, card set, simple binder) holds.
+     * <p>
+     * On Forge these lived in a {@code CARD_ITEM_INVENTORY} capability attached
+     * to the stack — live storage, so a menu mutating the handler persisted
+     * automatically, and {@code getShareTag}/{@code readShareTag} carried it to
+     * the client. Neither exists here: the slots are a component (a plain list
+     * of stacks), it syncs like every other component with no share-tag
+     * override, and because a component is immutable the mutation has to be
+     * written back. {@link de.cas_ual_ty.dueldimension.util.YDMItemHandler#boundTo}
+     * does exactly that — it seeds a handler from this component and writes the
+     * handler back into the stack on every change, restoring the "the handler is
+     * the storage" feel the capability had.
+     */
+    public static final DataComponentType<java.util.List<net.minecraft.world.item.ItemStack>>
+        CARD_INVENTORY = DataComponentType
+            .<java.util.List<net.minecraft.world.item.ItemStack>>builder()
+            .persistent(net.minecraft.world.item.ItemStack.OPTIONAL_CODEC.listOf())
+            .networkSynchronized(net.minecraft.world.item.ItemStack.OPTIONAL_LIST_STREAM_CODEC)
+            .build();
+
+    /**
+     * Which card set a set-item (sealed or opened pack) is.
+     * <p>
+     * The Forge build wrote a single string — the set's code — into the stack's
+     * tag under {@link JsonKeys#CODE}. {@link net.minecraft.world.item.ItemStack}
+     * has no tag, so that one string is its own component now: a plain
+     * {@code String}, defaulting to empty so a stack with no set reads as the
+     * dummy set, exactly as an empty tag key did.
+     */
+    public static final DataComponentType<String> SET_CODE = DataComponentType.<String>builder()
+        .persistent(Codec.STRING)
+        .networkSynchronized(ByteBufCodecs.STRING_UTF8.cast())
+        .build();
+
+    /**
+     * A card binder's id.
+     * <p>
+     * The binder's cards are a server-side collection keyed by this id — never
+     * on the stack — so this one value is the whole of what the stack carries.
+     * On Forge it lived in a {@code UUID_HOLDER} capability with a
+     * {@code getShareTag}/{@code readShareTag} pair to sync it; a component syncs
+     * on its own, so it replaces both. Persisted with
+     * {@link net.minecraft.core.UUIDUtil#CODEC} and synced with
+     * {@link net.minecraft.core.UUIDUtil#STREAM_CODEC}, the same encodings the
+     * card-inventory managers already use for a UUID.
+     */
+    public static final DataComponentType<java.util.UUID> BINDER_UUID =
+        DataComponentType.<java.util.UUID>builder()
+            .persistent(net.minecraft.core.UUIDUtil.CODEC)
+            .networkSynchronized(net.minecraft.core.UUIDUtil.STREAM_CODEC)
+            .build();
+
+    /**
+     * Who a duel disk has challenged, and which duel it belongs to.
+     * <p>
+     * Two UUIDs the disk used to keep in its item tag. An {@code ItemStack} has
+     * no tag any more, so each is its own component -- which is better than the
+     * tag was: a component is typed, so "duel_player2" cannot quietly be read
+     * back as something else, and it syncs to the client without the disk
+     * having to say so.
+     */
+    public static final DataComponentType<java.util.UUID> DUEL_PLAYER2 =
+        DataComponentType.<java.util.UUID>builder()
+            .persistent(net.minecraft.core.UUIDUtil.CODEC)
+            .networkSynchronized(net.minecraft.core.UUIDUtil.STREAM_CODEC)
+            .build();
+
+    public static final DataComponentType<java.util.UUID> DUEL_MANAGER =
+        DataComponentType.<java.util.UUID>builder()
+            .persistent(net.minecraft.core.UUIDUtil.CODEC)
+            .networkSynchronized(net.minecraft.core.UUIDUtil.STREAM_CODEC)
+            .build();
+
     private DdComponents()
     {
     }
@@ -92,5 +166,15 @@ public final class DdComponents
     {
         Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE,
             Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "card"), CARD);
+        Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE,
+            Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "card_inventory"), CARD_INVENTORY);
+        Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE,
+            Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "set_code"), SET_CODE);
+        Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE,
+            Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "binder_uuid"), BINDER_UUID);
+        Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE,
+            Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "duel_player2"), DUEL_PLAYER2);
+        Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE,
+            Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "duel_manager"), DUEL_MANAGER);
     }
 }

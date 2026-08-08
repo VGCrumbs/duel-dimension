@@ -22,6 +22,16 @@ import java.io.File;
  */
 public final class DuelDimension
 {
+    /**
+     * The mod's own source of randomness.
+     * <p>
+     * Every duel seeds its shuffles from this rather than from a fresh Random
+     * per duel: two duels starting in the same millisecond would otherwise draw
+     * the same opening hand, which is exactly the kind of thing nobody notices
+     * until it happens in a tournament.
+     */
+    public static final java.util.Random random = new java.util.Random();
+
     public static final String MOD_ID = "dueldimension";
 
     /** The id in capitals, for the places that name a thread after the mod. */

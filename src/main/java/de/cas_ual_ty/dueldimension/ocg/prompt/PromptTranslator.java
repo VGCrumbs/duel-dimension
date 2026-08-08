@@ -166,7 +166,9 @@ public class PromptTranslator
 
         if(message instanceof DuelMessage.SelectEffectYesNo effect)
         {
-            return new EnginePrompt(EnginePrompt.Kind.CHOOSE, text.describe(effect.description()),
+            String question = formatEffectQuestion(text.describe(effect.description()),
+                cardName(effect.code()), promptLocation(effect.loc()));
+            return new EnginePrompt(EnginePrompt.Kind.CHOOSE, question,
                 List.of(new EnginePrompt.Option("Yes", cardName(effect.code()), effect.code()),
                     new EnginePrompt.Option("No")), 1, 1, false, field);
         }
@@ -714,5 +716,43 @@ public class PromptTranslator
             default -> "Zone " + location.location();
         };
         return zone + " " + (location.sequence() + 1);
+    }
+
+    /** Location wording used by strings.conf's {@code [%ls]} prompt slot. */
+    private static String promptLocation(CardLocation location)
+    {
+        if(location == null)
+        {
+            return "Unknown location";
+        }
+        return switch(location.location())
+        {
+            case OcgConstants.LOCATION_DECK -> "Deck";
+            case OcgConstants.LOCATION_HAND -> "Hand";
+            case OcgConstants.LOCATION_MZONE -> "Monster Zone " + (location.sequence() + 1);
+            case OcgConstants.LOCATION_SZONE -> "Spell/Trap Zone " + (location.sequence() + 1);
+            case OcgConstants.LOCATION_GRAVE -> "Graveyard";
+            case OcgConstants.LOCATION_REMOVED -> "Banished";
+            case OcgConstants.LOCATION_EXTRA -> "Extra Deck";
+            default -> "Zone " + location.location();
+        };
+    }
+
+    /**
+     * EDOPro's localized system strings use C++ wide-string placeholders.
+     * MSG_SELECT_EFFECTYN supplies exactly the two values required by those
+     * templates: the effect card and its source location.
+     */
+    static String formatEffectQuestion(String template, String cardName, String location)
+    {
+        return replaceFirstLiteral(replaceFirstLiteral(template, "%ls", cardName),
+            "%ls", location);
+    }
+
+    private static String replaceFirstLiteral(String text, String target, String replacement)
+    {
+        int at = text.indexOf(target);
+        return at < 0 ? text : text.substring(0, at) + replacement
+            + text.substring(at + target.length());
     }
 }

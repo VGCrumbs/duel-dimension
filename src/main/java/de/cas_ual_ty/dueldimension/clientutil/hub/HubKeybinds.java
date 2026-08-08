@@ -42,6 +42,16 @@ public final class HubKeybinds
         GLFW.GLFW_KEY_Y,
         CATEGORY));
 
+    /**
+     * Opens the foil blend test. Temporary, and goes when the question it asks
+     * is answered -- see {@code FoilTestScreen}.
+     */
+    public static final KeyMapping FOIL_TEST = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+        "key.dueldimension.foil_test",
+        InputConstants.Type.KEYSYM,
+        GLFW.GLFW_KEY_J,
+        CATEGORY));
+
     private HubKeybinds()
     {
     }
@@ -66,6 +76,17 @@ public final class HubKeybinds
         if(pressed)
         {
             minecraft.setScreenAndShow(new DuelHubScreen());
+        }
+
+        boolean foil = false;
+        while(FOIL_TEST.consumeClick())
+        {
+            foil = true;
+        }
+        if(foil)
+        {
+            minecraft.setScreenAndShow(
+                new de.cas_ual_ty.dueldimension.clientutil.FoilTestScreen());
         }
     }
 }

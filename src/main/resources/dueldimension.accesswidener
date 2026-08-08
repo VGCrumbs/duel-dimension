@@ -1,0 +1,32 @@
+classTweaker v1 official
+
+# Why this exists: vanilla's MenuType has a PRIVATE constructor and only
+# private register(...) helpers, and Fabric API's ExtendedScreenHandlerType —
+# which used to hand mods a public way to build one — is not usable on 26.2
+# (the fabric-screen-handler-api-v1 jar is intermediary-mapped and references
+# class_1703 etc., which do not exist in the unobfuscated jar). This mod opens
+# its data-carrying menus with net/MenuData instead, but it still has to
+# construct the MenuType, so we widen the constructor and its package-private
+# MenuSupplier factory interface. DdContainerTypes then builds each MenuType
+# directly and registers it with Registry.register, exactly like DdItems.
+#
+# Namespace is "named" because Minecraft 26.2 ships unobfuscated, so the jar's
+# own names ARE the mapping — the same reason the mod carries no mappings dep.
+
+accessible	class	net/minecraft/world/inventory/MenuType$MenuSupplier
+accessible	method	net/minecraft/world/inventory/MenuType <init> (Lnet/minecraft/world/inventory/MenuType$MenuSupplier;Lnet/minecraft/world/flag/FeatureFlagSet;)V
+
+# Binding a container MenuType to its client Screen. MenuScreens.register is
+# private and its ScreenConstructor factory interface is package-private, and
+# the Fabric client screen-handler helper is intermediary-mapped (unusable on
+# the unobfuscated jar) — the same disappearance as the server-side one. So the
+# mod widens both and registers its screens directly in DdScreens.
+accessible	class	net/minecraft/client/gui/screens/MenuScreens$ScreenConstructor
+accessible	method	net/minecraft/client/gui/screens/MenuScreens register (Lnet/minecraft/world/inventory/MenuType;Lnet/minecraft/client/gui/screens/MenuScreens$ScreenConstructor;)V
+
+# Registering a custom item-model TYPE. In 26.2 an ItemModel type is looked up
+# by id from ItemModels.ID_MAPPER (a private LateBoundIdMapper), and there is no
+# Fabric hook to add one — the whole IDynamicBakedModel/ItemOverrides route the
+# card item used on Forge is gone. So the field is widened and DdCardModels puts
+# the card and card_set types in directly. See CardSpecialRenderer/CardItemModel.
+accessible	field	net/minecraft/client/renderer/item/ItemModels ID_MAPPER Lnet/minecraft/util/ExtraCodecs$LateBoundIdMapper;

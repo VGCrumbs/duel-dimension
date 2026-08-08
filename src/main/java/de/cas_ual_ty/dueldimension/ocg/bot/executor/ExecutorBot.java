@@ -424,6 +424,19 @@ public class ExecutorBot implements ResponseSource
                 }
             }
         }
+        // Nothing in the list wanted any of them. Before declining, the one
+        // question Windbot does not ask: is any of these free anyway?
+        for(int i = 0; i < chain.chains().size(); i++)
+        {
+            DuelMessage.ChainOption option = chain.chains().get(i);
+            if(executor.activateUnlistedOptional(
+                cardOf(option.code(), option.loc().controller(),
+                    option.loc().location(), option.loc().sequence()),
+                option.loc().location()))
+            {
+                return Responses.chain(i);
+            }
+        }
         return chain.forced() && !chain.chains().isEmpty()
             ? Responses.chain(0) : Responses.chainDecline();
     }
@@ -451,7 +464,9 @@ public class ExecutorBot implements ResponseSource
                 return Responses.yes();
             }
         }
-        return Responses.no();
+        // As above: a trigger that costs nothing is taken even unlisted.
+        return executor.activateUnlistedOptional(card, effect.loc().location())
+            ? Responses.yes() : Responses.no();
     }
 
     private byte[] onSelectPosition(DuelMessage.SelectPosition position)

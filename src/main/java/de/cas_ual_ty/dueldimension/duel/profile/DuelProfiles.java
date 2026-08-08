@@ -57,6 +57,21 @@ public final class DuelProfiles
                     DuelDimensionFabric.MOD_ID, "profile"));
     }
 
+    /**
+     * Registers the attachment, and this has to be called before a world loads.
+     * <p>
+     * The type is a static field on a nested class, so it exists only once
+     * something touches that class -- and until then Fabric does not know the
+     * id. A world saved with it and loaded before it is registered has its data
+     * <b>discarded</b>, with one warning line: "Found unknown attachment type".
+     * That is how a player's whole collection went missing once.
+     * <p>
+     * Touching the field is the registration; the empty body is the point.
+     */
+    public static void register()
+    {
+        java.util.Objects.requireNonNull(Storage.PROFILE);
+    }
     private DuelProfiles()
     {
     }
@@ -67,7 +82,14 @@ public final class DuelProfiles
      */
     public static DuelProfile get(ServerPlayer player)
     {
-        return player.getAttachedOrCreate(Storage.PROFILE);
+        DuelProfile profile = player.getAttachedOrCreate(Storage.PROFILE);
+        boolean expanded = grantMissingStarters(profile);
+        if(expanded)
+        {
+            profile = profile.snapshot();
+            player.setAttached(Storage.PROFILE, profile);
+        }
+        return profile;
     }
 
     /**
@@ -81,7 +103,7 @@ public final class DuelProfiles
      */
     public static void save(ServerPlayer player)
     {
-        player.setAttached(Storage.PROFILE, get(player));
+        player.setAttached(Storage.PROFILE, get(player).snapshot());
     }
 
     /** Saves and then tells the client, which is what every change wants. */
@@ -102,12 +124,24 @@ public final class DuelProfiles
     private static DuelProfile starting()
     {
         DuelProfile profile = new DuelProfile();
+        grantMissingStarters(profile);
+        return profile;
+    }
+
+    /** Adds newly bundled starter products to an existing profile exactly once. */
+    private static boolean grantMissingStarters(DuelProfile profile)
+    {
+        boolean changed = false;
         for(StarterDecks.Entry entry : StarterDecks.ALL)
         {
+            if(profile.unlockedStructures().contains(entry.id()))
+            {
+                continue;
+            }
             try
             {
                 YdkDeck deck = entry.load();
-                profile.unlockStarterDeck(entry.id(), entry.displayName(),
+                changed |= profile.unlockStarterDeck(entry.id(), entry.displayName(),
                     deck.main(), deck.extra(), deck.side());
             }
             catch(Exception unavailable)
@@ -118,6 +152,6 @@ public final class DuelProfiles
                     entry.id(), unavailable.getMessage());
             }
         }
-        return profile;
+        return changed;
     }
 }

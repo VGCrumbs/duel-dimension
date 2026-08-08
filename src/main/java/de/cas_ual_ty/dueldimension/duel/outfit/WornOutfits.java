@@ -67,11 +67,13 @@ public final class WornOutfits
             return;
         }
         String mine = de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.get(player).outfit();
-        for(ServerPlayer everyone : server.getPlayerList().getPlayers())
-        {
-            net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(everyone,
-                new OutfitMessages.Worn(player.getUUID(), mine));
-        }
+        OutfitMessages.Worn mineWorn = new OutfitMessages.Worn(player.getUUID(), mine);
+
+        // JOIN may run before the arriving player has been inserted into the
+        // server player list. Their own saved outfit must therefore be sent
+        // directly, not discovered by iterating that list. In singleplayer
+        // there may be nobody else in it at all.
+        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, mineWorn);
 
         for(ServerPlayer other : server.getPlayerList().getPlayers())
         {
@@ -79,6 +81,9 @@ public final class WornOutfits
             {
                 continue;
             }
+            // Existing clients learn what the arriving player is wearing...
+            net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(other, mineWorn);
+            // ...and the arriving client learns what each of them is wearing.
             net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, new OutfitMessages.Worn(other.getUUID(),
                     de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.get(other).outfit()));
         }

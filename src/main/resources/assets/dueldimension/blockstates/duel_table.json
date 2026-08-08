@@ -1,0 +1,8 @@
+{
+    "variants": {
+        "facing=north": { "model": "dueldimension:block/duel_table" },
+        "facing=south": { "model": "dueldimension:block/duel_table", "y": 180 },
+        "facing=west":  { "model": "dueldimension:block/duel_table", "y": 270 },
+        "facing=east":  { "model": "dueldimension:block/duel_table", "y": 90 }
+    }
+}
