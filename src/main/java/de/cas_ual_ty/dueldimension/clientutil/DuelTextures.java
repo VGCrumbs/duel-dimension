@@ -249,8 +249,11 @@ public final class DuelTextures
         {
             return UNKNOWN;
         }
-        return Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID,
+        Identifier __id = Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID,
             DdCardResourcePack.UNOWNED_PATH_PREFIX + image + ".png");
+        // Nothing releases card textures otherwise; see CardTextureCache.
+        CardTextureCache.touch(__id, size);
+        return __id;
     }
 
     private static Identifier card(Properties properties, byte imageIndex, int size, boolean smooth)
@@ -263,8 +266,11 @@ public final class DuelTextures
         {
             return UNKNOWN;
         }
-        return Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID,
+        Identifier __id = Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID,
             (smooth ? DdCardResourcePack.SMOOTH_PATH_PREFIX : DdCardResourcePack.PATH_PREFIX)
                 + image + ".png");
+        // Nothing releases card textures otherwise; see CardTextureCache.
+        CardTextureCache.touch(__id, size);
+        return __id;
     }
 }

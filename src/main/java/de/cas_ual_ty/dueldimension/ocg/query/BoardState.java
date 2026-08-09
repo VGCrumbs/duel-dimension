@@ -184,7 +184,14 @@ public record BoardState(int viewer, boolean omniscient, PlayerBoard self, Playe
         // Keep the position (that a card is set there is public) but strip
         // identity, including the base stats a set card must not reveal -- and
         // the scales, which would name a set pendulum card outright.
-        return new CardView(0, card.position(), 0, 0, -1, -1, -1, -1, -1, -1, false, true, null);
+        // Status and overlays go too. Neither can legitimately be set on a card
+        // this branch reaches -- the core only permits them on face-up on-field
+        // cards, which are public by its own definition and returned above --
+        // so this is belt and braces rather than a live case. It is written
+        // anyway because "conceal" should be the one place that decides what a
+        // stranger may see, without needing that argument re-derived.
+        return new CardView(0, card.position(), 0, 0, -1, -1, -1, -1, -1, -1, false, true, null,
+            0, 0);
     }
 
     /**
@@ -206,7 +213,10 @@ public record BoardState(int viewer, boolean omniscient, PlayerBoard self, Playe
             : new CardView(card.code(), card.position(), card.type(), card.level(), card.attack(),
                 card.defense(), card.baseAttack(), card.baseDefense(),
                 card.leftScale(), card.rightScale(), card.isPublic(), card.hidden(),
-                new CardView.Equip(controller, equip.location(), equip.sequence()));
+                new CardView.Equip(controller, equip.location(), equip.sequence()),
+                // Carried through: this rewrites WHERE an equip points, not
+                // what the card is.
+                card.status(), card.overlays());
     }
 
     /** Life points and pile sizes, from OCG_DuelQueryField. Layout: ocgapi.cpp. */

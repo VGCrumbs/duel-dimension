@@ -178,6 +178,25 @@ public abstract class Executor
         this.card = card;
     }
 
+    /** {@code Bot.BattlingMonster}: the monster whose attack is being resolved. */
+    private BotCard battlingMonster;
+
+    /**
+     * The monster currently attacking, or null outside a battle step.
+     * <p>
+     * WindBot keeps this on the field object; the host sets it when it declares
+     * the attack, and it is what a replay decision is asked about.
+     */
+    protected final BotCard battlingMonster()
+    {
+        return battlingMonster;
+    }
+
+    final void setBattlingMonster(BotCard attacker)
+    {
+        this.battlingMonster = attacker;
+    }
+
     final void setFields(BotField bot, BotField enemy)
     {
         this.bot = bot;
@@ -297,6 +316,20 @@ public abstract class Executor
 
     /** {@code OnSelectMonsterSummonOrSet}: true to set the monster face down. */
     public boolean onSelectMonsterSummonOrSet(BotCard card)
+    {
+        return false;
+    }
+
+    /**
+     * {@code OnSelectBattleReplay}: base returns false.
+     * <p>
+     * A replay is offered when the monster being attacked leaves the field
+     * during the battle step. Answering it through {@code onSelectYesNo} —
+     * whose base is "yes" — meant always swinging again into whatever the core
+     * listed first. Declining is the safe base; {@link DefaultExecutor}
+     * overrides it with the reference's actual judgement.
+     */
+    public boolean onSelectBattleReplay()
     {
         return false;
     }

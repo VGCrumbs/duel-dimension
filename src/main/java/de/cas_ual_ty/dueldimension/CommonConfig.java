@@ -55,6 +55,18 @@ public class CommonConfig
     public final Value<Boolean> mohistWorkaround;
     public final Value<Boolean> logBinderIO;
 
+    /**
+     * Whether losing a duel with The Seal of Orichalcos on the field takes the
+     * loser's soul — the anime's forfeit.
+     * <p>
+     * On by default. It only fires when that specific field spell is face-up
+     * when the contest ends, which is a thing a player has to go out of their
+     * way to make happen, and there is an in-game toggle for turning it off.
+     * Defaulting it off meant the card did nothing until someone found a
+     * setting they had no reason to look for.
+     */
+    public final Value<Boolean> sealOfOrichalcosDeath;
+
     private CommonConfig(JsonObject json)
     {
         dbSourceUrl = string(json, "dbSourceUrl",
@@ -64,6 +76,7 @@ public class CommonConfig
         // stays and simply answers false.
         mohistWorkaround = bool(json, "mohistWorkaround", false);
         logBinderIO = bool(json, "logInfiniteBinders", false);
+        sealOfOrichalcosDeath = bool(json, "sealOfOrichalcosDeath", true);
 
         // Ticks; twenty to the second.
         drawCooldown = integer(json, "drawCooldown", 20 * 30);
@@ -144,6 +157,7 @@ public class CommonConfig
         json.addProperty("dbSourceUrl", dbSourceUrl.get());
         json.addProperty("mohistWorkaround", mohistWorkaround.get());
         json.addProperty("logInfiniteBinders", logBinderIO.get());
+        json.addProperty("sealOfOrichalcosDeath", sealOfOrichalcosDeath.get());
         json.addProperty("drawCooldown", drawCooldown.get());
         json.addProperty("loserCooldown", loserCooldown.get());
         json.addProperty("winnerCooldown", winnerCooldown.get());

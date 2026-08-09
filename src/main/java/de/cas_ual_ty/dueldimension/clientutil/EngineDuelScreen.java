@@ -56,6 +56,14 @@ public class EngineDuelScreen extends Screen
     private static final int NAME_H = 10;
     /** The description band never gets squeezed below this. */
     private static final int MIN_DESCRIPTION_H = 30;
+    /** Line pitch of the effect text, inside the sidebar's 0.75 scale. */
+    private static final int DESCRIPTION_LINE_H = 8;
+    /** Lines the wheel moves the effect text by, in those same units. */
+    private static final int DESCRIPTION_SCROLL_STEP = DESCRIPTION_LINE_H * 2;
+    /** Width of the description's scroll bar, inside the sidebar's 0.75 scale. */
+    private static final int BAR_W = 4;
+    /** Slack either side of the bar, so catching it does not need pixel aim. */
+    private static final int BAR_GRAB = 3;
     /** However short the window, the preview stays recognisable. */
     private static final int MIN_PREVIEW_H = 40;
     /** The preview card, as a fraction of the sidebar's text column. */
@@ -104,6 +112,35 @@ public class EngineDuelScreen extends Screen
     private final List<Button> searchButtons = new ArrayList<>();
 
     private int previewCode;
+    /**
+     * The options behind one command chosen from a pile, or null.
+     * <p>
+     * A pile is a stack of face-down cards, so "Special Summon" off the Extra
+     * Deck is a verb with no visible subject. When one is picked, these are the
+     * cards it could mean, and the picker shows them until one is chosen.
+     */
+    private List<Integer> pileChoices;
+    /** What was picked to get here — "Special Summon" — for the picker's header. */
+    private String pileChoicesLabel;
+    /** How far the sidebar's effect text is scrolled, in text pixels. */
+    private int descriptionScroll;
+    /** How far it can scroll. Zero when the text already fits. */
+    private int descriptionMaxScroll;
+    /** The card {@link #descriptionScroll} belongs to, so a new card starts at the top. */
+    private int scrolledCode;
+    /** The effect-text well in GUI coordinates, for the wheel to hit-test against. */
+    private int descriptionX0;
+    private int descriptionY0;
+    private int descriptionX1;
+    private int descriptionY1;
+    /** The scroll bar's track, in GUI coordinates, so it can be clicked. */
+    private int barX0;
+    private int barY0;
+    private int barX1;
+    private int barY1;
+    /** Height of the thumb, and where in it the drag was taken hold of. */
+    private int barThumbH;
+    private int barGrabOffset = -1;
     private BoardRenderer.Hit menuAnchor;
     private final List<Button> menuButtons = new ArrayList<>();
     private List<BoardSnapshot.Slot> pileView;
@@ -220,6 +257,9 @@ public class EngineDuelScreen extends Screen
             sortOrder.clear();
             menuAnchor = null;
             answered = false;
+            // A new question; the old one's card list means nothing now.
+            pileChoices = null;
+            pileChoicesLabel = null;
         }
         shownPrompt = DuelClientState.prompt;
         searchBox = null;
@@ -234,7 +274,10 @@ public class EngineDuelScreen extends Screen
         {
             pickerScroll = 0;
         }
-        picker = hidden;
+        // A pile's command list wins: the player has already said "Special
+        // Summon" and is now being asked which card, and that question outlives
+        // the rebuild that follows the click.
+        picker = pileChoices != null ? pileChoices : hidden;
 
         // EDOPro keeps the chain toggles next to Surrender; same here.
         // Narrowed to leave the music button room on the same row: both are
@@ -457,26 +500,73 @@ public class EngineDuelScreen extends Screen
     {
     }
 
+    /**
+     * The picker's geometry, sized to the window it has to fit in.
+     * <p>
+     * The old version fixed the card at 62px and capped the grid at three rows
+     * without once consulting {@code height}. On a short window — or, far more
+     * commonly, at a GUI scale of 3, where a 920px client is only ~270 layout
+     * pixels tall — three rows of card plus header and footer came out taller
+     * than the screen. The panel was then centred to a negative y, so the top
+     * row ran off the top and the footer went off the bottom, taking Confirm
+     * and Cancel with it.
+     * <p>
+     * So height decides how many rows there is room for. And where that leaves
+     * a single row of a much longer list, the card shrinks until a second row
+     * fits: one row of enormous cards is the shape the bug produced, and it is
+     * not an improvement on three small ones.
+     */
     private PickerLayout pickerLayout()
     {
         int count = picker.size();
         int gap = 6;
-        int cardW = 62;
-        int cardH = Math.round(cardW / DuelTextures.CARD_ASPECT);
-        // Wide enough for the whole selection where that fits, and never wider
-        // than the window: a graveyard can hold thirty cards.
-        int maxColumns = Math.max(1, (width - 80 + gap) / (cardW + gap));
-        int columns = Math.max(1, Math.min(maxColumns, Math.min(count, 8)));
-        int rows = Math.max(1, Math.min(3, (count + columns - 1) / columns));
+        // A position choice is captioned by its ANSWER ("Face-up Attack"), not
+        // by a card name, and 62px cut that to "Face-up Att" with no ellipsis.
+        // Only this one kind pays for the extra width.
+        int preferred = shownPrompt != null && shownPrompt.kind() == EnginePrompt.Kind.POSITION
+            ? 78 : 62;
+        int chrome = PICKER_PAD * 2 + PICKER_HEADER + PICKER_FOOTER;
+        // Clear of the sidebar rather than centred over it: the sidebar carries
+        // the details of the card being pointed at, which is the one thing a
+        // player choosing between cards wants to read.
+        int room = Math.max(cardRoomFloor(), width - SIDEBAR_W - 40);
+
+        int cardW = preferred;
+        int cardH;
+        int columns;
+        int rows;
+        while(true)
+        {
+            cardH = Math.round(cardW / DuelTextures.CARD_ASPECT);
+            int maxColumns = Math.max(1, (room + gap) / (cardW + gap));
+            columns = Math.max(1, Math.min(maxColumns, Math.min(count, 8)));
+            int rowH = cardH + NAME_LINE + gap;
+            int maxRows = Math.max(1, (height - 40 - chrome + gap) / rowH);
+            rows = Math.max(1, Math.min(Math.min(3, maxRows),
+                (count + columns - 1) / columns));
+            // Good enough once a second row fits, or once the list needs only
+            // the one, or once shrinking further would make the art unreadable.
+            if(rows >= 2 || count <= columns || cardW - 4 < MIN_PICKER_CARD_W)
+            {
+                break;
+            }
+            cardW -= 4;
+        }
 
         int gridW = columns * cardW + (columns - 1) * gap;
         int gridH = rows * (cardH + NAME_LINE) + (rows - 1) * gap;
         int panelW = gridW + PICKER_PAD * 2;
-        int panelH = gridH + PICKER_PAD * 2 + PICKER_HEADER + PICKER_FOOTER;
-        int x = (width - panelW) / 2;
+        int panelH = gridH + chrome;
+        int x = SIDEBAR_W + (width - SIDEBAR_W - panelW) / 2;
         int y = (height - panelH) / 2;
         return new PickerLayout(x, y, panelW, panelH, cardW, cardH, columns, rows,
             x + PICKER_PAD, y + PICKER_PAD + PICKER_HEADER, gap);
+    }
+
+    /** Enough for one card even on a window too narrow to deserve one. */
+    private static int cardRoomFloor()
+    {
+        return MIN_PICKER_CARD_W;
     }
 
     private static final int PICKER_PAD = 10;
@@ -484,6 +574,8 @@ public class EngineDuelScreen extends Screen
     private static final int PICKER_FOOTER = 22;
     /** Room under each card for its name. */
     private static final int NAME_LINE = 10;
+    /** Never shrink a picker card below this; past it the art stops reading. */
+    private static final int MIN_PICKER_CARD_W = 30;
 
     /**
      * The picker: the choosable cards as cards, over a dimmed board.
@@ -508,7 +600,8 @@ public class EngineDuelScreen extends Screen
         poseStack.fill(0, 0, width, height, 0xA0000000);
         de.cas_ual_ty.dueldimension.clientutil.hub.NineSlice.draw(poseStack, de.cas_ual_ty.dueldimension.clientutil.hub.HubTextures.PANEL, at.x(), at.y(), at.width(), at.height());
 
-        String title = prompt.title() == null || prompt.title().isBlank()
+        String title = pileChoicesLabel != null ? pileChoicesLabel
+            : prompt.title() == null || prompt.title().isBlank()
             ? "Select a card" : prompt.title();
         poseStack.text(font, title, at.x() + PICKER_PAD, at.y() + 5, 0xFFF4D089, true);
 
@@ -559,13 +652,22 @@ public class EngineDuelScreen extends Screen
                 + " of " + prompt.options().size() + ")";
             case COUNTERS -> "Click a card to take one off   (" + countersChosen()
                 + " of " + prompt.minSelect() + ")";
-            case POSITION -> "Choose a position";
+            // Not a third "Choose a position" -- the header already asks and
+            // each cell is labelled with its answer. The one thing the panel
+            // never said is WHICH card is being placed, and the translator has
+            // been putting that in every option's detail all along with nothing
+            // drawing it. Any option will do; they are all the same card.
+            case POSITION -> prompt.options().isEmpty() ? ""
+                : prompt.options().get(0).detail();
             default -> prompt.isSingleChoice() ? "Click a card"
                 : "Choose " + prompt.minSelect()
                     + (prompt.maxSelect() > prompt.minSelect() ? " to " + prompt.maxSelect() : "")
                     + "   (" + selected.size() + " picked)";
         };
-        poseStack.text(font, need, at.x() + PICKER_PAD, footerY, 0xFF9FA6B4, true);
+        if(!need.isBlank())
+        {
+            poseStack.text(font, need, at.x() + PICKER_PAD, footerY, 0xFF9FA6B4, true);
+        }
 
         for(FooterButton button : pickerFooter(prompt, at))
         {
@@ -610,6 +712,11 @@ public class EngineDuelScreen extends Screen
         Identifier texture = back ? DuelTextures.COVER
             : DuelTextures.cardSmooth(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE);
 
+        int drawX = cardX;
+        int drawY = cardY;
+        int drawW = at.cardW();
+        int drawH = at.cardH();
+
         poseStack.pose().pushMatrix();
         if(defence)
         {
@@ -619,15 +726,27 @@ public class EngineDuelScreen extends Screen
             poseStack.pose().translate(cardX + at.cardW() / 2F, cardY + at.cardH() / 2F);
             poseStack.pose().rotate((float)Math.toRadians(90D));
             poseStack.pose().translate(-(cardX + at.cardW() / 2F), -(cardY + at.cardH() / 2F));
+
+            // A quarter turn swaps a quad's width and height, so the quad drawn
+            // BEFORE the turn has to be the one whose TURNED footprint fits the
+            // cell. Turning the full 62x90 card put a 90x62 picture on the same
+            // centre: 14px past the cell on either side, over its neighbour's
+            // edge and out through the panel. That is the invariant DdBlitUtil
+            // spells out -- rotation and bounds agree only on a square region --
+            // and it is why every other rotating caller squares up first.
+            drawW = Math.round(at.cardW() * DuelTextures.CARD_ASPECT);   // turned HEIGHT
+            drawH = at.cardW();                                          // turned WIDTH
+            drawX = cardX + (at.cardW() - drawW) / 2;
+            drawY = cardY + (at.cardH() - drawH) / 2;
         }
         if(back)
         {
-            DdBlitUtil.fullBlit(poseStack, texture, cardX, cardY, at.cardW(), at.cardH());
+            DdBlitUtil.fullBlit(poseStack, texture, drawX, drawY, drawW, drawH);
         }
         else
         {
             // The UV window is absolute now, not an offset and a span.
-            DdBlitUtil.blit(poseStack, texture, cardX, cardY, at.cardW(), at.cardH(),
+            DdBlitUtil.blit(poseStack, texture, drawX, drawY, drawW, drawH,
                 DuelTextures.CARD_U0, DuelTextures.CARD_V0,
                 DuelTextures.CARD_U1, DuelTextures.CARD_V1, DdBlitUtil.NO_TINT);
         }
@@ -683,6 +802,14 @@ public class EngineDuelScreen extends Screen
         int y = at.y() + at.height() - FOOTER_H - 3;
         int x = at.x() + at.width() - PICKER_PAD - FOOTER_W;
 
+        if(pileChoices != null)
+        {
+            // The idle prompt itself is not cancelable -- you must do SOMETHING
+            // on your turn -- but changing your mind about WHICH card is always
+            // allowed, and returns to the board rather than answering.
+            buttons.add(new FooterButton("Back", x, y, true, this::closePileChoices));
+            x -= FOOTER_W + 4;
+        }
         if(prompt.cancelable())
         {
             buttons.add(new FooterButton(
@@ -837,10 +964,36 @@ public class EngineDuelScreen extends Screen
         }
         EnginePrompt prompt = shownPrompt;
         List<MenuEntry> entries = new ArrayList<>();
-        for(int index : actions)
+        if(hit.isPile())
         {
-            EnginePrompt.Option option = prompt.options().get(index);
-            entries.add(new MenuEntry(option.label(), option.command(), () -> choose(index)));
+            // One row per VERB, not per card. The pile's cards are face down,
+            // so three summonable monsters produced three rows all reading
+            // "Special Summon" with nothing to tell them apart. Picking the
+            // verb now opens the list of cards it could mean -- which EDOPro
+            // does even when there is only one, because "Special Summon" on its
+            // own never says WHAT.
+            java.util.LinkedHashMap<Integer, List<Integer>> byCommand =
+                new java.util.LinkedHashMap<>();
+            for(int index : actions)
+            {
+                byCommand.computeIfAbsent(prompt.options().get(index).command(),
+                    command -> new ArrayList<>()).add(index);
+            }
+            for(java.util.Map.Entry<Integer, List<Integer>> group : byCommand.entrySet())
+            {
+                List<Integer> indices = group.getValue();
+                String label = prompt.options().get(indices.get(0)).label();
+                entries.add(new MenuEntry(label, group.getKey(),
+                    () -> openPileChoices(label, indices)));
+            }
+        }
+        else
+        {
+            for(int index : actions)
+            {
+                EnginePrompt.Option option = prompt.options().get(index);
+                entries.add(new MenuEntry(option.label(), option.command(), () -> choose(index)));
+            }
         }
         showMenu(hit, entries);
     }
@@ -885,6 +1038,35 @@ public class EngineDuelScreen extends Screen
             }));
         }
         showMenu(hit, entries);
+    }
+
+    /**
+     * Shows which cards a pile command could mean, and waits for one.
+     * <p>
+     * Always, even for a single card: a player told "Special Summon" and then
+     * asked for tributes has been asked to pay for something they were never
+     * shown.
+     */
+    private void openPileChoices(String label, List<Integer> indices)
+    {
+        closeMenu();
+        pileChoices = List.copyOf(indices);
+        pileChoicesLabel = label;
+        pickerScroll = 0;
+        rebuild();
+    }
+
+    /** Backs out of a pile's card list, returning to the board. */
+    private boolean closePileChoices()
+    {
+        if(pileChoices == null)
+        {
+            return false;
+        }
+        pileChoices = null;
+        pileChoicesLabel = null;
+        rebuild();
+        return true;
     }
 
     private void showMenu(BoardRenderer.Hit hit, List<MenuEntry> entries)
@@ -975,7 +1157,12 @@ public class EngineDuelScreen extends Screen
         closeMenu();
         switch(prompt.kind())
         {
-            case CHOOSE -> answer(new int[] {index}, 0);
+            // POSITION belongs here and was missing, which meant a position
+            // click fell through to the empty `default` below and was dropped:
+            // the panel drew, the cell highlighted, and nothing happened. It is
+            // always exactly one pick -- the translator builds it min 1, max 1 --
+            // so it answers on the click like any other single choice.
+            case CHOOSE, POSITION -> answer(new int[] {index}, 0);
             case MULTI, PLACES ->
             {
                 if(prompt.isSingleChoice())
@@ -1080,6 +1267,10 @@ public class EngineDuelScreen extends Screen
                 pileView = null;
                 return true;
             }
+            if(closePileChoices())
+            {
+                return true;
+            }
             if(!menuButtons.isEmpty())
             {
                 closeMenu();
@@ -1101,6 +1292,78 @@ public class EngineDuelScreen extends Screen
         return super.keyPressed(event);
     }
 
+    /**
+     * Leaving the duel screen.
+     * <p>
+     * Tells the server the player has their character back, which is what the
+     * Seal of Orichalcos waits for. Without this the server had no idea the
+     * screen had closed and every seal death sat out its full fallback timer.
+     */
+    @Override
+    public void onClose()
+    {
+        ClientPlayNetworking.send(
+            new de.cas_ual_ty.dueldimension.duel.orichalcos.OrichalcosMessages.LeftDuel());
+        super.onClose();
+    }
+
+    /**
+     * Takes hold of the description's scroll bar.
+     *
+     * @return whether the bar took this click
+     */
+    private boolean grabDescriptionBar(double mouseX, double mouseY)
+    {
+        if(descriptionMaxScroll <= 0 || barY1 <= barY0
+            || mouseX < barX0 - BAR_GRAB || mouseX >= barX1 + BAR_GRAB
+            || mouseY < barY0 || mouseY >= barY1)
+        {
+            return false;
+        }
+        int thumbY = barY0 + Math.round((barY1 - barY0 - barThumbH)
+            * (descriptionScroll / (float)descriptionMaxScroll));
+        // Grabbing the thumb keeps the offset, so it does not jump under the
+        // cursor. Clicking the track anywhere else centres the thumb there,
+        // which is what every other scroll bar does.
+        barGrabOffset = mouseY >= thumbY && mouseY < thumbY + barThumbH
+            ? (int)(mouseY - thumbY) : barThumbH / 2;
+        dragDescriptionBar(mouseY);
+        return true;
+    }
+
+    /** Scrubs the text to wherever the thumb has been dragged. */
+    private void dragDescriptionBar(double mouseY)
+    {
+        int travel = barY1 - barY0 - barThumbH;
+        if(travel <= 0)
+        {
+            descriptionScroll = 0;
+            return;
+        }
+        double top = mouseY - barGrabOffset - barY0;
+        descriptionScroll = Math.clamp(
+            Math.round(top / travel * descriptionMaxScroll), 0, descriptionMaxScroll);
+    }
+
+    @Override
+    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event,
+        double dragX, double dragY)
+    {
+        if(barGrabOffset >= 0)
+        {
+            dragDescriptionBar(event.y());
+            return true;
+        }
+        return super.mouseDragged(event, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event)
+    {
+        barGrabOffset = -1;
+        return super.mouseReleased(event);
+    }
+
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta)
     {
@@ -1108,6 +1371,18 @@ public class EngineDuelScreen extends Screen
         if(picker != null && shownPrompt != null && !answered)
         {
             pickerScroll = Math.max(0, pickerScroll - (int)Math.signum(delta));
+            return true;
+        }
+        // Reading a long effect. Anywhere over the SIDEBAR, not just inside
+        // the text well: the well is a narrow band low in a tall panel, and
+        // requiring the cursor to be in it made reading a card a matter of
+        // aiming. Nothing else in the sidebar scrolls, so there is nothing for
+        // this to be confused with.
+        if(descriptionMaxScroll > 0 && mouseX < SIDEBAR_W)
+        {
+            descriptionScroll = Math.clamp(
+                descriptionScroll - (int)Math.signum(delta) * DESCRIPTION_SCROLL_STEP,
+                0, descriptionMaxScroll);
             return true;
         }
         return super.mouseScrolled(mouseX, mouseY, scrollX, delta);
@@ -1120,6 +1395,12 @@ public class EngineDuelScreen extends Screen
         double mouseX = event.x();
         double mouseY = event.y();
         int button = event.button();
+        // The scroll bar first: it sits over the sidebar, which the board hit
+        // test would otherwise happily claim.
+        if(button == 0 && grabDescriptionBar(mouseX, mouseY))
+        {
+            return true;
+        }
         if(button == 0 && clickPicker(mouseX, mouseY))
         {
             return true;
@@ -1723,6 +2004,13 @@ public class EngineDuelScreen extends Screen
         {
             return;
         }
+        if(picker != null)
+        {
+            // The modal panel is up and carries the same title in its header.
+            // The banner exists to caption a choice made ON the board, where
+            // there is no panel to put a heading on.
+            return;
+        }
         String text = prompt.title();
         if(prompt.maxSelect() > 1)
         {
@@ -2138,14 +2426,76 @@ public class EngineDuelScreen extends Screen
         int wellTop = scaledY - 3;
         poseStack.fill(scaledX - 2, wellTop, scaledX + scaledW + 2, limit + 3, 0xC0101318);
         poseStack.fill(scaledX - 2, wellTop, scaledX + scaledW + 2, wellTop + 1, 0x33FFFFFF);
-        for(var line : font.split(Component.literal(card.getText()), scaledW - 8))
+
+        // The well scrolls, because a duel sidebar is not tall enough for the
+        // cards that need reading most. It used to stop at the bottom of the
+        // band and drop the rest, so a long effect ended mid-sentence with no
+        // way to see the clause that decides whether you can play it.
+        List<net.minecraft.util.FormattedCharSequence> textLines =
+            font.split(Component.literal(card.getText()), scaledW - 8);
+        int viewH = Math.max(DESCRIPTION_LINE_H, limit + DESCRIPTION_LINE_H - scaledY);
+        descriptionMaxScroll =
+            Math.max(0, textLines.size() * DESCRIPTION_LINE_H - viewH);
+        if(previewCode != scrolledCode)
         {
-            if(scaledY > limit)
+            // A different card starts at the top rather than inheriting the
+            // offset of whatever was pointed at before it.
+            scrolledCode = previewCode;
+            descriptionScroll = 0;
+        }
+        descriptionScroll = Math.min(descriptionScroll, descriptionMaxScroll);
+
+        // Where the wheel has to be for this to be the thing that scrolls.
+        // The pose is scaled, the mouse is not, so this is the one place the
+        // two spaces have to be reconciled by hand.
+        descriptionX0 = Math.round((scaledX - 2) * 0.75F);
+        descriptionY0 = Math.round(wellTop * 0.75F);
+        descriptionX1 = Math.round((scaledX + scaledW + 2) * 0.75F);
+        descriptionY1 = Math.round((limit + 3) * 0.75F);
+
+        // Clipped rather than line-skipped, so a partly visible line at either
+        // edge is cut off cleanly and the text reads as one moving column.
+        // enableScissor transforms by the current pose itself, so these are
+        // the same coordinates everything else here is drawn in.
+        poseStack.enableScissor(scaledX - 2, wellTop + 1, scaledX + scaledW + 2, limit + 3);
+        int textY = scaledY - descriptionScroll;
+        for(var line : textLines)
+        {
+            if(textY + DESCRIPTION_LINE_H > wellTop && textY < limit + DESCRIPTION_LINE_H)
             {
-                break;
+                poseStack.text(font, line, scaledX + 2, textY, 0xFFA8AEB4, false);
             }
-            poseStack.text(font, line, scaledX + 2, scaledY, 0xFFA8AEB4, false);
-            scaledY += 8;
+            textY += DESCRIPTION_LINE_H;
+        }
+        poseStack.disableScissor();
+
+        // A thumb, and only when there is somewhere to scroll to -- otherwise
+        // every short card grows a scrollbar that does nothing.
+        if(descriptionMaxScroll > 0)
+        {
+            int trackX = scaledX + scaledW;
+            int trackTop = wellTop + 1;
+            int trackH = limit + 3 - trackTop;
+            int thumbH = Math.max(6, Math.round(
+                trackH * (float)viewH / (textLines.size() * DESCRIPTION_LINE_H)));
+            int thumbY = trackTop + Math.round((trackH - thumbH)
+                * (descriptionScroll / (float)descriptionMaxScroll));
+            // Wide enough to hit. Two pixels inside a 0.75 scale is a pixel and
+            // a half on screen, which is a bar you can see but not catch.
+            poseStack.fill(trackX, trackTop, trackX + BAR_W, trackTop + trackH, 0x50000000);
+            poseStack.fill(trackX, thumbY, trackX + BAR_W, thumbY + thumbH, 0xFFB08A2A);
+
+            // In GUI coordinates for the mouse, which does not live in the
+            // 0.75 pose everything above is drawn in.
+            barX0 = Math.round(trackX * 0.75F);
+            barY0 = Math.round(trackTop * 0.75F);
+            barX1 = Math.round((trackX + BAR_W) * 0.75F);
+            barY1 = Math.round((trackTop + trackH) * 0.75F);
+            barThumbH = Math.max(1, Math.round(thumbH * 0.75F));
+        }
+        else
+        {
+            barY1 = barY0;   // nothing to grab
         }
         poseStack.pose().popMatrix();
     }

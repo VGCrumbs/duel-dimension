@@ -15,6 +15,9 @@
     ],
     "client": [
       "de.cas_ual_ty.dueldimension.fabric.DuelDimensionFabricClient"
+    ],
+    "modmenu": [
+      "de.cas_ual_ty.dueldimension.fabric.ModMenuIntegration"
     ]
   },
   "depends": {

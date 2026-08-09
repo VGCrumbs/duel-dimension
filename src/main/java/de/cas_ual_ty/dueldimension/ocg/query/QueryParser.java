@@ -29,7 +29,14 @@ public final class QueryParser
         | OcgConstants.QUERY_EQUIP_CARD
         // A pendulum card's CURRENT scale, which is not its printed one
         // once an effect has moved it.
-        | OcgConstants.QUERY_LSCALE | OcgConstants.QUERY_RSCALE;
+        | OcgConstants.QUERY_LSCALE | OcgConstants.QUERY_RSCALE
+        // Whether the card's effect is negated, which is the one always-visible
+        // over-card badge the reference draws.
+        | OcgConstants.QUERY_STATUS
+        // Xyz materials. Slot has carried an `overlays` field across the network
+        // since it was written, populated with a literal 0 and read by nobody;
+        // this is the flag that was missing to make it mean something.
+        | OcgConstants.QUERY_OVERLAY_CARD;
 
     private QueryParser()
     {
@@ -86,6 +93,8 @@ public final class QueryParser
         // -1 for "not a pendulum card", as with the stats.
         int leftScale = -1;
         int rightScale = -1;
+        int status = 0;
+        int overlays = 0;
         boolean isPublic = false;
         CardView.Equip equip = null;
 
@@ -118,6 +127,15 @@ public final class QueryParser
                 case OcgConstants.QUERY_DEFENSE -> defense = buffer.getInt();
                 case OcgConstants.QUERY_BASE_ATTACK -> baseAttack = buffer.getInt();
                 case OcgConstants.QUERY_BASE_DEFENSE -> baseDefense = buffer.getInt();
+                case OcgConstants.QUERY_STATUS -> status = buffer.getInt();
+                case OcgConstants.QUERY_OVERLAY_CARD ->
+                {
+                    // u32 count, then that many u32 passcodes. Only the count
+                    // is shown -- the materials themselves are drawn as a stack
+                    // under the monster, not listed -- and the loop below seeks
+                    // to `end` regardless, so the codes are skipped for free.
+                    overlays = buffer.getInt();
+                }
                 case OcgConstants.QUERY_LSCALE -> leftScale = buffer.getInt();
                 case OcgConstants.QUERY_RSCALE -> rightScale = buffer.getInt();
                 case OcgConstants.QUERY_IS_PUBLIC -> isPublic = buffer.get() != 0;
@@ -137,7 +155,8 @@ public final class QueryParser
                 case OcgConstants.QUERY_END ->
                 {
                     return new CardView(code, position, type, level, attack, defense,
-                        baseAttack, baseDefense, leftScale, rightScale, isPublic, false, equip);
+                        baseAttack, baseDefense, leftScale, rightScale, isPublic, false, equip,
+                        status, overlays);
                 }
                 default ->
                 {

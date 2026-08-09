@@ -1262,10 +1262,27 @@ public class BoardRenderer
         }
         drawCardArt(poseStack, collector, textureFor(slot, false, hit.controller()), zone.cardRect(),
             zone.cardTurns());
+        if(slot.negated())
+        {
+            // drawing.cpp composites tNegated over any face-up on-field card
+            // whose status carries STATUS_DISABLED or STATUS_FORBIDDEN. The art
+            // has shipped in this mod since the port and nothing drew it,
+            // because QUERY_STATUS was never asked for.
+            FieldQuad.drawProjected(poseStack, collector, DuelTextures.NEGATED, projection, rect, 2);
+        }
         if(canAttack.test(hit))
         {
             // drawing.cpp bobs tAttack over any card that may attack.
             FieldQuad.drawProjected(poseStack, collector, DuelTextures.ATTACK, projection, rect, 2);
+        }
+        if(slot.overlays() > 0)
+        {
+            // Xyz materials, counted the same way a pile's depth is. The number
+            // is the one thing a player needs off a stack they cannot fan out.
+            // The zone's own projected quad, which is what the pile indicator
+            // uses too -- a Rect is flat screen space and this number has to
+            // sit on the tilted field with the card.
+            drawStackIndicator(poseStack, collector, hit.corners(), slot.overlays());
         }
         drawStats(poseStack, collector, slot, hit, false);
     }

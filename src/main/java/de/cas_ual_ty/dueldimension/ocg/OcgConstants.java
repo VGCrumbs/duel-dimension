@@ -164,6 +164,12 @@ public final class OcgConstants
     public static final int QUERY_COUNTERS = 0x20000;
     public static final int QUERY_OWNER = 0x40000;
     public static final int QUERY_STATUS = 0x80000;
+
+    /* --- card status bits, as returned by QUERY_STATUS --- */
+    /** Effect negated. ygopro-core/ocgapi_constants.h:136. */
+    public static final int STATUS_DISABLED = 0x1;
+    /** Effect forbidden outright, a stronger negation. ocgapi_constants.h:161. */
+    public static final int STATUS_FORBIDDEN = 0x4000000;
     public static final int QUERY_IS_PUBLIC = 0x100000;
     public static final int QUERY_LSCALE = 0x200000;
     public static final int QUERY_RSCALE = 0x400000;

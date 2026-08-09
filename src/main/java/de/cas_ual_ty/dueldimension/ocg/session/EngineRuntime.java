@@ -152,6 +152,12 @@ public final class EngineRuntime
 
     public long defaultFlags()
     {
-        return OcgConstants.DUEL_MODE_MR5;
+        // MR5 plus the first-turn draw. Modern rules have the player going
+        // first skip their draw, opening on five cards while the second player
+        // reaches six; this hands that draw back, so whoever goes first begins
+        // their first turn holding six. DUEL_1ST_TURN_DRAW is ocgcore's own
+        // option -- MR1, MR2 and Rush all carry it -- so the engine applies it
+        // rather than anything here counting cards.
+        return OcgConstants.DUEL_MODE_MR5 | OcgConstants.DUEL_1ST_TURN_DRAW;
     }
 }

@@ -77,6 +77,19 @@ public final class OutfitPreview
         // rather than worked out again: a half turn about Z because a screen's
         // y axis runs the other way from the world's, and the entity centred in
         // its rectangle by half its own height.
+        //
+        // The normalisation below was the missing half of that recipe. Vanilla
+        // divides the bounding box by the state's own scale and then sets the
+        // scale to 1, so the centring offset is expressed in the same units the
+        // GUI works in. Skipping it left the offset measured against a box that
+        // still carried the entity's scale, which lifted the figure out of the
+        // top of its tile.
+        if(state.scale != 0F)
+        {
+            state.boundingBoxWidth /= state.scale;
+            state.boundingBoxHeight /= state.scale;
+            state.scale = 1F;
+        }
         graphics.entity(state, height / BODY_BLOCKS,
             new Vector3f(0F, state.boundingBoxHeight / 2F, 0F),
             new Quaternionf().rotateZ((float)Math.PI), null, x0, y0, x1, y1);

@@ -28,8 +28,23 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
     /** A card in a zone, or an empty zone when {@code present} is false. */
     public record Slot(boolean present, int code, boolean faceDown, boolean defence, int attack, int defense,
         int baseAttack, int baseDefense, int leftScale, int rightScale, int overlays,
-        CardView.Equip equip)
+        CardView.Equip equip, boolean negated)
     {
+        /**
+         * The old shape, for the places that build a slot without engine state.
+         * <p>
+         * {@code overlays} was carried across the wire for every card from the
+         * day this record was written, hardcoded to 0 at every construction
+         * site and read by nothing. It means something now.
+         */
+        public Slot(boolean present, int code, boolean faceDown, boolean defence, int attack,
+            int defense, int baseAttack, int baseDefense, int leftScale, int rightScale,
+            int overlays, CardView.Equip equip)
+        {
+            this(present, code, faceDown, defence, attack, defense, baseAttack, baseDefense,
+                leftScale, rightScale, overlays, equip, false);
+        }
+
         public static final Slot EMPTY =
             new Slot(false, 0, false, false, 0, 0, 0, 0, -1, -1, 0, null);
 
@@ -74,7 +89,8 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
             // flattening it to 0 turned "unknown" into a stated 0 ATK.
             return new Slot(true, card.code(), !card.isFaceUp(), !card.isAttackPosition(),
                 card.attack(), card.defense(), card.baseAttack(), card.baseDefense(),
-                card.leftScale(), card.rightScale(), 0, card.equip());
+                card.leftScale(), card.rightScale(), card.overlays(), card.equip(),
+                card.negated());
         }
 
         public void write(FriendlyByteBuf buffer)
@@ -94,6 +110,7 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
                 buffer.writeVarInt(leftScale + 1);
                 buffer.writeVarInt(rightScale + 1);
                 buffer.writeVarInt(overlays);
+            buffer.writeBoolean(negated);
                 // An equip and the monster under it are both face up, so this
                 // relation is public knowledge and needs no concealment.
                 buffer.writeBoolean(equip != null);
@@ -122,11 +139,12 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
             int leftScale = buffer.readVarInt() - 1;
             int rightScale = buffer.readVarInt() - 1;
             int overlays = buffer.readVarInt();
+            boolean negated = buffer.readBoolean();
             CardView.Equip equip = buffer.readBoolean()
                 ? new CardView.Equip(buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt())
                 : null;
             return new Slot(true, code, faceDown, defence, attack, defense,
-                baseAttack, baseDefense, leftScale, rightScale, overlays, equip);
+                baseAttack, baseDefense, leftScale, rightScale, overlays, equip, negated);
         }
     }
 

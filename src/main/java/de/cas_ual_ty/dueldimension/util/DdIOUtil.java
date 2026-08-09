@@ -26,11 +26,21 @@ public class DdIOUtil
         return () -> requiredSuffix;
     }
     
+    /** How long a card image may take to answer before the worker gives up. */
+    private static final int CONNECT_TIMEOUT_MS = 8_000;
+    private static final int READ_TIMEOUT_MS = 15_000;
+
     public static InputStream urlInputStream(URL url) throws IOException
     {
         //        /*
         URLConnection c = url.openConnection();
         c.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
+        // Bounded, because URLConnection's default is to wait for ever. There
+        // are four worker threads: four downloads to a host that accepts the
+        // connection and then says nothing will starve every image in the game
+        // permanently, and it looks exactly like the client having hung.
+        c.setConnectTimeout(CONNECT_TIMEOUT_MS);
+        c.setReadTimeout(READ_TIMEOUT_MS);
         return c.getInputStream();
         //        */
         //        return url.openStream();

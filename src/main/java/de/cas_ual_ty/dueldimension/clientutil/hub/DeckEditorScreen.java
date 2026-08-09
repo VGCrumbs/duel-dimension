@@ -85,7 +85,24 @@ public class DeckEditorScreen extends Screen
 
     /** Why the last attempted add was refused; cleared on the next action. */
     private String refusal = "";
+    /** Slack either side of a scrollbar, so catching it does not need pixel aim. */
+    private static final int BAR_GRAB = 3;
+
     private int trunkScroll;
+    /**
+     * The collection scrollbar's track, recorded as it is drawn.
+     * <p>
+     * Taken from the draw rather than recomputed, so the box you can click can
+     * never drift from the bar you can see.
+     */
+    private int trunkBarX;
+    private int trunkBarY;
+    private int trunkBarH;
+    private int trunkBarThumbH;
+    private int trunkBarRows;
+    private int trunkBarVisibleRows;
+    /** Where in the thumb the drag took hold, or -1 when not dragging. */
+    private int trunkBarGrab = -1;
     /** How far the deck's three sections are scrolled, in pixels. */
     private int deckScroll;
     /** Whether the extra filters are showing; they cover the trunk grid. */
@@ -1109,6 +1126,12 @@ public class DeckEditorScreen extends Screen
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
         boolean doubleClick)
     {
+        // The scrollbar before anything else: it sits over the collection grid,
+        // whose card hit test would otherwise swallow the click.
+        if(event.button() == 0 && grabTrunkBar(event.x(), event.y()))
+        {
+            return true;
+        }
         double mouseX = event.x();
         double mouseY = event.y();
         int button = event.button();
@@ -1518,6 +1541,7 @@ public class DeckEditorScreen extends Screen
     @Override
     public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event)
     {
+        trunkBarGrab = -1;
         double mouseX = event.x();
         double mouseY = event.y();
         int button = event.button();
@@ -2128,6 +2152,47 @@ public class DeckEditorScreen extends Screen
     }
 
     /**
+     * Asks for the art of the rows either side of the ones on screen.
+     * <p>
+     * A card's image is only scaled once something asks to draw it, so scrolling
+     * used to meet a fresh page of cold cards every time and show placeholders
+     * until the workers caught up. Asking a page early means the wheel arrives
+     * at art that is already made.
+     * <p>
+     * This is deliberately just a request and not a draw: the readiness gate
+     * queues the work as a side effect of being asked, the request is cheap
+     * once the answer is cached, and duplicate requests are dropped by
+     * ImageHandler rather than piling up behind each other.
+     */
+    private void warmAhead(List<Properties> shown, int visibleRows)
+    {
+        int first = Math.max(0, (trunkScroll - visibleRows) * trunkColumns);
+        int last = Math.min(shown.size(), (trunkScroll + visibleRows * 2) * trunkColumns);
+        int onScreenFirst = Math.max(0, trunkScroll * trunkColumns);
+        int onScreenLast = Math.min(shown.size(),
+            (trunkScroll + visibleRows) * trunkColumns);
+
+        for(int i = first; i < last; i++)
+        {
+            Properties card = shown.get(i);
+            if(card == null)
+            {
+                continue;
+            }
+            DuelTextures.card(card, (byte)0, DuelTextures.ICON_CARD_SIZE);
+            // The hover preview is a different, much larger texture, so warming
+            // the grid icon did nothing for it and the first hover over every
+            // card still waited. Only for the rows actually on screen though: a
+            // 512 is about sixteen times the pixels of a 128, and a card you
+            // MIGHT scroll to is a far weaker bet than one you are looking at.
+            if(i >= onScreenFirst && i < onScreenLast)
+            {
+                DuelTextures.card(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE);
+            }
+        }
+    }
+
+    /**
      * A scrollbar, drawn only when there is something to scroll.
      * <p>
      * The thumb's length reports how much of the list is on screen and its
@@ -2146,6 +2211,65 @@ public class DeckEditorScreen extends Screen
         int thumbH = Math.max(12, height * visible / Math.max(1, total));
         int thumbY = y + (height - thumbH) * offset / overflow;
         NineSlice.draw(poseStack, HubTextures.SCROLLBAR, x, thumbY, 4, thumbH, 1, 2);
+
+        // Remember what was drawn, so the click test and the picture are the
+        // same numbers rather than two independent calculations.
+        trunkBarX = x;
+        trunkBarY = y;
+        trunkBarH = height;
+        trunkBarThumbH = thumbH;
+        trunkBarRows = total;
+        trunkBarVisibleRows = visible;
+    }
+
+    /**
+     * Takes hold of the collection's scrollbar.
+     *
+     * @return whether the bar took this click
+     */
+    private boolean grabTrunkBar(double mouseX, double mouseY)
+    {
+        if(trunkBarH <= 0 || maxTrunkScroll() <= 0
+            || mouseX < trunkBarX - BAR_GRAB || mouseX >= trunkBarX + 4 + BAR_GRAB
+            || mouseY < trunkBarY || mouseY >= trunkBarY + trunkBarH)
+        {
+            return false;
+        }
+        int overflow = Math.max(1, trunkBarRows - trunkBarVisibleRows);
+        int thumbY = trunkBarY
+            + (trunkBarH - trunkBarThumbH) * Math.min(trunkScroll, overflow) / overflow;
+        // Grab the thumb where it was taken hold of; clicking bare track puts
+        // the thumb's middle under the cursor, as every other bar does.
+        trunkBarGrab = mouseY >= thumbY && mouseY < thumbY + trunkBarThumbH
+            ? (int)(mouseY - thumbY) : trunkBarThumbH / 2;
+        dragTrunkBar(mouseY);
+        return true;
+    }
+
+    /** Scrubs the collection to wherever the thumb has been dragged. */
+    private void dragTrunkBar(double mouseY)
+    {
+        int travel = trunkBarH - trunkBarThumbH;
+        int max = maxTrunkScroll();
+        if(travel <= 0 || max <= 0)
+        {
+            trunkScroll = 0;
+            return;
+        }
+        double top = mouseY - trunkBarGrab - trunkBarY;
+        trunkScroll = (int)Math.clamp(Math.round(top / travel * max), 0, max);
+    }
+
+    @Override
+    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event,
+        double dragX, double dragY)
+    {
+        if(trunkBarGrab >= 0)
+        {
+            dragTrunkBar(event.y());
+            return true;
+        }
+        return super.mouseDragged(event, dragX, dragY);
     }
 
     /** A scrollbar over a run of pixels rather than a count of rows. */
@@ -2249,6 +2373,8 @@ public class DeckEditorScreen extends Screen
                 }
             }
         }
+
+        warmAhead(shown, visibleRows);
 
         int rows = (shown.size() + trunkColumns - 1) / trunkColumns;
         scrollbar(poseStack, rightX + rightW - pad - 2, gridTop,

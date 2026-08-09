@@ -62,6 +62,30 @@ public final class DdItems
     public static final PatreonDeckBoxItem PATREON_DECK_BOX = register("patreon_deck_box",
         properties -> new PatreonDeckBoxItem(properties.stacksTo(1)));
 
+    // The duel disks. A disk held in the OFF hand is what opens a duel --
+    // see DuelDiskItem.use -- so they stack to one, as the Forge tree had
+    // them, and carry its names verbatim.
+    public static final de.cas_ual_ty.dueldimension.duel.dueldisk.DuelDiskItem DUEL_DISK =
+        register("duel_disk", one(de.cas_ual_ty.dueldimension.duel.dueldisk.DuelDiskItem::new));
+    public static final de.cas_ual_ty.dueldimension.duel.dueldisk.DuelDiskItem CHAOS_DISK =
+        register("chaos_disk", one(de.cas_ual_ty.dueldimension.duel.dueldisk.DuelDiskItem::new));
+    public static final de.cas_ual_ty.dueldimension.duel.dueldisk.DuelDiskItem ACADEMIA_DISK =
+        register("academia_disk", one(de.cas_ual_ty.dueldimension.duel.dueldisk.DuelDiskItem::new));
+    public static final de.cas_ual_ty.dueldimension.duel.dueldisk.DuelDiskItem ACADEMIA_DISK_RED =
+        register("academia_disk_red", one(de.cas_ual_ty.dueldimension.duel.dueldisk.DuelDiskItem::new));
+    public static final de.cas_ual_ty.dueldimension.duel.dueldisk.DuelDiskItem ACADEMIA_DISK_BLUE =
+        register("academia_disk_blue", one(de.cas_ual_ty.dueldimension.duel.dueldisk.DuelDiskItem::new));
+    public static final de.cas_ual_ty.dueldimension.duel.dueldisk.DuelDiskItem ACADEMIA_DISK_YELLOW =
+        register("academia_disk_yellow", one(de.cas_ual_ty.dueldimension.duel.dueldisk.DuelDiskItem::new));
+    public static final de.cas_ual_ty.dueldimension.duel.dueldisk.DuelDiskItem ROCK_SPIRIT_DISK =
+        register("rock_spirit_disk", one(de.cas_ual_ty.dueldimension.duel.dueldisk.DuelDiskItem::new));
+    public static final de.cas_ual_ty.dueldimension.duel.dueldisk.DuelDiskItem TRUEMAN_DISK =
+        register("trueman_disk", one(de.cas_ual_ty.dueldimension.duel.dueldisk.DuelDiskItem::new));
+    public static final de.cas_ual_ty.dueldimension.duel.dueldisk.DuelDiskItem JEWEL_DISK =
+        register("jewel_disk", one(de.cas_ual_ty.dueldimension.duel.dueldisk.DuelDiskItem::new));
+    public static final de.cas_ual_ty.dueldimension.duel.dueldisk.DuelDiskItem KAIBAMAN_DISK =
+        register("kaibaman_disk", one(de.cas_ual_ty.dueldimension.duel.dueldisk.DuelDiskItem::new));
+
     public static final CardBinderItem CARD_BINDER = register("card_binder",
         properties -> new CardBinderItem(properties.stacksTo(1)));
 
@@ -75,6 +99,16 @@ public final class DdItems
         properties -> new SimpleBinderItem(properties.stacksTo(1), 6 * 9 * 9));
     public static final SimpleBinderItem SIMPLE_BINDER_27 = register("simple_binder_27",
         properties -> new SimpleBinderItem(properties.stacksTo(1), 6 * 9 * 27));
+
+    /**
+     * Right-click any living thing to run the Seal of Orichalcos sequence on
+     * it. A testing aid -- see {@link
+     * de.cas_ual_ty.dueldimension.duel.orichalcos.OrichalcosDebugItem}.
+     */
+    public static final de.cas_ual_ty.dueldimension.duel.orichalcos.OrichalcosDebugItem
+        ORICHALCOS_DEBUG = register("orichalcos_debug",
+            properties -> new de.cas_ual_ty.dueldimension.duel.orichalcos.OrichalcosDebugItem(
+                properties.stacksTo(1)));
 
     private DdItems()
     {

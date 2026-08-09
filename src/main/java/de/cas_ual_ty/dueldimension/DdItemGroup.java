@@ -1,8 +1,5 @@
 package de.cas_ual_ty.dueldimension;
 
-import de.cas_ual_ty.dueldimension.card.properties.Properties;
-import de.cas_ual_ty.dueldimension.duel.DeckSource;
-import de.cas_ual_ty.dueldimension.deckbox.CustomDecks;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -47,8 +44,9 @@ public final class DdItemGroup
     }
 
     public static final ResourceKey<CreativeModeTab> MAIN = key("main");
-    public static final ResourceKey<CreativeModeTab> CARDS = key("cards");
-    public static final ResourceKey<CreativeModeTab> SETS = key("sets");
+    // The CARDS and SETS tab keys are gone with their tabs. Nothing else
+    // referenced them; a registry key kept for a tab that is never registered
+    // is a name that resolves to nothing.
 
     private DdItemGroup()
     {
@@ -61,9 +59,6 @@ public final class DdItemGroup
             .title(Component.translatable("itemGroup." + DuelDimension.MOD_ID + ".main"))
             .displayItems((parameters, output) ->
             {
-                output.accept(DdItems.BLANC_CARD);
-                output.accept(DdItems.CARD_BACK);
-                output.accept(DdItems.BLANC_SET);
                 output.accept(DdItems.MILLENIUM_EYE);
                 output.accept(DdItems.MILLENIUM_KEY);
                 output.accept(DdItems.MILLENIUM_NECKLACE);
@@ -73,68 +68,36 @@ public final class DdItemGroup
                 output.accept(DdItems.MILLENIUM_SCALE);
                 output.accept(DdBlocks.CARD_SUPPLY);
                 output.accept(DdBlocks.CARD_SHOP);
+                output.accept(DdItems.DUEL_DISK);
+                output.accept(DdItems.CHAOS_DISK);
+                output.accept(DdItems.ACADEMIA_DISK);
+                output.accept(DdItems.ACADEMIA_DISK_RED);
+                output.accept(DdItems.ACADEMIA_DISK_BLUE);
+                output.accept(DdItems.ACADEMIA_DISK_YELLOW);
+                output.accept(DdItems.ROCK_SPIRIT_DISK);
+                output.accept(DdItems.TRUEMAN_DISK);
+                output.accept(DdItems.JEWEL_DISK);
+                output.accept(DdItems.KAIBAMAN_DISK);
                 output.accept(DdItems.CARD_BINDER);
+                output.accept(DdItems.ORICHALCOS_DEBUG);
                 output.accept(DdItems.SIMPLE_BINDER_3);
                 output.accept(DdItems.SIMPLE_BINDER_9);
                 output.accept(DdItems.SIMPLE_BINDER_27);
-                output.accept(DdItems.DECK_BOX);
-                output.accept(DdItems.PATREON_DECK_BOX);
-                // The patreon decks are built from the database, which is not
-                // loaded when the tab is registered. On Forge this walk lived in
-                // PatreonDeckBoxItem.fillItemCategory.
-                if(DdDatabase.databaseReady)
-                {
-                    for(DeckSource s : CustomDecks.getAllPatreonDeckSources())
-                    {
-                        output.accept(DdItems.PATREON_DECK_BOX.makeItemStackFromDeckSource(s));
-                    }
-                }
             })
             .build());
 
-        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, CARDS, FabricCreativeModeTab.builder()
-            .icon(() -> new ItemStack(DdItems.CARD))
-            .title(Component.translatable("itemGroup." + DuelDimension.MOD_ID + ".cards"))
-            .displayItems((parameters, output) ->
-            {
-                // Built from the database each time the tab is opened, because
-                // the database is not loaded when the tab is registered. On
-                // Forge this was CardItem.fillItemCategory doing the same walk
-                // from the item's side.
-                for(Properties card : DdDatabase.PROPERTIES_LIST)
-                {
-                    if(card == null || card.getId() <= 0)
-                    {
-                        continue;
-                    }
-                    output.accept(DdItems.CARD.createItemForCard(card));
-                }
-            })
-            .build());
-
-        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, SETS, FabricCreativeModeTab.builder()
-            .icon(() -> new ItemStack(DdItems.BLANC_SET))
-            .title(Component.translatable("itemGroup." + DuelDimension.MOD_ID + ".sets"))
-            .displayItems((parameters, output) ->
-            {
-                // One entry per independent set in the database, which is loaded
-                // from disk after startup. On Forge this walk lived in
-                // CardSetItem.fillItemCategory, reached from the item's side.
-                // Deduplicated by code, which Forge did not have to do. The
-                // database ships two entries under YS15, and the stack built
-                // from a set carries only its code -- so both produce the same
-                // item. 1.19.2 listed it twice and shrugged; 26.2 throws
-                // "Accidentally adding the same item stack twice" and the tab
-                // is lost. One entry per code is what was meant either way.
-                java.util.Set<String> listed = new java.util.HashSet<>();
-                for(de.cas_ual_ty.dueldimension.set.CardSet set : DdDatabase.SETS_LIST)
-                {
-                    if(set.isIndependentAndItem() && listed.add(set.code))
-                    {
-                        output.accept(DdItems.SET.createItemForSet(set));
-                    }
-                }
-            })
-            .build());
+        // The CARDS and SETS tabs are gone, along with the blank card, the
+        // blank pack, the deck boxes and the patreon deck walk.
+        //
+        // Every one of them was a way to conjure something the mod now has a
+        // system for: cards come from packs and the shop, packs come from the
+        // card supply, decks are built in the deck editor. A creative tab
+        // holding one entry per card in a ten-thousand card database was also
+        // the slowest thing in the menu, rebuilt from the database on every
+        // open, and it is where the missing-texture squares were coming from --
+        // a set whose art had not been derived yet has nothing to draw.
+        //
+        // What stays is what has no other source: the Millennium items, the
+        // duel disks, the two blocks, the binders and the debug item.
     }
 }

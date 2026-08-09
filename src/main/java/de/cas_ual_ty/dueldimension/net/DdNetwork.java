@@ -113,6 +113,12 @@ public final class DdNetwork
 
         // What a menu's constructor needs, sent one packet ahead of the menu.
         clientbound(MenuData.TYPE, MenuData.CODEC);
+        clientbound(PreloadMessages.Preload.TYPE, PreloadMessages.Preload.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.duel.orichalcos
+            .OrichalcosMessages.LeftDuel.TYPE,
+            de.cas_ual_ty.dueldimension.duel.orichalcos.OrichalcosMessages.LeftDuel.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.duel.orichalcos.OrichalcosMessages.SealBegin.TYPE,
+            de.cas_ual_ty.dueldimension.duel.orichalcos.OrichalcosMessages.SealBegin.CODEC);
 
         // Paged card-item inventories (binders, deck boxes, card sets): the
         // server announces the page it moved to, the client asks to turn one.
@@ -252,6 +258,9 @@ public final class DdNetwork
             (message, player) -> de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages
                 .doForBinderContainer(player, container -> container.indexClicked(message.index())));
 
+        onServer(de.cas_ual_ty.dueldimension.duel.orichalcos.OrichalcosMessages.LeftDuel.TYPE,
+            (message, player) -> de.cas_ual_ty.dueldimension.duel.orichalcos.OrichalcosSouls
+                .playerLeftDuel(player));
         onServer(de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages.IndexDropped.TYPE,
             (message, player) -> de.cas_ual_ty.dueldimension.cardbinder.CardBinderMessages
                 .doForBinderContainer(player, container -> container.indexDropped(message.index())));
@@ -287,6 +296,27 @@ public final class DdNetwork
 
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
             MenuData.TYPE, (payload, context) -> MenuData.receive(payload.data()));
+
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            PreloadMessages.Preload.TYPE, (payload, context) ->
+            {
+                if(payload.start())
+                {
+                    de.cas_ual_ty.dueldimension.clientutil.CardPreloadJob.start();
+                }
+                else
+                {
+                    de.cas_ual_ty.dueldimension.clientutil.CardPreloadJob.stop();
+                }
+            });
+
+        // The Seal of Orichalcos closing on someone. The whole six seconds run
+        // from this one message; see OrichalcosRenderer.
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.duel.orichalcos.OrichalcosMessages.SealBegin.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.clientutil.OrichalcosRenderer
+                .begin(payload.entityId(), payload.growTicks(), payload.holdTicks(),
+                    payload.fadeTicks()));
 
         // The PvP lobby. Sent on every change to the room, so the handler
         // updates an open screen rather than replacing it; see the proxy.

@@ -50,7 +50,29 @@ public class DuelDimensionFabricClient implements ClientModInitializer
         {
             de.cas_ual_ty.dueldimension.clientutil.DuelClientState.tickPlayback();
             de.cas_ual_ty.dueldimension.clientutil.HitchWatch.tick();
+            de.cas_ual_ty.dueldimension.clientutil.OrichalcosRenderer.tick();
+            de.cas_ual_ty.dueldimension.clientutil.CardPreloadJob.tick();
+            // Card textures were never released by anything; this is what
+            // keeps a long browse from growing GPU memory without bound.
+            de.cas_ual_ty.dueldimension.clientutil.CardTextureCache.sweep();
         });
+
+        // The preload's progress bar. addLast, NOT attachElementBefore: an
+        // ATTACHED element is bound to its host's visibility, and the host I
+        // picked was the experience bar -- which is not drawn at all in
+        // creative mode, so the bar silently never appeared. This is an
+        // element in its own right, drawn last so nothing paints over it.
+        net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry.addLast(
+            net.minecraft.resources.Identifier.fromNamespaceAndPath(
+                de.cas_ual_ty.dueldimension.DuelDimension.MOD_ID, "preload_progress"),
+            new de.cas_ual_ty.dueldimension.clientutil.PreloadHud());
+
+        // The seal is drawn in the world, not in a GUI. WorldRenderEvents is
+        // gone in 26.2; COLLECT_SUBMITS is where geometry is handed to the
+        // renderer for the frame, and its context carries both the pose stack
+        // and the submit collector.
+        net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.COLLECT_SUBMITS
+            .register(de.cas_ual_ty.dueldimension.clientutil.OrichalcosRenderer::render);
 
         // Leaving a server forgets what everyone was wearing. The map is keyed
         // by UUID and nothing else clears it, so without this the next server
@@ -59,6 +81,8 @@ public class DuelDimensionFabricClient implements ClientModInitializer
             .register((handler, client) ->
             {
                 de.cas_ual_ty.dueldimension.duel.outfit.WornOutfits.clear();
+                de.cas_ual_ty.dueldimension.clientutil.OrichalcosRenderer.clear();
+                de.cas_ual_ty.dueldimension.clientutil.CardTextureCache.clear();
                 // A duel interrupted by a disconnect never reports itself over,
                 // so nothing else would ever stop its music -- it would play on
                 // over the title screen.

@@ -135,12 +135,21 @@ public class DuelistEntity extends PathfinderMob
      * {@code hurt} became {@code hurtServer}: damage is decided on the server
      * and the method name now says so, and it is handed the level it is
      * happening in rather than reaching for one.
+     * <p>
+     * The Seal of Orichalcos is the one exception, and it is the exception that
+     * proves the rule: it is not someone attacking a duelist, it is a duel they
+     * already lost. Everything else — swords, arrows, lava, their own duel
+     * partner — still bounces off, and a creative player can still remove one.
+     * Without this the seal closed on a duelist and then did nothing, because a
+     * damage source with no attacker behind it is not a creative player.
      */
     @Override
     public boolean hurtServer(net.minecraft.server.level.ServerLevel level,
         net.minecraft.world.damagesource.DamageSource source, float amount)
     {
-        return source.isCreativePlayer() && super.hurtServer(level, source, amount);
+        boolean allowed = source.isCreativePlayer()
+            || source.is(de.cas_ual_ty.dueldimension.duel.orichalcos.OrichalcosSouls.ORICHALCOS);
+        return allowed && super.hurtServer(level, source, amount);
     }
 
     @Override

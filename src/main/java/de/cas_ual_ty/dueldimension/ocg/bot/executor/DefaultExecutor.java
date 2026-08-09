@@ -40,6 +40,12 @@ public abstract class DefaultExecutor extends Executor
         public static final int Mountain = 50913601;
         public static final int Sogen = 86318356;
         public static final int Yami = 59197169;
+        public static final int MysticalSpaceTyphoon = 5318639;
+        public static final int BookOfMoon = 14087893;
+        public static final int TorrentialTribute = 53582587;
+        public static final int SmashingGround = 97169186;
+        public static final int HeavyStorm = 19613556;
+        public static final int CompulsoryEvacuationDevice = 94192409;
 
         private CardId()
         {
@@ -194,9 +200,17 @@ public abstract class DefaultExecutor extends Executor
         {
             return true;
         }
+        // DefaultExecutor.cs:1207, verbatim:
+        //   Card.Attack >= Card.Defense || Card.Attack >= Util.GetBestPower(Enemy)
+        // Both comparisons are >=, and there is no phase gate. This tree had >
+        // and a PHASE_MAIN1 clause that appears nowhere in the reference, which
+        // meant an ATK==DEF monster -- most of a starter deck -- could be set
+        // once and never stand up again, and a defender that came to out-power
+        // the enemy board could not re-arm in Main Phase 2, right when the
+        // board had just changed in its favour.
         return self.isDefense() && !enemyBetter
-            && (self.attack() > self.defense()
-                || (phase() == OcgConstants.PHASE_MAIN1 && self.attack() >= util.getBestPower(enemy())));
+            && (self.attack() >= self.defense()
+                || self.attack() >= util.getBestPower(enemy()));
     }
 
     /**
@@ -311,6 +325,96 @@ public abstract class DefaultExecutor extends Executor
     protected boolean defaultHammerShot()
     {
         return util.isOneEnemyBetter(true);
+    }
+
+    /**
+     * <pre>
+     * protected bool DefaultHeavyStorm()
+     * {
+     *     return Bot.GetSpellCount() &lt; Enemy.GetSpellCount();
+     * }
+     * </pre>
+     * A trade rule, not a value one: it fires only when the opponent has more
+     * spells and traps out than we do, so a storm never costs us more than it
+     * takes. It does not look at WHAT is out — the reference does not either.
+     */
+    protected boolean defaultHeavyStorm()
+    {
+        return bot().getSpells().size() < enemy().getSpells().size();
+    }
+
+    /**
+     * <pre>
+     * protected bool DefaultTorrentialTribute()
+     * {
+     *     return !Util.HasChainedTrap(0) &amp;&amp; Util.IsAllEnemyBetter(true);
+     * }
+     * </pre>
+     * Wipes the board only when EVERY enemy monster out-powers our best
+     * attacker, so it is a losing-board button rather than a trade.
+     * <p>
+     * <b>Deliberately NOT registered yet.</b> {@code HasChainedTrap(0)} reads
+     * {@code Duel.CurrentChain} — the cards on the chain right now — and we
+     * track only {@code lastChainPlayer}, an int. That guard is what stops the
+     * bot chaining this to its OWN trap and wiping its own board, so dropping
+     * it is not a nuance, it is a misplay the reference explicitly prevents.
+     * The body is ported and correct; it goes live the moment chain contents
+     * are exposed, and until then registering it would be inventing behaviour
+     * by omission.
+     */
+    protected boolean defaultTorrentialTribute()
+    {
+        return util.isAllEnemyBetter(true);
+    }
+
+    /**
+     * <pre>
+     * protected bool DefaultBookOfMoon()
+     * {
+     *     if (Util.IsAllEnemyBetter(true))
+     *     {
+     *         ClientCard monster = Enemy.GetMonsters().GetHighestAttackMonster(true);
+     *         if (monster != null &amp;&amp; monster.HasType(CardType.Effect) &amp;&amp; !monster.HasType(CardType.Link)
+     *             &amp;&amp; (monster.HasType(CardType.Xyz) || monster.Level &gt; 4))
+     *         {
+     *             AI.SelectCard(monster);
+     *             return true;
+     *         }
+     *     }
+     *     return false;
+     * }
+     * </pre>
+     * Turns their best monster face-down, which strips an Effect monster of its
+     * effect as well as its attack. The level/Xyz test is what stops it being
+     * spent on a small body: flipping a Level 4 beater is rarely worth the card.
+     */
+    protected boolean defaultBookOfMoon()
+    {
+        if(!util.isAllEnemyBetter(true))
+        {
+            return false;
+        }
+        List<BotCard> byPower = util.enemyMonstersByPowerDescending();
+        for(BotCard monster : byPower)
+        {
+            // Face-up only: a set monster's type and level are hidden, and the
+            // reference reads both before committing.
+            if(monster.isFaceDown() || !monster.isAttack())
+            {
+                continue;
+            }
+            if(monster.hasType(OcgConstants.TYPE_EFFECT)
+                && !monster.hasType(OcgConstants.TYPE_LINK)
+                && (monster.hasType(OcgConstants.TYPE_XYZ) || monster.level() > 4))
+            {
+                selectCard(monster);
+                return true;
+            }
+            // GetHighestAttackMonster returns ONE card; the reference gives up
+            // if that one does not qualify rather than looking further down.
+            return false;
+        }
+        return false;
     }
 
     /**
@@ -446,11 +550,52 @@ public abstract class DefaultExecutor extends Executor
      * }
      * </pre>
      * Defenders arrive sorted by power descending, so the first one the
-     * attacker beats is the biggest body that still dies. Strictly greater
-     * than: an even trade is declined. The {@code IsLastAttacker} clause that
-     * permits an even trade needs per-attack state the core does not expose to
-     * a host, so it is left out rather than approximated.
+     * attacker beats is the biggest body that still dies — and, as the LAST
+     * attacker, one it merely ties with, because an even trade costs no
+     * further attacks and declining it hands the opponent the same trade on
+     * their own terms.
+     * <p>
+     * This javadoc used to say the {@code IsLastAttacker} clause "needs
+     * per-attack state the core does not expose to a host". That was wrong:
+     * GameAI.cs:289 sets the flag from the position in the host's own sorted
+     * attacker list, which {@code ExecutorBot} already builds. The clause is
+     * now ported.
      */
+    /**
+     * <pre>
+     * public override bool OnSelectBattleReplay()
+     * {
+     *     if (Bot.BattlingMonster == null)
+     *         return false;
+     *     List&lt;ClientCard&gt; defenders = new List&lt;ClientCard&gt;(Duel.Fields[1].GetMonsters());
+     *     defenders.Sort(CardContainer.CompareDefensePower);
+     *     defenders.Reverse();
+     *     BattlePhaseAction result = OnSelectAttackTarget(Bot.BattlingMonster, defenders);
+     *     if (result != null &amp;&amp; result.Action == BattlePhaseAction.BattleAction.Attack)
+     *         return true;
+     *     return false;
+     * }
+     * </pre>
+     * Re-asks the same question the attack was declared on, against the board
+     * as it stands NOW. The defenders are re-sorted strongest first, so a
+     * "yes" means there is still something this monster beats — not merely
+     * that it is allowed to swing again.
+     */
+    @Override
+    public boolean onSelectBattleReplay()
+    {
+        BotCard attacker = battlingMonster();
+        if(attacker == null)
+        {
+            return false;
+        }
+        List<BotCard> defenders = new java.util.ArrayList<>(enemy().getMonsters());
+        // CompareDefensePower ascending, then reversed: strongest first.
+        defenders.sort((left, right) ->
+            Integer.compare(right.getDefensePower(), left.getDefensePower()));
+        return onSelectAttackTarget(attacker, defenders) != null;
+    }
+
     @Override
     public BotCard onSelectAttackTarget(BotCard attacker, List<BotCard> defenders)
     {
@@ -462,7 +607,17 @@ public abstract class DefaultExecutor extends Executor
             {
                 continue;
             }
-            if(attacker.realPower > defender.realPower)
+            // DefaultExecutor.cs:370, both halves:
+            //   attacker.RealPower > defender.RealPower
+            //   || (attacker.RealPower >= defender.RealPower
+            //       && attacker.IsLastAttacker && defender.IsAttack())
+            // The second clause is the even trade. Declining it leaves both
+            // monsters alive and hands the opponent the same trade on their
+            // own terms next turn; taking it as the LAST attacker costs no
+            // further attacks, which is why the reference gates it that way.
+            if(attacker.realPower > defender.realPower
+                || (attacker.realPower >= defender.realPower
+                    && attacker.isLastAttacker && defender.isAttack()))
             {
                 return defender;
             }

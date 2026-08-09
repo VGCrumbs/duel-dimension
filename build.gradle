@@ -42,6 +42,12 @@ loom {
 
 repositories {
     mavenCentral()
+    // ModMenu, for the config screen. Its 26.2 build is Mojang-named like
+    // everything else here, so it needs no remapping.
+    maven {
+        name = 'TerraformersMC'
+        url = 'https://maven.terraformersmc.com/releases'
+    }
 }
 
 dependencies {
@@ -67,6 +73,12 @@ dependencies {
     // throughout. Compile-only: it is documentation for javac, not something
     // the mod needs at runtime.
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
+
+    // ModMenu supplies the config screen's front door and nothing else, so it
+    // is compile-only: the loader stores entrypoint values as plain strings and
+    // only classloads them on getOrCreate, which means the "modmenu" entrypoint
+    // is inert -- not an error -- when ModMenu is not installed.
+    compileOnly 'com.terraformersmc:modmenu:20.0.1'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

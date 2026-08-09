@@ -288,6 +288,11 @@ public class DuelHubScreen extends Screen
             case PROFILE -> profilePanel(graphics, bodyTop);
             case DECKS -> deckPanel(graphics, bodyTop);
             case SETTINGS -> settingsPanel(graphics, bodyTop);
+            // OUTFIT draws nothing here on purpose: its wardrobe goes down
+            // AFTER the widgets, below. Without this arm it fell to the default
+            // and painted "Not ported yet:" under the tiles, where the corner
+            // of it showed between them.
+            case OUTFIT -> { }
             default -> waiting(graphics, bodyTop);
         }
 

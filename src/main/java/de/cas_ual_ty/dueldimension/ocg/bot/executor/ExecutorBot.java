@@ -65,6 +65,15 @@ public class ExecutorBot implements ResponseSource
     private static final int ACTIVATION_LIMIT = 9;
 
     /** Set when we declare an attack, so the following card prompt is read as target choice. */
+    /**
+     * The system-string id the core uses to ask "attack again?".
+     * <p>
+     * ygopro-core/processor.cpp: {@code SelectYesNo(infos.turn_player, 30)} at
+     * the replay branch. Suppressed only by DUEL_STORE_ATTACK_REPLAYS, which
+     * this mod's flags do not set, so the prompt does reach the bot.
+     */
+    private static final long BATTLE_REPLAY_HINT = 30L;
+
     private boolean expectingAttackTarget;
     private BotCard pendingAttacker;
 
@@ -193,7 +202,16 @@ public class ExecutorBot implements ResponseSource
             }
             else if(decoded instanceof DuelMessage.SelectYesNo yesNo)
             {
-                answer = executor.onSelectYesNo(yesNo.description()) ? Responses.yes() : Responses.no();
+                // Description 30 is the attack replay, not a card's question.
+                // ygopro-core/processor.cpp emits SelectYesNo(turn_player, 30)
+                // when the monster being attacked leaves the field mid battle
+                // step; GameBehavior.cs routes that one description to
+                // OnSelectBattleReplay rather than OnSelectYesNo, whose base
+                // answer is an unconditional yes.
+                answer = (yesNo.description() == BATTLE_REPLAY_HINT
+                    ? executor.onSelectBattleReplay()
+                    : executor.onSelectYesNo(yesNo.description()))
+                    ? Responses.yes() : Responses.no();
             }
         }
         return answer != null ? answer : fallback.respond(prompt);
@@ -373,21 +391,28 @@ public class ExecutorBot implements ResponseSource
             attackOf(battle.attackable().get(right)), attackOf(battle.attackable().get(left))));
 
         List<BotCard> defenders = util().enemyMonstersByPowerDescending();
-        for(int index : order)
+        for(int position = 0; position < order.size(); position++)
         {
+            int index = order.get(position);
             DuelMessage.AttackOption option = battle.attackable().get(index);
             BotCard attacker = cardOf(option.code(), option.controller(), option.location(),
                 option.sequence());
+            // GameAI.cs:289 -- `attacker.IsLastAttacker = (k == attackers.Count - 1)`,
+            // read off the host's OWN sorted list, not from the engine. This is
+            // that list, sorted the same way.
+            attacker.isLastAttacker = position == order.size() - 1;
             if(option.canDirect() || defenders.isEmpty())
             {
                 expectingAttackTarget = true;
                 pendingAttacker = attacker;
+                executor.setBattlingMonster(attacker);
                 return Responses.battleAttack(index);
             }
             if(executor.onSelectAttackTarget(attacker, defenders) != null)
             {
                 expectingAttackTarget = true;
                 pendingAttacker = attacker;
+                executor.setBattlingMonster(attacker);
                 return Responses.battleAttack(index);
             }
         }

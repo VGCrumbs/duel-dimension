@@ -168,6 +168,12 @@ public class DuelDimensionFabric implements ModInitializer
             // these were Forge's END-phase server tick, in this order.
             de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.tick(server);
             de.cas_ual_ty.dueldimension.duel.match.DuelInvites.tick(server);
+
+            // After the duels, never before: a duel that concludes this tick
+            // marks its loser inside DuelistDuels.tick, and the queue has to
+            // see that mark on the same tick it is made rather than a tick
+            // late.
+            de.cas_ual_ty.dueldimension.duel.orichalcos.OrichalcosSouls.tick(server);
         });
 
         LOG.info("Duel Dimension (Fabric fork): engine core, items, sounds, commands,"

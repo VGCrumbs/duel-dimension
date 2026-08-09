@@ -30,6 +30,11 @@ public final class DdSounds
     public static final SoundEvent GAIN_LP = register("duel.gainlp");
     public static final SoundEvent NEXT_TURN = register("duel.nextturn");
     public static final SoundEvent PHASE = register("duel.phase");
+
+    /** The seal closing in: loud at once, decaying across the six seconds. */
+    public static final SoundEvent ORICHALCOS_BUZZ = register("duel.orichalcos.buzz");
+    /** The soul going up, and the eight seconds the beam takes to go out with it. */
+    public static final SoundEvent ORICHALCOS_FADE = register("duel.orichalcos.fade");
     public static final SoundEvent SHUFFLE = register("duel.shuffle");
     public static final SoundEvent ADD_COUNTER = register("duel.addcounter");
     public static final SoundEvent COIN_FLIP = register("duel.coinflip");

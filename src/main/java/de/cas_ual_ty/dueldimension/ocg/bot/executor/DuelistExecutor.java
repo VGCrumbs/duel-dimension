@@ -101,6 +101,20 @@ public abstract class DuelistExecutor extends DefaultExecutor
      */
     protected final void addReferenceCardRules()
     {
+        // Removal the shipped decks actually run, measured against the 18
+        // .ydk files rather than assumed. Registered before the bodies, as
+        // OldSchoolExecutor does: clear the board, then commit a monster.
+        //
+        // DefaultSmashingGround shares DefaultRaigeki's body -- the reference
+        // says so and defaultRaigeki already carries it, so this card was
+        // missing only its registration.
+        addExecutor(ExecutorType.ACTIVATE, CardId.SmashingGround, this::defaultRaigeki);
+        // DefaultMysticalSpaceTyphoon and DefaultCompulsoryEvacuationDevice are
+        // deliberately NOT here. Both need Util helpers we have not ported
+        // (GetFloodgate, IsChainTarget, GetProblematicEnemyMonster and chain
+        // inspection), and approximating them would be inventing bot behaviour.
+        addExecutor(ExecutorType.ACTIVATE, CardId.HeavyStorm, this::defaultHeavyStorm);
+        addExecutor(ExecutorType.ACTIVATE, CardId.BookOfMoon, this::defaultBookOfMoon);
         // DefaultDarkHole: Util.IsOneEnemyBetter()
         addExecutor(ExecutorType.ACTIVATE, CardId.DarkHole, this::defaultDarkHole);
         // OldSchoolExecutor registers Fissure with no predicate at all: it only

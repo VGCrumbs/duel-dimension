@@ -59,6 +59,15 @@ public final class BotCard
         this.sequence = sequence;
     }
 
+    /**
+     * {@code ClientCard.IsLastAttacker}: whether this is the last monster the
+     * host will offer as an attacker this battle phase.
+     * <p>
+     * Set by the host from the position in its own sorted attacker list
+     * (GameAI.cs:289), not by the engine — which is why it is a plain field.
+     */
+    public boolean isLastAttacker;
+
     public int code()
     {
         return code;

@@ -95,10 +95,25 @@ public final class DuelistDuels
         final DuelRewardTracker rewards;
         final UUID rewardId = UUID.randomUUID();
         boolean paid;
+        /**
+         * Whether The Seal of Orichalcos was on the field at the last look.
+         * <p>
+         * Current state rather than ever-seen, so a Seal that gets destroyed
+         * stops counting -- the rule is that the field spell is ACTIVE when the
+         * duel is lost, not that it was played at some point.
+         */
+        boolean sealOnField;
         boolean forfeit;
         boolean concluded;
         /** A player who concedes this contest can never receive its DP packet. */
         final boolean[] rewardEligible = {true, true};
+        /**
+         * The duelist across the table, or null in a duel between two players.
+         * <p>
+         * Held as an id rather than the entity: a duel outlives a chunk unload,
+         * and the seal has to be able to find whoever lost it afterwards.
+         */
+        UUID duelistId;
 
         RunningDuel(DuelSession session, Watcher seat0, Watcher seat1,
             de.cas_ual_ty.dueldimension.ocg.CdbCardProvider cards)
@@ -212,7 +227,7 @@ public final class DuelistDuels
         long seed = serverPlayer.level().getGameTime() ^ serverPlayer.getUUID().getLeastSignificantBits();
         long[] seeds = {seed | 1, seed * 31 + 7, seed * 131 + 17, ~seed};
 
-        HeadlessDuelRunner.Deck deck0 = playerDeck.cards();
+        HeadlessDuelRunner.Deck deck0 = withChaosDiskPromise(serverPlayer, playerDeck.cards());
         HeadlessDuelRunner.Deck deck1 = npcDeck.load().toRunnerDeck();
 
         // The challenger plays seat 0 themselves; the NPC plays seat 1.
@@ -244,8 +259,10 @@ public final class DuelistDuels
                 engine.cards(), engine.cards().all()));
 
         sessionHolder[0] = session;
-        ACTIVE.put(Watcher.of(serverPlayer), new RunningDuel(session,
-            Watcher.of(serverPlayer), null, engine.cards()));
+        RunningDuel npcDuel = new RunningDuel(session,
+            Watcher.of(serverPlayer), null, engine.cards());
+        npcDuel.duelistId = duelist.getUUID();
+        ACTIVE.put(Watcher.of(serverPlayer), npcDuel);
 
         serverPlayer.sendSystemMessage(Component.literal("Duel started: ")
             .withStyle(ChatFormatting.GOLD)
@@ -306,8 +323,8 @@ public final class DuelistDuels
             de.cas_ual_ty.dueldimension.duel.match.Banlists.byId(config.banlistId());
         ChosenDeck deckA = deckFor(first, StarterDecks.YUGI, banlist);
         ChosenDeck deckB = deckFor(second, StarterDecks.KAIBA, banlist);
-        HeadlessDuelRunner.Deck deck0 = deckA.cards();
-        HeadlessDuelRunner.Deck deck1 = deckB.cards();
+        HeadlessDuelRunner.Deck deck0 = withChaosDiskPromise(first, deckA.cards());
+        HeadlessDuelRunner.Deck deck1 = withChaosDiskPromise(second, deckB.cards());
 
         long seed = first.level().getGameTime()
             ^ first.getUUID().getLeastSignificantBits()
@@ -679,6 +696,10 @@ public final class DuelistDuels
                     // seat0 is an absolute view for the server-side tracker:
                     // its self is core seat 0 and its opponent core seat 1.
                     duel.rewards.observe(board.forSeat(0));
+                    // Same absolute seat-0 view the reward tracker reads, so
+                    // the Seal is seen whichever side played it.
+                    duel.sealOnField = de.cas_ual_ty.dueldimension.duel.orichalcos
+                        .OrichalcosSouls.sealOnField(board.forSeat(0));
                     for(int seat = 0; seat < 2; seat++)
                     {
                         if(duel.seats[seat] == null)
@@ -937,6 +958,15 @@ public final class DuelistDuels
             return;
         }
         duel.paid = true;
+
+        // Before the rewards, and deliberately outside their loop. That loop
+        // skips a seat whose Watcher is null -- which is exactly a duelist's
+        // seat -- and skips anyone who failed canReward(), i.e. conceded.
+        // Neither of those should save you from the seal.
+        if(duel.sealOnField)
+        {
+            markSealLoser(server, duel);
+        }
         // A draw pays both the losing rate. Nobody won it, and the alternative
         // -- paying nobody -- punishes two players for a game that ran long.
         boolean drawn = duel.wins[0] == duel.wins[1];
@@ -975,6 +1005,80 @@ public final class DuelistDuels
                     duel.rewardId, outcome, reward.lines(), reward.total(), before, after,
                     duel.gameNumber, duel.wins[seat], duel.wins[1 - seat], !duel.isTwoPlayer()));
         }
+    }
+
+    /**
+     * Takes the loser's soul, player or duelist alike.
+     * <p>
+     * Called once per contest from {@link #payOut}, after {@code wins[]} is
+     * final. A duelist has no {@link Watcher} — its seat is null — so it is
+     * found through the id captured when the challenge was made.
+     */
+    private static void markSealLoser(net.minecraft.server.MinecraftServer server,
+        RunningDuel duel)
+    {
+        if(duel.wins[0] == duel.wins[1])
+        {
+            return;   // a draw has no loser
+        }
+        int loser = duel.wins[0] > duel.wins[1] ? 1 : 0;
+        Watcher watcher = duel.seats[loser];
+        if(watcher == null)
+        {
+            // The duelist lost. Its soul goes the same way a player's does, and
+            // on the same schedule: the player is still watching the duel
+            // screen, and should be back in the world to see it happen.
+            // Waits for the human at the OTHER seat: a duelist has no screen
+            // to close, and the point of the wait is that somebody is back in
+            // the world to watch.
+            Watcher winner = duel.seats[1 - loser];
+            de.cas_ual_ty.dueldimension.duel.orichalcos.OrichalcosSouls.markById(
+                server, duel.duelistId,
+                winner == null || winner.console() ? null : winner.playerId());
+            return;
+        }
+        if(watcher.console())
+        {
+            return;
+        }
+        de.cas_ual_ty.dueldimension.duel.orichalcos.OrichalcosSouls
+            .markById(server, watcher.playerId(), watcher.playerId());
+    }
+
+    /**
+     * The Chaos Duel Disk's promise: draw The Seal of Orichalcos.
+     * <p>
+     * Worn in the off hand and holding the Seal somewhere in the deck, a
+     * duelist opens with it — the card is moved to sixth from the top, which
+     * with the first-turn draw is the card they draw on their first turn.
+     * <p>
+     * It moves a card the deck already contains. A deck without the Seal is
+     * handed back untouched, so the disk cannot conjure one, and the deck stays
+     * exactly the size and contents it was built as.
+     */
+    private static HeadlessDuelRunner.Deck withChaosDiskPromise(ServerPlayer player,
+        HeadlessDuelRunner.Deck deck)
+    {
+        if(player == null || deck == null)
+        {
+            return deck;
+        }
+        // The off-hand SLOT, not the hand some use() arrived on: the disk is
+        // worn for the duel, and by now nobody is holding an interaction.
+        net.minecraft.world.item.ItemStack offHand =
+            player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND);
+        if(!offHand.is(de.cas_ual_ty.dueldimension.DdItems.CHAOS_DISK))
+        {
+            return deck;
+        }
+        int seal = de.cas_ual_ty.dueldimension.duel.orichalcos.OrichalcosSouls.SEAL_PASSCODE;
+        if(!deck.main().contains(seal))
+        {
+            return deck;
+        }
+        de.cas_ual_ty.dueldimension.DuelDimension.log("Chaos Disk: " + player.getGameProfile().name()
+            + " will open with The Seal of Orichalcos");
+        return deck.guaranteeing(seal);
     }
 
     private static void announceToBoth(net.minecraft.server.MinecraftServer server,

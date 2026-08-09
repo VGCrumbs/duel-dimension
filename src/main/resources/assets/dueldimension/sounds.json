@@ -178,5 +178,23 @@
         "stream": true
       }
     ]
+  },
+  "duel.orichalcos.buzz": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/orichalcos/buzz",
+        "stream": false
+      }
+    ]
+  },
+  "duel.orichalcos.fade": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/orichalcos/fade",
+        "stream": false
+      }
+    ]
   }
 }

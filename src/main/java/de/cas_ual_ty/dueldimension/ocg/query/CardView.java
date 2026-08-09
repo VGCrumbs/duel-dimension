@@ -19,10 +19,23 @@ package de.cas_ual_ty.dueldimension.ocg.query;
  */
 public record CardView(int code, int position, int type, int level, int attack, int defense,
     int baseAttack, int baseDefense, int leftScale, int rightScale,
-    boolean isPublic, boolean hidden, Equip equip)
+    boolean isPublic, boolean hidden, Equip equip, int status, int overlays)
 {
     public static final CardView HIDDEN =
-        new CardView(0, 0, 0, 0, -1, -1, -1, -1, -1, -1, false, true, null);
+        new CardView(0, 0, 0, 0, -1, -1, -1, -1, -1, -1, false, true, null, 0, 0);
+
+    /**
+     * Whether this card's effect is switched off.
+     * <p>
+     * Either bit counts: the reference draws the same mark for a negated card
+     * and a forbidden one, and a player only needs to know it will not do
+     * anything.
+     */
+    public boolean negated()
+    {
+        return (status & (de.cas_ual_ty.dueldimension.ocg.OcgConstants.STATUS_DISABLED
+            | de.cas_ual_ty.dueldimension.ocg.OcgConstants.STATUS_FORBIDDEN)) != 0;
+    }
 
     /** Whether the engine gave this card a scale, i.e. it is a pendulum card. */
     public boolean hasScale()
