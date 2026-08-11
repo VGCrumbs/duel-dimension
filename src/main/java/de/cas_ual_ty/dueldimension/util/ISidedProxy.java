@@ -54,6 +54,23 @@ public interface ISidedProxy
     {
     }
 
+    /** The sleeve on the deck this player is duelling with; server side does nothing. */
+    default void setOwnSleeve(String sleeve)
+    {
+    }
+
+    /**
+     * The cards in this player's own deck, shuffled by the server, ready to be
+     * shown in the pile panel. Server side does nothing.
+     * <p>
+     * Two parallel arrays rather than any card type: the answer is a multiset of
+     * (passcode, artwork) pairs, and nothing about where a card sits in the deck
+     * is permitted past this point.
+     */
+    default void showOwnDeck(int[] codes, int[] arts)
+    {
+    }
+
     /** Shows a duel prompt; server side does nothing. */
     default void showEnginePrompt(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt, int serial)
     {
@@ -201,6 +218,16 @@ public interface ISidedProxy
     }
 
     /** Opens or refreshes the duel lobby. Client only. */
+    /**
+     * Opens the collection binder.
+     * <p>
+     * A default that does nothing, like the rest of the client hooks here: the
+     * server calls this on the same code path and has no screens.
+     */
+    default void openCollectionBinder()
+    {
+    }
+
     default void openDuelLobby(
         de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.OpenLobby room)
     {

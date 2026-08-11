@@ -1,0 +1,47 @@
+{
+  "name": "Hobby League 2 participation card A",
+  "code": "HL2",
+  "type": "Booster Pack (2006)",
+  "date": "01-01-2006",
+  "image": "https://ygoprodeck.com/pics_sets/HL2.jpg",
+  "pull_type": "distribution",
+  "distribution": "composition_ultra_parallel_rare",
+  "cards": [
+    {
+      "id": 34124316,
+      "code": "HL2-EN001",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 5318639,
+      "code": "HL2-EN002",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 26202165,
+      "code": "HL2-EN003",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19613556,
+      "code": "HL2-EN004",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 2460565,
+      "code": "HL2-EN005",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 66788016,
+      "code": "HL2-EN006",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    }
+  ]
+}

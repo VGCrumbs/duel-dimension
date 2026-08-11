@@ -1,0 +1,12 @@
+{
+  "id": 14554127,
+  "name": "Tiki Peace",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Special Summon this card as an Effect Monster (Rock/EARTH/Level 4/ATK 1800/DEF 1800) with the following effect (this card is also still a Trap).\r\n● (Quick Effect): You can pay 800 LP; Special Summon 1 Continuous Trap, except \"Tiki Peace\", from your GY or banishment as a Normal Monster (Rock/EARTH/Level 4/ATK 1000/DEF 1000) and its name becomes \"Tiki Peace\" (even while face-down) (that card is NOT treated as a Trap). You can only use this effect of \"Tiki Peace\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/14554127.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Continuous"
+}

@@ -1,0 +1,23 @@
+{
+  "id": 67216732,
+  "name": "S-Force Nightcatcher",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2 monsters, including an \"S-Force\" monster\r\nIf this card is Special Summoned: You can add 1 \"S-Force\" Spell/Trap from your Deck to your hand. (Quick Effect): You can banish this card you control and 1 \"S-Force\" card in your hand; Special Summon 1 \"S-Force\" monster from your Deck/Extra Deck, except \"S-Force Nightcatcher\". You can only use each effect of \"S-Force Nightcatcher\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/67216732.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 1700,
+  "species": "Cyberse",
+  "monster_type": "Link",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "link_rating": 2,
+  "link_arrows": [
+    "Left",
+    "Right"
+  ]
+}

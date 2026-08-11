@@ -1,0 +1,21 @@
+{
+  "id": 80054655,
+  "name": "Crossroad Sonic Chick",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If a Tuner(s) is sent to your GY, even during the Damage Step: You can Special Summon this card from your GY (if it was there when the monster was sent) or hand (even if not), but banish it when it leaves the field, then if \"Junk Warrior\" or a monster that mentions it (except this card) is on the field, you can change all monsters your opponent controls with 1900 or more ATK to Defense Position, also for the rest of this turn, you cannot Special Summon from the Extra Deck, except Synchro Monsters. You can only use this effect of \"Crossroad Sonic Chick\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/80054655.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 300,
+  "species": "Winged Beast",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 300,
+  "level": 1,
+  "is_tuner": false
+}

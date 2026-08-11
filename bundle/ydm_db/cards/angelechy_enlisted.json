@@ -1,0 +1,21 @@
+{
+  "id": 81797573,
+  "name": "Angelechy Enlisted",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 Tuner + 1 non-Tuner\r\nYou can target 1 opponent's monster in this card's adjacent column; banish it, then change control of this card by moving it to one of your opponent's Main Monster Zones in this card's adjacent columns. If the control of this face-up card changes: Return this card to the Extra Deck, then the owner of this card Special Summons 1 \"Angelechy\" monster from their Extra Deck. You can only use each effect of \"Angelechy Enlisted\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/81797573.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 1500,
+  "species": "Fairy",
+  "monster_type": "Synchro",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1500,
+  "level": 2,
+  "is_tuner": true
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Ultimate Edition 2",
+  "code": "UE02",
+  "type": "Single",
+  "date": "11-11-2006",
+  "image": "https://ygoprodeck.com/pics_sets/UE02.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 62873545,
+      "code": "UE02-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": 54577949,
+  "name": "Witness of the Ancient",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you have a Synchro Monster in your field or GY: You can Special Summon this card from your hand. If this card is Special Summoned: You can place up to 3 Synchro Monsters with different names from your Extra Deck and/or GY in your Spell & Trap Zone as face-up Continuous Spells, and Special Summon 1 \"Arc Token\" (Machine/LIGHT/ATK 0/DEF 0) with a Level equal to the number placed, also for the rest of this turn, you cannot Special Summon from the Extra Deck, except Synchro Monsters. You can only use each effect of \"Witness of the Ancient\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/54577949.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 0,
+  "species": "Machine",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 3000,
+  "level": 8,
+  "is_tuner": true
+}

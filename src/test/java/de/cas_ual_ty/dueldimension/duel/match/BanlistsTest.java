@@ -21,10 +21,15 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  */
 class BanlistsTest
 {
+    /**
+     * Wherever the lists actually are, asked of the same discovery the server
+     * uses. Hardcoding one machine's install path here meant this test could
+     * only ever run on that machine, and skipped everywhere else without saying
+     * that a skip is what happened.
+     */
     private static Path lists()
     {
-        return Path.of(System.getProperty("ocg.lflists",
-            "C:/ProjectIgnis/repositories/lflists"));
+        return Banlists.directory();
     }
 
     @Test
@@ -50,7 +55,8 @@ class BanlistsTest
     @Test
     void theReferenceListsAreRead()
     {
-        assumeTrue(Files.isDirectory(lists()), "no EDOPro lflists directory present");
+        Path lists = lists();
+        assumeTrue(lists != null && Files.isDirectory(lists), "no EDOPro lflists directory present");
 
         List<Banlist> all = Banlists.all();
         assertTrue(all.size() > 1,
@@ -69,7 +75,8 @@ class BanlistsTest
     @Test
     void aRealListActuallyLimitsSomething()
     {
-        assumeTrue(Files.isDirectory(lists()), "no EDOPro lflists directory present");
+        Path lists = lists();
+        assumeTrue(lists != null && Files.isDirectory(lists), "no EDOPro lflists directory present");
         List<Banlist> all = Banlists.all();
         assumeTrue(all.size() > 1, "no reference lists loaded");
 

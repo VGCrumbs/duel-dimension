@@ -1,0 +1,12 @@
+{
+  "id": 80208225,
+  "name": "Dracotail Sting",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Target 1 monster and/or 1 Spell/Trap in your opponent's GY; banish them, then you can place 1 \"Dracotail\" card from your GY or banishment on the bottom of your Deck, except \"Dracotail Sting\", then draw 1 card. You can only activate 1 \"Dracotail Sting\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/80208225.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

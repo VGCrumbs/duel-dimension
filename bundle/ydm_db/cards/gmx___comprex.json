@@ -1,0 +1,21 @@
+{
+  "id": 75191028,
+  "name": "GMX - COMPREX",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 \"GMX\" monster + 2+ Dinosaur monsters\r\nGains these effects based on the number of Dinosaur monsters used as Fusion Material for this card.\r\n● 3+: Your opponent cannot target this card with card effects.\r\n● 4+: Can make up to 3 attacks during each Battle Phase.\r\n● 5+: Each time your opponent Normal or Special Summons a monster(s), they lose 800 LP.\r\nOnce per turn, if you excavate a card(s) by a \"GMX\" card effect: You can destroy all other monsters on the field.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/75191028.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 3700,
+  "species": "Dinosaur",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2300,
+  "level": 10,
+  "is_tuner": false
+}

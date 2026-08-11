@@ -1,0 +1,21 @@
+{
+  "id": 43632709,
+  "name": "Cerynemesia, Mystical Beast of the Forest",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is Normal or Special Summoned: You can banish (face-up) 1 Beast monster from your hand or face-up field until the End Phase; Special Summon 1 EARTH Beast monster from your Deck or GY, with an equal or lower Level than that monster's original Level, then your opponent can Special Summon 1 monster from their hand. You can only use this effect of \"Cerynemesia, Mystical Beast of the Forest\" once per turn. Your opponent's monsters that can attack must attack the monster you control with the highest ATK (their choice, if tied).",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/43632709.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 0,
+  "species": "Beast",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1600,
+  "level": 2,
+  "is_tuner": false
+}

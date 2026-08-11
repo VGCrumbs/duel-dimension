@@ -1,0 +1,35 @@
+{
+  "name": "Shonen Jump Championship 2007 Prize Card A",
+  "code": "SJCS",
+  "type": "Booster Pack (2007)",
+  "date": "27-01-2007",
+  "image": "https://ygoprodeck.com/pics_sets/SJCS.jpg",
+  "pull_type": "distribution",
+  "distribution": "battles_of_legend__armageddon",
+  "cards": [
+    {
+      "id": 57728570,
+      "code": "SJCS-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 75500286,
+      "code": "SJCS-EN005",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 78700060,
+      "code": "SJCS-EN006",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 88643579,
+      "code": "SJCS-EN007",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "id": 1036974,
+  "name": "Misfortune",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Select 1 face-up monster your opponent controls. Inflict damage to your opponent equal to half that monster's original ATK. Your monsters cannot attack this turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/1036974.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

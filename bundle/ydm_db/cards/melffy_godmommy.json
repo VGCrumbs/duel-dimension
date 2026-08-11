@@ -1,0 +1,20 @@
+{
+  "id": 5833929,
+  "name": "Melffy Godmommy",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "3+ Level 2 Beast monsters\r\nOnce per turn, you can also Xyz Summon \"Melffy Godmommy\" by using \"Melffy Mommy\" you control (transfer its materials). If this card is Special Summoned: You can add 1 \"Melffy\" Spell/Trap from your Deck or GY to your hand. Gains ATK equal to the combined ATK and DEF of \"Melffy\" monsters attached to it. You can detach 5 materials from this card; return all cards your opponent controls to the hand.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/5833929.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 0,
+  "species": "Beast",
+  "monster_type": "Xyz",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2000,
+  "rank": 2
+}

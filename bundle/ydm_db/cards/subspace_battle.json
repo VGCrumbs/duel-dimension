@@ -1,0 +1,12 @@
+{
+  "id": 89693655,
+  "name": "Subspace Battle",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Apply the following effect, 3 times, in sequence.\r\n● Each player reveals 1 monster from their Deck that does not have ? ATK. Add the monster with the higher ATK to the hand of the player that revealed it, also destroy the monster with the lower ATK and inflict 500 damage to the player that revealed it. If tied, shuffle those monsters into the Decks.\r\nFor the rest of this turn, neither player can activate the effects of monsters with any of their revealed monsters' names. You can only activate 1 \"Subspace Battle\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/89693655.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

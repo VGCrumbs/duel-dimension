@@ -1,0 +1,21 @@
+{
+  "id": 95174353,
+  "name": "Ameba",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When the control of this face-up card on the field shifts to your opponent, inflict 2000 points of damage to your opponent's Life Points. This effect can only be used once as long as this card remains face-up on the field.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/95174353.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WATER",
+  "atk": 300,
+  "species": "Aqua",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 350,
+  "level": 1,
+  "is_tuner": false
+}

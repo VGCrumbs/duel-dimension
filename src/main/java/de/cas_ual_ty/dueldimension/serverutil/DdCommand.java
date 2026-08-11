@@ -30,9 +30,50 @@ public class DdCommand
                 de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime.Paths.defaults();
         String status = de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime.status(paths);
         context.getSource().sendSuccess(() -> Component.literal("Rules engine: " + status), false);
+
+        // WHICH engine, not just whether there is one. Neither the card scripts
+        // nor cards.cdb carries a version of its own, so "duels work" and "duels
+        // are being judged by rules from a year ago" look identical from in
+        // game. These four lines are the only way to tell them apart -- and the
+        // first thing to ask for when a card behaves unexpectedly.
+        context.getSource().sendSuccess(() -> Component.literal("  scripts: "
+            + paths.scriptsDir().toAbsolutePath()), false);
+        context.getSource().sendSuccess(() -> Component.literal("  database: "
+            + paths.cdb().toAbsolutePath()), false);
+        context.getSource().sendSuccess(() -> Component.literal("  core: "
+            + paths.library().toAbsolutePath()), false);
+
+        String version = de.cas_ual_ty.dueldimension.ocg.session.EngineBundle.version();
+        String bundled = version == null ? "none bundled with this build"
+            : version + " (" + de.cas_ual_ty.dueldimension.ocg.session.EngineBundle.outcome() + ")";
+        context.getSource().sendSuccess(() -> Component.literal("  bundle: " + bundled), false);
         return Command.SINGLE_SUCCESS;
     }
     
+    /**
+     * Whether the card database is actually there.
+     * <p>
+     * The counterpart to {@code /dueldimension engine}: a server admin looking
+     * at a world full of unknown cards needs somewhere to ask what happened
+     * that is not the log file of a boot that may have been days ago.
+     */
+    private static int databaseStatus(CommandContext<CommandSourceStack> context)
+    {
+        String problem = DdDatabase.problem();
+        if(problem == null)
+        {
+            context.getSource().sendSuccess(() -> Component.literal("Card database: "
+                + DdDatabase.cardCount() + " cards from "
+                + DuelDimension.mainFolder.getAbsolutePath()), false);
+            return Command.SINGLE_SUCCESS;
+        }
+        context.getSource().sendFailure(Component.literal("Card database unavailable: " + problem
+            + ". Expected at " + DuelDimension.mainFolder.getAbsolutePath()
+            + "; it is downloaded automatically from " + DuelDimension.dbSourceUrl
+            + " on start."));
+        return 0;
+    }
+
     private static int testDuel(CommandContext<CommandSourceStack> context)
     {
         String error = de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels
@@ -173,6 +214,9 @@ public class DdCommand
                                 .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                                 .executes((context) -> DdCommand.testDuel(context))
                         )
+                )
+                .then(Commands.literal("database")
+                        .executes((context) -> DdCommand.databaseStatus(context))
                 )
                 .then(Commands.literal("preload")
                         .executes((context) -> DdCommand.preload(context, true))

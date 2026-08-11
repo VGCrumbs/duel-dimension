@@ -1,0 +1,20 @@
+{
+  "id": 4965193,
+  "name": "Chasma, Dragon Ruler of Auroras",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2 Level 7 Dragon monsters\r\n(Quick Effect): You can send 1 Level 7 \"Dragon Ruler\" monster from your Deck to the GY and detach 1 material from this card; this effect becomes that sent monster's effect that discards itself to activate. If this card is destroyed by battle, or if this card in its owner's possession is destroyed by an opponent's card effect: You can Special Summon 1 Level 7 \"Dragon Ruler\" monster from your GY or banishment. You can only use each effect of \"Chasma, Dragon Ruler of Auroras\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/4965193.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 3000,
+  "species": "Dragon",
+  "monster_type": "Xyz",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1600,
+  "rank": 7
+}

@@ -1,0 +1,21 @@
+{
+  "id": 23219323,
+  "name": "Junk Warrior/Assault Mode",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Cannot be Normal Summoned/Set. Must be Special Summoned with \"Assault Mode Activate\". Gains 1000 ATK for each \"/Assault Mode\" monster you control, also if this card battles a monster, any battle damage it inflicts to your opponent is doubled. Unaffected by your opponent's activated monster effects. If this card is destroyed: You can target 1 \"Junk Warrior\" in your GY; return it to the Extra Deck, then you can Special Summon it (this is treated as a Synchro Summon).",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/23219323.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2800,
+  "species": "Warrior",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1800,
+  "level": 7,
+  "is_tuner": false
+}

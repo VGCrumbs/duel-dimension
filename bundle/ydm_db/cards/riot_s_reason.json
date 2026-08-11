@@ -1,0 +1,12 @@
+{
+  "id": 51612489,
+  "name": "Riot's Reason",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Target 1 face-down Defense Position monster on the field; return it to the hand, then the player whose card was added to their hand can Special Summon 1 monster from their hand in face-down Defense Position. When an opponent's monster declares an attack: You can banish this card from your GY; change 1 face-down Defense Position monster on the field to face-up Attack Position. You can only use each effect of \"Riot's Reason\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/51612489.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Quick-Play"
+}

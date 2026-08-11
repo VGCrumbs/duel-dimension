@@ -1,0 +1,12 @@
+{
+  "id": 69299029,
+  "name": "Treasures of the Kings",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When this card is activated: You can Set 1 \"Apophis\" Trap from your Deck. This card's name becomes \"Temple of the Kings\" while in the Field Zone. Once per turn, if you have 2 or more Set cards on your field, or a Trap in your GY: You can add 1 monster that mentions \"Temple of the Kings\" from your Deck to your hand. You can only activate 1 \"Treasures of the Kings\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/69299029.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Field"
+}

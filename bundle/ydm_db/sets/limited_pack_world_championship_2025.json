@@ -1,0 +1,269 @@
+{
+  "name": "Limited Pack World Championship 2025",
+  "code": "25LP",
+  "type": "Booster Pack (2025)",
+  "date": "30-08-2025",
+  "image": "https://ygoprodeck.com/pics_sets/25LP.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 33396948,
+      "code": "25LP-EN000",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 33396948,
+      "code": "25LP-EN000",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33396948,
+      "code": "25LP-EN000",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 72270339,
+      "code": "25LP-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 72270339,
+      "code": "25LP-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90241276,
+      "code": "25LP-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90241276,
+      "code": "25LP-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 64182380,
+      "code": "25LP-EN003",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 64182380,
+      "code": "25LP-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90681088,
+      "code": "25LP-EN004",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90681088,
+      "code": "25LP-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 65261141,
+      "code": "25LP-EN005",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 65261141,
+      "code": "25LP-EN005",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56208713,
+      "code": "25LP-EN006",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56208713,
+      "code": "25LP-EN006",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 18969888,
+      "code": "25LP-EN007",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 18969888,
+      "code": "25LP-EN007",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 66730191,
+      "code": "25LP-EN008",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 66730191,
+      "code": "25LP-EN008",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14529511,
+      "code": "25LP-EN009",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14529511,
+      "code": "25LP-EN009",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46396218,
+      "code": "25LP-EN010",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46396218,
+      "code": "25LP-EN010",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 73391962,
+      "code": "25LP-EN011",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 73391962,
+      "code": "25LP-EN011",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60517697,
+      "code": "25LP-EN012",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60517697,
+      "code": "25LP-EN012",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69385019,
+      "code": "25LP-EN013",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69385019,
+      "code": "25LP-EN013",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34909328,
+      "code": "25LP-EN014",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34909328,
+      "code": "25LP-EN014",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6798031,
+      "code": "25LP-EN015",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6798031,
+      "code": "25LP-EN015",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21848500,
+      "code": "25LP-EN016",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21848500,
+      "code": "25LP-EN016",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 20726052,
+      "code": "25LP-EN017",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 20726052,
+      "code": "25LP-EN017",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17947697,
+      "code": "25LP-EN018",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17947697,
+      "code": "25LP-EN018",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11443677,
+      "code": "25LP-EN019",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11443677,
+      "code": "25LP-EN019",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89604813,
+      "code": "25LP-EN020",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89604813,
+      "code": "25LP-EN020",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

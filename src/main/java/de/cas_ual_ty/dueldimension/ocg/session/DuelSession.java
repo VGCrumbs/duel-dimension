@@ -60,12 +60,29 @@ public class DuelSession
          * player sees their own side nearest.
          */
         record Board(de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot seat0,
-            de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot seat1) implements Event
+            de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot seat1,
+            java.util.List<de.cas_ual_ty.dueldimension.ocg.query.CardView> deck0,
+            java.util.List<de.cas_ual_ty.dueldimension.ocg.query.CardView> deck1) implements Event
         {
             /** The view belonging to one seat. */
             public de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot forSeat(int seat)
             {
                 return seat == 0 ? seat0 : seat1;
+            }
+
+            /**
+             * That seat's OWN main deck, already de-ordered by its observer.
+             * <p>
+             * It rides the board event rather than an event of its own so the
+             * list and the {@code deckCount} drawn on the pile's label can never
+             * come from two different instants — a draw landing between two
+             * separate queries would put a visible contradiction on screen.
+             * Server-side only: nothing on the wire carries this, and the
+             * opposite seat's list is never given to a player.
+             */
+            public java.util.List<de.cas_ual_ty.dueldimension.ocg.query.CardView> deckForSeat(int seat)
+            {
+                return seat == 0 ? deck0 : deck1;
             }
         }
 
@@ -398,7 +415,19 @@ public class DuelSession
                     ? de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot.of(
                         other.board.observe(), turn, phase, turnPlayer == 1 ? 0 : 1)
                     : mine;
-            boardTap.accept(new Event.Board(mine, theirs));
+            // Each seat's own deck, from that seat's own observer and on the
+            // duel thread -- the only thread allowed near the core. The lists
+            // arrive already de-ordered (see BoardObserver.ownDeck), so what is
+            // cached here says WHICH cards are in a deck and nothing about
+            // where any of them sits.
+            java.util.List<de.cas_ual_ty.dueldimension.ocg.query.CardView> myDeck = board.ownDeck();
+            java.util.List<de.cas_ual_ty.dueldimension.ocg.query.CardView> theirDeck =
+                other != null && other.board != null ? other.board.ownDeck() : java.util.List.of();
+            // Same seat convention as the two snapshots beside them: this relay
+            // is the one installed on seat 0, so `mine` and `myDeck` are seat
+            // 0's. Pairing them in one constructor call is what keeps a deck
+            // from ever drifting away from the board it was captured with.
+            boardTap.accept(new Event.Board(mine, theirs, myDeck, theirDeck));
         }
 
         @Override

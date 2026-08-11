@@ -1,0 +1,12 @@
+{
+  "id": 94467314,
+  "name": "Rain of Frogs",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you control an Aqua monster with 2000 or more ATK: Send all monsters on the field to the GY, except Aqua monsters. If this Set card is destroyed by card effect: You can Set this card. You can only use each effect of \"Rain of Frogs\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/94467314.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

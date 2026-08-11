@@ -1,0 +1,101 @@
+{
+  "name": "McDonald's Promotional Cards",
+  "code": "MP1",
+  "type": "Booster Pack (2002)",
+  "date": "20-12-2002",
+  "image": "https://ygoprodeck.com/pics_sets/MP1.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 32012841,
+      "code": "MP1-001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38999506,
+      "code": "MP1-002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67959180,
+      "code": "MP1-003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68638985,
+      "code": "MP1-004",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 71280811,
+      "code": "MP1-005",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44073668,
+      "code": "MP1-006",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 71068263,
+      "code": "MP1-007",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 7562372,
+      "code": "MP1-008",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 70345785,
+      "code": "MP1-009",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 33734439,
+      "code": "MP1-010",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 5628232,
+      "code": "MP1-011",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 68401546,
+      "code": "MP1-012",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 48649353,
+      "code": "MP1-013",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 72929454,
+      "code": "MP1-014",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 45895206,
+      "code": "MP1-015",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "id": 91284003,
+  "name": "Argostars - Swift Capane",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "While this card is face-up in the Spell & Trap Zone, Warrior monsters you control cannot be destroyed by battle. Once per turn, if a Continuous Trap is in a Monster Zone: You can Special Summon this card as an Effect Monster (Warrior/LIGHT/Level 4/ATK 1800/DEF 1800) with the following effect (this card is also still a Trap), then if you have a banished \"Argostars\" monster, you gain 500 LP.\r\n● Once per turn (Quick Effect): You can place this card face-up in your Spell & Trap Zone.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/91284003.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Continuous"
+}

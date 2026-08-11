@@ -1,0 +1,23 @@
+{
+  "name": "Yu-Gi-Oh! 3D Bonds Beyond Time Theater distribution card",
+  "code": "MOV2",
+  "type": "Booster Pack (2011)",
+  "date": "22-02-2011",
+  "image": "https://ygoprodeck.com/pics_sets/MOV2.jpg",
+  "pull_type": "distribution",
+  "distribution": "ots_tournament_pack",
+  "cards": [
+    {
+      "id": 55343236,
+      "code": "MOV2-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 55343236,
+      "code": "MOV2-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

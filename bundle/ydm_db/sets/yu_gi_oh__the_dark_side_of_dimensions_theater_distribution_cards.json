@@ -1,0 +1,23 @@
+{
+  "name": "Yu-Gi-Oh! The Dark Side of Dimensions Theater distribution cards",
+  "code": "MVPC",
+  "type": "Booster Pack (2017)",
+  "date": "27-01-2017",
+  "image": "https://ygoprodeck.com/pics_sets/MVPC.jpg",
+  "pull_type": "distribution",
+  "distribution": "premium_gold__infinite_gold",
+  "cards": [
+    {
+      "id": 10000000,
+      "code": "MVPC-EN001",
+      "rarity": "Gold Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10000000,
+      "code": "MVPC-EN001",
+      "rarity": "Gold Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

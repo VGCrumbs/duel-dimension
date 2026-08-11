@@ -1,0 +1,12 @@
+{
+  "id": 33950246,
+  "name": "Royal Command",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Flip monsters' effects cannot be activated, also their effects are negated.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/33950246.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Continuous"
+}

@@ -1,0 +1,12 @@
+{
+  "id": 27285068,
+  "name": "Theorealize Liberation",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you control \"Medius the Pure\": Add to your hand or Special Summon 1 monster with 300 ATK/200 DEF from your Deck. During your Main Phase: You can banish this card from your GY, then target 1 face-up monster you control; it is treated as a Tuner this turn. You can only use each effect of \"Theorealize Liberation\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/27285068.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Quick-Play"
+}

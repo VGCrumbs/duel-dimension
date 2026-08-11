@@ -1,0 +1,12 @@
+{
+  "id": 54399598,
+  "name": "Fleeting Flower of the Magician",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Target 1 face-up Spell/Trap your opponent controls, or 1 Spell/Trap you control; destroy it, then if you targeted a card you control, you can apply 1 of these effects.\r\n● Place 1 monster from your GY in your Spell & Trap Zone as a face-up Continuous Spell.\r\n● Add 1 Equip or Continuous Spell from your GY to your hand.\r\nYou can only activate 1 \"Fleeting Flower of the Magician\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/54399598.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Quick-Play"
+}

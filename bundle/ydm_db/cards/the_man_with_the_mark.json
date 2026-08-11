@@ -1,0 +1,21 @@
+{
+  "id": 97522863,
+  "name": "The Man with the Mark",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is Normal or Special Summoned: You can take 1 \"Temple of the Kings\", or 1 Spell/Trap that mentions it, from your Deck and either add it to your hand or send it to the GY. You can only use this effect of \"The Man with the Mark\" once per turn. While you control \"Temple of the Kings\", this card and \"Apophis\" monsters you control cannot be destroyed by battle or card effects. \"Temple of the Kings\" you control cannot be destroyed by card effects.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/97522863.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 1000,
+  "species": "Spellcaster",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1000,
+  "level": 4,
+  "is_tuner": false
+}

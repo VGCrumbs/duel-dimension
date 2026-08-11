@@ -1,0 +1,185 @@
+{
+  "name": "Speed Duel Tournament Pack 4",
+  "code": "STP4",
+  "type": "Tournament Pack",
+  "date": "29-09-2022",
+  "image": "https://ygoprodeck.com/pics_sets/STP4.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 97017120,
+      "code": "STP4-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 45141844,
+      "code": "STP4-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 99789342,
+      "code": "STP4-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31036355,
+      "code": "STP4-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 15800838,
+      "code": "STP4-EN005",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90876561,
+      "code": "STP4-EN006",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4335645,
+      "code": "STP4-EN007",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 71413901,
+      "code": "STP4-EN008",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30492798,
+      "code": "STP4-EN009",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 49064413,
+      "code": "STP4-EN010",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95286165,
+      "code": "STP4-EN011",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13048472,
+      "code": "STP4-EN012",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4740489,
+      "code": "STP4-EN013",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81210420,
+      "code": "STP4-EN014",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 39778366,
+      "code": "STP4-EN015",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 28933734,
+      "code": "STP4-EN016",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 39507162,
+      "code": "STP4-EN017",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 37721209,
+      "code": "STP4-EN018",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 57046845,
+      "code": "STP4-EN019",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 48411996,
+      "code": "STP4-EN020",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 16111820,
+      "code": "STP4-EN021",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 19801646,
+      "code": "STP4-EN022",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 71044499,
+      "code": "STP4-EN023",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 2204140,
+      "code": "STP4-EN024",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 23265313,
+      "code": "STP4-EN025",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 37390589,
+      "code": "STP4-EN026",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 83133491,
+      "code": "STP4-EN027",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 82382815,
+      "code": "STP4-EN028",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 89208725,
+      "code": "STP4-EN029",
+      "rarity": "Common",
+      "image_index": 0
+    }
+  ]
+}

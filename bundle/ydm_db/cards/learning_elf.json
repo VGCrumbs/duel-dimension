@@ -1,0 +1,21 @@
+{
+  "id": 32126000,
+  "name": "Learning Elf",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is Normal or Special Summoned: You can Set 1 Trap from your Deck with an effect that equips itself to a monster. If this card is sent from the field to the GY: You can draw 1 card. You can only use each effect of \"Learning Elf\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/32126000.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 1400,
+  "species": "Spellcaster",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1500,
+  "level": 3,
+  "is_tuner": false
+}

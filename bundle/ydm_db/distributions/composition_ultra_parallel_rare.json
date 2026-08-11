@@ -1,0 +1,16 @@
+{
+  "name": "composition_ultra_parallel_rare",
+  "pulls": [
+    {
+      "weight": 6,
+      "entries": [
+        {
+          "count": 1,
+          "rarities": [
+            "Ultra Parallel Rare"
+          ]
+        }
+      ]
+    }
+  ]
+}

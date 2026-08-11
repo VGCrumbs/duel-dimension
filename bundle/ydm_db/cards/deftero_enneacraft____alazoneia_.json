@@ -1,0 +1,24 @@
+{
+  "id": 92171126,
+  "name": "Deftero Enneacraft - \"alazoneIA\"",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "[ Pendulum Effect ] \nEach time a monster(s) is flipped face-up, place 1 E.C. Counter on this card. You can pay 900 LP; reveal 3 \"Enneacraft\" cards from your Deck, your opponent randomly picks 1 for you to add to your hand, shuffle the rest into the Deck. You can only use this effect of \"Deftero Enneacraft - \"alazoneIA\"\" once per turn.\n\n[ Monster Effect ] \nFLIP: Banish (face-up) 1 random card from your opponent's hand, until the End Phase.\r\nWhen your opponent activates a card or effect that includes an effect that adds a card(s) from the Deck to the hand (Quick Effect): You can change this face-down card to face-up Defense Position; add 1 \"Enneacraft\" card from your Deck to your hand. You can reveal this card in your hand; Special Summon 1 monster from your hand in face-down Defense Position. You cannot Special Summon the turn you activate this effect, except in face-down Defense Position.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/92171126.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 100,
+  "species": "Machine",
+  "monster_type": "",
+  "is_pendulum": true,
+  "ability": "Flip",
+  "has_effect": true,
+  "pendulum_text": "Each time a monster(s) is flipped face-up, place 1 E.C. Counter on this card. You can pay 900 LP; reveal 3 \"Enneacraft\" cards from your Deck, your opponent randomly picks 1 for you to add to your hand, shuffle the rest into the Deck. You can only use this effect of \"Deftero Enneacraft - \"alazoneIA\"\" once per turn.",
+  "pendulum_scale_left_blue": 0,
+  "pendulum_scale_right_red": 0,
+  "def": 1000,
+  "level": 1,
+  "is_tuner": false
+}

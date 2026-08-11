@@ -1,0 +1,12 @@
+{
+  "id": 63679166,
+  "name": "Throne of the Archfiends",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Ritual Summon 1 \"Archfiend\" Ritual Monster from your hand, face-up Extra Deck, GY, or banishment, by Tributing monsters from your hand or field whose total Levels equal or exceed its Level. During the Standby Phase, if you have \"Archfiend Emperor\" in your face-up Extra Deck: You can add this card from your GY or banishment to your hand. You can only use this effect of \"Throne of the Archfiends\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/63679166.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Ritual"
+}

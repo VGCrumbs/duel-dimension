@@ -1,0 +1,21 @@
+{
+  "id": 47247792,
+  "name": "Conduction Warrior Plasma Magnum",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2 EARTH Rock monsters\r\nFace-up monsters on the field become EARTH. You can only use each of the following effects of \"Conduction Warrior Plasma Magnum\" once per turn. If this card is Fusion Summoned: You can add 1 \"Magnet\" Normal, Quick-Play, or Field Spell from your Deck to your hand. You can send 1 Level 8 \"Magna Warrior\" monster from your Deck to the GY; immediately after this effect resolves, Normal Summon 1 Level 4 or lower \"Magnet Warrior\" monster.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/47247792.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 2300,
+  "species": "Rock",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2800,
+  "level": 7,
+  "is_tuner": false
+}

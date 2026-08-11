@@ -2,6 +2,7 @@ package de.cas_ual_ty.dueldimension.duel.profile;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import de.cas_ual_ty.dueldimension.card.CardSleevesType;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -73,6 +74,94 @@ public final class DeckList
     private final List<Integer> extra = new ArrayList<>();
     private final List<Integer> side = new ArrayList<>();
     private final Origin origin;
+    /**
+     * The sleeve this deck is dressed in.
+     * <p>
+     * On the deck rather than on the player, because that is the choice being
+     * made: a duellist runs a burn deck in red and a dragon deck in gold, and a
+     * single per-player sleeve would make them pick again every time they swap
+     * decks. Held as the enum, stored as its name — see {@link Sleeves}.
+     */
+    private CardSleevesType sleeve = Sleeves.DEFAULT;
+
+    /**
+     * Which artwork each copy wears, one entry per position in the list beside
+     * it. 0 is the printed art, which is what an absent or short list means.
+     * <p>
+     * <b>Per POSITION, not per card.</b> Three Dark Magicians can carry three
+     * different arts, which is the whole point — a map keyed by passcode could
+     * not say that.
+     * <p>
+     * <b>And therefore it cannot be carried over on save the way the sleeve is.</b>
+     * {@code DeckEdits.saveDeck} rebuilds a deck from the payload, and the sleeve
+     * survives by being copied off the old object; that trick is wrong here,
+     * because removing one card shifts every position after it and the old
+     * indices would land on the wrong copies. Arts have to travel WITH the lists
+     * that give them meaning.
+     */
+    private final List<Integer> mainArts = new ArrayList<>();
+    private final List<Integer> extraArts = new ArrayList<>();
+    private final List<Integer> sideArts = new ArrayList<>();
+
+    /** The artwork the copy at this position wears; 0 when nothing was chosen. */
+    public int artAt(List<Integer> part, int index)
+    {
+        List<Integer> arts = artsFor(part);
+        return index >= 0 && index < arts.size() ? arts.get(index) : 0;
+    }
+
+    /** The art list belonging to one of this deck's three parts. */
+    public List<Integer> artsFor(List<Integer> part)
+    {
+        if(part == extra)
+        {
+            return extraArts;
+        }
+        if(part == side)
+        {
+            return sideArts;
+        }
+        return mainArts;
+    }
+
+    public List<Integer> mainArts()
+    {
+        return mainArts;
+    }
+
+    public List<Integer> extraArts()
+    {
+        return extraArts;
+    }
+
+    public List<Integer> sideArts()
+    {
+        return sideArts;
+    }
+
+    /**
+     * Records the art for one position, padding with the printed art so the
+     * list always lines up with the cards it describes.
+     */
+    public void setArtAt(List<Integer> part, int index, int art)
+    {
+        List<Integer> arts = artsFor(part);
+        while(arts.size() <= index)
+        {
+            arts.add(0);
+        }
+        arts.set(index, art);
+    }
+
+    public void setArts(List<Integer> mainArts, List<Integer> extraArts, List<Integer> sideArts)
+    {
+        this.mainArts.clear();
+        this.mainArts.addAll(mainArts);
+        this.extraArts.clear();
+        this.extraArts.addAll(extraArts);
+        this.sideArts.clear();
+        this.sideArts.addAll(sideArts);
+    }
 
     public DeckList(String name, Origin origin)
     {
@@ -112,6 +201,25 @@ public final class DeckList
     public void publish(boolean asRecipe)
     {
         published = asRecipe;
+    }
+
+    public CardSleevesType sleeve()
+    {
+        return sleeve;
+    }
+
+    /**
+     * Dresses the deck.
+     * <p>
+     * Deliberately does <em>not</em> check ownership: a deck knows nothing about
+     * who owns it, and a check here would be one a caller could skip by writing
+     * the field some other way. Entitlement is the profile's to answer and
+     * {@link DeckEdits#setDeckSleeve} is the only place a client's request
+     * reaches this.
+     */
+    public void setSleeve(CardSleevesType newSleeve)
+    {
+        sleeve = newSleeve == null ? Sleeves.DEFAULT : newSleeve;
     }
 
     public List<Integer> main()
@@ -202,9 +310,26 @@ public final class DeckList
         return main.size() + extra.size() + side.size();
     }
 
+    /**
+     * The same deck under a new name.
+     * <p>
+     * Carries the sleeve, because a copy of a deck is that deck: duplicating
+     * "Burn" should not hand back a copy in the plain back. {@code published} is
+     * the one thing left behind on purpose — offering the original as a recipe
+     * is not a statement about every deck ever built from it, which is why
+     * {@link DeckEdits#copyRecipe} says so explicitly.
+     */
     public DeckList copy(String newName, Origin newOrigin)
     {
-        return new DeckList(newName, newOrigin, main, extra, side);
+        DeckList copy = new DeckList(newName, newOrigin, main, extra, side);
+        copy.sleeve = sleeve;
+        // The artworks come too, and this line is load-bearing far beyond
+        // duplicating a deck: DuelProfile.snapshot() copies every deck through
+        // here, and the SNAPSHOT is what gets persisted. Leaving arts out did
+        // not lose them when a deck was copied -- it lost them on every save,
+        // because the object written to disk was a copy that never had them.
+        copy.setArts(mainArts, extraArts, sideArts);
+        return copy;
     }
 
     /**
@@ -219,6 +344,12 @@ public final class DeckList
      * that build reads here unchanged. {@code Recipe} and the three card lists
      * are optional for the same reason they were conditional there: a deck
      * saved before recipes existed simply is not one.
+     * <p>
+     * {@code Sleeve} is optional for exactly that reason as well. A deck saved
+     * before sleeves existed has no such field, so the optional default applies
+     * and it loads dressed in the plain card back — which is what it was being
+     * drawn in anyway. Nothing else about that deck is touched, and saving it
+     * again simply writes the field for the first time.
      */
     public static final Codec<DeckList> CODEC = RecordCodecBuilder.create(instance ->
         instance.group(
@@ -227,14 +358,23 @@ public final class DeckList
             Codec.BOOL.optionalFieldOf("Recipe", false).forGetter(deck -> deck.published),
             Codec.INT.listOf().optionalFieldOf("Main", List.of()).forGetter(DeckList::main),
             Codec.INT.listOf().optionalFieldOf("Extra", List.of()).forGetter(DeckList::extra),
-            Codec.INT.listOf().optionalFieldOf("Side", List.of()).forGetter(DeckList::side)
+            Codec.INT.listOf().optionalFieldOf("Side", List.of()).forGetter(DeckList::side),
+            Sleeves.CODEC.optionalFieldOf("Sleeve", Sleeves.DEFAULT).forGetter(DeckList::sleeve),
+            // Optional and empty-by-default, so every deck saved before this
+            // existed loads with every copy on its printed art.
+            Codec.INT.listOf().optionalFieldOf("MainArts", List.of()).forGetter(DeckList::mainArts),
+            Codec.INT.listOf().optionalFieldOf("ExtraArts", List.of()).forGetter(DeckList::extraArts),
+            Codec.INT.listOf().optionalFieldOf("SideArts", List.of()).forGetter(DeckList::sideArts)
         ).apply(instance, DeckList::of));
 
     private static DeckList of(String name, Origin origin, boolean published,
-        List<Integer> main, List<Integer> extra, List<Integer> side)
+        List<Integer> main, List<Integer> extra, List<Integer> side, CardSleevesType sleeve,
+        List<Integer> mainArts, List<Integer> extraArts, List<Integer> sideArts)
     {
         DeckList deck = new DeckList(name, origin, main, extra, side);
         deck.published = published;
+        deck.sleeve = sleeve;
+        deck.setArts(mainArts, extraArts, sideArts);
         return deck;
     }
 

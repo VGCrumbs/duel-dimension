@@ -1,0 +1,12 @@
+{
+  "id": 66236707,
+  "name": "Gordian Slicer",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "This card's activation and effect cannot be negated. At the start of your Main Phase 1 or 2: Target any number of face-up cards on the field; for each targeted card, banish 1 card from your hand, or 6 cards from your Extra Deck, face-down, then return those targeted cards to the hand.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/66236707.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

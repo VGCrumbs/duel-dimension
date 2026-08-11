@@ -82,6 +82,15 @@ public class DeckEditorScreen extends Screen
     private Properties carried;
     private DeckList.Part carriedFrom;
     private int carriedIndex = -1;
+    /**
+     * The artwork the carried copy is wearing.
+     * <p>
+     * Carried on the cursor with the card, because picking a copy up removes it
+     * from the deck and putting it down adds it back: without this the art
+     * would be dropped by the round trip, and dragging a dressed copy one slot
+     * to the left would quietly return it to its printed art.
+     */
+    private int carriedArt;
 
     /** Why the last attempted add was refused; cleared on the next action. */
     private String refusal = "";
@@ -142,6 +151,23 @@ public class DeckEditorScreen extends Screen
     private int menuX;
     private int menuY;
 
+    /**
+     * The artwork picker: which copy is being dressed, and where it lives.
+     * <p>
+     * An OVERLAY on this screen rather than a screen of its own, and that is
+     * not a preference. Minecraft does not draw the screen a new one opened
+     * over, so a second {@link Screen} would dim the world and leave the editor
+     * invisible behind it — and the one call that does show what is behind,
+     * {@code extractBackground}, blurs in 26.2, once per frame, which took the
+     * client down the last time two screens asked for it in the same frame.
+     * Drawn inside this screen the editor keeps rendering and a scrim dims it.
+     */
+    private Properties altCard;
+    private DeckList.Part altPart;
+    private int altIndex = -1;
+    /** Which column of the artwork row is leftmost, when they do not all fit. */
+    private int altScroll;
+
     /** How far the hovered card's description is scrolled, and whose it is. */
     private int previewScroll;
     private long previewCard = -1;
@@ -195,6 +221,17 @@ public class DeckEditorScreen extends Screen
     private void rebuildControls()
     {
         clearWidgets();
+
+        if(altCard != null)
+        {
+            // Its Back button is the only widget while it is up, so a click
+            // cannot reach the editor it is drawn over -- the same lock-out the
+            // hub's delete confirmation uses. Adding the search box would not
+            // be harmless: it is a child, so overControl finds it and a click
+            // would focus it straight through the scrim.
+            buildAltArts();
+            return;
+        }
         addWidget(search);
 
         Layout layout = Layout.of(LAYOUT);
@@ -302,6 +339,9 @@ public class DeckEditorScreen extends Screen
         Component sortLabel = Component.literal("Sort Deck");
         Component importLabel = Component.literal("Import");
         Component exportLabel = Component.literal("Export");
+        // No label: the swatch IS the label. It already shows what the deck is
+        // wearing, and the word beside it only repeated what the picture said.
+        Component sleevesLabel = Component.empty();
         int rowX = leftX + pad;
 
         int sortDeckW = buttonWidth(sortLabel);
@@ -321,12 +361,24 @@ public class DeckEditorScreen extends Screen
             importLabel, pressed -> importDeck()));
         rowX += importW + BUTTON_GAP;
 
+        int exportW = buttonWidth(exportLabel);
         addRenderableWidget(new HubWidgets.TextureButton(rowX, controlsY,
-            buttonWidth(exportLabel), 20, exportLabel, pressed ->
+            exportW, 20, exportLabel, pressed ->
         {
             DeckFiles.Result result = DeckFiles.export(EditorState.deck());
             refusal = result.message();
         }));
+        rowX += exportW + BUTTON_GAP;
+
+        // What the deck is printed on, on the row that acts on the deck. A
+        // sleeve belongs to a DECK exactly as its cards do -- it is stored on
+        // the deck and travels with it -- so it is chosen where the deck is
+        // worked on rather than in a settings tab beside the mat colour, which
+        // is a client preference and a different kind of thing entirely.
+        // Wide enough for the swatch it wears as well as its label.
+        addRenderableWidget(new SleeveButton(rowX, controlsY, SWATCH_ROOM + 8, 20,
+            sleevesLabel));
+
         // Named for what it does rather than for being finished with: the deck
         // is written to the server on the way out, and a player leaving an
         // editor should not have to guess whether that happened.
@@ -779,36 +831,32 @@ public class DeckEditorScreen extends Screen
             .map(value -> value.name).toList();
     }
 
+    /**
+     * Orders each part, moving each copy's artwork with it.
+     * <p>
+     * Sorted as (card, artwork) PAIRS rather than as a list of passcodes. The
+     * arts are stored one per position, so sorting the codes alone leaves every
+     * art on whichever copy happens to land in its old slot -- and since a sort
+     * moves nearly everything, a deck of three differently dressed Dark
+     * Magicians would come back wearing the artwork of whatever sorted into
+     * those three places.
+     */
     private void sortDeck()
     {
-        DeckList deck = EditorState.deck();
         for(DeckList.Part part : DeckList.Part.values())
         {
-            List<Integer> codes = deck.partFor(part);
-            List<Properties> cards = new java.util.ArrayList<>();
-            List<Integer> unknown = new java.util.ArrayList<>();
-            for(int code : codes)
+            List<EditorState.Copy> known = new java.util.ArrayList<>();
+            List<EditorState.Copy> unknown = new java.util.ArrayList<>();
+            for(EditorState.Copy copy : EditorState.copiesIn(part))
             {
-                Properties card = card(code);
-                if(card == null)
-                {
-                    unknown.add(code);
-                }
-                else
-                {
-                    cards.add(card);
-                }
+                (card(copy.code()) == null ? unknown : known).add(copy);
             }
-            List<Properties> sorted = new java.util.ArrayList<>(cards);
-            sorted.sort(DECK_ORDER);
-            codes.clear();
-            for(Properties card : sorted)
-            {
-                codes.add((int)card.getId());
-            }
+            known.sort(java.util.Comparator.comparing(
+                (EditorState.Copy copy) -> card(copy.code()), DECK_ORDER));
             // A card the database does not know still belongs to the deck, so
             // it is kept rather than dropped by the sort.
-            codes.addAll(unknown);
+            known.addAll(unknown);
+            EditorState.reorder(part, known);
         }
     }
 
@@ -1126,6 +1174,20 @@ public class DeckEditorScreen extends Screen
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
         boolean doubleClick)
     {
+        // The artwork picker before ANYTHING, the scrollbar included. That bar
+        // is tested first below and is still under the scrim, so a click on
+        // where it used to be would scrub the collection behind the picker.
+        if(altCard != null)
+        {
+            // Its Back button is the only widget there is, and it is drawn
+            // after the overlay, so it gets the click first.
+            if(overControl(event.x(), event.y()) && super.mouseClicked(event, false))
+            {
+                return true;
+            }
+            clickAltArts(event.x(), event.y(), event.button());
+            return true;
+        }
         // The scrollbar before anything else: it sits over the collection grid,
         // whose card hit test would otherwise swallow the click.
         if(event.button() == 0 && grabTrunkBar(event.x(), event.y()))
@@ -1191,10 +1253,17 @@ public class DeckEditorScreen extends Screen
                 {
                     // Shift-click in the deck sends a card back to the trunk,
                     // which is simply removing it: the trunk never lost it.
-                    cards.remove(index);
+                    // Through EditorState so the artwork list closes up behind
+                    // it; a bare cards.remove leaves every copy after this one
+                    // wearing its neighbour's art.
+                    EditorState.removeCard(part, index);
                     return true;
                 }
-                carried = card(cards.remove(index));
+                int code = cards.get(index);
+                // Read before the removal, and carried on the cursor: this copy
+                // may be wearing an artwork, and it keeps it wherever it lands.
+                carriedArt = EditorState.removeCard(part, index);
+                carried = card(code);
                 carriedFrom = part;
                 carriedIndex = index;
                 pressedOnCard = true;
@@ -1223,6 +1292,11 @@ public class DeckEditorScreen extends Screen
                     carried = picked;
                     carriedFrom = null;
                     carriedIndex = -1;
+                    // A card taken out of the collection is a new copy, so it
+                    // wears the printing the player owns -- decided here, at the
+                    // moment it comes into existence, rather than where it lands,
+                    // because the cursor has to be drawn in it on the way there.
+                    carriedArt = EditorState.defaultArtFor((int)picked.getId());
                     pressedOnCard = true;
                     pressX = mouseX;
                     pressY = mouseY;
@@ -1252,16 +1326,21 @@ public class DeckEditorScreen extends Screen
         if(carriedFrom == part)
         {
             // Moved within the same grid: it was already removed, so this is
-            // just putting it back.
-            EditorState.deck().partFor(part).add((int)held.getId());
+            // just putting it back -- in the artwork it was picked up in.
+            EditorState.addCard(part, (int)held.getId(), carriedArt);
             carriedFrom = null;
+            carriedArt = 0;
             return;
         }
-        if(!add(held, part))
+        // The carried artwork travels ACROSS grids too. This branch is what a
+        // drag from Main to Side takes, and appending on art 0 here is how a
+        // dressed copy would silently undress itself by being moved.
+        if(!add(held, part, carriedArt))
         {
             returnCarriedTo(held);
         }
         carriedFrom = null;
+        carriedArt = 0;
     }
 
     private void returnCarried()
@@ -1275,12 +1354,14 @@ public class DeckEditorScreen extends Screen
     {
         if(held != null && carriedFrom != null)
         {
-            List<Integer> cards = EditorState.deck().partFor(carriedFrom);
-            int at = Math.min(Math.max(0, carriedIndex), cards.size());
-            cards.add(at, (int)held.getId());
+            // Card and artwork put back at the same index in one call, so
+            // nothing can insert one and leave the other a place out.
+            // insertCard does the clamping this used to do here.
+            EditorState.insertCard(carriedFrom, carriedIndex, (int)held.getId(), carriedArt);
         }
         carriedFrom = null;
         carriedIndex = -1;
+        carriedArt = 0;
     }
 
     /** Menu row height and width; small, since it holds two choices. */
@@ -1307,8 +1388,11 @@ public class DeckEditorScreen extends Screen
         menuCard = target;
         menuPart = partAt(mouseX, mouseY);
         menuIndex = menuPart == null ? -1 : slotIndexAt(menuPart, mouseX, mouseY);
-        menuX = (int)mouseX;
-        menuY = (int)mouseY;
+        // Placed at the pointer, then pulled back so the whole menu is on
+        // screen: opened near the right or bottom edge it used to hang off it,
+        // and the rows that fell outside could not be read or clicked.
+        menuX = Math.max(0, Math.min((int)mouseX, width - menuWidth()));
+        menuY = Math.max(0, Math.min((int)mouseY, height - menuHeight()));
         refusal = "";
         return true;
     }
@@ -1339,8 +1423,37 @@ public class DeckEditorScreen extends Screen
         if(menuPart != null)
         {
             labels.add("-1");
+            // Only for a copy IN the deck, and only for the hundred or so cards
+            // that have more than one artwork. Artwork is stored per position,
+            // so there is no copy to dress on the collection side -- and an
+            // entry that opened a picker with one tile in it would be an entry
+            // that reads as broken.
+            if(hasAltArt(menuCard))
+            {
+                labels.add(ALT_ARTS);
+            }
         }
         return labels;
+    }
+
+    /** The one label the artwork picker is opened from. */
+    private static final String ALT_ARTS = "Alt Arts";
+
+    /**
+     * Whether a card was printed with more than one artwork.
+     * <p>
+     * Asked of {@code getImages()} and never of {@code getImageIndicesAmt()}:
+     * the array is what the database actually delivered for this card, and it
+     * is the same array {@code getImageURL} indexes to fetch one. {@code images}
+     * is null on the placeholder card, which is why the null is tested.
+     * <p>
+     * About 122 of the 13,826 cards answer true. Everything else pays one array
+     * length read and gets no marker, no menu entry and no picker.
+     */
+    static boolean hasAltArt(Properties card)
+    {
+        String[] images = card == null ? null : card.getImages();
+        return images != null && images.length > 1;
     }
 
     /** Wide enough for the widest row, whatever the rows happen to be. */
@@ -1354,9 +1467,17 @@ public class DeckEditorScreen extends Screen
         return widest + MENU_PAD * 2;
     }
 
+    /**
+     * As many rows as there are labels.
+     * <p>
+     * It used to answer 3 or 4 by hand, which meant every entry added to the
+     * menu had to be counted here as well -- and a row the box was not sized
+     * for is drawn outside it, while {@link #handleMenuClick}'s clamp files its
+     * clicks under the last row it does know about.
+     */
     private int menuRows()
     {
-        return menuPart == null ? 3 : 4;
+        return menuLabels().size();
     }
 
     private int menuHeight()
@@ -1364,6 +1485,18 @@ public class DeckEditorScreen extends Screen
         return menuRows() * MENU_ROW + MENU_EDGE * 2;
     }
 
+    /**
+     * Where a labelled row is, or -1 when the menu is not showing it.
+     * <p>
+     * Read off the list that is drawn rather than numbered here, so the rows
+     * cannot be in one order on screen and another in the click handler.
+     */
+    private int rowOf(String label)
+    {
+        return menuLabels().indexOf(label);
+    }
+
+    /** Always first, and its label says which way it will go. */
     private int favouriteRow()
     {
         return 0;
@@ -1371,18 +1504,24 @@ public class DeckEditorScreen extends Screen
 
     private int infoRow()
     {
-        return 1;
+        return rowOf("Card Info");
     }
 
     private int addRow()
     {
-        return 2;
+        return rowOf("+1");
     }
 
     /** Only present when the card clicked was one already in the deck. */
     private int removeRow()
     {
-        return menuPart == null ? -1 : 3;
+        return rowOf("-1");
+    }
+
+    /** Only present for a deck copy of a card that has alternate artwork. */
+    private int altArtsRow()
+    {
+        return rowOf(ALT_ARTS);
     }
 
     private boolean handleMenuClick(double mouseX, double mouseY)
@@ -1397,9 +1536,14 @@ public class DeckEditorScreen extends Screen
         // end belongs to the row nearest it, not to nothing.
         int row = Math.max(0, Math.min(rows - 1,
             (int)((mouseY - menuY - MENU_EDGE) / MENU_ROW)));
+        // Every row number read BEFORE the menu is closed, because they are
+        // derived from the labels and the labels are derived from what the menu
+        // is on -- which closeMenu forgets.
         int favourite = favouriteRow();
         int info = infoRow();
+        int add = addRow();
         int remove = removeRow();
+        int altArts = altArtsRow();
         Properties target = menuCard;
         DeckList.Part part = menuPart;
         int index = menuIndex;
@@ -1421,7 +1565,7 @@ public class DeckEditorScreen extends Screen
             EditorState.toggleFavourite((int)target.getId());
             return true;
         }
-        if(row == addRow())
+        if(row == add)
         {
             // Add one, into the part it belongs in.
             DeckList.Part destination = part != null ? part
@@ -1429,13 +1573,16 @@ public class DeckEditorScreen extends Screen
             add(target, destination);
             return true;
         }
+        if(row == altArts && part != null && index >= 0)
+        {
+            openAltArts(target, part, index);
+            return true;
+        }
         if(row == remove && part != null && index >= 0)
         {
-            List<Integer> cards = EditorState.deck().partFor(part);
-            if(index < cards.size())
-            {
-                cards.remove(index);
-            }
+            // The removal takes the artwork out with the card; the bare list
+            // remove this used to do left the arts a place out of step.
+            EditorState.removeCard(part, index);
         }
         return true;
     }
@@ -1477,6 +1624,280 @@ public class DeckEditorScreen extends Screen
         }
     }
 
+    // ---- the artwork picker ----
+
+    /** How much screen is left around the picker's panel. */
+    private static final int ALT_MARGIN = 6;
+    /** Never so wide that the row becomes a line to read along. */
+    private static final int ALT_MAX_WIDTH = 520;
+    private static final int ALT_PAD = 10;
+
+    /**
+     * How wide one artwork is drawn, in GUI units.
+     * <p>
+     * <b>Measured against the GUI, not the framebuffer.</b> The client runs at
+     * 1634&times;920 and {@code guiScale:0} resolves to 3 (scale 4 would leave
+     * {@code 920/4 = 230} units, under the 240 the game insists on), so a
+     * screen is {@code ceil(1634/3)} &times; {@code ceil(920/3)} =
+     * <b>545&times;307 GUI units</b>. Sizing a tile against 1634 would make it
+     * three times too large and fit two artworks on the row.
+     * <p>
+     * 48 is the largest tile at which the worst case fits in ONE row without
+     * scrolling: Dark Magician has nine artworks, and nine of them need
+     * {@code 9T + 8*GAP + 2*PAD <= 520}, so {@code T <= (520 - 84) / 9 = 48.4}.
+     * At the card's own aspect that is {@code round(48 / (480/700))} = 70 tall,
+     * and the panel comes out
+     * {@code 9*(48+8) - 8 + 20 = 516} by {@code 20 + 16 + 26 + 78 = 140} --
+     * just under half the screen's height, so the dimmed editor is still
+     * plainly there around it.
+     */
+    private static final int ALT_TILE_W = 48;
+
+    /**
+     * Space between cells. Wider than the editor's 2 because every tile wears a
+     * frame on all four sides, and at a smaller gap the neighbouring frames
+     * would touch and the row would read as one box rather than as choices.
+     */
+    private static final int ALT_GAP = 8;
+
+    /** How much of the chip behind a tile shows around its art. */
+    private static final int ALT_FRAME = 3;
+
+    /** Room above the row for the card's name. */
+    private static final int ALT_HEADER_H = 16;
+
+    /** Room below it: a 20-tall button row and 6 of air above that. */
+    private static final int ALT_FOOTER_H = 26;
+
+    // Worked out by altLayout, and read by both the drawing and the hit test so
+    // the tiles you can click are the tiles you can see.
+    private int altLeft;
+    private int altTop;
+    private int altPanelW;
+    private int altPanelH;
+    private int altTileH;
+    private int altColumns;
+    private int altGridTop;
+    private int altMaxScroll;
+
+    /** How many artworks the card being dressed was printed with. */
+    private int altCount()
+    {
+        return altCard == null ? 0 : altCard.getImages().length;
+    }
+
+    /**
+     * Sizes the picker to the artworks it has to show.
+     * <p>
+     * Whole columns and no more of them than there are artworks, so a card with
+     * two does not open a nine-wide panel with seven empty cells in it. Run
+     * before every draw and every click rather than once on opening: this
+     * screen re-derives its whole layout each frame, and a picker that
+     * remembered a size from an earlier window would be clicked in one place
+     * and drawn in another.
+     */
+    private void altLayout()
+    {
+        int arts = Math.max(1, altCount());
+        int usable = Math.min(ALT_MAX_WIDTH, width - ALT_MARGIN * 2);
+        altTileH = Math.max(8, Math.round(ALT_TILE_W / DuelTextures.CARD_ASPECT));
+        int cell = ALT_TILE_W + ALT_GAP;
+        altColumns = Math.clamp((usable - ALT_PAD * 2 + ALT_GAP) / cell, 1, arts);
+        altPanelW = altColumns * cell - ALT_GAP + ALT_PAD * 2;
+        String name = altCard == null || altCard.getName() == null ? "" : altCard.getName();
+        // 12 of air between the name and the count so they never touch.
+        int headerW = font.width(name) + 12 + font.width(altCount() + " artworks") + ALT_PAD * 2;
+        altPanelW = Math.min(usable, Math.max(altPanelW, headerW));
+        altPanelH = ALT_PAD * 2 + ALT_HEADER_H + ALT_FOOTER_H + altTileH + ALT_GAP;
+        altLeft = (width - altPanelW) / 2;
+        altTop = (height - altPanelH) / 2;
+        altGridTop = altTop + ALT_PAD + ALT_HEADER_H;
+        // Horizontal, because the grid is one row. Only reachable on a window
+        // small enough to lose columns -- at 545 units all nine fit.
+        altMaxScroll = Math.max(0, arts - altColumns);
+        altScroll = Math.clamp(altScroll, 0, altMaxScroll);
+    }
+
+    /**
+     * Whether the copy the picker was opened on is still that copy.
+     * <p>
+     * A profile sync replaces the whole deck list with what the server holds,
+     * and a deck can come back a card shorter -- at which point (part, index)
+     * names somebody else. The card is therefore checked as well as the
+     * position, and a picker that has lost its copy closes rather than dressing
+     * whatever moved into the slot.
+     */
+    private boolean altValid()
+    {
+        if(altCard == null || altPart == null || altIndex < 0)
+        {
+            return false;
+        }
+        List<Integer> cards = EditorState.deck().partFor(altPart);
+        return altIndex < cards.size() && cards.get(altIndex) == (int)altCard.getId();
+    }
+
+    /** Opens the picker on one copy, and locks the editor behind it. */
+    private void openAltArts(Properties card, DeckList.Part part, int index)
+    {
+        altCard = card;
+        altPart = part;
+        altIndex = index;
+        altScroll = 0;
+        refusal = "";
+        // Rebuilt so the editor's own controls go away and the picker's Back
+        // button is the only thing a click can reach.
+        rebuildControls();
+    }
+
+    private void closeAltArts()
+    {
+        altCard = null;
+        altPart = null;
+        altIndex = -1;
+        altScroll = 0;
+        rebuildControls();
+    }
+
+    /** The picker's one widget. */
+    private void buildAltArts()
+    {
+        altLayout();
+        addRenderableWidget(new HubWidgets.TextureButton(altLeft + ALT_PAD,
+            altTop + altPanelH - ALT_PAD - 20, 60, 20, Component.literal("Back"),
+            pressed -> closeAltArts()));
+    }
+
+    /**
+     * The artwork row, over a dimmed editor.
+     * <p>
+     * Described BEFORE {@code super.extractRenderState}, so the Back button --
+     * a widget, and therefore described by super -- lands on top of the panel
+     * rather than under it. Retained mode draws in the order it was told, so
+     * the order of these calls is what layering means here.
+     */
+    private void renderAltArts(GuiGraphicsExtractor poseStack, int mouseX, int mouseY)
+    {
+        altLayout();
+
+        // The editor's own dim, drawn a second time over the finished editor:
+        // it stays legible underneath and reads as out of reach, which is what
+        // it is. NOT extractBackground -- that blurs in 26.2, once per frame,
+        // and a second screen asking for the same blur is what crashed the
+        // client. Same decision, and the same substitute, as everywhere else.
+        poseStack.fillGradient(0, 0, width, height, 0xC0101010, 0xD0101010);
+        NineSlice.draw(poseStack, HubTextures.PANEL, altLeft, altTop, altPanelW, altPanelH);
+
+        String count = altCount() + " artworks";
+        String title = font.plainSubstrByWidth(
+            altCard.getName() == null ? "" : altCard.getName(),
+            altPanelW - ALT_PAD * 2 - font.width(count) - 12);
+        poseStack.text(font, title, altLeft + ALT_PAD, altTop + ALT_PAD, 0xFFF4D089, true);
+
+        poseStack.text(font, count, altLeft + altPanelW - ALT_PAD - font.width(count),
+            altTop + ALT_PAD, 0xFFC2C9D6, true);
+
+        // One recess behind the whole row rather than a frame per cell, as the
+        // deck grids and the sleeve picker both do.
+        NineSlice.draw(poseStack, HubTextures.PANEL_INSET, altLeft + ALT_PAD - 2, altGridTop - 2,
+            altPanelW - ALT_PAD * 2 + 4, altTileH + ALT_GAP + 4);
+
+        int worn = EditorState.artAt(altPart, altIndex);
+        for(int column = 0; column < altColumns; column++)
+        {
+            int index = column + altScroll;
+            if(index >= altCount())
+            {
+                break;
+            }
+            int x = altLeft + ALT_PAD + column * (ALT_TILE_W + ALT_GAP);
+            int y = altGridTop;
+            boolean over = mouseX >= x - ALT_FRAME && mouseX < x + ALT_TILE_W + ALT_FRAME
+                && mouseY >= y - ALT_FRAME && mouseY < y + altTileH + ALT_FRAME;
+
+            // The chip's three rows are idle, hovered and lit, which is exactly
+            // the three things a tile here has to say -- and the lit one marks
+            // what this copy is already wearing.
+            int row = index == worn ? NineSlice.SELECTED
+                : over ? NineSlice.HOVER : NineSlice.IDLE;
+            NineSlice.draw(poseStack, HubTextures.CHIP, x - ALT_FRAME, y - ALT_FRAME,
+                ALT_TILE_W + ALT_FRAME * 2, altTileH + ALT_FRAME * 2, row, 3);
+
+            // PREVIEW size, not the icon size the grids use. A 48-unit tile at
+            // guiScale 3 is 144 real pixels and the card fills only
+            // U1 - U0 = 60.2% of the square file, so a texel per pixel wants
+            // 144 / 0.602 = 240 across; the 128 icon is visibly soft at that
+            // size and the hover preview already caches the 512.
+            DdBlitUtil.blit(poseStack,
+                DuelTextures.card(altCard, (byte)index, DuelTextures.PREVIEW_CARD_SIZE),
+                x, y, ALT_TILE_W, altTileH,
+                DuelTextures.CARD_U0, DuelTextures.CARD_V0,
+                DuelTextures.CARD_U1, DuelTextures.CARD_V1, DdBlitUtil.NO_TINT);
+        }
+
+        if(altMaxScroll > 0)
+        {
+            // Under the row rather than over the last tile, so no artwork is
+            // half covered by furniture. Horizontal, because the grid is.
+            int trackW = altPanelW - ALT_PAD * 2;
+            int barY = altGridTop + altTileH + ALT_GAP - 2;
+            NineSlice.draw(poseStack, HubTextures.SCROLLBAR, altLeft + ALT_PAD, barY,
+                trackW, 4, 0, 2);
+            int thumbW = Math.max(12, trackW * altColumns / Math.max(1, altCount()));
+            int thumbX = altLeft + ALT_PAD + (trackW - thumbW) * altScroll / altMaxScroll;
+            NineSlice.draw(poseStack, HubTextures.SCROLLBAR, thumbX, barY, thumbW, 4, 1, 2);
+        }
+
+    }
+
+    /**
+     * A click while the picker is up. Everything reaches here, because the
+     * picker owns the screen while it is open.
+     */
+    private void clickAltArts(double mouseX, double mouseY, int button)
+    {
+        altLayout();
+        if(button == 0)
+        {
+            for(int column = 0; column < altColumns; column++)
+            {
+                int index = column + altScroll;
+                if(index >= altCount())
+                {
+                    break;
+                }
+                int x = altLeft + ALT_PAD + column * (ALT_TILE_W + ALT_GAP);
+                int y = altGridTop;
+                if(mouseX >= x - ALT_FRAME && mouseX < x + ALT_TILE_W + ALT_FRAME
+                    && mouseY >= y - ALT_FRAME && mouseY < y + altTileH + ALT_FRAME)
+                {
+                    if(!altValid())
+                    {
+                        closeAltArts();
+                        return;
+                    }
+                    // The copy is addressed by (part, index), which is what the
+                    // right-click recorded -- so three Dark Magicians in one
+                    // deck are three different answers to this click.
+                    EditorState.setArt(altPart, altIndex, index);
+                    // Written out now rather than on the next tick, so a player
+                    // who dresses a copy and closes the game immediately still
+                    // has it. The autosave would have caught it anyway.
+                    EditorState.flush();
+                    closeAltArts();
+                    return;
+                }
+            }
+        }
+        if(mouseX < altLeft || mouseX >= altLeft + altPanelW
+            || mouseY < altTop || mouseY >= altTop + altPanelH)
+        {
+            // Outside the panel is the same answer as Back, which is what a
+            // click off any of this screen's other pop-ups already means.
+            closeAltArts();
+        }
+    }
+
     /**
      * The part a card goes in when nobody said: extra deck monsters to the
      * extra deck, everything else to the main.
@@ -1506,7 +1927,7 @@ public class DeckEditorScreen extends Screen
         DeckLimits.Verdict verdict = roomFor(card);
         if(verdict.allowed())
         {
-            EditorState.deck().partFor(homeFor(card)).add((int)card.getId());
+            EditorState.addCard(homeFor(card), (int)card.getId());
         }
         return verdict;
     }
@@ -1518,8 +1939,20 @@ public class DeckEditorScreen extends Screen
             EditorState.banlist(), true);
     }
 
-    /** Adds a card if every rule allows it, else records why not. */
+    /**
+     * Adds a new copy if every rule allows it, dressed in the printing the
+     * player owns.
+     * <p>
+     * The shift-click route. It went in on artwork 0 unconditionally, which is
+     * one of the three places a new copy was born blind to the collection.
+     */
     private boolean add(Properties card, DeckList.Part part)
+    {
+        return add(card, part, EditorState.defaultArtFor((int)card.getId()));
+    }
+
+    /** Adds a card if every rule allows it, else records why not. */
+    private boolean add(Properties card, DeckList.Part part, int art)
     {
         DeckLimits.Verdict verdict = DeckLimits.canAddToDraft(EditorState.deck(), part,
             (int)card.getId(), EditorState.banlist());
@@ -1528,7 +1961,7 @@ public class DeckEditorScreen extends Screen
             refusal = verdict.reason();
             return false;
         }
-        EditorState.deck().partFor(part).add((int)card.getId());
+        EditorState.addCard(part, (int)card.getId(), art);
         return true;
     }
 
@@ -1541,6 +1974,12 @@ public class DeckEditorScreen extends Screen
     @Override
     public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event)
     {
+        if(altCard != null)
+        {
+            // The picker owns the screen; a release under it must not finish a
+            // scrollbar drag or drop a carried card into the editor behind.
+            return super.mouseReleased(event);
+        }
         trunkBarGrab = -1;
         double mouseX = event.x();
         double mouseY = event.y();
@@ -1579,6 +2018,14 @@ public class DeckEditorScreen extends Screen
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta)
     {
+        if(altCard != null)
+        {
+            // Along the artwork row, and nowhere else: the grids underneath are
+            // behind a scrim and must not move while they cannot be reached.
+            altLayout();
+            altScroll = Math.clamp(altScroll - (int)Math.signum(delta), 0, altMaxScroll);
+            return true;
+        }
         // Shift reads the hovered card's description; the plain wheel scrolls
         // whatever grid is under the cursor.
         //
@@ -1630,6 +2077,20 @@ public class DeckEditorScreen extends Screen
         int key = event.key();
         int scan = event.scancode();
         int modifiers = event.modifiers();
+        if(altCard != null)
+        {
+            if(key == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE)
+            {
+                // Escape answers the picker rather than leaving the editor,
+                // which is the safe reading of it while a question is up.
+                closeAltArts();
+                return true;
+            }
+            // The search box keeps its focus flag across a rebuild, so without
+            // this a keystroke would be typed into a field that is not on
+            // screen and would re-filter the collection behind the scrim.
+            return true;
+        }
         if(rename != null && rename.isFocused())
         {
             if(key == org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER
@@ -1661,6 +2122,12 @@ public class DeckEditorScreen extends Screen
     {
         char typed = (char)event.codepoint();
         int modifiers = 0;
+        if(altCard != null)
+        {
+            // As keyPressed: the fields are gone from the screen but not from
+            // their own idea of being focused.
+            return true;
+        }
         if(rename != null && rename.isFocused() && rename.charTyped(event))
         {
             return true;
@@ -1691,6 +2158,21 @@ public class DeckEditorScreen extends Screen
 
         renderDeckSide(poseStack, mouseX, mouseY);
         renderTrunkSide(poseStack, mouseX, mouseY);
+
+        // The picker's scrim and panel go down over the finished editor and
+        // BEFORE the widgets, so its own Back button -- described by super --
+        // is the one thing on top of it.
+        if(altCard != null)
+        {
+            renderAltArts(poseStack, mouseX, mouseY);
+            super.extractRenderState(poseStack, mouseX, mouseY, partialTick);
+            // Everything below this point draws over whatever super drew, so
+            // none of it may run while the picker is up: the search field, the
+            // filter drawer, the rename box, the refusal line, the hover
+            // preview and the right-click menu would each paint straight
+            // through the scrim.
+            return;
+        }
 
         super.extractRenderState(poseStack, mouseX, mouseY, partialTick);
         search.extractRenderState(poseStack, mouseX, mouseY, partialTick);
@@ -1738,7 +2220,7 @@ public class DeckEditorScreen extends Screen
         // The Z translate that lifted this above a later panel is gone:
         // retained mode draws in the order described, so ordering the
         // calls is what layering means now.
-                drawPreview(poseStack, hovered, mouseX, mouseY);
+                drawPreview(poseStack, hovered, mouseX, mouseY, artAt(mouseX, mouseY));
                 poseStack.pose().popMatrix();
             }
         }
@@ -1752,11 +2234,12 @@ public class DeckEditorScreen extends Screen
             poseStack.pose().popMatrix();
         }
 
-        // The carried card rides the cursor, as an inventory stack does.
+        // The carried card rides the cursor, as an inventory stack does, in
+        // whatever artwork it was picked up wearing.
         if(carried != null)
         {
             drawCard(poseStack, carried, mouseX - deckCardW / 2, mouseY - deckCardH / 2,
-                deckCardW, deckCardH, 1F);
+                deckCardW, deckCardH, 1F, false, carriedArt, false);
         }
     }
 
@@ -1855,6 +2338,24 @@ public class DeckEditorScreen extends Screen
     }
 
     /**
+     * The artwork the card under the cursor is wearing, or 0 over the
+     * collection -- a collection entry is a card and not a copy, so it has no
+     * artwork of its own to show.
+     */
+    private int artAt(double mouseX, double mouseY)
+    {
+        DeckList.Part part = partAt(mouseX, mouseY);
+        if(part == null)
+        {
+            return 0;
+        }
+        DeckList deck = EditorState.deck();
+        List<Integer> cards = deck.partFor(part);
+        int index = slotIndexAt(part, mouseX, mouseY);
+        return index >= 0 && index < cards.size() ? deck.artAt(cards, index) : 0;
+    }
+
+    /**
      * The preview panel, built the way the duel screen's sidebar is.
      * <p>
      * Three things matter here and all three were wrong before. The art comes
@@ -1869,7 +2370,8 @@ public class DeckEditorScreen extends Screen
      * The panel is anchored to whichever side of the cursor has room and
      * clamped to the screen, so it can never be the thing that overflows.
      */
-    private void drawPreview(GuiGraphicsExtractor poseStack, Properties card, int mouseX, int mouseY)
+    private void drawPreview(GuiGraphicsExtractor poseStack, Properties card, int mouseX,
+        int mouseY, int art)
     {
         Layout layout = Layout.of(LAYOUT);
         int artW = layout.i("preview.width", 78);
@@ -1930,8 +2432,11 @@ public class DeckEditorScreen extends Screen
         NineSlice.draw(poseStack, HubTextures.PANEL, x, y, panelW, panelH,
             NineSlice.IDLE, 1, layout.f("preview.opacity", 0.65F));
 
+        // The hovered COPY's artwork, so pointing at a dressed card shows what
+        // that card looks like rather than what its first printing did.
         DdBlitUtil.blit(poseStack,
-            DuelTextures.card(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE),
+            DuelTextures.card(card, (byte)Math.clamp(art, 0, Byte.MAX_VALUE),
+                DuelTextures.PREVIEW_CARD_SIZE),
             x + (panelW - artW) / 2, y + inner, artW, artH,
             DuelTextures.CARD_U0, DuelTextures.CARD_V0,
             DuelTextures.CARD_U1, DuelTextures.CARD_V1, DdBlitUtil.NO_TINT);
@@ -2045,8 +2550,11 @@ public class DeckEditorScreen extends Screen
                         boolean missing = !EditorState.freeMode()
                             && ordinalInDeck(deck, part, index, cards.get(index))
                                 > EditorState.trunk().countOf(cards.get(index));
+                        // The artwork is read per POSITION, so two copies of
+                        // the same card in the same grid can and do differ.
                         drawCard(poseStack, card, leftX + pad + column * cellW,
-                            top + row * (deckCardH + gap), deckCardW, deckCardH, 1F, missing);
+                            top + row * (deckCardH + gap), deckCardW, deckCardH, 1F, missing,
+                            deck.artAt(cards, index), true);
                     }
                 }
             }
@@ -2264,6 +2772,12 @@ public class DeckEditorScreen extends Screen
     public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event,
         double dragX, double dragY)
     {
+        if(altCard != null)
+        {
+            // A drag begun before the picker opened must not keep scrubbing the
+            // collection through it.
+            return true;
+        }
         if(trunkBarGrab >= 0)
         {
             dragTrunkBar(event.y());
@@ -2411,10 +2925,20 @@ public class DeckEditorScreen extends Screen
         return de.cas_ual_ty.dueldimension.DdDatabase.PROPERTIES_LIST.get((long)code);
     }
 
+    /**
+     * A tile in the collection panel.
+     * <p>
+     * Drawn in the best artwork the player owns rather than always in the
+     * printed one. A tile stands for the CARD and not for any one copy, so it
+     * shows the finest printing in the collection and goes on showing it while
+     * a deck is built -- which is why it asks for copy 0 rather than for the
+     * art the next copy added would wear.
+     */
     private void drawCard(GuiGraphicsExtractor poseStack, Properties card, int x, int y, float alpha)
     {
         drawCard(poseStack, card, x, y, trunkCardW, trunkCardH, alpha,
-            EditorState.showUnowned() && !EditorState.owns((int)card.getId()));
+            EditorState.showUnowned() && !EditorState.owns((int)card.getId()),
+            EditorState.bestArtOwned(card), false);
     }
 
     /**
@@ -2429,30 +2953,57 @@ public class DeckEditorScreen extends Screen
     private void drawCard(GuiGraphicsExtractor poseStack, Properties card, int x, int y,
         int w, int h, float alpha)
     {
-        drawCard(poseStack, card, x, y, w, h, alpha, false);
+        drawCard(poseStack, card, x, y, w, h, alpha, false, 0, false);
     }
 
     private void drawCard(GuiGraphicsExtractor poseStack, Properties card, int x, int y,
         int w, int h, float alpha, boolean halfSaturation)
+    {
+        drawCard(poseStack, card, x, y, w, h, alpha, halfSaturation, 0, false);
+    }
+
+    /**
+     * Draws one card, in one artwork.
+     *
+     * @param art       which artwork this copy wears; 0 is the printed one, and
+     *                  an index the card does not have folds back to 0 in
+     *                  {@code Properties.adjustImageIndex} rather than throwing
+     * @param altMarker whether to mark a card that has more than one artwork.
+     *                  Only the deck grids do: the mark means "this copy can be
+     *                  re-dressed", and a collection entry is a card rather
+     *                  than a copy, so there is nothing there to dress
+     */
+    private void drawCard(GuiGraphicsExtractor poseStack, Properties card, int x, int y,
+        int w, int h, float alpha, boolean halfSaturation, int art, boolean altMarker)
     {
         // Fetched at twice the size it is drawn at, and filtered on the way
         // down, so the art is legible rather than a 64-pixel image stretched
         // across a 40-pixel icon.
         // The texture is an argument now rather than a separate bind, and the
         // window is given as its two corners rather than an offset and a size.
+        byte imageIndex = (byte)Math.clamp(art, 0, Byte.MAX_VALUE);
         DdBlitUtil.blit(poseStack,
             halfSaturation
-                ? DuelTextures.cardUnowned(card, (byte)0, DuelTextures.ICON_CARD_SIZE)
-                : DuelTextures.card(card, (byte)0, DuelTextures.ICON_CARD_SIZE), x, y, w, h,
+                ? DuelTextures.cardUnowned(card, imageIndex, DuelTextures.ICON_CARD_SIZE)
+                : DuelTextures.card(card, imageIndex, DuelTextures.ICON_CARD_SIZE), x, y, w, h,
             DuelTextures.CARD_U0, DuelTextures.CARD_V0,
             DuelTextures.CARD_U1, DuelTextures.CARD_V1,
             DdBlitUtil.tint(1F, 1F, 1F, alpha));
 
+        // A fraction of the card rather than a fixed size, so both marks stay
+        // in proportion however small the icons get.
+        int mark = Math.max(6, w / 3);
+        boolean alternates = altMarker && hasAltArt(card);
+        if(alternates)
+        {
+            DdBlitUtil.blit(poseStack, HubTextures.ALT_ART, x + 1, y + 1, mark, mark,
+                0F, 0F, 1F, 1F, DdBlitUtil.NO_TINT);
+        }
         if(EditorState.isFavourite((int)card.getId()))
         {
-            // A fraction of the card rather than a fixed size, so it stays in
-            // proportion however small the icons get.
-            int mark = Math.max(6, w / 3);
+            // Top RIGHT, always. The top left belongs to the [A]. The bottom
+            // right is the collection's copy count, which is text rather than a
+            // badge and sits clear of this.
             DdBlitUtil.blit(poseStack, HubTextures.STAR, x + w - mark - 1, y + 1, mark, mark,
                 0F, 0F, 1F, 1F, DdBlitUtil.NO_TINT);
         }
@@ -2465,6 +3016,12 @@ public class DeckEditorScreen extends Screen
         // An edit reaches the server within a tick of being made, so closing
         // the game rather than the screen still keeps the deck.
         EditorState.flush();
+        // Checked here rather than mid-draw, because closing rebuilds the
+        // widgets and a frame is no place to do that.
+        if(altCard != null && !altValid())
+        {
+            closeAltArts();
+        }
     }
 
     /**
@@ -2682,6 +3239,67 @@ public class DeckEditorScreen extends Screen
                 getX() + (getWidth() - mark) / 2, getY() + (getHeight() - mark) / 2,
                 mark, mark, 0F, 0F, 1F, 1F,
                 on ? DdBlitUtil.NO_TINT : DdBlitUtil.alpha(0.45F));
+        }
+    }
+
+    /**
+     * How much wider the Sleeves button is than its label needs, so the swatch
+     * it wears has somewhere to sit.
+     * <p>
+     * A card-shaped swatch as tall as the button's inside is
+     * {@code round(14 * 480/700)} = 10 wide, plus the 4 either side of it.
+     */
+    private static final int SWATCH_ROOM = 14;
+
+    /**
+     * Opens the sleeve picker, wearing what the open deck is printed on.
+     * <p>
+     * The swatch is the point of it being its own widget rather than a plain
+     * button: the row then answers "what is this deck dressed in" without
+     * anything having to be opened, and it is read fresh every frame so a
+     * choice made in the picker -- or undone by a server refusal -- shows here
+     * without anything having to tell it.
+     */
+    private class SleeveButton extends HubWidgets.TextureButton
+    {
+        SleeveButton(int x, int y, int width, int height, Component label)
+        {
+            super(x, y, width, height, label, pressed ->
+            {
+            });
+        }
+
+        @Override
+        public void onPress(net.minecraft.client.input.InputWithModifiers input)
+        {
+            // Written out on the way, as the route to the card page is: the
+            // tick that normally saves a deck does not run while another
+            // screen is up.
+            EditorState.flush();
+            if(minecraft != null)
+            {
+                minecraft.setScreenAndShow(new SleevePickerScreen(DeckEditorScreen.this));
+            }
+        }
+
+        @Override
+        protected void extractContents(GuiGraphicsExtractor poseStack, int mouseX, int mouseY,
+            float partialTick)
+        {
+            int row = !active ? NineSlice.DISABLED
+                : isHoveredOrFocused() ? NineSlice.HOVER : NineSlice.IDLE;
+            NineSlice.draw(poseStack, HubTextures.BUTTON, getX(), getY(), getWidth(),
+                getHeight(), row, 3);
+
+            int swatchH = getHeight() - 6;
+            int swatchW = Math.max(4, Math.round(swatchH * DuelTextures.CARD_ASPECT));
+            // Centred, now that it is the whole content of the button rather
+            // than something sitting to the left of a word. A deck with its
+            // sleeves off draws the plain card back here, which is the honest
+            // picture of what its cards will look like.
+            SleevePickerScreen.drawSleeve(poseStack, EditorState.deck().sleeve(),
+                getX() + (getWidth() - swatchW) / 2, getY() + 3, swatchW, swatchH,
+                DdBlitUtil.NO_TINT);
         }
     }
 

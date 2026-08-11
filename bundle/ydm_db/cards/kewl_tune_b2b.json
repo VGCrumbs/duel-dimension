@@ -1,0 +1,21 @@
+{
+  "id": 65961304,
+  "name": "Kewl Tune B2B",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 Tuner + 1+ Synchro Monsters\r\nThe Levels of monsters your opponent controls are increased by 2. Your Tuners can make a second attack during each Battle Phase. When your opponent activates a monster effect (Quick Effect): You can target 1 Tuner in your GY or banishment, except a Level 10 Tuner; add it to your hand or Special Summon it, then immediately after this effect resolves, you can Synchro Summon 1 Synchro Monster. You can only use this effect of \"Kewl Tune B2B\" twice per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/65961304.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 3200,
+  "species": "Fiend",
+  "monster_type": "Synchro",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "level": 10,
+  "is_tuner": true
+}

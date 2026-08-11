@@ -1,0 +1,21 @@
+{
+  "id": 79561872,
+  "name": "Melffys' Joyful Surprise",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 \"Melffy\" monster + 1 Beast monster\r\nIf this card is Fusion Summoned: You can target an equal number of \"Melffy\" cards you control and cards your opponent controls; return them to the hand. If your opponent Normal or Special Summons a monster(s) (except during the Damage Step), or if an opponent's monster targets this card for an attack: You can target 1 Beast monster in your GY; reduce this card's Level by exactly 2, and if you do, Special Summon that target. You can only use each effect of \"Melffys' Joyful Surprise\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/79561872.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 0,
+  "species": "Beast",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2500,
+  "level": 4,
+  "is_tuner": false
+}

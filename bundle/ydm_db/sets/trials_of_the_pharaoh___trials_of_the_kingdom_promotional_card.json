@@ -1,0 +1,29 @@
+{
+  "name": "Trials of the Pharaoh - Trials of the Kingdom promotional card",
+  "code": "OPTP",
+  "type": "Booster Pack (2020)",
+  "date": "01-01-2020",
+  "image": "https://ygoprodeck.com/pics_sets/OPTP.jpg",
+  "pull_type": "distribution",
+  "distribution": "ots_tournament_pack",
+  "cards": [
+    {
+      "id": 69599136,
+      "code": "OPTP-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77585513,
+      "code": "OPTP-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14087893,
+      "code": "OPTP-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

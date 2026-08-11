@@ -1,0 +1,16 @@
+{
+  "name": "Yu-Gi-Oh! GX Volume 7 promotional card",
+  "code": "YG07",
+  "type": "Single",
+  "date": "18-08-2011",
+  "image": "https://ygoprodeck.com/pics_sets/YG07.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 28348537,
+      "code": "YG07-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

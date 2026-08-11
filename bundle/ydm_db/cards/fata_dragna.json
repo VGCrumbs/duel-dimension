@@ -1,0 +1,21 @@
+{
+  "id": 41763141,
+  "name": "Fata Dragna",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2 monsters with the same Type and Attribute, but different Levels\r\nYour opponent cannot target Fusion Monsters you control with card effects. If this card is sent to the GY as material for a Fusion Summon: You can Special Summon 1 Fusion Monster from your Extra Deck in Defense Position (but negate its effects, also return it to the Extra Deck during the End Phase), also for the rest of this turn, you cannot Special Summon from the Extra Deck, except Fusion Monsters. You can only use this effect of \"Fata Dragna\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/41763141.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WIND",
+  "atk": 1000,
+  "species": "Dragon",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2500,
+  "level": 5,
+  "is_tuner": false
+}

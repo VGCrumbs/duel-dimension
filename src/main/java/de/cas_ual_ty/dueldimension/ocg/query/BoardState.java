@@ -190,8 +190,27 @@ public record BoardState(int viewer, boolean omniscient, PlayerBoard self, Playe
         // so this is belt and braces rather than a live case. It is written
         // anyway because "conceal" should be the one place that decides what a
         // stranger may see, without needing that argument re-derived.
+        //
+        // The artwork goes with the code, and that is not decoration. Only
+        // about 122 of the 13,826 cards have a second artwork at all, so
+        // "this face-down card wears artwork 3" narrows it to a handful of
+        // cards -- it is a weaker statement of the code, and leaking it would
+        // be leaking the code.
+        //
+        // The core does none of this for us. card::get_infos is blind to both
+        // location and visibility, so a face-down monster arrives here with its
+        // passcode AND its cover intact -- measured, not assumed: a set monster
+        // the core itself reports as is_public=false still carries its cover
+        // through QUERY_COVER. This method is the only thing between that and
+        // the wire.
+        //
+        // So the zero is written out in the canonical constructor rather than
+        // left to the shorter overload to supply. An omitted argument is not a
+        // guarantee: completing this call into the 16-argument form and passing
+        // card.art() would leak per-copy identity, and overload resolution would
+        // have made that edit look like a tidy-up.
         return new CardView(0, card.position(), 0, 0, -1, -1, -1, -1, -1, -1, false, true, null,
-            0, 0);
+            0, 0, 0);
     }
 
     /**
@@ -216,7 +235,7 @@ public record BoardState(int viewer, boolean omniscient, PlayerBoard self, Playe
                 new CardView.Equip(controller, equip.location(), equip.sequence()),
                 // Carried through: this rewrites WHERE an equip points, not
                 // what the card is.
-                card.status(), card.overlays());
+                card.status(), card.overlays(), card.art());
     }
 
     /** Life points and pile sizes, from OCG_DuelQueryField. Layout: ocgapi.cpp. */

@@ -1,0 +1,21 @@
+{
+  "id": 87750925,
+  "name": "Disguise, the Copycat Hero",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you have an Equip Spell in your field or GY: You can Special Summon this card from your hand. If this card is Normal or Special Summoned: You can add 1 \"Cursed Copycat Noble Arms\" from your Deck to your hand. While this card is equipped with an Equip Card: You can target 1 non-Tuner Warrior monster on the field with a Level; this card's Level, also its name, become the same as that monster's until the End Phase. You can only use each effect of \"Disguise, the Copycat Hero\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/87750925.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 1400,
+  "species": "Warrior",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1200,
+  "level": 4,
+  "is_tuner": true
+}

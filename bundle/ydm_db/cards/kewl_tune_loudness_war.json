@@ -1,0 +1,21 @@
+{
+  "id": 41069676,
+  "name": "Kewl Tune Loudness War",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2+ Tuners\r\nOther Tuners you control cannot be destroyed by card effects, also your opponent cannot target them with card effects. When your opponent activates a card or effect (Quick Effect): You can banish 1 \"Kewl Tune\" monster from your GY; apply that banished monster's effect that activates when it is sent to the GY as Synchro Material. You can only use this effect of \"Kewl Tune Loudness War\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/41069676.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 0,
+  "species": "Machine",
+  "monster_type": "Synchro",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 3000,
+  "level": 6,
+  "is_tuner": true
+}

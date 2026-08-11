@@ -1,0 +1,21 @@
+{
+  "id": 7375867,
+  "name": "Dracotail Mululu",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "During the Main Phase (Quick Effect): You can Fusion Summon 1 \"Dracotail\" Fusion Monster from your Extra Deck, using monsters from your hand or field, also you cannot Special Summon from the Extra Deck for the rest of this turn, except Fusion Monsters. If this card is sent to the GY as material for a Fusion Summon: You can Set 1 \"Dracotail\" Spell/Trap from your Deck, then you can negate the effects of 1 face-up monster your opponent controls. You can only use each effect of \"Dracotail Mululu\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/7375867.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 1100,
+  "species": "Dragon",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1500,
+  "level": 3,
+  "is_tuner": false
+}

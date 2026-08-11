@@ -42,12 +42,35 @@ public final class FoilPipelines
         new BlendFunction(BlendFactor.ZERO, BlendFactor.ONE,
             BlendFactor.SRC_ALPHA, BlendFactor.ZERO));
 
-    /** Shows the foil where that alpha is high. */
+    /**
+     * A {@code NORMAL} rarity layer: shown AT the cursor.
+     * <p>
+     * <b>Read the factor and the mask together, or it comes out backwards.</b>
+     * The source factor is {@code ONE_MINUS_DST_ALPHA}, so on its own this
+     * shows the layer where the alpha written above is <em>low</em> — and
+     * {@code rarity_mask.png} is deliberately the inverse of what its name
+     * suggests: measured, it is alpha 128 across the middle and 255 at the
+     * border, a hole rather than a spot. So the low alpha is exactly the
+     * cursor, and the net effect is a layer that glints under the mouse.
+     * <p>
+     * Anything reproducing this without the two-pass trick — see
+     * {@code CardPreviewScreen}, which cannot use it inside a
+     * picture-in-picture — must therefore drive a NORMAL layer with the
+     * highlight itself, not with its complement.
+     */
     public static final RenderPipeline FOIL = copyOfGuiTextured("foil",
         new BlendFunction(BlendFactor.ONE_MINUS_DST_ALPHA, BlendFactor.DST_COLOR,
             BlendFactor.DST_ALPHA, BlendFactor.ONE_MINUS_DST_ALPHA));
 
-    /** The inverted variant, for rarity layers that mask the other way round. */
+    /**
+     * An {@code INVERTED} rarity layer: shown everywhere the cursor is NOT.
+     * <p>
+     * The exact complement of {@link #FOIL} — {@code DST_ALPHA} where that has
+     * {@code ONE_MINUS_DST_ALPHA} — which is why the database pairs an
+     * {@code _active} image with a {@code _passive} one. A foil is a crossfade
+     * between two printings of the same frame, not a second coat over the
+     * first.
+     */
     public static final RenderPipeline FOIL_INVERTED = copyOfGuiTextured("foil_inverted",
         new BlendFunction(BlendFactor.DST_ALPHA, BlendFactor.DST_COLOR,
             BlendFactor.ONE_MINUS_DST_ALPHA, BlendFactor.DST_ALPHA));

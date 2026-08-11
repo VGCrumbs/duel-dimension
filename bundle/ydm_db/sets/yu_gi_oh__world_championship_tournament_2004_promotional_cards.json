@@ -1,0 +1,47 @@
+{
+  "name": "Yu-Gi-Oh! World Championship Tournament 2004 promotional cards",
+  "code": "WC4",
+  "type": "Booster Pack (2004)",
+  "date": "10-02-2004",
+  "image": "https://ygoprodeck.com/pics_sets/WC4.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 45425051,
+      "code": "WC4-001",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79853073,
+      "code": "WC4-002",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 78636495,
+      "code": "WC4-003",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 75347539,
+      "code": "WC4-E001",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 8131171,
+      "code": "WC4-E002",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 18144507,
+      "code": "WC4-E003",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "id": 65514302,
+  "name": "Magnet Bonding",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "During the Main Phase: Activate 1 of these effects (but you can only use each effect of \"Magnet Bonding\" once per turn);\r\n● Add 1 \"Conduction Warrior Linear Magnum Plus Minus\" or 1 Level 4 or lower \"Magnet Warrior\" monster from your Deck to your hand.\r\n● Add 1 Level 8 \"Magna Warrior\" monster from your Deck to your hand.\r\n● Fusion Summon 1 Rock Fusion Monster from your Extra Deck, by shuffling Rock monsters from your hand, field, GY, and/or banishment into the Deck as material.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/65514302.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Quick-Play"
+}

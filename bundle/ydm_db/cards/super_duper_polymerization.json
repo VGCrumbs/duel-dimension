@@ -1,0 +1,12 @@
+{
+  "id": 44886582,
+  "name": "Super Duper Polymerization",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Pay 2000 LP, then target 1 Effect Monster on the field; Special Summon 1 monster from your Extra Deck, with the same Type and Attribute but a different Level (but negate its effects), then apply 1 of these effects. Neither player can activate cards or effects in response to this card's activation.\r\n● Fusion Summon 1 Fusion Monster from your Extra Deck, using the Special Summoned monster and the targeted monster.\r\n● Send the Special Summoned monster to the GY.\r\nYou can only activate 1 \"Super Duper Polymerization\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/44886582.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

@@ -1,0 +1,21 @@
+{
+  "id": 4215180,
+  "name": "Lollipo☆Yummy",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you control a Link-1 monster or a Level 2 Synchro Monster, you can Special Summon this card (from your hand). You can only Special Summon \"Lollipo☆Yummy\" once per turn this way. If this card is Normal or Special Summoned: You can target 1 card in your opponent's GY; shuffle it into the Deck, or, if this card was Special Summoned by the effect of a Synchro Monster, you can banish that card instead. You can only use this effect of \"Lollipo☆Yummy\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/4215180.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 600,
+  "species": "Beast",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1200,
+  "level": 1,
+  "is_tuner": false
+}

@@ -1,0 +1,21 @@
+{
+  "id": 71410542,
+  "name": "WAKE CUP! Macchia",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "FLIP: Target 1 face-down Defense Position monster on the field; change it to face-up Attack Position.\r\nYou can reveal this card and 1 Flip monster in your hand; Special Summon both in face-down Defense Position. You can only use each of the preceding effects of \"WAKE CUP! Macchia\" once per turn. Once per turn, during your End Phase: You can target 1 face-down card on the field; send it to the GY.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/71410542.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WIND",
+  "atk": 1000,
+  "species": "Aqua",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "Flip",
+  "has_effect": true,
+  "def": 100,
+  "level": 3,
+  "is_tuner": false
+}

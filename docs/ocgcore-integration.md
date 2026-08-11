@@ -23,12 +23,55 @@ Minecraft server (JVM)
 
 ## What the engine needs at runtime
 
-1. **The native library** (`ocgcore.dll` / `libocgcore.so` / `libocgcore.dylib`), built from [edo9300/ygopro-core](https://github.com/edo9300/ygopro-core). Local path: `native/` (gitignored). Sources:
+**All four of these now ship inside the jar** and are unpacked to
+`<gamedir>/dueldimension_engine/` on first run — see "The bundled engine" below.
+What follows is what each one *is* and where it comes from; a player no longer
+has to obtain any of it by hand.
+
+1. **The native library** (`ocgcore.dll` / `libocgcore.so` / `libocgcore.dylib`), built from [edo9300/ygopro-core](https://github.com/edo9300/ygopro-core). Local path: `native/` (**tracked in git**, despite what this line used to say — `git ls-files native/` returns it and `.gitignore` has no `native` entry). Sources:
    - extract from an [EDOPro release](https://github.com/edo9300/edopro/releases) (Windows x64),
    - or an existing ProjectIgnis/EDOPro installation,
    - or build from source (premake5 + MSVC/GCC, needs a Lua).
 2. **Card scripts:** a checkout of [ProjectIgnis/CardScripts](https://github.com/ProjectIgnis/CardScripts). `constant.lua` + `utility.lua` are loaded once per duel; per-card scripts (`official/c<code>.lua`) are requested on demand through the script-reader callback.
 3. **Card static data:** the engine asks for it by passcode through the card-reader callback (`OcgCard`). Source of truth should be [ProjectIgnis/BabelCDB](https://github.com/ProjectIgnis/BabelCDB) (`cards.cdb`, SQLite `datas` table) — **not** the YDM JSON DB, which lacks `setcodes` and the numeric bitfields the engine needs. Passcodes match YDM card ids, so joining engine data to YDM display data is a direct id match. Reading `.cdb` needs a bundled SQLite JDBC driver (e.g. `org.xerial:sqlite-jdbc` via jarJar) — not yet added.
+
+## The bundled engine
+
+The jar carries a copy of all four and unpacks whatever the machine is missing
+into `<gamedir>/dueldimension_engine/`. `EngineBundle` does the work;
+`EngineRuntime.Paths` decides what gets used.
+
+**Preference order, per piece:** an explicit `-Docg.lib` / `-Docg.scripts` /
+`-Docg.cdb` / `-Docg.strings`, then a discovered EDOPro install, then the
+bundle. That order is not an accident — EDOPro updates several times a week and
+its scripts and database were cut from the same commit as each other, so a
+player who has one is better off on it. The bundle is what makes a machine with
+nothing work.
+
+**It is per piece, not all-or-nothing.** The common Windows case is an EDOPro
+install whose core is 32-bit while Minecraft 26.2 needs 64-bit Java: that
+machine takes the core from the bundle (1.5 MB) and the scripts, database and
+strings from EDOPro, and 28 MB of scripts are never written.
+
+**Versioning.** Neither the scripts nor `cards.cdb` carries a version of its own
+(`PRAGMA user_version` is 0; there is no `.git` under `script/`), so the build
+stamps one: `engineBundleStamp` hashes the content of everything shipped and
+writes `dueldimension_engine/bundle.properties`. The unpacked tree keeps the
+same value in `.bundle`, written **last** so an interrupted unpack is never
+mistaken for a finished one. Same value plus the pieces already present means
+nothing is done; a mod update changes the hash and the pieces are rewritten.
+`bundle/provenance.properties` records which upstream snapshot was taken, and
+ships alongside.
+
+**Why it must be unpacked at all:** `HeadlessDuelRunner.cardScriptsDirectory` is
+`Files.readAllBytes` over a `Path`, `Sqlite.open` builds a `jdbc:sqlite:` URL
+that the driver opens as a real file, and JNA is handed an absolute path. None
+of the three can see a classpath resource.
+
+**Not bundled: the banlists.** [ProjectIgnis/LFLists](https://github.com/ProjectIgnis/LFLists)
+carries no licence file and no distribution repository supplies one, so
+`Banlists` still discovers them from EDOPro or `<gamedir>/lflists`. See
+`NOTICE.md`.
 
 ## The duel loop
 

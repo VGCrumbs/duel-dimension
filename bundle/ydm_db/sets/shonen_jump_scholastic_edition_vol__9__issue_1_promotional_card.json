@@ -1,0 +1,59 @@
+{
+  "name": "Shonen Jump Scholastic Edition Vol. 9, Issue 1 promotional card",
+  "code": "JMPS",
+  "type": "Booster Pack (2011)",
+  "date": "01-01-2011",
+  "image": "https://ygoprodeck.com/pics_sets/JMPS.jpg",
+  "pull_type": "distribution",
+  "distribution": "battles_of_legend__armageddon",
+  "cards": [
+    {
+      "id": 72144675,
+      "code": "JMPS-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89631139,
+      "code": "JMPS-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46986420,
+      "code": "JMPS-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10000000,
+      "code": "JMPS-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10000020,
+      "code": "JMPS-EN005",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10000010,
+      "code": "JMPS-EN006",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30603688,
+      "code": "JMPS-EN007",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40044918,
+      "code": "JMPS-EN008",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

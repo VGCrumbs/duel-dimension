@@ -1,7 +1,7 @@
 {
   "pad": 8,
   "left.width": 141,
-  "bottom.height": 62,
+  "bottom.height": 54,
   "pack.aspect": 1.0,
   "grid.maxColumns": 12,
   "grid.cellWidth": 46,
@@ -12,5 +12,6 @@
   "dir.width": 30,
   "close.width": 70,
   "close.gap": 4,
-  "bulk.width": 34
+  "bulk.width": 34,
+  "category.width": 88
 }

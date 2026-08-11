@@ -1,0 +1,24 @@
+{
+  "id": 3957130,
+  "name": "Trisborrel Dragon",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2+ DARK Dragon monsters, including a \"Rokket\" monster\r\nIf this card is Link Summoned: You can add 1 \"Rapid Trigger\", \"Heavy Interlock\", or \"Double Interlock\" from your Deck to your hand. You can target 1 face-up card you control and 1 DARK Dragon monster in your GY; destroy that card on the field, and if you do, add that other monster from your GY to your hand. You can only use each effect of \"Trisborrel Dragon\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/3957130.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2300,
+  "species": "Dragon",
+  "monster_type": "Link",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "link_rating": 3,
+  "link_arrows": [
+    "Left",
+    "Bottom-Left",
+    "Bottom"
+  ]
+}

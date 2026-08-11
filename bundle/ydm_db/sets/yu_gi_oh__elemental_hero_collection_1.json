@@ -1,0 +1,35 @@
+{
+  "name": "Yu-Gi-Oh! Elemental Hero Collection 1",
+  "code": "EHC1",
+  "type": "Collector's Set",
+  "date": "13-11-2007",
+  "image": "https://ygoprodeck.com/pics_sets/EHC1.jpg",
+  "pull_type": "distribution",
+  "distribution": "the_dark_side_of_dimensions_movie_pack_secret_edition__pack",
+  "cards": [
+    {
+      "id": 21844576,
+      "code": "EHC1-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58932615,
+      "code": "EHC1-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79979666,
+      "code": "EHC1-EN003",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35809262,
+      "code": "EHC1-EN004",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

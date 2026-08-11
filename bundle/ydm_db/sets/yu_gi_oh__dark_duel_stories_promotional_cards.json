@@ -1,0 +1,47 @@
+{
+  "name": "Yu-Gi-Oh! Dark Duel Stories promotional cards",
+  "code": "DDS",
+  "type": "Booster Pack (2002)",
+  "date": "19-03-2002",
+  "image": "https://ygoprodeck.com/pics_sets/DDS.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 89631139,
+      "code": "DDS-001",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46986420,
+      "code": "DDS-002",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33396948,
+      "code": "DDS-003",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6740720,
+      "code": "DDS-004",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 41356845,
+      "code": "DDS-005",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32268901,
+      "code": "DDS-006",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

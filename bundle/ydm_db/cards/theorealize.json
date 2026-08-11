@@ -1,0 +1,12 @@
+{
+  "id": 48739627,
+  "name": "Theorealize",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Send 1 \"Medius the Pure\" from your Deck to the GY; look at the top card of your opponent's Deck, and place it on the top or bottom of the Deck. You can banish this card from your GY, then target 1 face-up monster you control and declare 1 Monster Type and 1 Attribute; that monster becomes that Type and Attribute, until the end of your opponent's turn. You can only use each effect of \"Theorealize\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/48739627.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

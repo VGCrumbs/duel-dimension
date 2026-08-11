@@ -1,0 +1,21 @@
+{
+  "id": 93172951,
+  "name": "Clown Crew Meteor",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 Tuner + 1+ non-Tuners\r\nYour opponent cannot activate cards or effects when you Tribute Summon a monster. If this card is Tributed: You can activate 1 of these effects (but you can only use each effect of \"Clown Crew Meteor\" once per turn);\r\n● Return all Synchro Monsters from the field and the GYs to the Extra Deck.\r\n● You can target 1 \"Clown Crew\" card in your GY, except \"Clown Crew Meteor\"; add it to your hand.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/93172951.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 600,
+  "species": "Beast-Warrior",
+  "monster_type": "Synchro",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1300,
+  "level": 6,
+  "is_tuner": false
+}

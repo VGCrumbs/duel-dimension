@@ -1,0 +1,12 @@
+{
+  "id": 24461358,
+  "name": "Ragged Records of Rites",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Reveal 1 Ritual Spell from your hand or Deck, and if you do, add 1 monster from your Deck to your hand that mentions that Spell's name. If a face-up Ritual Monster(s) you control leaves the field by card effect while this card is in your GY, and you do not control any face-up monsters, other than Ritual Monsters (except during the Damage Step): You can add this card from your GY to your hand. You can only use each effect of \"Ragged Records of Rites\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/24461358.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

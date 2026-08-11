@@ -1,0 +1,21 @@
+{
+  "id": 97800311,
+  "name": "Divine Serpent Apophis",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2 monsters that mention \"Temple of the Kings\"\r\nMust be either Fusion Summoned, or Special Summoned by Tributing 2 \"Apophis\" monsters. Once per turn: You can target up to 3 \"Apophis\" Traps with different names in your GY; Set them. Once per turn, if a Trap Card is activated (except during the Damage Step): You can target 1 card your opponent controls; destroy it.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/97800311.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 2800,
+  "species": "Reptile",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2600,
+  "level": 6,
+  "is_tuner": false
+}

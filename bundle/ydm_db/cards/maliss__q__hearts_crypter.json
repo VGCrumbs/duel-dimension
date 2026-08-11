@@ -1,0 +1,24 @@
+{
+  "id": 21848500,
+  "name": "Maliss <Q> Hearts Crypter",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "3 monsters, including a \"Maliss\" monster\r\n(Quick Effect): You can target 1 of your banished \"Maliss\" cards; shuffle it into the Deck, and if you do, banish 1 card on the field (while this card points to a monster, this effect and its activation cannot be negated). If this card is banished: You can pay 900 LP; Special Summon it and double its ATK. You can only use each effect of \"Maliss Hearts Crypter\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/21848500.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2500,
+  "species": "Cyberse",
+  "monster_type": "Link",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "link_rating": 3,
+  "link_arrows": [
+    "Top",
+    "Bottom-Left",
+    "Bottom-Right"
+  ]
+}

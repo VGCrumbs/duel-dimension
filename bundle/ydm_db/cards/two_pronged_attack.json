@@ -1,0 +1,12 @@
+{
+  "id": 83887306,
+  "name": "Two-Pronged Attack",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Select and destroy 2 of your monsters and 1 of your opponent's monsters.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/83887306.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

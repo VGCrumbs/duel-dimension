@@ -1,0 +1,12 @@
+{
+  "id": 26387390,
+  "name": "Junk Signal",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Activate 1 of these effects (also you cannot Special Summon from the Extra Deck for the rest of this turn, except Synchro Monsters);\r\n● Tribute 1 monster; Special Summon 1 monster, except the Tributed monster, from your hand, Deck, or GY, that is \"Junk Warrior\" or \"Stardust Dragon\", or that mentions either of them.\r\n● When your opponent activates a card or effect in response to your Synchro Monster's effect activation: Negate that effect.\r\nYou can only activate 1 \"Junk Signal\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/26387390.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Quick-Play"
+}

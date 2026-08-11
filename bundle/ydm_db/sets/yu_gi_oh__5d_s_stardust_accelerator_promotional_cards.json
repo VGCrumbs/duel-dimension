@@ -1,0 +1,47 @@
+{
+  "name": "Yu-Gi-Oh! 5D's Stardust Accelerator promotional cards",
+  "code": "WC09",
+  "type": "Booster Pack (2009)",
+  "date": "19-05-2009",
+  "image": "https://ygoprodeck.com/pics_sets/WC09.jpg",
+  "pull_type": "distribution",
+  "distribution": "ots_tournament_pack",
+  "cards": [
+    {
+      "id": 99177923,
+      "code": "WC09-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 99177923,
+      "code": "WC09-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25171661,
+      "code": "WC09-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25171661,
+      "code": "WC09-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51566770,
+      "code": "WC09-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51566770,
+      "code": "WC09-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

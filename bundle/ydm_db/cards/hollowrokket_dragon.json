@@ -1,0 +1,21 @@
+{
+  "id": 51548207,
+  "name": "Hollowrokket Dragon",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When a Link Monster's effect is activated that targets this face-up card on the field (Quick Effect): You can destroy this card, then excavate up to 6 cards from the top of your opponent's Deck and banish 1 of them, and if you do, place the rest on top of the Deck in the same order. During the End Phase, if this card is in the GY because it was destroyed on the field by battle or card effect and sent there this turn: You can Special Summon 1 \"Rokket\" monster from your Deck, except \"Hollowrokket Dragon\". You can only use each effect of \"Hollowrokket Dragon\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/51548207.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2400,
+  "species": "Dragon",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1600,
+  "level": 6,
+  "is_tuner": false
+}

@@ -1,0 +1,20 @@
+{
+  "id": 65848113,
+  "name": "DoomZ XIII Over - Graflareio",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "3 Level 5 monsters\r\nOnce per turn, you can also Xyz Summon \"DoomZ XIII Over - Graflareio\" by using 1 \"DoomZ\" Xyz Monster you control (transfer its materials). You can only use each of the following effects of \"DoomZ XIII Over - Graflareio\" once per turn. You can detach 1 material from this card; add 1 \"DoomZ\" Spell/Trap from your Deck to your hand, then you can destroy 1 card on the field. If this card is destroyed by card effect: You can Special Summon 1 non-Xyz \"DoomZ\" monster from your Deck or GY.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/65848113.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WIND",
+  "atk": 2400,
+  "species": "Machine",
+  "monster_type": "Xyz",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1500,
+  "rank": 5
+}

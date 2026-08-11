@@ -1,0 +1,35 @@
+{
+  "name": "Flaming Eternity Sneak Peek Participation Card",
+  "code": "SP1",
+  "type": "Booster Pack (2005)",
+  "date": "26-02-2005",
+  "image": "https://ygoprodeck.com/pics_sets/SP1.jpg",
+  "pull_type": "distribution",
+  "distribution": "battles_of_legend__armageddon",
+  "cards": [
+    {
+      "id": 80316585,
+      "code": "SP1-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29654737,
+      "code": "SP1-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 28649820,
+      "code": "SP1-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17484499,
+      "code": "SP1-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

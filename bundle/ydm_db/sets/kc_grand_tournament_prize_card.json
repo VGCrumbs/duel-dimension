@@ -1,0 +1,16 @@
+{
+  "name": "KC Grand Tournament prize card",
+  "code": "2020",
+  "type": "Single",
+  "date": "29-08-2020",
+  "image": "https://ygoprodeck.com/pics_sets/2020.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 89631139,
+      "code": "2020-EN001",
+      "rarity": "Extra Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

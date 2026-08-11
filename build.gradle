@@ -96,11 +96,198 @@ tasks.withType(JavaCompile).configureEach {
     options.release = 25
 }
 
+// ---------------------------------------------------------------------------
+// The bundled rules engine.
+//
+// The mod embeds ocgcore and plays Project Ignis's card scripts; without them
+// there is no duel. Until this existed a player had to install EDOPro first,
+// which is a second download, a second install, and a licence-bearing tree the
+// mod then read out of someone else's folder. The jar now carries a copy.
+//
+// Two resource roots feed it, and they are separate for a reason:
+//
+//   bundle/payload  the pieces that ship as ordinary jar entries -- the card
+//                   database, strings.conf, the native core, the notices.
+//   bundle/script   12,727 card-script files, which do NOT ship as 12,727 jar
+//                   entries. They are zipped into ONE entry first (below), so
+//                   the jar's index stays near two thousand names instead of
+//                   fourteen thousand, and so the unpack at runtime can stream
+//                   through the archive rather than consult an index naming
+//                   every file -- a jar's directories cannot be listed through
+//                   a classloader, which is why the bundled card extras need
+//                   exactly such an index.
+//   bundle/ydm_db   the card database, 14,686 files, zipped for the same
+//                   reason and stamped by the same task. Rules and cards are
+//                   two different downloads a player used to have to make, and
+//                   one mechanism carries both.
+// ---------------------------------------------------------------------------
+def engineBundleOut = layout.buildDirectory.dir('generated/engine-bundle')
+
+tasks.register('engineScriptsZip', Zip) {
+    description = 'Packs the bundled card scripts into the single jar entry the mod unpacks at runtime.'
+    from layout.projectDirectory.dir('bundle/script')
+    archiveFileName = 'script.zip'
+    destinationDirectory = engineBundleOut.map { it.dir('dueldimension_engine') }
+    // The bundle is versioned by hashing its own bytes, so the same inputs have
+    // to produce the same bytes. Timestamps and directory order would otherwise
+    // change the hash on every build and re-unpack 28 MB on every player's
+    // machine for no reason at all.
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+// The card database, packed the same way and for the same reasons.
+//
+// It is 14,686 files and 16.9 MB raw, which is the difference between a mod
+// that duels on a machine with no connection and one that downloads tens of
+// megabytes before it can show a single card. Deflate takes it to about 8.3 MB
+// in the jar, most of that the 23 rarity overlay PNGs, which are already
+// compressed and do not shrink again.
+tasks.register('cardDatabaseZip', Zip) {
+    description = 'Packs the bundled card database into the single jar entry the mod unpacks at runtime.'
+    from layout.projectDirectory.dir('bundle/ydm_db')
+    archiveFileName = 'ydm_db.zip'
+    destinationDirectory = engineBundleOut.map { it.dir('dueldimension_engine') }
+    // Same reason as the scripts: the bundle version is a digest over its own
+    // bytes, so the same inputs have to produce the same bytes or every build
+    // re-unpacks the database on every player's machine.
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+tasks.register('engineBundleStamp') {
+    description = 'Stamps the engine bundle with a version derived from its contents.'
+    dependsOn tasks.named('engineScriptsZip'), tasks.named('cardDatabaseZip')
+
+    def payloadDir = layout.projectDirectory.dir('bundle/payload')
+    def provenanceFile = layout.projectDirectory.file('bundle/provenance.properties')
+    def scriptsZip = tasks.named('engineScriptsZip', Zip).flatMap { it.archiveFile }
+    def cardDbZip = tasks.named('cardDatabaseZip', Zip).flatMap { it.archiveFile }
+    def stamp = engineBundleOut.map { it.file('dueldimension_engine/bundle.properties') }
+    def modVersion = project.version.toString()
+
+    inputs.dir(payloadDir)
+    inputs.file(provenanceFile)
+    inputs.file(scriptsZip)
+    inputs.file(cardDbZip)
+    inputs.property('modVersion', modVersion)
+    outputs.file(stamp)
+
+    doLast {
+        // Neither cards.cdb nor the script tree carries a version of its own --
+        // PRAGMA user_version is 0, there is no .git under script/, and a card
+        // script says only its name and who wrote it. Upstream's version IS a
+        // git commit in a repo this build does not check out, so the bundle has
+        // to stamp itself: a digest over the CONTENT of everything it ships.
+        // That is stable across rebuilds, changes the moment any shipped byte
+        // does, and is the thing the unpacked copy on a player's disk is
+        // compared against.
+        def payloadRoot = payloadDir.asFile.toPath()
+        def parts = [['script.zip', scriptsZip.get().asFile]]
+        payloadDir.asFile.eachFileRecurse(groovy.io.FileType.FILES) { file ->
+            parts << [payloadRoot.relativize(file.toPath()).toString().replace('\\', '/'), file]
+        }
+        parts.sort { it[0] }
+
+        def whole = java.security.MessageDigest.getInstance('SHA-256')
+        long bytes = 0
+        parts.each { name, file ->
+            def each = java.security.MessageDigest.getInstance('SHA-256')
+            file.withInputStream { input ->
+                byte[] buffer = new byte[1 << 16]
+                int read
+                while((read = input.read(buffer)) > 0)
+                {
+                    each.update(buffer, 0, read)
+                }
+            }
+            bytes += file.length()
+            whole.update("${name}:${each.digest().encodeHex()}\n".getBytes('UTF-8'))
+        }
+
+        // The card database is digested SEPARATELY, and deliberately so.
+        //
+        // Folding it into `version` would have been one line less code and would
+        // have made every existing player re-unpack 28 MB of card scripts the
+        // first time they launched a build that carries a database -- the
+        // scripts are skipped or rewritten as a whole on a version mismatch, and
+        // adding cards to the jar is not a reason to rewrite a single Lua file.
+        // Two payloads that change on different schedules get two versions.
+        def cardDb = cardDbZip.get().asFile
+        def cardDbDigest = java.security.MessageDigest.getInstance('SHA-256')
+        cardDb.withInputStream { input ->
+            byte[] buffer = new byte[1 << 16]
+            int read
+            while((read = input.read(buffer)) > 0)
+            {
+                cardDbDigest.update(buffer, 0, read)
+            }
+        }
+        def cardDbFiles = 0
+        new java.util.zip.ZipFile(cardDb).withCloseable { zip ->
+            cardDbFiles = zip.entries().toList().count { !it.directory }
+        }
+
+        def provenance = new Properties()
+        provenanceFile.asFile.withInputStream { provenance.load(it) }
+
+        def target = stamp.get().asFile
+        target.parentFile.mkdirs()
+        // Written by hand rather than with Properties.store, which stamps the
+        // file with the time it was written and would make every build differ.
+        def text = new StringBuilder()
+        text << '# Generated by the engineBundleStamp task. Do not edit.\n'
+        text << '# bundle.version is a SHA-256 over the content of every file shipped\n'
+        text << '# in this bundle; it is what the unpacked copy under the game\n'
+        text << '# directory is compared against to decide whether to unpack again.\n'
+        text << '# carddb.version is the same idea over the bundled card database,\n'
+        text << '# which is versioned apart from the engine so that a change to one\n'
+        text << '# does not rewrite the other.\n'
+        text << "version=${whole.digest().encodeHex().toString().substring(0, 16)}\n"
+        text << "files=${parts.size()}\n"
+        text << "bytes=${bytes}\n"
+        text << "carddb.version=${cardDbDigest.digest().encodeHex().toString().substring(0, 16)}\n"
+        text << "carddb.files=${cardDbFiles}\n"
+        text << "carddb.bytes=${cardDb.length()}\n"
+        text << "mod.version=${modVersion}\n"
+        provenance.stringPropertyNames().sort().each { key ->
+            text << "${key}=${provenance.getProperty(key)}\n"
+        }
+        target.text = text.toString()
+        logger.lifecycle("Engine bundle stamped: ${target.readLines().find { it.startsWith('version=') }}, ${parts.size()} parts, ${bytes} bytes")
+        logger.lifecycle("Card database stamped: ${target.readLines().find { it.startsWith('carddb.version=') }}, ${cardDbFiles} files, ${cardDb.length()} bytes compressed")
+    }
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDir 'bundle/payload'
+            srcDir engineBundleOut
+        }
+    }
+}
+
 processResources {
+    dependsOn tasks.named('engineScriptsZip'), tasks.named('cardDatabaseZip'),
+        tasks.named('engineBundleStamp')
     inputs.property 'version', project.version
     filesMatching('fabric.mod.json') {
         expand 'version': project.version
     }
+}
+
+jar {
+    // AGPL-3.0 section 4: "give all recipients a copy of this License along
+    // with the Program". Naming a licence is not giving one, and until now the
+    // jar named AGPL-3.0-or-later in textures/duel/LICENSE.md without carrying
+    // a word of it -- and carried no CREDITS.md at all, so a player who
+    // received the jar received none of the attribution the repository records.
+    // These four files are the notices that have to travel with the artefact.
+    from(rootProject.file('LICENSE')) { rename { 'LICENSE-GPL-3.0.txt' } }
+    from(rootProject.file('LICENSE-AGPL-3.0.txt'))
+    from(rootProject.file('CREDITS.md'))
+    from(rootProject.file('NOTICE.md'))
 }
 
 test {

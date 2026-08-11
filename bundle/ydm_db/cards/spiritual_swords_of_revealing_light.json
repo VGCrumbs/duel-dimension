@@ -1,0 +1,12 @@
+{
+  "id": 78625592,
+  "name": "Spiritual Swords of Revealing Light",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Once per attack, when an opponent's monster declares an attack: You can pay 1000 LP; negate that attack. During your opponent's turn: You can banish this card from your Graveyard; this turn, your opponent's monsters cannot attack directly.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/78625592.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Continuous"
+}

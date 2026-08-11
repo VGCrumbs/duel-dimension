@@ -1,0 +1,21 @@
+{
+  "id": 29053656,
+  "name": "Crimson Dragon Quetzalcoatl",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 Tuner + 1+ non-Tuners\r\nGains ATK equal to the total original ATK of all other Synchro Monsters you control. You can only use each of the following effects of \"Crimson Dragon Quetzalcoatl\" once per turn. If this card is Synchro Summoned: You can Special Summon as many Dragon Synchro Monsters from your GY as possible, also you cannot Special Summon for the rest of this turn. When your opponent activates a monster effect (Quick Effect): You can return 1 other Dragon Synchro Monster you control to the Extra Deck, and if you do, negate that activation.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/29053656.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 0,
+  "species": "Dragon",
+  "monster_type": "Synchro",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "level": 12,
+  "is_tuner": false
+}

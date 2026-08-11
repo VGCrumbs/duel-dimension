@@ -1,0 +1,131 @@
+{
+  "name": "Duelist League 15 participation cards",
+  "code": "DL15",
+  "type": "Booster Pack (2012)",
+  "date": "15-12-2012",
+  "image": "https://ygoprodeck.com/pics_sets/DL15.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack",
+  "cards": [
+    {
+      "id": 73752131,
+      "code": "DL15-EN001",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76909279,
+      "code": "DL15-EN002",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67934141,
+      "code": "DL15-EN003",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51355346,
+      "code": "DL15-EN004",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 55589254,
+      "code": "DL15-EN005",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 9748752,
+      "code": "DL15-EN006",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 5220687,
+      "code": "DL15-EN007",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97896503,
+      "code": "DL15-EN008",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 26082117,
+      "code": "DL15-EN009",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62476815,
+      "code": "DL15-EN010",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40817915,
+      "code": "DL15-EN011",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69610924,
+      "code": "DL15-EN012",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32268901,
+      "code": "DL15-EN013",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46173679,
+      "code": "DL15-EN014",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 91351370,
+      "code": "DL15-EN015",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86780027,
+      "code": "DL15-EN016",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67775894,
+      "code": "DL15-EN017",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44095762,
+      "code": "DL15-EN018",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77561728,
+      "code": "DL15-EN019",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21350571,
+      "code": "DL15-EN020",
+      "rarity": "Rare",
+      "image_index": 0
+    }
+  ]
+}

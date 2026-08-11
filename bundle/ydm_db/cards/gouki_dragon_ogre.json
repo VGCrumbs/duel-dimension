@@ -1,0 +1,21 @@
+{
+  "id": 69453825,
+  "name": "Gouki Dragon Ogre",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 Tuner + 1+ non-Tuner monsters\r\nIf this card is Synchro Summoned: You can add 1 \"Gouki\" Spell from your Deck to your hand. If this card is sent to the GY: You can target 1 EARTH monster you control; while you control that face-up monster, your opponent's monsters can only target it for attacks, also add 1 \"Gouki\" monster with less ATK than that monster from your GY to your hand. You can only use each effect of \"Gouki Dragon Ogre\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/69453825.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 2200,
+  "species": "Warrior",
+  "monster_type": "Synchro",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "level": 6,
+  "is_tuner": false
+}

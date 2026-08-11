@@ -1,0 +1,17 @@
+{
+  "rarity": "Duel Terminal Super Parallel Rare",
+  "layers": [
+    {
+      "image": "rare",
+      "type": "normal"
+    },
+    {
+      "image": "super_rare",
+      "type": "normal"
+    },
+    {
+      "image": "mosaic_rare",
+      "type": "normal"
+    }
+  ]
+}

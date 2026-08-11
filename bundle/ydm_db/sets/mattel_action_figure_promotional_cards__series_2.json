@@ -1,0 +1,35 @@
+{
+  "name": "Mattel Action Figure promotional cards: Series 2",
+  "code": "MF02",
+  "type": "Booster Pack (2006)",
+  "date": "01-01-2006",
+  "image": "https://ygoprodeck.com/pics_sets/MF02.jpg",
+  "pull_type": "distribution",
+  "distribution": "composition_normal_parallel_rare",
+  "cards": [
+    {
+      "id": 83121692,
+      "code": "MF02-EN001",
+      "rarity": "Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10526791,
+      "code": "MF02-EN002",
+      "rarity": "Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1546123,
+      "code": "MF02-EN003",
+      "rarity": "Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85066822,
+      "code": "MF02-EN004",
+      "rarity": "Normal Parallel Rare",
+      "image_index": 0
+    }
+  ]
+}

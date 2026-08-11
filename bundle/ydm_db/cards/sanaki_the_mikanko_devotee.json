@@ -1,0 +1,21 @@
+{
+  "id": 11161666,
+  "name": "Sanaki the Mikanko Devotee",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can target 1 \"Mikanko\" card you control; return it to the hand. If an Equip Card becomes equipped to this card: You can Special Summon 1 non-Illusion \"Mikanko\" monster from your Deck, also you cannot Special Summon from the Extra Deck for the rest of this turn, except \"Mikanko\" monsters. If this card is sent to the GY: You can target 1 face-up monster on the field; equip this card to it as an Equip Spell. You can only use each effect of \"Sanaki the Mikanko Devotee\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/11161666.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 0,
+  "species": "Illusion",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "level": 3,
+  "is_tuner": false
+}

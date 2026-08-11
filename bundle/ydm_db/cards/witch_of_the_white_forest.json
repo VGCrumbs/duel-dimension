@@ -1,0 +1,12 @@
+{
+  "id": 4398189,
+  "name": "Witch of the White Forest",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When this card is activated: You can add 1 \"White Forest\" monster from your Deck to your hand, but you cannot Special Summon DARK monsters from the Extra Deck for the rest of this turn. The first time each \"White Forest\" monster you control would be destroyed by battle each turn, it is not destroyed. You can target 1 \"White Forest\" monster you control; it is treated as a Tuner this turn. You can only use this effect of \"Witch of the White Forest\" once per turn. You can only activate 1 \"Witch of the White Forest\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/4398189.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Field"
+}

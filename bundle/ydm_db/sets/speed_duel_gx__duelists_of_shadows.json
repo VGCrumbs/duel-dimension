@@ -1,0 +1,1379 @@
+{
+  "name": "Speed Duel GX: Duelists of Shadows",
+  "code": "SGX3",
+  "type": "Booster Pack (2023)",
+  "date": "30-03-2023",
+  "image": "https://ygoprodeck.com/pics_sets/SGX3.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 58554959,
+      "code": "SGX3-ENA01",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 21844576,
+      "code": "SGX3-ENA02",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 58932615,
+      "code": "SGX3-ENA03",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 84327329,
+      "code": "SGX3-ENA04",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 20721928,
+      "code": "SGX3-ENA05",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 86188410,
+      "code": "SGX3-ENA06",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 95943058,
+      "code": "SGX3-ENA07",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 50304345,
+      "code": "SGX3-ENA08",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 73648243,
+      "code": "SGX3-ENA09",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 50259460,
+      "code": "SGX3-ENA10",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 94820406,
+      "code": "SGX3-ENA11",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 94820406,
+      "code": "SGX3-ENA11",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53982768,
+      "code": "SGX3-ENA11",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 3900605,
+      "code": "SGX3-ENA12",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 94820406,
+      "code": "SGX3-ENA13",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 94820406,
+      "code": "SGX3-ENA13",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 12071500,
+      "code": "SGX3-ENA14",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 18438874,
+      "code": "SGX3-ENA15",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 93554166,
+      "code": "SGX3-ENA16",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 48130397,
+      "code": "SGX3-ENA17",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 48130397,
+      "code": "SGX3-ENA17",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22020907,
+      "code": "SGX3-ENA18",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 65824822,
+      "code": "SGX3-ENA19",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 59744639,
+      "code": "SGX3-ENA20",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 86676862,
+      "code": "SGX3-ENA21",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 86676862,
+      "code": "SGX3-ENA21",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22160245,
+      "code": "SGX3-ENA22",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 13293158,
+      "code": "SGX3-ENA23",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 58332301,
+      "code": "SGX3-ENA24",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 21947653,
+      "code": "SGX3-ENA25",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 96561011,
+      "code": "SGX3-ENB01",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 96561011,
+      "code": "SGX3-ENB01",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74677427,
+      "code": "SGX3-ENB02",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11091375,
+      "code": "SGX3-ENB03",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 17658803,
+      "code": "SGX3-ENB04",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 36262024,
+      "code": "SGX3-ENB05",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 67300516,
+      "code": "SGX3-ENB06",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 93969023,
+      "code": "SGX3-ENB07",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 55013285,
+      "code": "SGX3-ENB08",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 15960641,
+      "code": "SGX3-ENB09",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 31553716,
+      "code": "SGX3-ENB10",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 77135531,
+      "code": "SGX3-ENB11",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 564541,
+      "code": "SGX3-ENB12",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81385346,
+      "code": "SGX3-ENB13",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 55991637,
+      "code": "SGX3-ENB14",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 8267140,
+      "code": "SGX3-ENB15",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 96765646,
+      "code": "SGX3-ENB16",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 54178050,
+      "code": "SGX3-ENB17",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 14315573,
+      "code": "SGX3-ENB18",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44397496,
+      "code": "SGX3-ENB19",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 22056710,
+      "code": "SGX3-ENC01",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 22056710,
+      "code": "SGX3-ENC01",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56387350,
+      "code": "SGX3-ENC02",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 34250214,
+      "code": "SGX3-ENC03",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 26495087,
+      "code": "SGX3-ENC04",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 53839837,
+      "code": "SGX3-ENC05",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 70645913,
+      "code": "SGX3-ENC06",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 88728507,
+      "code": "SGX3-ENC07",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 34294855,
+      "code": "SGX3-ENC08",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81616639,
+      "code": "SGX3-ENC09",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 63665875,
+      "code": "SGX3-ENC10",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 55696885,
+      "code": "SGX3-ENC11",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 34761062,
+      "code": "SGX3-ENC12",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 57281778,
+      "code": "SGX3-ENC13",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 4861205,
+      "code": "SGX3-ENC14",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 2204140,
+      "code": "SGX3-ENC15",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81439173,
+      "code": "SGX3-ENC16",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 68005187,
+      "code": "SGX3-ENC17",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 69700783,
+      "code": "SGX3-ENC18",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 94861297,
+      "code": "SGX3-ENC19",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 31189536,
+      "code": "SGX3-ENC20",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 15951532,
+      "code": "SGX3-END01",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 15951532,
+      "code": "SGX3-END01",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 94004268,
+      "code": "SGX3-END02",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 94004268,
+      "code": "SGX3-END02",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10979723,
+      "code": "SGX3-END03",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 47480070,
+      "code": "SGX3-END04",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29654737,
+      "code": "SGX3-END05",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 55821894,
+      "code": "SGX3-END06",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 89567993,
+      "code": "SGX3-END07",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 53162898,
+      "code": "SGX3-END08",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 71209500,
+      "code": "SGX3-END09",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 64178868,
+      "code": "SGX3-END10",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 32807846,
+      "code": "SGX3-END11",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 79965360,
+      "code": "SGX3-END12",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 712559,
+      "code": "SGX3-END13",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 36100154,
+      "code": "SGX3-END14",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81325903,
+      "code": "SGX3-END15",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 67987611,
+      "code": "SGX3-END16",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 22082163,
+      "code": "SGX3-END17",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 58477767,
+      "code": "SGX3-END19",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 6799227,
+      "code": "SGX3-END20",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 61370518,
+      "code": "SGX3-ENE01",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 61370518,
+      "code": "SGX3-ENE01",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 49881766,
+      "code": "SGX3-ENE02",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 35975813,
+      "code": "SGX3-ENE03",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 8581705,
+      "code": "SGX3-ENE04",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 73219648,
+      "code": "SGX3-ENE05",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 9603356,
+      "code": "SGX3-ENE06",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 35798491,
+      "code": "SGX3-ENE07",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 72192100,
+      "code": "SGX3-ENE08",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 73698349,
+      "code": "SGX3-ENE09",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24508238,
+      "code": "SGX3-ENE10",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 28601770,
+      "code": "SGX3-ENE10",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29603180,
+      "code": "SGX3-ENE11",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 48675364,
+      "code": "SGX3-ENE12",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81439173,
+      "code": "SGX3-ENE13",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 94585852,
+      "code": "SGX3-ENE14",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 69313735,
+      "code": "SGX3-ENE15",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 40619825,
+      "code": "SGX3-ENE16",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24096228,
+      "code": "SGX3-ENE17",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 56246017,
+      "code": "SGX3-ENE18",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 94463200,
+      "code": "SGX3-ENE19",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 41925941,
+      "code": "SGX3-ENE20",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 54493213,
+      "code": "SGX3-ENF01",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 54493213,
+      "code": "SGX3-ENF01",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27408609,
+      "code": "SGX3-ENF02",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 27408609,
+      "code": "SGX3-ENF02",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40133511,
+      "code": "SGX3-ENF03",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 47829960,
+      "code": "SGX3-ENF04",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 41113025,
+      "code": "SGX3-ENF05",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 48092532,
+      "code": "SGX3-ENF06",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 3773196,
+      "code": "SGX3-ENF07",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 82112775,
+      "code": "SGX3-ENF08",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 94853057,
+      "code": "SGX3-ENF09",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24508238,
+      "code": "SGX3-ENF10",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24508238,
+      "code": "SGX3-ENF10",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44792253,
+      "code": "SGX3-ENF11",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 36584821,
+      "code": "SGX3-ENF12",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 86361354,
+      "code": "SGX3-ENF13",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 5758500,
+      "code": "SGX3-ENF14",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 5133471,
+      "code": "SGX3-ENF15",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 38430673,
+      "code": "SGX3-ENF16",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 56460688,
+      "code": "SGX3-ENF17",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 39900763,
+      "code": "SGX3-ENF18",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 30241314,
+      "code": "SGX3-ENF19",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 30241314,
+      "code": "SGX3-ENF19",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 41398771,
+      "code": "SGX3-ENF20",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 6007213,
+      "code": "SGX3-ENG01",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 6007213,
+      "code": "SGX3-ENG01",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32491822,
+      "code": "SGX3-ENG02",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 32491822,
+      "code": "SGX3-ENG02",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69890967,
+      "code": "SGX3-ENG03",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 69890967,
+      "code": "SGX3-ENG03",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 87917187,
+      "code": "SGX3-ENG04",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 31034919,
+      "code": "SGX3-ENG05",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 79279397,
+      "code": "SGX3-ENG06",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29216198,
+      "code": "SGX3-ENG07",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 18590133,
+      "code": "SGX3-ENG08",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11448373,
+      "code": "SGX3-ENG09",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 13301895,
+      "code": "SGX3-ENG10",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 54828837,
+      "code": "SGX3-ENG11",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 90434926,
+      "code": "SGX3-ENG12",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 28486799,
+      "code": "SGX3-ENG13",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 56460688,
+      "code": "SGX3-ENG14",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 53701259,
+      "code": "SGX3-ENG15",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 69452756,
+      "code": "SGX3-ENG16",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 47060347,
+      "code": "SGX3-ENG17",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 50277973,
+      "code": "SGX3-ENG18",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 52503575,
+      "code": "SGX3-ENG19",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 6614221,
+      "code": "SGX3-ENH01",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 6614221,
+      "code": "SGX3-ENH01",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57610714,
+      "code": "SGX3-ENH02",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 17810268,
+      "code": "SGX3-ENH03",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 79703905,
+      "code": "SGX3-ENH04",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 43318266,
+      "code": "SGX3-ENH05",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 83604828,
+      "code": "SGX3-ENH06",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 16197610,
+      "code": "SGX3-ENH07",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 80825553,
+      "code": "SGX3-ENH08",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 20003527,
+      "code": "SGX3-ENH09",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 13474291,
+      "code": "SGX3-ENH10",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 7736719,
+      "code": "SGX3-ENH11",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 57839750,
+      "code": "SGX3-ENH12",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 88210105,
+      "code": "SGX3-ENH13",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 90135989,
+      "code": "SGX3-ENH14",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 55375684,
+      "code": "SGX3-ENH15",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 19980975,
+      "code": "SGX3-ENH16",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 63741331,
+      "code": "SGX3-ENH17",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 23639291,
+      "code": "SGX3-ENH18",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 45653036,
+      "code": "SGX3-ENH19",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 58169731,
+      "code": "SGX3-ENH20",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 61587183,
+      "code": "SGX3-ENI01",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 6967870,
+      "code": "SGX3-ENI02",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 52550973,
+      "code": "SGX3-ENI03",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 89959682,
+      "code": "SGX3-ENI04",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 25343280,
+      "code": "SGX3-ENI05",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 31076103,
+      "code": "SGX3-ENI06",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 4081094,
+      "code": "SGX3-ENI07",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 78697395,
+      "code": "SGX3-ENI08",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 49003308,
+      "code": "SGX3-ENI09",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44702857,
+      "code": "SGX3-ENI10",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 90464188,
+      "code": "SGX3-ENI11",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 7459013,
+      "code": "SGX3-ENI12",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 6214884,
+      "code": "SGX3-ENI13",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 99458769,
+      "code": "SGX3-ENI14",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 25773409,
+      "code": "SGX3-ENI15",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 25773409,
+      "code": "SGX3-ENI15",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 52248570,
+      "code": "SGX3-ENI16",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 70595331,
+      "code": "SGX3-ENI17",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 70595331,
+      "code": "SGX3-ENI17",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 88975532,
+      "code": "SGX3-ENI18",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 80485722,
+      "code": "SGX3-ENI19",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 80485722,
+      "code": "SGX3-ENI19",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40916023,
+      "code": "SGX3-ENI20",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 12800777,
+      "code": "SGX3-ENI21",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 80887952,
+      "code": "SGX3-ENI22",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 17286057,
+      "code": "SGX3-ENI23",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 56597272,
+      "code": "SGX3-ENI24",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 25366484,
+      "code": "SGX3-ENI25",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 25366484,
+      "code": "SGX3-ENI25",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 78060096,
+      "code": "SGX3-ENI25",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 78060096,
+      "code": "SGX3-ENI26",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 59464593,
+      "code": "SGX3-ENI27",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 59464593,
+      "code": "SGX3-ENI27",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70095154,
+      "code": "SGX3-ENI28",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 70095154,
+      "code": "SGX3-ENI28",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1371589,
+      "code": "SGX3-ENI29",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 1475311,
+      "code": "SGX3-ENI30",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 1475311,
+      "code": "SGX3-ENI30",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14087893,
+      "code": "SGX3-ENI31",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 38834303,
+      "code": "SGX3-ENI32",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 39956951,
+      "code": "SGX3-ENI33",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 95132338,
+      "code": "SGX3-ENI34",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 95132338,
+      "code": "SGX3-ENI34",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11593137,
+      "code": "SGX3-ENI35",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 30353551,
+      "code": "SGX3-ENI36",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 54704216,
+      "code": "SGX3-ENI37",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 79852326,
+      "code": "SGX3-ENI38",
+      "rarity": "Common",
+      "image_index": 0
+    }
+  ]
+}

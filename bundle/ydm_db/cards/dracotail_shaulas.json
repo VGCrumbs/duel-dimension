@@ -1,0 +1,21 @@
+{
+  "id": 42125140,
+  "name": "Dracotail Shaulas",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 \"Dracotail\" monster + 1 monster in the hand\r\nYou can target 2 \"Dracotail\" cards in your GY and 1 face-up card on the field with the same type (Monster, Spell, or Trap) as 1 of those GY cards; shuffle all 3 into the Deck. If 2 or more monsters are sent to the GY at the same time, while this card is in your GY (except during the Damage Step): You can Special Summon this card, but banish it when it leaves the field. You can only use each effect of \"Dracotail Shaulas\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/42125140.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 2400,
+  "species": "Dragon",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1500,
+  "level": 6,
+  "is_tuner": false
+}

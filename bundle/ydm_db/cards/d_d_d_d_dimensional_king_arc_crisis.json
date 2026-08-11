@@ -1,0 +1,24 @@
+{
+  "id": 71398055,
+  "name": "D/D/D/D Dimensional King Arc Crisis",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "[ Pendulum Effect ] \nYou can target any number of \"Dark Contract\" cards you control; destroy them, then you can Special Summon up to that many \"Doom King\" Pendulum Monsters from your Deck and/or Extra Deck. You can only use this effect of \"D/D/D/D Dimensional King Arc Crisis\" once per turn.\n\n[ Monster Effect ] \n4 Fiend monsters (1 Fusion, 1 Synchro, 1 Xyz, and 1 Pendulum)\r\nMust be either Fusion Summoned, or Special Summoned (from your face-down Extra Deck) by banishing the above cards from your field and/or GY. You can only Special Summon \"D/D/D/D Dimensional King Arc Crisis\" once per turn this way, no matter which method you use. If this card is Special Summoned: You can negate the effects of all face-up monsters your opponent currently controls. Can attack all your opponent's monsters, once each. If this card in the Monster Zone is destroyed: You can place this card in your Pendulum Zone.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/71398055.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 4000,
+  "species": "Fiend",
+  "monster_type": "Fusion",
+  "is_pendulum": true,
+  "ability": "",
+  "has_effect": true,
+  "pendulum_text": "You can target any number of \"Dark Contract\" cards you control; destroy them, then you can Special Summon up to that many \"Doom King\" Pendulum Monsters from your Deck and/or Extra Deck. You can only use this effect of \"D/D/D/D Dimensional King Arc Crisis\" once per turn.",
+  "pendulum_scale_left_blue": 13,
+  "pendulum_scale_right_red": 13,
+  "def": 4000,
+  "level": 12,
+  "is_tuner": false
+}

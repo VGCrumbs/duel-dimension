@@ -1,0 +1,21 @@
+{
+  "id": 97462632,
+  "name": "Griffoh",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "(Quick Effect): You can discard this card, then activate 1 of these effects;\r\n● The next battle or effect damage you take this turn will become 0.\r\n● Set 1 Quick-Play Spell or Trap that mentions \"Light and Darkness Ritual\" from your Deck. It can be activated this turn.\r\nYou can only use this effect of \"Griffoh\" once per turn. If you Ritual Summon exactly 1 Level 8 Ritual Monster with a card effect that requires use of monsters, this card can be used as the entire Tribute.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/97462632.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 300,
+  "species": "Fiend",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 200,
+  "level": 1,
+  "is_tuner": false
+}

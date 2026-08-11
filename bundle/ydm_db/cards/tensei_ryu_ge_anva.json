@@ -1,0 +1,24 @@
+{
+  "id": 56322832,
+  "name": "Tensei Ryu-Ge Anva",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "[ Pendulum Effect ] \nYou cannot Pendulum Summon, except \"Ryu-Ge\" monsters (this effect cannot be negated). You can negate your opponent's card or effect activated in response to the activation of your \"Ryu-Ge\" Spell Card or effect, then destroy this card. You can only use this effect of \"Tensei Ryu-Ge Anva\" once per turn.\n\n[ Monster Effect ] \nYou can Tribute 1 \"Ryu-Ge\" monster from your hand or field, except \"Tensei Ryu-Ge Anva\"; Special Summon this card from your hand. If this card is Special Summoned: You can target 1 card on the field; destroy it. If this card is destroyed: You can place 1 \"Ryu-Ge\" Continuous Spell/Trap from your Deck, GY, or banishment, face-up on your field. You can only use each effect of \"Tensei Ryu-Ge Anva\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/56322832.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 3000,
+  "species": "Dragon",
+  "monster_type": "",
+  "is_pendulum": true,
+  "ability": "",
+  "has_effect": true,
+  "pendulum_text": "You cannot Pendulum Summon, except \"Ryu-Ge\" monsters (this effect cannot be negated). You can negate your opponent's card or effect activated in response to the activation of your \"Ryu-Ge\" Spell Card or effect, then destroy this card. You can only use this effect of \"Tensei Ryu-Ge Anva\" once per turn.",
+  "pendulum_scale_left_blue": 11,
+  "pendulum_scale_right_red": 11,
+  "def": 2100,
+  "level": 10,
+  "is_tuner": false
+}

@@ -1,0 +1,21 @@
+{
+  "id": 57649113,
+  "name": "Stinger the Electric Expeller",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "''Through brave struggles, Stinger and the Dune Defenders have repelled all approaching external threats. His sword should only be used for the defense of its people.''",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/57649113.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WIND",
+  "atk": 800,
+  "species": "Psychic",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": false,
+  "def": 1000,
+  "level": 3,
+  "is_tuner": true
+}

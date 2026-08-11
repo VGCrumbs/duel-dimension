@@ -1,0 +1,12 @@
+{
+  "id": 38776201,
+  "name": "Sacred Beasts Released",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Add 3 \"Sacred Beast\" monsters with different names from your Deck to your hand, then discard 2 cards. If this card is in your GY, except the turn it was sent there: You can banish it; add 1 Level 10 Pyro, Thunder, or Fiend monster that cannot be Normal Summoned/Set, from your Deck to your hand. You can only use each effect of \"Sacred Beasts Released\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/38776201.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

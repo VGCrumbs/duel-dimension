@@ -1,0 +1,16 @@
+{
+  "name": "Duel Overload (Box)",
+  "code": "DUOV_B",
+  "type": "Collector's Set",
+  "date": "19-03-2020",
+  "image": "https://i.imgur.com/1ji44hR.png",
+  "pull_type": "composition",
+  "sub_sets": [
+    "DUOV_P",
+    "DUOV_P",
+    "DUOV_P",
+    "DUOV_P",
+    "DUOV_P",
+    "DUOV_P"
+  ]
+}

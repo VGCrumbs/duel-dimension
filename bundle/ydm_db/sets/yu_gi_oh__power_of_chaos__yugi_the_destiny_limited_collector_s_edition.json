@@ -1,0 +1,71 @@
+{
+  "name": "Yu-Gi-Oh! Power of Chaos: Yugi the Destiny Limited Collector's Edition",
+  "code": "PCY",
+  "type": "Collector's Set",
+  "date": "18-11-2003",
+  "image": "https://ygoprodeck.com/pics_sets/PCY.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 59744639,
+      "code": "PCY-001",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58921041,
+      "code": "PCY-002",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63391643,
+      "code": "PCY-003",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46986420,
+      "code": "PCY-004",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40640057,
+      "code": "PCY-005",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59744639,
+      "code": "PCY-E001",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58921041,
+      "code": "PCY-E002",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63391643,
+      "code": "PCY-E003",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46986420,
+      "code": "PCY-E004",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40640057,
+      "code": "PCY-E005",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": 33955120,
+  "name": "Rage Rose Witch",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 Tuner + 1+ non-Tuner monsters\r\nPlant monsters you control cannot be destroyed by card effects. You can only use each of the following effects of \"Rage Rose Witch\" once per turn. If this card is Synchro Summoned: You can send up to 1 Plant monster each from your Deck and Extra Deck to the GY, also you cannot Special Summon from the Extra Deck for the rest of this turn, except Synchro Monsters. If a card(s) on the field is destroyed by card effect while this card is in your GY (except during the Damage Step): You can Special Summon this card.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/33955120.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 1600,
+  "species": "Plant",
+  "monster_type": "Synchro",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2400,
+  "level": 6,
+  "is_tuner": false
+}

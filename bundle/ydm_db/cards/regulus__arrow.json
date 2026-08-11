@@ -1,0 +1,12 @@
+{
+  "id": 60439482,
+  "name": "Regulus' Arrow",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you control \"Regulus, the Prince of Endymion\": Activate 1 of these effects;\r\n● Destroy 1 monster your opponent controls that battled this turn.\r\n● When a Normal or Quick-Play Spell Card is activated: Negate that effect.\r\nDuring your Main Phase: You can banish this card from your GY, then target 1 \"Regulus, the Prince of Endymion\" or 1 monster that mentions it in your GY; Special Summon it. You can only use each effect of \"Regulus' Arrow\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/60439482.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Quick-Play"
+}

@@ -1,0 +1,21 @@
+{
+  "id": 91215724,
+  "name": "Junk Armor",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Your opponent cannot target Synchro Monsters you control with \"Warrior\" or \"Stardust\" in their original names, with card effects. You can only use each of the following effects of \"Junk Armor\" once per turn. If this card is added to your hand, except by drawing it: You can Special Summon it. You can Tribute this card; Special Summon 1 \"Junk\" or \"Synchron\" monster from your Deck in Defense Position, except \"Junk Armor\".",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/91215724.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 600,
+  "species": "Warrior",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1200,
+  "level": 2,
+  "is_tuner": false
+}

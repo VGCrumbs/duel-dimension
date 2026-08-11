@@ -1,0 +1,185 @@
+{
+  "name": "OTS Tournament Pack 26",
+  "code": "OP26",
+  "type": "OTS Tournament Pack",
+  "date": "17-10-2024",
+  "image": "https://ygoprodeck.com/pics_sets/OP26.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 72270339,
+      "code": "OP26-EN001",
+      "rarity": "Ultimate Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25801745,
+      "code": "OP26-EN002",
+      "rarity": "Ultimate Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80453041,
+      "code": "OP26-EN003",
+      "rarity": "Ultimate Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60990740,
+      "code": "OP26-EN004",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1278431,
+      "code": "OP26-EN005",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70156946,
+      "code": "OP26-EN006",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7150545,
+      "code": "OP26-EN007",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40509732,
+      "code": "OP26-EN008",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 71818935,
+      "code": "OP26-EN009",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67616300,
+      "code": "OP26-EN010",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 9113513,
+      "code": "OP26-EN011",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30336082,
+      "code": "OP26-EN012",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27132350,
+      "code": "OP26-EN013",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11954712,
+      "code": "OP26-EN014",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 21954587,
+      "code": "OP26-EN015",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 5908650,
+      "code": "OP26-EN016",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11845050,
+      "code": "OP26-EN017",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 47840168,
+      "code": "OP26-EN018",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 30604579,
+      "code": "OP26-EN019",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 67098114,
+      "code": "OP26-EN020",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 93483212,
+      "code": "OP26-EN021",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29981921,
+      "code": "OP26-EN022",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 80696379,
+      "code": "OP26-EN023",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 23672629,
+      "code": "OP26-EN024",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 54031490,
+      "code": "OP26-EN025",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 68540059,
+      "code": "OP26-EN026",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 35027493,
+      "code": "OP26-EN027",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 54974237,
+      "code": "OP26-EN028",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 4931121,
+      "code": "OP26-EN029",
+      "rarity": "Common",
+      "image_index": 0
+    }
+  ]
+}

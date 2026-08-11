@@ -1,0 +1,21 @@
+{
+  "id": 16509007,
+  "name": "Kewl Tune Mix",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card on the field would be used as Synchro Material, 1 Tuner in your hand can be used as 1 of the other materials. You can only use each of the following effects of \"Kewl Tune Mix\" once per turn. If this card is Normal or Special Summoned: You can add 1 \"Kewl Tune\" monster from your Deck or GY to your hand, except a Level 2 monster. If this card is sent to the GY as Synchro Material: You can target 1 monster your opponent controls; destroy it.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/16509007.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WIND",
+  "atk": 100,
+  "species": "Warrior",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2000,
+  "level": 2,
+  "is_tuner": true
+}

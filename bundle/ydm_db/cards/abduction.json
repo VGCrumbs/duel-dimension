@@ -1,0 +1,12 @@
+{
+  "id": 21846145,
+  "name": "Abduction",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Target 1 face-up monster your opponent controls; banish 1 monster from your Deck or Extra Deck with the same original Type, Attribute, and Level/Rank/Link Rating, and if you do, take control of that targeted monster, and if you banished a monster with the same original name, that monster's effects are negated. You can only activate 1 \"Abduction\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/21846145.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

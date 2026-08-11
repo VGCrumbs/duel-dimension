@@ -1,0 +1,16 @@
+{
+  "name": "Nike collaboration cards",
+  "code": "NKC1",
+  "type": "Single",
+  "date": "",
+  "image": "https://ygoprodeck.com/pics_sets/NKC1.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 37301660,
+      "code": "NKC1-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

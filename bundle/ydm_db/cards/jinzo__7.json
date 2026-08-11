@@ -1,0 +1,21 @@
+{
+  "id": 32809211,
+  "name": "Jinzo #7",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "This monster can attack your opponent's Life Points directly.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/32809211.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 500,
+  "species": "Machine",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 400,
+  "level": 2,
+  "is_tuner": false
+}

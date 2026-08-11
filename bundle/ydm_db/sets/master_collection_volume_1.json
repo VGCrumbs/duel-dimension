@@ -1,0 +1,47 @@
+{
+  "name": "Master Collection Volume 1",
+  "code": "MC1",
+  "type": "Collector's Set",
+  "date": "01-12-2004",
+  "image": "https://ygoprodeck.com/pics_sets/MC1.jpg",
+  "pull_type": "distribution",
+  "distribution": "the_dark_side_of_dimensions_movie_pack_secret_edition__pack",
+  "cards": [
+    {
+      "id": 33396948,
+      "code": "MC1-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81480461,
+      "code": "MC1-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 64631466,
+      "code": "MC1-EN003",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63519819,
+      "code": "MC1-EN004",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31829185,
+      "code": "MC1-EN005",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53982768,
+      "code": "MC1-EN006",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "Yu-Gi-Oh! Elemental Hero Collection 2",
+  "code": "EHC2",
+  "type": "Collector's Set",
+  "date": "13-11-2007",
+  "image": "https://ygoprodeck.com/pics_sets/EHC2.jpg",
+  "pull_type": "distribution",
+  "distribution": "the_dark_side_of_dimensions_movie_pack_secret_edition__pack",
+  "cards": [
+    {
+      "id": 20721928,
+      "code": "EHC2-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84327329,
+      "code": "EHC2-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86188410,
+      "code": "EHC2-EN003",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 61204971,
+      "code": "EHC2-EN004",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

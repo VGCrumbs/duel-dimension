@@ -1,0 +1,12 @@
+{
+  "id": 8778267,
+  "name": "Penetration Fusion",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If a monster(s) was destroyed by battle this turn: Fusion Summon 1 Fusion Monster from your Extra Deck, using monsters from your hand or field, and if you do, it gains this effect.\r\n● (Quick Effect): You can Tribute this card, then target 1 face-up monster you control; it gains 500 ATK.\r\nYou can only activate 1 \"Penetration Fusion\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/8778267.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Quick-Play"
+}

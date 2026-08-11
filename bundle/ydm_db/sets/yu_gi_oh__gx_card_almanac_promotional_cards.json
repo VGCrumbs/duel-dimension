@@ -1,0 +1,29 @@
+{
+  "name": "Yu-Gi-Oh! GX Card Almanac promotional cards",
+  "code": "YDB1",
+  "type": "Booster Pack (2007)",
+  "date": "30-11-2007",
+  "image": "https://ygoprodeck.com/pics_sets/YDB1.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 61802346,
+      "code": "YDB1-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7200041,
+      "code": "YDB1-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33695750,
+      "code": "YDB1-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

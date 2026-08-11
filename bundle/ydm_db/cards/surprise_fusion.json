@@ -1,0 +1,12 @@
+{
+  "id": 35167375,
+  "name": "Surprise Fusion",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Target 1 face-up monster you control and declare 1 Monster Type and 1 Attribute; that monster becomes that Type and Attribute, then you can Fusion Summon 1 Fusion Monster from your Extra Deck, using monsters you control, including the targeted monster. You can banish this card from your GY; Tribute 1 Fusion Monster, and if you do, Special Summon 2 \"Surprise Tokens\" (Spellcaster/DARK/ATK 0/DEF 0) with a Level equal to the Level the Tributed monster had on the field. You can only use this effect of \"Surprise Fusion\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/35167375.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

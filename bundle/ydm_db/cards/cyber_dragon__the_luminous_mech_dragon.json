@@ -1,0 +1,21 @@
+{
+  "id": 66664203,
+  "name": "Cyber Dragon, the Luminous Mech Dragon",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you control no monsters, you can Special Summon this card (from your hand). You can only use each of the following effects of \"Cyber Dragon, the Luminous Mech Dragon\" once per turn. If this card is Special Summoned: You can target 1 face-up monster your opponent controls; negate its effects until the end of this turn. During your Main Phase: You can Fusion Summon 1 Machine Fusion Monster from your Extra Deck, using this card you control and monsters from your hand or field.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/66664203.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 2100,
+  "species": "Machine",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1600,
+  "level": 5,
+  "is_tuner": false
+}

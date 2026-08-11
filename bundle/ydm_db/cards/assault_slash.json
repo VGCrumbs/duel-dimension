@@ -1,0 +1,12 @@
+{
+  "id": 40012727,
+  "name": "Assault Slash",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Activate only while you control an \"/Assault Mode\" monster. Destroy all face-up monsters on the field.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/40012727.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

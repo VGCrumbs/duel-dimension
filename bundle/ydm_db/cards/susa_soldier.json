@@ -1,0 +1,21 @@
+{
+  "id": 40473581,
+  "name": "Susa Soldier",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "This card cannot be Special Summoned. This card returns to the owner's hand during the End Phase of the turn that this card is Normal Summoned or flipped face-up. The Battle Damage this card inflicts to your opponent's Life Points is halved.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/40473581.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 2000,
+  "species": "Thunder",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "Spirit",
+  "has_effect": true,
+  "def": 1600,
+  "level": 4,
+  "is_tuner": false
+}

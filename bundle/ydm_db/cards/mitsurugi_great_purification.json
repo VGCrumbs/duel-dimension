@@ -1,0 +1,12 @@
+{
+  "id": 17954937,
+  "name": "Mitsurugi Great Purification",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When your opponent activates a card or effect: Tribute 1 Level 5 or higher Reptile monster; negate that effect, and if you do, destroy that card. You can banish this card from your GY, then target 1 Reptile monster in your GY; Special Summon it, and if you do, Tribute 1 other monster you control. You can only use 1 \"Mitsurugi Great Purification\" effect per turn, and only once that turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/17954937.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

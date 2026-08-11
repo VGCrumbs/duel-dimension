@@ -48,8 +48,14 @@ public class DdIOUtil
     
     public static void downloadFile(URL url, File target) throws IOException
     {
-        InputStream in = DdIOUtil.urlInputStream(url);
-        Files.copy(in, Paths.get(target.toURI()));
+        // try-with-resources. The stream used to be opened and never closed, so
+        // a download that failed part way -- which is exactly what happens on a
+        // flaky connection, the case this is most often exercised on -- left the
+        // connection open until the collector got round to it.
+        try(InputStream in = DdIOUtil.urlInputStream(url))
+        {
+            Files.copy(in, Paths.get(target.toURI()));
+        }
     }
     
     public static void setAgent()
@@ -58,11 +64,23 @@ public class DdIOUtil
         //        System.setProperty("http.agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
     }
     
+    /**
+     * Makes a directory, and every parent it needs.
+     * <p>
+     * {@code mkdirs}, not {@code mkdir}: the callers ask for nested folders --
+     * {@code ydm_db_images/cards/raw} and {@code ydm_db/rarity_images} -- and
+     * one level at a time silently did nothing when the parent was not there
+     * yet, which is exactly the state a clean install whose database download
+     * failed is in. Every image the workers then wrote failed one by one.
+     */
     public static void createDirIfNonExistant(File file)
     {
-        if(!file.exists())
+        if(!file.exists() && !file.mkdirs() && !file.isDirectory())
         {
-            file.mkdir();
+            // Said once, here, rather than as one exception per file written
+            // into a folder that is not there.
+            de.cas_ual_ty.dueldimension.DuelDimension.warn(
+                "Could not create " + file.getAbsolutePath());
         }
     }
     

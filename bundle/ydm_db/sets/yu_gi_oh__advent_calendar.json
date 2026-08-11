@@ -1,0 +1,149 @@
+{
+  "name": "Yu-Gi-Oh! Advent Calendar",
+  "code": "AC19",
+  "type": "Booster Pack (2019)",
+  "date": "26-09-2019",
+  "image": "https://ygoprodeck.com/pics_sets/AC19.jpg",
+  "pull_type": "distribution",
+  "distribution": "ots_tournament_pack",
+  "cards": [
+    {
+      "id": 40640057,
+      "code": "AC19-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40703222,
+      "code": "AC19-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46613515,
+      "code": "AC19-EN004",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33776734,
+      "code": "AC19-EN005",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80831721,
+      "code": "AC19-EN006",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 15471265,
+      "code": "AC19-EN007",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38491199,
+      "code": "AC19-EN008",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40817915,
+      "code": "AC19-EN009",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 2830693,
+      "code": "AC19-EN010",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 41999284,
+      "code": "AC19-EN011",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33245030,
+      "code": "AC19-EN012",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50185950,
+      "code": "AC19-EN013",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 78355370,
+      "code": "AC19-EN014",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89086566,
+      "code": "AC19-EN015",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35112613,
+      "code": "AC19-EN016",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 47432275,
+      "code": "AC19-EN017",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 2295440,
+      "code": "AC19-EN018",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 16404809,
+      "code": "AC19-EN019",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 20065322,
+      "code": "AC19-EN020",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57116033,
+      "code": "AC19-EN021",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25573054,
+      "code": "AC19-EN022",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 98585345,
+      "code": "AC19-EN023",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69181753,
+      "code": "AC19-EN024",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

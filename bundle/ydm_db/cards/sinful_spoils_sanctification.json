@@ -1,0 +1,12 @@
+{
+  "id": 90386276,
+  "name": "Sinful Spoils Sanctification",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can activate 1 of these effects;\r\n● Target 1 \"Diabell\" monster in your GY or banishment; discard 1 card, and if you do, Special Summon that monster.\r\n● Target 1 face-up Monster Card in your Spell & Trap Zone; Special Summon it.\r\nYou can only use this effect of \"Sinful Spoils Sanctification\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/90386276.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Continuous"
+}

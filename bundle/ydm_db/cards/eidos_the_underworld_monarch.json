@@ -1,0 +1,21 @@
+{
+  "id": 31596518,
+  "name": "Eidos the Underworld Monarch",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is Normal or Special Summoned: You can add 1 \"Monarch\" Spell/Trap or 1 monster with 2800 ATK/1000 DEF from your Deck or GY to your hand. You can declare 1 Attribute; make 1 face-up monster on the field become that Attribute. If you Tribute Summon a monster with 2400 or more ATK and 1000 DEF, while this card is in your GY: You can add this card to your hand or Special Summon it. You can only use each effect of \"Eidos the Underworld Monarch\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/31596518.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2400,
+  "species": "Spellcaster",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1000,
+  "level": 6,
+  "is_tuner": false
+}

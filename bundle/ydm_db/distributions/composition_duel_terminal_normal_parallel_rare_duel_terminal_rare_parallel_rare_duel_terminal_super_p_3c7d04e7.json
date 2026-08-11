@@ -1,0 +1,38 @@
+{
+  "name": "composition_duel_terminal_normal_parallel_rare_duel_terminal_rare_parallel_rare_duel_terminal_super_p_3c7d04e7",
+  "pulls": [
+    {
+      "weight": 25,
+      "entries": [
+        {
+          "count": 1,
+          "rarities": [
+            "Duel Terminal Normal Parallel Rare"
+          ]
+        }
+      ]
+    },
+    {
+      "weight": 9,
+      "entries": [
+        {
+          "count": 1,
+          "rarities": [
+            "Duel Terminal Rare Parallel Rare"
+          ]
+        }
+      ]
+    },
+    {
+      "weight": 3,
+      "entries": [
+        {
+          "count": 1,
+          "rarities": [
+            "Duel Terminal Super Parallel Rare"
+          ]
+        }
+      ]
+    }
+  ]
+}

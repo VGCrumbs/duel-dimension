@@ -1,0 +1,21 @@
+{
+  "id": 66646087,
+  "name": "Super Quantal Fairy Zetan",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you control a \"Super Quant\" monster, except \"Super Quantal Fairy Zetan\", and this card is in your hand: You can Special Summon this card, then you can make this card's Level the same as 1 \"Super Quant\" monster you control. You can Tribute this card and send 1 \"Super Quant\" card from your Deck to the GY, except a DARK monster; Special Summon 1 \"Super Quant\" monster from your Deck, except \"Super Quantal Fairy Zetan\". You can only use each effect of \"Super Quantal Fairy Zetan\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/66646087.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 0,
+  "species": "Zombie",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "level": 1,
+  "is_tuner": false
+}

@@ -1,0 +1,521 @@
+{
+  "name": "Shonen Jump May 2006 subscription bonus",
+  "code": "JUMP",
+  "type": "Booster Pack (2006)",
+  "date": "01-05-2006",
+  "image": "https://ygoprodeck.com/pics_sets/JUMP.jpg",
+  "pull_type": "distribution",
+  "distribution": "battles_of_legend__armageddon",
+  "cards": [
+    {
+      "id": 14731897,
+      "code": "JUMP-EN006",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81332143,
+      "code": "JUMP-EN007",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 55948544,
+      "code": "JUMP-EN008",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80304126,
+      "code": "JUMP-EN009",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90960358,
+      "code": "JUMP-EN010",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44910027,
+      "code": "JUMP-EN011",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40044918,
+      "code": "JUMP-EN012",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37195861,
+      "code": "JUMP-EN013",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46668237,
+      "code": "JUMP-EN014",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 66973070,
+      "code": "JUMP-EN015",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57793869,
+      "code": "JUMP-EN016",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21208154,
+      "code": "JUMP-EN017",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62180201,
+      "code": "JUMP-EN018",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 26302522,
+      "code": "JUMP-EN019",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 26376390,
+      "code": "JUMP-EN020",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37507488,
+      "code": "JUMP-EN021",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86871614,
+      "code": "JUMP-EN022",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 24857466,
+      "code": "JUMP-EN023",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 39439590,
+      "code": "JUMP-EN024",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13893596,
+      "code": "JUMP-EN025",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38109772,
+      "code": "JUMP-EN026",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 5861892,
+      "code": "JUMP-EN027",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 64681432,
+      "code": "JUMP-EN028",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 15341821,
+      "code": "JUMP-EN029",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 88264978,
+      "code": "JUMP-EN030",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79229522,
+      "code": "JUMP-EN031",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 78651105,
+      "code": "JUMP-EN032",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 98777036,
+      "code": "JUMP-EN033",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31038159,
+      "code": "JUMP-EN034",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7634581,
+      "code": "JUMP-EN035",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60417395,
+      "code": "JUMP-EN036",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10000000,
+      "code": "JUMP-EN037",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33093439,
+      "code": "JUMP-EN038",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95453143,
+      "code": "JUMP-EN039",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 9666558,
+      "code": "JUMP-EN040",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 88071625,
+      "code": "JUMP-EN041",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 66094973,
+      "code": "JUMP-EN042",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 36521459,
+      "code": "JUMP-EN043",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 88643579,
+      "code": "JUMP-EN044",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10000010,
+      "code": "JUMP-EN045",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 87259077,
+      "code": "JUMP-EN046",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 43366227,
+      "code": "JUMP-EN047",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37115575,
+      "code": "JUMP-EN048",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46986420,
+      "code": "JUMP-EN049",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63468625,
+      "code": "JUMP-EN050",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90953320,
+      "code": "JUMP-EN051",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4545683,
+      "code": "JUMP-EN052",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68140974,
+      "code": "JUMP-EN053",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 8967776,
+      "code": "JUMP-EN054",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35952884,
+      "code": "JUMP-EN055",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7845138,
+      "code": "JUMP-EN056",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51402908,
+      "code": "JUMP-EN057",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63612442,
+      "code": "JUMP-EN058",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81330115,
+      "code": "JUMP-EN059",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54719828,
+      "code": "JUMP-EN060",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10000020,
+      "code": "JUMP-EN061",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56910167,
+      "code": "JUMP-EN062",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 75433814,
+      "code": "JUMP-EN063",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 48995978,
+      "code": "JUMP-EN064",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31563350,
+      "code": "JUMP-EN065",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 98012938,
+      "code": "JUMP-EN066",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68371799,
+      "code": "JUMP-EN067",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89631139,
+      "code": "JUMP-EN068",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77498348,
+      "code": "JUMP-EN069",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 96471335,
+      "code": "JUMP-EN070",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95486586,
+      "code": "JUMP-EN071",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1686814,
+      "code": "JUMP-EN072",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 464362,
+      "code": "JUMP-EN073",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 72378329,
+      "code": "JUMP-EN074",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 52085072,
+      "code": "JUMP-EN075",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50185950,
+      "code": "JUMP-EN076",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 52653092,
+      "code": "JUMP-EN077",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89870349,
+      "code": "JUMP-EN078",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21250202,
+      "code": "JUMP-EN079",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30603688,
+      "code": "JUMP-EN080",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 2530830,
+      "code": "JUMP-EN081",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 41999284,
+      "code": "JUMP-EN082",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51011872,
+      "code": "JUMP-EN083",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 61665245,
+      "code": "JUMP-EN084",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68431965,
+      "code": "JUMP-EN085",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 82301904,
+      "code": "JUMP-EN086",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79266769,
+      "code": "JUMP-EN087",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 15661378,
+      "code": "JUMP-EN088",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 41659072,
+      "code": "JUMP-EN089",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 78144171,
+      "code": "JUMP-EN090",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": 95072744,
+  "name": "Tohushaddoll Grysta",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "FLIP: You can target 1 non-Rock \"Shaddoll\" monster in your GY; apply its effect that activates when it is flipped face-up.\r\nIf this card is sent to the GY by card effect (except during the Damage Step): You can Fusion Summon 1 \"Shaddoll\" Fusion Monster from your Extra Deck, by banishing its materials from your hand, field, and/or GY. You cannot Special Summon from the Extra Deck the turn you activate this effect, except \"Shaddoll\" monsters. You can only use 1 \"Tohushaddoll Grysta\" effect per turn, and only once that turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/95072744.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 2450,
+  "species": "Rock",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "Flip",
+  "has_effect": true,
+  "def": 1950,
+  "level": 7,
+  "is_tuner": false
+}

@@ -1,0 +1,20 @@
+{
+  "id": 79480466,
+  "name": "Bazoo the Soul-Devourer",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "3 Level 4 monsters\r\nAny Xyz Material detached from a monster is banished instead of going to the GY. Once per Chain, if a Monster Card(s) is sent to the GY (except during the Damage Step): You can detach 1 material from this card. If the last material(s) is detached from this card (except during the Damage Step): You can target 3 cards in the GY(s); attach them to this card.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/79480466.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 2500,
+  "species": "Beast",
+  "monster_type": "Xyz",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 900,
+  "rank": 4
+}

@@ -1,0 +1,101 @@
+{
+  "name": "The Pot Collection",
+  "code": "TBC1",
+  "type": "Collector's Set",
+  "date": "01-09-2023",
+  "image": "https://ygoprodeck.com/pics_sets/TBC1.jpg",
+  "pull_type": "distribution",
+  "distribution": "composition_ultra_parallel_rare",
+  "cards": [
+    {
+      "id": 55144522,
+      "code": "TBC1-EN001",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70278545,
+      "code": "TBC1-EN002",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67169062,
+      "code": "TBC1-EN003",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51790181,
+      "code": "TBC1-EN004",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 96598015,
+      "code": "TBC1-EN005",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 64014615,
+      "code": "TBC1-EN006",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 98645731,
+      "code": "TBC1-EN007",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 98672567,
+      "code": "TBC1-EN008",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35261759,
+      "code": "TBC1-EN009",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 49238328,
+      "code": "TBC1-EN010",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84211599,
+      "code": "TBC1-EN011",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4896788,
+      "code": "TBC1-EN012",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22123627,
+      "code": "TBC1-EN013",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33904024,
+      "code": "TBC1-EN014",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 55144522,
+      "code": "TBC1-ENS01",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

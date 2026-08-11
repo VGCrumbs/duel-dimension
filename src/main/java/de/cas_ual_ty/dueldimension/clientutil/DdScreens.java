@@ -39,7 +39,5 @@ public final class DdScreens
             DdContainerTypes.CARD_SET, CIIScreen::new);
         MenuScreens.<CIIContainer, CIIScreen<CIIContainer>>register(
             DdContainerTypes.CARD_SET_CONTENTS, CIIScreen::new);
-        MenuScreens.<CIIContainer, CIIScreen<CIIContainer>>register(
-            DdContainerTypes.SIMPLE_BINDER, CIIScreen::new);
     }
 }

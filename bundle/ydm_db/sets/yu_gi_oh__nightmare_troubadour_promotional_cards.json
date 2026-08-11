@@ -1,0 +1,29 @@
+{
+  "name": "Yu-Gi-Oh! Nightmare Troubadour promotional cards",
+  "code": "NTR",
+  "type": "Booster Pack (2005)",
+  "date": "30-08-2005",
+  "image": "https://ygoprodeck.com/pics_sets/NTR.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 73665146,
+      "code": "NTR-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 72443568,
+      "code": "NTR-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50755,
+      "code": "NTR-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

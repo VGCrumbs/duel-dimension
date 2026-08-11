@@ -110,6 +110,7 @@ public class CardSetItem extends CardSetBaseItem
         }
         java.util.List<Integer> codes = new java.util.ArrayList<>();
         java.util.List<String> rarities = new java.util.ArrayList<>();
+        java.util.List<Integer> arts = new java.util.ArrayList<>();
         for(ItemStack card : de.cas_ual_ty.dueldimension.set.OpenedCardSetItem.contentsOf(openedStack))
         {
             if(card.isEmpty() || !(card.getItem() instanceof de.cas_ual_ty.dueldimension.card.CardItem item))
@@ -123,6 +124,10 @@ public class CardSetItem extends CardSetBaseItem
             }
             codes.add((int)holder.getCard().getId());
             rarities.add(holder.getRarity() == null ? "" : holder.getRarity());
+            // The artwork this printing specifies, which the set file named and
+            // the puller has been carrying on the holder all along. Gathered in
+            // the same pass as the rarity so the three lists stay in step.
+            arts.add((int)holder.getImageIndex());
         }
         if(codes.isEmpty())
         {
@@ -131,8 +136,21 @@ public class CardSetItem extends CardSetBaseItem
         // Recorded on the server, exactly as a shop purchase is: a pack opened
         // in the world and a pack bought at the counter are the same event as
         // far as the collection is concerned.
-        codes.forEach(code -> de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles
-            .get(serverPlayer).trunk().add(code, 1));
+        // With the rarity, which was gathered two lines up for the reveal and
+        // then thrown away here -- every card opened in the world landed under
+        // Trunk.UNKNOWN_RARITY, so the primary way a player acquires cards told
+        // the collection nothing about which printing it had. And with the
+        // artwork beside it, for the same reason and from the same holder: a
+        // printing that names image 2 is a copy that wears image 2, and the
+        // deck editor defaults a new copy's art from what is recorded here. The
+        // three lists are filled in lockstep above (a card that is skipped is
+        // skipped from all three), so index i is the same card in each.
+        de.cas_ual_ty.dueldimension.duel.profile.Trunk trunk =
+            de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.get(serverPlayer).trunk();
+        for(int i = 0; i < codes.size(); i++)
+        {
+            trunk.add(codes.get(i), rarities.get(i), arts.get(i), 1);
+        }
         de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.saveAndSync(serverPlayer);
         // Fabric registers a receiver by direction and hands it the payload and
         // the sender, so the reveal is a plain send now rather than a

@@ -246,6 +246,52 @@ def star(size=32):
     return big.resize((size, size), Image.LANCZOS)
 
 
+def alt_art(size=32):
+    """The mark on a card that has more than one artwork: a gold [A] badge.
+
+    A badge rather than a bare letter, for the reason the star is outlined: it
+    is drawn over card art of any colour, and an unbacked glyph disappears into
+    a light illustration. The gold plate carries the contrast and the letter is
+    knocked out of it in the case ink, so the mark reads at the six pixels the
+    deck grid gives it.
+
+    The letter is PART OF THE PNG, drawn as filled polygons -- every UI element
+    in this mod is a texture and only real text uses the font, so an [A] drawn
+    with `font.width` at runtime would be the one exception.
+
+    Built at eight times the final size and reduced, exactly as `star` is: a
+    one-pixel outline drawn at 32 survives, but the diagonals of the A would be
+    stepped without the supersample. Same 32 as the star, and for the same
+    reason -- the grids draw this at around six pixels and it shares the
+    corner with the star, so the two must be the same shape of file.
+    """
+    scale = 8
+    span = size * scale
+    big = Image.new('RGBA', (span, span), (0, 0, 0, 0))
+    d = ImageDraw.Draw(big)
+
+    stroke = scale * 2
+    # Inset by half the stroke: it straddles the path, so a badge drawn to the
+    # canvas edge would have the outer half of its outline clipped away.
+    edge = stroke / 2
+    d.rounded_rectangle([edge, edge, span - 1 - edge, span - 1 - edge],
+                        radius=span * 0.26, fill=GOLD + (255,),
+                        outline=(0, 0, 0, 255), width=stroke)
+
+    def at(fx, fy):
+        return (span * fx, span * fy)
+
+    # The A: an outer triangle in the case ink, with its counter and the gap
+    # between its legs cut back out in the plate's own gold. Cutting rather
+    # than stroking keeps the letter's weight even at this size, where a
+    # stroked A closes up into a blob.
+    d.polygon([at(0.50, 0.20), at(0.80, 0.80), at(0.20, 0.80)], fill=INK + (255,))
+    d.polygon([at(0.50, 0.38), at(0.605, 0.585), at(0.395, 0.585)], fill=GOLD + (255,))
+    d.polygon([at(0.405, 0.665), at(0.595, 0.665), at(0.655, 0.80), at(0.345, 0.80)],
+              fill=GOLD + (255,))
+    return big.resize((size, size), Image.LANCZOS)
+
+
 def title_ribbon():
     """A dark band under the deck's name, separating it from the grids.
 
@@ -313,6 +359,7 @@ if __name__ == '__main__':
     write(header_bar(), 'deckeditor', 'header.png')
     write(title_ribbon(), 'deckeditor', 'title_ribbon.png')
     write(star(), 'deckeditor', 'star.png')
+    write(alt_art(), 'deckeditor', 'alt_art.png')
     write(search_field(), 'deckeditor', 'search_field.png')
     write(states(chip_state), 'deckeditor', 'chip.png')
     write(scrollbar(), 'deckeditor', 'scrollbar.png')

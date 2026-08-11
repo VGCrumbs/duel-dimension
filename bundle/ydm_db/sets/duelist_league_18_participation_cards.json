@@ -1,0 +1,131 @@
+{
+  "name": "Duelist League 18 participation cards",
+  "code": "DL18",
+  "type": "Booster Pack (2014)",
+  "date": "27-06-2014",
+  "image": "https://ygoprodeck.com/pics_sets/DL18.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack",
+  "cards": [
+    {
+      "id": 95727991,
+      "code": "DL18-EN001",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93920745,
+      "code": "DL18-EN002",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38033121,
+      "code": "DL18-EN003",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 83104731,
+      "code": "DL18-EN004",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 15341821,
+      "code": "DL18-EN005",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34230233,
+      "code": "DL18-EN006",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1045143,
+      "code": "DL18-EN007",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 43748308,
+      "code": "DL18-EN008",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 75132317,
+      "code": "DL18-EN009",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 73285669,
+      "code": "DL18-EN010",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 75500286,
+      "code": "DL18-EN011",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 5973663,
+      "code": "DL18-EN012",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 71233859,
+      "code": "DL18-EN013",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57103969,
+      "code": "DL18-EN014",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74701381,
+      "code": "DL18-EN015",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53582587,
+      "code": "DL18-EN016",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63477921,
+      "code": "DL18-EN017",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 98427577,
+      "code": "DL18-EN018",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84749824,
+      "code": "DL18-EN019",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44920699,
+      "code": "DL18-EN020",
+      "rarity": "Rare",
+      "image_index": 0
+    }
+  ]
+}

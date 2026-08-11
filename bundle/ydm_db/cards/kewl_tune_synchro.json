@@ -1,0 +1,12 @@
+{
+  "id": 78058681,
+  "name": "Kewl Tune Synchro",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Add 1 \"Kewl Tune\" card from your Deck to your hand, except \"Kewl Tune Synchro\", then immediately after this effect resolves, you can Synchro Summon 1 Tuner Synchro Monster. You cannot Special Summon for the rest of this turn after this card resolves, except Tuners. You can activate up to 2 \"Kewl Tune Synchro\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/78058681.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Quick-Play"
+}

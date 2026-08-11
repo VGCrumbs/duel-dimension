@@ -1,0 +1,21 @@
+{
+  "id": 11212437,
+  "name": "Draluvice the Diabolic Dragon Fortress",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "''The ultimate fate of the huntress who continued to spread the dragontaint. Now she has become the source of the plague, a fortress of swirling dark, wicked thoughts, and ironically is now the target of others' revenge. She has no way of knowing that the strike team standing before her are the survivors of a village that was once decimated by a dragon...''",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/11212437.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2300,
+  "species": "Dragon",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": false,
+  "def": 2500,
+  "level": 7,
+  "is_tuner": true
+}

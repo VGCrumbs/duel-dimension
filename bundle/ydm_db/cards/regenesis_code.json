@@ -1,0 +1,12 @@
+{
+  "id": 67171933,
+  "name": "Regenesis Code",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Special Summon 1 \"Regenesis\" monster from your Deck (but send it to the GY during your opponent's End Phase), also until the end of the next turn after this card resolves, you cannot Special Summon from the Extra Deck. During your Main Phase, if this card is in your GY, except the turn it was sent there: You can banish it, then target 1 of your banished \"Regenesis\" monsters; Special Summon it. You can only use each effect of \"Regenesis Code\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/67171933.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Quick-Play"
+}

@@ -1,0 +1,21 @@
+{
+  "id": 30397786,
+  "name": "Blue-Eyes White Dragon, the White Phantom Beast",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When this card is added from the Deck to your hand, or a monster you control is destroyed by battle: You can reveal this card in your hand; Special Summon it. If this card is Special Summoned from the hand or Deck: You can destroy all monsters your opponent controls, also you can only attack directly with \"Blue-Eyes\" monsters for the rest of this turn. You can only use each of the preceding effects of \"Blue-Eyes White Dragon, the White Phantom Beast\" once per turn. When a card or effect is activated that targets this card on the field (Quick Effect): You can discard 1 card; negate that effect.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/30397786.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 3000,
+  "species": "Dragon",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2500,
+  "level": 8,
+  "is_tuner": false
+}

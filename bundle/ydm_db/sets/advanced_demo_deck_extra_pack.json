@@ -1,0 +1,71 @@
+{
+  "name": "Advanced Demo Deck Extra Pack",
+  "code": "DEM4",
+  "type": "Booster Pack (2018)",
+  "date": "06-01-2018",
+  "image": "https://ygoprodeck.com/pics_sets/DEM4.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 24094653,
+      "code": "DEM4-EN001",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11066358,
+      "code": "DEM4-EN002",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 17390179,
+      "code": "DEM4-EN003",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 48940337,
+      "code": "DEM4-EN004",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 19474136,
+      "code": "DEM4-EN005",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 43785278,
+      "code": "DEM4-EN006",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 10817524,
+      "code": "DEM4-EN007",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 97204936,
+      "code": "DEM4-EN008",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 71594310,
+      "code": "DEM4-EN009",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 98978921,
+      "code": "DEM4-EN010",
+      "rarity": "Common",
+      "image_index": 0
+    }
+  ]
+}

@@ -28,6 +28,11 @@ public final class HubTextures
     public static final Identifier TITLE_RIBBON = gui("deckeditor/title_ribbon.png");
     /** Marks a favourited card, drawn in the corner of its icon. */
     public static final Identifier STAR = gui("deckeditor/star.png");
+    /**
+     * Marks a card that has more than one artwork, drawn in the corner of its
+     * icon. Shares that corner with {@link #STAR}, which moves aside for it.
+     */
+    public static final Identifier ALT_ART = gui("deckeditor/alt_art.png");
     /** The recessed search field the trunk is filtered with. */
     public static final Identifier SEARCH_FIELD = gui("deckeditor/search_field.png");
     /** Filter chip; three rows, the third being lit rather than disabled. */

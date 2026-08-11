@@ -1,0 +1,16 @@
+{
+  "name": "Yu-Gi-Oh! GX Volume 6 promotional card",
+  "code": "YG06",
+  "type": "Single",
+  "date": "01-03-2011",
+  "image": "https://ygoprodeck.com/pics_sets/YG06.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 22061412,
+      "code": "YG06-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

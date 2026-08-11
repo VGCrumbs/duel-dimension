@@ -1,0 +1,131 @@
+{
+  "name": "Duelist League 2010 participation cards",
+  "code": "DL09",
+  "type": "Booster Pack (2009)",
+  "date": "15-08-2009",
+  "image": "https://ygoprodeck.com/pics_sets/DL09.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack",
+  "cards": [
+    {
+      "id": 89631139,
+      "code": "DL09-EN001",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93920745,
+      "code": "DL09-EN002",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40640057,
+      "code": "DL09-EN003",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 65240384,
+      "code": "DL09-EN004",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97017120,
+      "code": "DL09-EN005",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 83011278,
+      "code": "DL09-EN006",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 39507162,
+      "code": "DL09-EN007",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25773409,
+      "code": "DL09-EN008",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51945556,
+      "code": "DL09-EN009",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59575539,
+      "code": "DL09-EN010",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 49003716,
+      "code": "DL09-EN011",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23693634,
+      "code": "DL09-EN012",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 72302403,
+      "code": "DL09-EN013",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 5318639,
+      "code": "DL09-EN014",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 73915051,
+      "code": "DL09-EN015",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81510157,
+      "code": "DL09-EN016",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4206964,
+      "code": "DL09-EN017",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56120475,
+      "code": "DL09-EN018",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 94192409,
+      "code": "DL09-EN019",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 36361633,
+      "code": "DL09-EN020",
+      "rarity": "Rare",
+      "image_index": 0
+    }
+  ]
+}

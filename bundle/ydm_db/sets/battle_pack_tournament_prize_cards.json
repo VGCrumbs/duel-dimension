@@ -1,0 +1,131 @@
+{
+  "name": "Battle Pack Tournament Prize Cards",
+  "code": "BATT",
+  "type": "Battle Pack",
+  "date": "29-05-2012",
+  "image": "https://ygoprodeck.com/pics_sets/BATT.jpg",
+  "pull_type": "distribution",
+  "distribution": "star_pack",
+  "cards": [
+    {
+      "id": 23995348,
+      "code": "BATT-EN001",
+      "rarity": "Starfoil Rare",
+      "image_index": 0
+    },
+    {
+      "id": 9156135,
+      "code": "BATT-EN002",
+      "rarity": "Starfoil Rare",
+      "image_index": 0
+    },
+    {
+      "id": 41006930,
+      "code": "BATT-EN003",
+      "rarity": "Starfoil Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53567095,
+      "code": "BATT-EN004",
+      "rarity": "Starfoil Rare",
+      "image_index": 0
+    },
+    {
+      "id": 24725825,
+      "code": "BATT-EN005",
+      "rarity": "Starfoil Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34487429,
+      "code": "BATT-EN006",
+      "rarity": "Starfoil Rare",
+      "image_index": 0
+    },
+    {
+      "id": 88307361,
+      "code": "BATT-EN007",
+      "rarity": "Starfoil Rare",
+      "image_index": 0
+    },
+    {
+      "id": 48156348,
+      "code": "BATT-EN008",
+      "rarity": "Starfoil Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69031175,
+      "code": "BATT-EN009",
+      "rarity": "Starfoil Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30213599,
+      "code": "BATT-EN010",
+      "rarity": "Starfoil Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14464864,
+      "code": "BATT-EN011",
+      "rarity": "Starfoil Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80316585,
+      "code": "BATT-EN012",
+      "rarity": "Starfoil Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23205979,
+      "code": "BATT-EN013",
+      "rarity": "Starfoil Rare",
+      "image_index": 0
+    },
+    {
+      "id": 39552864,
+      "code": "BATT-EN014",
+      "rarity": "Starfoil Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79229522,
+      "code": "BATT-EN015",
+      "rarity": "Starfoil Rare",
+      "image_index": 0
+    },
+    {
+      "id": 83039729,
+      "code": "BATT-EN016",
+      "rarity": "Starfoil Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57774843,
+      "code": "BATT-EN017",
+      "rarity": "Starfoil Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23693634,
+      "code": "BATT-EN018",
+      "rarity": "Starfoil Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11012887,
+      "code": "BATT-EN019",
+      "rarity": "Starfoil Rare",
+      "image_index": 0
+    },
+    {
+      "id": 36687247,
+      "code": "BATT-EN020",
+      "rarity": "Starfoil Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "id": 7594154,
+  "name": "Zenna's Deceiving Doll Maidens",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2+ Effect Monsters\r\nYou can also use 1 monster in your hand as material to Link Summon this card. You can only use each of the following effects of \"Zenna's Deceiving Doll Maidens\" once per turn. If this card is Link Summoned: You can send 1 monster from your Deck to the GY, or if all materials used for its Link Summon were monsters you controlled, you can send 1 monster from your Extra Deck instead. During your next Standby Phase after this card was sent from the field to the GY: You can add 1 monster from your GY to your hand.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/7594154.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 0,
+  "species": "Machine",
+  "monster_type": "Link",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "link_rating": 5,
+  "link_arrows": [
+    "Left",
+    "Right",
+    "Bottom-Left",
+    "Bottom",
+    "Bottom-Right"
+  ]
+}

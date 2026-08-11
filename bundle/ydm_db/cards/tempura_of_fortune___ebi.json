@@ -1,0 +1,24 @@
+{
+  "id": 86304179,
+  "name": "Tempura of Fortune - EBI",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "[ Pendulum Effect ] \nYou can target 1 card in your Pendulum Zone; toss a coin.\r\n● Heads: Special Summon it.\r\n● Tails: Destroy it, but lose LP equal to its Pendulum Scale x 300.\r\nYou can only use this effect of \"Tempura of Fortune - EBI\" once per turn.\n\n[ Monster Effect ] \n''We went to EDO-FRONT, which has been the talk of the town. The scale of the Tempura here is not only large but also so beautifully shaped that it has earned the nickname of \"Golden Tempura\". The state-of-the-art facilities and the atmosphere of other cultures are all in the harbor, but there is also a mellow, nostalgic aroma in the air, and the occasional crackle of the crackling sounds will lift your spirits. We have been looking forward to this cruise for a year, but I think 3 stars is just about right.''",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/86304179.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "FIRE",
+  "atk": 1600,
+  "species": "Aqua",
+  "monster_type": "",
+  "is_pendulum": true,
+  "ability": "",
+  "has_effect": false,
+  "pendulum_text": "You can target 1 card in your Pendulum Zone; toss a coin.\r\n● Heads: Special Summon it.\r\n● Tails: Destroy it, but lose LP equal to its Pendulum Scale x 300.\r\nYou can only use this effect of \"Tempura of Fortune - EBI\" once per turn.",
+  "pendulum_scale_left_blue": 8,
+  "pendulum_scale_right_red": 8,
+  "def": 0,
+  "level": 3,
+  "is_tuner": false
+}

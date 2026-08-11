@@ -1,0 +1,12 @@
+{
+  "id": 63181559,
+  "name": "Trickstar Diffusion",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Activate 1 of these effects;\r\n● Fusion Summon 1 \"Trickstar\" Fusion Monster from your Extra Deck, by banishing its materials from your GY.\r\n● Immediately after this effect resolves, Link Summon 1 \"Trickstar\" Link Monster.\r\nYou can banish this card from your GY, then target 1 \"Trickstar\" monster you control; this turn, while that monster is face-up on your field, your opponent's monsters can only target that monster for attacks. You can only use each effect of \"Trickstar Diffusion\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/63181559.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

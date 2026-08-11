@@ -101,6 +101,62 @@ public class CardShopScreen extends Screen
         }
     }
 
+    /**
+     * The four shelves the catalogue is split across.
+     * <p>
+     * Read off each set's own type, which the database already carries and the
+     * server already sends with the stock — so switching tabs is a filter over
+     * a list already in hand, not a second request.
+     * <p>
+     * Boosters is deliberately the catch-all rather than there being a fifth
+     * "Other" tab. Everything that is not a deck and is not a single printing is
+     * something you open for a random result, which is exactly what the tab
+     * means; a Mega Pack and a Duelist Pack belong beside a booster, not in a
+     * bucket of leftovers.
+     */
+    private enum Category
+    {
+        BOOSTERS("Boosters"), STARTER("Starter Decks"),
+        STRUCTURE("Structure Decks"), SINGLES("Singles");
+
+        private final String label;
+
+        Category(String label)
+        {
+            this.label = label;
+        }
+
+        String label()
+        {
+            return label;
+        }
+
+        /** Which shelf a pack sits on. Matches the types the database writes. */
+        static Category of(ShopStock.Pack pack)
+        {
+            String type = pack.type() == null ? "" : pack.type();
+            return switch(type)
+            {
+                case "Single" -> SINGLES;
+                case "Structure Deck" -> STRUCTURE;
+                case "Starter Deck" -> STARTER;
+                default -> BOOSTERS;
+            };
+        }
+    }
+
+    /**
+     * Static, so the shelf you were browsing is still the one showing when you
+     * come back — after opening a pack, or after closing and reopening the shop.
+     * A player working through the Structure Decks should not be put back on
+     * Boosters every time they buy something.
+     * <p>
+     * Session-lived rather than written to disk, which is the same treatment the
+     * balance above gets.
+     */
+    private static Category category = Category.BOOSTERS;
+    private boolean categoryOpen;
+
     public CardShopScreen(List<ShopStock.Pack> packs)
     {
         super(Component.literal("Card Shop"));
@@ -165,7 +221,7 @@ public class CardShopScreen extends Screen
      */
     private int gridRows()
     {
-        int bottom = height - layout().i("bottom.height", 62) - 12;
+        int bottom = height - layout().i("bottom.height", 54) - 8;
         int room = bottom - gridTop();
         int gap = layout().i("grid.gap", 4);
         return Math.max(1, (room + gap) / (cellH() + gap));
@@ -194,32 +250,66 @@ public class CardShopScreen extends Screen
         int controlsY = controlsTop();
         int sortW = layout.i("sort.width", 62);
         int dirW = layout.i("dir.width", 30);
-        // Search and sort now share the compact balance row. The old field
-        // consumed every pixel left after the two sort buttons; half of that
-        // span is ample for pack names/codes and keeps the header breathable.
-        int fullSearchW = width - pad - gridLeft() - sortW - dirW - 8;
+        int catW = layout.i("category.width", 88);
+        // Category, search, sort and direction all share the one control row.
+        // A strip of four tabs above it cost a whole row of the grid -- at 920p
+        // the cells pitch 50 apart and the strip ate exactly that -- and a
+        // dropdown says the same thing in a quarter of the width.
+        int fullSearchW = width - pad - gridLeft() - catW - sortW - dirW - 10;
+        // Half the space it could take. A set is found by a few letters of its
+        // name or its four-letter code, so the rest of that width was only ever
+        // empty field, and giving it back leaves the row less crowded.
         int searchW = Math.max(60, fullSearchW / 2);
+        int searchX = gridLeft() + catW + 2;
 
-        search = new EditBox(font, gridLeft() + 4, controlsY + 3, searchW - 6, 12,
+        addRenderableWidget(new HubWidgets.TextureButton(gridLeft(), controlsY, catW, 16,
+            Component.literal(category.label() + (categoryOpen ? " ▴" : " ▾")),
+            pressed ->
+        {
+            categoryOpen = !categoryOpen;
+            rebuild();
+        }));
+
+        search = new EditBox(font, searchX + 4, controlsY + 3, searchW - 6, 12,
             Component.literal("Search"));
         search.setValue(typed);
         search.setResponder(value -> refresh());
         addWidget(search);
 
-        addRenderableWidget(new HubWidgets.TextureButton(gridLeft() + searchW + 2, controlsY,
+        addRenderableWidget(new HubWidgets.TextureButton(searchX + searchW + 2, controlsY,
             sortW, 16, Component.literal(sort.label()), pressed ->
         {
             sort = sort.next();
             refresh();
             rebuild();
         }));
-        addRenderableWidget(new HubWidgets.TextureButton(gridLeft() + searchW + sortW + 4,
+        addRenderableWidget(new HubWidgets.TextureButton(searchX + searchW + sortW + 4,
             controlsY, dirW, 16, Component.literal(descending ? "DESC" : "ASC"), pressed ->
         {
             descending = !descending;
             refresh();
             rebuild();
         }));
+
+        // The open list, added LAST so it is extracted last and therefore drawn
+        // over the grid rather than behind it.
+        if(categoryOpen)
+        {
+            Category[] categories = Category.values();
+            for(int i = 0; i < categories.length; i++)
+            {
+                Category option = categories[i];
+                addRenderableWidget(new HubWidgets.TabButton(gridLeft(),
+                    controlsY + 16 + i * 16, catW, 16, Component.literal(option.label()),
+                    () -> category == option, pressed ->
+                {
+                    category = option;
+                    categoryOpen = false;
+                    refresh();
+                    rebuild();
+                }));
+            }
+        }
 
         // The button carries the whole cost rather than the unit price: buying
         // ten is the one time a player wants to know the total before pressing.
@@ -229,7 +319,7 @@ public class CardShopScreen extends Screen
         String cost = shownPack == null ? "Buy"
             : isCreative() ? "Buy (free)"
             : "Buy  " + shownPack.price() * bulk;
-        int buyY = height - layout.i("bottom.height", 62) - 30;
+        int buyY = height - layout.i("bottom.height", 54) - 30;
         addRenderableWidget(new HubWidgets.TextureButton(pad, buyY, buyLabelW, 20,
             Component.literal(cost), pressed -> buy()));
         addRenderableWidget(new HubWidgets.TextureButton(pad + buyLabelW + 2, buyY, bulkW, 20,
@@ -286,6 +376,13 @@ public class CardShopScreen extends Screen
         List<ShopStock.Pack> matching = new ArrayList<>();
         for(ShopStock.Pack pack : packs)
         {
+            // The tab narrows first, then the search narrows within it. A search
+            // that reached across tabs would return results the player cannot
+            // see without guessing which tab they landed on.
+            if(Category.of(pack) != category)
+            {
+                continue;
+            }
             if(needle.isEmpty() || matches(pack, needle))
             {
                 matching.add(pack);
@@ -398,6 +495,16 @@ public class CardShopScreen extends Screen
         {
             return true;
         }
+        // An open list closes on a click that missed it, and swallows that
+        // click: it is covering the grid, so letting it through would select
+        // whatever happened to be underneath the option the player was aiming
+        // at and just missed.
+        if(categoryOpen)
+        {
+            categoryOpen = false;
+            rebuild();
+            return true;
+        }
         int index = packAt(mouseX, mouseY);
         if(index >= 0)
         {
@@ -479,7 +586,7 @@ public class CardShopScreen extends Screen
         poseStack.fillGradient(0, 0, width, height, 0xC0101010, 0xD0101010);
         Layout layout = layout();
         int pad = layout.i("pad", 8);
-        int bottomH = layout.i("bottom.height", 62);
+        int bottomH = layout.i("bottom.height", 54);
         int leftW = layout.i("left.width", 120);
 
         renderControls(poseStack);

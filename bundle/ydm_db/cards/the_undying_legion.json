@@ -1,0 +1,20 @@
+{
+  "id": 43355214,
+  "name": "The Undying Legion",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2 Level 7 monsters\r\nOnce per turn, you can also Xyz Summon \"The Undying Legion\" by using 1 Rank 6 Zombie Xyz Monster you control (transfer its materials). During your opponent's Main Phase (Quick Effect): You can detach 2 materials from this card (or just 1 material if all this card's materials are Xyz Monsters), then target 1 Attack Position monster your opponent controls or 1 monster in their GY; attach it to this card. You can only use this effect of \"The Undying Legion\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/43355214.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2700,
+  "species": "Zombie",
+  "monster_type": "Xyz",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "rank": 7
+}

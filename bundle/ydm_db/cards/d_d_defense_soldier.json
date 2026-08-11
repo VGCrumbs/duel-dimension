@@ -1,0 +1,21 @@
+{
+  "id": 93317313,
+  "name": "D/D Defense Soldier",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can activate 1 of these effects;\r\n● Target 1 \"D/D\" card in your Pendulum Zone; Special Summon it.\r\n● Banish 1 \"D/D\" monster from your GY; if your \"D/D/D\" monster attacks this turn, your opponent cannot activate cards or effects until the end of the Damage Step.\r\nYou can banish this card from your GY; add 1 \"D/D\" Pendulum Monster from your face-up Extra Deck or GY to your hand. You can only use each effect of \"D/D Defense Soldier\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/93317313.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 0,
+  "species": "Fiend",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1800,
+  "level": 4,
+  "is_tuner": false
+}

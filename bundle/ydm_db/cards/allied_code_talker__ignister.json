@@ -1,0 +1,26 @@
+{
+  "id": 39138610,
+  "name": "Allied Code Talker @Ignister",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "3+ Effect Monsters\r\nIf this card is Link Summoned: You can Special Summon as many Cyberse monsters with 2300 ATK from your GY as possible to your zones this card points to, and if you do, this card gains 500 ATK for each, also you cannot Special Summon for the rest of this turn. When your opponent activates a card or effect (Quick Effect): You can Tribute 1 of your Link Monsters this card points to; negate the activation, and if you do, banish that card. You can only use this effect of \"Allied Code Talker @Ignister\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/39138610.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2300,
+  "species": "Cyberse",
+  "monster_type": "Link",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "link_rating": 5,
+  "link_arrows": [
+    "Left",
+    "Right",
+    "Bottom-Left",
+    "Bottom",
+    "Bottom-Right"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Yu-Gi-Oh! GX Volume 1 promotional card",
+  "code": "YG01",
+  "type": "Single",
+  "date": "06-11-2007",
+  "image": "https://ygoprodeck.com/pics_sets/YG01.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 47297616,
+      "code": "YG01-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

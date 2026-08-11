@@ -1,0 +1,12 @@
+{
+  "id": 30271097,
+  "name": "The Fallen & The Virtuous",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "(This card is always treated as a \"Branded\" and \"Dogmatika\" card.)\r\nActivate 1 of these effects;\r\n● Send 1 monster that mentions \"Fallen of Albaz\" from your Extra Deck to the GY, then target 1 face-up card on the field; destroy it.\r\n● If you have an \"Ecclesia\" monster in your field or GY: Target 1 monster in either GY; Special Summon it to your field.\r\nYou can only activate 1 \"The Fallen & The Virtuous\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/30271097.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Quick-Play"
+}

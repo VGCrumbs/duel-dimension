@@ -1,0 +1,21 @@
+{
+  "id": 54701958,
+  "name": "Lunalight Liger Dancer",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "\"Lunalight Leo Dancer\" + 3 \"Lunalight\" monsters\r\nMust be Fusion Summoned with the above Fusion Materials. Unaffected by card effects, except \"Lunalight\" cards. Can make a second attack during each Battle Phase. Once per turn (Quick Effect): You can send 1 \"Lunalight\" monster from your Extra Deck to the GY; destroy all your opponent's Special Summoned monsters.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/54701958.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 3800,
+  "species": "Beast-Warrior",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 3500,
+  "level": 12,
+  "is_tuner": false
+}

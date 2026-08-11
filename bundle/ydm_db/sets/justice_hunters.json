@@ -1,0 +1,629 @@
+{
+  "name": "Justice Hunters",
+  "code": "JUSH",
+  "type": "Booster Pack (2025)",
+  "date": "31-07-2025",
+  "image": "https://ygoprodeck.com/pics_sets/JUSH.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare_with_starlight_rare",
+  "cards": [
+    {
+      "id": 75003700,
+      "code": "JUSH-EN001",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 75003700,
+      "code": "JUSH-EN001",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 75003700,
+      "code": "JUSH-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1498449,
+      "code": "JUSH-EN002",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1498449,
+      "code": "JUSH-EN002",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1498449,
+      "code": "JUSH-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44482554,
+      "code": "JUSH-EN003",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44482554,
+      "code": "JUSH-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70871153,
+      "code": "JUSH-EN004",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70871153,
+      "code": "JUSH-EN004",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7375867,
+      "code": "JUSH-EN005",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7375867,
+      "code": "JUSH-EN005",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33760966,
+      "code": "JUSH-EN006",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33760966,
+      "code": "JUSH-EN006",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33760966,
+      "code": "JUSH-EN006",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79755671,
+      "code": "JUSH-EN007",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79755671,
+      "code": "JUSH-EN007",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6153210,
+      "code": "JUSH-EN008",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32548318,
+      "code": "JUSH-EN009",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32548318,
+      "code": "JUSH-EN009",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69932023,
+      "code": "JUSH-EN010",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69932023,
+      "code": "JUSH-EN010",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 5431722,
+      "code": "JUSH-EN011",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 5431722,
+      "code": "JUSH-EN011",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 61173621,
+      "code": "JUSH-EN012",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13735899,
+      "code": "JUSH-EN013",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 24094653,
+      "code": "JUSH-EN014",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34773082,
+      "code": "JUSH-EN015",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31425736,
+      "code": "JUSH-EN016",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31425736,
+      "code": "JUSH-EN016",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31425736,
+      "code": "JUSH-EN016",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68810435,
+      "code": "JUSH-EN017",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68810435,
+      "code": "JUSH-EN017",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68810435,
+      "code": "JUSH-EN017",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4215180,
+      "code": "JUSH-EN018",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4215180,
+      "code": "JUSH-EN018",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4215180,
+      "code": "JUSH-EN018",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31603289,
+      "code": "JUSH-EN019",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31603289,
+      "code": "JUSH-EN019",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67098897,
+      "code": "JUSH-EN020",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67098897,
+      "code": "JUSH-EN020",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93192592,
+      "code": "JUSH-EN021",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93192592,
+      "code": "JUSH-EN021",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30581601,
+      "code": "JUSH-EN022",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30581601,
+      "code": "JUSH-EN022",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30581601,
+      "code": "JUSH-EN022",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 66975205,
+      "code": "JUSH-EN023",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 66975205,
+      "code": "JUSH-EN023",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93360904,
+      "code": "JUSH-EN024",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93360904,
+      "code": "JUSH-EN024",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29369059,
+      "code": "JUSH-EN025",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 65853758,
+      "code": "JUSH-EN026",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 65853758,
+      "code": "JUSH-EN026",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23656668,
+      "code": "JUSH-EN027",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51405049,
+      "code": "JUSH-EN028",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 72537897,
+      "code": "JUSH-EN029",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33907039,
+      "code": "JUSH-EN030",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92248362,
+      "code": "JUSH-EN031",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92248362,
+      "code": "JUSH-EN031",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92248362,
+      "code": "JUSH-EN031",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 28642461,
+      "code": "JUSH-EN032",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 55031170,
+      "code": "JUSH-EN033",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 91025875,
+      "code": "JUSH-EN034",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 91025875,
+      "code": "JUSH-EN034",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 91025875,
+      "code": "JUSH-EN034",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27420823,
+      "code": "JUSH-EN035",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27420823,
+      "code": "JUSH-EN035",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54919528,
+      "code": "JUSH-EN036",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54919528,
+      "code": "JUSH-EN036",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90303227,
+      "code": "JUSH-EN037",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27308231,
+      "code": "JUSH-EN038",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27308231,
+      "code": "JUSH-EN038",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53792930,
+      "code": "JUSH-EN039",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80181649,
+      "code": "JUSH-EN040",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80181649,
+      "code": "JUSH-EN040",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 26585784,
+      "code": "JUSH-EN041",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 75214390,
+      "code": "JUSH-EN042",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29669359,
+      "code": "JUSH-EN043",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 2609443,
+      "code": "JUSH-EN044",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29510428,
+      "code": "JUSH-EN045",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79109599,
+      "code": "JUSH-EN046",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79109599,
+      "code": "JUSH-EN046",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 41578483,
+      "code": "JUSH-EN047",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50277355,
+      "code": "JUSH-EN048",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50277355,
+      "code": "JUSH-EN048",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 45452224,
+      "code": "JUSH-EN049",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13836592,
+      "code": "JUSH-EN050",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13836592,
+      "code": "JUSH-EN050",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79606837,
+      "code": "JUSH-EN051",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81846453,
+      "code": "JUSH-EN052",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 52340444,
+      "code": "JUSH-EN053",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 52340444,
+      "code": "JUSH-EN053",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51697825,
+      "code": "JUSH-EN054",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51697825,
+      "code": "JUSH-EN054",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32854013,
+      "code": "JUSH-EN055",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67173574,
+      "code": "JUSH-EN056",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69840739,
+      "code": "JUSH-EN057",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69840739,
+      "code": "JUSH-EN057",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35772782,
+      "code": "JUSH-EN058",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35772782,
+      "code": "JUSH-EN058",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35772782,
+      "code": "JUSH-EN058",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34876719,
+      "code": "JUSH-EN059",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 61374414,
+      "code": "JUSH-EN060",
+      "rarity": "Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": 35763582,
+  "name": "Lunalight Silver Hound",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is sent to the GY by card effect: You can Special Summon 1 \"Lunalight\" monster from your Deck, except \"Lunalight Silver Hound\", but you cannot Special Summon from the Extra Deck, except \"Lunalight\" monsters, while you control that face-up monster. When a Spell/Trap Card or effect is activated on the field (Quick Effect): You can banish this card and 1 \"Lunalight\" Fusion Monster from your GY; negate the activation. You can only use each effect of \"Lunalight Silver Hound\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/35763582.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 1400,
+  "species": "Beast-Warrior",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 400,
+  "level": 3,
+  "is_tuner": false
+}

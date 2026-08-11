@@ -1,0 +1,12 @@
+{
+  "id": 52648457,
+  "name": "Gorgon's Eye",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Until the end of this turn, all effects of Defense Position monsters are negated.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/52648457.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

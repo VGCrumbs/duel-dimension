@@ -1,0 +1,12 @@
+{
+  "id": 54936778,
+  "name": "Dark Contract with the Different Dimension",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Once per turn, during your Standby Phase: Take 1000 damage. You can only use each of the following effects of \"Dark Contract with the Different Dimension\" once per turn. You can shuffle 2 \"Dark Contract\" cards from your GY into the Deck, then target 1 card in your opponent's field or GY; banish it. If this card is destroyed: You can gain 500 LP, then if it was destroyed by an opponent's card effect, gain another 500 LP.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/54936778.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Continuous"
+}

@@ -1,0 +1,893 @@
+{
+  "name": "Legendary Modern Decks 2026",
+  "code": "L26D",
+  "type": "Booster Pack (2026)",
+  "date": "23-04-2026",
+  "image": "https://ygoprodeck.com/pics_sets/L26D.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare_with_starlight_rare",
+  "cards": [
+    {
+      "id": 95492061,
+      "code": "L26D-ENM01",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 14558127,
+      "code": "L26D-ENM02",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 20295753,
+      "code": "L26D-ENM03",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 82782870,
+      "code": "L26D-ENM04",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 18176525,
+      "code": "L26D-ENM05",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 18176525,
+      "code": "L26D-ENM05",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 18176525,
+      "code": "L26D-ENM05",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40543231,
+      "code": "L26D-ENM06",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 40543231,
+      "code": "L26D-ENM06",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40543231,
+      "code": "L26D-ENM06",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76948970,
+      "code": "L26D-ENM07",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 19899073,
+      "code": "L26D-ENM08",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 19899073,
+      "code": "L26D-ENM08",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19899073,
+      "code": "L26D-ENM08",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 55397172,
+      "code": "L26D-ENM09",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13332685,
+      "code": "L26D-ENM10",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13332685,
+      "code": "L26D-ENM10",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13332685,
+      "code": "L26D-ENM10",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13048472,
+      "code": "L26D-ENM11",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 49238328,
+      "code": "L26D-ENM12",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24299458,
+      "code": "L26D-ENM13",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 45171524,
+      "code": "L26D-ENM14",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 45171524,
+      "code": "L26D-ENM14",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 45171524,
+      "code": "L26D-ENM14",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 45171524,
+      "code": "L26D-ENM14",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81560239,
+      "code": "L26D-ENM15",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81560239,
+      "code": "L26D-ENM15",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81560239,
+      "code": "L26D-ENM15",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 49721684,
+      "code": "L26D-ENM16",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76725398,
+      "code": "L26D-ENM17",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 12210097,
+      "code": "L26D-ENM18",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 10045474,
+      "code": "L26D-ENM19",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 17954937,
+      "code": "L26D-ENM20",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 49604192,
+      "code": "L26D-ENM21",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46772449,
+      "code": "L26D-ENM22",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 6983839,
+      "code": "L26D-ENM23",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 90590303,
+      "code": "L26D-ENM24",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 8165596,
+      "code": "L26D-ENM25",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 66011101,
+      "code": "L26D-ENM26",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 61399402,
+      "code": "L26D-ENM27",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 93039339,
+      "code": "L26D-ENM28",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 65741786,
+      "code": "L26D-ENM29",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 8264361,
+      "code": "L26D-ENM30",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 73898890,
+      "code": "L26D-ENM31",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29301450,
+      "code": "L26D-ENM32",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 26077387,
+      "code": "L26D-ENS01",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 26077387,
+      "code": "L26D-ENS01",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 26077387,
+      "code": "L26D-ENS01",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27204311,
+      "code": "L26D-ENS02",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 37351133,
+      "code": "L26D-ENS03",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 61151074,
+      "code": "L26D-ENS04",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 12580477,
+      "code": "L26D-ENS05",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 18144507,
+      "code": "L26D-ENS06",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 70368879,
+      "code": "L26D-ENS07",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 32807846,
+      "code": "L26D-ENS08",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 32807846,
+      "code": "L26D-ENS08",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32807846,
+      "code": "L26D-ENS08",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 24224830,
+      "code": "L26D-ENS09",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 63166095,
+      "code": "L26D-ENS10",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 63166095,
+      "code": "L26D-ENS10",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63166095,
+      "code": "L26D-ENS10",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 99550630,
+      "code": "L26D-ENS11",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 25955749,
+      "code": "L26D-ENS12",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 52340444,
+      "code": "L26D-ENS13",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 98338152,
+      "code": "L26D-ENS14",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 25733157,
+      "code": "L26D-ENS15",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 51227866,
+      "code": "L26D-ENS16",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 97616504,
+      "code": "L26D-ENS17",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24010609,
+      "code": "L26D-ENS18",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 50005218,
+      "code": "L26D-ENS19",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 14532163,
+      "code": "L26D-ENS20",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 25311006,
+      "code": "L26D-ENS21",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 9726840,
+      "code": "L26D-ENS22",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 9726840,
+      "code": "L26D-ENS22",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35269904,
+      "code": "L26D-ENS23",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 34433770,
+      "code": "L26D-ENS24",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 63288573,
+      "code": "L26D-ENS25",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 90673288,
+      "code": "L26D-ENS26",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 90673288,
+      "code": "L26D-ENS26",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90673288,
+      "code": "L26D-ENS26",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 8491308,
+      "code": "L26D-ENS27",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 12421694,
+      "code": "L26D-ENS28",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 75147529,
+      "code": "L26D-ENS29",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 98462037,
+      "code": "L26D-ENS30",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 63013339,
+      "code": "L26D-ENS31",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 63013339,
+      "code": "L26D-ENS31",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23530726,
+      "code": "L26D-ENS32",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17217034,
+      "code": "L26D-ENS33",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 17217034,
+      "code": "L26D-ENS33",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76072561,
+      "code": "L26D-ENS34",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 25072579,
+      "code": "L26D-ENS35",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90508760,
+      "code": "L26D-ENX01",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 96099959,
+      "code": "L26D-ENX02",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 23093604,
+      "code": "L26D-ENX03",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 51808422,
+      "code": "L26D-ENX04",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 51808422,
+      "code": "L26D-ENX04",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51808422,
+      "code": "L26D-ENX04",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 87292536,
+      "code": "L26D-ENX05",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 78422252,
+      "code": "L26D-ENX06",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 77330185,
+      "code": "L26D-ENX07",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 42737833,
+      "code": "L26D-ENX08",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 5998840,
+      "code": "L26D-ENX09",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 31383545,
+      "code": "L26D-ENX10",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 84192580,
+      "code": "L26D-ENX11",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 42141493,
+      "code": "L26D-ENX12",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 87126721,
+      "code": "L26D-ENX13",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 9978697,
+      "code": "L26D-ENX14",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 9978697,
+      "code": "L26D-ENX14",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 45462306,
+      "code": "L26D-ENX15",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 45462306,
+      "code": "L26D-ENX15",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67723438,
+      "code": "L26D-ENX16",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11052544,
+      "code": "L26D-ENX17",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 57103969,
+      "code": "L26D-ENX18",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 61948106,
+      "code": "L26D-ENX19",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 61948106,
+      "code": "L26D-ENX19",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 24224830,
+      "code": "L26D-ENX20",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 25311006,
+      "code": "L26D-ENX21",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 84211599,
+      "code": "L26D-ENX22",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 89558743,
+      "code": "L26D-ENX23",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 35269904,
+      "code": "L26D-ENX24",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 35240714,
+      "code": "L26D-ENX25",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 35240714,
+      "code": "L26D-ENX25",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13504844,
+      "code": "L26D-ENX26",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 13504844,
+      "code": "L26D-ENX26",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44901281,
+      "code": "L26D-ENX27",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 30748475,
+      "code": "L26D-ENX28",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 27315304,
+      "code": "L26D-ENX29",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 27315304,
+      "code": "L26D-ENX29",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27315304,
+      "code": "L26D-ENX29",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80108118,
+      "code": "L26D-ENX30",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 73580471,
+      "code": "L26D-ENX31",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 33198837,
+      "code": "L26D-ENX32",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 2956282,
+      "code": "L26D-ENX33",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 52352005,
+      "code": "L26D-ENX34",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 2203790,
+      "code": "L26D-ENX35",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 2203790,
+      "code": "L26D-ENX35",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 2203790,
+      "code": "L26D-ENX35",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 52687916,
+      "code": "L26D-ENX36",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 63612442,
+      "code": "L26D-ENX37",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 9348522,
+      "code": "L26D-ENX38",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 33698022,
+      "code": "L26D-ENX39",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 87188910,
+      "code": "L26D-ENX40",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 96633955,
+      "code": "L26D-ENX41",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 72867001,
+      "code": "L26D-ENX42",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 72867001,
+      "code": "L26D-ENX42",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 8252010,
+      "code": "L26D-ENX43",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 8252010,
+      "code": "L26D-ENX43",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

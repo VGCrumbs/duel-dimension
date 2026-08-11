@@ -36,7 +36,30 @@ public final class QueryParser
         // Xyz materials. Slot has carried an `overlays` field across the network
         // since it was written, populated with a literal 0 and read by nobody;
         // this is the flag that was missing to make it mean something.
-        | OcgConstants.QUERY_OVERLAY_CARD;
+        | OcgConstants.QUERY_OVERLAY_CARD
+        // Which artwork this physical copy wears. The engine has no per-copy
+        // handle of its own -- it identifies a card by (controller, location,
+        // sequence), which changes every time it moves and is renumbered
+        // silently when a pile is dug out of -- so the choice is carried on
+        // card::cover, a uint32 the core moves with the card object itself
+        // and never touches. See AltArtScript for how it is written.
+        | OcgConstants.QUERY_COVER;
+
+    /**
+     * Everything the deck view needs, and not one field more.
+     * <p>
+     * Deliberately NOT {@link #BOARD_FLAGS}. The deck panel draws a passcode and
+     * an artwork and reads nothing else, and every extra field asked for here is
+     * another thing that has to be proved harmless on a list of cards nobody is
+     * entitled to know the order of. QUERY_EQUIP_CARD is the one that makes this
+     * a rule rather than a preference: it arrives as a 10-byte loc_info carrying
+     * controller, LOCATION and SEQUENCE (card.cpp:149, parsed below), which is
+     * precisely the positional data a deck list must never carry.
+     * <p>
+     * QUERY_IS_PUBLIC arrives whether or not it is asked for, and everything
+     * unasked parses to its "unknown" default.
+     */
+    public static final int DECK_FLAGS = OcgConstants.QUERY_CODE | OcgConstants.QUERY_COVER;
 
     private QueryParser()
     {
@@ -95,6 +118,9 @@ public final class QueryParser
         int rightScale = -1;
         int status = 0;
         int overlays = 0;
+        // card::cover, which this mod uses as "which artwork this copy wears".
+        // Zero unless the host dressed the card before the duel started.
+        int art = 0;
         boolean isPublic = false;
         CardView.Equip equip = null;
 
@@ -128,6 +154,7 @@ public final class QueryParser
                 case OcgConstants.QUERY_BASE_ATTACK -> baseAttack = buffer.getInt();
                 case OcgConstants.QUERY_BASE_DEFENSE -> baseDefense = buffer.getInt();
                 case OcgConstants.QUERY_STATUS -> status = buffer.getInt();
+                case OcgConstants.QUERY_COVER -> art = buffer.getInt();
                 case OcgConstants.QUERY_OVERLAY_CARD ->
                 {
                     // u32 count, then that many u32 passcodes. Only the count
@@ -156,7 +183,7 @@ public final class QueryParser
                 {
                     return new CardView(code, position, type, level, attack, defense,
                         baseAttack, baseDefense, leftScale, rightScale, isPublic, false, equip,
-                        status, overlays);
+                        status, overlays, art);
                 }
                 default ->
                 {

@@ -1,0 +1,21 @@
+{
+  "id": 31411835,
+  "name": "Hecahands Dandalos",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2 \"Hecahands\" monsters\r\nYou can target 1 monster your opponent controls; take control of it. You can only use this effect of \"Hecahands Dandalos\" once per turn. If this card battles a monster, neither can be destroyed by that battle. Your \"Hecahands\" Fusion Monsters, and monsters you control that are owned by your opponent, can attack directly.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/31411835.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2900,
+  "species": "Illusion",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 3000,
+  "level": 7,
+  "is_tuner": false
+}

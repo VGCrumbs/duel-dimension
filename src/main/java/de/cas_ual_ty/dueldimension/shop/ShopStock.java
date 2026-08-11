@@ -34,6 +34,18 @@ public final class ShopStock
     public static final int BASE_PRICE = 150;
 
     /**
+     * What a sleeve costs, flat.
+     * <p>
+     * <b>Its own constant, deliberately not {@link #BASE_PRICE}.</b> That number
+     * is not a pack price either — {@link #priceOf} scales it by how many cards
+     * a pack yields, so it is really a price per five cards. Borrowing it would
+     * tie a cosmetic's price to the size of the game's booster packs, and a
+     * database change that made packs bigger would silently reprice every
+     * sleeve. A sleeve is one thing and costs one number.
+     */
+    public static final int SLEEVE_PRICE = 500;
+
+    /**
      * The catalogue, built on first use. Volatile because the server thread
      * builds it and the client thread of an integrated server may read it.
      */
@@ -91,8 +103,93 @@ public final class ShopStock
         }
     }
 
+    /**
+     * One sleeve on sale.
+     * <p>
+     * Carries the sleeve's <b>id</b> and its price and nothing else. No display
+     * name: a sleeve already has a translation key
+     * ({@code item.dueldimension.sleeves_<name>}), so sending text would send
+     * the server's language to a client that has its own. And no "owned" flag:
+     * what a player owns lives on their profile, which is already synced to
+     * them, and a second copy of a fact is a second copy to keep in step.
+     *
+     * @param sleeve {@link de.cas_ual_ty.dueldimension.duel.profile.Sleeves#nameOf}
+     *               — the id, never the enum index, which is only ever safe
+     *               inside a single connection
+     */
+    public record SleeveOffer(String sleeve, int price)
+    {
+        public void write(FriendlyByteBuf buffer)
+        {
+            buffer.writeUtf(sleeve, 64);
+            buffer.writeVarInt(price);
+        }
+
+        public static SleeveOffer read(FriendlyByteBuf buffer)
+        {
+            return new SleeveOffer(buffer.readUtf(64), buffer.readVarInt());
+        }
+    }
+
+    /**
+     * The sleeve catalogue, built on first use. Volatile for the reason
+     * {@link #catalogue} is.
+     */
+    private static volatile List<SleeveOffer> sleeveCatalogue;
+
     private ShopStock()
     {
+    }
+
+    /**
+     * Every sleeve on sale, in enum order.
+     * <p>
+     * Enum order rather than by price or by name: they are all the same price,
+     * and the enum's order is how the art was authored — the metals together,
+     * the series art together, the Millenium set together. A shop that
+     * reshuffled them would be harder to shop in, not easier.
+     * <p>
+     * Derived from {@link de.cas_ual_ty.dueldimension.duel.profile.Sleeves#isPurchasable},
+     * which is the one place that decides what may be sold: the free dye
+     * colours are not stock, and a patron's sleeve is a thank-you rather than a
+     * product. Nothing here enumerates sleeves by hand, so the five Millenium
+     * constants appear in the shop without this file mentioning them.
+     */
+    public static List<SleeveOffer> sleeves()
+    {
+        List<SleeveOffer> known = sleeveCatalogue;
+        if(known != null)
+        {
+            return known;
+        }
+        List<SleeveOffer> offers = new ArrayList<>();
+        for(de.cas_ual_ty.dueldimension.card.CardSleevesType sleeve
+            : de.cas_ual_ty.dueldimension.card.CardSleevesType.VALUES)
+        {
+            if(de.cas_ual_ty.dueldimension.duel.profile.Sleeves.isPurchasable(sleeve))
+            {
+                offers.add(new SleeveOffer(
+                    de.cas_ual_ty.dueldimension.duel.profile.Sleeves.nameOf(sleeve),
+                    priceOfSleeve(sleeve)));
+            }
+        }
+        known = List.copyOf(offers);
+        sleeveCatalogue = known;
+        return known;
+    }
+
+    /**
+     * What the server will charge for a sleeve.
+     * <p>
+     * The one place the figure is worked out, called both to fill the shop
+     * window and to take the money, so what is shown and what is charged cannot
+     * drift apart. Nothing a client sends reaches this — the purchase names a
+     * sleeve and the price is looked up here.
+     */
+    public static int priceOfSleeve(de.cas_ual_ty.dueldimension.card.CardSleevesType sleeve)
+    {
+        return de.cas_ual_ty.dueldimension.duel.profile.Sleeves.isPurchasable(sleeve)
+            ? SLEEVE_PRICE : 0;
     }
 
     /** Every pack on sale, newest first, since that is what a shop leads with. */

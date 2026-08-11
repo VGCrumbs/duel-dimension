@@ -1,0 +1,16 @@
+{
+  "name": "Yu-Gi-Oh! 5D's Volume 9 promotional card",
+  "code": "YF09",
+  "type": "Single",
+  "date": "05-04-2016",
+  "image": "https://ygoprodeck.com/pics_sets/YF09.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 89474727,
+      "code": "YF09-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

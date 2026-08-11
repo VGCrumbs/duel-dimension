@@ -1,0 +1,21 @@
+{
+  "id": 18300894,
+  "name": "Silk Bomb Moth",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you have 2 or more WIND monsters in your GY and this card is in your hand: You can Special Summon this card, and if you do, shuffle 1 WIND monster from your GY into the Deck. If this card is Normal or Special Summoned: You can reveal the top card of your opponent's Deck, and apply the appropriate effect based on its card type.\r\n● Monster: Place it in your opponent's Spell & Trap Zone as a face-up Continuous Spell.\r\n● Spell/Trap: Banish it.\r\nYou can only use each effect of \"Silk Bomb Moth\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/18300894.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WIND",
+  "atk": 2400,
+  "species": "Insect",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1000,
+  "level": 6,
+  "is_tuner": false
+}

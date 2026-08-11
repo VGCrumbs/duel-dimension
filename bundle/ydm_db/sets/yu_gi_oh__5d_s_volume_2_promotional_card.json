@@ -1,0 +1,16 @@
+{
+  "name": "Yu-Gi-Oh! 5D's Volume 2 promotional card",
+  "code": "YF02",
+  "type": "Single",
+  "date": "07-02-2012",
+  "image": "https://ygoprodeck.com/pics_sets/YF02.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 37474917,
+      "code": "YF02-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

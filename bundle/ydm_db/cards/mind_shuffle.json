@@ -1,0 +1,12 @@
+{
+  "id": 24749710,
+  "name": "Mind Shuffle",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "During either player's turn: You can add 1 monster that mentions \"Light and Darkness Ritual\" from your Deck to your hand, then discard 1 card. You can only use this effect of \"Mind Shuffle\" once per turn. When your opponent activates a card or effect: You can return 1 Level 7 or higher monster you control to the hand; Special Summon 1 monster that mentions \"Light and Darkness Ritual\" from your hand, with a different name than the returned monster, ignoring its Summoning conditions. You cannot activate these effects of \"Mind Shuffle\" in the same Chain.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/24749710.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Continuous"
+}

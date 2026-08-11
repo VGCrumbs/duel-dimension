@@ -181,4 +181,146 @@ class DeckEditsTest
         // Back on, and it plays again with no repair needed.
         assertTrue(DeckEdits.problemsUnder(built, empty, Banlist.none(), true).isEmpty());
     }
+
+    // ---- the artwork a new copy is born wearing ----
+
+    /**
+     * Registers a card the database can resolve, with as many artworks as
+     * asked for. Never removed again: the list is keyed by passcode and these
+     * ids are not real cards.
+     */
+    private static int registerCard(long passcode, int artworks)
+    {
+        de.cas_ual_ty.dueldimension.card.properties.LevelMonsterProperties card =
+            new de.cas_ual_ty.dueldimension.card.properties.LevelMonsterProperties();
+        card.id = passcode;
+        card.name = "Test " + passcode;
+        card.type = de.cas_ual_ty.dueldimension.card.properties.Type.MONSTER;
+        card.species = "Warrior";
+        card.attribute = "DARK";
+        card.ability = "";
+        card.images = new String[] { "printed" };
+        if(artworks > 1)
+        {
+            String[] alternates = new String[artworks - 1];
+            java.util.Arrays.fill(alternates, "alternate");
+            card.addArtwork(alternates);
+        }
+        de.cas_ual_ty.dueldimension.DdDatabase.PROPERTIES_LIST.add(card);
+        return (int)passcode;
+    }
+
+    /**
+     * The worked example, in miniature: own the MVP1 printing and that copy
+     * wears its artwork.
+     */
+    @Test
+    void aNewCopyWearsThePrintingYouOwn()
+    {
+        int obelisk = registerCard(91000001L, 3);
+        Trunk trunk = new Trunk();
+        trunk.add(obelisk, "Ultra Rare", 2, 1);
+
+        assertEquals(2, DeckEdits.artForNewCopy(trunk, deckOf(List.of()), obelisk));
+    }
+
+    /**
+     * Fanciest first, one copy at a time. A player holding a BP01 and an MVP1
+     * Obelisk who runs two sees artwork 2 and artwork 1 -- the pair of cards
+     * they actually own -- and a third copy falls back to the printed art.
+     */
+    @Test
+    void eachCopyGetsTheNextPrintingDown()
+    {
+        int obelisk = registerCard(91000002L, 3);
+        Trunk trunk = new Trunk();
+        trunk.add(obelisk, "Ultra Rare", 2, 1);
+        trunk.add(obelisk, "Rare", 1, 1);
+
+        DeckList deck = deckOf(List.of());
+        assertEquals(2, DeckEdits.artForNewCopy(trunk, deck, obelisk));
+        deck.main().add(obelisk);
+        assertEquals(1, DeckEdits.artForNewCopy(trunk, deck, obelisk));
+        deck.main().add(obelisk);
+        assertEquals(0, DeckEdits.artForNewCopy(trunk, deck, obelisk),
+            "a third copy is one they do not own, so it is the printed art");
+    }
+
+    /** Copies are counted across the whole deck, as the copy limit is. */
+    @Test
+    void aCopyInTheSideDeckStillCountsAsOne()
+    {
+        int obelisk = registerCard(91000003L, 3);
+        Trunk trunk = new Trunk();
+        trunk.add(obelisk, "Ultra Rare", 2, 1);
+        trunk.add(obelisk, "Rare", 1, 1);
+
+        DeckList deck = new DeckList("Spread", DeckList.Origin.SAVED,
+            List.of(), List.of(), List.of(obelisk));
+        assertEquals(1, DeckEdits.artForNewCopy(trunk, deck, obelisk),
+            "the side deck already holds the fanciest copy");
+    }
+
+    /**
+     * The cost for the other 13,740 cards. A card with one artwork is answered
+     * without the collection ever being asked.
+     */
+    @Test
+    void aCardWithOneArtworkIsAlwaysThePrintedArt()
+    {
+        int plain = registerCard(91000004L, 1);
+        Trunk trunk = new Trunk();
+        trunk.add(plain, "Ultra Rare", 2, 1);
+
+        assertEquals(0, DeckEdits.artForNewCopy(trunk, deckOf(List.of()), plain),
+            "the collection says 2 and the card has no 2; the card is the authority");
+    }
+
+    /**
+     * An artwork this build's database does not have folds back to the printed
+     * art, the same way a value off the wire does. A set file can name an
+     * artwork an alt_art folder no longer provides.
+     */
+    @Test
+    void anArtworkTheCardDoesNotHaveFoldsToThePrintedArt()
+    {
+        int obelisk = registerCard(91000005L, 2);
+        Trunk trunk = new Trunk();
+        trunk.add(obelisk, "Ultra Rare", 7, 1);
+
+        assertEquals(0, DeckEdits.artForNewCopy(trunk, deckOf(List.of()), obelisk));
+    }
+
+    /** A card nobody owns, and a card the database has never heard of. */
+    @Test
+    void nothingOwnedMeansThePrintedArt()
+    {
+        int obelisk = registerCard(91000006L, 3);
+        assertEquals(0, DeckEdits.artForNewCopy(new Trunk(), deckOf(List.of()), obelisk));
+        assertEquals(0, DeckEdits.artForNewCopy(new Trunk(), deckOf(List.of()), 91009999));
+    }
+
+    /**
+     * The default is a creation-time value and never a render-time fallback,
+     * which is how a deliberate artwork 0 is told from an undecided one: what
+     * the picker wrote survives canonicalArts untouched, because nothing asks
+     * this question about a position that already exists.
+     */
+    @Test
+    void aDeliberateChoiceIsNotOverwrittenByTheDefault()
+    {
+        int obelisk = registerCard(91000007L, 3);
+        Trunk trunk = new Trunk();
+        trunk.add(obelisk, "Ultra Rare", 2, 1);
+
+        // Two copies, the first dressed by the default and the second dressed
+        // by hand back down to the printed art.
+        List<Integer> cards = List.of(obelisk, obelisk);
+        List<Integer> arts = List.of(2, 0);
+
+        assertEquals(List.of(2), DeckEdits.canonicalArts(cards, arts),
+            "the chosen 0 is stored as a trailing absence, which reads back as 0");
+        assertEquals(2, DeckEdits.artForNewCopy(trunk, deckOf(List.of()), obelisk),
+            "and the default is unchanged for the next copy that IS created");
+    }
 }

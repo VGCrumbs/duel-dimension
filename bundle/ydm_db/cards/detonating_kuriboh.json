@@ -1,0 +1,21 @@
+{
+  "id": 46789706,
+  "name": "Detonating Kuriboh",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If a \"Kuriboh\" Monster Card is on the field: You can Special Summon this card from your hand. When your opponent activates a monster effect on the field (Quick Effect): You can equip this card you control to that opponent's monster as an Equip Spell with the following effect.\r\n● The equipped monster's effects are negated.\r\nYou can only use each effect of \"Detonating Kuriboh\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/46789706.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 300,
+  "species": "Fiend",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 200,
+  "level": 1,
+  "is_tuner": false
+}

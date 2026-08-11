@@ -1,0 +1,12 @@
+{
+  "id": 62991886,
+  "name": "Unstable Evolution",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "While your LP is lower than your opponent's, the equipped monster's original ATK becomes 2400. While your LP is higher, the equipped monster's original ATK becomes 1000.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/62991886.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Equip"
+}

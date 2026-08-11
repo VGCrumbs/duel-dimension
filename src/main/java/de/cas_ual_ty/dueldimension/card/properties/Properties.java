@@ -48,6 +48,26 @@ public class Properties
     public String text;
     public Type type;
     public String[] images;
+
+    /**
+     * Adds artworks after the printed one.
+     * <p>
+     * Appended, never inserted: index 0 stays the art this card has always had,
+     * so a deck that dressed a copy keeps meaning what it meant. Lives here
+     * rather than on the caller because {@code imageIndicesAmt} is derived from
+     * this array and the two must not drift.
+     */
+    public void addArtwork(String[] urls)
+    {
+        if(urls == null || urls.length == 0)
+        {
+            return;
+        }
+        String[] combined = java.util.Arrays.copyOf(images, images.length + urls.length);
+        System.arraycopy(urls, 0, combined, images.length, urls.length);
+        images = combined;
+        imageIndicesAmt = combined.length;
+    }
     
     protected int imageIndicesAmt;
     
@@ -67,8 +87,11 @@ public class Properties
     public Properties(JsonObject j)
     {
         isHardcoded = false;
+        // No `imageIndicesAmt = 1` after this call. It used to sit here and it
+        // overwrote what readProperties had just worked out from the images
+        // array, which made that line dead: the count has to come from the
+        // array, and the array is filled in there.
         readAllProperties(j);
-        imageIndicesAmt = 1;
     }
     
     public Properties()
@@ -107,6 +130,16 @@ public class Properties
         {
             this.images[i] = images.get(i).getAsString();
         }
+        // Set HERE, where the array is filled, rather than in a constructor.
+        // A database card reaches its final form through the COPY constructor
+        // (DdUtil.buildProperties wraps a plain Properties in a Spell/Trap/
+        // Monster one), and that constructor has always used images.length --
+        // which is why alternate artwork resolves at all. This line is for the
+        // paths that do not: buildProperties returns the plain object itself
+        // for a card it cannot classify, and that object used to claim one
+        // artwork however many it had, so isAcceptedImageIndex refused every
+        // index but 0 and adjustImageIndex folded them back to the printed art.
+        this.imageIndicesAmt = this.images.length;
     }
     
     public void writeProperties(JsonObject j)

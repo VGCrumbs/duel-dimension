@@ -1,0 +1,21 @@
+{
+  "id": 19715246,
+  "name": "Cyber Jormungardr",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Cannot be Normal Summoned/Set. Must be Special Summoned by card effect. If your opponent controls a monster: You can Special Summon this card from your hand, then take 1 \"Cyber Dragon\" from your Deck, and either Special Summon it or equip it to this card as an Equip Spell, also you cannot Special Summon for the rest of this turn, except Machine monsters. You can return 1 \"Cyber Dragon\" you control to the hand; add 1 \"Polymerization\" from your Deck or GY to your hand. You can only use each effect of \"Cyber Jormungardr\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/19715246.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 1000,
+  "species": "Machine",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2100,
+  "level": 5,
+  "is_tuner": false
+}

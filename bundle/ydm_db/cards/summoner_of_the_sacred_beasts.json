@@ -1,0 +1,21 @@
+{
+  "id": 22734799,
+  "name": "Summoner of the Sacred Beasts",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can reveal this card in your hand; discard 1 card, and if you do, Special Summon 1 \"Sacred Beast\" monster from your hand in Defense Position, except a Level 8 monster. You can discard 1 card; Special Summon 1 \"Sacred Beast\" monster from your hand or GY in Defense Position, except a Level 8 monster or the discarded card. You can banish this card from your GY; Special Summon 1 \"Sacred Beast\" monster from your GY in Defense Position, except a Level 8 monster. You can only use each effect of \"Summoner of the Sacred Beasts\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/22734799.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 2300,
+  "species": "Thunder",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 3000,
+  "level": 8,
+  "is_tuner": false
+}

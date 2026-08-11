@@ -253,6 +253,7 @@ public final class ShopMessages
 
             List<Integer> codes = new ArrayList<>();
             List<String> rarities = new ArrayList<>();
+            List<Integer> arts = new ArrayList<>();
             for(ItemStack card : pulled)
             {
                 if(card.isEmpty() || !(card.getItem() instanceof de.cas_ual_ty.dueldimension.card.CardItem item))
@@ -266,6 +267,10 @@ public final class ShopMessages
                 }
                 codes.add((int)holder.getCard().getId());
                 rarities.add(holder.getRarity() == null ? "" : holder.getRarity());
+                // The artwork this printing specifies, off the same holder as
+                // the rarity and gathered in the same pass so the three lists
+                // stay in step.
+                arts.add((int)holder.getImageIndex());
             }
 
             // Into the collection, and only there. The cards used to be dropped
@@ -273,7 +278,18 @@ public final class ShopMessages
             // mod tracked ownership before there was a trunk; now that the
             // server holds one, the items are a second copy of the same fact
             // that fills a hotbar and can be thrown away by accident.
-            codes.forEach(id -> DuelProfiles.get(player).trunk().add(id, 1));
+            // With the rarity, which was already gathered a few lines up for
+            // the opening animation and then thrown away here. The collection
+            // records which printing was pulled, so a set can be completed
+            // printing by printing -- and which artwork that printing prints,
+            // so a copy bought as MVP1-SV5 is remembered as the one wearing
+            // image 2 rather than as a generic Obelisk.
+            de.cas_ual_ty.dueldimension.duel.profile.Trunk trunk =
+                DuelProfiles.get(player).trunk();
+            for(int i = 0; i < codes.size(); i++)
+            {
+                trunk.add(codes.get(i), rarities.get(i), arts.get(i), 1);
+            }
             DuelProfiles.saveAndSync(player);
 
             net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, new SyncPoints(DuelPoints.get(player)));
@@ -283,6 +299,178 @@ public final class ShopMessages
                 // look the same rather than being two different ceremonies.
                 net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, new PackMessages.OpenPack(set.name, codes, rarities));
             }
+        }
+    }
+
+    /**
+     * Server to client: open the sleeve shop with this stock and balance.
+     * <p>
+     * Its own message rather than a flag on {@link OpenShop}: the two shops sell
+     * different things and a payload whose meaning depends on a boolean is a
+     * payload that can be sent meaninglessly. The stock is built server side and
+     * sent, for the reason {@link OpenShop} does it — the shop a player sees has
+     * to be the shop the server will sell from.
+     */
+    public record OpenSleeveShop(int points, List<ShopStock.SleeveOffer> sleeves)
+        implements CustomPacketPayload
+    {
+        /** Names this message on the wire. */
+        public static final CustomPacketPayload.Type<OpenSleeveShop> TYPE =
+            DdNetwork.type("shop_open_sleeves");
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, OpenSleeveShop> CODEC =
+            CustomPacketPayload.codec(OpenSleeveShop::encode, OpenSleeveShop::decode);
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
+        {
+            return TYPE;
+        }
+
+        public static void encode(OpenSleeveShop message, FriendlyByteBuf buffer)
+        {
+            buffer.writeVarInt(message.points());
+            buffer.writeVarInt(message.sleeves().size());
+            message.sleeves().forEach(offer -> offer.write(buffer));
+        }
+
+        public static OpenSleeveShop decode(FriendlyByteBuf buffer)
+        {
+            int points = buffer.readVarInt();
+            int count = buffer.readVarInt();
+            List<ShopStock.SleeveOffer> offers = new ArrayList<>(count);
+            for(int i = 0; i < count; i++)
+            {
+                offers.add(ShopStock.SleeveOffer.read(buffer));
+            }
+            return new OpenSleeveShop(points, offers);
+        }
+    }
+
+    /**
+     * Client to server: buy this sleeve.
+     * <p>
+     * Carries the sleeve's id and <b>nothing else</b> — no price, no count, no
+     * claim about what is already owned. Everything that decides whether the
+     * sale happens is looked up in {@link #sell}, so a client cannot assert what
+     * it paid, and the count is absent rather than clamped because a sleeve is
+     * owned or not owned; there is no second one to buy.
+     */
+    public record BuySleeve(String sleeve) implements CustomPacketPayload
+    {
+        /** Names this message on the wire. */
+        public static final CustomPacketPayload.Type<BuySleeve> TYPE =
+            DdNetwork.type("shop_buy_sleeve");
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, BuySleeve> CODEC =
+            CustomPacketPayload.codec(BuySleeve::encode, BuySleeve::decode);
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
+        {
+            return TYPE;
+        }
+
+        /** Matches the field width {@code Sleeves} ids are written at elsewhere. */
+        public static final int NAME_LIMIT = 64;
+
+        public static void encode(BuySleeve message, FriendlyByteBuf buffer)
+        {
+            buffer.writeUtf(message.sleeve(), NAME_LIMIT);
+        }
+
+        public static BuySleeve decode(FriendlyByteBuf buffer)
+        {
+            return new BuySleeve(buffer.readUtf(NAME_LIMIT));
+        }
+
+        /**
+         * Sells a sleeve, or refuses to.
+         * <p>
+         * The order of the four steps is the whole safety of it:
+         * <ol>
+         * <li><b>Resolve the id.</b> {@code Sleeves.byName} returns null for an
+         *     id this build does not have, which is a refusal rather than a
+         *     substitution — the strict half of that class's deliberate
+         *     lenient-on-disk/strict-on-the-wire split.</li>
+         * <li><b>Check it is stock at all.</b> A free dye colour has nothing to
+         *     sell and a patron's sleeve is not a product, so neither can be
+         *     bought however the packet is spelt.</li>
+         * <li><b>Check ownership BEFORE charging.</b> This is what stops a
+         *     second click on a bought sleeve costing another 500. It has to be
+         *     {@code ownsSleeve} and not the return of {@code grantSleeve},
+         *     because that method answers false for a free sleeve as well as for
+         *     one already held — reading its false as "already paid" would let a
+         *     free sleeve take the money.</li>
+         * <li><b>Charge, then grant.</b> {@link DuelPoints#spend} is the same
+         *     balance check {@link Buy#sell} makes ({@code if(!free &&
+         *     !DuelPoints.spend(player, price))}), and it only deducts when the
+         *     balance covers the price. Granting after paying means a grant that
+         *     somehow fails can be refunded; granting first would give the
+         *     sleeve away when the charge failed.</li>
+         * </ol>
+         * The price is {@link ShopStock#priceOfSleeve}, re-derived here from the
+         * sleeve alone. The number the client was shown never comes back.
+         */
+        public static void sell(ServerPlayer player, String name)
+        {
+            de.cas_ual_ty.dueldimension.card.CardSleevesType sleeve =
+                de.cas_ual_ty.dueldimension.duel.profile.Sleeves.byName(name);
+            if(sleeve == null
+                || !de.cas_ual_ty.dueldimension.duel.profile.Sleeves.isPurchasable(sleeve))
+            {
+                player.sendSystemMessage(Component.literal("Those sleeves are not for sale.")
+                    .withStyle(ChatFormatting.RED));
+                return;
+            }
+
+            de.cas_ual_ty.dueldimension.duel.profile.DuelProfile profile =
+                DuelProfiles.get(player);
+            if(profile.ownsSleeve(sleeve))
+            {
+                // Refused before a single point moves. A client whose screen is
+                // a purchase behind -- two clicks before the profile sync landed
+                // -- lands here, which is exactly the case that must not charge.
+                player.sendSystemMessage(Component.literal("You already own those sleeves.")
+                    .withStyle(ChatFormatting.RED));
+                return;
+            }
+
+            // Creative pays nothing, as it does for packs: the shop is not the
+            // one place in the game where creative mode still costs something.
+            // Read from the player's real game mode on the SERVER, never taken
+            // from a client that could simply claim it.
+            boolean free = player.isCreative();
+            int price = free ? 0 : ShopStock.priceOfSleeve(sleeve);
+            if(!free && !DuelPoints.spend(player, price))
+            {
+                player.sendSystemMessage(Component.literal("Not enough DP.")
+                    .withStyle(ChatFormatting.RED));
+                return;
+            }
+
+            if(!profile.grantSleeve(sleeve))
+            {
+                // Unreachable through the checks above -- ownership was tested a
+                // few lines up and this is the server thread, so nothing has run
+                // in between. Handled anyway because the alternative to an
+                // impossible refund is an impossible theft.
+                if(!free)
+                {
+                    DuelPoints.award(player, price);
+                }
+                player.sendSystemMessage(Component.literal("Those sleeves could not be added; "
+                    + "you were not charged.").withStyle(ChatFormatting.RED));
+                return;
+            }
+
+            // The grant is on the profile, so it is the profile that has to be
+            // written and re-sent; the picker in the deck editor reads its owned
+            // set, which is how the new sleeve becomes selectable there without
+            // a message of its own.
+            DuelProfiles.saveAndSync(player);
+            net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
+                new SyncPoints(DuelPoints.get(player)));
         }
     }
 }

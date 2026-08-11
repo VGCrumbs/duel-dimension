@@ -1,0 +1,347 @@
+{
+  "name": "THE CHRONICLES DECK: Spirit Charmers (All-Foil Edition)",
+  "code": "CH02",
+  "type": "Booster Pack (2026)",
+  "date": "22-01-2026",
+  "image": "https://ygoprodeck.com/pics_sets/CH02.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare_with_starlight_rare",
+  "cards": [
+    {
+      "id": 74364659,
+      "code": "CH02-EN001",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 74364659,
+      "code": "CH02-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74364659,
+      "code": "CH02-EN001",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 759393,
+      "code": "CH02-EN002",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 759393,
+      "code": "CH02-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 759393,
+      "code": "CH02-EN002",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37744402,
+      "code": "CH02-EN003",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 37744402,
+      "code": "CH02-EN003",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37744402,
+      "code": "CH02-EN003",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37970940,
+      "code": "CH02-EN004",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 37970940,
+      "code": "CH02-EN004",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37970940,
+      "code": "CH02-EN004",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68881649,
+      "code": "CH02-EN005",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31887905,
+      "code": "CH02-EN008",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 15746348,
+      "code": "CH02-EN009",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76615300,
+      "code": "CH02-EN010",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86395581,
+      "code": "CH02-EN011",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62803464,
+      "code": "CH02-EN012",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40894584,
+      "code": "CH02-EN013",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62953041,
+      "code": "CH02-EN014",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44680819,
+      "code": "CH02-EN015",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60666820,
+      "code": "CH02-EN016",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74426895,
+      "code": "CH02-EN017",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92652813,
+      "code": "CH02-EN018",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 410904,
+      "code": "CH02-EN019",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 65268179,
+      "code": "CH02-EN020",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 9822220,
+      "code": "CH02-EN021",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84941194,
+      "code": "CH02-EN022",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11335209,
+      "code": "CH02-EN023",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 47330808,
+      "code": "CH02-EN024",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74725513,
+      "code": "CH02-EN025",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86937530,
+      "code": "CH02-EN026",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14824019,
+      "code": "CH02-EN027",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11911336,
+      "code": "CH02-EN028",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 91530236,
+      "code": "CH02-EN029",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38057522,
+      "code": "CH02-EN030",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62256492,
+      "code": "CH02-EN031",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89739383,
+      "code": "CH02-EN032",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23314220,
+      "code": "CH02-EN033",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11827244,
+      "code": "CH02-EN034",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54693926,
+      "code": "CH02-EN035",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19739265,
+      "code": "CH02-EN036",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 16528181,
+      "code": "CH02-EN037",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 65046521,
+      "code": "CH02-EN038",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25704359,
+      "code": "CH02-EN039",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44822037,
+      "code": "CH02-EN040",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 48016074,
+      "code": "CH02-EN041",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 73309655,
+      "code": "CH02-EN042",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 48815792,
+      "code": "CH02-EN043",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30674956,
+      "code": "CH02-EN044",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97661969,
+      "code": "CH02-EN045",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84433295,
+      "code": "CH02-EN046",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 73082255,
+      "code": "CH02-EN047",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1528054,
+      "code": "CH02-EN048",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 45819647,
+      "code": "CH02-EN049",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86066372,
+      "code": "CH02-EN050",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

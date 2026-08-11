@@ -128,6 +128,15 @@ public class ClientConfig
      */
     public static ClientConfig load()
     {
+        // The chosen card back, applied here because this is the one client
+        // setting that is not read from this file -- it changes from a button
+        // and this class cannot write, so it keeps its own (see CardBacks).
+        // It still has to be APPLIED at config load: the choice is read by a
+        // static initialiser, and a static initialiser only runs when something
+        // touches the class, so without this the saved back would not reach the
+        // duel screen until the player next opened the settings tab.
+        CardBacks.apply();
+
         Path file = FabricLoader.getInstance().getConfigDir()
             .resolve(DuelDimension.MOD_ID + "-client.json");
         try

@@ -1,0 +1,12 @@
+{
+  "id": 55870497,
+  "name": "Burning Bamboo Sword",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you activate a \"Bamboo Sword\" card while this card is already face-up in your Spell & Trap Zone: You can skip your opponent's next Main Phase 1.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/55870497.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Continuous"
+}

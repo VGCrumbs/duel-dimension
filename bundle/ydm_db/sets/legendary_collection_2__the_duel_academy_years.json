@@ -1,0 +1,89 @@
+{
+  "name": "Legendary Collection 2: The Duel Academy Years",
+  "code": "LC02",
+  "type": "Collector's Set",
+  "date": "04-10-2011",
+  "image": "https://ygoprodeck.com/pics_sets/LC02.jpg",
+  "pull_type": "distribution",
+  "distribution": "battles_of_legend__armageddon",
+  "cards": [
+    {
+      "id": 6007213,
+      "code": "LC02-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32491822,
+      "code": "LC02-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69890967,
+      "code": "LC02-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85771019,
+      "code": "LC02-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11260714,
+      "code": "LC02-EN005",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 47664723,
+      "code": "LC02-EN006",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35050257,
+      "code": "LC02-EN007",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4611269,
+      "code": "LC02-EN008",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 39984786,
+      "code": "LC02-EN009",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 3642509,
+      "code": "LC02-EN010",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54283059,
+      "code": "LC02-EN011",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 72549351,
+      "code": "LC02-EN012",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 24449083,
+      "code": "LC02-EN013",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

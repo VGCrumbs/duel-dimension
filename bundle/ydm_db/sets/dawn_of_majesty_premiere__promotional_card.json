@@ -1,0 +1,647 @@
+{
+  "name": "Dawn of Majesty Premiere! promotional card",
+  "code": "DAMA",
+  "type": "Booster Pack (2021)",
+  "date": "07-08-2021",
+  "image": "https://ygoprodeck.com/pics_sets/DAMA.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare_with_starlight_rare",
+  "cards": [
+    {
+      "id": 2656842,
+      "code": "DAMA-EN000",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 291414,
+      "code": "DAMA-EN001",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 37799519,
+      "code": "DAMA-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63184227,
+      "code": "DAMA-EN003",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 90179822,
+      "code": "DAMA-EN004",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 36577931,
+      "code": "DAMA-EN005",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 62962630,
+      "code": "DAMA-EN006",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 99456344,
+      "code": "DAMA-EN007",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25451383,
+      "code": "DAMA-EN008",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62849088,
+      "code": "DAMA-EN009",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62849088,
+      "code": "DAMA-EN009",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 98234196,
+      "code": "DAMA-EN010",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24639891,
+      "code": "DAMA-EN011",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 61027400,
+      "code": "DAMA-EN012",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 97112505,
+      "code": "DAMA-EN013",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 24506253,
+      "code": "DAMA-EN014",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 50901852,
+      "code": "DAMA-EN015",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 96399967,
+      "code": "DAMA-EN016",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23384666,
+      "code": "DAMA-EN017",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59789370,
+      "code": "DAMA-EN018",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86277379,
+      "code": "DAMA-EN019",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 22662014,
+      "code": "DAMA-EN020",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58066722,
+      "code": "DAMA-EN021",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 85055821,
+      "code": "DAMA-EN022",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11449436,
+      "code": "DAMA-EN023",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 58844135,
+      "code": "DAMA-EN024",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58844135,
+      "code": "DAMA-EN024",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84339249,
+      "code": "DAMA-EN025",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84339249,
+      "code": "DAMA-EN025",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11327848,
+      "code": "DAMA-EN026",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 57722593,
+      "code": "DAMA-EN027",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 83116692,
+      "code": "DAMA-EN028",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 10505300,
+      "code": "DAMA-EN029",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 46999905,
+      "code": "DAMA-EN030",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 83094004,
+      "code": "DAMA-EN031",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 19489718,
+      "code": "DAMA-EN032",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 45877457,
+      "code": "DAMA-EN033",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 72272462,
+      "code": "DAMA-EN034",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 18666161,
+      "code": "DAMA-EN035",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 45655875,
+      "code": "DAMA-EN036",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 71159974,
+      "code": "DAMA-EN037",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 3544583,
+      "code": "DAMA-EN038",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 40939228,
+      "code": "DAMA-EN039",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40939228,
+      "code": "DAMA-EN039",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76937326,
+      "code": "DAMA-EN040",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 3322931,
+      "code": "DAMA-EN041",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 49816630,
+      "code": "DAMA-EN042",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 75215744,
+      "code": "DAMA-EN043",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 2609443,
+      "code": "DAMA-EN044",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38694052,
+      "code": "DAMA-EN045",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 75083197,
+      "code": "DAMA-EN046",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 1487805,
+      "code": "DAMA-EN047",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 37972500,
+      "code": "DAMA-EN048",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 64966519,
+      "code": "DAMA-EN049",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 365213,
+      "code": "DAMA-EN050",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37750912,
+      "code": "DAMA-EN051",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63144961,
+      "code": "DAMA-EN052",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 99543666,
+      "code": "DAMA-EN053",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 36637374,
+      "code": "DAMA-EN054",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62022479,
+      "code": "DAMA-EN055",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 99426088,
+      "code": "DAMA-EN056",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35815783,
+      "code": "DAMA-EN057",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62200831,
+      "code": "DAMA-EN058",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 98204536,
+      "code": "DAMA-EN059",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24793135,
+      "code": "DAMA-EN060",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1187243,
+      "code": "DAMA-EN061",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 37582948,
+      "code": "DAMA-EN062",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 64576557,
+      "code": "DAMA-EN063",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 90965652,
+      "code": "DAMA-EN064",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 36350300,
+      "code": "DAMA-EN065",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63854005,
+      "code": "DAMA-EN066",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 99243014,
+      "code": "DAMA-EN067",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 26237713,
+      "code": "DAMA-EN068",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62632427,
+      "code": "DAMA-EN069",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 98020526,
+      "code": "DAMA-EN070",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25415161,
+      "code": "DAMA-EN071",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 51510279,
+      "code": "DAMA-EN072",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 98904974,
+      "code": "DAMA-EN073",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24393683,
+      "code": "DAMA-EN074",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 50797682,
+      "code": "DAMA-EN075",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 97182396,
+      "code": "DAMA-EN076",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 23270035,
+      "code": "DAMA-EN077",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 50675040,
+      "code": "DAMA-EN078",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 86060749,
+      "code": "DAMA-EN079",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22454453,
+      "code": "DAMA-EN080",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 40380686,
+      "code": "DAMA-EN081",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 77384395,
+      "code": "DAMA-EN082",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 3779493,
+      "code": "DAMA-EN083",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30163008,
+      "code": "DAMA-EN084",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 76552147,
+      "code": "DAMA-EN085",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 39041550,
+      "code": "DAMA-EN086",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 65430555,
+      "code": "DAMA-EN087",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 2834264,
+      "code": "DAMA-EN088",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38229962,
+      "code": "DAMA-EN089",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 64213017,
+      "code": "DAMA-EN090",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1712616,
+      "code": "DAMA-EN091",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 7925734,
+      "code": "DAMA-EN092",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33314479,
+      "code": "DAMA-EN093",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 61269611,
+      "code": "DAMA-EN094",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 24158464,
+      "code": "DAMA-EN095",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70709488,
+      "code": "DAMA-EN096",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 6203182,
+      "code": "DAMA-EN097",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 62481203,
+      "code": "DAMA-EN098",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35870016,
+      "code": "DAMA-EN099",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44508094,
+      "code": "DAMA-EN100",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 2656842,
+      "code": "DAMA-ENSP1",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

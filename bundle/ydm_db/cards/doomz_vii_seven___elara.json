@@ -1,0 +1,21 @@
+{
+  "id": 54265980,
+  "name": "DoomZ VII Seven - Elara",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is Normal or Special Summoned, or destroyed by card effect: You can Set 1 \"DoomZ\" Spell/Trap from your Deck. While this card is equipped with an Equip Card (Quick Effect): You can Special Summon 1 WIND Machine Xyz Monster from your Extra Deck with the same Rank as this card's Level, and if you do, attach this card and its Equip Cards to that monster as material (this is treated as an Xyz Summon). You can only use each effect of \"DoomZ VII Seven - Elara\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/54265980.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 1400,
+  "species": "Dragon",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1200,
+  "level": 4,
+  "is_tuner": false
+}

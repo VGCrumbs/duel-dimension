@@ -1,0 +1,21 @@
+{
+  "id": 70576413,
+  "name": "D/D/D First King Clovis",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 Tuner + 1+ non-Tuner monsters\r\nIf this card is Synchro Summoned: You can target 1 of your banished \"D/D\" monsters, or if a \"Dark Contract\" card is on the field, you can target 1 in your GY instead; Special Summon it. You can only use this effect of \"D/D/D First King Clovis\" once per turn. If this card is banished: You can activate this effect; if your \"D/D\" monster attacks a Defense Position monster this turn, inflict piercing battle damage to your opponent.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/70576413.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2100,
+  "species": "Fiend",
+  "monster_type": "Synchro",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1900,
+  "level": 6,
+  "is_tuner": false
+}

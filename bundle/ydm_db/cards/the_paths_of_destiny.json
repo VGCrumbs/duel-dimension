@@ -1,0 +1,12 @@
+{
+  "id": 50470982,
+  "name": "The Paths of Destiny",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Both players toss a coin once. If a player's result is Heads, they gain 2000 Life Points, and if their result is Tails, they take 2000 damage.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/50470982.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

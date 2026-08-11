@@ -1,0 +1,21 @@
+{
+  "id": 30583090,
+  "name": "Evil HERO Dead-End Prison",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you control a Fusion Monster that must be Special Summoned with \"Dark Fusion\", you can Special Summon this card (from your hand). You can only Special Summon \"Evil HERO Dead-End Prison\" once per turn this way. You can send 1 \"HERO\" monster from your Deck to the GY; if you Fusion Summon a \"HERO\" monster this turn, this face-up card can be used as a substitute for 1 material mentioned by name, but all other Fusion Materials must be correct. You can only use this effect of \"Evil HERO Dead-End Prison\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/30583090.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 1700,
+  "species": "Rock",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1100,
+  "level": 4,
+  "is_tuner": false
+}

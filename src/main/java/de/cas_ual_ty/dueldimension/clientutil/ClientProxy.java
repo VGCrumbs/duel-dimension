@@ -56,8 +56,14 @@ public class ClientProxy implements ISidedProxy
      * A database update deletes {@code ydm_db} recursively before unpacking the
      * new one. Images nested under it would go with it, and the client would
      * re-download thousands of them every time the card list changed.
+     * <p>
+     * In the game directory rather than the working directory, for the reason
+     * given on {@link DuelDimension#mainFolder}: a launcher that passes
+     * {@code --gameDir} would otherwise scatter one instance's image cache into
+     * whichever folder it happened to start the JVM in, and two instances would
+     * share it.
      */
-    public static File imagesParentFolder = new File("ydm_db_images");
+    public static File imagesParentFolder = de.cas_ual_ty.dueldimension.util.GameDir.file("ydm_db_images");
     public static File cardImagesFolder = new File(imagesParentFolder, "cards");
     public static File setImagesFolder = new File(imagesParentFolder, "sets");
     public static File rarityImagesFolder = new File(imagesParentFolder, "rarities");
@@ -237,6 +243,43 @@ public class ClientProxy implements ISidedProxy
     }
 
     @Override
+    public void setOwnSleeve(String sleeve)
+    {
+        // byName returns null for a name this build does not know, rather than
+        // guessing. An unknown sleeve is simply the plain back.
+        de.cas_ual_ty.dueldimension.card.CardSleevesType named =
+            de.cas_ual_ty.dueldimension.duel.profile.Sleeves.byName(sleeve);
+        DuelClientState.ownSleeve = named == null
+            ? de.cas_ual_ty.dueldimension.duel.profile.Sleeves.DEFAULT : named;
+    }
+
+    /**
+     * The player's own deck list, as the server shuffled it.
+     * <p>
+     * Built into slots here rather than through {@code Slot.of(CardView)}: the
+     * deck query asks for no position, so {@code CardView.isFaceUp()} would be
+     * false and {@code Slot.of} would mark every one of these face down. That
+     * renders correctly today only because the pile panel never reads the flag,
+     * which makes it a trap for whoever adds "if faceDown, draw the cover".
+     * These cards are the viewer's own and are meant to be read, so the flag is
+     * written out explicitly. Everything else takes its neutral value; none of
+     * it is drawn, and an equip is null because a card in a deck equips nothing.
+     */
+    @Override
+    public void showOwnDeck(int[] codes, int[] arts)
+    {
+        java.util.List<de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot.Slot> deck =
+            new java.util.ArrayList<>(codes.length);
+        for(int i = 0; i < codes.length; i++)
+        {
+            int art = i < arts.length ? arts[i] : 0;
+            deck.add(new de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot.Slot(
+                true, codes[i], false, false, -1, -1, -1, -1, -1, -1, 0, null, false, art));
+        }
+        DuelClientState.deckView = java.util.List.copyOf(deck);
+    }
+
+    @Override
     public void setOpponentPlayMat(String matId)
     {
         DuelClientState.opponentMat = PlayMats.byId(matId);
@@ -340,6 +383,20 @@ public class ClientProxy implements ISidedProxy
     }
 
     /**
+     * Opens the collection binder over whatever is on screen.
+     * <p>
+     * It reads the already-synced profile, so this needs nothing from the
+     * server and no menu; {@code gui.screen()} is the current screen, which
+     * becomes the one to go back to.
+     */
+    @Override
+    public void openCollectionBinder()
+    {
+        getMinecraft().setScreenAndShow(
+            new de.cas_ual_ty.dueldimension.cardbinder.BinderScreen(getMinecraft().gui.screen()));
+    }
+
+    /**
      * The PvP lobby, opened or refreshed.
      * <p>
      * Every change re-sends the whole room, so an open lobby is updated in
@@ -396,9 +453,11 @@ public class ClientProxy implements ISidedProxy
     public void openPackReveal(String setName, java.util.List<Integer> codes,
         java.util.List<String> rarities)
     {
+        // The screen that asked for the packs, so closing the reveal returns
+        // there rather than dumping the player back into the world.
         getMinecraft().gui.setScreen(
             new de.cas_ual_ty.dueldimension.clientutil.hub.PackOpeningScreen(
-                setName, codes, rarities));
+                getMinecraft().gui.screen(), setName, codes, rarities));
     }
 
     @Override

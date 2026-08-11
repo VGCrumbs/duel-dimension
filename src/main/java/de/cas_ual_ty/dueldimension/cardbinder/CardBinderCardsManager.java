@@ -10,13 +10,20 @@ import java.util.UUID;
  * Port: the Forge tree kept the binders folder on {@code DuelDimension} (set in
  * the {@code @Mod} constructor). That class is the loader-agnostic identity here
  * and does not own folders, so the folder lives with the one feature that uses
- * it — same relative path ({@code ydm_binders}) and same lazy directory
+ * it — same folder name ({@code ydm_binders}) and same lazy directory
  * creation the Forge init did, so a world written by the Forge build still
  * reads.
+ * <p>
+ * Rooted at the game directory rather than named relatively: these are
+ * SERVER-SIDE player data, keyed by UUID, and a bare relative path resolves
+ * against the process working directory. A server whose wrapper starts the JVM
+ * somewhere else would hand every player an empty binder and quietly begin a
+ * second collection beside the first.
  */
 public class CardBinderCardsManager extends UUIDCardsManager
 {
-    public static final File bindersFolder = new File("ydm_binders");
+    public static final File bindersFolder =
+        de.cas_ual_ty.dueldimension.util.GameDir.file("ydm_binders");
 
     public CardBinderCardsManager()
     {

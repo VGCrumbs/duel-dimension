@@ -1,0 +1,47 @@
+{
+  "name": "Hobby League 6 participation card B",
+  "code": "HL06",
+  "type": "Booster Pack (2008)",
+  "date": "01-01-2008",
+  "image": "https://ygoprodeck.com/pics_sets/HL06.jpg",
+  "pull_type": "distribution",
+  "distribution": "composition_ultra_parallel_rare",
+  "cards": [
+    {
+      "id": 71044499,
+      "code": "HL06-EN001",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23171610,
+      "code": "HL06-EN002",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7572887,
+      "code": "HL06-EN003",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32807846,
+      "code": "HL06-EN004",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97077563,
+      "code": "HL06-EN005",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95956346,
+      "code": "HL06-EN006",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    }
+  ]
+}

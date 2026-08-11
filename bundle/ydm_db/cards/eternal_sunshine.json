@@ -1,0 +1,12 @@
+{
+  "id": 28903523,
+  "name": "Eternal Sunshine",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Monsters you control gain 500 DEF for each \"Ancient Fairy Dragon\", and monsters that mention it, that you control. Once per Chain: You can target 1 face-up monster your opponent controls; until the end of this turn, its ATK/DEF become halved, also its effects are negated. You can use this effect of \"Eternal Sunshine\" a number of times per turn, up to the number of \"Ancient Fairy Dragon\", and monsters that mention it, that you control.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/28903523.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Continuous"
+}

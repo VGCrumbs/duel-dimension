@@ -311,6 +311,40 @@ public final class PromptMessages
          */
     }
 
+    /**
+     * Server -> client: the sleeve on the deck THIS player is duelling with.
+     * <p>
+     * Sent once as the duel starts. It names the deck actually in play, which is
+     * not always the one the client made active — an illegal deck is swapped for
+     * a starter deck server-side, and the back on the table should be that
+     * deck's, not the one that was refused.
+     */
+    public record OwnSleeve(String sleeve) implements CustomPacketPayload
+    {
+        /** Names this message on the wire. */
+        public static final CustomPacketPayload.Type<OwnSleeve> TYPE =
+            DdNetwork.type("prompt_own_sleeve");
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, OwnSleeve> CODEC =
+            CustomPacketPayload.codec(OwnSleeve::encode, OwnSleeve::decode);
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
+        {
+            return TYPE;
+        }
+
+        public static void encode(OwnSleeve message, FriendlyByteBuf buffer)
+        {
+            buffer.writeUtf(message.sleeve(), 64);
+        }
+
+        public static OwnSleeve decode(FriendlyByteBuf buffer)
+        {
+            return new OwnSleeve(buffer.readUtf(64));
+        }
+    }
+
     /** Server -> client: the mat the opponent is playing on. */
     public record OpponentPlayMat(String matId) implements CustomPacketPayload
     {
@@ -354,6 +388,81 @@ public final class PromptMessages
          * ctx.setPacketHandled(true);
          * }
          */
+    }
+
+    /**
+     * Client -> server: show me MY deck.
+     * <p>
+     * No payload, and that is the whole of the authorisation story. A field
+     * naming a controller, a location or a seat would be a request the client
+     * gets to aim, and the first bug in validating it puts the opponent's deck
+     * on a screen. The server derives the seat from the sender, so there is
+     * nothing here to validate and nothing to get wrong.
+     */
+    public record ViewOwnDeck() implements CustomPacketPayload
+    {
+        /** Names this message on the wire. */
+        public static final CustomPacketPayload.Type<ViewOwnDeck> TYPE =
+            DdNetwork.type("prompt_view_own_deck");
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, ViewOwnDeck> CODEC =
+            CustomPacketPayload.codec(ViewOwnDeck::encode, ViewOwnDeck::decode);
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
+        {
+            return TYPE;
+        }
+
+        public static void encode(ViewOwnDeck message, FriendlyByteBuf buffer)
+        {
+        }
+
+        public static ViewOwnDeck decode(FriendlyByteBuf buffer)
+        {
+            return new ViewOwnDeck();
+        }
+    }
+
+    /**
+     * Server -> client: the cards in YOUR deck, in a shuffled order.
+     * <p>
+     * Two parallel arrays and nothing else, deliberately: this is a MULTISET of
+     * (passcode, artwork) pairs, and a multiset has no order to leak. It is not
+     * a list of {@link BoardSnapshot.Slot} because a Slot carries a
+     * {@code CardView.Equip(controller, location, sequence)} and an overlay
+     * count — fields that CAN encode a position. A field that is not on the wire
+     * cannot be filled in by a later change that looks like tidying up.
+     * <p>
+     * No index, no sequence, no count: the array length IS the deck size, which
+     * is already public (both clients are told {@code deckCount} and the pile
+     * label prints it), so a separate number could only ever disagree with it.
+     */
+    public record OwnDeckList(int[] codes, int[] arts) implements CustomPacketPayload
+    {
+        /** Names this message on the wire. */
+        public static final CustomPacketPayload.Type<OwnDeckList> TYPE =
+            DdNetwork.type("prompt_own_deck_list");
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, OwnDeckList> CODEC =
+            CustomPacketPayload.codec(OwnDeckList::encode, OwnDeckList::decode);
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
+        {
+            return TYPE;
+        }
+
+        public static void encode(OwnDeckList message, FriendlyByteBuf buffer)
+        {
+            buffer.writeVarIntArray(message.codes());
+            buffer.writeVarIntArray(message.arts());
+        }
+
+        public static OwnDeckList decode(FriendlyByteBuf buffer)
+        {
+            return new OwnDeckList(buffer.readVarIntArray(), buffer.readVarIntArray());
+        }
     }
 
     /** Client -> server: I give up. */

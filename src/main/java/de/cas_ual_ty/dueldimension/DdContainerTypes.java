@@ -7,7 +7,6 @@ import de.cas_ual_ty.dueldimension.deckbox.DeckBoxItem;
 import de.cas_ual_ty.dueldimension.net.MenuData;
 import de.cas_ual_ty.dueldimension.set.CardSetContainer;
 import de.cas_ual_ty.dueldimension.set.CardSetContentsContainer;
-import de.cas_ual_ty.dueldimension.simplebinder.SimpleBinderContainer;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
@@ -60,9 +59,6 @@ public final class DdContainerTypes
     // The simple binder carries the handler size and which hand in the MenuData
     // buffer (via HeldCIIContainer), read here into the FriendlyByteBuf
     // constructor exactly as the Forge IContainerFactory buffer was.
-    public static final MenuType<SimpleBinderContainer> SIMPLE_BINDER = register("simple_binder",
-        (id, inv) -> new SimpleBinderContainer(DdContainerTypes.SIMPLE_BINDER, id, inv,
-            MenuData.pending(inv.player.registryAccess())));
 
     // The two duel surfaces. Both take their target out of the MenuData buffer
     // the same way the binders do: a block position for the block, an entity id

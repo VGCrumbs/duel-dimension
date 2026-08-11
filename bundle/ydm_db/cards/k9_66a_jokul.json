@@ -1,0 +1,21 @@
+{
+  "id": 28642461,
+  "name": "K9-66a Jokul",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If your opponent has 2 or more cards in their hand, you can Normal Summon this card without Tributing. You can only use each of the following effects of \"K9-66a Jokul\" once per turn. You can reveal this card and 1 other Level 5 monster in your hand; Special Summon both, but they cannot be used as material for the Xyz Summon of a LIGHT monster. During your Main Phase: You can add 1 non-Aqua \"K9\" monster from your Deck to your hand.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/28642461.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2000,
+  "species": "Aqua",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1900,
+  "level": 5,
+  "is_tuner": false
+}

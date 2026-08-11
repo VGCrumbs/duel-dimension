@@ -1,0 +1,22 @@
+{
+  "id": 6636319,
+  "name": "Evil★Twin Ki-sikil Deal",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 \"Ki-sikil\" monster\r\nYou can only Link Summon \"Evil★Twin Ki-sikil Deal\" once per turn. You can send 1 \"Lil-la\" monster from your Deck or Extra Deck to the GY; apply this effect this turn.\r\n● Each time your opponent activates a card or effect in response to your \"Ki-sikil\" or \"Lil-la\" monster effect activation, draw 1 card when that card/effect resolves.\r\nYou can only use this effect of \"Evil★Twin Ki-sikil Deal\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/6636319.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 100,
+  "species": "Fiend",
+  "monster_type": "Link",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "link_rating": 1,
+  "link_arrows": [
+    "Right"
+  ]
+}

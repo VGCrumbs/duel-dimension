@@ -1,0 +1,21 @@
+{
+  "id": 42302563,
+  "name": "Elfnote Seraphim Strelitzia",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 Tuner + 1+ non-Tuners\r\nThis card's original ATK becomes 3000, while in the center Main Monster Zone. During the Main Phase (Quick Effect): You can Special Summon 1 Level 6 or lower \"Elfnote\" monster from your hand or GY, then you can reduce the Levels of all Level 4 or higher monsters on the field by 3 until the end of this turn, also you cannot Special Summon from the Extra Deck for the rest of this turn, except Synchro Monsters. You can only use this effect of \"Elfnote Seraphim Strelitzia\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/42302563.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "FIRE",
+  "atk": -1,
+  "species": "Plant",
+  "monster_type": "Synchro",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 3000,
+  "level": 7,
+  "is_tuner": false
+}

@@ -1,0 +1,47 @@
+{
+  "name": "Yu-Gi-Oh! 5D's World Championship 2010: Reverse of Arcadia promotional cards",
+  "code": "WC10",
+  "type": "Booster Pack (2010)",
+  "date": "23-02-2010",
+  "image": "https://ygoprodeck.com/pics_sets/WC10.jpg",
+  "pull_type": "distribution",
+  "distribution": "ots_tournament_pack",
+  "cards": [
+    {
+      "id": 14344682,
+      "code": "WC10-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14344682,
+      "code": "WC10-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50732780,
+      "code": "WC10-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50732780,
+      "code": "WC10-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86137485,
+      "code": "WC10-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86137485,
+      "code": "WC10-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

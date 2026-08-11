@@ -1,0 +1,23 @@
+{
+  "name": "Yu-Gi-Oh! World Championship 2019 Japanese National Qualifiers prize cards",
+  "code": "2019",
+  "type": "Booster Pack (2019)",
+  "date": "01-02-2019",
+  "image": "https://ygoprodeck.com/pics_sets/2019.jpg",
+  "pull_type": "distribution",
+  "distribution": "battles_of_legend__armageddon",
+  "cards": [
+    {
+      "id": 662855,
+      "code": "2019-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 662854,
+      "code": "2019-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

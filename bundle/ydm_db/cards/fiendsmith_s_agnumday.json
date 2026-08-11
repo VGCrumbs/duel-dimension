@@ -1,0 +1,24 @@
+{
+  "id": 32991300,
+  "name": "Fiendsmith's Agnumday",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2+ monsters, including a LIGHT Fiend monster\r\nOnce per turn (Quick Effect): You can target 1 LIGHT non-Link Fiend monster in your GY; Special Summon it, and if you do, equip this card you control to that monster as an Equip Spell with the following effects.\r\n● The equipped monster gains ATK equal to the total Link Rating of Link Monsters equipped to it x 600.\r\n● If the equipped monster attacks a Defense Position monster, inflict piercing battle damage to your opponent.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/32991300.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 1800,
+  "species": "Fiend",
+  "monster_type": "Link",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "link_rating": 3,
+  "link_arrows": [
+    "Top",
+    "Bottom-Left",
+    "Bottom-Right"
+  ]
+}

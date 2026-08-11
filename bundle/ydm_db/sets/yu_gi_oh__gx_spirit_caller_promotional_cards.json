@@ -1,0 +1,29 @@
+{
+  "name": "Yu-Gi-Oh! GX Spirit Caller promotional cards",
+  "code": "GX03",
+  "type": "Booster Pack (2007)",
+  "date": "02-01-2007",
+  "image": "https://ygoprodeck.com/pics_sets/GX03.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 81919143,
+      "code": "GX03-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51962254,
+      "code": "GX03-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 87350908,
+      "code": "GX03-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

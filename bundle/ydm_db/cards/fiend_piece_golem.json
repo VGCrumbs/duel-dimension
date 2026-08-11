@@ -1,0 +1,21 @@
+{
+  "id": 56838842,
+  "name": "Fiend Piece Golem",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you control a Fiend Tuner and this card is in your hand: You can Special Summon this card. If this card is Special Summoned: You can reduce its Level by up to 2. If this card is sent to the GY as Synchro Material for \"Red Dragon Archfiend\" or a Synchro Monster that mentions it: You can target 1 Level 4 or lower Fiend monster in your GY; Special Summon it in Defense Position. You can only use each effect of \"Fiend Piece Golem\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/56838842.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2100,
+  "species": "Fiend",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "level": 5,
+  "is_tuner": false
+}

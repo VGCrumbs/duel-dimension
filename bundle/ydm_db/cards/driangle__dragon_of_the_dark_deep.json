@@ -1,0 +1,21 @@
+{
+  "id": 98248208,
+  "name": "Driangle, Dragon of the Dark Deep",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If 3 or more Level 10 monsters are in your field, GY, and/or banishment, while this card is in your hand: You can Special Summon this card. If this card is Special Summoned: You can send the top card of your Deck to the GY; this card gains 500 ATK, then if the card sent to the GY was a monster, inflict 1000 damage to your opponent, otherwise, you can send the new top card of your Deck to the GY. You can only use each effect of \"Driangle, Dragon of the Dark Deep\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/98248208.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WATER",
+  "atk": 2100,
+  "species": "Sea Serpent",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 3100,
+  "level": 10,
+  "is_tuner": false
+}

@@ -1,5 +1,6 @@
 package de.cas_ual_ty.dueldimension.clientutil.hub;
 
+import de.cas_ual_ty.dueldimension.clientutil.CardBacks;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -32,6 +33,32 @@ public class DuelHubScreen extends Screen
     private static final int TILE_H = 118;
 
     /**
+     * One card-back tile in the settings tab, and the art inside it.
+     * <p>
+     * 48x70 is the printed card exactly -- 480/700, which is
+     * {@code DuelTextures.CARD_ASPECT} -- so a back is never stretched to fit
+     * its tile. The art sits inside the tile's own 3px nine-slice frame, at 42
+     * wide and the 61 tall that keeps the same ratio.
+     */
+    private static final int BACK_W = 48;
+    private static final int BACK_H = 70;
+    private static final int BACK_ART_W = 42;
+    private static final int BACK_ART_H = 61;
+
+    /**
+     * Tile pitch, and how many fit in the strip beside the mat preview. Two
+     * today; a further back is an entry rather than more width, which is what
+     * the scroll arm in {@link #mouseScrolled} is for.
+     * <p>
+     * Sleeves do not appear here. They are bought, server-authoritative and
+     * chosen per deck, so they are picked from the deck editor
+     * ({@code SleevePickerScreen}), not from this strip of free client-local
+     * card backs.
+     */
+    private static final int BACK_PITCH = 54;
+    private static final int BACK_TILES = 7;
+
+    /**
      * The four sections, with what each is still waiting on. The order is the
      * Forge build's, so the strip reads the same.
      */
@@ -57,6 +84,32 @@ public class DuelHubScreen extends Screen
     private int top;
 
     /** The two halves of the Decks tab: the player's decks, and recipes. */
+    /**
+     * The Settings tab's own sub-sections.
+     * <p>
+     * Three unrelated preferences were sharing one body and crowding each other
+     * out — the mat preview had been shrunk to make room for the card backs, and
+     * the backs were down to two visible tiles. Each of these now owns the whole
+     * body instead. Same shape as {@link DeckView}, deliberately: the Decks tab
+     * already introduced sub-tabs and a second idiom would only be a second
+     * thing to learn.
+     */
+    private enum SettingsView
+    {
+        MAT("Duel Mat"),
+        CARDS("Cards"),
+        AUDIO("Audio");
+
+        private final String label;
+
+        SettingsView(String label)
+        {
+            this.label = label;
+        }
+    }
+
+    private SettingsView settingsView = SettingsView.MAT;
+
     private enum DeckView
     {
         DECKS("Decks"),
@@ -101,6 +154,9 @@ public class DuelHubScreen extends Screen
 
     /** First tile shown, when there are more outfits than fit across. */
     private int outfitScroll;
+
+    /** First tile shown, when there are more card backs than fit across. */
+    private int backScroll;
 
     /** What went wrong with the last under-skin import, shown under the row. */
     private String notice = "";
@@ -194,8 +250,28 @@ public class DuelHubScreen extends Screen
         matPicker = null;
         if(section == Section.SETTINGS)
         {
-            matPicker = new MatColourPicker(left + PAD + 6, bodyTop + 26, 120, 14,
+            int viewX = left + PAD + 4;
+            for(SettingsView candidate : SettingsView.values())
+            {
+                SettingsView targetView = candidate;
+                addRenderableWidget(new HubWidgets.TabButton(viewX, bodyTop + 3, 68, 16,
+                    Component.literal(candidate.label), () -> settingsView == targetView,
+                    pressed ->
+                {
+                    settingsView = targetView;
+                    backScroll = 0;
+                    rebuild();
+                }));
+                viewX += 70;
+            }
+        }
+        if(section == Section.SETTINGS && settingsView == SettingsView.MAT)
+        {
+            matPicker = new MatColourPicker(left + PAD + 6, bodyTop + 48, 120, 14,
                 de.cas_ual_ty.dueldimension.clientutil.DuelClientState.matColour());
+            // Apply and Reset belong to the mat alone -- a colour is dragged and
+            // needs settling on. They used to be built for the whole tab, so the
+            // music and card-back views offered an Apply that applied nothing.
             addRenderableWidget(new HubWidgets.TextureButton(left + PAD + 6, top + HEIGHT - 32,
                 96, 20, Component.literal("Apply"), pressed -> applyMat()));
             addRenderableWidget(new HubWidgets.TextureButton(left + PAD + 108, top + HEIGHT - 32,
@@ -204,6 +280,9 @@ public class DuelHubScreen extends Screen
                 matPicker.setColour(de.cas_ual_ty.dueldimension.clientutil.DuelClientState.DEFAULT_MAT_COLOUR);
                 applyMat();
             }));
+        }
+        if(section == Section.SETTINGS && settingsView == SettingsView.AUDIO)
+        {
 
             // ---- duel music, under the mat ----
             // Both take effect immediately rather than waiting on Apply: Apply
@@ -213,7 +292,7 @@ public class DuelHubScreen extends Screen
             de.cas_ual_ty.dueldimension.clientutil.DuelMusic.Track current =
                 de.cas_ual_ty.dueldimension.clientutil.DuelMusic.track();
             HubWidgets.TextureButton trackButton = new HubWidgets.TextureButton(
-                left + PAD + 168, bodyTop + 162, 130, 18,
+                left + PAD + 6, bodyTop + 48, 130, 18,
                 Component.literal(current.label()), pressed ->
             {
                 java.util.List<de.cas_ual_ty.dueldimension.clientutil.DuelMusic.Track> all =
@@ -235,7 +314,7 @@ public class DuelHubScreen extends Screen
 
             boolean quiet = de.cas_ual_ty.dueldimension.clientutil.DuelMusic.muted();
             HubWidgets.TextureButton muteButton = new HubWidgets.TextureButton(
-                left + PAD + 302, bodyTop + 162, 68, 18,
+                left + PAD + 140, bodyTop + 48, 68, 18,
                 Component.literal(quiet ? "Muted" : "On"), pressed ->
             {
                 de.cas_ual_ty.dueldimension.clientutil.DuelMusic.toggleMuted();
@@ -258,7 +337,99 @@ public class DuelHubScreen extends Screen
                         "The same switch as the one in a duel"));
             addRenderableWidget(muteButton);
         }
+        if(section == Section.SETTINGS && settingsView == SettingsView.CARDS)
+        {
+            // On click, for the reason the two music buttons are: a back is a
+            // single named choice and is its own confirmation. Apply belongs to
+            // the mat, whose colour is dragged and needs settling on.
+            buildCardBackTiles(bodyTop);
+        }
 
+    }
+
+    /**
+     * The card-back chooser: each back drawn as itself, the one in use marked.
+     * <p>
+     * The thing being chosen IS art, so the tile is the art -- the same
+     * reasoning the wardrobe uses for outfits, where a list of names would tell
+     * a player nothing about what they are picking.
+     * <p>
+     * Each tile draws its back from inside its own {@code extractContents}
+     * rather than having {@link #settingsPanel} draw it. That is not a style
+     * choice: settingsPanel runs BEFORE {@code super.extractRenderState}, so a
+     * back drawn there would be painted over by the button covering the same
+     * rectangle -- the exact trap the wardrobe works around by drawing after
+     * super. A widget that draws its own art cannot be covered by itself.
+     */
+    private void buildCardBackTiles(int bodyTop)
+    {
+        java.util.List<CardBacks.Back> backs = CardBacks.ALL;
+        backScroll = Math.max(0, Math.min(backScroll, Math.max(0, backs.size() - BACK_TILES)));
+        for(int slot = 0; slot < BACK_TILES && slot + backScroll < backs.size(); slot++)
+        {
+            CardBacks.Back back = backs.get(slot + backScroll);
+            CardBackTile tile = new CardBackTile(backStripX() + slot * BACK_PITCH, bodyTop + 48,
+                back, pressed -> CardBacks.set(back));
+            tile.setTooltipLines(java.util.List.of(back.label(),
+                "Drawn on every face-down card"));
+            addRenderableWidget(tile);
+        }
+    }
+
+    /**
+     * Where the card-back strip begins.
+     * <p>
+     * Five pixels clear of the mat preview's frame, which ends at
+     * {@code left + PAD + 321} now the preview is 150 wide, and 12 clear of the
+     * panel's right border. Two 48-wide tiles at a 54 pitch reach
+     * {@code left + PAD + 428}.
+     */
+    private int backStripX()
+    {
+        return left + PAD + 6;
+    }
+
+    /**
+     * One card back, drawn as itself on a button surface.
+     * <p>
+     * It asks which back is in use at draw time rather than being told when it
+     * was built, and that buys two things: choosing a back does not need the
+     * tab rebuilt, and a mat colour the player has dragged but not yet applied
+     * survives the click -- {@code rebuild()} reseeds the picker from the
+     * colour actually in force and would otherwise discard it.
+     */
+    private static class CardBackTile extends HubWidgets.TextureButton
+    {
+        private final CardBacks.Back back;
+
+        private CardBackTile(int x, int y, CardBacks.Back back, OnPress onPress)
+        {
+            // No label: the name is drawn under the tile by settingsPanel, the
+            // way the wardrobe names its figures, so nothing is written across
+            // the art.
+            super(x, y, BACK_W, BACK_H, Component.literal(""), onPress);
+            this.back = back;
+        }
+
+        @Override
+        protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
+            float partialTick)
+        {
+            // The chosen one wears the disabled surface, which is how the
+            // wardrobe marks the outfit being worn. It stays clickable rather
+            // than being switched inactive, because active is fixed at build
+            // time and this tile is never rebuilt; picking the back already in
+            // use is a no-op in CardBacks.set anyway.
+            boolean on = CardBacks.back() == back;
+            int row = on ? NineSlice.DISABLED
+                : isHoveredOrFocused() ? NineSlice.HOVER : NineSlice.IDLE;
+            NineSlice.draw(graphics, HubTextures.BUTTON, getX(), getY(), getWidth(), getHeight(),
+                row, 3);
+            // Inside the frame, and never dimmed with it: the art is the whole
+            // reason the tile exists.
+            NineSlice.image(graphics, back.texture(), getX() + 3, getY() + 4,
+                BACK_ART_W, BACK_ART_H);
+        }
     }
 
     /**
@@ -314,20 +485,51 @@ public class DuelHubScreen extends Screen
 
     private void settingsPanel(GuiGraphicsExtractor graphics, int bodyTop)
     {
-        int x = left + PAD + 10;
-        graphics.text(font, "Duel Mat", x, bodyTop + 10, 0xFFF4D089, true);
-        if(matPicker != null)
+        // Everything below the sub-tab row, which occupies bodyTop + 3 to + 19.
+        int headingY = bodyTop + 32;
+        if(settingsView == SettingsView.MAT && matPicker != null)
         {
+            graphics.text(font, "Duel Mat", left + PAD + 6, headingY, 0xFFF4D089, true);
             matPicker.render(graphics);
             // The preview is the real mat texture under the chosen tint, so
-            // what is shown here is exactly what reaches the table.
-            matPicker.renderPreview(graphics, left + PAD + 168, bodyTop + 30, 210, 92);
+            // what is shown here is exactly what reaches the table. Back to
+            // 210x92 now that the card backs are not sharing this body --
+            // custom.png is 1024x448 and 2.28 keeps its 2.29.
+            matPicker.renderPreview(graphics, left + PAD + 168, bodyTop + 48, 210, 92);
             String hex = String.format("#%06X", matPicker.colour());
-            graphics.text(font, hex, left + PAD + 168, bodyTop + 128, 0xFFC2C9D6, true);
+            graphics.text(font, hex, left + PAD + 168, bodyTop + 146, 0xFFC2C9D6, true);
+            return;
         }
-        // The heading its two buttons sit under. Drawn here rather than built
-        // as a widget because it is a label, and this panel draws its own.
-        graphics.text(font, "Duel Music", left + PAD + 168, bodyTop + 150, 0xFFF4D089, true);
+        if(settingsView == SettingsView.AUDIO)
+        {
+            // Drawn here rather than built as a widget because it is a label,
+            // and this panel draws its own.
+            graphics.text(font, "Duel Music", left + PAD + 6, headingY, 0xFFF4D089, true);
+            return;
+        }
+
+        // ---- card back ----
+        // Only the words: each tile paints its own back, because this runs
+        // before the widgets and would otherwise be covered by them. The names
+        // are safe here -- they sit below the tiles rather than inside them.
+        graphics.text(font, "Card Back", backStripX(), headingY, 0xFFF4D089, true);
+        java.util.List<CardBacks.Back> backs = CardBacks.ALL;
+        for(int slot = 0; slot < BACK_TILES && slot + backScroll < backs.size(); slot++)
+        {
+            CardBacks.Back back = backs.get(slot + backScroll);
+            boolean on = CardBacks.back() == back;
+            String name = font.plainSubstrByWidth(back.label(), BACK_PITCH - 4);
+            graphics.text(font, name,
+                backStripX() + slot * BACK_PITCH + (BACK_W - font.width(name)) / 2,
+                bodyTop + 48 + BACK_H + 4, on ? 0xFFF4D089 : 0xFFC2C9D6, true);
+        }
+        if(backs.size() > BACK_TILES)
+        {
+            graphics.text(font, (backScroll + 1) + "-"
+                    + Math.min(backs.size(), backScroll + BACK_TILES)
+                    + " of " + backs.size(),
+                backStripX(), bodyTop + 48 + BACK_H + 18, 0xFF7A8090, true);
+        }
     }
 
     private void applyMat()
@@ -1190,6 +1392,21 @@ public class DuelHubScreen extends Screen
             if(moved != outfitScroll)
             {
                 outfitScroll = moved;
+                rebuild();
+            }
+            return true;
+        }
+        // The card-back strip is a row too, and scrolls the same way -- but only
+        // once there are more backs than fit. Taking the notch unconditionally
+        // would swallow scrolling on a settings tab that has nothing to scroll.
+        if(section == Section.SETTINGS && settingsView == SettingsView.CARDS
+            && CardBacks.ALL.size() > BACK_TILES)
+        {
+            int max = CardBacks.ALL.size() - BACK_TILES;
+            int moved = Math.max(0, Math.min(max, backScroll - (int)Math.signum(scrollY)));
+            if(moved != backScroll)
+            {
+                backScroll = moved;
                 rebuild();
             }
             return true;

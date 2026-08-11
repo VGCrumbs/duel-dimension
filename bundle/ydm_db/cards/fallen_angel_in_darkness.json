@@ -1,0 +1,12 @@
+{
+  "id": 93023136,
+  "name": "Fallen Angel in Darkness",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "(This card is always treated as a \"Darklord\" card.)\r\nSend 1 Fairy monster from your hand or face-up field to the GY; Special Summon 1 \"Darklord\" monster from your hand, Deck, or banishment, ignoring its Summoning conditions. You can only activate 1 \"Fallen Angel in Darkness\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/93023136.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

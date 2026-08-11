@@ -1,0 +1,161 @@
+{
+  "name": "Premium Collection Tin",
+  "code": "PRC1",
+  "type": "Collector's Set",
+  "date": "16-03-2012",
+  "image": "https://ygoprodeck.com/pics_sets/PRC1.jpg",
+  "pull_type": "distribution",
+  "distribution": "mega_pack_3",
+  "cards": [
+    {
+      "id": 64271667,
+      "code": "PRC1-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81933259,
+      "code": "PRC1-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31890399,
+      "code": "PRC1-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90660762,
+      "code": "PRC1-EN004",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27054370,
+      "code": "PRC1-EN005",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11287364,
+      "code": "PRC1-EN006",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86915847,
+      "code": "PRC1-EN007",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 75292259,
+      "code": "PRC1-EN008",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56410040,
+      "code": "PRC1-EN009",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 49674183,
+      "code": "PRC1-EN010",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 39284521,
+      "code": "PRC1-EN011",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6602300,
+      "code": "PRC1-EN012",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 45298492,
+      "code": "PRC1-EN013",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19353570,
+      "code": "PRC1-EN014",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 55758589,
+      "code": "PRC1-EN015",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81146288,
+      "code": "PRC1-EN016",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 18631392,
+      "code": "PRC1-EN017",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29095552,
+      "code": "PRC1-EN018",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62624486,
+      "code": "PRC1-EN019",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44035031,
+      "code": "PRC1-EN020",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81020646,
+      "code": "PRC1-EN021",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17418744,
+      "code": "PRC1-EN022",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 43813459,
+      "code": "PRC1-EN023",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22061412,
+      "code": "PRC1-ENV01",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32003338,
+      "code": "PRC1-ENV02",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

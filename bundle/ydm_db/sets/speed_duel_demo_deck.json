@@ -1,0 +1,71 @@
+{
+  "name": "Speed Duel Demo Deck",
+  "code": "DEM5",
+  "type": "Booster Pack (2019)",
+  "date": "08-06-2019",
+  "image": "https://ygoprodeck.com/pics_sets/DEM5.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 41392891,
+      "code": "DEM5-EN001",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 5053103,
+      "code": "DEM5-EN002",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 99261403,
+      "code": "DEM5-EN003",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 88819587,
+      "code": "DEM5-EN004",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 64271667,
+      "code": "DEM5-EN005",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 26376390,
+      "code": "DEM5-EN006",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 63695531,
+      "code": "DEM5-EN007",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 34016756,
+      "code": "DEM5-EN008",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 98495314,
+      "code": "DEM5-EN009",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 59744639,
+      "code": "DEM5-EN010",
+      "rarity": "Common",
+      "image_index": 0
+    }
+  ]
+}

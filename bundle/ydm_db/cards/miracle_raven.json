@@ -1,0 +1,24 @@
+{
+  "id": 18988396,
+  "name": "Miracle Raven",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "[ Pendulum Effect ] \nOnce per turn, during your Main Phase: You can Ritual Summon this card, by Tributing monsters from your hand or field whose total Levels equal or exceed 1.\n\n[ Monster Effect ] \nYou can Ritual Summon this card with \"Miracle Raven\". Must be Ritual Summoned. This Ritual Summoned card is unaffected by your opponent's activated effects. If you Ritual Summon exactly 1 Ritual Monster with a card effect that requires use of monsters, this card you control can be used as the entire Tribute. If this card is Tributed for a Ritual Summon: You can add 1 Ritual Monster from your Deck to your hand. You can only use this effect of \"Miracle Raven\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/18988396.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 300,
+  "species": "Fiend",
+  "monster_type": "Ritual",
+  "is_pendulum": true,
+  "ability": "",
+  "has_effect": true,
+  "pendulum_text": "Once per turn, during your Main Phase: You can Ritual Summon this card, by Tributing monsters from your hand or field whose total Levels equal or exceed 1.",
+  "pendulum_scale_left_blue": 0,
+  "pendulum_scale_right_red": 0,
+  "def": 300,
+  "level": 1,
+  "is_tuner": false
+}

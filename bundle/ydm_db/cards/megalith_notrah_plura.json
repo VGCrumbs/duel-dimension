@@ -1,0 +1,21 @@
+{
+  "id": 44293356,
+  "name": "Megalith Notrah Plura",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can Ritual Summon this card with a \"Megalith\" card. Must be Ritual Summoned using only Ritual Monsters. You can reveal this card in your hand; this turn, your opponent cannot activate cards or effects in response to the activation of your \"Megalith\" Ritual Monster effects. When your opponent activates a card or effect (Quick Effect): You can negate the activation, and if you do, destroy that card, then if that negated card or effect targeted a card(s) on the field, you can Tribute 1 monster your opponent controls. You can only use each effect of \"Megalith Notrah Plura\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/44293356.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 3700,
+  "species": "Rock",
+  "monster_type": "Ritual",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2700,
+  "level": 12,
+  "is_tuner": false
+}

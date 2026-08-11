@@ -1,0 +1,16 @@
+{
+  "name": "Fire Fists: Special Edition",
+  "code": "FFSE",
+  "type": "Single",
+  "date": "04-04-2014",
+  "image": "https://ygoprodeck.com/pics_sets/FFSE.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 57103969,
+      "code": "FFSE-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

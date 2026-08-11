@@ -1,0 +1,21 @@
+{
+  "id": 73218792,
+  "name": "Junk Meister",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can reveal 1 \"Warrior\" or \"Stardust\" Synchro Monster in your Extra Deck; Special Summon this card from your hand, also you cannot Special Summon from the Extra Deck for the rest of this turn, except Synchro Monsters. If this card is Normal or Special Summoned: You can add 1 \"Junk\" card from your Deck to your hand, except \"Junk Meister\". You can target 1 \"Junk\" monster you control; reduce its Level by up to 2. You can only use each effect of \"Junk Meister\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/73218792.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 100,
+  "species": "Warrior",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2300,
+  "level": 4,
+  "is_tuner": false
+}

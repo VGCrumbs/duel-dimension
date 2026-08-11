@@ -1,0 +1,12 @@
+{
+  "id": 4575541,
+  "name": "Here There Be Dragons",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Special Summon 1 \"Dragon Ruler\" monster from your hand, GY, or banishment, then immediately after this effect resolves, you can Xyz Summon 1 \"Dragon Ruler\" Xyz Monster using only \"Dragon Ruler\" monsters you control. During your Main Phase: You can banish this card from your GY, then target any number of your banished \"Dragon Ruler\" monsters with different Attributes; return them to the GY. You can only use 1 \"Here There Be Dragons\" effect per turn, and only once that turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/4575541.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Quick-Play"
+}

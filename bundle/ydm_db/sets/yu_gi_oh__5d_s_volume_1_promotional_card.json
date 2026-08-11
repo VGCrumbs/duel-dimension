@@ -1,0 +1,16 @@
+{
+  "name": "Yu-Gi-Oh! 5D's Volume 1 promotional card",
+  "code": "YF01",
+  "type": "Single",
+  "date": "06-07-2011",
+  "image": "https://ygoprodeck.com/pics_sets/YF01.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 75326861,
+      "code": "YF01-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

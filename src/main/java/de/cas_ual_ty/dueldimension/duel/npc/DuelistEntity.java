@@ -53,7 +53,31 @@ public class DuelistEntity extends PathfinderMob
     {
         // A duelist stands around and makes eye contact; it has no business
         // wandering off mid-duel or fighting anyone.
-        goalSelector.addGoal(1, new WaterAvoidingRandomStrollGoal(this, 0.4));
+        //
+        // The stroll is switched off for the length of a duel. It used to run
+        // regardless, so the duellist you were facing would wander away from its
+        // own table -- and because the duel is driven by the entity rather than
+        // by where it stands, it kept playing from wherever it ended up.
+        //
+        // Gated by asking the duel registry rather than by a flag on this
+        // entity: see DuelistDuels.isDueling for why a flag is the fragile
+        // choice. Looking at the player is deliberately NOT gated -- a duelist
+        // that keeps eye contact across the table is the point.
+        goalSelector.addGoal(1, new WaterAvoidingRandomStrollGoal(this, 0.4)
+        {
+            @Override
+            public boolean canUse()
+            {
+                return !DuelistDuels.isDueling(DuelistEntity.this.getUUID()) && super.canUse();
+            }
+
+            @Override
+            public boolean canContinueToUse()
+            {
+                return !DuelistDuels.isDueling(DuelistEntity.this.getUUID())
+                    && super.canContinueToUse();
+            }
+        });
         goalSelector.addGoal(2, new LookAtPlayerGoal(this, Player.class, 8));
         goalSelector.addGoal(3, new RandomLookAroundGoal(this));
     }

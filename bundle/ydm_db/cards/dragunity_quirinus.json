@@ -1,0 +1,21 @@
+{
+  "id": 71645463,
+  "name": "Dragunity Quirinus",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Your \"Dragunity\" monsters cannot be destroyed by battle while this card is equipped with an Equip Card. You can only use each of the following effects of \"Dragunity Quirinus\" once per turn. If this card is Normal or Special Summoned: You can add 1 \"Dragunity\" Spell/Trap from your Deck to your hand. You can target 1 other \"Dragunity\" Monster Card you control; return it to the hand/Extra Deck, then you can Special Summon 1 \"Dragunity\" monster from your hand.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/71645463.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WIND",
+  "atk": 1200,
+  "species": "Winged Beast",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1200,
+  "level": 4,
+  "is_tuner": false
+}

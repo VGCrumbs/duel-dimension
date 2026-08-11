@@ -1,0 +1,845 @@
+{
+  "name": "Legendary Duelists: Season 3",
+  "code": "LDS3",
+  "type": "Legendary Duelists",
+  "date": "21-07-2022",
+  "image": "https://ygoprodeck.com/pics_sets/LDS3.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 26202165,
+      "code": "LDS3-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31829185,
+      "code": "LDS3-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 41855169,
+      "code": "LDS3-EN003",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 77936940,
+      "code": "LDS3-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 78700060,
+      "code": "LDS3-EN005",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 28297833,
+      "code": "LDS3-EN006",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 31766317,
+      "code": "LDS3-EN007",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51644030,
+      "code": "LDS3-EN008",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 14509651,
+      "code": "LDS3-EN009",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51993760,
+      "code": "LDS3-EN010",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 87988305,
+      "code": "LDS3-EN011",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 31893528,
+      "code": "LDS3-EN012",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 67287533,
+      "code": "LDS3-EN013",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 94772232,
+      "code": "LDS3-EN014",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 30170981,
+      "code": "LDS3-EN015",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 16625614,
+      "code": "LDS3-EN016",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 14386013,
+      "code": "LDS3-EN017",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 94212438,
+      "code": "LDS3-EN018",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 79852326,
+      "code": "LDS3-EN019",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 65743242,
+      "code": "LDS3-EN020",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 40771118,
+      "code": "LDS3-EN021",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 58554959,
+      "code": "LDS3-EN022",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 95943058,
+      "code": "LDS3-EN023",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 50304345,
+      "code": "LDS3-EN024",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13650422,
+      "code": "LDS3-EN025",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 45659520,
+      "code": "LDS3-EN026",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22160245,
+      "code": "LDS3-EN027",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21947653,
+      "code": "LDS3-EN028",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58332301,
+      "code": "LDS3-EN029",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 13293158,
+      "code": "LDS3-EN030",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50282757,
+      "code": "LDS3-EN031",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 86676862,
+      "code": "LDS3-EN032",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 86165817,
+      "code": "LDS3-EN033",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 94820406,
+      "code": "LDS3-EN034",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 12071500,
+      "code": "LDS3-EN035",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 72043279,
+      "code": "LDS3-EN036",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 18438874,
+      "code": "LDS3-EN037",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 10875327,
+      "code": "LDS3-EN038",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46263076,
+      "code": "LDS3-EN039",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 33537328,
+      "code": "LDS3-EN040",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 69931927,
+      "code": "LDS3-EN041",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 79798060,
+      "code": "LDS3-EN042",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 15187079,
+      "code": "LDS3-EN043",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 41181774,
+      "code": "LDS3-EN044",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 42280216,
+      "code": "LDS3-EN045",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 78275321,
+      "code": "LDS3-EN046",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 78552773,
+      "code": "LDS3-EN047",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 67987302,
+      "code": "LDS3-EN048",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 45836982,
+      "code": "LDS3-EN049",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 71821687,
+      "code": "LDS3-EN050",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17315396,
+      "code": "LDS3-EN051",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 39823987,
+      "code": "LDS3-EN052",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 66818682,
+      "code": "LDS3-EN053",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 96907086,
+      "code": "LDS3-EN054",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 64187086,
+      "code": "LDS3-EN055",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44710391,
+      "code": "LDS3-EN056",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29934351,
+      "code": "LDS3-EN057",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 56339050,
+      "code": "LDS3-EN058",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 39967326,
+      "code": "LDS3-EN059",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 82340056,
+      "code": "LDS3-EN060",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 70109009,
+      "code": "LDS3-EN061",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 43598843,
+      "code": "LDS3-EN062",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 79086452,
+      "code": "LDS3-EN063",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 88120966,
+      "code": "LDS3-EN063",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 33776843,
+      "code": "LDS3-EN064",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 69170557,
+      "code": "LDS3-EN065",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6165656,
+      "code": "LDS3-EN066",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 7593748,
+      "code": "LDS3-EN067",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 6471156,
+      "code": "LDS3-EN068",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 32875265,
+      "code": "LDS3-EN069",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 99913726,
+      "code": "LDS3-EN070",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 89181134,
+      "code": "LDS3-EN071",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 5259518,
+      "code": "LDS3-EN072",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 41209827,
+      "code": "LDS3-EN073",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 25586143,
+      "code": "LDS3-EN074",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69946549,
+      "code": "LDS3-EN075",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 79864860,
+      "code": "LDS3-EN076",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 88069597,
+      "code": "LDS3-EN077",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 72129804,
+      "code": "LDS3-EN078",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 31643613,
+      "code": "LDS3-EN079",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 8148322,
+      "code": "LDS3-EN080",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44536921,
+      "code": "LDS3-EN081",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 38033121,
+      "code": "LDS3-EN082",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 72630549,
+      "code": "LDS3-EN083",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35191415,
+      "code": "LDS3-EN084",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 71696014,
+      "code": "LDS3-EN085",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 7084129,
+      "code": "LDS3-EN086",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 30603688,
+      "code": "LDS3-EN087",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97631303,
+      "code": "LDS3-EN088",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 47963370,
+      "code": "LDS3-EN089",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50237654,
+      "code": "LDS3-EN090",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 96471335,
+      "code": "LDS3-EN091",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85551711,
+      "code": "LDS3-EN092",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 47222536,
+      "code": "LDS3-EN093",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 73616671,
+      "code": "LDS3-EN094",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 23020408,
+      "code": "LDS3-EN095",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59514116,
+      "code": "LDS3-EN096",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 50755,
+      "code": "LDS3-EN097",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 7922915,
+      "code": "LDS3-EN098",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 86509711,
+      "code": "LDS3-EN099",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57116033,
+      "code": "LDS3-EN100",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 17955766,
+      "code": "LDS3-EN101",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 14124483,
+      "code": "LDS3-EN102",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59392529,
+      "code": "LDS3-EN103",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22908820,
+      "code": "LDS3-EN104",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63035430,
+      "code": "LDS3-EN105",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 45906428,
+      "code": "LDS3-EN106",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 74825788,
+      "code": "LDS3-EN107",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 213326,
+      "code": "LDS3-EN108",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 37318031,
+      "code": "LDS3-EN109",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 63703130,
+      "code": "LDS3-EN110",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 191749,
+      "code": "LDS3-EN111",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 8949584,
+      "code": "LDS3-EN112",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 85787173,
+      "code": "LDS3-EN113",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11881272,
+      "code": "LDS3-EN114",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 22020907,
+      "code": "LDS3-EN115",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 58270977,
+      "code": "LDS3-EN116",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 20932152,
+      "code": "LDS3-EN117",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11069680,
+      "code": "LDS3-EN118",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57458399,
+      "code": "LDS3-EN119",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 37675907,
+      "code": "LDS3-EN120",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 84664085,
+      "code": "LDS3-EN121",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 96363153,
+      "code": "LDS3-EN122",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23442438,
+      "code": "LDS3-EN123",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 50947142,
+      "code": "LDS3-EN124",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 23720856,
+      "code": "LDS3-EN125",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 59724555,
+      "code": "LDS3-EN126",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 86331741,
+      "code": "LDS3-EN127",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 85119159,
+      "code": "LDS3-EN128",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 12508268,
+      "code": "LDS3-EN129",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 58092907,
+      "code": "LDS3-EN130",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85497611,
+      "code": "LDS3-EN131",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11481610,
+      "code": "LDS3-EN132",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 47870325,
+      "code": "LDS3-EN133",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 84274024,
+      "code": "LDS3-EN134",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 15613529,
+      "code": "LDS3-EN135",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 41002238,
+      "code": "LDS3-EN136",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77406972,
+      "code": "LDS3-EN137",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4991081,
+      "code": "LDS3-EN138",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

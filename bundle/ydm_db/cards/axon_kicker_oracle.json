@@ -1,0 +1,21 @@
+{
+  "id": 33171768,
+  "name": "Axon Kicker Oracle",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 Psychic monster + 1 Synchro, Xyz, or Link Monster\r\nAfter this card is Fusion Summoned, it gains 1000 ATK for each Synchro, Xyz, and Link Monster used as its material, until the end of the next turn. You can only use each of the following effects of \"Axon Kicker Oracle\" once per turn. When your opponent would Special Summon a monster(s) (Quick Effect): You can negate the Summon, and if you do, banish that monster(s). If this Fusion Summoned card is sent to the GY: You can banish 1 \"Teleport\" Normal or Quick-Play Spell from your GY; Special Summon this card.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/33171768.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 2900,
+  "species": "Psychic",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1000,
+  "level": 10,
+  "is_tuner": false
+}

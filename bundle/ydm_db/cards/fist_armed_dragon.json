@@ -1,0 +1,21 @@
+{
+  "id": 49181828,
+  "name": "Fist Armed Dragon",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is in your GY: You can target 1 Dragon monster you control; destroy it, and if you do, Special Summon this card. You can discard 1 card, then target 1 monster on the field with 2400 or less ATK; destroy it, then if you destroyed a monster you control, you can Special Summon 1 Dragon monster from your hand or Deck, whose original Level is 2 higher than that monster's. You can only use each effect of \"Fist Armed Dragon\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/49181828.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WIND",
+  "atk": 2400,
+  "species": "Dragon",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1700,
+  "level": 5,
+  "is_tuner": false
+}

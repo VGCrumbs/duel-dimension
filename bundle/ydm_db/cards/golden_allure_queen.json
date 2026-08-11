@@ -1,0 +1,24 @@
+{
+  "id": 95937545,
+  "name": "Golden Allure Queen",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "3 Spellcaster monsters\r\nIf this card is Link Summoned: You can Special Summon 1 \"Allure Queen\" monster from your Deck or GY, and if you do, this card gains 1500 ATK until the end of the next turn. You can activate the effects of your monsters with \"Allure Queen\" in their original names, that equip monsters to themselves, as Quick Effects. Once per turn, when your opponent activates a card or effect (Quick Effect): You can destroy 1 card on the field, also \"Allure Queen\" monsters you control cannot be destroyed by card effects this turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/95937545.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2500,
+  "species": "Spellcaster",
+  "monster_type": "Link",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "link_rating": 3,
+  "link_arrows": [
+    "Left",
+    "Right",
+    "Bottom"
+  ]
+}

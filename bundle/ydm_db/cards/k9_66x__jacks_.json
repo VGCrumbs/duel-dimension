@@ -1,0 +1,20 @@
+{
+  "id": 67515699,
+  "name": "K9-66X \"Jacks\"",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2 Level 5 monsters\r\nIf this card is Xyz Summoned, or if your opponent activates a monster effect in the hand or GY: You can detach 1 material from this card, then target 1 monster on the field; destroy it. You can only use this effect of \"K9-66X \"Jacks\"\" once per turn. A \"K9\" Xyz Monster that has this card as material gains this effect.\r\n● During any turn in which your opponent has activated a monster effect in the hand or GY, any battle damage this card inflicts to your opponent is doubled.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/67515699.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2600,
+  "species": "Fiend",
+  "monster_type": "Xyz",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2500,
+  "rank": 5
+}

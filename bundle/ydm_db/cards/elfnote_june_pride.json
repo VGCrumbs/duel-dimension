@@ -1,0 +1,21 @@
+{
+  "id": 5559570,
+  "name": "Elfnote June Pride",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 Tuner + 1 non-Tuner Spellcaster monster\r\nWhile this card is in the center Main Monster Zone, neither player can declare attacks, except with monsters in their center Main Monster Zones. During the Main Phase, if this card is in the center Main Monster Zone (Quick Effect): You can return this card to the Extra Deck, and if you do, Special Summon up to 1 \"Elfnote\" monster each from your hand, Deck, and GY. You can only use this effect of \"Elfnote June Pride\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/5559570.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 3100,
+  "species": "Spellcaster",
+  "monster_type": "Synchro",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1800,
+  "level": 10,
+  "is_tuner": false
+}

@@ -1,0 +1,41 @@
+{
+  "name": "Yu-Gi-Oh! Reshef of Destruction promotional cards",
+  "code": "ROD",
+  "type": "Booster Pack (2004)",
+  "date": "29-06-2004",
+  "image": "https://ygoprodeck.com/pics_sets/ROD.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 50725996,
+      "code": "ROD-EN001",
+      "rarity": "Super Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50725996,
+      "code": "ROD-EN001",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 87210505,
+      "code": "ROD-EN002",
+      "rarity": "Super Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 87210505,
+      "code": "ROD-EN002",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13604200,
+      "code": "ROD-EN003",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

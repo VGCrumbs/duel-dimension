@@ -1,0 +1,16 @@
+{
+  "name": "EFootball collaboration cards",
+  "code": "EFC1",
+  "type": "Single",
+  "date": "",
+  "image": "https://ygoprodeck.com/pics_sets/EFC1.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 85138716,
+      "code": "EFC1-EN001",
+      "rarity": "Normal Parallel Rare",
+      "image_index": 0
+    }
+  ]
+}

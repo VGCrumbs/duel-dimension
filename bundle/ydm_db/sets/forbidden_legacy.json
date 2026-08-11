@@ -1,0 +1,29 @@
+{
+  "name": "Forbidden Legacy",
+  "code": "FL1",
+  "type": "Booster Pack (2005)",
+  "date": "01-10-2005",
+  "image": "https://ygoprodeck.com/pics_sets/FL1.jpg",
+  "pull_type": "distribution",
+  "distribution": "the_dark_side_of_dimensions_movie_pack_secret_edition__pack",
+  "cards": [
+    {
+      "id": 89631139,
+      "code": "FL1-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46986420,
+      "code": "FL1-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40640057,
+      "code": "FL1-EN003",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

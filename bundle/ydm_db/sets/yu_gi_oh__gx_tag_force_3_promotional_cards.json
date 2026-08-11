@@ -1,0 +1,29 @@
+{
+  "name": "Yu-Gi-Oh! GX Tag Force 3 promotional cards",
+  "code": "GX06",
+  "type": "Booster Pack (2008)",
+  "date": "28-11-2008",
+  "image": "https://ygoprodeck.com/pics_sets/GX06.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 30915572,
+      "code": "GX06-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67300516,
+      "code": "GX06-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93709215,
+      "code": "GX06-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

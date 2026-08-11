@@ -1,0 +1,131 @@
+{
+  "name": "Duelist League 14 participation cards",
+  "code": "DL14",
+  "type": "Booster Pack (2012)",
+  "date": "01-06-2012",
+  "image": "https://ygoprodeck.com/pics_sets/DL14.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack",
+  "cards": [
+    {
+      "id": 51934376,
+      "code": "DL14-EN001",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10375182,
+      "code": "DL14-EN002",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84430950,
+      "code": "DL14-EN003",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76039636,
+      "code": "DL14-EN004",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92676637,
+      "code": "DL14-EN005",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 2525268,
+      "code": "DL14-EN006",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 94081496,
+      "code": "DL14-EN007",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 73125233,
+      "code": "DL14-EN008",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31924889,
+      "code": "DL14-EN009",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84013237,
+      "code": "DL14-EN010",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 9373534,
+      "code": "DL14-EN011",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68304813,
+      "code": "DL14-EN012",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68462976,
+      "code": "DL14-EN013",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17896384,
+      "code": "DL14-EN014",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 71044499,
+      "code": "DL14-EN015",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21143940,
+      "code": "DL14-EN016",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 61962135,
+      "code": "DL14-EN017",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58873391,
+      "code": "DL14-EN018",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53341729,
+      "code": "DL14-EN019",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 99735427,
+      "code": "DL14-EN020",
+      "rarity": "Rare",
+      "image_index": 0
+    }
+  ]
+}

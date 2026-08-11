@@ -1,0 +1,12 @@
+{
+  "id": 58809685,
+  "name": "Elfnotes: Quatrain of Succession",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "The monster in your center Main Monster Zone cannot be banished by your opponent's card effects. You can send 1 other Spell/Trap from your hand or field to the GY, then declare a Level from 1 to 4; Special Summon 1 \"Elfnote Seraphim Token\" (Plant/Tuner/FIRE/ATK 0/DEF 0) with the declared Level. While that Token is in the Monster Zone, the player who Summoned it cannot Special Summon from the Extra Deck, except \"Elfnote\" monsters. You can only use this effect of \"Elfnotes: Quatrain of Succession\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/58809685.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Continuous"
+}

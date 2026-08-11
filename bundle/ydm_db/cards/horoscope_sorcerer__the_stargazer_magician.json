@@ -1,0 +1,24 @@
+{
+  "id": 1186447,
+  "name": "Horoscope Sorcerer, the Stargazer Magician",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "[ Pendulum Effect ] \nWhen a Spell Card or effect activated by your opponent resolves, if you control a \"Magician\" Pendulum Monster or an \"Odd-Eyes\" monster, you can negate that effect, then destroy this card. You can only use this effect of \"Horoscope Sorcerer, the Stargazer Magician\" once per turn.\n\n[ Monster Effect ] \nIf this card is in your hand: You can discard 1 other \"Magician\" Pendulum Monster, \"Performapal\" monster, or \"Odd-Eyes\" monster; Special Summon this card. If this card is Special Summoned: You can add 1 Pendulum Monster with 2500 ATK from your Deck to your hand. You can target 1 Pendulum Monster Card you control; destroy it, then you can add 1 face-up Pendulum Monster from your Extra Deck to your hand. You can only use each effect of \"Horoscope Sorcerer, the Stargazer Magician\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/1186447.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 1200,
+  "species": "Spellcaster",
+  "monster_type": "",
+  "is_pendulum": true,
+  "ability": "",
+  "has_effect": true,
+  "pendulum_text": "When a Spell Card or effect activated by your opponent resolves, if you control a \"Magician\" Pendulum Monster or an \"Odd-Eyes\" monster, you can negate that effect, then destroy this card. You can only use this effect of \"Horoscope Sorcerer, the Stargazer Magician\" once per turn.",
+  "pendulum_scale_left_blue": 1,
+  "pendulum_scale_right_red": 1,
+  "def": 2400,
+  "level": 5,
+  "is_tuner": false
+}

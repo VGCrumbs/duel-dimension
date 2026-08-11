@@ -1,0 +1,29 @@
+{
+  "name": "Duelist Pack Collection Tin 2011",
+  "code": "DPC5",
+  "type": "Duelist Pack",
+  "date": "31-03-2011",
+  "image": "https://ygoprodeck.com/pics_sets/DPC5.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 63465535,
+      "code": "DPC5-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22858242,
+      "code": "DPC5-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95453143,
+      "code": "DPC5-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

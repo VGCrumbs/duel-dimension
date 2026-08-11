@@ -1,0 +1,21 @@
+{
+  "id": 19304410,
+  "name": "Tri-Brigade Springans Kitt",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you control a \"Tri-Brigade\" or \"Springans\" monster, except \"Tri-Brigade Springans Kitt\": You can Special Summon this card from your hand. If this card is sent to the GY: You can Special Summon 1 of the following monsters from your GY in Defense Position, except \"Tri-Brigade Springans Kitt\".\r\n● \"Tri-Brigade\" monster ● \"Springans\" monster\r\n● \"Fallen of Albaz\" or 1 monster that mentions it\r\nYou can only use each effect of \"Tri-Brigade Springans Kitt\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/19304410.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 1700,
+  "species": "Beast",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1000,
+  "level": 4,
+  "is_tuner": false
+}

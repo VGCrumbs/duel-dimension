@@ -1,0 +1,41 @@
+{
+  "name": "Yu-Gi-Oh! World Championship 2004 prize cards",
+  "code": "WCS",
+  "type": "Booster Pack (2004)",
+  "date": "25-07-2004",
+  "image": "https://ygoprodeck.com/pics_sets/WCS.jpg",
+  "pull_type": "distribution",
+  "distribution": "ots_tournament_pack",
+  "cards": [
+    {
+      "id": 501000000,
+      "code": "WCS-EN401",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 501000001,
+      "code": "WCS-EN402",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76232340,
+      "code": "WCS-EN403",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 501000002,
+      "code": "WCS-EN501",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 501000003,
+      "code": "WCS-EN502",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": 84433129,
+  "name": "Star Ryzeal",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can Special Summon this card (from your hand) by detaching 1 material from a monster you control. If Summoned this way, you cannot Special Summon from the Extra Deck for the rest of this turn, except Rank 4 Xyz Monsters. You can only Special Summon \"Star Ryzeal\" once per turn this way. If this card is Special Summoned: You can Set 1 \"Ryzeal\" Spell/Trap from your Deck. You can only use this effect of \"Star Ryzeal\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/84433129.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 1800,
+  "species": "Pyro",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "level": 4,
+  "is_tuner": false
+}

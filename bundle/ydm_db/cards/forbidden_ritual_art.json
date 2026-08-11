@@ -1,0 +1,12 @@
+{
+  "id": 12157563,
+  "name": "Forbidden Ritual Art",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Ritual Summon 1 Ritual Monster from your GY by banishing monsters from your GY whose total Levels equal the Level of the Ritual Monster, but destroy it during the End Phase. You can banish this card from your GY; once this turn, when you Ritual Summon, you can also use Ritual Monster(s) in your GY as Tribute(s) for the Ritual Summon, by banishing them. You can only use each effect of \"Forbidden Ritual Art\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/12157563.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

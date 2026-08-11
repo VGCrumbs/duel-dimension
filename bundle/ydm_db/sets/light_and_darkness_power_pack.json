@@ -1,0 +1,16 @@
+{
+  "name": "Light and Darkness Power Pack",
+  "code": "LDPP",
+  "type": "Single",
+  "date": "14-11-2007",
+  "image": "https://ygoprodeck.com/pics_sets/LDPP.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 47297616,
+      "code": "LDPP-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

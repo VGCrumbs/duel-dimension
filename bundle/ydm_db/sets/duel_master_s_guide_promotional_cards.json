@@ -1,0 +1,16 @@
+{
+  "name": "Duel Master's Guide promotional cards",
+  "code": "DMG",
+  "type": "Single",
+  "date": "28-10-2003",
+  "image": "https://ygoprodeck.com/pics_sets/DMG.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 98502113,
+      "code": "DMG-001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

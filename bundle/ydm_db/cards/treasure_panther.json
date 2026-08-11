@@ -1,0 +1,21 @@
+{
+  "id": 84824728,
+  "name": "Treasure Panther",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "FLIP: You can send 1 Normal Monster from your Deck to the GY.\r\nIf a face-down Defense Position monster is on the field and this card is in your hand: You can Special Summon this card. You can target up to 3 face-down Defense Position monsters on the field; change them to Attack Position, then if you changed 3 monsters to Attack Position by this effect, inflict 900 damage to your opponent. You can only use each effect of \"Treasure Panther\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/84824728.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 100,
+  "species": "Beast",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "Flip",
+  "has_effect": true,
+  "def": 100,
+  "level": 1,
+  "is_tuner": false
+}

@@ -25,11 +25,31 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
 {
     public static final BoardSnapshot EMPTY = new BoardSnapshot(Side.empty(), Side.empty(), 0, 0, 0);
 
-    /** A card in a zone, or an empty zone when {@code present} is false. */
+    /**
+     * A card in a zone, or an empty zone when {@code present} is false.
+     *
+     * @param art which artwork this physical copy wears, 0 for the printed
+     *            one. It arrives only for a card this viewer may already
+     *            identify: {@link BoardState}'s conceal zeroes it beside the
+     *            code, because with only ~122 cards having a second artwork
+     *            an art index all but names the card.
+     */
     public record Slot(boolean present, int code, boolean faceDown, boolean defence, int attack, int defense,
         int baseAttack, int baseDefense, int leftScale, int rightScale, int overlays,
-        CardView.Equip equip, boolean negated)
+        CardView.Equip equip, boolean negated, int art)
     {
+        /**
+         * The shape before per-copy artwork, for the places that build a slot
+         * without one — a copy nobody dressed wears its printed artwork.
+         */
+        public Slot(boolean present, int code, boolean faceDown, boolean defence, int attack,
+            int defense, int baseAttack, int baseDefense, int leftScale, int rightScale,
+            int overlays, CardView.Equip equip, boolean negated)
+        {
+            this(present, code, faceDown, defence, attack, defense, baseAttack, baseDefense,
+                leftScale, rightScale, overlays, equip, negated, 0);
+        }
+
         /**
          * The old shape, for the places that build a slot without engine state.
          * <p>
@@ -90,7 +110,7 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
             return new Slot(true, card.code(), !card.isFaceUp(), !card.isAttackPosition(),
                 card.attack(), card.defense(), card.baseAttack(), card.baseDefense(),
                 card.leftScale(), card.rightScale(), card.overlays(), card.equip(),
-                card.negated());
+                card.negated(), card.art());
         }
 
         public void write(FriendlyByteBuf buffer)
@@ -111,6 +131,15 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
                 buffer.writeVarInt(rightScale + 1);
                 buffer.writeVarInt(overlays);
             buffer.writeBoolean(negated);
+                // Only written when there is an identity to attach it to, so a
+                // slot the viewer may not read cannot carry an artwork index
+                // even by mistake -- the byte is not on the wire to be filled
+                // in. Costs one zero byte per identified card and nothing for
+                // the rest.
+                if(code != 0)
+                {
+                    buffer.writeVarInt(art);
+                }
                 // An equip and the monster under it are both face up, so this
                 // relation is public knowledge and needs no concealment.
                 buffer.writeBoolean(equip != null);
@@ -140,11 +169,12 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
             int rightScale = buffer.readVarInt() - 1;
             int overlays = buffer.readVarInt();
             boolean negated = buffer.readBoolean();
+            int art = code != 0 ? buffer.readVarInt() : 0;
             CardView.Equip equip = buffer.readBoolean()
                 ? new CardView.Equip(buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt())
                 : null;
             return new Slot(true, code, faceDown, defence, attack, defense,
-                baseAttack, baseDefense, leftScale, rightScale, overlays, equip, negated);
+                baseAttack, baseDefense, leftScale, rightScale, overlays, equip, negated, art);
         }
     }
 

@@ -1,0 +1,12 @@
+{
+  "id": 37301660,
+  "name": "WINDS OF VICTORY",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "The equipped monster gains 300 ATK, also it becomes WIND.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/37301660.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Equip"
+}

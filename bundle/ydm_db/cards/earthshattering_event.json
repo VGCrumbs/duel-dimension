@@ -1,0 +1,12 @@
+{
+  "id": 54407825,
+  "name": "Earthshattering Event",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If a card(s) is sent from the Deck to the Graveyard: Target 1 card in either player's Graveyard; shuffle it into the Deck, also neither player can send cards from the Deck to the Graveyard for the rest of this turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/54407825.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Continuous"
+}

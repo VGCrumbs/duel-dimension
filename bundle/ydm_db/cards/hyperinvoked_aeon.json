@@ -1,0 +1,21 @@
+{
+  "id": 33166263,
+  "name": "Hyperinvoked Aeon",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2+ Fusion Monsters with different Attributes\r\nIf this card is Fusion Summoned: You can banish cards from the field and/or GYs, up to the number of monsters used as material, then if you used 3 or more materials, you can look at your opponent's Extra Deck and banish up to 3 cards from it. (Quick Effect): You can declare 1 Attribute; all other monsters on the field become that Attribute until the end of this turn. You can only use 1 \"Hyperinvoked Aeon\" effect per turn, and only once that turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/33166263.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 3800,
+  "species": "Fiend",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 3200,
+  "level": 10,
+  "is_tuner": false
+}

@@ -1,0 +1,21 @@
+{
+  "id": 95091919,
+  "name": "Prototype Psychic Blaster",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can discard this card; Special Summon 1 Level 4 or lower Psychic monster from your hand or banishment. If this card is in your GY: You can pay 1000 LP, and banish 1 other Psychic monster from your GY; Special Summon this card, but banish it when it leaves the field. You can only use each effect of \"Prototype Psychic Blaster\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/95091919.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 2000,
+  "species": "Psychic",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1500,
+  "level": 6,
+  "is_tuner": false
+}

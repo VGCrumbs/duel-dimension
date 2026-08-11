@@ -1,0 +1,23 @@
+{
+  "id": 31897444,
+  "name": "Defender of the Labyrinth",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2 Normal Monsters\nNon-Effect Monsters you control gain 500 ATK, also all Effect Monsters your opponent controls lose 500 ATK. If this card in its owner's possession is destroyed by your opponent's card: You can target 1 non-Effect Monster in your GY; Special Summon it. You can only use this effect of \"Defender of the Labyrinth\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/31897444.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 1400,
+  "species": "Warrior",
+  "monster_type": "Link",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "link_rating": 2,
+  "link_arrows": [
+    "Bottom-Right",
+    "Bottom-Left"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": 27519978,
+  "name": "Charmer Quartet in Bloom",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2+ monsters\r\nGains 300 ATK for each different Attribute on the field. Once, while this card is face-up on the field, during the Main Phase (Quick Effect): You can target 2 monsters in your GY with the same Attribute but different Types, or with the same Type but different Attributes; Special Summon both, also until the end of the next turn, this card and the Special Summoned monsters cannot be used as material for a Fusion, Synchro, Xyz, or Link Summon. You can only use this effect of \"Charmer Quartet in Bloom\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/27519978.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 1850,
+  "species": "Spellcaster",
+  "monster_type": "Link",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "link_rating": 4,
+  "link_arrows": [
+    "Left",
+    "Right",
+    "Bottom-Left",
+    "Bottom-Right"
+  ]
+}

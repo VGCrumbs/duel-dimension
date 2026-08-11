@@ -1,0 +1,29 @@
+{
+  "name": "Yu-Gi-Oh! Capsule Monster Coliseum promotional cards",
+  "code": "CMC",
+  "type": "Booster Pack (2004)",
+  "date": "26-11-2004",
+  "image": "https://ygoprodeck.com/pics_sets/CMC.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 18318842,
+      "code": "CMC-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17185260,
+      "code": "CMC-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 16469012,
+      "code": "CMC-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

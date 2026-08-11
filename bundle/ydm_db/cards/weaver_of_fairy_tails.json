@@ -1,0 +1,21 @@
+{
+  "id": 78021082,
+  "name": "Weaver of Fairy Tails",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 \"Fairy Tail\" monster + 1 Spellcaster monster\r\nAll \"Prince of Fairies\" on the field become Spellcaster monsters. During your Main Phase: You can Special Summon 1 \"Fairy Tail\" monster from your Deck or banishment. You can only use this effect of \"Weaver of Fairy Tails\" once per turn. If you Normal or Special Summon a non-EARTH \"Fairy Tail\" monster, while this card is in your Monster Zone (except during the Damage Step): You can target 1 Effect Monster your opponent controls; negate its effects, also its name becomes \"Prince of Fairies\".",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/78021082.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 1850,
+  "species": "Spellcaster",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1000,
+  "level": 4,
+  "is_tuner": false
+}

@@ -1,0 +1,12 @@
+{
+  "id": 80749819,
+  "name": "Call of the Forgotten",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When this card is activated: You can Set up to 3 \"Call of the Haunted\" from your Deck and/or GY, and if you do, until the end of your opponent's turn, you cannot Special Summon, except Zombie monsters, or monsters from the GY. Once per turn, if you activate \"Call of the Haunted\": You can target 1 monster your opponent controls; send it to the GY. You can only activate 1 \"Call of the Forgotten\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/80749819.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Field"
+}

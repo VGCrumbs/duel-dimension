@@ -1,0 +1,21 @@
+{
+  "id": 18616294,
+  "name": "Gray Layer",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can Tribute this card, then reveal 1 Machine monster in your hand; add 1 Machine monster with a different Attribute from your Deck to your hand, then if you added a monster with 1200 or less ATK, you can Special Summon 1 Machine monster from your hand. If a monster(s) in your possession is destroyed by card effect, while this card is in your GY (except during the Damage Step): You can banish this card; destroy 1 card on the field. You can only use each effect of \"Gray Layer\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/18616294.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 1200,
+  "species": "Machine",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1000,
+  "level": 4,
+  "is_tuner": false
+}

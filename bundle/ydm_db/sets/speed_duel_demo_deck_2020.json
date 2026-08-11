@@ -1,0 +1,131 @@
+{
+  "name": "Speed Duel Demo Deck 2020",
+  "code": "DEM6",
+  "type": "Booster Pack (2020)",
+  "date": "01-01-2020",
+  "image": "https://ygoprodeck.com/pics_sets/DEM6.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 64271667,
+      "code": "DEM6-EN001",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 90876561,
+      "code": "DEM6-EN002",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 41392891,
+      "code": "DEM6-EN003",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 5053103,
+      "code": "DEM6-EN004",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 94119974,
+      "code": "DEM6-EN005",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 59383041,
+      "code": "DEM6-EN006",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 99261403,
+      "code": "DEM6-EN007",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 25652259,
+      "code": "DEM6-EN008",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 88819587,
+      "code": "DEM6-EN009",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 66672569,
+      "code": "DEM6-EN010",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 89091579,
+      "code": "DEM6-EN011",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 63695531,
+      "code": "DEM6-EN012",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 51534754,
+      "code": "DEM6-EN013",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 26376390,
+      "code": "DEM6-EN014",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 52097679,
+      "code": "DEM6-EN015",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 98495314,
+      "code": "DEM6-EN016",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 25880422,
+      "code": "DEM6-EN017",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 34016756,
+      "code": "DEM6-EN018",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 17814387,
+      "code": "DEM6-EN019",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 59744639,
+      "code": "DEM6-EN020",
+      "rarity": "Common",
+      "image_index": 0
+    }
+  ]
+}

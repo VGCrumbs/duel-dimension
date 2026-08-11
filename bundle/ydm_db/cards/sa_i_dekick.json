@@ -1,0 +1,12 @@
+{
+  "id": 91509824,
+  "name": "SA.I.dekick",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Target face-up cards your opponent controls equal to the number of Cyberse monsters you control with 2300 original ATK; negate their effects until the end of this turn. You can banish this card from your GY, then target 1 of your banished Cyberse monsters; Special Summon it. You can only use each effect of \"SA.I.dekick\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/91509824.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

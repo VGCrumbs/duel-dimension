@@ -1,0 +1,21 @@
+{
+  "id": 20011655,
+  "name": "Beast of Talwar - The Sword Summit",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "(This card is always treated as an \"Archfiend\" card.)\r\nIf you control no monsters, you can Special Summon this card (from your hand). The first time this card would be destroyed by an opponent's card effect each turn, it is not destroyed. Neither player can target other monsters with Equip Spell Cards or effects.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/20011655.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2400,
+  "species": "Fiend",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2150,
+  "level": 7,
+  "is_tuner": false
+}

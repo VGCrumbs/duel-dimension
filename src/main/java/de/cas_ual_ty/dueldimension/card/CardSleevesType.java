@@ -6,8 +6,19 @@ import net.minecraft.world.item.Item;
 
 public enum CardSleevesType
 {
-    CARD_BACK("card_back"), BRONZE("bronze"), SILVER("silver"), GOLD("gold"), PLATINUM("platinum"), RUBY("ruby"), BLACK("black"), BLUE("blue"), BROWN("brown"), CYAN("cyan"), GRAY("gray"), GREEN("green"), LIGHT_BLUE("light_blue"), LIGHT_GRAY("light_gray"), LIME("lime"), MAGENTA("magenta"), ORANGE("orange"), PINK("pink"), PURPLE("purple"), RED("red"), WHITE("white"), YELLOW("yellow"), VFD("vfd"), OLD_ENTITY("old_entity"), MASTER_PEACE("master_peace"), HERO("hero"), DESTINY_HERO("destiny_hero"), P_1("p_1", "Lucifer"), KINGDOMS_MC("kingdoms_mc"), DUELIST_ACADEMY_NETWORK("duelist_academy_network"), P_2("p_2", "LuisRavenFlame1"), P_3("p_3", "LuisRavenFlame1"), DUELING_MC("dueling_mc");
-    
+    CARD_BACK("card_back"), BRONZE("bronze"), SILVER("silver"), GOLD("gold"), PLATINUM("platinum"), RUBY("ruby"), BLACK("black"), BLUE("blue"), BROWN("brown"), CYAN("cyan"), GRAY("gray"), GREEN("green"), LIGHT_BLUE("light_blue"), LIGHT_GRAY("light_gray"), LIME("lime"), MAGENTA("magenta"), ORANGE("orange"), PINK("pink"), PURPLE("purple"), RED("red"), WHITE("white"), YELLOW("yellow"), VFD("vfd"), OLD_ENTITY("old_entity"), MASTER_PEACE("master_peace"), HERO("hero"), DESTINY_HERO("destiny_hero"), P_1("p_1", "Lucifer"), KINGDOMS_MC("kingdoms_mc"), DUELIST_ACADEMY_NETWORK("duelist_academy_network"), P_2("p_2", "LuisRavenFlame1"), P_3("p_3", "LuisRavenFlame1"), DUELING_MC("dueling_mc"),
+
+    // Appended at the END, never inserted, because index == ordinal (see the
+    // static block below) and that index is what InitSleevesAction puts on the
+    // wire. Inserting one mid-enum would renumber every constant after it and
+    // silently repaint every sleeve already in play.
+    //
+    // The single 'n' in "millenium" is deliberate: getResourceName() resolves
+    // straight to the art on disk, which is spelt that way. The unrelated
+    // Millennium items keep their two n's -- these five must NOT be "corrected"
+    // to match them or the texture lookup misses and the item goes magenta.
+    MILLENIUM_VOID("millenium_void"), MILLENIUM_VOIDRED("millenium_voidred"), MILLENIUM_RED("millenium_red"), MILLENIUM_BLUE("millenium_blue"), MILLENIUM_WHITE("millenium_white");
+
     public static final CardSleevesType[] VALUES = CardSleevesType.values();
     
     public static CardSleevesType getFromIndex(byte index)

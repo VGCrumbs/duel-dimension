@@ -1,0 +1,21 @@
+{
+  "id": 43904702,
+  "name": "Kewl Tune Clip",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card on the field would be used as Synchro Material, 1 Tuner in your hand can be used as 1 of the other materials. You can only use each of the following effects of \"Kewl Tune Clip\" once per turn. During your opponent's Main Phase, if this card is in your hand (Quick Effect): You can Special Summon this card, then immediately after this effect resolves, you can Synchro Summon 1 Tuner Synchro Monster. If this card is sent to the GY as Synchro Material: You can banish (face-up) 1 random face-down card from your opponent's Extra Deck.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/43904702.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 800,
+  "species": "Thunder",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1000,
+  "level": 2,
+  "is_tuner": true
+}

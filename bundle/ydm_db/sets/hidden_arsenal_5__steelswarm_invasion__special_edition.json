@@ -1,0 +1,23 @@
+{
+  "name": "Hidden Arsenal 5: Steelswarm Invasion: Special Edition",
+  "code": "H5SE",
+  "type": "Hidden Arsenal",
+  "date": "30-03-2012",
+  "image": "https://ygoprodeck.com/pics_sets/H5SE.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 50321796,
+      "code": "H5SE-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 65749035,
+      "code": "H5SE-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

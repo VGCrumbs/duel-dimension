@@ -1,0 +1,191 @@
+{
+  "name": "Premium Pack 2 (TCG)",
+  "code": "PP02",
+  "type": "Booster Pack (2008)",
+  "date": "31-07-2008",
+  "image": "https://ygoprodeck.com/pics_sets/PP02.jpg",
+  "pull_type": "distribution",
+  "distribution": "mega_pack_3",
+  "cards": [
+    {
+      "id": 33951077,
+      "code": "PP02-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33951077,
+      "code": "PP02-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54539105,
+      "code": "PP02-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54539105,
+      "code": "PP02-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76232340,
+      "code": "PP02-EN003",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76232340,
+      "code": "PP02-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 75434695,
+      "code": "PP02-EN004",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62107981,
+      "code": "PP02-EN005",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62107981,
+      "code": "PP02-EN005",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51085303,
+      "code": "PP02-EN006",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51085303,
+      "code": "PP02-EN006",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 98266377,
+      "code": "PP02-EN007",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 98266377,
+      "code": "PP02-EN007",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95362816,
+      "code": "PP02-EN008",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95362816,
+      "code": "PP02-EN008",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74711057,
+      "code": "PP02-EN009",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68745629,
+      "code": "PP02-EN010",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25090294,
+      "code": "PP02-EN011",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25090294,
+      "code": "PP02-EN011",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76442616,
+      "code": "PP02-EN012",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 26509612,
+      "code": "PP02-EN013",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 26509612,
+      "code": "PP02-EN013",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 9327502,
+      "code": "PP02-EN014",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46848859,
+      "code": "PP02-EN015",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92826944,
+      "code": "PP02-EN016",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 8400623,
+      "code": "PP02-EN017",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 48964966,
+      "code": "PP02-EN018",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74968065,
+      "code": "PP02-EN019",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74968065,
+      "code": "PP02-EN019",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1353770,
+      "code": "PP02-EN020",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

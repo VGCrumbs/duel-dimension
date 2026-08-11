@@ -1,0 +1,12 @@
+{
+  "id": 68337209,
+  "name": "Maliss in Underground",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When this card is activated: You can banish 1 \"Maliss\" card from your hand, Deck, or GY. While 3 or more of your \"Maliss\" Traps with different names are banished, \"Maliss\" Link Monsters you control gain 3000 ATK. While you control a \"Maliss\" Link Monster, your opponent's monsters can only target \"Maliss\" Link Monsters for attacks. You can only activate 1 \"Maliss in Underground\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/68337209.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Field"
+}

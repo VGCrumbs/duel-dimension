@@ -1,0 +1,21 @@
+{
+  "id": 32044675,
+  "name": "Glitch Clutch Nullgainer",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 Tuner + 1+ non-Tuners\r\nIf this card is Synchro Summoned: You can add 1 Level 8 or higher monster with 0 ATK from your Deck to your hand. You can target 1 monster with 0 ATK in your GY; Special Summon it, but negate its effects, also it cannot be used as material for a Fusion, Synchro, Xyz, or Link Summon. You can only use each effect of \"Glitch Clutch Nullgainer\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/32044675.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 0,
+  "species": "Psychic",
+  "monster_type": "Synchro",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2000,
+  "level": 8,
+  "is_tuner": false
+}

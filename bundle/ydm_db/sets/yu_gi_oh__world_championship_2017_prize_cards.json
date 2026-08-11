@@ -1,0 +1,23 @@
+{
+  "name": "Yu-Gi-Oh! World Championship 2017 prize cards",
+  "code": "2017",
+  "type": "Booster Pack (2017)",
+  "date": "13-08-2017",
+  "image": "https://ygoprodeck.com/pics_sets/2017.jpg",
+  "pull_type": "distribution",
+  "distribution": "composition_extra_secret_rare",
+  "cards": [
+    {
+      "id": 662853,
+      "code": "2017-EN001",
+      "rarity": "Extra Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 662857,
+      "code": "2017-EN002",
+      "rarity": "Extra Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": 3797883,
+  "name": "Slot Machine",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "The machine's ability is said to vary according to its slot results.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/3797883.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2000,
+  "species": "Machine",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": false,
+  "def": 2300,
+  "level": 7,
+  "is_tuner": false
+}

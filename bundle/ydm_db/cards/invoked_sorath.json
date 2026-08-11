@@ -1,0 +1,21 @@
+{
+  "id": 43989315,
+  "name": "Invoked Sorath",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 \"Aleister\" monster + 1 FIRE or WIND monster\r\nDuring the Main Phase (Quick Effect): You can target 1 Level 6 or lower monster in either GY; Special Summon it to your field in Defense Position, but negate its effects. If this card is in your GY: You can Fusion Summon 1 \"Invoked\" Fusion Monster from your Extra Deck, by banishing this card from your GY and monsters from your field or GY as material. You can only use each effect of \"Invoked Sorath\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/43989315.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 1600,
+  "species": "Pyro",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2600,
+  "level": 6,
+  "is_tuner": false
+}

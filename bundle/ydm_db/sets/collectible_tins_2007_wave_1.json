@@ -1,0 +1,47 @@
+{
+  "name": "Collectible Tins 2007 Wave 1",
+  "code": "CT04",
+  "type": "Booster Pack (2007)",
+  "date": "29-08-2007",
+  "image": "https://ygoprodeck.com/pics_sets/CT04.jpg",
+  "pull_type": "distribution",
+  "distribution": "the_dark_side_of_dimensions_movie_pack_secret_edition__pack",
+  "cards": [
+    {
+      "id": 48996569,
+      "code": "CT04-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7093411,
+      "code": "CT04-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 83965310,
+      "code": "CT04-EN003",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32543380,
+      "code": "CT04-EN004",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79856792,
+      "code": "CT04-EN005",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60493189,
+      "code": "CT04-EN006",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

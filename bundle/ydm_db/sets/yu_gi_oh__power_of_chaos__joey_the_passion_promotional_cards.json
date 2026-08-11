@@ -1,0 +1,29 @@
+{
+  "name": "Yu-Gi-Oh! Power of Chaos: Joey the Passion promotional cards",
+  "code": "PCJ",
+  "type": "Booster Pack (2004)",
+  "date": "29-06-2004",
+  "image": "https://ygoprodeck.com/pics_sets/PCJ.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 74677427,
+      "code": "PCJ-EN001",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22537443,
+      "code": "PCJ-EN002",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 61405855,
+      "code": "PCJ-EN003",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

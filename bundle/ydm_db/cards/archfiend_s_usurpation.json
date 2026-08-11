@@ -1,0 +1,12 @@
+{
+  "id": 82997779,
+  "name": "Archfiend's Usurpation",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Activate 1 of these effects;\r\n● Set 1 \"Archfiend\" Trap from your Deck or GY. It can be activated this turn.\r\n● Ritual Summon 1 \"Archfiend\" Ritual Monster from your hand or face-up Extra Deck, by Tributing monsters from your hand or field whose total Levels equal or exceed its Level.\r\nYou can only activate 1 \"Archfiend's Usurpation\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/82997779.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Quick-Play"
+}

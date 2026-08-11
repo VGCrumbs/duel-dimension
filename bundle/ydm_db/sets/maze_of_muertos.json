@@ -1,0 +1,863 @@
+{
+  "name": "Maze of Muertos",
+  "code": "MZMU",
+  "type": "Booster Pack (2026)",
+  "date": "19-02-2026",
+  "image": "https://ygoprodeck.com/pics_sets/MZMU.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare_with_starlight_rare",
+  "cards": [
+    {
+      "id": 6007213,
+      "code": "MZMU-EN000",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81684048,
+      "code": "MZMU-EN001",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81684048,
+      "code": "MZMU-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 18078153,
+      "code": "MZMU-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54077752,
+      "code": "MZMU-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80461466,
+      "code": "MZMU-EN004",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17856505,
+      "code": "MZMU-EN005",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17856505,
+      "code": "MZMU-EN005",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 43355214,
+      "code": "MZMU-EN006",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 43355214,
+      "code": "MZMU-EN006",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80749819,
+      "code": "MZMU-EN007",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 16734927,
+      "code": "MZMU-EN008",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 16734927,
+      "code": "MZMU-EN008",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 42138622,
+      "code": "MZMU-EN009",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 75527221,
+      "code": "MZMU-EN010",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59400890,
+      "code": "MZMU-EN011",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59400890,
+      "code": "MZMU-EN011",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85899505,
+      "code": "MZMU-EN012",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85899505,
+      "code": "MZMU-EN012",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22283204,
+      "code": "MZMU-EN013",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22283204,
+      "code": "MZMU-EN013",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10808715,
+      "code": "MZMU-EN014",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58288218,
+      "code": "MZMU-EN015",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85672957,
+      "code": "MZMU-EN016",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11161666,
+      "code": "MZMU-EN017",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57566760,
+      "code": "MZMU-EN018",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84550369,
+      "code": "MZMU-EN019",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84550369,
+      "code": "MZMU-EN019",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 8445808,
+      "code": "MZMU-EN020",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 8445808,
+      "code": "MZMU-EN020",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 71228611,
+      "code": "MZMU-EN021",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7622360,
+      "code": "MZMU-EN022",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33017964,
+      "code": "MZMU-EN023",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33017964,
+      "code": "MZMU-EN023",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70105073,
+      "code": "MZMU-EN024",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 2507443,
+      "code": "MZMU-EN025",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6500778,
+      "code": "MZMU-EN026",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33995387,
+      "code": "MZMU-EN027",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69389481,
+      "code": "MZMU-EN028",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19222426,
+      "code": "MZMU-EN029",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19222426,
+      "code": "MZMU-EN029",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46221535,
+      "code": "MZMU-EN030",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 82616239,
+      "code": "MZMU-EN031",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54878729,
+      "code": "MZMU-EN032",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54878729,
+      "code": "MZMU-EN032",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 73129314,
+      "code": "MZMU-EN033",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 613013,
+      "code": "MZMU-EN034",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6696168,
+      "code": "MZMU-EN035",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 42081767,
+      "code": "MZMU-EN036",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79480466,
+      "code": "MZMU-EN037",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 5574510,
+      "code": "MZMU-EN038",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31969219,
+      "code": "MZMU-EN039",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57649113,
+      "code": "MZMU-EN040",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32872239,
+      "code": "MZMU-EN041",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 24514503,
+      "code": "MZMU-EN042",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 3837261,
+      "code": "MZMU-EN043",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60681372,
+      "code": "MZMU-EN044",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89974735,
+      "code": "MZMU-EN045",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 88039509,
+      "code": "MZMU-EN046",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 39520293,
+      "code": "MZMU-EN047",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53246495,
+      "code": "MZMU-EN048",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37720300,
+      "code": "MZMU-EN049",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1035143,
+      "code": "MZMU-EN050",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1035143,
+      "code": "MZMU-EN050",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40725446,
+      "code": "MZMU-EN051",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30394645,
+      "code": "MZMU-EN052",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84824728,
+      "code": "MZMU-EN053",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86289475,
+      "code": "MZMU-EN054",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33099732,
+      "code": "MZMU-EN055",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33099732,
+      "code": "MZMU-EN055",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 83838727,
+      "code": "MZMU-EN056",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 71440209,
+      "code": "MZMU-EN057",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6368038,
+      "code": "MZMU-EN058",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 20721928,
+      "code": "MZMU-EN059",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 71625222,
+      "code": "MZMU-EN060",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29155212,
+      "code": "MZMU-EN061",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69579761,
+      "code": "MZMU-EN062",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 980973,
+      "code": "MZMU-EN063",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57116033,
+      "code": "MZMU-EN064",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59464593,
+      "code": "MZMU-EN065",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 66540884,
+      "code": "MZMU-EN066",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 65676461,
+      "code": "MZMU-EN067",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 47222536,
+      "code": "MZMU-EN068",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59514116,
+      "code": "MZMU-EN069",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58481572,
+      "code": "MZMU-EN070",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21143940,
+      "code": "MZMU-EN071",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6327734,
+      "code": "MZMU-EN072",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81260679,
+      "code": "MZMU-EN073",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6007213,
+      "code": "MZMU-EN074",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70595331,
+      "code": "MZMU-EN075",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92807548,
+      "code": "MZMU-EN076",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19299793,
+      "code": "MZMU-EN077",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80978111,
+      "code": "MZMU-EN078",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46565218,
+      "code": "MZMU-EN079",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 42023223,
+      "code": "MZMU-EN080",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79418928,
+      "code": "MZMU-EN081",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 15502037,
+      "code": "MZMU-EN082",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25451652,
+      "code": "MZMU-EN083",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51728779,
+      "code": "MZMU-EN084",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 12262393,
+      "code": "MZMU-EN085",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79523365,
+      "code": "MZMU-EN086",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93850652,
+      "code": "MZMU-EN087",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 66570171,
+      "code": "MZMU-EN088",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58655504,
+      "code": "MZMU-EN089",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67748760,
+      "code": "MZMU-EN090",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 48519867,
+      "code": "MZMU-EN091",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85914562,
+      "code": "MZMU-EN092",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11302671,
+      "code": "MZMU-EN093",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 36099130,
+      "code": "MZMU-EN094",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 55226153,
+      "code": "MZMU-EN095",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 91598270,
+      "code": "MZMU-EN096",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76352503,
+      "code": "MZMU-EN097",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38339996,
+      "code": "MZMU-EN098",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92892239,
+      "code": "MZMU-EN099",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4167084,
+      "code": "MZMU-EN100",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38811586,
+      "code": "MZMU-EN101",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 45742626,
+      "code": "MZMU-EN102",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32302078,
+      "code": "MZMU-EN103",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 9940036,
+      "code": "MZMU-EN104",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 45935145,
+      "code": "MZMU-EN105",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37129797,
+      "code": "MZMU-EN106",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35306215,
+      "code": "MZMU-EN107",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29296344,
+      "code": "MZMU-EN108",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4064256,
+      "code": "MZMU-EN109",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1073952,
+      "code": "MZMU-EN110",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4740489,
+      "code": "MZMU-EN111",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 87112784,
+      "code": "MZMU-EN112",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14517422,
+      "code": "MZMU-EN113",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 975299,
+      "code": "MZMU-EN114",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 91405870,
+      "code": "MZMU-EN115",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14532163,
+      "code": "MZMU-EN116",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 2263869,
+      "code": "MZMU-EN117",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97077563,
+      "code": "MZMU-EN118",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97077563,
+      "code": "MZMU-EN118",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53582587,
+      "code": "MZMU-EN119",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 9995766,
+      "code": "MZMU-EN120",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92512625,
+      "code": "MZMU-EN121",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77133792,
+      "code": "MZMU-EN122",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50501121,
+      "code": "MZMU-EN123",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 87990236,
+      "code": "MZMU-EN124",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97045737,
+      "code": "MZMU-EN125",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40366667,
+      "code": "MZMU-EN126",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

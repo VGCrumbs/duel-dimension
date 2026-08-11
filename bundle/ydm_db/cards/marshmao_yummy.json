@@ -1,0 +1,21 @@
+{
+  "id": 10966439,
+  "name": "Marshmao☆Yummy",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you control no monsters, or all monsters you control are LIGHT Beast monsters: You can Special Summon this card from your hand. If this card is Normal or Special Summoned: You can add 1 \"Yummy\" Spell/Trap from your GY to your hand, or, if this card was Special Summoned by the effect of a Synchro Monster, you can place 1 \"Yummy\" Field Spell or 1 \"Yummy\" Continuous Spell/Trap from your Deck or banishment, face-up on your field instead. You can only use each effect of \"Marshmao☆Yummy\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/10966439.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 800,
+  "species": "Beast",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 600,
+  "level": 1,
+  "is_tuner": false
+}

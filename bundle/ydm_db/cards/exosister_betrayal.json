@@ -1,0 +1,12 @@
+{
+  "id": 52335937,
+  "name": "Exosister Betrayal",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When this card is activated: Add 2 \"Exosister\" monsters from your Deck to your hand, then discard 1 card. You can target 1 face-up monster you control; immediately after this effect resolves, Normal Summon 1 \"Exosister\" monster mentioned on that monster. If a monster(s) is sent to your opponent's GY, even during the Damage Step: You can activate this effect; your opponent banishes 1 of them. You can only use each effect of \"Exosister Betrayal\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/52335937.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Continuous"
+}

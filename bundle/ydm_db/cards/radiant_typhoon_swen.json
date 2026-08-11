@@ -1,0 +1,21 @@
+{
+  "id": 80538047,
+  "name": "Radiant Typhoon Swen",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you have \"Mystical Space Typhoon\" in your GY, or your opponent controls no Spells/Traps, you can Special Summon this card (from your hand). You can only Special Summon \"Radiant Typhoon Swen\" once per turn this way. If this card is Normal or Special Summoned: You can add 1 \"Radiant Typhoon\" Spell/Trap or 1 \"Mystical Space Typhoon\" from your Deck to your hand. You can only use this effect of \"Radiant Typhoon Swen\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/80538047.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WIND",
+  "atk": 1600,
+  "species": "Beast-Warrior",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 400,
+  "level": 3,
+  "is_tuner": false
+}

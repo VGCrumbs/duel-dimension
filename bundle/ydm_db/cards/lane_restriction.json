@@ -1,0 +1,12 @@
+{
+  "id": 47914440,
+  "name": "Lane Restriction",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When this card is activated: You can Special Summon 1 of your banished monsters to your rightmost Main Monster Zone. If your opponent would Normal or Special Summon a monster(s) in their Main Monster Zone, they must use their leftmost zone(s) that can be used.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/47914440.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Continuous"
+}

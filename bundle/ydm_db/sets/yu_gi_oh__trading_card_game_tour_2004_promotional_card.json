@@ -1,0 +1,16 @@
+{
+  "name": "Yu-Gi-Oh! Trading Card Game Tour 2004 promotional card",
+  "code": "EM1",
+  "type": "Single",
+  "date": "19-06-2004",
+  "image": "https://ygoprodeck.com/pics_sets/EM1.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 46700124,
+      "code": "EM1-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

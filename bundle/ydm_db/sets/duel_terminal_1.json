@@ -1,0 +1,623 @@
+{
+  "name": "Duel Terminal 1",
+  "code": "DT01",
+  "type": "Booster Pack (2010)",
+  "date": "29-01-2010",
+  "image": "https://ygoprodeck.com/pics_sets/DT01.jpg",
+  "pull_type": "distribution",
+  "distribution": "composition_duel_terminal_normal_parallel_rare_duel_terminal_rare_parallel_rare_duel_terminal_super_p_c212ea15",
+  "cards": [
+    {
+      "id": 89631139,
+      "code": "DT01-EN001",
+      "rarity": "Duel Terminal Super Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46986420,
+      "code": "DT01-EN002",
+      "rarity": "Duel Terminal Rare Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74677427,
+      "code": "DT01-EN003",
+      "rarity": "Duel Terminal Rare Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 42941100,
+      "code": "DT01-EN004",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89943723,
+      "code": "DT01-EN005",
+      "rarity": "Duel Terminal Rare Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 78193831,
+      "code": "DT01-EN006",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40640057,
+      "code": "DT01-EN007",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57116033,
+      "code": "DT01-EN008",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70095154,
+      "code": "DT01-EN009",
+      "rarity": "Duel Terminal Rare Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60161788,
+      "code": "DT01-EN010",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60161788,
+      "code": "DT01-EN010",
+      "rarity": "Duel Terminal Super Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 96565487,
+      "code": "DT01-EN011",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23950192,
+      "code": "DT01-EN012",
+      "rarity": "Duel Terminal Rare Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69448290,
+      "code": "DT01-EN013",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95443805,
+      "code": "DT01-EN014",
+      "rarity": "Duel Terminal Super Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22837504,
+      "code": "DT01-EN015",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68226653,
+      "code": "DT01-EN016",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95621257,
+      "code": "DT01-EN017",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21615956,
+      "code": "DT01-EN018",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53100061,
+      "code": "DT01-EN019",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90508760,
+      "code": "DT01-EN020",
+      "rarity": "Duel Terminal Super Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 26993374,
+      "code": "DT01-EN021",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53388413,
+      "code": "DT01-EN022",
+      "rarity": "Duel Terminal Super Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89386122,
+      "code": "DT01-EN023",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25771826,
+      "code": "DT01-EN024",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 52265835,
+      "code": "DT01-EN025",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 88650530,
+      "code": "DT01-EN026",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 15658249,
+      "code": "DT01-EN027",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51043243,
+      "code": "DT01-EN028",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 88438982,
+      "code": "DT01-EN029",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14936691,
+      "code": "DT01-EN030",
+      "rarity": "Duel Terminal Super Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50321796,
+      "code": "DT01-EN031",
+      "rarity": "Duel Terminal Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27315304,
+      "code": "DT01-EN032",
+      "rarity": "Duel Terminal Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53714009,
+      "code": "DT01-EN033",
+      "rarity": "Duel Terminal Rare Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80108118,
+      "code": "DT01-EN034",
+      "rarity": "Duel Terminal Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 26593852,
+      "code": "DT01-EN035",
+      "rarity": "Duel Terminal Rare Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68005187,
+      "code": "DT01-EN036",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 99597615,
+      "code": "DT01-EN037",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17449108,
+      "code": "DT01-EN038",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17655904,
+      "code": "DT01-EN039",
+      "rarity": "Duel Terminal Rare Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 2314238,
+      "code": "DT01-EN040",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 52684508,
+      "code": "DT01-EN041",
+      "rarity": "Duel Terminal Rare Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 52098461,
+      "code": "DT01-EN042",
+      "rarity": "Duel Terminal Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89086566,
+      "code": "DT01-EN043",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 15471265,
+      "code": "DT01-EN044",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 52875873,
+      "code": "DT01-EN045",
+      "rarity": "Duel Terminal Rare Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60082869,
+      "code": "DT01-EN046",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57882509,
+      "code": "DT01-EN047",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77414722,
+      "code": "DT01-EN048",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17814387,
+      "code": "DT01-EN049",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14315573,
+      "code": "DT01-EN050",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 96182448,
+      "code": "DT01-EN051",
+      "rarity": "Duel Terminal Rare Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59965151,
+      "code": "DT01-EN052",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25247218,
+      "code": "DT01-EN053",
+      "rarity": "Duel Terminal Rare Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97021916,
+      "code": "DT01-EN054",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97904474,
+      "code": "DT01-EN055",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 16589042,
+      "code": "DT01-EN056",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 91932350,
+      "code": "DT01-EN057",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7093411,
+      "code": "DT01-EN058",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68505803,
+      "code": "DT01-EN059",
+      "rarity": "Duel Terminal Rare Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4904812,
+      "code": "DT01-EN060",
+      "rarity": "Duel Terminal Super Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30399511,
+      "code": "DT01-EN061",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67483216,
+      "code": "DT01-EN062",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93882364,
+      "code": "DT01-EN063",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30276969,
+      "code": "DT01-EN064",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 66661678,
+      "code": "DT01-EN065",
+      "rarity": "Duel Terminal Super Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92065772,
+      "code": "DT01-EN066",
+      "rarity": "Duel Terminal Rare Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29054481,
+      "code": "DT01-EN067",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 65549080,
+      "code": "DT01-EN068",
+      "rarity": "Duel Terminal Rare Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92933195,
+      "code": "DT01-EN069",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 28332833,
+      "code": "DT01-EN070",
+      "rarity": "Duel Terminal Rare Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54326448,
+      "code": "DT01-EN071",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 91711547,
+      "code": "DT01-EN072",
+      "rarity": "Duel Terminal Super Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23115241,
+      "code": "DT01-EN073",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50604950,
+      "code": "DT01-EN074",
+      "rarity": "Duel Terminal Rare Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 96099959,
+      "code": "DT01-EN075",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23093604,
+      "code": "DT01-EN076",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59482302,
+      "code": "DT01-EN077",
+      "rarity": "Duel Terminal Rare Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85876417,
+      "code": "DT01-EN078",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22371016,
+      "code": "DT01-EN079",
+      "rarity": "Duel Terminal Rare Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58760121,
+      "code": "DT01-EN080",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85754829,
+      "code": "DT01-EN081",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11159464,
+      "code": "DT01-EN082",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57543573,
+      "code": "DT01-EN083",
+      "rarity": "Duel Terminal Super Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84932271,
+      "code": "DT01-EN084",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84932271,
+      "code": "DT01-EN084",
+      "rarity": "Duel Terminal Rare Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10026986,
+      "code": "DT01-EN085",
+      "rarity": "Duel Terminal Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 18013090,
+      "code": "DT01-EN086",
+      "rarity": "Duel Terminal Super Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7391448,
+      "code": "DT01-EN087",
+      "rarity": "Duel Terminal Super Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 47421985,
+      "code": "DT01-EN088",
+      "rarity": "Duel Terminal Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 83810690,
+      "code": "DT01-EN089",
+      "rarity": "Duel Terminal Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19204398,
+      "code": "DT01-EN090",
+      "rarity": "Duel Terminal Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56830749,
+      "code": "DT01-EN091",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34016756,
+      "code": "DT01-EN092",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 5318639,
+      "code": "DT01-EN093",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 65169794,
+      "code": "DT01-EN094",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97687912,
+      "code": "DT01-EN095",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37580756,
+      "code": "DT01-EN096",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58621589,
+      "code": "DT01-EN097",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62325062,
+      "code": "DT01-EN098",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 96331676,
+      "code": "DT01-EN099",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50323155,
+      "code": "DT01-EN100",
+      "rarity": "Duel Terminal Normal Parallel Rare",
+      "image_index": 0
+    }
+  ]
+}

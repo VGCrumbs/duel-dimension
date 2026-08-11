@@ -1,0 +1,12 @@
+{
+  "id": 1463589,
+  "name": "Anti-GMX Final Experiment",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Activate only if you control a \"GMX\" monster. Once per turn, when your opponent activates a monster effect on the field (except during the Damage Step): You can excavate the top 5 cards of your Deck, then if you excavated a \"GMX\" card(s), negate that activated effect, also place all the excavated cards on the top or bottom of the Deck in any order.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/1463589.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Continuous"
+}

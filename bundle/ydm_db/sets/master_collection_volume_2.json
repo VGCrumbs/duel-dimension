@@ -1,0 +1,47 @@
+{
+  "name": "Master Collection Volume 2",
+  "code": "MC2",
+  "type": "Collector's Set",
+  "date": "18-10-2005",
+  "image": "https://ygoprodeck.com/pics_sets/MC2.jpg",
+  "pull_type": "distribution",
+  "distribution": "the_dark_side_of_dimensions_movie_pack_secret_edition__pack",
+  "cards": [
+    {
+      "id": 40659562,
+      "code": "MC2-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 71413901,
+      "code": "MC2-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 12600382,
+      "code": "MC2-EN003",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 72989439,
+      "code": "MC2-EN004",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25551951,
+      "code": "MC2-EN005",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 87997872,
+      "code": "MC2-EN006",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

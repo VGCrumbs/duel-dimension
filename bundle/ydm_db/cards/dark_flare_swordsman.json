@@ -1,0 +1,21 @@
+{
+  "id": 94979322,
+  "name": "Dark Flare Swordsman",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You take no damage from battles involving this card. You can only use each of the following effects of \"Dark Flare Swordsman\" once per turn. You can send 1 \"Flame Swordsman\" or 1 monster that mentions it from your Extra Deck to the GY; Special Summon this card from your hand, also you cannot declare attacks for the rest of this turn, except with Warrior monsters. (Quick Effect): You can Tribute this card; Special Summon 1 monster that mentions \"Flame Swordsman\" from your Deck, except a Level 6 monster.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/94979322.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "FIRE",
+  "atk": 2200,
+  "species": "Warrior",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 800,
+  "level": 6,
+  "is_tuner": false
+}

@@ -1,0 +1,21 @@
+{
+  "id": 10426067,
+  "name": "Darklord Djehuty",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is Normal or Special Summoned: You can Special Summon 1 \"Darklord\" monster from your Deck in Defense Position, except \"Darklord Djehuty\", also you cannot Special Summon for the rest of this turn, except Fairy monsters. If you control a DARK Fairy Fusion Monster: You can banish this card from your GY, then target 1 \"Darklord\" card or \"Forbidden\" Quick-Play Spell in your GY; add it to your hand. You can only use each effect of \"Darklord Djehuty\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/10426067.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 0,
+  "species": "Fairy",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "level": 4,
+  "is_tuner": false
+}

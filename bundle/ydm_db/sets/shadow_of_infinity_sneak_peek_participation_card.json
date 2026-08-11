@@ -1,0 +1,23 @@
+{
+  "name": "Shadow of Infinity Sneak Peek Participation Card",
+  "code": "SP2",
+  "type": "Booster Pack (2006)",
+  "date": "18-02-2006",
+  "image": "https://ygoprodeck.com/pics_sets/SP2.jpg",
+  "pull_type": "distribution",
+  "distribution": "battles_of_legend__armageddon",
+  "cards": [
+    {
+      "id": 54912977,
+      "code": "SP2-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90960358,
+      "code": "SP2-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

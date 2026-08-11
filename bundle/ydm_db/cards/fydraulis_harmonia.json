@@ -1,0 +1,21 @@
+{
+  "id": 70088809,
+  "name": "Fydraulis Harmonia",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When a monster your opponent controls activates its effect (Quick Effect): You can reveal this card in your hand and up to 5 Synchro Monsters in your Extra Deck; apply all of these effects in sequence, based on the number revealed, also you cannot activate the effects of monsters Special Summoned from the Extra Deck until the end of your next turn after this effect resolves, except Synchro Monsters.\r\n● 2+: Special Summon this card. ● 4+: Send 1 revealed Synchro Monster to the GY. ● 6: Destroy 1 monster your opponent controls.\r\nYou can only use this effect of \"Fydraulis Harmonia\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/70088809.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2500,
+  "species": "Dragon",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2000,
+  "level": 7,
+  "is_tuner": true
+}

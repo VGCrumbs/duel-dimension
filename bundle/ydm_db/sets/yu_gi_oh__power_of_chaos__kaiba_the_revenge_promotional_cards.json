@@ -1,0 +1,47 @@
+{
+  "name": "Yu-Gi-Oh! Power of Chaos: Kaiba the Revenge promotional cards",
+  "code": "PCK",
+  "type": "Booster Pack (2004)",
+  "date": "06-04-2004",
+  "image": "https://ygoprodeck.com/pics_sets/PCK.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 89631139,
+      "code": "PCK-001",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95132338,
+      "code": "PCK-002",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97809599,
+      "code": "PCK-003",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89631139,
+      "code": "PCK-E001",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95132338,
+      "code": "PCK-E002",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97809599,
+      "code": "PCK-E003",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": 22106558,
+  "name": "Mechanical Mechanic",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When an attack is declared involving your other Machine monster: You can increase or decrease the Level of that other monster you control by 1. You can only use each of the following effects of \"Mechanical Mechanic\" once per turn. If a card is in the Field Zone: You can Special Summon this card from your hand. You can target 1 face-up Spell/Trap you control; destroy it, and if you do, add 1 WIND Machine monster with 0 ATK from your Deck to your hand, also you cannot Special Summon from the Extra Deck for the rest of this turn, except Machine monsters.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/22106558.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WIND",
+  "atk": 500,
+  "species": "Machine",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 500,
+  "level": 3,
+  "is_tuner": true
+}

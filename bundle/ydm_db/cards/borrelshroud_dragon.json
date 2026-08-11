@@ -1,0 +1,26 @@
+{
+  "id": 66452432,
+  "name": "Borrelshroud Dragon",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "3+ Effect Monsters\r\nYour opponent cannot Tribute this face-up card on the field. Once per turn, during the Main Phase (Quick Effect): You can target 1 \"Rokket\" monster you control; negate the effects of 1 face-up card your opponent controls, then destroy the targeted monster. Your opponent cannot activate cards or effects in response to this effect's activation. Once while face-up on the field, at the start of the Battle Phase: You can Special Summon 1 Link-4 or lower \"Borrel\" Link Monster from your Extra Deck.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/66452432.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 3500,
+  "species": "Dragon",
+  "monster_type": "Link",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "link_rating": 5,
+  "link_arrows": [
+    "Left",
+    "Right",
+    "Bottom-Left",
+    "Bottom",
+    "Bottom-Right"
+  ]
+}

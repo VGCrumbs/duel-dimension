@@ -1,0 +1,21 @@
+{
+  "id": 8379983,
+  "name": "Lunalight Gold Leo",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is Normal or Special Summoned: You can add 1 \"Lunalight\" monster from your Deck to your hand, except \"Lunalight Gold Leo\", then discard 1 card. If a \"Lunalight\" monster(s) is sent to your GY, while this card is in your Monster Zone, even during the Damage Step: You can target 1 of them; add it to your hand. You can only use each effect of \"Lunalight Gold Leo\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/8379983.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 600,
+  "species": "Beast-Warrior",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1600,
+  "level": 4,
+  "is_tuner": false
+}

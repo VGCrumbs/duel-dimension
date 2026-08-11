@@ -1,0 +1,29 @@
+{
+  "name": "Yu-Gi-Oh! GX Tag Force Evolution promotional cards",
+  "code": "GX05",
+  "type": "Booster Pack (2007)",
+  "date": "07-12-2007",
+  "image": "https://ygoprodeck.com/pics_sets/GX05.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 67316075,
+      "code": "GX05-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 3701074,
+      "code": "GX05-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30155789,
+      "code": "GX05-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

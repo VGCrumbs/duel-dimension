@@ -1,0 +1,23 @@
+{
+  "name": "Power of the Duelist Sneak Peek Participation Card",
+  "code": "SP02",
+  "type": "Booster Pack (2006)",
+  "date": "05-08-2006",
+  "image": "https://ygoprodeck.com/pics_sets/SP02.jpg",
+  "pull_type": "distribution",
+  "distribution": "battles_of_legend__armageddon",
+  "cards": [
+    {
+      "id": 2047519,
+      "code": "SP02-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62271284,
+      "code": "SP02-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

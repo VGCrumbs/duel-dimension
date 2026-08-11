@@ -1,0 +1,21 @@
+{
+  "id": 22912101,
+  "name": "Surge Blitzclique",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can reveal this card in your hand, then target 1 monster on the field; destroy it, and if you do, Special Summon 1 Thunder monster from your hand, also for the rest of this turn, you cannot Special Summon Effect Monsters, except from the hand. If another card(s) is destroyed by card effect, while this card is in the Monster Zone (except during the Damage Step): You can add 1 \"Blitzclique\" monster from your Deck to your hand, except \"Surge Blitzclique\". You can only use each effect of \"Surge Blitzclique\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/22912101.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 1800,
+  "species": "Thunder",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1200,
+  "level": 4,
+  "is_tuner": false
+}

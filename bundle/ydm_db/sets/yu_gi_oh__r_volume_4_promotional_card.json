@@ -1,0 +1,16 @@
+{
+  "name": "Yu-Gi-Oh! R Volume 4 promotional card",
+  "code": "YR04",
+  "type": "Single",
+  "date": "29-04-2010",
+  "image": "https://ygoprodeck.com/pics_sets/YR04.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 56784842,
+      "code": "YR04-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": 3294539,
+  "name": "Crimson Blade Dragon",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 \"Resonator\" Tuner + 1+ non-Tuners\r\n(This card is always treated as \"Crimson Blader\".)\r\nIf this card is Synchro Summoned: You can take 1 Level 8 or higher monster that cannot be Normal Summoned/Set from your Deck or GY, and either add it to your hand or Special Summon it, but negate its effects. You can only use this effect of \"Crimson Blade Dragon\" once per turn. At the start of the Damage Step, if this card battles a Level 5 or higher monster: You can destroy that monster.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/3294539.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2400,
+  "species": "Dragon",
+  "monster_type": "Synchro",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2600,
+  "level": 7,
+  "is_tuner": false
+}

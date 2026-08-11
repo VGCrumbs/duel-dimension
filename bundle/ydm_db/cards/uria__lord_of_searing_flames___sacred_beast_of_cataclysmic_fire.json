@@ -1,0 +1,21 @@
+{
+  "id": 23856331,
+  "name": "Uria, Lord of Searing Flames - Sacred Beast of Cataclysmic Fire",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Cannot be Normal Summoned/Set. Must be Special Summoned with a \"Sacred Beast\" card. You can reveal this card in your hand; add 1 \"Sacred Beast\" Trap from your Deck to your hand, then discard 1 card. You can only use this effect of \"Uria, Lord of Searing Flames - Sacred Beast of Cataclysmic Fire\" once per turn. Gains 1000 ATK/DEF for each Trap in the GYs. Once per turn (Quick Effect): You can target 1 Spell/Trap on the field; destroy it. Neither player can activate cards or effects in response to this effect's activation.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/23856331.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "FIRE",
+  "atk": 0,
+  "species": "Pyro",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "level": 10,
+  "is_tuner": false
+}

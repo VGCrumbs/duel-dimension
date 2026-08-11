@@ -1,0 +1,12 @@
+{
+  "id": 74271714,
+  "name": "Fish and Bids",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "At the start of your Main Phase 1: Banish 1 card from your hand; your opponent can banish 2 cards from their hand, if they do not, you apply this effect.\r\n● Take 2 Fish monsters from your Deck and either banish both or send both to the GY, also you cannot Special Summon for the rest of this turn, except Fish monsters.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/74271714.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Yu-Gi-Oh! ARC-V Volume 7 promotional card",
+  "code": "YA07",
+  "type": "Single",
+  "date": "02-06-2020",
+  "image": "https://ygoprodeck.com/pics_sets/YA07.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 40227329,
+      "code": "YA07-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

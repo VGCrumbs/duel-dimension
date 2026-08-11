@@ -1,0 +1,21 @@
+{
+  "id": 51618973,
+  "name": "Avance, Swordsman of the Nekroz",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you Ritual Summon exactly 1 \"Nekroz\" Ritual Monster with a card effect that requires use of monsters, this card you control can be used as the entire Tribute. When this card is Normal Summoned: You can Special Summon 1 \"Nekroz\" monster from your Deck, except \"Avance, Swordsman of the Nekroz\". If this card is Tributed by card effect: You can add any number of your banished \"Nekroz\" cards with different names to your hand. You can only use this effect of \"Avance, Swordsman of the Nekroz\" once per Duel.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/51618973.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WATER",
+  "atk": 1500,
+  "species": "Spellcaster",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 800,
+  "level": 4,
+  "is_tuner": false
+}

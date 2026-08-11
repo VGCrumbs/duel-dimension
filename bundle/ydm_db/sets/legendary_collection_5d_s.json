@@ -1,0 +1,41 @@
+{
+  "name": "Legendary Collection 5D's",
+  "code": "LC05",
+  "type": "Collector's Set",
+  "date": "23-10-2014",
+  "image": "https://ygoprodeck.com/pics_sets/LC05.jpg",
+  "pull_type": "distribution",
+  "distribution": "battles_of_legend__armageddon",
+  "cards": [
+    {
+      "id": 64203620,
+      "code": "LC05-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 91697229,
+      "code": "LC05-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27196937,
+      "code": "LC05-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 73580471,
+      "code": "LC05-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35952884,
+      "code": "LC05-EN005",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

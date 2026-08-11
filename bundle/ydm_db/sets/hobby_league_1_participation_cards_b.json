@@ -1,0 +1,47 @@
+{
+  "name": "Hobby League 1 participation cards B",
+  "code": "HL1",
+  "type": "Booster Pack (2004)",
+  "date": "01-01-2004",
+  "image": "https://ygoprodeck.com/pics_sets/HL1.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 99510761,
+      "code": "HL1-EN001",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 61831093,
+      "code": "HL1-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 295517,
+      "code": "HL1-EN003",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 37721209,
+      "code": "HL1-EN004",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33550694,
+      "code": "HL1-EN005",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 79109599,
+      "code": "HL1-EN006",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

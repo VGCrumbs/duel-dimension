@@ -68,6 +68,7 @@ public final class DdItemGroup
                 output.accept(DdItems.MILLENIUM_SCALE);
                 output.accept(DdBlocks.CARD_SUPPLY);
                 output.accept(DdBlocks.CARD_SHOP);
+                output.accept(DdBlocks.SLEEVE_SHOP);
                 output.accept(DdItems.DUEL_DISK);
                 output.accept(DdItems.CHAOS_DISK);
                 output.accept(DdItems.ACADEMIA_DISK);
@@ -80,9 +81,6 @@ public final class DdItemGroup
                 output.accept(DdItems.KAIBAMAN_DISK);
                 output.accept(DdItems.CARD_BINDER);
                 output.accept(DdItems.ORICHALCOS_DEBUG);
-                output.accept(DdItems.SIMPLE_BINDER_3);
-                output.accept(DdItems.SIMPLE_BINDER_9);
-                output.accept(DdItems.SIMPLE_BINDER_27);
             })
             .build());
 

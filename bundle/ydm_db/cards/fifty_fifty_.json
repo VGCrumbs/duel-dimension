@@ -1,0 +1,12 @@
+{
+  "id": 71275181,
+  "name": "Fifty Fifty?",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Take 1 monster and 2 Traps from your Deck and reveal them, your opponent randomly picks 1 and you look at the remaining 2 to banish 1 Trap from it, then your opponent chooses 1 of these effects for you to apply.\r\n● Reveal the card picked by your opponent, and if it was a monster, add it to your hand or Special Summon it, or if it wasn't, banish it, also shuffle the rest into the Deck.\r\n● Reveal the card that was not picked by your opponent nor banished by you, and if it was a monster, add it to your hand, or if it wasn't, banish it, also shuffle the rest into the Deck.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/71275181.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

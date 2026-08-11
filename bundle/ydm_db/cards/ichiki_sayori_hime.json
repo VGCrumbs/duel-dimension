@@ -1,0 +1,21 @@
+{
+  "id": 9627299,
+  "name": "Ichiki Sayori-Hime",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Cannot be Special Summoned. Once per turn, during the End Phase, if this card was Normal Summoned or flipped face-up this turn: Return this card to the hand. You can only use each of the following effects of \"Ichiki Sayori-Hime\" once per turn. If you control a monster with 800 ATK or DEF, and this card is in your hand: Immediately after this effect resolves, you can Normal Summon this card. If this card is Normal Summoned: You can add 1 Level 4 LIGHT or DARK monster with 800 ATK or DEF from your Deck to your hand, except \"Ichiki Sayori-Hime\".",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/9627299.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 800,
+  "species": "Fairy",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "Spirit",
+  "has_effect": true,
+  "def": 800,
+  "level": 4,
+  "is_tuner": false
+}

@@ -1,0 +1,29 @@
+{
+  "name": "Yu-Gi-Oh! 5D's Duel Transer promotional cards",
+  "code": "YDT1",
+  "type": "Booster Pack (2010)",
+  "date": "07-12-2010",
+  "image": "https://ygoprodeck.com/pics_sets/YDT1.jpg",
+  "pull_type": "distribution",
+  "distribution": "battles_of_legend__armageddon",
+  "cards": [
+    {
+      "id": 41098335,
+      "code": "YDT1-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 78082039,
+      "code": "YDT1-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4587638,
+      "code": "YDT1-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

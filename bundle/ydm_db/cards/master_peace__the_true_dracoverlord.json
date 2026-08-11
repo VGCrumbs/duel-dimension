@@ -1,0 +1,21 @@
+{
+  "id": 12800564,
+  "name": "Master Peace, the True Dracoverlord",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Requires 3 Tributes to Normal Summon (cannot be Normal Set). To Tribute Summon this card face-up, you can Tribute Continuous Spells/Traps you control, as well as monsters. You can only use each of the following effects of \"Master Peace, the True Dracoverlord\" once per turn. When your opponent activates a monster effect in their hand or field and you control this Tribute Summoned card (Quick Effect): You can negate the activation, and if you do, destroy that monster. If this Tribute Summoned card is destroyed by battle, or is destroyed by an opponent's card effect while in its owner's Monster Zone: You can activate this effect; your opponent skips their next Main Phase.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/12800564.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2950,
+  "species": "Wyrm",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2950,
+  "level": 10,
+  "is_tuner": false
+}

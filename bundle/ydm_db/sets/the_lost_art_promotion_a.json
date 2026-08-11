@@ -1,0 +1,827 @@
+{
+  "name": "The Lost Art Promotion A",
+  "code": "LART",
+  "type": "Booster Pack (2018)",
+  "date": "01-02-2018",
+  "image": "https://ygoprodeck.com/pics_sets/LART.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 83764719,
+      "code": "LART-EN001",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 83764719,
+      "code": "LART-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 8124921,
+      "code": "LART-EN002",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 8124921,
+      "code": "LART-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44519536,
+      "code": "LART-EN003",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44519536,
+      "code": "LART-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33396948,
+      "code": "LART-EN004",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 33396948,
+      "code": "LART-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7902349,
+      "code": "LART-EN005",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 7902349,
+      "code": "LART-EN005",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70903634,
+      "code": "LART-EN006",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 70903634,
+      "code": "LART-EN006",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 83555666,
+      "code": "LART-EN007",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 83555666,
+      "code": "LART-EN007",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 16475472,
+      "code": "LART-EN008",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 16475472,
+      "code": "LART-EN008",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97077563,
+      "code": "LART-EN009",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 97077563,
+      "code": "LART-EN009",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53982768,
+      "code": "LART-EN010",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 53982768,
+      "code": "LART-EN010",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 73599290,
+      "code": "LART-EN011",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 73599290,
+      "code": "LART-EN011",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 82732705,
+      "code": "LART-EN012",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 82732705,
+      "code": "LART-EN012",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27770341,
+      "code": "LART-EN013",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 27770341,
+      "code": "LART-EN013",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 41420027,
+      "code": "LART-EN014",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 41420027,
+      "code": "LART-EN014",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30068120,
+      "code": "LART-EN015",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 30068120,
+      "code": "LART-EN015",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81439173,
+      "code": "LART-EN016",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81439173,
+      "code": "LART-EN016",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19230408,
+      "code": "LART-EN017",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 19230408,
+      "code": "LART-EN017",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56910167,
+      "code": "LART-EN018",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 56910167,
+      "code": "LART-EN018",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38033121,
+      "code": "LART-EN019",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 3643300,
+      "code": "LART-EN020",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 3643300,
+      "code": "LART-EN020",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 75064463,
+      "code": "LART-EN021",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 75064463,
+      "code": "LART-EN021",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90238142,
+      "code": "LART-EN022",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 90238142,
+      "code": "LART-EN022",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68815132,
+      "code": "LART-EN023",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 68815132,
+      "code": "LART-EN023",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60643553,
+      "code": "LART-EN024",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 60643553,
+      "code": "LART-EN024",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10383554,
+      "code": "LART-EN025",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 10383554,
+      "code": "LART-EN025",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85696777,
+      "code": "LART-EN026",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 85696777,
+      "code": "LART-EN026",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29508346,
+      "code": "LART-EN027",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29508346,
+      "code": "LART-EN027",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92881099,
+      "code": "LART-EN028",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 92881099,
+      "code": "LART-EN028",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 39275698,
+      "code": "LART-EN029",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 39275698,
+      "code": "LART-EN029",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35686188,
+      "code": "LART-EN030",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 35686188,
+      "code": "LART-EN030",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56524813,
+      "code": "LART-EN031",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 56524813,
+      "code": "LART-EN031",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84243274,
+      "code": "LART-EN032",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 84243274,
+      "code": "LART-EN032",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 82962242,
+      "code": "LART-EN033",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 82962242,
+      "code": "LART-EN033",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92518817,
+      "code": "LART-EN034",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 92518817,
+      "code": "LART-EN034",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38033121,
+      "code": "LART-EN035",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 94381039,
+      "code": "LART-EN036",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 94381039,
+      "code": "LART-EN036",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81480461,
+      "code": "LART-EN037",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29013526,
+      "code": "LART-EN038",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29013526,
+      "code": "LART-EN038",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69140098,
+      "code": "LART-EN039",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 69140098,
+      "code": "LART-EN039",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30531525,
+      "code": "LART-EN040",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 30531525,
+      "code": "LART-EN040",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58932615,
+      "code": "LART-EN041",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 58932615,
+      "code": "LART-EN041",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 88369727,
+      "code": "LART-EN042",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 88369727,
+      "code": "LART-EN042",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76922029,
+      "code": "LART-EN044",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 76922029,
+      "code": "LART-EN044",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95503687,
+      "code": "LART-EN045",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 95503687,
+      "code": "LART-EN045",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7198399,
+      "code": "LART-EN046",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 7198399,
+      "code": "LART-EN046",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56166150,
+      "code": "LART-EN047",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 56166150,
+      "code": "LART-EN047",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40398073,
+      "code": "LART-EN048",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 40398073,
+      "code": "LART-EN048",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77235086,
+      "code": "LART-EN049",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 77235086,
+      "code": "LART-EN049",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 3629090,
+      "code": "LART-EN050",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 3629090,
+      "code": "LART-EN050",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40619825,
+      "code": "LART-EN051",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 40619825,
+      "code": "LART-EN051",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 78387742,
+      "code": "LART-EN052",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 78387742,
+      "code": "LART-EN052",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80230510,
+      "code": "LART-EN053",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 80230510,
+      "code": "LART-EN053",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59071624,
+      "code": "LART-EN055",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 59071624,
+      "code": "LART-EN055",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 88078306,
+      "code": "LART-EN056",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 88078306,
+      "code": "LART-EN056",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81489939,
+      "code": "LART-EN058",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81489939,
+      "code": "LART-EN058",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 88472456,
+      "code": "LART-EN059",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 88472456,
+      "code": "LART-EN059",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95477924,
+      "code": "LART-EN060",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 95477924,
+      "code": "LART-EN060",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67282505,
+      "code": "LART-EN061",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 67282505,
+      "code": "LART-EN061",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38430673,
+      "code": "LART-EN062",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 38430673,
+      "code": "LART-EN062",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54693926,
+      "code": "LART-EN063",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 54693926,
+      "code": "LART-EN063",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22512406,
+      "code": "LART-EN064",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 22512406,
+      "code": "LART-EN064",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30241314,
+      "code": "LART-EN065",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 30241314,
+      "code": "LART-EN065",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95440946,
+      "code": "LART-EN066",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51976476,
+      "code": "LART-EN067",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56993276,
+      "code": "LART-EN068",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92418590,
+      "code": "LART-EN069",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80604092,
+      "code": "LART-EN070",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76823930,
+      "code": "LART-EN071",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 12600382,
+      "code": "LART-EN072",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 12538374,
+      "code": "LART-EN073",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 83764719,
+      "code": "LART-EN074",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70865988,
+      "code": "LART-EN075",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 39751094,
+      "code": "LART-EN076",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68024506,
+      "code": "LART-EN077",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76913983,
+      "code": "LART-EN078",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50915474,
+      "code": "LART-EN079",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30118811,
+      "code": "LART-EN080",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": 42209438,
+  "name": "Legendary Lord Six Samurai - Kizan",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 Tuner + 1+ non-Tuner monsters\r\n\"Six Samurai\" monsters you control gain 600 ATK/DEF during the Battle Phase only. You can only use each of the following effects of \"Legendary Lord Six Samurai - Kizan\" once per turn. During your opponent's Main Phase (Quick Effect): You can banish 1 \"Six Strike\" card from your GY, then target 1 card on the field; destroy it. If you control 2 or more \"Six Samurai\" monsters: You can Special Summon this card from the GY.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/42209438.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 1800,
+  "species": "Warrior",
+  "monster_type": "Synchro",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 800,
+  "level": 6,
+  "is_tuner": false
+}

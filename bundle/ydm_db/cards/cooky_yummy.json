@@ -1,0 +1,21 @@
+{
+  "id": 68810435,
+  "name": "Cooky☆Yummy",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you control a Link-1 monster or a Level 2 Synchro Monster, you can Special Summon this card (from your hand). You can only Special Summon \"Cooky☆Yummy\" once per turn this way. If this card is Normal or Special Summoned: You can target 1 face-up monster your opponent controls; it loses 1000 ATK, or, if this card was Special Summoned by the effect of a Synchro Monster, you can destroy that monster instead. You can only use this effect of \"Cooky☆Yummy\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/68810435.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 1000,
+  "species": "Beast",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "level": 1,
+  "is_tuner": false
+}

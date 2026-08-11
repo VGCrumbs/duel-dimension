@@ -1,0 +1,24 @@
+{
+  "id": 30998403,
+  "name": "D/D/D Sky King Zeus Ragnarok",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2+ \"D/D\" monsters\r\nYou can target 1 \"D/D\" or \"Dark Contract\" card you control; destroy it, also during your Main Phase this turn, you can conduct 1 Pendulum Summon of a \"D/D\" monster(s) in addition to your Pendulum Summon (you can only gain this effect once per turn). When your opponent activates a monster effect in the hand (Quick Effect): You can banish 1 \"D/D\" monster and 1 \"Dark Contract\" card from your GY; negate the activation. You can only use this effect of \"D/D/D Sky King Zeus Ragnarok\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/30998403.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2200,
+  "species": "Fiend",
+  "monster_type": "Link",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "link_rating": 3,
+  "link_arrows": [
+    "Bottom-Left",
+    "Bottom",
+    "Bottom-Right"
+  ]
+}

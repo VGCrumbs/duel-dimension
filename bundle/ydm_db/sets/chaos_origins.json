@@ -1,0 +1,785 @@
+{
+  "name": "Chaos Origins",
+  "code": "CORI",
+  "type": "Booster Pack (2026)",
+  "date": "02-07-2026",
+  "image": "https://ygoprodeck.com/pics_sets/CORI.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare_with_starlight_rare",
+  "cards": [
+    {
+      "id": 98684220,
+      "code": "CORI-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 98684220,
+      "code": "CORI-EN001",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 24088928,
+      "code": "CORI-EN002",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 24088928,
+      "code": "CORI-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50073633,
+      "code": "CORI-EN003",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50073633,
+      "code": "CORI-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97462632,
+      "code": "CORI-EN004",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97462632,
+      "code": "CORI-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23856331,
+      "code": "CORI-EN005",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23856331,
+      "code": "CORI-EN005",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50251045,
+      "code": "CORI-EN006",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50251045,
+      "code": "CORI-EN006",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 96345184,
+      "code": "CORI-EN007",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 96345184,
+      "code": "CORI-EN007",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22734799,
+      "code": "CORI-EN008",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59138498,
+      "code": "CORI-EN009",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85523502,
+      "code": "CORI-EN010",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85523502,
+      "code": "CORI-EN010",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22912101,
+      "code": "CORI-EN011",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22912101,
+      "code": "CORI-EN011",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58916810,
+      "code": "CORI-EN012",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58916810,
+      "code": "CORI-EN012",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84401954,
+      "code": "CORI-EN013",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11895663,
+      "code": "CORI-EN014",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57294268,
+      "code": "CORI-EN015",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57294268,
+      "code": "CORI-EN015",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84288367,
+      "code": "CORI-EN016",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10673071,
+      "code": "CORI-EN017",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46072770,
+      "code": "CORI-EN018",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46072770,
+      "code": "CORI-EN018",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 83566725,
+      "code": "CORI-EN019",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 19951423,
+      "code": "CORI-EN020",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 46955132,
+      "code": "CORI-EN021",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 82344137,
+      "code": "CORI-EN022",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 82344137,
+      "code": "CORI-EN022",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 82344137,
+      "code": "CORI-EN022",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 18738846,
+      "code": "CORI-EN023",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 18738846,
+      "code": "CORI-EN023",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 45223540,
+      "code": "CORI-EN024",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 71222649,
+      "code": "CORI-EN025",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 18616294,
+      "code": "CORI-EN026",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44001993,
+      "code": "CORI-EN027",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44001993,
+      "code": "CORI-EN027",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44001993,
+      "code": "CORI-EN027",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70405001,
+      "code": "CORI-EN028",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70405001,
+      "code": "CORI-EN028",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70405001,
+      "code": "CORI-EN028",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7894706,
+      "code": "CORI-EN029",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7894706,
+      "code": "CORI-EN029",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7894706,
+      "code": "CORI-EN029",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 43989315,
+      "code": "CORI-EN030",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70383419,
+      "code": "CORI-EN031",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 6772168,
+      "code": "CORI-EN032",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 33166263,
+      "code": "CORI-EN033",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33166263,
+      "code": "CORI-EN033",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79561872,
+      "code": "CORI-EN034",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 5559570,
+      "code": "CORI-EN035",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 5559570,
+      "code": "CORI-EN035",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32044675,
+      "code": "CORI-EN036",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 78449284,
+      "code": "CORI-EN037",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 5833929,
+      "code": "CORI-EN038",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 31822037,
+      "code": "CORI-EN039",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67216732,
+      "code": "CORI-EN040",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4611341,
+      "code": "CORI-EN041",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30109445,
+      "code": "CORI-EN042",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7594154,
+      "code": "CORI-EN043",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7594154,
+      "code": "CORI-EN043",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33599853,
+      "code": "CORI-EN044",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 75983808,
+      "code": "CORI-EN045",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 2372506,
+      "code": "CORI-EN046",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 2372506,
+      "code": "CORI-EN046",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38776201,
+      "code": "CORI-EN047",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 65861210,
+      "code": "CORI-EN048",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 1259915,
+      "code": "CORI-EN049",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 37654623,
+      "code": "CORI-EN050",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37654623,
+      "code": "CORI-EN050",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 64049762,
+      "code": "CORI-EN051",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 433377,
+      "code": "CORI-EN052",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 37432075,
+      "code": "CORI-EN053",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37432075,
+      "code": "CORI-EN053",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63926180,
+      "code": "CORI-EN054",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 99311889,
+      "code": "CORI-EN055",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 36709484,
+      "code": "CORI-EN056",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62104532,
+      "code": "CORI-EN057",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 99199231,
+      "code": "CORI-EN058",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 25687946,
+      "code": "CORI-EN059",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 61082944,
+      "code": "CORI-EN060",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 98476659,
+      "code": "CORI-EN061",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 98476659,
+      "code": "CORI-EN061",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 24461358,
+      "code": "CORI-EN062",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51869363,
+      "code": "CORI-EN063",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 97254001,
+      "code": "CORI-EN064",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24749710,
+      "code": "CORI-EN065",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50147815,
+      "code": "CORI-EN066",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 86132414,
+      "code": "CORI-EN067",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 23526128,
+      "code": "CORI-EN068",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 59921227,
+      "code": "CORI-EN069",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 86319972,
+      "code": "CORI-EN070",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 22404570,
+      "code": "CORI-EN071",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 58809685,
+      "code": "CORI-EN072",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 85257384,
+      "code": "CORI-EN073",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11642993,
+      "code": "CORI-EN074",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 58036097,
+      "code": "CORI-EN075",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 84031736,
+      "code": "CORI-EN076",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 10529441,
+      "code": "CORI-EN077",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 47914440,
+      "code": "CORI-EN078",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 83319154,
+      "code": "CORI-EN079",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10307853,
+      "code": "CORI-EN080",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 54577949,
+      "code": "CORI-EN081",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54577949,
+      "code": "CORI-EN081",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81965543,
+      "code": "CORI-EN082",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 17350692,
+      "code": "CORI-EN083",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 53754391,
+      "code": "CORI-EN084",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 80843006,
+      "code": "CORI-EN085",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 16237004,
+      "code": "CORI-EN086",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 43632709,
+      "code": "CORI-EN087",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 89027418,
+      "code": "CORI-EN088",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 15415552,
+      "code": "CORI-EN089",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 42410161,
+      "code": "CORI-EN090",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 28904860,
+      "code": "CORI-EN091",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 55393975,
+      "code": "CORI-EN092",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81797573,
+      "code": "CORI-EN093",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 17782288,
+      "code": "CORI-EN094",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 54171327,
+      "code": "CORI-EN095",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 80565021,
+      "code": "CORI-EN096",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 28103028,
+      "code": "CORI-EN097",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 64413994,
+      "code": "CORI-EN098",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 60516416,
+      "code": "CORI-EN099",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74405783,
+      "code": "CORI-EN100",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

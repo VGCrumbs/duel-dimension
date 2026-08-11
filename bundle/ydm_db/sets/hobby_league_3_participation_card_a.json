@@ -1,0 +1,53 @@
+{
+  "name": "Hobby League 3 participation card A",
+  "code": "HL03",
+  "type": "Booster Pack (2006)",
+  "date": "01-01-2006",
+  "image": "https://ygoprodeck.com/pics_sets/HL03.jpg",
+  "pull_type": "distribution",
+  "distribution": "composition_ultra_parallel_rare",
+  "cards": [
+    {
+      "id": 97017120,
+      "code": "HL03-EN001",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31036355,
+      "code": "HL03-EN002",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4206964,
+      "code": "HL03-EN003",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31553716,
+      "code": "HL03-EN004",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 83011278,
+      "code": "HL03-EN005",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51452091,
+      "code": "HL03-EN006",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80071763,
+      "code": "HL03-EN007",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    }
+  ]
+}

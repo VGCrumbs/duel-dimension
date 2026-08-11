@@ -1,0 +1,22 @@
+{
+  "id": 30581601,
+  "name": "Yummy★Snatchy",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 Level 4 or lower LIGHT Beast monster\r\nIf this card is Special Summoned: You can place 1 \"Yummy\" Field Spell from your hand or Deck, face-up on your field, also you cannot Link Summon Link-3 or higher Link Monsters for the rest of this turn. You can only use this effect of \"Yummy★Snatchy\" once per turn. Once per Chain, during the Main Phase or your opponent's Battle Phase (Quick Effect): You can pay 100 LP; immediately after this effect resolves, Synchro Summon using monsters you control as material, including a \"Yummy\" monster.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/30581601.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 600,
+  "species": "Beast",
+  "monster_type": "Link",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "link_rating": 1,
+  "link_arrows": [
+    "Bottom"
+  ]
+}

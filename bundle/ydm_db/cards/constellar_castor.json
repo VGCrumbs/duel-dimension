@@ -1,0 +1,21 @@
+{
+  "id": 33302589,
+  "name": "Constellar Castor",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is Summoned: You can Special Summon 1 \"Constellar\" monster from your Deck, except \"Constellar Castor\", also you cannot Special Summon from the Extra Deck for the rest of this turn, except LIGHT and DARK monsters. You can only use this effect of \"Constellar Castor\" once per turn. A \"Constellar\" Xyz Monster that has this card as material gains this effect.\r\n● Once per turn, when your opponent activates a Spell Card or effect (Quick Effect): You can detach 2 materials from a monster(s) you control, and if you do, negate that effect, and if you do that, destroy that card.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/33302589.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 1700,
+  "species": "Fairy",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 600,
+  "level": 4,
+  "is_tuner": false
+}

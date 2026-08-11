@@ -1,0 +1,21 @@
+{
+  "id": 67768675,
+  "name": "Kaibaman the Legend",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is Normal or Special Summoned: You can show 3 \"Blue-Eyes White Dragon\" in your hand, Deck, face-up field, and/or GY, then Special Summon 1 \"Blue-Eyes White Dragon\" from your hand, Deck, or GY. If you Special Summon \"Blue-Eyes White Dragon\" while this card is in your GY (except during the Damage Step): You can banish this card; add 1 \"Blue-Eyes\" monster from your Deck to your hand. You can only use each effect of \"Kaibaman the Legend\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/67768675.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 200,
+  "species": "Warrior",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 700,
+  "level": 1,
+  "is_tuner": true
+}

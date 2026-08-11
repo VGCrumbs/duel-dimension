@@ -1,0 +1,21 @@
+{
+  "id": 6560411,
+  "name": "Bramble Rose Dragon",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 Plant Tuner + 1+ non-Tuner monsters\r\nEach time your opponent activates a monster effect, inflict 600 damage to your opponent, and if you do, all monsters your opponent currently controls lose 600 ATK. You can only use each of the following effects of \"Bramble Rose Dragon\" once per turn. During the Main Phase (Quick Effect): You can Tribute this card; Special Summon 1 \"Black Rose Dragon\" from your Extra Deck (this is treated as a Synchro Summon). You can banish this card from your GY; Special Summon 1 Level 4 or lower Plant Tuner from your GY.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/6560411.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "FIRE",
+  "atk": 2400,
+  "species": "Plant",
+  "monster_type": "Synchro",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1800,
+  "level": 7,
+  "is_tuner": false
+}

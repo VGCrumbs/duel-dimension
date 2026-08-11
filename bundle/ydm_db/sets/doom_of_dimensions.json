@@ -1,0 +1,761 @@
+{
+  "name": "Doom of Dimensions",
+  "code": "DOOD",
+  "type": "Booster Pack (2025)",
+  "date": "25-09-2025",
+  "image": "https://ygoprodeck.com/pics_sets/DOOD.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare_with_starlight_rare",
+  "cards": [
+    {
+      "id": 67322708,
+      "code": "DOOD-EN001",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 93317313,
+      "code": "DOOD-EN002",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 20715411,
+      "code": "DOOD-EN003",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 20715411,
+      "code": "DOOD-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 66100116,
+      "code": "DOOD-EN004",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92595825,
+      "code": "DOOD-EN005",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29099860,
+      "code": "DOOD-EN006",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 55088578,
+      "code": "DOOD-EN007",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 92472273,
+      "code": "DOOD-EN008",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92472273,
+      "code": "DOOD-EN008",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 28877382,
+      "code": "DOOD-EN009",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 28877382,
+      "code": "DOOD-EN009",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54265980,
+      "code": "DOOD-EN010",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81650695,
+      "code": "DOOD-EN011",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27755794,
+      "code": "DOOD-EN012",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54143349,
+      "code": "DOOD-EN013",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80538047,
+      "code": "DOOD-EN014",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80538047,
+      "code": "DOOD-EN014",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 16922142,
+      "code": "DOOD-EN015",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 16922142,
+      "code": "DOOD-EN015",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53927851,
+      "code": "DOOD-EN016",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85315450,
+      "code": "DOOD-EN017",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85315450,
+      "code": "DOOD-EN017",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 12800564,
+      "code": "DOOD-EN018",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 12800564,
+      "code": "DOOD-EN018",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58205203,
+      "code": "DOOD-EN019",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 84693918,
+      "code": "DOOD-EN020",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11688916,
+      "code": "DOOD-EN021",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 47082621,
+      "code": "DOOD-EN022",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84477320,
+      "code": "DOOD-EN023",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84477320,
+      "code": "DOOD-EN023",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10966439,
+      "code": "DOOD-EN024",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10966439,
+      "code": "DOOD-EN024",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 47960073,
+      "code": "DOOD-EN025",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 47960073,
+      "code": "DOOD-EN025",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 73355772,
+      "code": "DOOD-EN026",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 73355772,
+      "code": "DOOD-EN026",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19743887,
+      "code": "DOOD-EN027",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 46148485,
+      "code": "DOOD-EN028",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 72632190,
+      "code": "DOOD-EN029",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 9627299,
+      "code": "DOOD-EN030",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 45016904,
+      "code": "DOOD-EN031",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 71410542,
+      "code": "DOOD-EN032",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 8805651,
+      "code": "DOOD-EN033",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44293356,
+      "code": "DOOD-EN034",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 71398055,
+      "code": "DOOD-EN035",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 71398055,
+      "code": "DOOD-EN035",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7782069,
+      "code": "DOOD-EN036",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33171768,
+      "code": "DOOD-EN037",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70576413,
+      "code": "DOOD-EN038",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 6560411,
+      "code": "DOOD-EN039",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6560411,
+      "code": "DOOD-EN039",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33955120,
+      "code": "DOOD-EN040",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33955120,
+      "code": "DOOD-EN040",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69453825,
+      "code": "DOOD-EN041",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 5848934,
+      "code": "DOOD-EN042",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 32232538,
+      "code": "DOOD-EN043",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68231287,
+      "code": "DOOD-EN044",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68231287,
+      "code": "DOOD-EN044",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95626382,
+      "code": "DOOD-EN045",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95626382,
+      "code": "DOOD-EN045",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31010081,
+      "code": "DOOD-EN046",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67515699,
+      "code": "DOOD-EN047",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 94503794,
+      "code": "DOOD-EN048",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 30998403,
+      "code": "DOOD-EN049",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30998403,
+      "code": "DOOD-EN049",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7382007,
+      "code": "DOOD-EN050",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 33781156,
+      "code": "DOOD-EN051",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33781156,
+      "code": "DOOD-EN051",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69176851,
+      "code": "DOOD-EN052",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 6260560,
+      "code": "DOOD-EN053",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32665564,
+      "code": "DOOD-EN054",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 69053263,
+      "code": "DOOD-EN055",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69053263,
+      "code": "DOOD-EN055",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95448372,
+      "code": "DOOD-EN056",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 32442017,
+      "code": "DOOD-EN057",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68831625,
+      "code": "DOOD-EN058",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 94326720,
+      "code": "DOOD-EN059",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 21720439,
+      "code": "DOOD-EN060",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 67115133,
+      "code": "DOOD-EN061",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67115133,
+      "code": "DOOD-EN061",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 94103142,
+      "code": "DOOD-EN062",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 20508881,
+      "code": "DOOD-EN063",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 66092596,
+      "code": "DOOD-EN064",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 66092596,
+      "code": "DOOD-EN064",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93481594,
+      "code": "DOOD-EN065",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29876299,
+      "code": "DOOD-EN066",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 56870908,
+      "code": "DOOD-EN067",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92269002,
+      "code": "DOOD-EN068",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 28653611,
+      "code": "DOOD-EN069",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 55158350,
+      "code": "DOOD-EN070",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81143465,
+      "code": "DOOD-EN071",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 28531163,
+      "code": "DOOD-EN072",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 54936778,
+      "code": "DOOD-EN073",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 80320877,
+      "code": "DOOD-EN074",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 17719582,
+      "code": "DOOD-EN075",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 53813120,
+      "code": "DOOD-EN076",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 80208225,
+      "code": "DOOD-EN077",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 16693934,
+      "code": "DOOD-EN078",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 42091632,
+      "code": "DOOD-EN079",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 42091632,
+      "code": "DOOD-EN079",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89086647,
+      "code": "DOOD-EN080",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 87750925,
+      "code": "DOOD-EN081",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 23249029,
+      "code": "DOOD-EN082",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 50643638,
+      "code": "DOOD-EN083",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86038337,
+      "code": "DOOD-EN084",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 13023431,
+      "code": "DOOD-EN085",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 55421040,
+      "code": "DOOD-EN086",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81916745,
+      "code": "DOOD-EN087",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 18300894,
+      "code": "DOOD-EN088",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 54399598,
+      "code": "DOOD-EN089",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81794107,
+      "code": "DOOD-EN090",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81794107,
+      "code": "DOOD-EN090",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17188206,
+      "code": "DOOD-EN091",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44573911,
+      "code": "DOOD-EN092",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80071619,
+      "code": "DOOD-EN093",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80071619,
+      "code": "DOOD-EN093",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 16066654,
+      "code": "DOOD-EN094",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 43450363,
+      "code": "DOOD-EN095",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 79859067,
+      "code": "DOOD-EN096",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 47643326,
+      "code": "DOOD-EN097",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 34149150,
+      "code": "DOOD-EN098",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 20714553,
+      "code": "DOOD-EN099",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10218411,
+      "code": "DOOD-EN100",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53325667,
+      "code": "DOOD-EN101",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    }
+  ]
+}

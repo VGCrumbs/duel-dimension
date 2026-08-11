@@ -1,0 +1,12 @@
+{
+  "id": 69053263,
+  "name": "Black Rose Garden",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When this card is activated: You can add 1 \"Rose Dragon\" monster from your Deck or GY to your hand. All face-up monsters on the field become Plant monsters. If this card is destroyed: Inflict 100 damage to your opponent for each Plant monster in your GY and banishment, then if this card was destroyed by the effect of \"Black Rose Dragon\", inflict 2400 damage to your opponent. You can only use this effect of \"Black Rose Garden\" once per turn. You can only activate 1 \"Black Rose Garden\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/69053263.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Continuous"
+}

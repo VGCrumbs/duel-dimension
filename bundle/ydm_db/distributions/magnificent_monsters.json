@@ -1,0 +1,50 @@
+{
+  "name": "magnificent_monsters",
+  "pulls": [
+    {
+      "weight": 90,
+      "entries": [
+        {
+          "count": 5,
+          "rarities": [
+            "Ultra Rare"
+          ]
+        }
+      ]
+    },
+    {
+      "weight": 9,
+      "entries": [
+        {
+          "count": 4,
+          "rarities": [
+            "Ultra Rare"
+          ]
+        },
+        {
+          "count": 1,
+          "rarities": [
+            "Starlight Rare"
+          ]
+        }
+      ]
+    },
+    {
+      "weight": 1,
+      "entries": [
+        {
+          "count": 4,
+          "rarities": [
+            "Ultra Rare"
+          ]
+        },
+        {
+          "count": 1,
+          "rarities": [
+            "Grand Master Rare"
+          ]
+        }
+      ]
+    }
+  ]
+}

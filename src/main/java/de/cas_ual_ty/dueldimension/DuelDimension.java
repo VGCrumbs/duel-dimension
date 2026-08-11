@@ -40,13 +40,25 @@ public final class DuelDimension
     private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     /**
-     * Where the card database is unpacked, relative to the game directory.
+     * Where the card database is unpacked, inside the game directory.
      * <p>
      * Plain files rather than resources: the database is tens of thousands of
      * cards that arrive after the game has started, and it is shared by the
      * client and the server of an integrated game.
+     * <p>
+     * Resolved against {@link de.cas_ual_ty.dueldimension.util.GameDir} rather
+     * than named relatively. {@code new File("ydm_db")} means "ydm_db under the
+     * process working directory", which is the game directory only by
+     * coincidence -- the coincidence holds for a vanilla launcher and breaks for
+     * anything that passes {@code --gameDir} or starts a server from elsewhere,
+     * and the config was already going to the loader's directory either way.
+     * <p>
+     * All five are assigned together, here, because the four below are derived
+     * from the first: moving {@code mainFolder} on its own would leave them
+     * pointing at the old place and the database would read as "(cards folder)
+     * does not exist".
      */
-    public static File mainFolder = new File("ydm_db");
+    public static File mainFolder = de.cas_ual_ty.dueldimension.util.GameDir.file("ydm_db");
     public static File cardsFolder = new File(mainFolder, "cards");
     public static File setsFolder = new File(mainFolder, "sets");
     public static File distributionsFolder = new File(mainFolder, "distributions");

@@ -1,0 +1,12 @@
+{
+  "id": 37432075,
+  "name": "Invocation - \"Sword\"",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Fusion Summon 1 Fusion Monster from your Extra Deck, using monsters you control. If Summoning an \"Invoked\" Fusion Monster this way, you can also return monsters from any banishment to the GY as material. During your Main Phase, if this card is in your GY: You can target 1 \"Aleister\" monster or \"Invocation\" in your GY; shuffle this card into the Deck, and if you do, add that target to your hand. You can only use each effect of \"Invocation - \"Sword\"\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/37432075.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Quick-Play"
+}

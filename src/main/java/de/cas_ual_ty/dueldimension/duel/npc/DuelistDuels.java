@@ -105,6 +105,25 @@ public final class DuelistDuels
         boolean sealOnField;
         boolean forfeit;
         boolean concluded;
+        /**
+         * Each seat's own main deck, de-ordered on the duel thread and refreshed
+         * at every board checkpoint.
+         * <p>
+         * Indexed by seat and read only by {@link #viewOwnDeck}, which resolves
+         * the seat from the sending player. It is deliberately NOT attached to
+         * {@code PromptMessages.DuelUpdate}: that is the per-seat broadcast, and
+         * keeping the deck off it means no broadcast bug has a path to the wrong
+         * seat.
+         */
+        @SuppressWarnings("unchecked")
+        final List<de.cas_ual_ty.dueldimension.ocg.query.CardView>[] ownDeck =
+            new List[] {List.of(), List.of()};
+        /**
+         * When each seat last asked to look at its deck, so a scripted client
+         * cannot make the server serialise fifty cards a tick. Hygiene, not
+         * concealment -- the answer is the player's own deck list either way.
+         */
+        final long[] lastDeckView = new long[2];
         /** A player who concedes this contest can never receive its DP packet. */
         final boolean[] rewardEligible = {true, true};
         /**
@@ -203,16 +222,20 @@ public final class DuelistDuels
         String missing = paths.missing();
         if(missing != null)
         {
-            serverPlayer.sendSystemMessage(Component.literal("Ruled duels unavailable: " + missing)
-                .withStyle(ChatFormatting.RED));
+            serverPlayer.sendSystemMessage(EngineRuntime.requirementMessage(missing,
+                EngineRuntime.hostedElsewhere(serverPlayer)));
             return;
         }
 
         EngineRuntime engine = EngineRuntime.get(paths);
         if(engine == null)
         {
-            serverPlayer.sendSystemMessage(Component.literal("Ruled duels unavailable.")
-                .withStyle(ChatFormatting.RED));
+            // The engine was there and would not load -- a wrong build, most
+            // likely. "Ruled duels unavailable" on its own left a player with
+            // nothing to act on, so they get the same message as a missing
+            // install, carrying the actual reason.
+            serverPlayer.sendSystemMessage(EngineRuntime.requirementMessage(
+                EngineRuntime.unavailable(paths), EngineRuntime.hostedElsewhere(serverPlayer)));
             return;
         }
 
@@ -277,6 +300,11 @@ public final class DuelistDuels
         // are fetched as they hit the field.
         int[] warmUp = deck0.main().stream().mapToInt(Integer::intValue).distinct().toArray();
         net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(serverPlayer, new PromptMessages.DuelUpdate(null, List.of(), false, "", warmUp));
+        // The back this player's cards wear, decided here because this is where
+        // the deck was decided -- see deckFor's fallback branch.
+        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(serverPlayer,
+            new PromptMessages.OwnSleeve(
+                de.cas_ual_ty.dueldimension.duel.profile.Sleeves.nameOf(playerDeck.sleeve())));
 
         session.start();
     }
@@ -313,7 +341,7 @@ public final class DuelistDuels
         EngineRuntime engine = EngineRuntime.get(paths);
         if(engine == null)
         {
-            return "Ruled duels unavailable";
+            return "Ruled duels unavailable: " + EngineRuntime.unavailable(paths);
         }
 
         // Each player brings their own deck. The fallbacks differ so that two
@@ -394,6 +422,12 @@ public final class DuelistDuels
         // information, and their cards are fetched as they reach the field.
         int[] warmUp = ownDeck.main().stream().mapToInt(Integer::intValue).distinct().toArray();
         net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, new PromptMessages.DuelUpdate(null, List.of(), false, "", warmUp));
+        // Their own sleeve only -- the opponent's is theirs to see, not this
+        // player's, and telling each side about the other's would be the start
+        // of leaking deck cosmetics both ways for no gain.
+        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
+            new PromptMessages.OwnSleeve(
+                de.cas_ual_ty.dueldimension.duel.profile.Sleeves.nameOf(own.sleeve())));
     }
 
     /** Routes a client's answer to the seat that is waiting for it. */
@@ -434,6 +468,98 @@ public final class DuelistDuels
         {
             seat.setChainPreference(preference);
         }
+    }
+
+    /** No player may ask to see their deck more often than this. */
+    private static final long DECK_VIEW_COOLDOWN_MS = 250L;
+
+    /**
+     * Sends the requesting player the cards in THEIR OWN deck, shuffled.
+     * <p>
+     * Ownership is enforced by construction rather than by validation. The
+     * request carries no seat, no controller and no location, so the only seat
+     * this method can find is the sender's own — resolved the same way
+     * {@link #surrender} resolves it, by matching the player's uuid against the
+     * seats of the duel they are registered in. A player who is not seated has
+     * no {@code ACTIVE} entry and is answered with nothing.
+     * <p>
+     * The list itself was captured and de-ordered on the duel thread (see
+     * {@code BoardObserver.ownDeck}); the engine is emphatically NOT touched
+     * here, because this runs on the server tick thread. The shuffle below is on
+     * a fresh copy, so the cached list stays as it was and the order that leaves
+     * this method is a fresh one each time it is asked for.
+     * <p>
+     * There is exactly one recipient and it is the sender. Spectators do not
+     * exist in this mod — a {@code Watcher} is either a seated player or the
+     * console, and the console has no {@code ServerPlayer} to send to — so if
+     * spectating is ever added, this is the line that has to be changed
+     * deliberately rather than the one that quietly already worked.
+     */
+    public static void viewOwnDeck(ServerPlayer player)
+    {
+        RunningDuel duel = ACTIVE.get(Watcher.of(player));
+        if(duel == null || !duel.session.isRunning())
+        {
+            return;
+        }
+        int seat = -1;
+        for(int index = 0; index < duel.seats.length; index++)
+        {
+            if(duel.seats[index] != null
+                && duel.seats[index].playerId().equals(player.getUUID()))
+            {
+                seat = index;
+                break;
+            }
+        }
+        if(seat < 0)
+        {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        if(now - duel.lastDeckView[seat] < DECK_VIEW_COOLDOWN_MS)
+        {
+            return;
+        }
+        duel.lastDeckView[seat] = now;
+
+        PromptMessages.OwnDeckList payload = shuffledDeckList(duel.ownDeck[seat]);
+        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, payload);
+    }
+
+    /**
+     * One seat's cached deck, shuffled onto the wire.
+     * <p>
+     * The shuffle is applied to a COPY and re-rolled on every call. Shuffling
+     * the cached list in place would leave it claiming an order it no longer
+     * holds, and the cache is what the next request reads — the observer hands
+     * back an immutable list precisely so that mistake throws instead of
+     * happening quietly.
+     * <p>
+     * The random is a fresh {@link java.security.SecureRandom} and is
+     * emphatically not derived from the duel seed: the core shuffled the real
+     * deck from that seed, so a display order that was also a function of it
+     * could be inverted by anyone who knew or guessed it.
+     * <p>
+     * Package-private so a test can hold it to those two promises without
+     * needing a running server.
+     */
+    static PromptMessages.OwnDeckList shuffledDeckList(
+        List<de.cas_ual_ty.dueldimension.ocg.query.CardView> deck)
+    {
+        List<de.cas_ual_ty.dueldimension.ocg.query.CardView> shown = new ArrayList<>(deck);
+        java.util.Collections.shuffle(shown, new java.security.SecureRandom());
+
+        int[] codes = new int[shown.size()];
+        int[] arts = new int[shown.size()];
+        for(int i = 0; i < shown.size(); i++)
+        {
+            // Code and artwork, and that is the entire card. Nothing here knows
+            // where any of these sat, so nothing here can say.
+            codes[i] = shown.get(i).code();
+            arts[i] = shown.get(i).art();
+        }
+        return new PromptMessages.OwnDeckList(codes, arts);
     }
 
     /** Concedes the player's running duel. */
@@ -478,6 +604,31 @@ public final class DuelistDuels
     }
 
     /** Releases every registry entry owned by one duel, without touching a newer rematch. */
+    /**
+     * Whether this duelist is currently at a table.
+     * <p>
+     * Asked rather than told. A flag set when a duel begins and cleared when it
+     * ends is one abnormal ending -- a crash, a disconnect, a seat released down
+     * a path nobody thought about -- away from a duelist frozen in place
+     * forever. Reading the live registry cannot desynchronise: when the duel
+     * leaves ACTIVE the duelist walks again by itself.
+     */
+    public static boolean isDueling(java.util.UUID duelistId)
+    {
+        if(duelistId == null)
+        {
+            return false;
+        }
+        for(RunningDuel duel : ACTIVE.values())
+        {
+            if(duelistId.equals(duel.duelistId))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     static void releaseSeats(RunningDuel duel)
     {
         for(Watcher watcher : duel.seats)
@@ -500,7 +651,8 @@ public final class DuelistDuels
      * built and becomes a thing being played with, and it is the last point at
      * which a deck of forty Blue-Eyes can be turned away.
      */
-    private record ChosenDeck(HeadlessDuelRunner.Deck cards, String displayName)
+    private record ChosenDeck(HeadlessDuelRunner.Deck cards, String displayName,
+        de.cas_ual_ty.dueldimension.card.CardSleevesType sleeve)
     {
     }
 
@@ -521,8 +673,15 @@ public final class DuelistDuels
                     de.cas_ual_ty.dueldimension.duel.profile.FreeMode.isEnabled(player));
             if(chosen != null && problems.isEmpty())
             {
+                // The artwork each copy wears travels with the deck order, and
+                // this is the only place it can be picked up: past here the
+                // deck is a list of passcodes and one Dark Magician is every
+                // other Dark Magician. artsFor takes the list itself, by
+                // identity, so the deck's own list is passed and never a copy.
                 return new ChosenDeck(
-                    new HeadlessDuelRunner.Deck(chosen.main(), chosen.extra()), chosen.name());
+                    new HeadlessDuelRunner.Deck(chosen.main(), chosen.extra())
+                        .wearing(chosen.artsFor(chosen.main()), chosen.artsFor(chosen.extra())),
+                    chosen.name(), chosen.sleeve());
             }
             if(chosen != null)
             {
@@ -531,7 +690,11 @@ public final class DuelistDuels
                         + fallback.displayName() + ".").withStyle(ChatFormatting.YELLOW));
             }
         }
-        return new ChosenDeck(fallback.load().toRunnerDeck(), fallback.displayName());
+        // A starter deck has no sleeve of its own, and this is the branch where
+        // the player's chosen deck was refused -- so the back is the plain one,
+        // which is also the honest signal that the deck on the table is not theirs.
+        return new ChosenDeck(fallback.load().toRunnerDeck(), fallback.displayName(),
+            de.cas_ual_ty.dueldimension.duel.profile.Sleeves.DEFAULT);
     }
 
     /**
@@ -595,7 +758,7 @@ public final class DuelistDuels
         EngineRuntime engine = EngineRuntime.get(paths);
         if(engine == null)
         {
-            return "engine unavailable";
+            return "engine unavailable: " + EngineRuntime.unavailable(paths);
         }
         long[] seeds = {seed | 1, seed * 31 + 7, seed * 131 + 17, ~seed};
         DuelSession session = DuelSession.create("console", engine.api(), engine.defaultFlags(), seeds,
@@ -706,6 +869,11 @@ public final class DuelistDuels
                         {
                             continue;
                         }
+                        // Kept server-side against the seat it belongs to, and
+                        // NOT put on the update below. A DuelUpdate is the one
+                        // thing broadcast per seat, so a deck that never rides
+                        // it has no path to the wrong player at all.
+                        duel.ownDeck[seat] = board.deckForSeat(seat);
                         outbound[seat].add(new PromptMessages.DuelUpdate(board.forSeat(seat),
                             List.of(), false, "", new int[0], new ArrayList<>(pending[seat])));
                         pending[seat].clear();
@@ -768,8 +936,13 @@ public final class DuelistDuels
                 {
                     result = failure[0] != null ? failure[0]
                         : winner[0] == -1 ? "Duel ended without a result"
-                        : winner[0] == seat ? "Winner: you"
-                        : winner[0] == (1 - seat) ? "Winner: opponent" : "Winner: draw";
+                        // Just the outcome. This string is built PER SEAT, so
+                        // each player is already being told about their own duel
+                        // -- naming who won on top of that is saying the same
+                        // thing twice, and "Winner: you" reads like a scoreboard
+                        // rather than a result.
+                        : winner[0] == seat ? "Victory"
+                        : winner[0] == (1 - seat) ? "Lose" : "Draw";
                 }
                 if(watcher.console())
                 {

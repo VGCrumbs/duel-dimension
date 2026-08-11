@@ -1,0 +1,41 @@
+{
+  "name": "Yu-Gi-Oh! The Dawn of Destiny promotional cards",
+  "code": "DOD",
+  "type": "Booster Pack (2004)",
+  "date": "23-03-2004",
+  "image": "https://ygoprodeck.com/pics_sets/DOD.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 92377303,
+      "code": "DOD-002",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77754944,
+      "code": "DOD-003",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 48642904,
+      "code": "DOD-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92377303,
+      "code": "DOD-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77754944,
+      "code": "DOD-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

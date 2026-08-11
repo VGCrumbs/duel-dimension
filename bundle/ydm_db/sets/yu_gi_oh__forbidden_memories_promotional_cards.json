@@ -1,0 +1,29 @@
+{
+  "name": "Yu-Gi-Oh! Forbidden Memories promotional cards",
+  "code": "FMR",
+  "type": "Booster Pack (2002)",
+  "date": "25-11-2002",
+  "image": "https://ygoprodeck.com/pics_sets/FMR.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 64335805,
+      "code": "FMR-001",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 52040216,
+      "code": "FMR-002",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68540059,
+      "code": "FMR-003",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

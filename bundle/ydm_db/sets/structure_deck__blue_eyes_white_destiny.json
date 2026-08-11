@@ -1,0 +1,298 @@
+{
+  "name": "Structure Deck: Blue-Eyes White Destiny",
+  "code": "SDWD",
+  "type": "Structure Deck",
+  "date": "13-02-2025",
+  "image": "https://ygoprodeck.com/pics_sets/SDWD.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 89631139,
+      "code": "SDWD-EN001",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 89631139,
+      "code": "SDWD-EN002",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 89631139,
+      "code": "SDWD-EN003",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 54332792,
+      "code": "SDWD-EN004",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38517737,
+      "code": "SDWD-EN005",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 30576089,
+      "code": "SDWD-EN006",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 64202399,
+      "code": "SDWD-EN007",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 45467446,
+      "code": "SDWD-EN008",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 55410871,
+      "code": "SDWD-EN009",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 20654247,
+      "code": "SDWD-EN010",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 79814787,
+      "code": "SDWD-EN011",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 71039903,
+      "code": "SDWD-EN012",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 8240199,
+      "code": "SDWD-EN013",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 45644898,
+      "code": "SDWD-EN014",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 66961194,
+      "code": "SDWD-EN015",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 27204311,
+      "code": "SDWD-EN016",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 14558127,
+      "code": "SDWD-EN017",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 97268402,
+      "code": "SDWD-EN018",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 17725109,
+      "code": "SDWD-EN019",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21082832,
+      "code": "SDWD-EN020",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 71143015,
+      "code": "SDWD-EN021",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 48800175,
+      "code": "SDWD-EN022",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24382602,
+      "code": "SDWD-EN023",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 17655904,
+      "code": "SDWD-EN024",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 38120068,
+      "code": "SDWD-EN025",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24224830,
+      "code": "SDWD-EN026",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 43219114,
+      "code": "SDWD-EN027",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62089826,
+      "code": "SDWD-EN028",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 56920308,
+      "code": "SDWD-EN029",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 22634473,
+      "code": "SDWD-EN030",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 10045474,
+      "code": "SDWD-EN031",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 16699558,
+      "code": "SDWD-EN032",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 42097666,
+      "code": "SDWD-EN033",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56532353,
+      "code": "SDWD-EN035",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 2129638,
+      "code": "SDWD-EN036",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11443677,
+      "code": "SDWD-EN037",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 59822133,
+      "code": "SDWD-EN038",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 40908371,
+      "code": "SDWD-EN039",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24361622,
+      "code": "SDWD-EN040",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 17947697,
+      "code": "SDWD-EN041",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17947697,
+      "code": "SDWD-EN041",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17947697,
+      "code": "SDWD-EN041",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80326401,
+      "code": "SDWD-EN042",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80326401,
+      "code": "SDWD-EN042",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80326401,
+      "code": "SDWD-EN042",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89604813,
+      "code": "SDWD-EN043",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89604813,
+      "code": "SDWD-EN043",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89604813,
+      "code": "SDWD-EN043",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

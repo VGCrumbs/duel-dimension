@@ -1,0 +1,21 @@
+{
+  "id": 6696168,
+  "name": "Festiballoon",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card battles a monster, neither can be destroyed by that battle. Each time a monster declares an attack, this card gains 1000 ATK. During your Main Phase: You can make this card lose exactly 5000 ATK, and if you do, destroy all other cards on the field. You can only use this effect of \"Festiballoon\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/6696168.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 0,
+  "species": "Illusion",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "level": 8,
+  "is_tuner": false
+}

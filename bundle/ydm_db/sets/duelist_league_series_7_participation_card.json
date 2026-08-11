@@ -1,0 +1,16 @@
+{
+  "name": "Duelist League Series 7 participation card",
+  "code": "DL7",
+  "type": "Single",
+  "date": "01-04-2005",
+  "image": "https://ygoprodeck.com/pics_sets/DL7.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 15270885,
+      "code": "DL7-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

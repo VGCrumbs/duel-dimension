@@ -1,0 +1,21 @@
+{
+  "id": 43143567,
+  "name": "Fallen Angel of the Golden Land",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "\"Eldlich the Golden Lord\" + 1 Zombie monster\r\nMust be either Fusion Summoned, or Special Summoned (from your Extra Deck) by Tributing 1 LIGHT Zombie monster, while you have \"Eldlich the Golden Lord\" in your field or GY. You can only Special Summon \"Fallen Angel of the Golden Land\" once per turn this way, no matter which method you use. If this card is sent from the field to the GY: You can Special Summon 1 \"Eldlich\" monster from your Deck, Extra Deck, or GY. You can only use this effect of \"Fallen Angel of the Golden Land\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/43143567.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 1800,
+  "species": "Zombie",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2500,
+  "level": 10,
+  "is_tuner": false
+}

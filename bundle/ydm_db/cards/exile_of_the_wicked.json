@@ -1,0 +1,12 @@
+{
+  "id": 26725158,
+  "name": "Exile of the Wicked",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Destroy all Fiend monsters on the field.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/26725158.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

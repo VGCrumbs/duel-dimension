@@ -1,0 +1,12 @@
+{
+  "id": 93294363,
+  "name": "Ib'al-Hecahands",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When your opponent activates a monster effect, while you control a \"Hecahands\" monster: Negate the activation, and if you do, destroy that monster, then you can Special Summon the destroyed monster to your field. You can only activate 1 \"Ib'al-Hecahands\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/93294363.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Counter"
+}

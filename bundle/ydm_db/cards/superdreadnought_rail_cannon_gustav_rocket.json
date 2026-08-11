@@ -1,0 +1,20 @@
+{
+  "id": 92359409,
+  "name": "Superdreadnought Rail Cannon Gustav Rocket",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "3 Level 10 monsters\r\nOnce per turn, you can also Xyz Summon \"Superdreadnought Rail Cannon Gustav Rocket\" by discarding 1 card and using 1 \"Superdreadnought Rail Cannon Gustav Max\" you control (transfer its materials). When your opponent activates a monster effect, while this card has material (Quick Effect): You can negate that effect, and if you do, destroy that card, then inflict 1000 damage to your opponent. You can only use this effect of \"Superdreadnought Rail Cannon Gustav Rocket\" once per turn. Once per turn, during your End Phase: Detach 1 material from this card or destroy this card.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/92359409.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 5000,
+  "species": "Machine",
+  "monster_type": "Xyz",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 3000,
+  "rank": 10
+}

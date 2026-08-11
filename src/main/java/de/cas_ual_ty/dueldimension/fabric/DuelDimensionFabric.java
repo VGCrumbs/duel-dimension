@@ -72,6 +72,46 @@ public class DuelDimensionFabric implements ModInitializer
             // persisted choice on join so this client restores its own outfit
             // and every connected client sees it too.
             de.cas_ual_ty.dueldimension.duel.outfit.WornOutfits.announce(player);
+
+            // Said once, on arrival, rather than only when a duel is refused.
+            // The engine is not ours -- this mod embeds ocgcore and plays
+            // EDOPro's card scripts -- so without that install nothing here
+            // duels, and a player deserves to learn that before they walk up to
+            // a duelist and get turned away. The message carries a clickable
+            // link because a URL someone has to retype is a URL they do not
+            // visit.
+            String missing = de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime.Paths
+                .defaults().missing();
+            if(missing != null)
+            {
+                // Evaluated against THIS machine's filesystem, which is the
+                // server's. On a dedicated server the message says so, rather
+                // than telling a guest to install something on their own
+                // computer that would not help.
+                player.sendSystemMessage(
+                    de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime
+                        .requirementMessage(missing,
+                            de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime
+                                .hostedElsewhere(player)));
+            }
+
+            // And the other half of "why is nothing working": the card
+            // database. Without it every card the server sends is an id this
+            // side cannot resolve, which shows up as a world full of unknown
+            // cards rather than as an error. Same reasoning about whose machine
+            // it is -- this is the server's database.
+            String database = de.cas_ual_ty.dueldimension.DdDatabase.problem();
+            if(database != null)
+            {
+                boolean elsewhere = de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime
+                    .hostedElsewhere(player);
+                player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                    (elsewhere ? "This server has no card database: " : "Duel Dimension has no card database: ")
+                        + database + ". "
+                        + (elsewhere ? "Whoever runs it has to fix that; " : "")
+                        + "until then every card is an unknown card.")
+                    .withStyle(net.minecraft.ChatFormatting.RED));
+            }
         });
 
         // A leaving player is released by everything that was holding them.
@@ -117,6 +157,15 @@ public class DuelDimensionFabric implements ModInitializer
         // A user agent, before any HTTP happens. Requests without one are
         // refused by the host the database comes from.
         de.cas_ual_ty.dueldimension.util.DdIOUtil.setAgent();
+
+        // The rules engine this jar carries, unpacked beside the game so the
+        // engine can read it -- nothing in ocgcore's reading path can see inside
+        // a jar. Started here rather than waited on: it runs on its own thread
+        // and overlaps the database download below, which is the other thing a
+        // first run waits for, and the engine itself is not loaded until a duel
+        // is requested. It writes nothing at all on a machine that already has
+        // EDOPro; see EngineBundle.install().
+        de.cas_ual_ty.dueldimension.ocg.session.EngineBundle.beginInstall();
 
         // The card database: check the local version against the remote one,
         // download it if it is missing or stale, then read every card into

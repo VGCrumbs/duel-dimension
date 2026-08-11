@@ -1,0 +1,131 @@
+{
+  "name": "Demo Pack",
+  "code": "DEM1",
+  "type": "Booster Pack (2011)",
+  "date": "12-02-2011",
+  "image": "https://ygoprodeck.com/pics_sets/DEM1.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 70781052,
+      "code": "DEM1-EN001",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11321183,
+      "code": "DEM1-EN002",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 37265642,
+      "code": "DEM1-EN003",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 69247929,
+      "code": "DEM1-EN004",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 54652250,
+      "code": "DEM1-EN005",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 21015833,
+      "code": "DEM1-EN006",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 66362965,
+      "code": "DEM1-EN007",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 2460565,
+      "code": "DEM1-EN008",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 74131780,
+      "code": "DEM1-EN009",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 69579761,
+      "code": "DEM1-EN010",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 69303178,
+      "code": "DEM1-EN011",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 51196174,
+      "code": "DEM1-EN012",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 66788016,
+      "code": "DEM1-EN013",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 70368879,
+      "code": "DEM1-EN014",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 95281259,
+      "code": "DEM1-EN015",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 57882509,
+      "code": "DEM1-EN016",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 27053506,
+      "code": "DEM1-EN017",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 36361633,
+      "code": "DEM1-EN018",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 78211862,
+      "code": "DEM1-EN019",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 60306104,
+      "code": "DEM1-EN020",
+      "rarity": "Common",
+      "image_index": 0
+    }
+  ]
+}

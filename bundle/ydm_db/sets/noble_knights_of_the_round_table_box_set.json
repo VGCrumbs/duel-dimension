@@ -1,0 +1,275 @@
+{
+  "name": "Noble Knights of the Round Table Box Set",
+  "code": "NKRT",
+  "type": "Booster Pack (2014)",
+  "date": "20-11-2014",
+  "image": "https://ygoprodeck.com/pics_sets/NKRT.jpg",
+  "pull_type": "distribution",
+  "distribution": "composition_platinum_rare",
+  "cards": [
+    {
+      "id": 3580032,
+      "code": "NKRT-EN001",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30575681,
+      "code": "NKRT-EN002",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92125819,
+      "code": "NKRT-EN003",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19680539,
+      "code": "NKRT-EN004",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95772051,
+      "code": "NKRT-EN005",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59057152,
+      "code": "NKRT-EN006",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13391185,
+      "code": "NKRT-EN007",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53550467,
+      "code": "NKRT-EN008",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 47120245,
+      "code": "NKRT-EN009",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 73359475,
+      "code": "NKRT-EN010",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93085839,
+      "code": "NKRT-EN011",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19748583,
+      "code": "NKRT-EN012",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10736540,
+      "code": "NKRT-EN013",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37742478,
+      "code": "NKRT-EN014",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 15767889,
+      "code": "NKRT-EN015",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6351548,
+      "code": "NKRT-EN016",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 66970385,
+      "code": "NKRT-EN017",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 55742055,
+      "code": "NKRT-EN018",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14745409,
+      "code": "NKRT-EN019",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 83438826,
+      "code": "NKRT-EN020",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23562407,
+      "code": "NKRT-EN021",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7452945,
+      "code": "NKRT-EN022",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46008667,
+      "code": "NKRT-EN023",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53129443,
+      "code": "NKRT-EN024",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 72302403,
+      "code": "NKRT-EN025",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32807846,
+      "code": "NKRT-EN026",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14087893,
+      "code": "NKRT-EN027",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81439173,
+      "code": "NKRT-EN028",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 98847704,
+      "code": "NKRT-EN029",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25067275,
+      "code": "NKRT-EN030",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 82140600,
+      "code": "NKRT-EN031",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97077563,
+      "code": "NKRT-EN032",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1224927,
+      "code": "NKRT-EN033",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70342110,
+      "code": "NKRT-EN034",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84749824,
+      "code": "NKRT-EN035",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 83519853,
+      "code": "NKRT-EN036",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21223277,
+      "code": "NKRT-EN037",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10613952,
+      "code": "NKRT-EN038",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97268402,
+      "code": "NKRT-EN039",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 5318639,
+      "code": "NKRT-EN040",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 75500286,
+      "code": "NKRT-EN041",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27243130,
+      "code": "NKRT-EN042",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53582587,
+      "code": "NKRT-EN043",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    },
+    {
+      "id": 94192409,
+      "code": "NKRT-EN044",
+      "rarity": "Platinum Rare",
+      "image_index": 0
+    }
+  ]
+}

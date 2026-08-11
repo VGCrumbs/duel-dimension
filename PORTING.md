@@ -511,6 +511,29 @@ follows the cursor, and the control is flat. So `FoilPipelines.MASK` then
 `FoilPipelines.FOIL` is the path, and `ADDITIVE` stays only as a fallback nobody
 needs.
 
+**But it does not reach inside a picture-in-picture pass.** Those pipelines are
+reached through `GuiGraphicsExtractor.blit`, which draws axis-aligned rectangles
+only. Anything on a turned quad goes through `FieldQuad`, which submits a
+`RenderType` rather than a `RenderPipeline` — a different road entirely — so the
+3D card preview (`cardbinder/CardPreviewScreen`) cannot use the two-pass trick
+even though it wants the same effect. It draws the same `RarityEntry.layers`, in
+the same order, as ordinary textured quads over the card mesh, with the glint's
+strength written per vertex and interpolated across each cell.
+
+That costs the cursor. The mask pass exists to localise the glint around the
+pointer on a flat card; on a card the player is already turning, the phase is
+driven by `yaw`/`pitch` instead, and `RarityLayerType.INVERTED` is honoured as
+the arithmetic complement so a `_active`/`_passive` pair crossfades rather than
+stacking two coats. Worth knowing before trying to unify the two paths: they are
+the same data and deliberately not the same draw.
+
+**And the layer art is data, not resources.** The rarity images live in
+`run/ydm_db/rarity_images/` and are served through `DdCardResourcePack`, so they
+will not appear under `src/main/resources` and grepping there for them finds
+nothing. `run/ydm_db/rarities/*.json` defines which layers each rarity stacks.
+Ask `DdDatabase.getRarity(String)`; do not write a rarity table. One was written
+by hand here once and had to be deleted.
+
 ### 3. Arbitrary quads — BUILT
 
 A perspective field has no axis-aligned rectangles in it. The GUI can only blit
@@ -576,6 +599,80 @@ one.
 
 ## Decisions
 
+- **The jar carries the rules engine, and unpacks only the pieces the machine
+  is actually missing.** `EngineBundle` writes `<gamedir>/dueldimension_engine/`
+  from resources in the jar; `EngineRuntime.Paths` resolves each piece
+  independently as *override → discovered EDOPro → bundle → relative fallback*.
+  Three things about it are not obvious. **(1) It has to be unpacked at all**
+  because none of the three readers can see a classpath resource:
+  `cardScriptsDirectory` is `Files.readAllBytes` over a `Path`, `Sqlite.open`
+  builds a `jdbc:sqlite:` URL that the driver opens as a real file, and JNA is
+  handed an absolute path — so "just read it from the jar" is not available even
+  though JNA *could* extract a native by itself. **(2) The 12,727 card scripts
+  are one jar entry, not 12,727.** A jar's directories cannot be listed through
+  a classloader, so per-file packaging would need an index naming every script
+  (which is exactly why the bundled card extras have one); a single `script.zip`
+  streams straight out instead, and it also came out **1.27 MB smaller** than
+  the same files as individual entries, because 12,727 zip headers are not
+  free. **(3) The unpack is per piece.** The common Windows machine has EDOPro
+  with a 32-bit core under a 64-bit JVM: it takes the core from the bundle
+  (1.5 MB) and scripts, database and strings from EDOPro, and never writes the
+  28 MB script tree. `EngineBundle.usable()` has to test `isRegularFile` before
+  asking `NativeArchitecture.loadableHere`, which answers "is there a mismatch I
+  can prove" and so calls a core that is *absent* loadable — that alone made a
+  fresh install decide it needed nothing.
+- **The bundle stamps its own version, because nothing upstream has one.**
+  `PRAGMA user_version` on `cards.cdb` is 0, there is no `.git` under `script/`,
+  and a card script says only its name and its author; EDOPro's version *is* a
+  DeltaBagooska commit. So `engineBundleStamp` hashes the content of everything
+  shipped into `dueldimension_engine/bundle.properties`, the unpacked tree keeps
+  the same value in `.bundle`, and the two are compared on start. The stamp is
+  written **last**, so an interrupted unpack reads as unfinished rather than as
+  current. The `Zip` task sets `preserveFileTimestamps = false` and
+  `reproducibleFileOrder = true` for the same reason — otherwise every build
+  would produce a new hash and every player would re-unpack 28 MB for nothing.
+  Do **not** copy `installBundledExtras`'s byte-comparison freshness check here:
+  at 12,702 files it re-reads 28 MB from disk on every launch. **The cheap
+  substitute for it is worse than either.** `unpackScripts` first skipped any
+  file whose size already matched the zip entry's, which sounds free and is
+  wrong twice over: `ZipInputStream.getSize()` is populated for every one of
+  these 12,727 entries, so the branch is live, and a script whose next revision
+  is the same length as this one would never be written. It was proved rather
+  than argued — one `official/c10000.lua` overwritten with 1,636 dashes, then
+  the repair `README.md` tells a player to perform (delete `.bundle`), which
+  reported `unpacked cdb, strings, library, scripts -- 3 files` and left every
+  dash in place. The tree is therefore decided **as a whole, by the stamp**:
+  current means nothing is written, stale means all 12,727 files are. That still
+  reads nothing off the disk, so the objection above is untouched.
+- **The banlists are the one thing not bundled, and it is a licence answer, not
+  a size one.** `ProjectIgnis/LFLists` has no licence file — GitHub's licence
+  API returns 404 and the repository root holds only `.gitattributes` and the
+  `.lflist.conf` files. `cards.cdb` is in the same position at its *authoring*
+  repository (BabelCDB, also unlicensed) but is rescued by the repositories it
+  is *distributed* from (DeltaPuppetOfStrings, DeltaBagooska — both carry the
+  AGPL, sha `0ad25db4…`); LFLists has no such chain, because EDOPro fetches it
+  directly. So `Banlists` keeps discovering them and offering "No banlist".
+- **Looking through your own deck mid-duel is a deliberate departure from
+  EDOPro, and the randomisation is what makes it defensible.** The reference
+  refuses the deck browser outside single mode (`gframe/event_handler.cpp`:
+  `if(hovered_location == LOCATION_DECK && !mainGame->dInfo.isSingleMode) break;`)
+  and when it does open one it shows TRUE ORDER, top-first
+  (`display_cards.assign(deck[player].crbegin(), deck[player].crend())`). So
+  there is no parity to port here. What ships instead: `BoardObserver.ownDeck()`
+  queries `LOCATION_DECK` with `QueryParser.DECK_FLAGS` (passcode + cover only —
+  `BOARD_FLAGS` would drag in QUERY_EQUIP_CARD, a loc_info of controller,
+  location and *sequence*) and sorts the result canonically **inside the call
+  frame that asked for it**, so no true-ordered deck list exists anywhere else
+  to be forwarded by mistake. That matters because the query is bottom-first
+  (`ocgapi.cpp` walks `list_main` front to back) while the draw pops
+  `list_main.back()` — the last element of a raw query *is* the next draw.
+  `DuelistDuels.shuffledDeckList` then shuffles a **copy** with a fresh
+  `SecureRandom` (never the duel seed, which is what the core shuffled the real
+  deck with) and sends it to one recipient. The request carries no payload at
+  all, so the seat is the sender's and there is nothing to validate; the wire
+  form is two varint arrays rather than `BoardSnapshot.Slot`, because a Slot has
+  fields that *can* encode a position and a field that is not on the wire cannot
+  be filled in later by an edit that looks like tidying up.
 - **Duel rewards are a server-owned assessment, not a client animation or a
   flat outcome constant.** `DuelRewardTracker` consumes the same absolute,
   ordered OCGCore stream the server already drains, and `DuelReward` is a pure

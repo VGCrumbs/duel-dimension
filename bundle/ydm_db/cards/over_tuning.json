@@ -1,0 +1,12 @@
+{
+  "id": 613496,
+  "name": "Over Tuning",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you control a Tuner: Special Summon 1 Tuner from your hand, Deck, or GY, also you cannot Special Summon from the Extra Deck for the rest of this turn after this card resolves, except Synchro Monsters. You can only activate 1 \"Over Tuning\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/613496.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

@@ -1,0 +1,641 @@
+{
+  "name": "Crossover Breakers",
+  "code": "CRBR",
+  "type": "Booster Pack (2024)",
+  "date": "05-12-2024",
+  "image": "https://ygoprodeck.com/pics_sets/CRBR.jpg",
+  "pull_type": "distribution",
+  "distribution": "genesis_impact",
+  "cards": [
+    {
+      "id": 35844557,
+      "code": "CRBR-EN001",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35844557,
+      "code": "CRBR-EN001",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35844557,
+      "code": "CRBR-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 72238166,
+      "code": "CRBR-EN002",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 72238166,
+      "code": "CRBR-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 8633261,
+      "code": "CRBR-EN003",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 8633261,
+      "code": "CRBR-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34022970,
+      "code": "CRBR-EN004",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34022970,
+      "code": "CRBR-EN004",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34022970,
+      "code": "CRBR-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 61116514,
+      "code": "CRBR-EN005",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 61116514,
+      "code": "CRBR-EN005",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7511613,
+      "code": "CRBR-EN006",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7511613,
+      "code": "CRBR-EN006",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7511613,
+      "code": "CRBR-EN006",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34909328,
+      "code": "CRBR-EN007",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34909328,
+      "code": "CRBR-EN007",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34909328,
+      "code": "CRBR-EN007",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60394026,
+      "code": "CRBR-EN008",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60394026,
+      "code": "CRBR-EN008",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6798031,
+      "code": "CRBR-EN009",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6798031,
+      "code": "CRBR-EN009",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33787730,
+      "code": "CRBR-EN010",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33787730,
+      "code": "CRBR-EN010",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33787730,
+      "code": "CRBR-EN010",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 94380860,
+      "code": "CRBR-EN011",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 94380860,
+      "code": "CRBR-EN011",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21044178,
+      "code": "CRBR-EN012",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6983839,
+      "code": "CRBR-EN013",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6983839,
+      "code": "CRBR-EN013",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 55285840,
+      "code": "CRBR-EN014",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69272449,
+      "code": "CRBR-EN015",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69272449,
+      "code": "CRBR-EN015",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69272449,
+      "code": "CRBR-EN015",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 96676583,
+      "code": "CRBR-EN016",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 96676583,
+      "code": "CRBR-EN016",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32061192,
+      "code": "CRBR-EN017",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32061192,
+      "code": "CRBR-EN017",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68059897,
+      "code": "CRBR-EN018",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68059897,
+      "code": "CRBR-EN018",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95454996,
+      "code": "CRBR-EN019",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95454996,
+      "code": "CRBR-EN019",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21848500,
+      "code": "CRBR-EN020",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21848500,
+      "code": "CRBR-EN020",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21848500,
+      "code": "CRBR-EN020",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68337209,
+      "code": "CRBR-EN021",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68337209,
+      "code": "CRBR-EN021",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68337209,
+      "code": "CRBR-EN021",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 94722358,
+      "code": "CRBR-EN022",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 94722358,
+      "code": "CRBR-EN022",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 94722358,
+      "code": "CRBR-EN022",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 20726052,
+      "code": "CRBR-EN023",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 20726052,
+      "code": "CRBR-EN023",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57111661,
+      "code": "CRBR-EN024",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 18789533,
+      "code": "CRBR-EN025",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92998610,
+      "code": "CRBR-EN026",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 66403530,
+      "code": "CRBR-EN027",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1475311,
+      "code": "CRBR-EN028",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 43839002,
+      "code": "CRBR-EN029",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81674782,
+      "code": "CRBR-EN030",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93509766,
+      "code": "CRBR-EN031",
+      "rarity": "Collector's Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93509766,
+      "code": "CRBR-EN031",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 20904475,
+      "code": "CRBR-EN032",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56499179,
+      "code": "CRBR-EN033",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92487128,
+      "code": "CRBR-EN034",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92487128,
+      "code": "CRBR-EN034",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29882827,
+      "code": "CRBR-EN035",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29882827,
+      "code": "CRBR-EN035",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 55276522,
+      "code": "CRBR-EN036",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 82661630,
+      "code": "CRBR-EN037",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 82661630,
+      "code": "CRBR-EN037",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 28669235,
+      "code": "CRBR-EN038",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 28669235,
+      "code": "CRBR-EN038",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 55154344,
+      "code": "CRBR-EN039",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 55154344,
+      "code": "CRBR-EN039",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81549048,
+      "code": "CRBR-EN040",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81549048,
+      "code": "CRBR-EN040",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23401839,
+      "code": "CRBR-EN041",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23401839,
+      "code": "CRBR-EN041",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97526666,
+      "code": "CRBR-EN042",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97526666,
+      "code": "CRBR-EN042",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 66523544,
+      "code": "CRBR-EN043",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57282724,
+      "code": "CRBR-EN044",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38331564,
+      "code": "CRBR-EN045",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 91110378,
+      "code": "CRBR-EN046",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38273745,
+      "code": "CRBR-EN047",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38273745,
+      "code": "CRBR-EN047",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46772449,
+      "code": "CRBR-EN048",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46772449,
+      "code": "CRBR-EN048",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 5821478,
+      "code": "CRBR-EN049",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32617464,
+      "code": "CRBR-EN050",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 72529749,
+      "code": "CRBR-EN051",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 98159737,
+      "code": "CRBR-EN052",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97036149,
+      "code": "CRBR-EN053",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23431858,
+      "code": "CRBR-EN054",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 87052196,
+      "code": "CRBR-EN055",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32519092,
+      "code": "CRBR-EN056",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32519092,
+      "code": "CRBR-EN056",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70950698,
+      "code": "CRBR-EN057",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70950698,
+      "code": "CRBR-EN057",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6622715,
+      "code": "CRBR-EN058",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6622715,
+      "code": "CRBR-EN058",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79016563,
+      "code": "CRBR-EN059",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70238111,
+      "code": "CRBR-EN060",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70238111,
+      "code": "CRBR-EN060",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

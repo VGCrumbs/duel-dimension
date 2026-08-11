@@ -1,0 +1,35 @@
+{
+  "name": "Remote Duel at Home Sweepstakes",
+  "code": "SBPR",
+  "type": "Booster Pack (2020)",
+  "date": "01-10-2020",
+  "image": "https://ygoprodeck.com/pics_sets/SBPR.jpg",
+  "pull_type": "distribution",
+  "distribution": "the_dark_side_of_dimensions_movie_pack_secret_edition__pack",
+  "cards": [
+    {
+      "id": 56747793,
+      "code": "SBPR-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68007326,
+      "code": "SBPR-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38517737,
+      "code": "SBPR-EN003",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 71703785,
+      "code": "SBPR-EN004",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

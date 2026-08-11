@@ -1,0 +1,12 @@
+{
+  "id": 81560239,
+  "name": "Mitsurugi Ritual",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "This card can be used to Ritual Summon any Reptile Ritual Monster. Activate 1 of these effects (but you can only use each effect of \"Mitsurugi Ritual\" once per turn);\r\n● Ritual Summon 1 Reptile Ritual Monster from your Deck, by Tributing Reptile monsters from your hand or field whose total Levels equal the Level of the Ritual Monster.\r\n● Ritual Summon 1 Reptile Ritual Monster from your hand, by Tributing up to 2 Reptile monsters from your hand, Deck, or field, whose total Levels equal the Level of the Ritual Monster.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/81560239.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Ritual"
+}

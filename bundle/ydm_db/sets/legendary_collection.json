@@ -1,0 +1,41 @@
+{
+  "name": "Legendary Collection",
+  "code": "LC01",
+  "type": "Collector's Set",
+  "date": "01-10-2010",
+  "image": "https://ygoprodeck.com/pics_sets/LC01.jpg",
+  "pull_type": "distribution",
+  "distribution": "battles_of_legend__armageddon",
+  "cards": [
+    {
+      "id": 89631139,
+      "code": "LC01-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89631139,
+      "code": "LC01-EN004",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46986420,
+      "code": "LC01-EN005",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74677427,
+      "code": "LC01-EN006",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74677427,
+      "code": "LC01-EN006",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

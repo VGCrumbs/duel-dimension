@@ -1,0 +1,131 @@
+{
+  "name": "Duelist League 17 participation cards",
+  "code": "DL17",
+  "type": "Booster Pack (2013)",
+  "date": "13-12-2013",
+  "image": "https://ygoprodeck.com/pics_sets/DL17.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack",
+  "cards": [
+    {
+      "id": 17985575,
+      "code": "DL17-EN001",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 48229808,
+      "code": "DL17-EN002",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37267041,
+      "code": "DL17-EN003",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6849042,
+      "code": "DL17-EN004",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92826944,
+      "code": "DL17-EN005",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40348946,
+      "code": "DL17-EN006",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 75498415,
+      "code": "DL17-EN007",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 20932152,
+      "code": "DL17-EN008",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85718645,
+      "code": "DL17-EN009",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1546123,
+      "code": "DL17-EN010",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97204936,
+      "code": "DL17-EN011",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 9053187,
+      "code": "DL17-EN012",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 43973174,
+      "code": "DL17-EN013",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 2204140,
+      "code": "DL17-EN014",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4861205,
+      "code": "DL17-EN015",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 20188127,
+      "code": "DL17-EN016",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 43422537,
+      "code": "DL17-EN017",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23516703,
+      "code": "DL17-EN018",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59839761,
+      "code": "DL17-EN019",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58120309,
+      "code": "DL17-EN020",
+      "rarity": "Rare",
+      "image_index": 0
+    }
+  ]
+}

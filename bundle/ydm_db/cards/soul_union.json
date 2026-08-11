@@ -1,0 +1,12 @@
+{
+  "id": 69389481,
+  "name": "Soul Union",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Target 1 face-up monster on the field and 1 \"Elemental HERO\" monster in your GY; that target on the field gains ATK equal to the other target's ATK (until the end of this turn), then if you have an \"Elemental HERO\" Normal Monster in your field or GY (except during the Damage Step), you can Fusion Summon 1 \"Elemental HERO\" Fusion Monster from your Extra Deck, by banishing its materials from your GY. You can only activate 1 \"Soul Union\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/69389481.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

@@ -1,0 +1,21 @@
+{
+  "id": 71411377,
+  "name": "Queen's Bodyguard",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "\"Allure Queen\" monsters on your side of the field cannot be selected as an attack target.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/71411377.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 1700,
+  "species": "Warrior",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1200,
+  "level": 4,
+  "is_tuner": false
+}

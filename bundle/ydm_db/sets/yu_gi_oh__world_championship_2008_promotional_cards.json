@@ -1,0 +1,29 @@
+{
+  "name": "Yu-Gi-Oh! World Championship 2008 promotional cards",
+  "code": "WC08",
+  "type": "Booster Pack (2007)",
+  "date": "04-12-2007",
+  "image": "https://ygoprodeck.com/pics_sets/WC08.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 17559367,
+      "code": "WC08-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44947065,
+      "code": "WC08-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70342110,
+      "code": "WC08-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

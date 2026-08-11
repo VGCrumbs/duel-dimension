@@ -1,0 +1,21 @@
+{
+  "id": 60946049,
+  "name": "Artmage Graflare",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "The first time this card would be destroyed by battle each turn, it is not destroyed. You can only use each of the following effects of \"Artmage Graflare\" once per turn. If you control an \"Artmage\" card: You can Special Summon this card from your hand, then you can Set 1 \"Artmage\" Spell from your Deck. You can target 1 Spell/Trap your opponent controls; destroy it. This is a Quick Effect if you have 3 or more different Monster Types on your field.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/60946049.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 2100,
+  "species": "Dragon",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1500,
+  "level": 5,
+  "is_tuner": false
+}

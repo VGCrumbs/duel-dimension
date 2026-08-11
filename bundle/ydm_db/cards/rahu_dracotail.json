@@ -1,0 +1,12 @@
+{
+  "id": 32548318,
+  "name": "Rahu Dracotail",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Fusion Summon 1 \"Dracotail\" monster from your Extra Deck, using monsters from your hand, Deck, or field, also for the rest of this turn after this card resolves, you cannot Special Summon from the Extra Deck, except Fusion Monsters. You can only activate 1 \"Rahu Dracotail\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/32548318.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

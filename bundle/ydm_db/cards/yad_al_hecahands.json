@@ -1,0 +1,12 @@
+{
+  "id": 29792472,
+  "name": "Yad'al-Hecahands",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When your opponent activates a Spell/Trap Card, while you control a \"Hecahands\" monster: Negate the activation, and if you do, destroy that card, then you can Set the destroyed Spell/Trap to your field. You can only activate 1 \"Yad'al-Hecahands\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/29792472.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Counter"
+}

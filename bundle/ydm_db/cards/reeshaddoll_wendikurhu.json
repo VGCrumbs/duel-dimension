@@ -1,0 +1,21 @@
+{
+  "id": 8852158,
+  "name": "Reeshaddoll Wendikurhu",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 \"Shaddoll\" monster + 1 WIND monster\r\nMust first be Fusion Summoned. (Quick Effect): You can change any number of face-down monsters on the field to face-up Defense Position, then you can change other face-up monsters on the field to face-down Defense Position up to the number of Flip monsters flipped face-up. You can only use this effect of \"Reeshaddoll Wendikurhu\" once per turn. If this card is sent to the GY: You can target 1 \"Shaddoll\" card in your GY; add it to your hand.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/8852158.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WIND",
+  "atk": 200,
+  "species": "Psychic",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2800,
+  "level": 6,
+  "is_tuner": false
+}

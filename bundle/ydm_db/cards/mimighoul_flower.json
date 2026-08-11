@@ -1,0 +1,21 @@
+{
+  "id": 82933935,
+  "name": "Mimighoul Flower",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "FLIP: If it is the Main Phase: Apply these effects in sequence.\r\n● Your opponent can add 1 Flip monster or 1 \"Mimighoul\" card from their Deck to their hand.\r\n● Give control of this card to your opponent.\r\nDuring your Main Phase: You can Special Summon this card from your hand to your opponent's field in face-down Defense Position, or if a face-down monster is on the field, you can Special Summon this card face-up on your field. You can only use each effect of \"Mimighoul Flower\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/82933935.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 0,
+  "species": "Plant",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "Flip",
+  "has_effect": true,
+  "def": 2100,
+  "level": 1,
+  "is_tuner": false
+}

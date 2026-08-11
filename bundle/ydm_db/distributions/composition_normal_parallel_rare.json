@@ -1,0 +1,16 @@
+{
+  "name": "composition_normal_parallel_rare",
+  "pulls": [
+    {
+      "weight": 4,
+      "entries": [
+        {
+          "count": 1,
+          "rarities": [
+            "Normal Parallel Rare"
+          ]
+        }
+      ]
+    }
+  ]
+}

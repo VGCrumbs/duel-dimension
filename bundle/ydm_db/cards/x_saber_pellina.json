@@ -1,0 +1,21 @@
+{
+  "id": 9978697,
+  "name": "X-Saber Pellina",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is Normal or Special Summoned: You can send it to the GY; Special Summon 2 \"X-Saber\" monsters from your Deck, except \"X-Saber Pellina\", but destroy them during the End Phase. If this card is sent to the GY as Synchro Material for an \"X-Saber\" monster: You can apply 1 of these effects.\r\n● That monster can make a second attack during each Battle Phase.\r\n● That monster can attack directly.\r\nYou can only use each effect of \"X-Saber Pellina\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/9978697.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 1700,
+  "species": "Beast-Warrior",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 300,
+  "level": 4,
+  "is_tuner": true
+}

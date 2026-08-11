@@ -1,0 +1,12 @@
+{
+  "id": 24623598,
+  "name": "Disappear",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Remove from play 1 card from your opponent's Graveyard.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/24623598.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

@@ -1,0 +1,21 @@
+{
+  "id": 35844557,
+  "name": "Sword Ryzeal",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you have a \"Ryzeal\" monster in your field or GY, you can Special Summon this card (from your hand). If Summoned this way, you cannot Special Summon from the Extra Deck for the rest of this turn, except Rank 4 Xyz Monsters. You can only Special Summon \"Sword Ryzeal\" once per turn this way. If this card is Normal or Special Summoned: You can add 1 LIGHT Pyro monster from your Deck to your hand. You can only use this effect of \"Sword Ryzeal\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/35844557.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "FIRE",
+  "atk": 1500,
+  "species": "Thunder",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 200,
+  "level": 4,
+  "is_tuner": false
+}

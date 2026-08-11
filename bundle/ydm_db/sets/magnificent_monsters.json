@@ -1,0 +1,335 @@
+{
+  "name": "Magnificent Monsters",
+  "code": "MAMO",
+  "type": "Booster Pack (2026)",
+  "date": "04-09-2026",
+  "image": "https://ygoprodeck.com/pics_sets/MAMO.jpg",
+  "pull_type": "distribution",
+  "distribution": "magnificent_monsters",
+  "cards": [
+    {
+      "id": 88570003,
+      "code": "MAMO-EN001",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 88570003,
+      "code": "MAMO-EN001",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 88570003,
+      "code": "MAMO-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14965712,
+      "code": "MAMO-EN002",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14965712,
+      "code": "MAMO-EN002",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14965712,
+      "code": "MAMO-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 41350417,
+      "code": "MAMO-EN003",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 41350417,
+      "code": "MAMO-EN003",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 41350417,
+      "code": "MAMO-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 87758525,
+      "code": "MAMO-EN004",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 87758525,
+      "code": "MAMO-EN004",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 87758525,
+      "code": "MAMO-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13243124,
+      "code": "MAMO-EN005",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13243124,
+      "code": "MAMO-EN005",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13243124,
+      "code": "MAMO-EN005",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40237839,
+      "code": "MAMO-EN006",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40237839,
+      "code": "MAMO-EN006",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40237839,
+      "code": "MAMO-EN006",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76636978,
+      "code": "MAMO-EN007",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76636978,
+      "code": "MAMO-EN007",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76636978,
+      "code": "MAMO-EN007",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13021682,
+      "code": "MAMO-EN008",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13021682,
+      "code": "MAMO-EN008",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13021682,
+      "code": "MAMO-EN008",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 49415281,
+      "code": "MAMO-EN009",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 49415281,
+      "code": "MAMO-EN009",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 49415281,
+      "code": "MAMO-EN009",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76504386,
+      "code": "MAMO-EN010",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76504386,
+      "code": "MAMO-EN010",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76504386,
+      "code": "MAMO-EN010",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 12908094,
+      "code": "MAMO-EN011",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 12908094,
+      "code": "MAMO-EN011",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 12908094,
+      "code": "MAMO-EN011",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 48393693,
+      "code": "MAMO-EN012",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 48393693,
+      "code": "MAMO-EN012",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 48393693,
+      "code": "MAMO-EN012",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 75787708,
+      "code": "MAMO-EN013",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 75787708,
+      "code": "MAMO-EN013",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 75787708,
+      "code": "MAMO-EN013",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1186447,
+      "code": "MAMO-EN014",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1186447,
+      "code": "MAMO-EN014",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1186447,
+      "code": "MAMO-EN014",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 48171151,
+      "code": "MAMO-EN015",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 48171151,
+      "code": "MAMO-EN015",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 48171151,
+      "code": "MAMO-EN015",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74665150,
+      "code": "MAMO-EN016",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74665150,
+      "code": "MAMO-EN016",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74665150,
+      "code": "MAMO-EN016",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 64865,
+      "code": "MAMO-EN017",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 64865,
+      "code": "MAMO-EN017",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 64865,
+      "code": "MAMO-EN017",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37458564,
+      "code": "MAMO-EN018",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37458564,
+      "code": "MAMO-EN018",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37458564,
+      "code": "MAMO-EN018",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

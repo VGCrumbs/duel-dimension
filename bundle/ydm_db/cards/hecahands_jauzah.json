@@ -1,0 +1,21 @@
+{
+  "id": 67021206,
+  "name": "Hecahands Jauzah",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 \"Hecahands\" monster + 1 Illusion monster\r\nMust first be either Fusion Summoned, or Special Summoned (from your Extra Deck) by Tributing 2 monsters you control (1 face-up monster owned by your opponent and 1 Illusion monster). If this card battles a monster, neither can be destroyed by that battle. During your Main Phase: You can add 1 \"Hecahands\" card from your Deck or GY to your hand. You can only use this effect of \"Hecahands Jauzah\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/67021206.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 2400,
+  "species": "Illusion",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2500,
+  "level": 8,
+  "is_tuner": false
+}

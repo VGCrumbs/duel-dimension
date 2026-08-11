@@ -1,0 +1,12 @@
+{
+  "id": 49721684,
+  "name": "Mitsurugi Mirror",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "This card can be used to Ritual Summon any Reptile Ritual Monster from your hand or GY. You must also Tribute Reptile monsters from your hand or field whose total Levels equal or exceed the Level of the Ritual Monster. If \"Ame no Murakumo no Mitsurugi\", \"Futsu no Mitama no Mitsurugi\", or \"Ame no Habakiri no Mitsurugi\" you control is Tributed, while this card is in your GY: You can shuffle this card into the Deck. You can only use each effect of \"Mitsurugi Mirror\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/49721684.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Ritual"
+}

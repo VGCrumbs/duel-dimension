@@ -1,0 +1,47 @@
+{
+  "name": "Yu-Gi-Oh! The Falsebound Kingdom promotional cards",
+  "code": "TFK",
+  "type": "Booster Pack (2003)",
+  "date": "04-11-2003",
+  "image": "https://ygoprodeck.com/pics_sets/TFK.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 24311372,
+      "code": "TFK-001",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50705071,
+      "code": "TFK-002",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4149689,
+      "code": "TFK-003",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 45425051,
+      "code": "TFK-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79853073,
+      "code": "TFK-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 78636495,
+      "code": "TFK-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

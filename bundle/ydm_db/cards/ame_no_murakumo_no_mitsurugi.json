@@ -1,0 +1,21 @@
+{
+  "id": 19899073,
+  "name": "Ame no Murakumo no Mitsurugi",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can Ritual Summon this card with \"Mitsurugi Ritual\". If this card is Special Summoned: You can destroy all monsters your opponent controls. When your opponent activates a card or effect (Quick Effect): You can activate this effect; your opponent can discard 1 card, or that effect is negated. If this card is Tributed: You can add 1 \"Mitsurugi\" card from your Deck to your hand, except \"Ame no Murakumo no Mitsurugi\", then you can Special Summon this card. You can only use each effect of \"Ame no Murakumo no Mitsurugi\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/19899073.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 3200,
+  "species": "Reptile",
+  "monster_type": "Ritual",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 800,
+  "level": 8,
+  "is_tuner": false
+}

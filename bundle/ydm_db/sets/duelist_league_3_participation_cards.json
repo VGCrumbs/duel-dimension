@@ -1,0 +1,131 @@
+{
+  "name": "Duelist League 3 participation cards",
+  "code": "DL12",
+  "type": "Booster Pack (2011)",
+  "date": "01-06-2011",
+  "image": "https://ygoprodeck.com/pics_sets/DL12.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack",
+  "cards": [
+    {
+      "id": 89943723,
+      "code": "DL12-EN001",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60806437,
+      "code": "DL12-EN002",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95178994,
+      "code": "DL12-EN003",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57839750,
+      "code": "DL12-EN004",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77585513,
+      "code": "DL12-EN005",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 73431236,
+      "code": "DL12-EN006",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 26205777,
+      "code": "DL12-EN007",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57116033,
+      "code": "DL12-EN008",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38280762,
+      "code": "DL12-EN009",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63977008,
+      "code": "DL12-EN010",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 3897065,
+      "code": "DL12-EN011",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60800381,
+      "code": "DL12-EN012",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44656491,
+      "code": "DL12-EN013",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 96947648,
+      "code": "DL12-EN014",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85852291,
+      "code": "DL12-EN015",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76895648,
+      "code": "DL12-EN016",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 28529976,
+      "code": "DL12-EN017",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97077563,
+      "code": "DL12-EN018",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62279055,
+      "code": "DL12-EN019",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44595286,
+      "code": "DL12-EN020",
+      "rarity": "Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": 14965712,
+  "name": "Kuriboh - Multiply!",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When your opponent activates a monster effect, or an opponent's monster declares an attack (Quick Effect): You can Special Summon this card from your hand. You can only use this effect of \"Kuriboh - Multiply!\" once per turn. Once per turn, when your opponent activates a monster effect on the field, or during damage calculation when an opponent's monster attacks (Quick Effect): You can add to your hand or Special Summon, from your Deck or GY, 1 \"Dark Magician\" or 1 monster with 300 ATK/200 DEF, then you can change that opponent's monster's ATK to 0.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/14965712.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 300,
+  "species": "Fiend",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 200,
+  "level": 1,
+  "is_tuner": false
+}

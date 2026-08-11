@@ -1,0 +1,16 @@
+{
+  "name": "Yu-Gi-Oh! 5D's Volume 7 promotional card",
+  "code": "YF07",
+  "type": "Single",
+  "date": "03-03-2015",
+  "image": "https://ygoprodeck.com/pics_sets/YF07.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 33698022,
+      "code": "YF07-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Duelist League Series 10 participation card",
+  "code": "DL10",
+  "type": "Single",
+  "date": "28-04-2006",
+  "image": "https://ygoprodeck.com/pics_sets/DL10.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 20101223,
+      "code": "DL10-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

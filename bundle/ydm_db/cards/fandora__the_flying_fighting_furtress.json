@@ -1,0 +1,12 @@
+{
+  "id": 26162470,
+  "name": "Fandora, the Flying Fighting Furtress",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "(This card is always treated as a card \"Fur Hire\".)\r\nMonsters \"Fur Hire\" you control gain 300 ATK for each monster \"Fur Hire\" you control with a different name. You can only use each of the following effects of \"Fandora, the Flying Fighting Furtress\" once per turn. During your Main Phase: You can add 1 monster \"Fur Hire\" from your Deck to your hand, then discard 1 card. If a face-up monster(s) \"Fur Hire\" you control is destroyed by an opponent's card effect (except during the Damage Step): You can Special Summon 1 monster \"Fur Hire\" from your Deck.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/26162470.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Field"
+}

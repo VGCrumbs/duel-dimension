@@ -1,0 +1,29 @@
+{
+  "name": "Yu-Gi-Oh! Ultimate Masters: World Championship Tournament 2006 promotional cards",
+  "code": "WC6",
+  "type": "Booster Pack (2006)",
+  "date": "14-03-2006",
+  "image": "https://ygoprodeck.com/pics_sets/WC6.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 27408609,
+      "code": "WC6-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54493213,
+      "code": "WC6-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80887952,
+      "code": "WC6-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

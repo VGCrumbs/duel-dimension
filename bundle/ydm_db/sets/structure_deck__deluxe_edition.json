@@ -1,0 +1,13 @@
+{
+  "name": "Structure Deck: Deluxe Edition",
+  "code": "SD-DE",
+  "type": "Structure Deck",
+  "date": "01-01-2005",
+  "image": "https://ygoprodeck.com/pics_sets/SD1.jpg",
+  "pull_type": "composition",
+  "sub_sets": [
+    "SD1",
+    "SD2",
+    "SD-DE_C"
+  ]
+}

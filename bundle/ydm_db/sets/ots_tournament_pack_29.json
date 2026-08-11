@@ -1,0 +1,167 @@
+{
+  "name": "OTS Tournament Pack 29",
+  "code": "OP29",
+  "type": "OTS Tournament Pack",
+  "date": "15-10-2025",
+  "image": "https://ygoprodeck.com/pics_sets/OP29.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 28642461,
+      "code": "OP29-EN001",
+      "rarity": "Ultimate Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31603289,
+      "code": "OP29-EN002",
+      "rarity": "Ultimate Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6153210,
+      "code": "OP29-EN003",
+      "rarity": "Ultimate Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67120578,
+      "code": "OP29-EN004",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 87209160,
+      "code": "OP29-EN005",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 18176525,
+      "code": "OP29-EN006",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 18988396,
+      "code": "OP29-EN007",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19508728,
+      "code": "OP29-EN008",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4227096,
+      "code": "OP29-EN009",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31552317,
+      "code": "OP29-EN010",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 45171524,
+      "code": "OP29-EN011",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63899196,
+      "code": "OP29-EN012",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63056220,
+      "code": "OP29-EN013",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 78990927,
+      "code": "OP29-EN014",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 84569886,
+      "code": "OP29-EN015",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 72402069,
+      "code": "OP29-EN016",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 18897163,
+      "code": "OP29-EN017",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 78437364,
+      "code": "OP29-EN018",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 59644128,
+      "code": "OP29-EN019",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 99726621,
+      "code": "OP29-EN020",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 5318639,
+      "code": "OP29-EN021",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 67723438,
+      "code": "OP29-EN022",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 42199039,
+      "code": "OP29-EN023",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 55870497,
+      "code": "OP29-EN024",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 64964750,
+      "code": "OP29-EN025",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 33578406,
+      "code": "OP29-EN026",
+      "rarity": "Common",
+      "image_index": 0
+    }
+  ]
+}

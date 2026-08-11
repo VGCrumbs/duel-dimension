@@ -1,0 +1,131 @@
+{
+  "name": "McDonald's Promotional Cards 2",
+  "code": "MDP2",
+  "type": "Booster Pack (2006)",
+  "date": "22-12-2006",
+  "image": "https://ygoprodeck.com/pics_sets/MDP2.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack",
+  "cards": [
+    {
+      "id": 29343734,
+      "code": "MDP2-EN001",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 52031567,
+      "code": "MDP2-EN002",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58932615,
+      "code": "MDP2-EN003",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 20065322,
+      "code": "MDP2-EN004",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 47529357,
+      "code": "MDP2-EN005",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 73891874,
+      "code": "MDP2-EN006",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97590747,
+      "code": "MDP2-EN007",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 64271667,
+      "code": "MDP2-EN008",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 15367030,
+      "code": "MDP2-EN009",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68339286,
+      "code": "MDP2-EN010",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 94566432,
+      "code": "MDP2-EN011",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 40173854,
+      "code": "MDP2-EN012",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 86164529,
+      "code": "MDP2-EN013",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 33691040,
+      "code": "MDP2-EN014",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 86100785,
+      "code": "MDP2-EN015",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 2830619,
+      "code": "MDP2-EN016",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 42348802,
+      "code": "MDP2-EN017",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 51228280,
+      "code": "MDP2-EN018",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 45909477,
+      "code": "MDP2-EN019",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 68171737,
+      "code": "MDP2-EN020",
+      "rarity": "Common",
+      "image_index": 0
+    }
+  ]
+}

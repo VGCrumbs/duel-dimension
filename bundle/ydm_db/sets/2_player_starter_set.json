@@ -1,0 +1,268 @@
+{
+  "name": "2-Player Starter Set",
+  "code": "STAX",
+  "type": "Starter Deck",
+  "date": "26-01-2024",
+  "image": "https://ygoprodeck.com/pics_sets/STAX.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 25652259,
+      "code": "STAX-EN001",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 13039848,
+      "code": "STAX-EN002",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 97590747,
+      "code": "STAX-EN003",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 95788410,
+      "code": "STAX-EN004",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 42941100,
+      "code": "STAX-EN006",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 50005633,
+      "code": "STAX-EN007",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 38120068,
+      "code": "STAX-EN008",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 60306104,
+      "code": "STAX-EN009",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 43250041,
+      "code": "STAX-EN010",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 1571945,
+      "code": "STAX-EN011",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 63391643,
+      "code": "STAX-EN012",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 23265313,
+      "code": "STAX-EN013",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 97077563,
+      "code": "STAX-EN014",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 70095154,
+      "code": "STAX-EN015",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 95440946,
+      "code": "STAX-EN016",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 73729209,
+      "code": "STAX-EN017",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 28637168,
+      "code": "STAX-EN018",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 26708437,
+      "code": "STAX-EN019",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 38033121,
+      "code": "STAX-EN020",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 16956455,
+      "code": "STAX-EN021",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 31560081,
+      "code": "STAX-EN022",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 93920745,
+      "code": "STAX-EN023",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 5318639,
+      "code": "STAX-EN024",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 14087893,
+      "code": "STAX-EN025",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 38411870,
+      "code": "STAX-EN026",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 32022366,
+      "code": "STAX-EN027",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 90928333,
+      "code": "STAX-EN028",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 18325492,
+      "code": "STAX-EN029",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 96765646,
+      "code": "STAX-EN030",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 78651105,
+      "code": "STAX-EN031",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44947065,
+      "code": "STAX-EN032",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 6178850,
+      "code": "STAX-EN033",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 26082117,
+      "code": "STAX-EN034",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 63485233,
+      "code": "STAX-EN035",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 46083380,
+      "code": "STAX-EN036",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 89882100,
+      "code": "STAX-EN037",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24610207,
+      "code": "STAX-EN038",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 72171665,
+      "code": "STAX-EN039",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 27012717,
+      "code": "STAX-EN040",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 581014,
+      "code": "STAX-EN041",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 47805931,
+      "code": "STAX-EN042",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 82633039,
+      "code": "STAX-EN043",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90448279,
+      "code": "STAX-EN044",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

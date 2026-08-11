@@ -57,6 +57,16 @@ public final class DdBlocks
         key -> new de.cas_ual_ty.dueldimension.shop.CardShopBlock(BlockBehaviour.Properties.of()
             .mapColor(MapColor.COLOR_BLUE).strength(5.0F, 6.0F).sound(SoundType.METAL).setId(key)));
 
+    // The counter beside it, selling sleeves rather than packs. The same
+    // properties as the card shop down to the map colour: on a map the two are
+    // one shop, and giving the second counter a different colour would draw a
+    // seam through a building that does not have one.
+    public static final de.cas_ual_ty.dueldimension.shop.SleeveShopBlock SLEEVE_SHOP =
+        register("sleeve_shop",
+            key -> new de.cas_ual_ty.dueldimension.shop.SleeveShopBlock(BlockBehaviour.Properties.of()
+                .mapColor(MapColor.COLOR_BLUE).strength(5.0F, 6.0F).sound(SoundType.METAL)
+                .setId(key)));
+
     private DdBlocks()
     {
     }

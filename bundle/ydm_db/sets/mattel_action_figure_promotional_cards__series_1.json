@@ -1,0 +1,16 @@
+{
+  "name": "Mattel Action Figure promotional cards: Series 1",
+  "code": "MF01",
+  "type": "Single",
+  "date": "01-01-2006",
+  "image": "https://ygoprodeck.com/pics_sets/MF01.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 61204971,
+      "code": "MF01-EN001",
+      "rarity": "Normal Parallel Rare",
+      "image_index": 0
+    }
+  ]
+}

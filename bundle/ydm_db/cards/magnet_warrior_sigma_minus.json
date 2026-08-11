@@ -1,0 +1,21 @@
+{
+  "id": 87814728,
+  "name": "Magnet Warrior Sigma Minus",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Once per turn, when an attack is declared involving 2 EARTH monsters: You can negate that attack. You can only use each of the following effects of \"Magnet Warrior Sigma Minus\" once per turn. You can reveal this card in your hand; Fusion Summon 1 Fusion Monster from your Extra Deck, using Rock monsters from your hand or field, including this card in your hand. If this card is Normal or Special Summoned: You can send 1 Level 8 \"Magna Warrior\" monster from your Deck to the GY.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/87814728.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 1500,
+  "species": "Rock",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1800,
+  "level": 4,
+  "is_tuner": false
+}

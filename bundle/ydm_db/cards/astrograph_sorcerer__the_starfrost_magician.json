@@ -1,0 +1,24 @@
+{
+  "id": 48171151,
+  "name": "Astrograph Sorcerer, the Starfrost Magician",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "[ Pendulum Effect ] \nDuring your Main Phase: You can destroy this card, and if you do, place 1 Pendulum Monster whose Pendulum Scale is 1 from your hand or Deck in your Pendulum Zone, except \"Astrograph Sorcerer, the Starfrost Magician\", but it cannot activate its Pendulum Effects this turn. You can only use this effect of \"Astrograph Sorcerer, the Starfrost Magician\" once per turn.\n\n[ Monster Effect ] \nIf a face-up Monster Card(s) you control is destroyed by battle or card effect: You can Special Summon this card from your hand, then you can Special Summon 1 of those destroyed monsters from your GY or face-up Extra Deck. During the Main Phase (Quick Effect): You can Tribute this card, then you can Fusion Summon 1 Dragon Fusion Monster from your Extra Deck, by shuffling its materials from your field and/or face-up Extra Deck into the Deck. You can only use each effect of \"Astrograph Sorcerer, the Starfrost Magician\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/48171151.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2500,
+  "species": "Spellcaster",
+  "monster_type": "",
+  "is_pendulum": true,
+  "ability": "",
+  "has_effect": true,
+  "pendulum_text": "During your Main Phase: You can destroy this card, and if you do, place 1 Pendulum Monster whose Pendulum Scale is 1 from your hand or Deck in your Pendulum Zone, except \"Astrograph Sorcerer, the Starfrost Magician\", but it cannot activate its Pendulum Effects this turn. You can only use this effect of \"Astrograph Sorcerer, the Starfrost Magician\" once per turn.",
+  "pendulum_scale_left_blue": 1,
+  "pendulum_scale_right_red": 1,
+  "def": 2000,
+  "level": 7,
+  "is_tuner": false
+}

@@ -1,0 +1,21 @@
+{
+  "id": 39706423,
+  "name": "GMX Suppression Squad",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is in your hand and you control a \"GMX\" monster or a Dinosaur monster: You can Special Summon this card. You can target 1 face-up monster on the field; excavate the top cards of your Deck until you excavate a Dinosaur monster, send that Dinosaur monster to the GY, and if you do, the targeted monster becomes a Dinosaur monster (until the end of this turn), also shuffle the rest into the Deck. You can only use each effect of \"GMX Suppression Squad\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/39706423.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WIND",
+  "atk": 1900,
+  "species": "Beast-Warrior",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "level": 4,
+  "is_tuner": false
+}

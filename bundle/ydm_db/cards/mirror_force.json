@@ -1,0 +1,12 @@
+{
+  "id": 44095762,
+  "name": "Mirror Force",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When an opponent's monster declares an attack: Destroy all your opponent's Attack Position monsters.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/44095762.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

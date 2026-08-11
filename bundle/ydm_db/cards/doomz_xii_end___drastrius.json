@@ -1,0 +1,20 @@
+{
+  "id": 95626382,
+  "name": "DoomZ XII End - Drastrius",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "3 Level 8 monsters\r\nThe first time this card would be destroyed by battle or card effect each turn, it is not destroyed. You can only use each of the following effects of \"DoomZ XII End - Drastrius\" once per turn. If this card is Xyz Summoned: You can equip 1 other face-up monster on the field to this card as an Equip Spell. When your opponent activates a monster effect on the field or GY (Quick Effect): You can detach 1 material from this card; negate that effect, then you can equip 1 face-up monster your opponent controls to this card as an Equip Spell.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/95626382.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WIND",
+  "atk": 2700,
+  "species": "Machine",
+  "monster_type": "Xyz",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1500,
+  "rank": 8
+}

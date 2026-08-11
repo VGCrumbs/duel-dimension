@@ -1,0 +1,12 @@
+{
+  "id": 94749594,
+  "name": "Curse of the Ancient Turtle",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Banish 1 Zombie monster from your hand or GY; send 1 Zombie monster from your Deck to the GY. When your Zombie monster is destroyed by battle: You can banish this card from your GY; Special Summon 1 Zombie monster with 2000 or less DEF from your Deck. You can only use each effect of \"Curse of the Ancient Turtle\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/94749594.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

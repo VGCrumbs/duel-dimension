@@ -1,0 +1,101 @@
+{
+  "name": "Duelist Pack Collection Tin 2008",
+  "code": "DPCT",
+  "type": "Duelist Pack",
+  "date": "11-03-2008",
+  "image": "https://ygoprodeck.com/pics_sets/DPCT.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 26701483,
+      "code": "DPCT-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89312388,
+      "code": "DPCT-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 61257789,
+      "code": "DPCT-EN003",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 61257789,
+      "code": "DPCT-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58120309,
+      "code": "DPCT-EN004",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 94515289,
+      "code": "DPCT-EN005",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63977008,
+      "code": "DPCT-ENY01",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23571046,
+      "code": "DPCT-ENY02",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35537860,
+      "code": "DPCT-ENY03",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56286179,
+      "code": "DPCT-ENY04",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 9365703,
+      "code": "DPCT-ENY05",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51630558,
+      "code": "DPCT-ENY06",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57421866,
+      "code": "DPCT-ENY07",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 2295440,
+      "code": "DPCT-ENY08",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 98427577,
+      "code": "DPCT-ENY09",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "id": 5208118,
+  "name": "Solving for Pendulum",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Once per turn, during the Standby Phase: Place 1 T Counter on this card. Once per turn: You can target 1 Pendulum Monster in your Main Monster Zone; for each T Counter on this card, move that Pendulum Monster to an adjacent (horizontal) Monster Zone, 1 move at a time. Then, after you have finished moving, destroy all Fusion or Xyz Monsters your opponent controls in the same (final) column, with an equal or lower Level/Rank than that monster's Pendulum Scale, and if you do, inflict damage to your opponent equal to their combined ATK they had on the field.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/5208118.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Continuous"
+}

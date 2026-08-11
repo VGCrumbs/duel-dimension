@@ -1,0 +1,47 @@
+{
+  "name": "Yu-Gi-Oh! The Sacred Cards promotional cards",
+  "code": "TSC",
+  "type": "Booster Pack (2003)",
+  "date": "04-11-2003",
+  "image": "https://ygoprodeck.com/pics_sets/TSC.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 48579379,
+      "code": "TSC-001",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34016756,
+      "code": "TSC-002",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14315573,
+      "code": "TSC-003",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 5556668,
+      "code": "TSC-E001",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74137509,
+      "code": "TSC-E002",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 126218,
+      "code": "TSC-E003",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

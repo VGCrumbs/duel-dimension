@@ -1,0 +1,47 @@
+{
+  "name": "Yu-Gi-Oh! The Duelists of the Roses promotional cards",
+  "code": "DOR",
+  "type": "Booster Pack (2003)",
+  "date": "16-02-2003",
+  "image": "https://ygoprodeck.com/pics_sets/DOR.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 99785935,
+      "code": "DOR-001",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 39256679,
+      "code": "DOR-002",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11549357,
+      "code": "DOR-003",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 99785935,
+      "code": "DOR-E001",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 39256679,
+      "code": "DOR-E002",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11549357,
+      "code": "DOR-E003",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

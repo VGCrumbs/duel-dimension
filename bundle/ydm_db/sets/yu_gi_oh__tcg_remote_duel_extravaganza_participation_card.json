@@ -1,0 +1,16 @@
+{
+  "name": "Yu-Gi-Oh! TCG Remote Duel Extravaganza participation card",
+  "code": "21CC",
+  "type": "Single",
+  "date": "22-05-2021",
+  "image": "https://ygoprodeck.com/pics_sets/21CC.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 2139640,
+      "code": "21CC-EN001",
+      "rarity": "Common",
+      "image_index": 0
+    }
+  ]
+}

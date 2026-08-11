@@ -1,0 +1,29 @@
+{
+  "name": "Yu-Gi-Oh! The Eternal Duelist Soul promotional cards",
+  "code": "EDS",
+  "type": "Booster Pack (2002)",
+  "date": "15-10-2002",
+  "image": "https://ygoprodeck.com/pics_sets/EDS.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 5556668,
+      "code": "EDS-001",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74137509,
+      "code": "EDS-002",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 126218,
+      "code": "EDS-003",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

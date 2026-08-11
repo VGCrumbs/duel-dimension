@@ -1,0 +1,41 @@
+{
+  "name": "Duelist League Demo 2010",
+  "code": "DLDI",
+  "type": "Booster Pack (2009)",
+  "date": "01-08-2009",
+  "image": "https://ygoprodeck.com/pics_sets/DLDI.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 54652250,
+      "code": "DLDI-EN001",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 22567609,
+      "code": "DLDI-EN002",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 40619825,
+      "code": "DLDI-EN003",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 98045062,
+      "code": "DLDI-EN004",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 69162969,
+      "code": "DLDI-EN005",
+      "rarity": "Common",
+      "image_index": 0
+    }
+  ]
+}

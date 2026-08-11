@@ -1,0 +1,12 @@
+{
+  "id": 83626916,
+  "name": "D.D. Post",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Monsters you control gain 300 ATK for each card type (Monster, Spell, or Trap) among your banished cards. Once per turn, during the Main Phase: You can banish 1 card from your hand or GY, then you can shuffle 1 of your banished cards into the Deck. If this card is banished: You can place it face-up on your field. You can only use this effect of \"D.D. Post\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/83626916.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Continuous"
+}

@@ -1,0 +1,35 @@
+{
+  "name": "Legendary Collection 3: Yugi's World",
+  "code": "LC03",
+  "type": "Collector's Set",
+  "date": "27-09-2012",
+  "image": "https://ygoprodeck.com/pics_sets/LC03.jpg",
+  "pull_type": "distribution",
+  "distribution": "battles_of_legend__armageddon",
+  "cards": [
+    {
+      "id": 48179391,
+      "code": "LC03-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31829185,
+      "code": "LC03-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34022290,
+      "code": "LC03-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 99267150,
+      "code": "LC03-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

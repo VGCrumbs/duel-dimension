@@ -1,0 +1,21 @@
+{
+  "id": 6083904,
+  "name": "Diabrocken the Ominous Specter",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is in your hand (Quick Effect): You can banish 1 FIRE monster from your face-up field or GY; Special Summon this card. If this card is Special Summoned: You can target 1 face-up card on the field; negate its effects until the end of this turn. If this card is sent to the GY as Link Material: You can Set 1 Quick-Play Spell or Normal Trap from your GY that was sent there this turn. You can only use each effect of \"Diabrocken the Ominous Specter\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/6083904.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "FIRE",
+  "atk": 2000,
+  "species": "Fiend",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2000,
+  "level": 6,
+  "is_tuner": false
+}

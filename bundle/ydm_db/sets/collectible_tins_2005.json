@@ -1,0 +1,47 @@
+{
+  "name": "Collectible Tins 2005",
+  "code": "CT2",
+  "type": "Booster Pack (2005)",
+  "date": "01-09-2005",
+  "image": "https://ygoprodeck.com/pics_sets/CT2.jpg",
+  "pull_type": "distribution",
+  "distribution": "the_dark_side_of_dimensions_movie_pack_secret_edition__pack",
+  "cards": [
+    {
+      "id": 36354007,
+      "code": "CT2-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63749102,
+      "code": "CT2-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14898066,
+      "code": "CT2-EN003",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38033121,
+      "code": "CT2-EN004",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30860696,
+      "code": "CT2-EN005",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 42035044,
+      "code": "CT2-EN006",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

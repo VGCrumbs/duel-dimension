@@ -144,17 +144,34 @@ class SessionOrderingTest
         assertTrue(session.forfeit(1));
         assertFalse(session.forfeit(0), "a second concession must not claim another finish");
 
+        // Waiting on isRunning() alone is a race, and it made this test fail
+        // about two runs in five. DuelSession clears the running flag INSIDE
+        // its termination lock and adds the terminal event AFTER it, on
+        // purpose -- so that the server never drains a "finished" event while
+        // isRunning() still says true. That ordering leaves a real window in
+        // which the session has stopped and the event has not been queued yet:
+        // the server does not care, because it drains every tick, but a test
+        // that drains exactly once on seeing the flag drop lands in the window
+        // and sees nothing. So drain until the terminal event actually
+        // arrives. The invariant under test survives intact -- the flag is
+        // cleared before the event is published on the same thread, so seeing
+        // the event at all proves the session had already stopped.
         long deadline = System.nanoTime() + 10_000_000_000L;
-        while(session.isRunning() && System.nanoTime() < deadline)
+        List<DuelSession.Event> seen = new ArrayList<>();
+        List<DuelSession.Event> terminal = List.of();
+        while(System.nanoTime() < deadline)
         {
+            session.drainEvents(seen::add);
+            terminal = seen.stream().filter(event ->
+                event instanceof DuelSession.Event.Finished
+                    || event instanceof DuelSession.Event.Forfeited
+                    || event instanceof DuelSession.Event.Failed).toList();
+            if(!terminal.isEmpty())
+            {
+                break;
+            }
             Thread.sleep(2);
         }
-        List<DuelSession.Event> seen = new ArrayList<>();
-        session.drainEvents(seen::add);
-        List<DuelSession.Event> terminal = seen.stream().filter(event ->
-            event instanceof DuelSession.Event.Finished
-                || event instanceof DuelSession.Event.Forfeited
-                || event instanceof DuelSession.Event.Failed).toList();
 
         assertFalse(session.isRunning(), "terminal event must not precede the stopped state");
         assertEquals(1, terminal.size(), "a concession must produce exactly one terminal event");

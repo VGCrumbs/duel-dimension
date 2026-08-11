@@ -1,0 +1,12 @@
+{
+  "id": 82119326,
+  "name": "Tails of the Fairy Tails",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "The equipped monster gains 1000 ATK. Once per turn, during your Main Phase: You can Fusion Summon 1 Spellcaster Fusion Monster from your Extra Deck, using monsters from your hand, field, and/or \"Prince of Fairies\" your opponent controls as material. If this card is in your GY: You can equip this card to 1 \"Fairy Tail\" monster on the field, then immediately after this effect resolves, you can Normal Summon 1 Spellcaster monster with 1850 ATK. You can only use this effect of \"Tails of the Fairy Tails\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/82119326.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Equip"
+}

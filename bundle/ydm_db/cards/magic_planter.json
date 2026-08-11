@@ -1,0 +1,12 @@
+{
+  "id": 1073952,
+  "name": "Magic Planter",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Send 1 face-up Continuous Trap you control to the GY; draw 2 cards.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/1073952.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

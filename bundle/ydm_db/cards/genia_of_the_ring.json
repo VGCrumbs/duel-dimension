@@ -1,0 +1,21 @@
+{
+  "id": 40041559,
+  "name": "Genia of the Ring",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is in your hand: You can target 1 face-up monster on the field; Special Summon this card, also that target becomes a Spellcaster monster. The next time that target would be destroyed by card effect this turn, it is not destroyed, also you cannot Special Summon from the Extra Deck for the rest of this turn, except Spellcaster monsters. If this card is Tributed, or banished, to activate a Spellcaster monster's effect: You can add this card to your hand. You can only use each effect of \"Genia of the Ring\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/40041559.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 1850,
+  "species": "Spellcaster",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1850,
+  "level": 4,
+  "is_tuner": false
+}

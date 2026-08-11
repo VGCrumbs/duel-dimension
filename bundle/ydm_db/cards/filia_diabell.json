@@ -1,0 +1,12 @@
+{
+  "id": 78293584,
+  "name": "Filia Diabell",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Add 1 Level 8 or higher \"Diabell\" monster from your Deck to your hand, or if only your opponent controls a monster, you can Special Summon it instead. If this card is banished: You can make all \"Diabell\" monsters you currently control gain 500 ATK. You can only use each effect of \"Filia Diabell\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/78293584.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

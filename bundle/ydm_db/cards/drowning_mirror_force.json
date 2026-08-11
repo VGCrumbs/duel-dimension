@@ -1,0 +1,12 @@
+{
+  "id": 47475363,
+  "name": "Drowning Mirror Force",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When an opponent's monster declares a direct attack: Shuffle all your opponent's Attack Position monsters into the Deck.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/47475363.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

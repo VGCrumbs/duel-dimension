@@ -1,0 +1,21 @@
+{
+  "id": 80461466,
+  "name": "Great Mammoth of the Netherworld",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is Special Summoned and you control \"Call of the Haunted\" or a Zombie monster, except \"Great Mammoth of the Netherworld\": You can target 1 card on the field; destroy it. You can only use this effect of \"Great Mammoth of the Netherworld\" once per turn. A Zombie Xyz Monster that has this card as material gains this effect.\r\n● Gains 1000 ATK.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/80461466.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2200,
+  "species": "Zombie",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1800,
+  "level": 6,
+  "is_tuner": false
+}

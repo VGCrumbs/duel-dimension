@@ -1,0 +1,21 @@
+{
+  "id": 18711696,
+  "name": "Assault Sonic Warrior",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you control \"Junk Warrior\", \"Assault Mode Activate\", or a card that mentions either of those cards: You can Special Summon this card from your hand. If this card is Normal or Special Summoned: You can add 1 \"Synchron\" monster or 1 \"Assault Mode Activate\" from your Deck to your hand. If this card is sent to the GY as Synchro Material: You can make all monsters you control gain 500 ATK, for the rest of this turn. You can only use each effect of \"Assault Sonic Warrior\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/18711696.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WIND",
+  "atk": 1000,
+  "species": "Warrior",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "level": 2,
+  "is_tuner": false
+}

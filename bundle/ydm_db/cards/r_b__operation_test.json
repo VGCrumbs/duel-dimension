@@ -1,0 +1,12 @@
+{
+  "id": 16066654,
+  "name": "R.B. Operation Test",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When this card is activated: You can target 1 Level 3 or higher \"R.B.\" monster in your GY; Special Summon it. You can target any number of \"R.B.\" monsters you control; gain LP equal to their combined original ATK, and if you do, return them to the hand/Extra Deck, then you can Special Summon 1 \"R.B.\" monster from your hand. You can only use this effect of \"R.B. Operation Test\" once per turn. You can only activate 1 \"R.B. Operation Test\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/16066654.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Continuous"
+}

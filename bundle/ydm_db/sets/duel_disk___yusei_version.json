@@ -1,0 +1,16 @@
+{
+  "name": "Duel Disk - Yusei Version",
+  "code": "DDY1",
+  "type": "Single",
+  "date": "01-11-2009",
+  "image": "https://ygoprodeck.com/pics_sets/DDY1.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 54343893,
+      "code": "DDY1-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

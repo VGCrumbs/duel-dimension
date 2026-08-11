@@ -1,0 +1,12 @@
+{
+  "id": 43932352,
+  "name": "Hecahands Bait",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can Tribute 1 \"Hecahands\" monster, or 1 monster you control that is owned by your opponent; take control of 1 monster your opponent controls. You can only use this effect of \"Hecahands Bait\" once per turn. Once per turn, during your End Phase: Send 1 card you control to the GY.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/43932352.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Continuous"
+}

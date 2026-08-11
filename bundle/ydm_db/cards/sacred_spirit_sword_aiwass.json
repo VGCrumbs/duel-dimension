@@ -1,0 +1,12 @@
+{
+  "id": 63926180,
+  "name": "Sacred Spirit Sword Aiwass",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Activate 1 of these effects, but you cannot declare attacks for the rest of this turn, except with Fusion Monsters;\r\n● Special Summon 1 \"Aiwass, Divine Spirit of the Law\" from your Deck or GY.\r\n● Take 1 \"Aleister\" monster from your Deck, and either send it to the GY or banish it.\r\n● Look at 3 random face-down cards in your opponent's Extra Deck, and if you do, banish 1 of them.\r\nYou can only activate 1 \"Sacred Spirit Sword Aiwass\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/63926180.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

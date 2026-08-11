@@ -1,0 +1,12 @@
+{
+  "id": 81820689,
+  "name": "The Inexperienced Spy",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Select and see 1 card in your opponent's hand.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/81820689.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

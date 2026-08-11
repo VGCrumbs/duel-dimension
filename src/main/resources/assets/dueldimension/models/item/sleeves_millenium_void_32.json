@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_millenium_void",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_millenium_void"
+  }
+}

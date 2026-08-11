@@ -1,0 +1,12 @@
+{
+  "id": 80320877,
+  "name": "DoomZ Destruction",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Target 1 \"DoomZ\" Xyz Monster you control; equip this card to it with the following effect.\r\n● Cards cannot be added from the Main Deck to your opponent's hand except by drawing them.\r\nIf this card is destroyed by card effect: You can target 1 face-up monster on the field; equip 1 \"DoomZ\" monster from your Deck to it as an Equip Spell. You can only use each effect of \"DoomZ Destruction\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/80320877.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

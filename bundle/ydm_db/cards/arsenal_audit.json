@@ -1,0 +1,12 @@
+{
+  "id": 49652661,
+  "name": "Arsenal Audit",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Send up to 2 Equip Spells with different names from your Deck to the GY. You can banish this card from your GY, then target 1 face-up monster you control; equip it with up to 2 Equip Spells with different names from your hand and/or GY that can equip to it, but any battle damage it inflicts to your opponent is halved while equipped with a card by this effect. You can only use 1 \"Arsenal Audit\" effect per turn, and only once that turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/49652661.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

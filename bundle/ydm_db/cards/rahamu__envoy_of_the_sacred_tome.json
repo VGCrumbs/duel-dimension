@@ -1,0 +1,23 @@
+{
+  "id": 53904087,
+  "name": "Rahamu, Envoy of the Sacred Tome",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2 Effect Monsters\r\nOnce, while this Link Summoned card is face-up on the field, you can Normal Summon 1 Level 5 or higher monster without Tributing. During the Main Phase, you can (Quick Effect): Immediately after this effect resolves, Normal Summon 1 Level 5 or higher DARK monster. During your End Phase: You can reveal any number of monsters in your hand and place them on the bottom of the Deck in any order, then draw cards equal to the number placed. You can only use each effect of \"Rahamu, Envoy of the Sacred Tome\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/53904087.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 1400,
+  "species": "Fairy",
+  "monster_type": "Link",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "link_rating": 2,
+  "link_arrows": [
+    "Left",
+    "Bottom-Right"
+  ]
+}

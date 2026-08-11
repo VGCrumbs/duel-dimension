@@ -1,0 +1,21 @@
+{
+  "id": 62606805,
+  "name": "Mind Procedure",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card you control would be used as Synchro Material for a Psychic monster, you can treat it as a non-Tuner. You can only use 1 of the following effects of \"Mind Procedure\" per turn, and only once that turn. If this card is Normal Summoned, or Special Summoned by a monster effect: You can pay 2000 LP; add 1 \"Teleport\" Normal or Quick-Play Spell from your Deck or GY to your hand. If this card is banished: You can pay 1000 LP; Special Summon it.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/62606805.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 1100,
+  "species": "Psychic",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1100,
+  "level": 3,
+  "is_tuner": true
+}

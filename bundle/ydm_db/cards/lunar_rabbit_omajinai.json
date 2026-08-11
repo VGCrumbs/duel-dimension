@@ -1,0 +1,21 @@
+{
+  "id": 47643326,
+  "name": "Lunar Rabbit Omajinai",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "''A mysterious visitor who has descended from the heavens. It converts pain into signals and sends them into space, but its purpose is still unknown.\r\nPain, pain, go away.''",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/47643326.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 0,
+  "species": "Spellcaster",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": false,
+  "def": 1500,
+  "level": 1,
+  "is_tuner": true
+}

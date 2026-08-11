@@ -1,0 +1,21 @@
+{
+  "id": 66100116,
+  "name": "Vengeful Witch",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you control \"Black Rose Dragon\", a monster that mentions it, or a Plant Synchro Monster: You can Special Summon this card from your hand. If this card is sent to the GY and a Synchro Monster is on the field: You can discard 1 card; Special Summon 1 Plant monster with 1500 or less DEF from your Deck, also you cannot Special Summon from the Extra Deck for the rest of this turn, except Synchro Monsters. You can only use each effect of \"Vengeful Witch\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/66100116.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 1100,
+  "species": "Plant",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1200,
+  "level": 4,
+  "is_tuner": false
+}

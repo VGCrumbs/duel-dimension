@@ -1,0 +1,21 @@
+{
+  "id": 75748977,
+  "name": "XYZ-Hyper Dragon Cannon",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "\"X-Cross Cannon\" + \"Y-Yare Head\" + \"Z-Zillion Tank\"\r\nMust first be Special Summoned (from your Extra Deck) by banishing the above cards from your field and/or GY. Once per opponent's turn (Quick Effect): You can discard 1 card, then target 1 card your opponent controls; destroy it. You can banish this card from your field or GY and reveal 1 Level 8 LIGHT Machine Fusion Monster in your Extra Deck; Special Summon up to 3 of the Fusion Materials mentioned on it from your GY and/or banishment.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/75748977.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 3000,
+  "species": "Machine",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2800,
+  "level": 9,
+  "is_tuner": false
+}

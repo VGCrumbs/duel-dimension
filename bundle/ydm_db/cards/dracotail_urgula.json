@@ -1,0 +1,21 @@
+{
+  "id": 70871153,
+  "name": "Dracotail Urgula",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is sent to the GY as material for a Fusion Summon: You can Set 1 \"Dracotail\" Spell/Trap from your Deck, then you can destroy 1 Spell/Trap on the field. If this card is in your GY: You can target 1 Spellcaster \"Dracotail\" monster in your GY; place this card on the bottom of your Deck, and if you do, add that monster to your hand. You can only use each effect of \"Dracotail Urgula\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/70871153.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "FIRE",
+  "atk": 2400,
+  "species": "Dragon",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1000,
+  "level": 6,
+  "is_tuner": false
+}

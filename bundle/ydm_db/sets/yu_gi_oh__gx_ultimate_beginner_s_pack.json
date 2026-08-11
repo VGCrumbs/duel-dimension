@@ -1,0 +1,41 @@
+{
+  "name": "Yu-Gi-Oh! GX Ultimate Beginner's Pack",
+  "code": "UBP1",
+  "type": "Booster Pack (2006)",
+  "date": "19-07-2006",
+  "image": "https://ygoprodeck.com/pics_sets/UBP1.jpg",
+  "pull_type": "distribution",
+  "distribution": "the_dark_side_of_dimensions_movie_pack_secret_edition__pack",
+  "cards": [
+    {
+      "id": 8124921,
+      "code": "UBP1-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44519536,
+      "code": "UBP1-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70903634,
+      "code": "UBP1-EN003",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7902349,
+      "code": "UBP1-EN004",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33396948,
+      "code": "UBP1-EN005",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

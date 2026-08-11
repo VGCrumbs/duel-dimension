@@ -1,0 +1,16 @@
+{
+  "name": "Duelist League Series 8 participation card",
+  "code": "DL8",
+  "type": "Single",
+  "date": "30-06-2005",
+  "image": "https://ygoprodeck.com/pics_sets/DL8.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 21323861,
+      "code": "DL8-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

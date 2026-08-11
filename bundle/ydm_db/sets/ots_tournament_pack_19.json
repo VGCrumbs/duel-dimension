@@ -1,0 +1,401 @@
+{
+  "name": "OTS Tournament Pack 19",
+  "code": "OP19",
+  "type": "OTS Tournament Pack",
+  "date": "15-06-2022",
+  "image": "https://ygoprodeck.com/pics_sets/OP19.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 68468459,
+      "code": "OP19-EN001",
+      "rarity": "Ultimate Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30680659,
+      "code": "OP19-EN002",
+      "rarity": "Ultimate Rare",
+      "image_index": 0
+    },
+    {
+      "id": 82732705,
+      "code": "OP19-EN003",
+      "rarity": "Ultimate Rare",
+      "image_index": 0
+    },
+    {
+      "id": 9748752,
+      "code": "OP19-EN004",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13821299,
+      "code": "OP19-EN005",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21620076,
+      "code": "OP19-EN006",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19808608,
+      "code": "OP19-EN007",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46136942,
+      "code": "OP19-EN008",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74583607,
+      "code": "OP19-EN009",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 82956492,
+      "code": "OP19-EN010",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25789292,
+      "code": "OP19-EN011",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 52584282,
+      "code": "OP19-EN012",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 60802233,
+      "code": "OP19-EN013",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 40453765,
+      "code": "OP19-EN014",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 20394040,
+      "code": "OP19-EN015",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 16226786,
+      "code": "OP19-EN016",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44330098,
+      "code": "OP19-EN017",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 48686504,
+      "code": "OP19-EN018",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 1833916,
+      "code": "OP19-EN019",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 72714461,
+      "code": "OP19-EN020",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 40318957,
+      "code": "OP19-EN021",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 55623480,
+      "code": "OP19-EN022",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 5560911,
+      "code": "OP19-EN023",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 60645181,
+      "code": "OP19-EN024",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 48009503,
+      "code": "OP19-EN025",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 75304793,
+      "code": "OP19-EN026",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 23002292,
+      "code": "OP19-EN027",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 68468459,
+      "code": "OP19-PT001",
+      "rarity": "Ultimate Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30680659,
+      "code": "OP19-PT002",
+      "rarity": "Ultimate Rare",
+      "image_index": 0
+    },
+    {
+      "id": 82732705,
+      "code": "OP19-PT003",
+      "rarity": "Ultimate Rare",
+      "image_index": 0
+    },
+    {
+      "id": 9748752,
+      "code": "OP19-PT004",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13821299,
+      "code": "OP19-PT005",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21620076,
+      "code": "OP19-PT006",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19808608,
+      "code": "OP19-PT007",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46136942,
+      "code": "OP19-PT008",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74583607,
+      "code": "OP19-PT009",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 82956492,
+      "code": "OP19-PT010",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25789292,
+      "code": "OP19-PT011",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 52584282,
+      "code": "OP19-PT012",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 40453765,
+      "code": "OP19-PT014",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 20394040,
+      "code": "OP19-PT015",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 16226786,
+      "code": "OP19-PT016",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44330098,
+      "code": "OP19-PT017",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 48686504,
+      "code": "OP19-PT018",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 1833916,
+      "code": "OP19-PT019",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 72714461,
+      "code": "OP19-PT020",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 40318957,
+      "code": "OP19-PT021",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 55623480,
+      "code": "OP19-PT022",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 5560911,
+      "code": "OP19-PT023",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 60645181,
+      "code": "OP19-PT024",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 48009503,
+      "code": "OP19-PT025",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 75304793,
+      "code": "OP19-PT026",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 23002292,
+      "code": "OP19-PT027",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 68933343,
+      "code": "OP19-PT030",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 94331452,
+      "code": "OP19-PT031",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 31826057,
+      "code": "OP19-PT032",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 50491121,
+      "code": "OP19-PT033",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 26885836,
+      "code": "OP19-PT034",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 52370835,
+      "code": "OP19-PT035",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 89774530,
+      "code": "OP19-PT036",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 34143852,
+      "code": "OP19-PT037",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 53466826,
+      "code": "OP19-PT038",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 49551909,
+      "code": "OP19-PT039",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 95920682,
+      "code": "OP19-PT040",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 21924381,
+      "code": "OP19-PT041",
+      "rarity": "Common",
+      "image_index": 0
+    }
+  ]
+}

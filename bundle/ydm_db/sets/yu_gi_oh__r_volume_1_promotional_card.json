@@ -1,0 +1,23 @@
+{
+  "name": "Yu-Gi-Oh! R Volume 1 promotional card",
+  "code": "YR01",
+  "type": "Booster Pack (2009)",
+  "date": "10-06-2009",
+  "image": "https://ygoprodeck.com/pics_sets/YR01.jpg",
+  "pull_type": "distribution",
+  "distribution": "battles_of_legend__armageddon",
+  "cards": [
+    {
+      "id": 24857466,
+      "code": "YR01-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44330098,
+      "code": "YR01-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

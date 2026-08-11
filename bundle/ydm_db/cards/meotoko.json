@@ -1,0 +1,21 @@
+{
+  "id": 53832650,
+  "name": "Meotoko",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Dis big ol' guy wit' a big ol' eye shoots a nasty ray beam right atcha!",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/53832650.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 700,
+  "species": "Beast",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": false,
+  "def": 600,
+  "level": 2,
+  "is_tuner": false
+}

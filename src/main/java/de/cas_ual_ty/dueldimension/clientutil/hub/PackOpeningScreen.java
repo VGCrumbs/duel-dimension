@@ -109,14 +109,38 @@ public class PackOpeningScreen extends Screen
     /** Reveals everything, then closes: its label says which it will do. */
     private HubWidgets.TextureButton skip;
 
-    public PackOpeningScreen(String setName, List<Integer> codes, List<String> rarities)
+    /**
+     * Where closing the reveal goes back to.
+     * <p>
+     * Whatever was on screen when the packs were bought, which in practice is
+     * the shop. Buying used to drop you out to the world, so opening ten packs
+     * meant walking back to the counter nine times; the shop is where you were
+     * and where you are most likely going next. Null when a pack was opened from
+     * somewhere with no screen behind it, and then this closes as it always did.
+     */
+    private final Screen parent;
+
+    public PackOpeningScreen(Screen parent, String setName, List<Integer> codes,
+        List<String> rarities)
     {
         super(Component.literal("Opening " + setName));
+        this.parent = parent;
         this.setName = setName;
         this.codes = new ArrayList<>(codes);
         this.rarities = new ArrayList<>(rarities);
         this.flip = new float[this.codes.size()];
         this.shine = new float[this.codes.size()];
+    }
+
+    @Override
+    public void onClose()
+    {
+        if(parent != null)
+        {
+            minecraft.setScreenAndShow(parent);
+            return;
+        }
+        super.onClose();
     }
 
     @Override

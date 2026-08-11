@@ -1,0 +1,16 @@
+{
+  "name": "Yu-Gi-Oh! ARC-V Volume 2 promotional card",
+  "code": "YA02",
+  "type": "Single",
+  "date": "05-09-2017",
+  "image": "https://ygoprodeck.com/pics_sets/YA02.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 90036274,
+      "code": "YA02-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

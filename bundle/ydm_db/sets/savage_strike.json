@@ -1,0 +1,611 @@
+{
+  "name": "Savage Strike",
+  "code": "SAST",
+  "type": "Booster Pack (Series 10)",
+  "date": "31-01-2019",
+  "image": "https://ygoprodeck.com/pics_sets/SAST.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack",
+  "cards": [
+    {
+      "id": 83518674,
+      "code": "SAST-000",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50690129,
+      "code": "SAST-001",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 86784733,
+      "code": "SAST-002",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13173832,
+      "code": "SAST-003",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 59577547,
+      "code": "SAST-004",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 86962245,
+      "code": "SAST-005",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 12950294,
+      "code": "SAST-006",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 48355999,
+      "code": "SAST-007",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85840608,
+      "code": "SAST-008",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11234702,
+      "code": "SAST-009",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 48633301,
+      "code": "SAST-010",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 74627016,
+      "code": "SAST-011",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11012154,
+      "code": "SAST-012",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 43411769,
+      "code": "SAST-013",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 79905468,
+      "code": "SAST-014",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 6990577,
+      "code": "SAST-015",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 42388271,
+      "code": "SAST-016",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79783880,
+      "code": "SAST-017",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 5177985,
+      "code": "SAST-018",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 41562624,
+      "code": "SAST-019",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 78661338,
+      "code": "SAST-020",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4055337,
+      "code": "SAST-021",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 31440046,
+      "code": "SAST-022",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 77848740,
+      "code": "SAST-023",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 3233859,
+      "code": "SAST-024",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30227494,
+      "code": "SAST-025",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 66722103,
+      "code": "SAST-026",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 3111207,
+      "code": "SAST-027",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 39505816,
+      "code": "SAST-028",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 65500515,
+      "code": "SAST-029",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 92998610,
+      "code": "SAST-030",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 38383368,
+      "code": "SAST-031",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 65877963,
+      "code": "SAST-032",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 91272072,
+      "code": "SAST-033",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37261776,
+      "code": "SAST-034",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 64655485,
+      "code": "SAST-035",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90050480,
+      "code": "SAST-036",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27548199,
+      "code": "SAST-037",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63533837,
+      "code": "SAST-038",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 99937842,
+      "code": "SAST-039",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 26326541,
+      "code": "SAST-040",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 52711246,
+      "code": "SAST-041",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 99115354,
+      "code": "SAST-042",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25200959,
+      "code": "SAST-043",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 52698008,
+      "code": "SAST-044",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 88093706,
+      "code": "SAST-045",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24487411,
+      "code": "SAST-046",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51476410,
+      "code": "SAST-047",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 87871125,
+      "code": "SAST-048",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14365823,
+      "code": "SAST-049",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50750868,
+      "code": "SAST-050",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86148577,
+      "code": "SAST-051",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13143275,
+      "code": "SAST-052",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59537380,
+      "code": "SAST-053",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86926989,
+      "code": "SAST-054",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 12421694,
+      "code": "SAST-055",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 48815792,
+      "code": "SAST-056",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25800447,
+      "code": "SAST-057",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51208046,
+      "code": "SAST-058",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 88693151,
+      "code": "SAST-059",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14088859,
+      "code": "SAST-060",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50186558,
+      "code": "SAST-061",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 87571563,
+      "code": "SAST-062",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13965201,
+      "code": "SAST-063",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40364916,
+      "code": "SAST-064",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 86758915,
+      "code": "SAST-065",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 12743620,
+      "code": "SAST-066",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 49238328,
+      "code": "SAST-067",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85636437,
+      "code": "SAST-068",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 12021072,
+      "code": "SAST-069",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 48015771,
+      "code": "SAST-070",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 74414885,
+      "code": "SAST-071",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11908584,
+      "code": "SAST-072",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 47393199,
+      "code": "SAST-073",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74798297,
+      "code": "SAST-074",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 786906,
+      "code": "SAST-075",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 47171541,
+      "code": "SAST-076",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 73575650,
+      "code": "SAST-077",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 9064354,
+      "code": "SAST-078",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 36458063,
+      "code": "SAST-079",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 72453068,
+      "code": "SAST-080",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29913783,
+      "code": "SAST-081",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56308388,
+      "code": "SAST-082",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 82496097,
+      "code": "SAST-083",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 19891131,
+      "code": "SAST-084",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 55285840,
+      "code": "SAST-085",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81670445,
+      "code": "SAST-086",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 18678554,
+      "code": "SAST-087",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44163252,
+      "code": "SAST-088",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81558967,
+      "code": "SAST-089",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17956906,
+      "code": "SAST-090",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 43341600,
+      "code": "SAST-091",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14505685,
+      "code": "SAST-092",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 15327215,
+      "code": "SAST-093",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 16428514,
+      "code": "SAST-094",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 98169343,
+      "code": "SAST-095",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 8820526,
+      "code": "SAST-096",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 77754169,
+      "code": "SAST-097",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 90020780,
+      "code": "SAST-098",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 66141736,
+      "code": "SAST-099",
+      "rarity": "Common",
+      "image_index": 0
+    }
+  ]
+}

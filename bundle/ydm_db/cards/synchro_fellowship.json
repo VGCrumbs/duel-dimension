@@ -1,0 +1,12 @@
+{
+  "id": 43834302,
+  "name": "Synchro Fellowship",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Add 2 monsters from your Deck to your hand (1 \"Junk Synchron\" and 1 monster that mentions \"Junk Warrior\" or \"Stardust Dragon\"), then discard 1 card. You can banish this card from your GY, then target 1 Synchro Monster you control; reduce its Level by 1, then you can Normal Summon 1 \"Synchron\" monster during your Main Phase this turn, in addition to your Normal Summon/Set (you can only gain this effect once per turn). You can only activate 1 \"Synchro Fellowship\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/43834302.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

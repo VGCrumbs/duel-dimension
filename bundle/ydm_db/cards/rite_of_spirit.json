@@ -1,0 +1,12 @@
+{
+  "id": 30450531,
+  "name": "Rite of Spirit",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Target 1 \"Gravekeeper's\" monster in your GY; Special Summon that target. This card's activation and effect are unaffected by \"Necrovalley\".",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/30450531.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

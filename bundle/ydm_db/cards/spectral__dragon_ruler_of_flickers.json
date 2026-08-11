@@ -1,0 +1,21 @@
+{
+  "id": 58201062,
+  "name": "Spectral, Dragon Ruler of Flickers",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can discard this card and 1 Dragon or LIGHT monster; add 2 \"Dragon Ruler\" monsters from your Deck to your hand, except \"Spectral, Dragon Ruler of Flickers\". You can banish from your GY, this card and 1 Dragon or LIGHT monster, then target 1 \"Chasma, Dragon Ruler of Auroras\" in your GY; Special Summon it. You can only use 1 \"Spectral, Dragon Ruler of Flickers\" effect per turn, and only once that turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/58201062.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 600,
+  "species": "Dragon",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1000,
+  "level": 2,
+  "is_tuner": false
+}

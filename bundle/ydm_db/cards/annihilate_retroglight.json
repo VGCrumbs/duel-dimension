@@ -1,0 +1,12 @@
+{
+  "id": 83319154,
+  "name": "Annihilate Retroglight",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When your opponent activates a monster effect on the field, except monsters that were Summoned this turn: Negate that activation, then you can banish (face-down) all face-up monsters your opponent controls, except monsters Summoned this turn. If this Set card in its owner's control is destroyed by an opponent's card effect: You can Set 1 Trap from your Deck.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/83319154.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Counter"
+}

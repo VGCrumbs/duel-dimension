@@ -44,6 +44,13 @@ public class DuelFuzzer
 
     public static void main(String[] rawArgs) throws Exception
     {
+        // Unpack the bundled engine if this machine has nothing else. The mod
+        // does this from its own initialiser; a headless tool has no
+        // initialiser, and without it the fuzzer is the one part of the project
+        // that still needs EDOPro installed by hand. Writes nothing when an
+        // install is already there, which in a dev checkout is always.
+        de.cas_ual_ty.dueldimension.ocg.session.EngineBundle.install();
+
         Args args = parse(rawArgs);
         Files.createDirectories(args.out());
 
@@ -189,9 +196,12 @@ public class DuelFuzzer
 
     private static Args parse(String[] argv)
     {
-        Path lib = Path.of(System.getProperty("ocg.lib", "native/ocgcore.dll"));
-        Path scripts = Path.of(System.getProperty("ocg.scripts", "C:/ProjectIgnis/script"));
-        Path cdb = Path.of(System.getProperty("ocg.cdb", "C:/ProjectIgnis/expansions/cards.cdb"));
+        // The same discovery the mod itself uses; see BotArena.main.
+        de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime.Paths found =
+            de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime.Paths.defaults();
+        Path lib = found.library();
+        Path scripts = found.scriptsDir();
+        Path cdb = found.cdb();
         int count = 100;
         int threads = 1;
         long baseSeed = 1;

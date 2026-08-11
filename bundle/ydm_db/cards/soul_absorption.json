@@ -1,0 +1,12 @@
+{
+  "id": 68073522,
+  "name": "Soul Absorption",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If a card(s) is banished: Gain 500 LP for each.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/68073522.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Continuous"
+}

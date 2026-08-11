@@ -1,0 +1,12 @@
+{
+  "id": 95915457,
+  "name": "Mirror Barrier",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Target 1 face-up monster you control; equip this card to it as an Equip Card with this effect.\r\n● Once per battle, during the Battle Step, if the equipped monster battles an opponent's monster: You can destroy that opponent's monster.\r\nIf this card is destroyed: You can add 1 \"Armament Reincarnation\" from your Deck to your hand. You can only use this effect of \"Mirror Barrier\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/95915457.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

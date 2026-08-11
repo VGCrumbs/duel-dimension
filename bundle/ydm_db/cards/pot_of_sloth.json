@@ -1,0 +1,12 @@
+{
+  "id": 98476659,
+  "name": "Pot of Sloth",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Draw cards equal to the number of cards your opponent controls, then if you drew 2 or more cards, place cards from your hand on the bottom of the Deck in any order, equal to the number you drew -1. For the rest of this turn after this card resolves, you cannot activate \"Pot of Sloth\".",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/98476659.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

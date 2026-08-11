@@ -695,6 +695,11 @@ public class DuelAnimations
             float t = animation.progress(now);
             int code = event.code();
             Identifier texture = artFor(event.code());
+            boolean edoproArt = isEdoproArt(texture);
+            float windowU0 = edoproArt ? 0F : DuelTextures.CARD_U0;
+            float windowU1 = edoproArt ? 1F : DuelTextures.CARD_U1;
+            float windowV0 = edoproArt ? 0F : DuelTextures.CARD_V0;
+            float windowV1 = edoproArt ? 1F : DuelTextures.CARD_V1;
 
             float centreX = rect.x() + rect.w() / 2F;
             float centreY = rect.y() + rect.h() / 2F;
@@ -758,14 +763,14 @@ public class DuelAnimations
                         continue;
                     }
 
-                    float u0 = DuelTextures.CARD_U0
-                        + (DuelTextures.CARD_U1 - DuelTextures.CARD_U0) * fu0;
-                    float u1 = DuelTextures.CARD_U0
-                        + (DuelTextures.CARD_U1 - DuelTextures.CARD_U0) * fu1;
-                    float v0 = DuelTextures.CARD_V0
-                        + (DuelTextures.CARD_V1 - DuelTextures.CARD_V0) * fv0;
-                    float v1 = DuelTextures.CARD_V0
-                        + (DuelTextures.CARD_V1 - DuelTextures.CARD_V0) * fv1;
+                    // The shard's slice is taken from whatever window this
+                    // texture's card actually occupies, so a face-down card
+                    // shatters into pieces of its back rather than pieces of
+                    // the middle of its back.
+                    float u0 = windowU0 + (windowU1 - windowU0) * fu0;
+                    float u1 = windowU0 + (windowU1 - windowU0) * fu1;
+                    float v0 = windowV0 + (windowV1 - windowV0) * fv0;
+                    float v1 = windowV0 + (windowV1 - windowV0) * fv1;
 
                     // The shard's fade was a shader colour set before the draw;
                     // it is now the draw's own tint. Squared, as it was.
@@ -868,7 +873,7 @@ public class DuelAnimations
             float t = animation.progress(now);
             boolean endsFaceUp = event.amount() != 0;
             boolean showFace = (t < 0.5F) != endsFaceUp;
-            Identifier texture = showFace ? artFor(event.code())
+            Identifier texture = showFace ? artFor(event.code(), event.toZone())
                 : (event.player() == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT);
 
             // |cos| gives one full narrow-and-open across the animation.
@@ -1056,10 +1061,12 @@ public class DuelAnimations
             // A slight lift at the midpoint reads as the card being carried.
             float lift = (float)Math.sin(Math.PI * t) * 0.12F;
 
-            Identifier texture = artFor(event.code());
+            Identifier texture = artFor(event.code(), event.toZone());
+            boolean edoproArt = isEdoproArt(texture);
             FieldQuad.drawProjected(poseStack, collector, texture, projection,
                 new FieldLayout.Rect(x, y - lift, to.w(), to.h()), 4, false,
-                DuelTextures.CARD_U0, DuelTextures.CARD_V0, DuelTextures.CARD_U1, DuelTextures.CARD_V1);
+                edoproArt ? 0F : DuelTextures.CARD_U0, edoproArt ? 0F : DuelTextures.CARD_V0,
+                edoproArt ? 1F : DuelTextures.CARD_U1, edoproArt ? 1F : DuelTextures.CARD_V1);
         }
     }
 
@@ -1127,7 +1134,42 @@ public class DuelAnimations
             || !shatters.isEmpty() || !tosses.isEmpty() || !flips.isEmpty() || !queue.isEmpty();
     }
 
+    /**
+     * Whether a texture is already card-shaped rather than letterboxed.
+     * <p>
+     * A downloaded card sits in a window of a square file, which is what
+     * {@code CARD_U0..CARD_V1} exists to sample. EDOPro's own art — the card
+     * backs and the unknown-card placeholder — is the card and nothing else, so
+     * sampling it through that window crops it to its middle and stretches what
+     * survives. {@link #artFor} hands back a back for every face-down card, so
+     * every face-down card in a move or a shatter was drawn that way.
+     * <p>
+     * {@code BoardRenderer} has made the same test since the board was ported;
+     * this is that test where the animations can reach it. It went unnoticed
+     * because the old back was a dark vortex whose middle looks much like its
+     * edges — a flat back shows the crop immediately.
+     */
+    private static boolean isEdoproArt(Identifier texture)
+    {
+        return texture.equals(DuelTextures.COVER)
+            || texture.equals(DuelTextures.COVER_OPPONENT)
+            || texture.equals(DuelTextures.UNKNOWN);
+    }
+
     private static Identifier artFor(int code)
+    {
+        return artFor(code, -1);
+    }
+
+    /**
+     * @param zoneRef the field zone this card is standing in by the time the
+     *                animation runs, or -1 when there is none. The board is
+     *                applied before its events play, so for a card arriving
+     *                somewhere that zone already holds it — which is how a
+     *                copy wearing chosen artwork is drawn wearing it while it
+     *                travels, instead of changing picture on landing.
+     */
+    private static Identifier artFor(int code, int zoneRef)
     {
         if(code == 0)
         {
@@ -1135,7 +1177,42 @@ public class DuelAnimations
         }
         Properties card = DdDatabase.PROPERTIES_LIST.get((long)code);
         return card == null ? DuelTextures.COVER
-            : DuelTextures.card(card, (byte)0, DuelTextures.FIELD_CARD_SIZE);
+            : DuelTextures.card(card, DuelTextures.artIndex(card, artAtZone(code, zoneRef)),
+                DuelTextures.FIELD_CARD_SIZE);
+    }
+
+    /**
+     * The artwork worn by the copy in a field zone, and 0 for anything less
+     * certain than that.
+     * <p>
+     * The code must match as well as the zone. A zone identifies one physical
+     * card, but only of the board it was read from, and an update may move
+     * several cards through one zone before this frame is drawn; requiring the
+     * code to agree makes the answer either exactly this copy's artwork or the
+     * printed one. There is no third case where a wrong artwork is shown
+     * confidently, which for a card whose whole point is which picture it
+     * wears would be worse than the printed one.
+     */
+    private static int artAtZone(int code, int zoneRef)
+    {
+        if(zoneRef < 0)
+        {
+            return 0;
+        }
+        boolean opponent = (zoneRef & 16) != 0;
+        boolean monsterZone = (zoneRef & 8) != 0;
+        int sequence = zoneRef & 7;
+        de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot snapshot = DuelClientState.board;
+        de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot.Side side =
+            opponent ? snapshot.opponent() : snapshot.self();
+        java.util.List<de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot.Slot> zones =
+            monsterZone ? side.monsters() : side.spells();
+        if(sequence < 0 || sequence >= zones.size())
+        {
+            return 0;
+        }
+        de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot.Slot slot = zones.get(sequence);
+        return slot.present() && slot.code() == code ? slot.art() : 0;
     }
 
     /** Unpacks a zone reference back into its rectangle on the table. */

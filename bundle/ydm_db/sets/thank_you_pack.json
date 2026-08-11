@@ -1,0 +1,155 @@
+{
+  "name": "THANK YOU PACK",
+  "code": "TYP1",
+  "type": "Booster Pack (2026)",
+  "date": "22-07-2026",
+  "image": "https://ygoprodeck.com/pics_sets/TYP1.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 85306040,
+      "code": "TYP1-EN004",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 85306040,
+      "code": "TYP1-EN004",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90508760,
+      "code": "TYP1-EN008",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 90508760,
+      "code": "TYP1-EN008",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 52687916,
+      "code": "TYP1-EN013",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 52687916,
+      "code": "TYP1-EN013",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69610924,
+      "code": "TYP1-EN015",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 69610924,
+      "code": "TYP1-EN015",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 83764719,
+      "code": "TYP1-EN018",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 83764719,
+      "code": "TYP1-EN018",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4031928,
+      "code": "TYP1-EN019",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 4031928,
+      "code": "TYP1-EN019",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 26412047,
+      "code": "TYP1-EN021",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 26412047,
+      "code": "TYP1-EN021",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31834488,
+      "code": "TYP1-EN024",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 31834488,
+      "code": "TYP1-EN024",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29401950,
+      "code": "TYP1-EN027",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29401950,
+      "code": "TYP1-EN027",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4178474,
+      "code": "TYP1-EN028",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 4178474,
+      "code": "TYP1-EN028",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14883228,
+      "code": "TYP1-EN029",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 14883228,
+      "code": "TYP1-EN029",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40838625,
+      "code": "TYP1-EN030",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 40838625,
+      "code": "TYP1-EN030",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

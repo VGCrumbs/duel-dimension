@@ -1,0 +1,12 @@
+{
+  "id": 13379114,
+  "name": "Archfiend's Fervor",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you control an \"Archfiend\" Ritual Monster in the Extra Monster Zone: You can target 1 face-up card your opponent controls; negate its effects until the end of this turn. If this card is banished from the hand or field: You can add 1 \"Archfiend\" card from your Deck to your hand, except \"Archfiend's Fervor\". You can only use each effect of \"Archfiend's Fervor\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/13379114.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Continuous"
+}

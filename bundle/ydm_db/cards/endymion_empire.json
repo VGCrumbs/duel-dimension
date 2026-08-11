@@ -1,0 +1,12 @@
+{
+  "id": 34041788,
+  "name": "Endymion Empire",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When this card is activated: Add 1 \"Regulus, the Prince of Endymion\" or 1 monster that mentions it from your Deck to your hand, then if your opponent controls a monster, you can Special Summon 1 Spellcaster monster from your hand. If a card(s) you control would be destroyed by battle or card effect, you can destroy 1 \"Regulus, the Prince of Endymion\" in your hand or face-up Monster Zone instead. You can only use this effect of \"Endymion Empire\" once per turn. You can only activate 1 \"Endymion Empire\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/34041788.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Continuous"
+}

@@ -1,0 +1,929 @@
+{
+  "name": "Legendary Arc-V Decks",
+  "code": "LAVD",
+  "type": "Booster Pack (2026)",
+  "date": "06-08-2026",
+  "image": "https://ygoprodeck.com/pics_sets/LAVD.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare_with_starlight_rare",
+  "cards": [
+    {
+      "id": 97268402,
+      "code": "LAVD-ENL01",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11317977,
+      "code": "LAVD-ENL02",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11317977,
+      "code": "LAVD-ENL02",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11317977,
+      "code": "LAVD-ENL02",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11317977,
+      "code": "LAVD-ENL02",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 47705572,
+      "code": "LAVD-ENL03",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 83190280,
+      "code": "LAVD-ENL04",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 35618217,
+      "code": "LAVD-ENL05",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 14558127,
+      "code": "LAVD-ENL06",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 14152693,
+      "code": "LAVD-ENL07",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50546208,
+      "code": "LAVD-ENL08",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 50546208,
+      "code": "LAVD-ENL08",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50546208,
+      "code": "LAVD-ENL08",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 87209160,
+      "code": "LAVD-ENL09",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 87126721,
+      "code": "LAVD-ENL10",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 8379983,
+      "code": "LAVD-ENL11",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 35763582,
+      "code": "LAVD-ENL12",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11876803,
+      "code": "LAVD-ENL13",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11876803,
+      "code": "LAVD-ENL13",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 24094653,
+      "code": "LAVD-ENL14",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81439173,
+      "code": "LAVD-ENL15",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 57103969,
+      "code": "LAVD-ENL16",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 48444114,
+      "code": "LAVD-ENL17",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 35726888,
+      "code": "LAVD-ENL18",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24224830,
+      "code": "LAVD-ENL19",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 87931906,
+      "code": "LAVD-ENL20",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 65681983,
+      "code": "LAVD-ENL21",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 25311006,
+      "code": "LAVD-ENL22",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 84211599,
+      "code": "LAVD-ENL23",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 35269904,
+      "code": "LAVD-ENL24",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 58570206,
+      "code": "LAVD-ENL25",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 2344618,
+      "code": "LAVD-ENL26",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 2344618,
+      "code": "LAVD-ENL26",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 2344618,
+      "code": "LAVD-ENL26",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10045474,
+      "code": "LAVD-ENL27",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 13935001,
+      "code": "LAVD-ENL28",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 49299410,
+      "code": "LAVD-ENL29",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 51777272,
+      "code": "LAVD-ENL30",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97165977,
+      "code": "LAVD-ENL31",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24550676,
+      "code": "LAVD-ENL32",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 88753594,
+      "code": "LAVD-ENL33",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54701958,
+      "code": "LAVD-ENL34",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 54701958,
+      "code": "LAVD-ENL34",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54701958,
+      "code": "LAVD-ENL34",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81196066,
+      "code": "LAVD-ENL35",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81196066,
+      "code": "LAVD-ENL35",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81196066,
+      "code": "LAVD-ENL35",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 96381979,
+      "code": "LAVD-ENL36",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 8809344,
+      "code": "LAVD-ENL37",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 55285840,
+      "code": "LAVD-ENL38",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 60303245,
+      "code": "LAVD-ENL39",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 50277355,
+      "code": "LAVD-ENL40",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29301450,
+      "code": "LAVD-ENL41",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 94145021,
+      "code": "LAVD-ENO01",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 47075569,
+      "code": "LAVD-ENO02",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 40318957,
+      "code": "LAVD-ENO03",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 40318957,
+      "code": "LAVD-ENO03",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17330916,
+      "code": "LAVD-ENO04",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 17330916,
+      "code": "LAVD-ENO04",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17330916,
+      "code": "LAVD-ENO04",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21250202,
+      "code": "LAVD-ENO05",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 67754901,
+      "code": "LAVD-ENO06",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76794549,
+      "code": "LAVD-ENO07",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 14558127,
+      "code": "LAVD-ENO08",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 46136942,
+      "code": "LAVD-ENO09",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 82224646,
+      "code": "LAVD-ENO10",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 14105623,
+      "code": "LAVD-ENO11",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 16306932,
+      "code": "LAVD-ENO12",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 56677752,
+      "code": "LAVD-ENO13",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 82661461,
+      "code": "LAVD-ENO14",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 21949879,
+      "code": "LAVD-ENO15",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 58938528,
+      "code": "LAVD-ENO16",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 4836680,
+      "code": "LAVD-ENO17",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 4836680,
+      "code": "LAVD-ENO17",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4836680,
+      "code": "LAVD-ENO17",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84192580,
+      "code": "LAVD-ENO18",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 27813661,
+      "code": "LAVD-ENO19",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 27813661,
+      "code": "LAVD-ENO19",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27813661,
+      "code": "LAVD-ENO19",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 24224830,
+      "code": "LAVD-ENO20",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 56506740,
+      "code": "LAVD-ENO21",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 92501449,
+      "code": "LAVD-ENO22",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29095457,
+      "code": "LAVD-ENO23",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 53262004,
+      "code": "LAVD-ENO24",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22850702,
+      "code": "LAVD-ENO25",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29325276,
+      "code": "LAVD-ENO26",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29325276,
+      "code": "LAVD-ENO26",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 45627618,
+      "code": "LAVD-ENO27",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 16691074,
+      "code": "LAVD-ENO28",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 86238081,
+      "code": "LAVD-ENO29",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 98452268,
+      "code": "LAVD-ENO30",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 28781003,
+      "code": "LAVD-ENO31",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 64276752,
+      "code": "LAVD-ENO32",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 65741786,
+      "code": "LAVD-ENO33",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 86066372,
+      "code": "LAVD-ENO34",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22125101,
+      "code": "LAVD-ENO35",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 22125101,
+      "code": "LAVD-ENO35",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22125101,
+      "code": "LAVD-ENO35",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92812851,
+      "code": "LAVD-ENO36",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29301450,
+      "code": "LAVD-ENO37",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 58083496,
+      "code": "LAVD-ENO38",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 58083496,
+      "code": "LAVD-ENO38",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97268402,
+      "code": "LAVD-ENS01",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 94145021,
+      "code": "LAVD-ENS02",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81275020,
+      "code": "LAVD-ENS03",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81275020,
+      "code": "LAVD-ENS03",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81275020,
+      "code": "LAVD-ENS03",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81275020,
+      "code": "LAVD-ENS03",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53054833,
+      "code": "LAVD-ENS04",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 53932291,
+      "code": "LAVD-ENS05",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 53932291,
+      "code": "LAVD-ENS05",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53932291,
+      "code": "LAVD-ENS05",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53932291,
+      "code": "LAVD-ENS05",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 16725505,
+      "code": "LAVD-ENS06",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 59640711,
+      "code": "LAVD-ENS07",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 14558127,
+      "code": "LAVD-ENS08",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 96708940,
+      "code": "LAVD-ENS09",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 27204311,
+      "code": "LAVD-ENS10",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 96945958,
+      "code": "LAVD-ENS11",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 86976918,
+      "code": "LAVD-ENS12",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 42141493,
+      "code": "LAVD-ENS13",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 2254222,
+      "code": "LAVD-ENS14",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 85482105,
+      "code": "LAVD-ENS15",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 85482105,
+      "code": "LAVD-ENS15",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 88204302,
+      "code": "LAVD-ENS16",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24224830,
+      "code": "LAVD-ENS17",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 25311006,
+      "code": "LAVD-ENS18",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 12148078,
+      "code": "LAVD-ENS19",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29114773,
+      "code": "LAVD-ENS20",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 10045474,
+      "code": "LAVD-ENS21",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 58543073,
+      "code": "LAVD-ENS22",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 66002986,
+      "code": "LAVD-ENS23",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 82044280,
+      "code": "LAVD-ENS24",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 42110604,
+      "code": "LAVD-ENS25",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 21516908,
+      "code": "LAVD-ENS26",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 64880894,
+      "code": "LAVD-ENS27",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 64880894,
+      "code": "LAVD-ENS27",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 64880894,
+      "code": "LAVD-ENS27",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86943389,
+      "code": "LAVD-ENS28",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 90036274,
+      "code": "LAVD-ENS29",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 5772618,
+      "code": "LAVD-ENS30",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23361526,
+      "code": "LAVD-ENS31",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 23361526,
+      "code": "LAVD-ENS31",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23361526,
+      "code": "LAVD-ENS31",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59765225,
+      "code": "LAVD-ENS32",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 86154370,
+      "code": "LAVD-ENS33",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 86154370,
+      "code": "LAVD-ENS33",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86154370,
+      "code": "LAVD-ENS33",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84343351,
+      "code": "LAVD-ENS34",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10732060,
+      "code": "LAVD-ENS35",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 10732060,
+      "code": "LAVD-ENS35",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 72813401,
+      "code": "LAVD-ENS36",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 72813401,
+      "code": "LAVD-ENS36",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

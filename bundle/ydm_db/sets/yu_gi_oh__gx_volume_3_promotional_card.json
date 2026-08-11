@@ -1,0 +1,16 @@
+{
+  "name": "Yu-Gi-Oh! GX Volume 3 promotional card",
+  "code": "YG03",
+  "type": "Single",
+  "date": "02-06-2009",
+  "image": "https://ygoprodeck.com/pics_sets/YG03.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 33776734,
+      "code": "YG03-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

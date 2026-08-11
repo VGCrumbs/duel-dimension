@@ -1,0 +1,21 @@
+{
+  "id": 85523502,
+  "name": "Whisker Blitzclique",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "During the turn a card(s) was destroyed by your \"Blitzclique\" card effect (Quick Effect): You can reveal this card in your hand; Special Summon up to 3 Thunder monsters from your hand, then you can destroy up to that many cards on the field, also for the rest of this turn, you cannot Special Summon Effect Monsters, except from the hand. When a monster effect is activated, except in the hand (Quick Effect): You can return 1 other Thunder monster you control to the hand; negate the activation, and if you do, destroy that monster. You can only use each effect of \"Whisker Blitzclique\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/85523502.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 3000,
+  "species": "Thunder",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2400,
+  "level": 8,
+  "is_tuner": false
+}

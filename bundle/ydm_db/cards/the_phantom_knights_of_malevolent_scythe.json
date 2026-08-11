@@ -1,0 +1,20 @@
+{
+  "id": 78449284,
+  "name": "The Phantom Knights of Malevolent Scythe",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2 Level 3 DARK monsters\r\nYou can detach 1 material from this card; Special Summon 1 \"The Phantom Knights\" monster from your Deck. If you Xyz Summon an \"Xyz Dragon\" monster, while this card is in your Monster Zone (except during the Damage Step): You can add 1 \"Rank-Up-Magic\" Spell from your Deck to your hand. If this card is destroyed: You can add 1 of your banished \"The Phantom Knights\" cards to your hand, except Xyz Monsters. You can only use each effect of \"The Phantom Knights of Malevolent Scythe\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/78449284.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 1900,
+  "species": "Warrior",
+  "monster_type": "Xyz",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "rank": 3
+}

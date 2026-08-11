@@ -1,0 +1,16 @@
+{
+  "name": "Duelist League Series 9 participation card",
+  "code": "DL9",
+  "type": "Single",
+  "date": "03-01-2006",
+  "image": "https://ygoprodeck.com/pics_sets/DL9.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 90330453,
+      "code": "DL9-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

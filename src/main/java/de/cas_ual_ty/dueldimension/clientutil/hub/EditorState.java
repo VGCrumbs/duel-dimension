@@ -211,6 +211,196 @@ public final class EditorState
         dirty = true;
     }
 
+    // ---- positions, and the artwork each one wears ----
+
+    /**
+     * One position in a deck: which card, and which artwork that copy wears.
+     * <p>
+     * The pair exists so a reorder cannot separate them. Sorting a list of
+     * passcodes and then sorting a list of arts the same way is two operations
+     * that have to agree, and the second one has no idea what the first did.
+     */
+    public record Copy(int code, int art)
+    {
+    }
+
+    /**
+     * The artwork the copy at this position wears; 0 is the printed art.
+     * <p>
+     * Answers 0 for a position with no art recorded, which is every position of
+     * every deck built before this existed. That is the whole reason the art
+     * lists are allowed to be short.
+     */
+    public static int artAt(DeckList.Part part, int index)
+    {
+        DeckList deck = deck();
+        return deck.artAt(deck.partFor(part), index);
+    }
+
+    /**
+     * Dresses one copy in one artwork.
+     * <p>
+     * Says nothing over the wire, like every other edit here: {@link #flush()}
+     * compares the deck against what the server acknowledged once a tick and
+     * sends it if it moved, and the comparison includes the arts. An edit that
+     * announced itself would be a second thing to remember to do.
+     */
+    public static void setArt(DeckList.Part part, int index, int art)
+    {
+        DeckList deck = deck();
+        List<Integer> cards = deck.partFor(part);
+        if(index < 0 || index >= cards.size())
+        {
+            return;
+        }
+        deck.setArtAt(cards, index, Math.max(0, art));
+    }
+
+    /**
+     * Appends a new copy, dressed in the printing the player owns.
+     * <p>
+     * The overload for a copy that did not exist a moment ago — a shift-click
+     * out of the collection, a "+1" from the card info page. It is the ONLY
+     * place the default is applied, and deliberately not {@link #insertCard}:
+     * that one is also how a carried card is put back down and how a move
+     * within a grid lands, where the art being handed to it is a fact being
+     * restored rather than a blank to fill in. Defaulting there would repaint a
+     * deliberately chosen artwork on every drag.
+     */
+    public static void addCard(DeckList.Part part, int code)
+    {
+        addCard(part, code, defaultArtFor(code));
+    }
+
+    /**
+     * The artwork the next copy of this card added to the open deck should
+     * wear; 0 for the printed art.
+     * <p>
+     * The rule itself lives in {@code DeckEdits} beside the one that sanitises
+     * arts off the wire, so it can be tested without a client and so there is
+     * one answer to it rather than one per caller. This is simply the editor's
+     * way of asking, with the collection and the open deck filled in.
+     */
+    public static int defaultArtFor(int code)
+    {
+        return de.cas_ual_ty.dueldimension.duel.profile.DeckEdits.artForNewCopy(trunk(), deck(),
+            code);
+    }
+
+    /**
+     * The artwork the fanciest copy of this card in the collection wears.
+     * <p>
+     * What the right-hand panel draws. A tile there is a CARD rather than a
+     * copy, so it shows the best the player owns and keeps showing it while a
+     * deck is built — asking for the next copy's art instead would make the
+     * collection repaint itself as cards were dragged out of it.
+     */
+    public static int bestArtOwned(Properties card)
+    {
+        // Takes the card rather than its passcode because the panel already
+        // holds it, and the answer for a card with one artwork is 0 without
+        // looking anything up at all -- which is 13,740 of the 13,862 in the
+        // database, asked once per tile per frame.
+        return card == null || card.getImageIndicesAmt() <= 1 ? 0
+            : de.cas_ual_ty.dueldimension.duel.profile.DeckEdits.artOwnedAt(trunk(),
+                (int)card.getId(), 0);
+    }
+
+    /** Appends a copy already dressed — what dropping a carried card does. */
+    public static void addCard(DeckList.Part part, int code, int art)
+    {
+        insertCard(part, deck().partFor(part).size(), code, art);
+    }
+
+    /**
+     * Puts a copy at a position, pushing everything from there along.
+     * <p>
+     * The art goes in at the same index rather than being written after the
+     * fact, because writing it after would set the art of whichever copy now
+     * happens to sit there.
+     */
+    public static void insertCard(DeckList.Part part, int index, int code, int art)
+    {
+        DeckList deck = deck();
+        List<Integer> cards = deck.partFor(part);
+        List<Integer> arts = deck.artsFor(cards);
+        int at = Math.min(Math.max(0, index), cards.size());
+        cards.add(at, code);
+        // The art list is allowed to be short, so the insert point may not
+        // exist yet; the positions in between are all on the printed art.
+        while(arts.size() < at)
+        {
+            arts.add(0);
+        }
+        arts.add(at, Math.max(0, art));
+    }
+
+    /**
+     * Takes a copy out, and its artwork with it.
+     * <p>
+     * <b>This is the one that would have been silently wrong.</b> Removing card
+     * 3 of a forty card deck moves cards 4..39 back one place, so an art list
+     * left alone would leave all thirty-six of them wearing the artwork of the
+     * copy in front — a bug that shows up nowhere near the click that caused it.
+     *
+     * @return the artwork the removed copy was wearing, so a card picked up and
+     *         put down elsewhere keeps it
+     */
+    public static int removeCard(DeckList.Part part, int index)
+    {
+        DeckList deck = deck();
+        List<Integer> cards = deck.partFor(part);
+        if(index < 0 || index >= cards.size())
+        {
+            return 0;
+        }
+        cards.remove(index);
+        List<Integer> arts = deck.artsFor(cards);
+        return index < arts.size() ? arts.remove(index) : 0;
+    }
+
+    /** One part as (card, artwork) pairs, in deck order. */
+    public static List<Copy> copiesIn(DeckList.Part part)
+    {
+        DeckList deck = deck();
+        List<Integer> cards = deck.partFor(part);
+        List<Copy> copies = new ArrayList<>(cards.size());
+        for(int index = 0; index < cards.size(); index++)
+        {
+            copies.add(new Copy(cards.get(index), deck.artAt(cards, index)));
+        }
+        return copies;
+    }
+
+    /**
+     * Lays a part out again, exactly as given.
+     * <p>
+     * What a sort is: {@link #copiesIn} hands out the pairs, the caller puts
+     * them in the order it wants, and this writes both lists back together.
+     */
+    public static void reorder(DeckList.Part part, List<Copy> copies)
+    {
+        DeckList deck = deck();
+        List<Integer> cards = deck.partFor(part);
+        List<Integer> arts = deck.artsFor(cards);
+        cards.clear();
+        arts.clear();
+        for(Copy copy : copies)
+        {
+            cards.add(copy.code());
+            arts.add(Math.max(0, copy.art()));
+        }
+    }
+
+    /** Empties a part, artwork and all. */
+    public static void clear(DeckList.Part part)
+    {
+        DeckList deck = deck();
+        List<Integer> cards = deck.partFor(part);
+        deck.artsFor(cards).clear();
+        cards.clear();
+    }
+
     /** True once the server has sent this player's collection. */
     public static boolean isSynced()
     {
@@ -344,6 +534,11 @@ public final class EditorState
             name = source.name() + " copy " + suffix;
         }
         DeckList copy = source.copy(name, DeckList.Origin.SAVED);
+        // DeckList.copy carries the sleeve but not the arts, and a copy of a
+        // deck is that deck: duplicating one full of chosen artwork should not
+        // hand back forty cards on their printed art. Position for position,
+        // because the copy has the same cards in the same order.
+        copy.setArts(source.mainArts(), source.extraArts(), source.sideArts());
         profile.addDeck(copy);
         current = profile.decks().size() - 1;
         // A copy of a granted deck is a recipe being used; a copy of a build is
@@ -356,7 +551,23 @@ public final class EditorState
         else
         {
             send(new ProfilePayloads.CreateDeck(name));
-            send(new ProfilePayloads.SaveDeck(name, copy.main(), copy.extra(), copy.side()));
+            // The arts ride along in the payload, so unlike the sleeve below
+            // they need no message of their own -- which is the point of having
+            // put them there rather than leaving the server to carry them over.
+            send(saveMessage(name, copy));
+            // And the sleeve, which neither of those carries.
+            //
+            // CreateDeck makes a deck at the default sleeve, and SaveDeck's
+            // carry-over then reads the sleeve off "the existing deck" -- which
+            // here is the blank one CreateDeck just made, so it faithfully
+            // preserves the default over the copied sleeve. The client kept it
+            // (DeckList.copy does carry it), so the two sides disagreed and the
+            // paid cosmetic quietly vanished at the next sync.
+            //
+            // Safe to send: the player owns the source deck's sleeve, which is
+            // what the server checks before accepting.
+            send(new ProfilePayloads.SetDeckSleeve(name,
+                de.cas_ual_ty.dueldimension.duel.profile.Sleeves.nameOf(copy.sleeve())));
         }
         return copy;
     }
@@ -380,6 +591,10 @@ public final class EditorState
             name = source.name() + " " + suffix;
         }
         DeckList made = source.copy(name, DeckList.Origin.SAVED);
+        // Matching what DeckEdits.copyRecipe does with the same two decks. A
+        // granted recipe is all printed art anyway, but a player's own
+        // published deck is a recipe too and can be full of chosen artwork.
+        made.setArts(source.mainArts(), source.extraArts(), source.sideArts());
         profile.addDeck(made);
         current = profile.decks().size() - 1;
         send(new ProfilePayloads.CopyRecipe(source.name(), name));
@@ -430,7 +645,11 @@ public final class EditorState
             target.main().clear();
             target.extra().clear();
             target.side().clear();
-            send(new ProfilePayloads.SaveDeck(name, List.of(), List.of(), List.of()));
+            // And the arts, which describe positions that no longer exist. Left
+            // behind they would dress whatever the player builds here next.
+            target.setArts(List.of(), List.of(), List.of());
+            send(new ProfilePayloads.SaveDeck(name, List.of(), List.of(), List.of(),
+                List.of(), List.of(), List.of()));
             if(!"New Deck".equals(name))
             {
                 target.rename("New Deck");
@@ -590,7 +809,7 @@ public final class EditorState
             return;
         }
         agreed = contentsOf(open);
-        send(new ProfilePayloads.SaveDeck(open.name(), open.main(), open.extra(), open.side()));
+        send(saveMessage(open.name(), open));
     }
 
     public static void flush()
@@ -610,7 +829,28 @@ public final class EditorState
             return;
         }
         agreed = now;
-        send(new ProfilePayloads.SaveDeck(open.name(), open.main(), open.extra(), open.side()));
+        send(saveMessage(open.name(), open));
+    }
+
+    /**
+     * A deck as the wire carries it: three lists of cards and, beside them, the
+     * artwork each copy wears.
+     * <p>
+     * The arts go through {@code DeckEdits.canonicalArts} — the same method the
+     * server puts them through on arrival — so what is sent is already what will
+     * be stored. Skipping that would make the two sides disagree about a deck
+     * neither of them changed: the server would trim an art off a card that has
+     * only one, and the next comparison would see a difference and send again.
+     */
+    private static ProfilePayloads.SaveDeck saveMessage(String name, DeckList deck)
+    {
+        return new ProfilePayloads.SaveDeck(name, deck.main(), deck.extra(), deck.side(),
+            de.cas_ual_ty.dueldimension.duel.profile.DeckEdits.canonicalArts(deck.main(),
+                deck.mainArts()),
+            de.cas_ual_ty.dueldimension.duel.profile.DeckEdits.canonicalArts(deck.extra(),
+                deck.extraArts()),
+            de.cas_ual_ty.dueldimension.duel.profile.DeckEdits.canonicalArts(deck.side(),
+                deck.sideArts()));
     }
 
     /**
@@ -622,9 +862,27 @@ public final class EditorState
      */
     private static String agreed = "";
 
+    /**
+     * Everything about a deck the server needs told, as one string to compare.
+     * <p>
+     * The arts are in it, and they have to be: this comparison is the <em>only</em>
+     * thing that decides whether {@link #flush()} sends. Choosing an artwork
+     * changes no card and no name, so without them an art-only edit would look
+     * like nothing happened and would be lost when the editor closed.
+     * <p>
+     * Canonical, for the same reason {@link #saveMessage} is: what is compared
+     * has to be what is sent, or a deck the server accepted would keep looking
+     * different from the one it stored.
+     */
     private static String contentsOf(DeckList deck)
     {
-        return deck.name() + "|" + deck.main() + deck.extra() + deck.side();
+        return deck.name() + "|" + deck.main() + deck.extra() + deck.side()
+            + de.cas_ual_ty.dueldimension.duel.profile.DeckEdits.canonicalArts(deck.main(),
+                deck.mainArts())
+            + de.cas_ual_ty.dueldimension.duel.profile.DeckEdits.canonicalArts(deck.extra(),
+                deck.extraArts())
+            + de.cas_ual_ty.dueldimension.duel.profile.DeckEdits.canonicalArts(deck.side(),
+                deck.sideArts());
     }
 
     public static boolean isFavourite(int passcode)

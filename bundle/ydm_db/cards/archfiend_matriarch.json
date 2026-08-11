@@ -1,0 +1,24 @@
+{
+  "id": 78744660,
+  "name": "Archfiend Matriarch",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "[ Pendulum Effect ] \nYou can target 1 \"Archfiend\" Spell/Trap in your GY or banishment; destroy this card, and if you do, add that target to your hand. You can only use this effect of \"Archfiend Matriarch\" once per turn.\n\n[ Monster Effect ] \nYou can Ritual Summon this card with \"Throne of the Archfiends\". Must be Ritual Summoned. Unaffected by other monsters' effects while in the Extra Monster Zone. If this card is Ritual Summoned: You can destroy as many Spells/Traps your opponent controls as possible, then if this card is in the Extra Monster Zone, you can banish all Spells/Traps from your opponent's GY. You can only use this effect of \"Archfiend Matriarch\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/78744660.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 2100,
+  "species": "Fiend",
+  "monster_type": "Ritual",
+  "is_pendulum": true,
+  "ability": "",
+  "has_effect": true,
+  "pendulum_text": "You can target 1 \"Archfiend\" Spell/Trap in your GY or banishment; destroy this card, and if you do, add that target to your hand. You can only use this effect of \"Archfiend Matriarch\" once per turn.",
+  "pendulum_scale_left_blue": 9,
+  "pendulum_scale_right_red": 9,
+  "def": 2900,
+  "level": 7,
+  "is_tuner": false
+}

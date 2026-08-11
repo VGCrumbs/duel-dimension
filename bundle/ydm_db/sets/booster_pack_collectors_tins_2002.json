@@ -1,0 +1,83 @@
+{
+  "name": "Booster Pack Collectors Tins 2002",
+  "code": "BPT",
+  "type": "Collector's Set",
+  "date": "04-10-2002",
+  "image": "https://ygoprodeck.com/pics_sets/BPT.jpg",
+  "pull_type": "distribution",
+  "distribution": "the_dark_side_of_dimensions_movie_pack_secret_edition__pack",
+  "cards": [
+    {
+      "id": 46986420,
+      "code": "BPT-001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70781052,
+      "code": "BPT-002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89631139,
+      "code": "BPT-003",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17985575,
+      "code": "BPT-004",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74677427,
+      "code": "BPT-005",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11901678,
+      "code": "BPT-006",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46986420,
+      "code": "BPT-007",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 78193831,
+      "code": "BPT-008",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89631139,
+      "code": "BPT-009",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 91998119,
+      "code": "BPT-010",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77585513,
+      "code": "BPT-011",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 423705,
+      "code": "BPT-012",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

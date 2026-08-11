@@ -1,0 +1,21 @@
+{
+  "id": 46072770,
+  "name": "The Phantom Knights of Decayed Cloak",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is in your hand: You can reveal 1 other \"The Phantom Knights\" card in your hand; Special Summon this card. If this card is Normal or Special Summoned: You can add 1 \"The Phantom Knights\" monster from your Deck to your hand. You can banish this card from your GY, then target 1 Xyz Monster you control; this turn, you can use that face-up Xyz Monster as material for an Xyz Summon using its Rank as if it were a Level. You can only use each effect of \"The Phantom Knights of Decayed Cloak\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/46072770.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 1000,
+  "species": "Warrior",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 300,
+  "level": 3,
+  "is_tuner": false
+}

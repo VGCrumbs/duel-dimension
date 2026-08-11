@@ -1,0 +1,12 @@
+{
+  "id": 81601517,
+  "name": "Gemini Counter",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Change 1 face-up Gemini monster you control to face-down Defense Position and negate the activation of an opponent's Spell Card, and destroy it.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/81601517.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Counter"
+}

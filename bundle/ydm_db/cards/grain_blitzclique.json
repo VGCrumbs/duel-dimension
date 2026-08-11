@@ -1,0 +1,21 @@
+{
+  "id": 84401954,
+  "name": "Grain Blitzclique",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can reveal this card in your hand, then target 1 Spell/Trap on the field; destroy it, and if you do, Special Summon 1 Thunder monster from your hand, also for the rest of this turn, you cannot Special Summon Effect Monsters, except from the hand. If another card(s) is destroyed by card effect, while this card is in the Monster Zone (except during the Damage Step): You can add 1 \"Blitzclique\" Spell or 1 \"Hideout in the Sky, Coulomb\" from your Deck to your hand. You can only use each effect of \"Grain Blitzclique\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/84401954.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 1200,
+  "species": "Thunder",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 600,
+  "level": 2,
+  "is_tuner": false
+}

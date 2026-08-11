@@ -26,11 +26,45 @@ public final class DuelTextures
         Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "textures/duel/field4.png");
     public static final Identifier FIELD_TRANSPARENT =
         Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "textures/duel/field-transparent4.png");
-    /** Card backs: EDOPro uses a different one per side (tCover[controler]). */
-    public static final Identifier COVER =
-        Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "textures/duel/cover.png");
-    public static final Identifier COVER_OPPONENT =
-        Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "textures/duel/cover2.png");
+    /**
+     * Card backs: EDOPro uses a different one per side (tCover[controler]), and
+     * the pair is kept for that reason even though the player's chosen back
+     * currently goes on both.
+     * <p>
+     * <b>Assigned, not computed, and that is deliberate.</b> A dozen call sites
+     * across the duel screen ask {@code texture.equals(DuelTextures.COVER)} to
+     * decide whether art is already card-shaped and should be drawn through the
+     * full 0..1 UV range rather than the {@link #CARD_U0} letterbox window.
+     * Those tests keep working precisely because they compare against whatever
+     * the field holds <em>now</em>: the same field is the only producer of a
+     * back, so producer and predicate cannot disagree. Turning either into a
+     * method would break every one of them silently.
+     * <p>
+     * {@code volatile} because they are written from a settings button and read
+     * from the render thread, which is the rule {@code DuelClientState} follows
+     * for every static that crosses threads. A dropped {@code final} costs no
+     * caller a recompile — an {@code Identifier} is built by a method call, so
+     * it was never a compile-time constant and was never inlined anywhere.
+     *
+     * @see CardBacks
+     */
+    public static volatile Identifier COVER =
+        Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "textures/duel/backs/tcg.png");
+    public static volatile Identifier COVER_OPPONENT =
+        Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "textures/duel/backs/tcg.png");
+
+    /**
+     * Prints both sides' cards on the given backs.
+     * <p>
+     * Two arguments although there is one choice today: {@link CardBacks} hands
+     * the same texture twice, and a per-side choice is then a change to that
+     * one call rather than to this shape.
+     */
+    public static void setCovers(Identifier own, Identifier opponent)
+    {
+        COVER = own;
+        COVER_OPPONENT = opponent;
+    }
     /**
      * The mute button's two states, side by side: cell 0 the speaker, cell 1
      * the speaker crossed out. A 256x256 sheet because that is the size every
@@ -218,6 +252,27 @@ public final class DuelTextures
 
     private DuelTextures()
     {
+    }
+
+    /**
+     * The artwork index a duel wire value asks for, as an index this card
+     * actually has.
+     * <p>
+     * A duel carries the artwork chosen for a copy as a plain int, and it
+     * arrives from a deck that may have been built when the card had more
+     * artwork than the database now lists. {@code adjustImageIndex} already
+     * folds an index the card does not have back to the printed one; this adds
+     * the range check that has to happen before the narrowing to byte, because
+     * an int of 256 would otherwise become the perfectly valid byte 0 by
+     * accident rather than by decision, and one of 200 a negative.
+     */
+    public static byte artIndex(Properties properties, int art)
+    {
+        if(art <= 0 || art > Byte.MAX_VALUE)
+        {
+            return 0;
+        }
+        return properties.adjustImageIndex((byte)art);
     }
 
     /**

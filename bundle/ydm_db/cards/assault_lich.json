@@ -1,0 +1,21 @@
+{
+  "id": 86098176,
+  "name": "Assault Lich",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card you control would be used as Synchro Material, you can treat it as a non-Tuner. You can only use each of the following effects of \"Assault Lich\" once per turn. If this card is Normal or Special Summoned: You can Special Summon 1 monster that mentions \"Assault Mode Activate\", or 1 Level 4 or lower Zombie monster, from your GY. If this card is sent to the GY as Synchro Material: You can add 1 \"Assault Slash\" or \"Assault Counter\" from your Deck to your hand.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/86098176.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 1500,
+  "species": "Zombie",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "level": 4,
+  "is_tuner": true
+}

@@ -29,6 +29,25 @@ public final class DuelClientState
     public static volatile PlayMats selfMat = PlayMats.CLASSIC;
     /** The mat the other duelist brought, as the server reported it. */
     public static volatile PlayMats opponentMat = PlayMats.CLASSIC;
+
+    /**
+     * The sleeve on the deck this player is duelling with, or the plain back.
+     * <p>
+     * Only ever this player's. The opponent's cards keep the standard back, so a
+     * sleeve marks which side of the table is yours rather than restyling the
+     * whole field.
+     */
+    public static volatile de.cas_ual_ty.dueldimension.card.CardSleevesType ownSleeve =
+        de.cas_ual_ty.dueldimension.duel.profile.Sleeves.DEFAULT;
+    /**
+     * The player's own deck list, waiting for the screen to pick it up, or null.
+     * <p>
+     * The other piles open straight out of {@link #board} because their contents
+     * are already in the board packet. A deck is not and must not be: it is
+     * asked for, answered to one player, and arrives here. The screen takes it,
+     * shows it and nulls this, so a list can never be shown twice by accident.
+     */
+    public static volatile java.util.List<BoardSnapshot.Slot> deckView;
     public static volatile String result = "";
     /** Server-calculated reward waiting behind the outcome stinger. */
     private static volatile de.cas_ual_ty.dueldimension.shop.DuelRewardMessages.Result reward;
@@ -338,14 +357,35 @@ public final class DuelClientState
             snapshot.opponent().monsters(), snapshot.opponent().spells(),
             snapshot.opponent().grave(), snapshot.opponent().banished());
         java.util.List<Integer> codes = new java.util.ArrayList<>();
+        // A copy wearing chosen artwork needs THAT file fetched, not the
+        // printed one -- the pre-duel warm-up sends passcodes only, so this is
+        // where an alternate artwork first gets asked for. Kept separate from
+        // the code list so the ordinary card still costs one distinct() entry
+        // and no extra request.
+        java.util.List<BoardSnapshot.Slot> dressed = new java.util.ArrayList<>();
         groups.forEach(group -> group.forEach(slot ->
         {
             if(slot.present() && slot.code() != 0)
             {
                 codes.add(slot.code());
+                if(slot.art() != 0)
+                {
+                    dressed.add(slot);
+                }
             }
         }));
         warmUpArt(codes.stream().mapToInt(Integer::intValue).distinct().toArray());
+        for(BoardSnapshot.Slot slot : dressed)
+        {
+            de.cas_ual_ty.dueldimension.card.properties.Properties card =
+                de.cas_ual_ty.dueldimension.DdDatabase.PROPERTIES_LIST.get((long)slot.code());
+            if(card != null)
+            {
+                byte art = DuelTextures.artIndex(card, slot.art());
+                DuelTextures.card(card, art, DuelTextures.FIELD_CARD_SIZE);
+                DuelTextures.card(card, art, DuelTextures.PREVIEW_CARD_SIZE);
+            }
+        }
     }
 
     public static synchronized void reset()
@@ -357,6 +397,12 @@ public final class DuelClientState
         won = false;
         // selfMat is the player's own preference and outlives a duel.
         opponentMat = PlayMats.CLASSIC;
+        // Cleared with the rest of the duel, so the next one does not inherit
+        // the sleeve of the deck that played the last.
+        ownSleeve = de.cas_ual_ty.dueldimension.duel.profile.Sleeves.DEFAULT;
+        // For the same reason as the sleeve above: a deck list left here would
+        // be the PREVIOUS duel's deck, opening itself over the next one.
+        deckView = null;
         result = "";
         reward = null;
         log.clear();

@@ -1,0 +1,65 @@
+{
+  "name": "Kids WB Duel of Destiny promotional card",
+  "code": "EP1",
+  "type": "Booster Pack (2004)",
+  "date": "15-05-2004",
+  "image": "https://ygoprodeck.com/pics_sets/EP1.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 42664989,
+      "code": "EP1-EN000",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 87997872,
+      "code": "EP1-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 15013468,
+      "code": "EP1-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51402177,
+      "code": "EP1-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25236056,
+      "code": "EP1-EN004",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 52624755,
+      "code": "EP1-EN005",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 89731911,
+      "code": "EP1-EN006",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 14391920,
+      "code": "EP1-EN007",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 27174286,
+      "code": "EP1-EN008",
+      "rarity": "Common",
+      "image_index": 0
+    }
+  ]
+}

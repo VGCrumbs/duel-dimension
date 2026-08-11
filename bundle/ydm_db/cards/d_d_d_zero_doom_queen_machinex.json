@@ -1,0 +1,24 @@
+{
+  "id": 20715411,
+  "name": "D/D/D Zero Doom Queen Machinex",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "[ Pendulum Effect ] \nDuring your Main Phase, if this card was activated this turn: You can place 1 \"Dark Contract\" Continuous Spell/Trap from your Deck face-up on your field. You can only use this effect of \"D/D/D Zero Doom Queen Machinex\" once per turn.\n\n[ Monster Effect ] \nIf a face-up \"D/D/D\" and/or \"Dark Contract\" card(s) you control, except \"D/D/D Zero Doom Queen Machinex\", is destroyed while this card is face-up in your Extra Deck, even during the Damage Step: You can Special Summon this card, then you can destroy 1 card on the field. If this card in the Monster Zone is destroyed: You can place this card in your Pendulum Zone. You can only use each effect of \"D/D/D Zero Doom Queen Machinex\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/20715411.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 3000,
+  "species": "Fiend",
+  "monster_type": "",
+  "is_pendulum": true,
+  "ability": "",
+  "has_effect": true,
+  "pendulum_text": "During your Main Phase, if this card was activated this turn: You can place 1 \"Dark Contract\" Continuous Spell/Trap from your Deck face-up on your field. You can only use this effect of \"D/D/D Zero Doom Queen Machinex\" once per turn.",
+  "pendulum_scale_left_blue": 0,
+  "pendulum_scale_right_red": 0,
+  "def": 0,
+  "level": 8,
+  "is_tuner": false
+}

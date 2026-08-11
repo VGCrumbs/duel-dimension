@@ -1,0 +1,16 @@
+{
+  "name": "Yu-Gi-Oh! 5D's Volume 5 promotional card",
+  "code": "YF05",
+  "type": "Single",
+  "date": "05-11-2013",
+  "image": "https://ygoprodeck.com/pics_sets/YF05.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 83994433,
+      "code": "YF05-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,18 +1,20 @@
 package de.cas_ual_ty.dueldimension;
 
 import de.cas_ual_ty.dueldimension.card.CardItem;
+import de.cas_ual_ty.dueldimension.card.CardSleevesItem;
+import de.cas_ual_ty.dueldimension.card.CardSleevesType;
 import de.cas_ual_ty.dueldimension.cardbinder.CardBinderItem;
 import de.cas_ual_ty.dueldimension.deckbox.DeckBoxItem;
 import de.cas_ual_ty.dueldimension.deckbox.PatreonDeckBoxItem;
 import de.cas_ual_ty.dueldimension.set.CardSetItem;
 import de.cas_ual_ty.dueldimension.set.OpenedCardSetItem;
-import de.cas_ual_ty.dueldimension.simplebinder.SimpleBinderItem;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
 
 import java.util.function.Function;
 
@@ -89,16 +91,9 @@ public final class DdItems
     public static final CardBinderItem CARD_BINDER = register("card_binder",
         properties -> new CardBinderItem(properties.stacksTo(1)));
 
-    // A simple binder's size is six rows of nine per page, so binderSize is
-    // 6 * 9 * pages. The Forge SimpleBinderItem.makeItem factory set the tab and
-    // stack size; those are the register helper's job now (setId, tabs live in
-    // DdItemGroup), so the item just takes its size.
-    public static final SimpleBinderItem SIMPLE_BINDER_3 = register("simple_binder_3",
-        properties -> new SimpleBinderItem(properties.stacksTo(1), 6 * 9 * 3));
-    public static final SimpleBinderItem SIMPLE_BINDER_9 = register("simple_binder_9",
-        properties -> new SimpleBinderItem(properties.stacksTo(1), 6 * 9 * 9));
-    public static final SimpleBinderItem SIMPLE_BINDER_27 = register("simple_binder_27",
-        properties -> new SimpleBinderItem(properties.stacksTo(1), 6 * 9 * 27));
+// The three simple binders are gone. They differed only in page count and
+    // all three were storage; the one binder left is a collection TRACKER, which
+    // is a different job and does not want three sizes of itself.
 
     /**
      * Right-click any living thing to run the Seal of Orichalcos sequence on
@@ -109,6 +104,36 @@ public final class DdItems
         ORICHALCOS_DEBUG = register("orichalcos_debug",
             properties -> new de.cas_ual_ty.dueldimension.duel.orichalcos.OrichalcosDebugItem(
                 properties.stacksTo(1)));
+
+    /**
+     * Every sleeve in {@link CardSleevesType} except {@code CARD_BACK}, which is
+     * the absence of sleeves rather than a design of them.
+     * <p>
+     * Ported from the Forge tree's static block verbatim in shape: the enum is
+     * the list, so a new design is five words in one enum and nothing here.
+     * Registering them by hand would be thirty-seven fields whose only job is to
+     * repeat what the enum already says, and the first one anybody forgot would
+     * be a sleeve that exists on the wire and nowhere in the registry.
+     * <p>
+     * Two Forge idioms had to move rather than translate. {@code .tab(...)} is
+     * gone entirely -- a tab picks its items now -- and these are purchased
+     * cosmetics, so no tab offers them. And {@code getRarity(ItemStack)} is no
+     * longer an override point: rarity is a data component, so the patreon
+     * sleeves get theirs from {@code Properties} here, once, at construction.
+     */
+    static
+    {
+        for(CardSleevesType sleeve : CardSleevesType.VALUES)
+        {
+            if(!sleeve.isCardBack())
+            {
+                register(sleeve.getResourceName(), properties -> new CardSleevesItem(
+                    properties.stacksTo(1)
+                        .rarity(sleeve.isPatreonReward ? Rarity.RARE : Rarity.COMMON),
+                    sleeve));
+            }
+        }
+    }
 
     private DdItems()
     {

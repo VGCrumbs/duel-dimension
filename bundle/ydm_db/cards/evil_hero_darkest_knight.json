@@ -1,0 +1,21 @@
+{
+  "id": 86282581,
+  "name": "Evil HERO Darkest Knight",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 Fiend monster + 1 Warrior monster\r\nMust be Special Summoned with \"Dark Fusion\". Monsters your opponent controls lose ATK equal to the total original ATK of the materials used for this card's Fusion Summon. Can make a second attack during each Battle Phase. If this face-up Special Summoned card in its owner's control leaves the field by an opponent's card: You can target 1 Fiend or Warrior monster in your GY; Special Summon it in Defense Position.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/86282581.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 1600,
+  "species": "Fiend",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "level": 8,
+  "is_tuner": false
+}

@@ -1,0 +1,761 @@
+{
+  "name": "The Infinite Forbidden",
+  "code": "INFO",
+  "type": "Booster Pack (2024)",
+  "date": "18-07-2024",
+  "image": "https://ygoprodeck.com/pics_sets/INFO.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare_with_quarter_century_secret_rare",
+  "cards": [
+    {
+      "id": 96823189,
+      "code": "INFO-EN000",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38775407,
+      "code": "INFO-EN001",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38775407,
+      "code": "INFO-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74169516,
+      "code": "INFO-EN002",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 1164211,
+      "code": "INFO-EN003",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1164211,
+      "code": "INFO-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37552929,
+      "code": "INFO-EN004",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 63947968,
+      "code": "INFO-EN005",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 342673,
+      "code": "INFO-EN006",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 342673,
+      "code": "INFO-EN006",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 36436372,
+      "code": "INFO-EN007",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 63825486,
+      "code": "INFO-EN008",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 99229085,
+      "code": "INFO-EN009",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 35614780,
+      "code": "INFO-EN010",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 62002838,
+      "code": "INFO-EN011",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 98007437,
+      "code": "INFO-EN012",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 25592142,
+      "code": "INFO-EN013",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25592142,
+      "code": "INFO-EN013",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 61980241,
+      "code": "INFO-EN014",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 61980241,
+      "code": "INFO-EN014",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 98385955,
+      "code": "INFO-EN015",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24779554,
+      "code": "INFO-EN016",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 60764609,
+      "code": "INFO-EN017",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60764609,
+      "code": "INFO-EN017",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97262307,
+      "code": "INFO-EN018",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23657016,
+      "code": "INFO-EN019",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23657016,
+      "code": "INFO-EN019",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50042011,
+      "code": "INFO-EN020",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 96030710,
+      "code": "INFO-EN021",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22435424,
+      "code": "INFO-EN022",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 59829423,
+      "code": "INFO-EN023",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85314178,
+      "code": "INFO-EN024",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 22712877,
+      "code": "INFO-EN025",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 58707981,
+      "code": "INFO-EN026",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58707981,
+      "code": "INFO-EN026",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84192580,
+      "code": "INFO-EN027",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84192580,
+      "code": "INFO-EN027",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11590299,
+      "code": "INFO-EN028",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 57985393,
+      "code": "INFO-EN029",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 84079032,
+      "code": "INFO-EN030",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 10474647,
+      "code": "INFO-EN031",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 56863746,
+      "code": "INFO-EN032",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 83257450,
+      "code": "INFO-EN033",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 83257450,
+      "code": "INFO-EN033",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19652159,
+      "code": "INFO-EN034",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19652159,
+      "code": "INFO-EN034",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46640168,
+      "code": "INFO-EN035",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 82135803,
+      "code": "INFO-EN036",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14529511,
+      "code": "INFO-EN037",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 41924516,
+      "code": "INFO-EN038",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 41924516,
+      "code": "INFO-EN038",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77313225,
+      "code": "INFO-EN039",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77313225,
+      "code": "INFO-EN039",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14307929,
+      "code": "INFO-EN040",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14307929,
+      "code": "INFO-EN040",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40702028,
+      "code": "INFO-EN041",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 76290637,
+      "code": "INFO-EN042",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 3685372,
+      "code": "INFO-EN043",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 49689480,
+      "code": "INFO-EN044",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76078185,
+      "code": "INFO-EN045",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 2463794,
+      "code": "INFO-EN046",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 2463794,
+      "code": "INFO-EN046",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 49867899,
+      "code": "INFO-EN047",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 75352507,
+      "code": "INFO-EN048",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 1340142,
+      "code": "INFO-EN049",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38745241,
+      "code": "INFO-EN050",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 74139959,
+      "code": "INFO-EN051",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 1528054,
+      "code": "INFO-EN052",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1528054,
+      "code": "INFO-EN052",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37613663,
+      "code": "INFO-EN053",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37613663,
+      "code": "INFO-EN053",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63017368,
+      "code": "INFO-EN054",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63017368,
+      "code": "INFO-EN054",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 402416,
+      "code": "INFO-EN055",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 36890111,
+      "code": "INFO-EN056",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 63295720,
+      "code": "INFO-EN057",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 99289828,
+      "code": "INFO-EN058",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 99289828,
+      "code": "INFO-EN058",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35778533,
+      "code": "INFO-EN059",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62173132,
+      "code": "INFO-EN060",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 98567237,
+      "code": "INFO-EN061",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 98567237,
+      "code": "INFO-EN061",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35552985,
+      "code": "INFO-EN062",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 61950680,
+      "code": "INFO-EN063",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 97345699,
+      "code": "INFO-EN064",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24839398,
+      "code": "INFO-EN065",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 60238002,
+      "code": "INFO-EN066",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 97223101,
+      "code": "INFO-EN067",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 23617756,
+      "code": "INFO-EN068",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59016454,
+      "code": "INFO-EN069",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 36400569,
+      "code": "INFO-EN070",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 62995268,
+      "code": "INFO-EN071",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 99989863,
+      "code": "INFO-EN072",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25388971,
+      "code": "INFO-EN073",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 61773610,
+      "code": "INFO-EN074",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 98167225,
+      "code": "INFO-EN075",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24166324,
+      "code": "INFO-EN076",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 51650038,
+      "code": "INFO-EN077",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 97045737,
+      "code": "INFO-EN078",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97045737,
+      "code": "INFO-EN078",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 24440742,
+      "code": "INFO-EN079",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 24440742,
+      "code": "INFO-EN079",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50838440,
+      "code": "INFO-EN080",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 67694706,
+      "code": "INFO-EN081",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93683815,
+      "code": "INFO-EN082",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 20087414,
+      "code": "INFO-EN083",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 66472129,
+      "code": "INFO-EN084",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 93860227,
+      "code": "INFO-EN085",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29265962,
+      "code": "INFO-EN086",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 55359571,
+      "code": "INFO-EN087",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 92744676,
+      "code": "INFO-EN088",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 28143384,
+      "code": "INFO-EN089",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 55537983,
+      "code": "INFO-EN090",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 55537983,
+      "code": "INFO-EN090",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81522098,
+      "code": "INFO-EN091",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23920796,
+      "code": "INFO-EN092",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50415441,
+      "code": "INFO-EN093",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86809440,
+      "code": "INFO-EN094",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86809440,
+      "code": "INFO-EN094",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13204145,
+      "code": "INFO-EN095",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59293853,
+      "code": "INFO-EN096",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70117791,
+      "code": "INFO-EN097",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 71818935,
+      "code": "INFO-EN098",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 28958464,
+      "code": "INFO-EN099",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 15735108,
+      "code": "INFO-EN100",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

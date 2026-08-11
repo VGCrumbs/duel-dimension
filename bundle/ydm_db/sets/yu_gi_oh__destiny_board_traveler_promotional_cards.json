@@ -1,0 +1,29 @@
+{
+  "name": "Yu-Gi-Oh! Destiny Board Traveler promotional cards",
+  "code": "DBT",
+  "type": "Booster Pack (2004)",
+  "date": "26-10-2004",
+  "image": "https://ygoprodeck.com/pics_sets/DBT.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 43580269,
+      "code": "DBT-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70074904,
+      "code": "DBT-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 82035781,
+      "code": "DBT-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

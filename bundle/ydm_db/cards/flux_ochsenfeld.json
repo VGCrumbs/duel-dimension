@@ -1,0 +1,21 @@
+{
+  "id": 21861412,
+  "name": "Flux Ochsenfeld",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 Level 5 or higher EARTH monster + 1 Rock monster\r\nIf this card is Fusion Summoned: You can Special Summon 1 Rock monster from your hand or GY, except \"Flux Ochsenfeld\". (Quick Effect): You can target 1 EARTH monster you control and 1 card your opponent controls; return them to the hand. You can only use each effect of \"Flux Ochsenfeld\" once per turn, and cannot activate more than 1 in the same Chain.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/21861412.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 2600,
+  "species": "Rock",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2000,
+  "level": 7,
+  "is_tuner": false
+}

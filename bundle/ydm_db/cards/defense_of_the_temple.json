@@ -1,0 +1,12 @@
+{
+  "id": 96687733,
+  "name": "Defense of the Temple",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Fusion Summon 1 EARTH Fusion Monster from your Extra Deck, using monsters from your hand or field. If you use a monster you control that mentions \"Temple of the Kings\", you can also use face-up monsters your opponent controls as material. If you control \"Temple of the Kings\": You can banish this card from your GY; add 1 \"Dangers of the Divine\" from your Deck to your hand. You can only use this effect of \"Defense of the Temple\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/96687733.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

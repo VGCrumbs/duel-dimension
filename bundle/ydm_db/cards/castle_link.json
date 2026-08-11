@@ -1,0 +1,12 @@
+{
+  "id": 22198672,
+  "name": "Castle Link",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Once per turn: You can target 1 Link Monster on the field; move it to a Main Monster Zone it points to on its controller's field. Once per turn: You can switch the locations of 2 Link Monsters in your Main Monster Zones or 2 Link Monsters in your opponent's Main Monster Zones.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/22198672.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Field"
+}

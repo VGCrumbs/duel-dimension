@@ -1,0 +1,21 @@
+{
+  "id": 48016074,
+  "name": "Charmers of the Grand Circle",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2+ \"Charmer\" or \"Familiar-Possessed\" monsters\r\nIf this card is Fusion Summoned: You can activate this effect; for each different original Attribute used for its Fusion Summon (max. 4), you can apply 1 effect from this list. You can choose the same effect more than once. Resolve each effect before choosing again.\r\n● This card gains 800 ATK. ● Add 1 \"Possessed\" Spell/Trap from your Deck to your hand.\r\n● Return 1 card on the field to the hand. ● Special Summon 1 Spellcaster monster from your GY.\r\nYou can only use this effect of \"Charmers of the Grand Circle\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/48016074.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 1850,
+  "species": "Spellcaster",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1500,
+  "level": 6,
+  "is_tuner": false
+}

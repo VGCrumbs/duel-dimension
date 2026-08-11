@@ -1,0 +1,12 @@
+{
+  "id": 54020393,
+  "name": "Enneacraft Release",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Place 1 \"Enneacraft\" Pendulum Monster from your Deck in your Pendulum Zone. If this card is in your GY, except the turn it was sent there: You can banish it; add 1 face-up \"Enneacraft\" monster from your Extra Deck to your hand. You can only activate 1 \"Enneacraft Release\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/54020393.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

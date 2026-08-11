@@ -1,0 +1,12 @@
+{
+  "id": 74378580,
+  "name": "GMX Lab #5",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Your opponent cannot activate cards or effects when you Normal or Special Summon a \"GMX\" monster(s). During your Main Phase: You can Set 1 \"GMX\" Spell/Trap from your Deck, except \"GMX Lab #5\", then place 1 card from your hand on top of the Deck. You can only use this effect of \"GMX Lab #5\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/74378580.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Field"
+}

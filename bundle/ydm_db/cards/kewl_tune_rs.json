@@ -1,0 +1,21 @@
+{
+  "id": 15665977,
+  "name": "Kewl Tune RS",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "\"Kewl Tune Reco\" + 1+ Tuners\r\nGains 300 ATK for each Tuner in the GYs. The Levels of monsters your opponent controls with 1700 or less original ATK are increased by 1. During the Main Phase (Quick Effect): You can banish 1 Tuner from your GY, then target 1 face-up card your opponent controls; negate its effects until the end of this turn. You can only use this effect of \"Kewl Tune RS\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/15665977.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 1700,
+  "species": "Fiend",
+  "monster_type": "Synchro",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2400,
+  "level": 5,
+  "is_tuner": true
+}

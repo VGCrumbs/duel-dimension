@@ -1,0 +1,23 @@
+{
+  "id": 31822037,
+  "name": "Purification Power Patron",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2 non-Link Monsters\r\nIf this card is Link Summoned, and you have a \"Power Patron\" monster in your GY: You can add 1 \"Theorealize\" card from your Deck to your hand. During the Main Phase, if you control another DARK Fairy monster, you can (Quick Effect): Immediately after this effect resolves, Link Summon 1 Link Monster using materials you control, including this card. You can only use each effect of \"Purification Power Patron\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/31822037.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 300,
+  "species": "Fairy",
+  "monster_type": "Link",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "link_rating": 2,
+  "link_arrows": [
+    "Top",
+    "Bottom"
+  ]
+}

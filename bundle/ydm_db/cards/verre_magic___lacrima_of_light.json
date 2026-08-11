@@ -1,0 +1,12 @@
+{
+  "id": 73664385,
+  "name": "Verre Magic - Lacrima of Light",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "(This card is always treated as a \"Magistus\" and \"Witchcrafter\" card.)\r\nActivate 1 of these effects (but you can only use each effect of \"Verre Magic - Lacrima of Light\" once per turn);\r\n● If you control a \"Magistus\" or \"Witchcrafter\" monster: Send 1 Spellcaster monster or 1 Spell from your Deck to the GY.\r\n● When your opponent activates a card or effect: Special Summon 1 \"Magistus\" or \"Witchcrafter\" monster from your hand or Deck.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/73664385.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Quick-Play"
+}

@@ -2,9 +2,11 @@ package de.cas_ual_ty.dueldimension.duel.profile;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import de.cas_ual_ty.dueldimension.card.CardSleevesType;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -32,6 +34,21 @@ public final class DuelProfile
      * nothing to anyone.
      */
     private final Set<Integer> favourites = new LinkedHashSet<>();
+    /**
+     * Sleeves this player has bought or been given.
+     * <p>
+     * The first cosmetic in this mod that anyone has to <em>own</em>: outfits
+     * are gated only by existing and a play mat's colour is a file on the
+     * player's own disk, so neither needed an entitlement to check. A sleeve is
+     * sold, which means the answer to "may I wear this" has to live on the side
+     * that also holds the money — here, beside the {@link Trunk}, persisted and
+     * synced by the same Codec.
+     * <p>
+     * Holds only what was <em>granted</em>. The free sleeves are a rule rather
+     * than a grant ({@link Sleeves#FREE}), so they never enter this set and can
+     * never be lost from it.
+     */
+    private final Set<CardSleevesType> sleeves = new LinkedHashSet<>();
     private String activeDeck = "";
     /** The outfit this duelist is seen in; empty means their own skin. */
     private String outfit = "";
@@ -105,6 +122,43 @@ public final class DuelProfile
         }
         favourites.add(passcode);
         return true;
+    }
+
+    /**
+     * Every sleeve this player may dress a deck in, free ones included.
+     * <p>
+     * What a picker iterates to decide what is greyed out. In enum order rather
+     * than in the order they were bought, so the list does not reshuffle itself
+     * under the player after a purchase.
+     */
+    public Set<CardSleevesType> ownedSleeves()
+    {
+        EnumSet<CardSleevesType> all = EnumSet.copyOf(Sleeves.FREE);
+        all.addAll(sleeves);
+        return Collections.unmodifiableSet(all);
+    }
+
+    /** The question every sleeve change has to pass, and the only one. */
+    public boolean ownsSleeve(CardSleevesType sleeve)
+    {
+        return sleeve != null && (Sleeves.isFree(sleeve) || sleeves.contains(sleeve));
+    }
+
+    /**
+     * Records that this player owns a sleeve.
+     *
+     * @return true if this granted something they did not already have, so a
+     *         shop can tell a purchase from a second click on the same button
+     */
+    public boolean grantSleeve(CardSleevesType sleeve)
+    {
+        if(sleeve == null || Sleeves.isFree(sleeve))
+        {
+            // Nothing to grant, and nothing worth writing to disk: a free sleeve
+            // is owned by the rule that says so.
+            return false;
+        }
+        return sleeves.add(sleeve);
     }
 
     public String outfit()
@@ -185,11 +239,23 @@ public final class DuelProfile
      * an object with itself and report no change. A deep snapshot gives the
      * attachment a genuinely new value and prevents later client/server work
      * from mutating the value that was handed to persistence.
+     * <p>
+     * <b>This copies field by field, and the copy is what persists.</b> A field
+     * added to the class and to {@link #CODEC} but forgotten here does not fail
+     * anywhere — it simply saves as empty, every time, for everyone. Anything
+     * added above belongs in here too. A deck's own sleeve rides along inside
+     * {@link DeckList#copy}.
      */
     public DuelProfile snapshot()
     {
         DuelProfile copy = new DuelProfile();
-        trunk.all().forEach(copy.trunk::add);
+        // Printing for printing, NOT through trunk.all(). That flattened map is
+        // passcode to total, and feeding it back in resolved to the two-argument
+        // add, which files everything under Trunk.UNKNOWN_RARITY on art 0. Since
+        // this copy is what persists, every rarity and every artwork the
+        // collection knew was destroyed on each save while the counts stayed
+        // right -- so nothing ever looked wrong.
+        trunk.copyInto(copy.trunk);
         for(DeckList deck : decks)
         {
             DeckList deckCopy = deck.copy(deck.name(), deck.origin());
@@ -198,6 +264,7 @@ public final class DuelProfile
         }
         copy.unlockedStructures.addAll(unlockedStructures);
         copy.favourites.addAll(favourites);
+        copy.sleeves.addAll(sleeves);
         copy.activeDeck = activeDeck;
         copy.outfit = outfit;
         return copy;
@@ -275,6 +342,11 @@ public final class DuelProfile
      * before any one of them existed still loads -- which is what the Forge
      * build's conditional writes achieved by hand. The names match that build's
      * exactly, so a world moved across reads without conversion.
+     * <p>
+     * This is also the wire format: {@code ProfilePayloads.Sync} carries a
+     * {@code DuelProfile} through this Codec, so {@code Sleeves} reaching the
+     * client is not a second message to remember to send — it is the same one
+     * fact written once. Which is the point of a profile having a Codec at all.
      */
     public static final Codec<DuelProfile> CODEC = RecordCodecBuilder.create(instance ->
         instance.group(
@@ -285,18 +357,32 @@ public final class DuelProfile
                 .forGetter(profile -> List.copyOf(profile.unlockedStructures)),
             Codec.INT.listOf().optionalFieldOf("Favourites", List.of())
                 .forGetter(profile -> List.copyOf(profile.favourites)),
+            Sleeves.CODEC.listOf().optionalFieldOf("Sleeves", List.of())
+                .forGetter(profile -> List.copyOf(profile.sleeves)),
             Codec.STRING.optionalFieldOf("Active", "").forGetter(DuelProfile::activeDeck),
             Codec.STRING.optionalFieldOf("Outfit", "").forGetter(DuelProfile::outfit)
         ).apply(instance, DuelProfile::of));
 
     private static DuelProfile of(Trunk trunk, List<DeckList> decks, List<String> structures,
-        List<Integer> favourites, String activeDeck, String outfit)
+        List<Integer> favourites, List<CardSleevesType> sleeves, String activeDeck, String outfit)
     {
         DuelProfile profile = new DuelProfile();
-        trunk.all().forEach(profile.trunk::add);
+        // Copied rather than kept: the optionalFieldOf default above is a single
+        // shared Trunk instance, so holding onto it would give every profile
+        // without a saved collection the same one. Printing for printing, for
+        // the reason snapshot() spells out -- and this one runs on every load
+        // AND on every ProfilePayloads.Sync decode, so flattening here meant the
+        // client's collection was always rarity-blind and art-blind as well.
+        trunk.copyInto(profile.trunk);
         profile.decks.addAll(decks);
         profile.unlockedStructures.addAll(structures);
         profile.favourites.addAll(favourites);
+        // Through grantSleeve rather than into the set, so the two things it
+        // refuses are refused on the way in as well: a free sleeve saved by an
+        // older rule is dropped rather than kept as a stale grant, and an id
+        // this build no longer has reads as the plain back and lands in the
+        // same bin. A profile therefore cleans itself up the next time it saves.
+        sleeves.forEach(profile::grantSleeve);
         profile.activeDeck = activeDeck;
         profile.outfit = outfit;
         return profile;

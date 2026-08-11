@@ -1,0 +1,12 @@
+{
+  "id": 90939874,
+  "name": "Six Strike - Sextuple Barrage",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you control 3 or more \"Six Samurai\" Synchro Monsters with different names (for every 6 Bushido Counters you control, reduce this number by 1): Destroy all cards your opponent controls. If this Set card in its owner's control is destroyed or banished by an opponent's activated effect: You can Special Summon 1 \"Six Samurai\" monster or 1 \"Shien\" Effect Monster from your Deck/Extra Deck. You can only use each effect of \"Six Strike - Sextuple Barrage\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/90939874.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

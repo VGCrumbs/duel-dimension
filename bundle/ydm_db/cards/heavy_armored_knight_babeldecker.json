@@ -1,0 +1,21 @@
+{
+  "id": 45116390,
+  "name": "Heavy Armored Knight Babeldecker",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can Normal Summon this card without Tributing. You can only use each of the following effects of \"Heavy Armored Knight Babeldecker\" once per turn. If this card is Normal or Special Summoned: You can Special Summon 1 EARTH Machine monster from your hand. During your Main Phase, if your opponent activated a card or effect this turn: You can Special Summon 1 Rank 10 EARTH Machine Xyz Monster from your Extra Deck using this card you control as material (this is treated as an Xyz Summon).",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/45116390.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 500,
+  "species": "Machine",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 3000,
+  "level": 10,
+  "is_tuner": false
+}

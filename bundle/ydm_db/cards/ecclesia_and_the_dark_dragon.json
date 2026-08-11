@@ -1,0 +1,21 @@
+{
+  "id": 78397661,
+  "name": "Ecclesia and the Dark Dragon",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 Tuner + 1+ non-Tuners\r\nDuring the Main Phase (Quick Effect): You can banish this card (until the End Phase), and if you do, Special Summon 1 \"Fallen of Albaz\" or 1 Level 4 or lower monster that mentions it from your Deck or GY. If this card is in your GY: You can target 1 Level 8 Fusion Monster in your GY or banishment and 1 card on the field; shuffle both of those cards and this card into the Deck. You can only use each effect of \"Ecclesia and the Dark Dragon\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/78397661.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 2500,
+  "species": "Spellcaster",
+  "monster_type": "Synchro",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2500,
+  "level": 8,
+  "is_tuner": false
+}

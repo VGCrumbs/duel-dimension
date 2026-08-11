@@ -1,0 +1,24 @@
+{
+  "id": 32872239,
+  "name": "Gallugallud the Endless Enigma",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "''A bird monster clad in flickering flames, it can shapeshift into all sorts of things. After switching back and forth between human and bird, it has forgotten its original self.''",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/32872239.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "FIRE",
+  "atk": 2000,
+  "species": "Fiend",
+  "monster_type": "",
+  "is_pendulum": true,
+  "ability": "",
+  "has_effect": false,
+  "pendulum_text": "",
+  "pendulum_scale_left_blue": 9,
+  "pendulum_scale_right_red": 9,
+  "def": 2000,
+  "level": 6,
+  "is_tuner": false
+}

@@ -1,0 +1,21 @@
+{
+  "id": 83711531,
+  "name": "Red-Eyes Metal Claws Dragon",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can activate \"Metalmorph\" Traps the turn they were Set. You can only use each of the following effects of \"Red-Eyes Metal Claws Dragon\" once per turn. You can send 1 face-down card you control to the GY; Special Summon this card from your hand. If this card is Normal or Special Summoned, and you have \"Max Metalmorph\" in your field or GY: You can add 1 \"Metalmorph\" Trap from your Deck or GY to your hand.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/83711531.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2400,
+  "species": "Dragon",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2000,
+  "level": 7,
+  "is_tuner": false
+}

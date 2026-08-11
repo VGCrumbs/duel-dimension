@@ -1,0 +1,131 @@
+{
+  "name": "Duelist League 2 participation cards",
+  "code": "DL11",
+  "type": "Booster Pack (2010)",
+  "date": "01-12-2010",
+  "image": "https://ygoprodeck.com/pics_sets/DL11.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack",
+  "cards": [
+    {
+      "id": 46986420,
+      "code": "DL11-EN001",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 8124921,
+      "code": "DL11-EN002",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44519536,
+      "code": "DL11-EN003",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70903634,
+      "code": "DL11-EN004",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7902349,
+      "code": "DL11-EN005",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33396948,
+      "code": "DL11-EN006",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33508719,
+      "code": "DL11-EN007",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77044671,
+      "code": "DL11-EN008",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 24317029,
+      "code": "DL11-EN009",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4929256,
+      "code": "DL11-EN010",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 20450925,
+      "code": "DL11-EN011",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 39703254,
+      "code": "DL11-EN012",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85215458,
+      "code": "DL11-EN013",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70780151,
+      "code": "DL11-EN014",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17449108,
+      "code": "DL11-EN015",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33550694,
+      "code": "DL11-EN016",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 72405967,
+      "code": "DL11-EN017",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21598948,
+      "code": "DL11-EN018",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30450531,
+      "code": "DL11-EN019",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53567095,
+      "code": "DL11-EN020",
+      "rarity": "Rare",
+      "image_index": 0
+    }
+  ]
+}

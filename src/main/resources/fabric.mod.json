@@ -7,7 +7,21 @@
   "authors": [
     "VGCrumbs"
   ],
-  "license": "MIT",
+  "license": [
+    "AGPL-3.0-or-later",
+    "GPL-3.0-or-later",
+    "Unlicense",
+    "CC0-1.0",
+    "CC-BY-3.0",
+    "Apache-2.0",
+    "LGPL-2.1-or-later",
+    "LicenseRef-DuelDimension-NOTICE"
+  ],
+  "contact": {
+    "homepage": "https://github.com/VGCrumbs/duel-dimension",
+    "sources": "https://github.com/VGCrumbs/duel-dimension",
+    "issues": "https://github.com/VGCrumbs/duel-dimension/issues"
+  },
   "environment": "*",
   "entrypoints": {
     "main": [

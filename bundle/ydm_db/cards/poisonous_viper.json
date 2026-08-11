@@ -1,0 +1,21 @@
+{
+  "id": 561300,
+  "name": "Poisonous Viper",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can reveal this card in your hand; Special Summon it, or if your opponent controls no monsters, Special Summon it to their field in Defense Position instead. Once per turn, during your Standby Phase: Take 500 damage. If this card is banished, or sent to the GY by card effect: You can target 1 Set Spell/Trap your opponent controls; destroy it. It cannot be activated in response to this effect's activation. You can only use this effect of \"Poisonous Viper\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/561300.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 100,
+  "species": "Reptile",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 200,
+  "level": 1,
+  "is_tuner": false
+}

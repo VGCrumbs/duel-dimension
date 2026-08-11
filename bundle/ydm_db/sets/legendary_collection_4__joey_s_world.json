@@ -1,0 +1,23 @@
+{
+  "name": "Legendary Collection 4: Joey's World",
+  "code": "LC04",
+  "type": "Collector's Set",
+  "date": "11-10-2013",
+  "image": "https://ygoprodeck.com/pics_sets/LC04.jpg",
+  "pull_type": "distribution",
+  "distribution": "battles_of_legend__armageddon",
+  "cards": [
+    {
+      "id": 50903514,
+      "code": "LC04-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86308219,
+      "code": "LC04-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

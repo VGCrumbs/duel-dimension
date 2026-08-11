@@ -1,0 +1,21 @@
+{
+  "id": 48393693,
+  "name": "Gagaga Girl - Cell Phone Subtraction",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If your opponent Special Summons a monster(s) from the Extra Deck (except during the Damage Step): You can target 1 face-up monster you control; Special Summon this card from your hand, then immediately after this effect resolves, Xyz Summon using only this card and the targeted monster. When you do, treat this card's Level as the same as the targeted monster's. If this card is detached from an Xyz Monster to activate that monster's effect: You can change the ATK of 1 face-up monster your opponent controls to 0. You can only use each effect of \"Gagaga Girl - Cell Phone Subtraction\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/48393693.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 1000,
+  "species": "Spellcaster",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 800,
+  "level": 3,
+  "is_tuner": false
+}

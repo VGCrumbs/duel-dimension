@@ -1,0 +1,12 @@
+{
+  "id": 95448372,
+  "name": "Gouki Gameface",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When this card is activated: You can Special Summon 1 Level 4 or lower EARTH monster (Warrior, Dinosaur, or Cyberse) from your hand in Defense Position. You can Tribute 1 Link-3 or higher \"Gouki\" monster; Special Summon 1 \"Dinowrestler\" or \"G Golem\" monster from your Deck or Extra Deck. You can only use this effect of \"Gouki Gameface\" once per turn. You can only activate 1 \"Gouki Gameface\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/95448372.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Continuous"
+}

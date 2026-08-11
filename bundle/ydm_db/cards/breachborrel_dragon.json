@@ -1,0 +1,23 @@
+{
+  "id": 90011273,
+  "name": "Breachborrel Dragon",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2 DARK Dragon monsters, including a \"Rokket\" monster\r\nIf this card is Link Summoned: You can add 1 \"Borrel\" Spell/Trap from your Deck to your hand. (Quick Effect): You can target 1 DARK monster you control; it gains 500 ATK, or if it is no longer on the field, you can Special Summon 1 \"Rokket\" monster from your Deck in Defense Position instead. You can only use each effect of \"Breachborrel Dragon\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/90011273.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 1200,
+  "species": "Dragon",
+  "monster_type": "Link",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "link_rating": 2,
+  "link_arrows": [
+    "Bottom-Left",
+    "Bottom"
+  ]
+}

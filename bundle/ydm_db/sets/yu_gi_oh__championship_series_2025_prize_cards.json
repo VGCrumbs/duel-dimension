@@ -1,0 +1,95 @@
+{
+  "name": "Yu-Gi-Oh! Championship Series 2025 prize cards",
+  "code": "25YC",
+  "type": "Booster Pack (2025)",
+  "date": "27-07-2025",
+  "image": "https://ygoprodeck.com/pics_sets/25YC.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack",
+  "cards": [
+    {
+      "id": 10949074,
+      "code": "25YC-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10949074,
+      "code": "25YC-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97268402,
+      "code": "25YC-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85087012,
+      "code": "25YC-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89631139,
+      "code": "25YC-ENP01",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70095154,
+      "code": "25YC-ENP02",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 2009101,
+      "code": "25YC-ENP03",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 26082117,
+      "code": "25YC-ENP04",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 83531441,
+      "code": "25YC-ENP05",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79559912,
+      "code": "25YC-ENP06",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11738489,
+      "code": "25YC-ENP07",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 94886282,
+      "code": "25YC-ENP08",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44394295,
+      "code": "25YC-ENP09",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35261759,
+      "code": "25YC-ENP10",
+      "rarity": "Rare",
+      "image_index": 0
+    }
+  ]
+}

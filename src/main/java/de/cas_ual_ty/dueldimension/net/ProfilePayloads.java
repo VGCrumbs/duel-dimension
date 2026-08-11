@@ -39,6 +39,9 @@ public final class ProfilePayloads
     /** A deck's three parts, each capped so a client cannot send a huge one. */
     private static final int PART_LIMIT = 256;
 
+    /** How long a sleeve id may be. The longest this build has is 23 characters. */
+    private static final int SLEEVE_LIMIT = 64;
+
     // ---- server to client ----
 
     /** The whole profile: what this player owns, has built and has starred. */
@@ -75,8 +78,24 @@ public final class ProfilePayloads
 
     // ---- client to server ----
 
+    /**
+     * A deck's contents: three lists of passcodes and, beside each, which
+     * artwork the copy at that position wears.
+     * <p>
+     * The arts travel <em>inside</em> this message rather than being carried
+     * over server side the way the sleeve is, and that is not a preference. A
+     * sleeve belongs to the deck; an art belongs to a <em>position</em>, and
+     * this message is what changes the positions — remove one card and every
+     * copy behind it shifts, so arts read off the old stored deck would land on
+     * the wrong copies. They only mean anything next to the lists they describe.
+     * <p>
+     * Each art list may be shorter than the part it belongs to, and usually is:
+     * a trailing run of printed-art copies says nothing, so it is not sent. A
+     * deck with no alternate artwork anywhere sends three empty lists.
+     */
     public record SaveDeck(String name, List<Integer> main, List<Integer> extra,
-        List<Integer> side) implements CustomPacketPayload
+        List<Integer> side, List<Integer> mainArts, List<Integer> extraArts,
+        List<Integer> sideArts) implements CustomPacketPayload
     {
         public static final CustomPacketPayload.Type<SaveDeck> TYPE = DdNetwork.type("deck_save");
 
@@ -87,6 +106,10 @@ public final class ProfilePayloads
          * the payload travels on a {@code RegistryFriendlyByteBuf}, so the
          * element codec is widened to the buffer this message actually uses.
          * Every codec that touches no registry has the same shape.
+         * <p>
+         * The art lists reuse it, and therefore the same cap: an art list can
+         * never usefully be longer than the part it describes, so the bound
+         * that stops a huge deck stops a huge art list too.
          */
         private static final StreamCodec<RegistryFriendlyByteBuf, List<Integer>> PART =
             ByteBufCodecs.<RegistryFriendlyByteBuf, Integer>list(PART_LIMIT)
@@ -97,6 +120,9 @@ public final class ProfilePayloads
             PART, SaveDeck::main,
             PART, SaveDeck::extra,
             PART, SaveDeck::side,
+            PART, SaveDeck::mainArts,
+            PART, SaveDeck::extraArts,
+            PART, SaveDeck::sideArts,
             SaveDeck::new);
 
         @Override
@@ -208,6 +234,34 @@ public final class ProfilePayloads
         }
     }
 
+    /**
+     * "Dress this deck in these sleeves."
+     * <p>
+     * Carries the sleeve's <em>name</em> and not its enum index, for the reason
+     * {@link de.cas_ual_ty.dueldimension.duel.profile.Sleeves} gives: the index
+     * is a position in a list of cosmetics that grows, and this request ends in
+     * something written to disk. It is also a request rather than a statement —
+     * ownership is checked server side, in {@link DeckEdits#setDeckSleeve},
+     * because a client that could assert what it owns owns everything.
+     */
+    public record SetDeckSleeve(String name, String sleeve) implements CustomPacketPayload
+    {
+        public static final CustomPacketPayload.Type<SetDeckSleeve> TYPE =
+            DdNetwork.type("deck_sleeve");
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, SetDeckSleeve> CODEC =
+            StreamCodec.composite(
+                ByteBufCodecs.stringUtf8(NAME_LIMIT), SetDeckSleeve::name,
+                ByteBufCodecs.stringUtf8(SLEEVE_LIMIT), SetDeckSleeve::sleeve,
+                SetDeckSleeve::new);
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
+        {
+            return TYPE;
+        }
+    }
+
     public record ToggleFavourite(int passcode) implements CustomPacketPayload
     {
         public static final CustomPacketPayload.Type<ToggleFavourite> TYPE =
@@ -238,6 +292,7 @@ public final class ProfilePayloads
         DdNetwork.serverbound(CopyRecipe.TYPE, CopyRecipe.CODEC);
         DdNetwork.serverbound(SetActiveDeck.TYPE, SetActiveDeck.CODEC);
         DdNetwork.serverbound(PublishRecipe.TYPE, PublishRecipe.CODEC);
+        DdNetwork.serverbound(SetDeckSleeve.TYPE, SetDeckSleeve.CODEC);
         DdNetwork.serverbound(ToggleFavourite.TYPE, ToggleFavourite.CODEC);
     }
 
@@ -245,7 +300,7 @@ public final class ProfilePayloads
     {
         DdNetwork.onServer(SaveDeck.TYPE, (message, player) -> answer(player,
             DeckEdits.saveDeck(player, message.name(), message.main(), message.extra(),
-                message.side())));
+                message.side(), message.mainArts(), message.extraArts(), message.sideArts())));
         DdNetwork.onServer(CreateDeck.TYPE, (message, player) ->
             answer(player, DeckEdits.createDeck(player, message.name())));
         DdNetwork.onServer(RenameDeck.TYPE, (message, player) ->
@@ -258,6 +313,8 @@ public final class ProfilePayloads
             answer(player, DeckEdits.setActive(player, message.name())));
         DdNetwork.onServer(PublishRecipe.TYPE, (message, player) ->
             answer(player, DeckEdits.publishRecipe(player, message.name(), message.asRecipe())));
+        DdNetwork.onServer(SetDeckSleeve.TYPE, (message, player) ->
+            answer(player, DeckEdits.setDeckSleeve(player, message.name(), message.sleeve())));
         DdNetwork.onServer(ToggleFavourite.TYPE, (message, player) ->
             answer(player, DeckEdits.toggleFavourite(player, message.passcode())));
     }

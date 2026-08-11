@@ -1,0 +1,29 @@
+{
+  "name": "Yu-Gi-Oh! GX Tag Force promotional cards",
+  "code": "GX02",
+  "type": "Booster Pack (2006)",
+  "date": "16-11-2006",
+  "image": "https://ygoprodeck.com/pics_sets/GX02.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 71181155,
+      "code": "GX02-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7576264,
+      "code": "GX02-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34961968,
+      "code": "GX02-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

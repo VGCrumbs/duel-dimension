@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class DuelProfileTest
 {
+    private static final int OBELISK = 10000000;
     private static final List<Integer> MAIN = List.of(46986414, 46986414, 41392891, 53129443);
     private static final List<Integer> EXTRA = List.of(24094653);
     private static final List<Integer> SIDE = List.of(4206964);
@@ -199,6 +200,40 @@ class DuelProfileTest
         assertEquals(MAIN, saved.savedNamed("Custom").main());
         assertEquals(2, saved.trunk().countOf(46986414));
         assertEquals("red", saved.outfit());
+    }
+
+    /**
+     * The collection is copied printing for printing, not flattened.
+     * <p>
+     * Both of these lines used to read {@code trunk.all().forEach(x.trunk::add)},
+     * and {@code all()} is passcode to TOTAL: the two-argument add is the only
+     * one that fits it, and it files everything under the unknown rarity on the
+     * printed art. The counts came out right, so nothing looked broken -- but
+     * snapshot() is what persists and of() is what the Codec builds on every
+     * load AND on every sync to the client, so a rarity survived from the pack
+     * being opened until the very next save, and an artwork would have died in
+     * exactly the same place.
+     */
+    @Test
+    void savingAProfileKeepsWhichPrintingEachCardIs()
+    {
+        DuelProfile profile = new DuelProfile();
+        profile.trunk().add(OBELISK, "Ultra Rare", 2, 1);
+        profile.trunk().add(OBELISK, "Rare", 1, 1);
+        profile.trunk().add(46986414, "Common", 3);
+
+        for(DuelProfile kept : List.of(profile.snapshot(), roundTrip(profile)))
+        {
+            assertEquals(5, kept.trunk().totalCards(), "the counts were never the problem");
+            assertEquals(1, kept.trunk().countOf(OBELISK, "Ultra Rare", 2),
+                "the MVP1 printing, artwork and all");
+            assertEquals(1, kept.trunk().countOf(OBELISK, "Rare", 1));
+            assertEquals(3, kept.trunk().countOf(46986414, "Common", 0));
+            assertEquals(0, kept.trunk().countOf(OBELISK, Trunk.UNKNOWN_RARITY),
+                "nothing should have been collapsed into the unknown pile");
+            assertEquals(2, kept.trunk().artForCopy(OBELISK, 0),
+                "and the editor can still default a new copy from it");
+        }
     }
 
     /**

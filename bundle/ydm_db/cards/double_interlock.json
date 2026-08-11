@@ -1,0 +1,12 @@
+{
+  "id": 38129297,
+  "name": "Double Interlock",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Activate 1 of these effects (but you can only use each effect of \"Double Interlock\" once per turn);\r\n● Fusion Summon 1 Fusion Monster from your Extra Deck, by banishing its materials from your GY, including a \"Rokket\" monster.\r\n● Ritual Summon 1 Ritual Monster from your hand, by banishing monsters from your GY whose total Levels equal or exceed its Level, including a \"Rokket\" monster.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/38129297.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

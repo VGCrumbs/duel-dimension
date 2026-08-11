@@ -1,0 +1,191 @@
+{
+  "name": "Speed Duel Tournament Pack 6",
+  "code": "STP6",
+  "type": "Tournament Pack",
+  "date": "06-09-2023",
+  "image": "https://ygoprodeck.com/pics_sets/STP6.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 63665875,
+      "code": "STP6-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 48092532,
+      "code": "STP6-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 94853057,
+      "code": "STP6-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58332301,
+      "code": "STP6-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69452756,
+      "code": "STP6-EN005",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 99861526,
+      "code": "STP6-EN006",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50304345,
+      "code": "STP6-EN007",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 564541,
+      "code": "STP6-EN008",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63060238,
+      "code": "STP6-EN009",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 87917187,
+      "code": "STP6-EN010",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1945387,
+      "code": "STP6-EN011",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56830749,
+      "code": "STP6-EN012",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 12071500,
+      "code": "STP6-EN013",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 5133471,
+      "code": "STP6-EN014",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77754944,
+      "code": "STP6-EN015",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17985575,
+      "code": "STP6-EN016",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 76305638,
+      "code": "STP6-EN017",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 1347977,
+      "code": "STP6-EN018",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 94568601,
+      "code": "STP6-EN019",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 71200730,
+      "code": "STP6-EN020",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 16226786,
+      "code": "STP6-EN021",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 36021814,
+      "code": "STP6-EN022",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 30208479,
+      "code": "STP6-EN023",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 76792184,
+      "code": "STP6-EN024",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 43973174,
+      "code": "STP6-EN025",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 17449108,
+      "code": "STP6-EN026",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 52105192,
+      "code": "STP6-EN027",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 12607053,
+      "code": "STP6-EN028",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 55773067,
+      "code": "STP6-EN029",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 74003290,
+      "code": "STP6-EN030",
+      "rarity": "Common",
+      "image_index": 0
+    }
+  ]
+}

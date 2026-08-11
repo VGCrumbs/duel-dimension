@@ -1,0 +1,21 @@
+{
+  "id": 42711820,
+  "name": "Scrap Warrior",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "\"Scrap Synchron\" + 1+ non-Tuner monsters\r\nMonsters you control that mention \"Junk Warrior\", or are a Synchro Monster with \"Warrior\" in their original name, cannot have their activated effects negated (except \"Scrap Warrior\"). If this card is Synchro Summoned: You can take 1 \"Junk Synchron\", or 1 card that mentions \"Junk Warrior\", from your Deck, and either add it to your hand or send it to the GY. You can only use this effect of \"Scrap Warrior\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/42711820.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 1700,
+  "species": "Warrior",
+  "monster_type": "Synchro",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 100,
+  "level": 3,
+  "is_tuner": false
+}

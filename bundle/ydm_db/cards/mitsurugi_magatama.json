@@ -1,0 +1,12 @@
+{
+  "id": 76725398,
+  "name": "Mitsurugi Magatama",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "During the Main Phase: Activate 1 of these effects;\r\n● Tribute 1 Reptile monster, then target 1 face-up card your opponent controls; destroy it.\r\n● Ritual Summon 1 \"Mitsurugi\" Ritual Monster from your hand, by Tributing monsters you control whose total Levels equal or exceed its Level.\r\nYou can only activate 1 \"Mitsurugi Magatama\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/76725398.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Quick-Play"
+}

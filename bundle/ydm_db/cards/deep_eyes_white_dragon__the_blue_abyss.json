@@ -1,0 +1,21 @@
+{
+  "id": 67886895,
+  "name": "Deep-Eyes White Dragon, the Blue Abyss",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "(This card is always treated as a \"Blue-Eyes\" card.)\r\nYou can discard this card; add 1 Level 1 LIGHT Tuner from your Deck to your hand. If a \"Blue-Eyes\" Ritual Monster(s) and/or \"Blue-Eyes White Dragon\" is sent to your GY (except during the Damage Step): You can target 1 of them; Special Summon this card from your GY (if it was there when the monster was sent) or hand (even if not), and if you do, its ATK becomes that monster's, also banish it when it leaves the field. You can only use each effect of \"Deep-Eyes White Dragon, the Blue Abyss\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/67886895.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 0,
+  "species": "Dragon",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "level": 10,
+  "is_tuner": false
+}

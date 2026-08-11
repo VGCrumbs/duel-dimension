@@ -1,0 +1,12 @@
+{
+  "id": 56260110,
+  "name": "Raimei",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Decrease your opponent's Life Points by 300 points.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/56260110.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

@@ -25,8 +25,14 @@ public final class DeckFiles
     /**
      * Where exported decks land, beside the mod's other game-directory
      * folders ({@code ydm_binders}, {@code ydm_db_images}).
+     * <p>
+     * Resolved against the game directory, which is what that sentence always
+     * claimed and what {@code new File("ydm_decks")} did not do -- it named the
+     * process working directory, so a launcher that passes {@code --gameDir}
+     * exported decks somewhere the player would never find them, and the import
+     * dialog opened there too.
      */
-    public static final File FOLDER = new File("ydm_decks");
+    public static final File FOLDER = de.cas_ual_ty.dueldimension.util.GameDir.file("ydm_decks");
 
     private DeckFiles()
     {

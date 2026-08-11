@@ -1,0 +1,221 @@
+{
+  "name": "Speed Duel Tournament Pack 5",
+  "code": "STP5",
+  "type": "Tournament Pack",
+  "date": "09-03-2023",
+  "image": "https://ygoprodeck.com/pics_sets/STP5.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 86188410,
+      "code": "STP5-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77235086,
+      "code": "STP5-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60493189,
+      "code": "STP5-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76263644,
+      "code": "STP5-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58169731,
+      "code": "STP5-EN005",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53493204,
+      "code": "STP5-EN006",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10509340,
+      "code": "STP5-EN007",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13093792,
+      "code": "STP5-EN008",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 32933942,
+      "code": "STP5-EN009",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 33365932,
+      "code": "STP5-EN010",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 20586572,
+      "code": "STP5-EN011",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 64627453,
+      "code": "STP5-EN012",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 26412047,
+      "code": "STP5-EN013",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 39996157,
+      "code": "STP5-EN014",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 83968380,
+      "code": "STP5-EN015",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 8131171,
+      "code": "STP5-EN016",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 77585513,
+      "code": "STP5-EN017",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 43586926,
+      "code": "STP5-EN018",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 51534754,
+      "code": "STP5-EN019",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 99050989,
+      "code": "STP5-EN020",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 45462639,
+      "code": "STP5-EN021",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81977953,
+      "code": "STP5-EN022",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 33245030,
+      "code": "STP5-EN023",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 61405855,
+      "code": "STP5-EN024",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 14087893,
+      "code": "STP5-EN025",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 90928333,
+      "code": "STP5-EN026",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 68396778,
+      "code": "STP5-EN027",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 45141013,
+      "code": "STP5-EN028",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 34559295,
+      "code": "STP5-EN029",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 49587034,
+      "code": "STP5-EN030",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 3819470,
+      "code": "STP5-EN031",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 32207100,
+      "code": "STP5-EN032",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 47766694,
+      "code": "STP5-EN033",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 20638610,
+      "code": "STP5-EN034",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 69599136,
+      "code": "STP5-EN035",
+      "rarity": "Common",
+      "image_index": 0
+    }
+  ]
+}

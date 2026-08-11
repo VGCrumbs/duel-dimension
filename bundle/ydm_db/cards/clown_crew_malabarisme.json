@@ -1,0 +1,12 @@
+{
+  "id": 83232904,
+  "name": "Clown Crew Malabarisme",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Special Summon up to 2 \"Clown Crew\" monsters from your Deck and/or Extra Deck, ignoring their Summoning conditions, also until the end of the next turn after this card resolves, you cannot activate the effects of monsters Special Summoned from the Deck or Extra Deck. During your Main Phase, if this card is in your GY, except the turn it was sent there: You can banish this card and Tribute 1 monster from your hand or field, then target 1 card on the field; return it to the hand. You can only use each effect of \"Clown Crew Malabarisme\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/83232904.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Quick-Play"
+}

@@ -74,6 +74,29 @@ public class DuelDimensionFabricClient implements ClientModInitializer
         net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.COLLECT_SUBMITS
             .register(de.cas_ual_ty.dueldimension.clientutil.OrichalcosRenderer::render);
 
+        // THIS client's own card database, which is a separate copy from the
+        // server's and is what every card the player looks at is drawn from.
+        // A client whose download failed shows a world of unknown cards and
+        // says nothing about why; the server cannot tell them, because from
+        // where it is standing everything is fine. Skipped in singleplayer,
+        // where the integrated server has already said it about the same
+        // database in the same JVM.
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.JOIN
+            .register((handler, sender, client) ->
+            {
+                String problem = de.cas_ual_ty.dueldimension.DdDatabase.problem();
+                if(problem == null || client.hasSingleplayerServer())
+                {
+                    return;
+                }
+                client.gui.chatListener().handleSystemMessage(
+                    net.minecraft.network.chat.Component.literal(
+                        "Duel Dimension could not set up your card database: " + problem
+                            + ". Every card will show as an unknown card until that is fixed;"
+                            + " the game log has the details.")
+                        .withStyle(net.minecraft.ChatFormatting.RED), false);
+            });
+
         // Leaving a server forgets what everyone was wearing. The map is keyed
         // by UUID and nothing else clears it, so without this the next server
         // starts with the last one's outfits on strangers who share a UUID.

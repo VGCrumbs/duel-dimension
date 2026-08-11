@@ -73,10 +73,29 @@ public record EnginePrompt(Kind kind, String title, List<Option> options, int mi
      * @param sequence index within that location, -1 if unknown
      * @param command  {@link CardCommands} COMMAND_* bit this option is, or 0
      *                 when it isn't a per-card command
+     * @param art      which artwork the copy being offered wears, 0 for the
+     *                 printed one. Decided server-side, at the moment the
+     *                 option is built, by asking the engine about the very
+     *                 (controller, location, sequence) it just named — because
+     *                 the client cannot work it out for a card that is in no
+     *                 board snapshot, which is every card in a deck. 0 also
+     *                 means "this viewer may not identify this card"; see
+     *                 {@code BoardObserver.coverOf}.
      */
     public record Option(String label, String detail, int cardCode, int zone, int max,
-        int controller, int location, int sequence, int command)
+        int controller, int location, int sequence, int command, int art)
     {
+        /**
+         * The undressed option, which is most of them: a zone, a phase button,
+         * a yes/no. Also the shape a bot or a test builds, neither of which
+         * draws anything.
+         */
+        public Option(String label, String detail, int cardCode, int zone, int max,
+            int controller, int location, int sequence, int command)
+        {
+            this(label, detail, cardCode, zone, max, controller, location, sequence, command, 0);
+        }
+
         public Option(String label)
         {
             this(label, "", 0, -1, 0, -1, 0, -1, 0);
@@ -90,6 +109,13 @@ public record EnginePrompt(Kind kind, String title, List<Option> options, int mi
         public Option(String label, String detail, int cardCode, int controller, int location, int sequence)
         {
             this(label, detail, cardCode, -1, 0, controller, location, sequence, 0);
+        }
+
+        /** A card the engine named, dressed in the artwork that copy wears. */
+        public Option(String label, String detail, int cardCode,
+            int controller, int location, int sequence, int art)
+        {
+            this(label, detail, cardCode, -1, 0, controller, location, sequence, 0, art);
         }
 
         public Option(String label, String detail, int cardCode, int zone, int max,
@@ -120,14 +146,30 @@ public record EnginePrompt(Kind kind, String title, List<Option> options, int mi
             buffer.writeVarInt(location);
             buffer.writeVarInt(sequence + 1);
             buffer.writeVarInt(command);
+            // Only a card carries an artwork, and an option that is not one --
+            // a zone, a phase button, a declared number -- has no identity to
+            // attach one to. Following BoardSnapshot.Slot: the byte is not on
+            // the wire to be filled in.
+            if(cardCode != 0)
+            {
+                buffer.writeVarInt(art);
+            }
         }
 
         public static Option read(FriendlyByteBuf buffer)
         {
-            return new Option(buffer.readUtf(256), buffer.readUtf(256), buffer.readVarInt(),
-                buffer.readVarInt(), buffer.readVarInt(),
-                buffer.readVarInt() - 1, buffer.readVarInt(), buffer.readVarInt() - 1,
-                buffer.readVarInt());
+            String label = buffer.readUtf(256);
+            String detail = buffer.readUtf(256);
+            int cardCode = buffer.readVarInt();
+            int zone = buffer.readVarInt();
+            int max = buffer.readVarInt();
+            int controller = buffer.readVarInt() - 1;
+            int location = buffer.readVarInt();
+            int sequence = buffer.readVarInt() - 1;
+            int command = buffer.readVarInt();
+            int art = cardCode != 0 ? buffer.readVarInt() : 0;
+            return new Option(label, detail, cardCode, zone, max, controller, location, sequence,
+                command, art);
         }
     }
 

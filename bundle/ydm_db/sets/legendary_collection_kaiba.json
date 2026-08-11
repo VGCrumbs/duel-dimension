@@ -1,0 +1,41 @@
+{
+  "name": "Legendary Collection Kaiba",
+  "code": "LC06",
+  "type": "Collector's Set",
+  "date": "08-03-2018",
+  "image": "https://ygoprodeck.com/pics_sets/LC06.jpg",
+  "pull_type": "distribution",
+  "distribution": "battles_of_legend__armageddon",
+  "cards": [
+    {
+      "id": 72589042,
+      "code": "LC06-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 8978197,
+      "code": "LC06-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44373896,
+      "code": "LC06-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 71867500,
+      "code": "LC06-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7852509,
+      "code": "LC06-EN005",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

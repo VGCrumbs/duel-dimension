@@ -1,0 +1,29 @@
+{
+  "name": "Yu-Gi-Oh! ZEXAL World Duel Carnival promotional cards",
+  "code": "ZDC1",
+  "type": "Booster Pack (2014)",
+  "date": "26-06-2014",
+  "image": "https://ygoprodeck.com/pics_sets/ZDC1.jpg",
+  "pull_type": "distribution",
+  "distribution": "battles_of_legend__armageddon",
+  "cards": [
+    {
+      "id": 24731453,
+      "code": "ZDC1-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51126152,
+      "code": "ZDC1-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97520701,
+      "code": "ZDC1-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

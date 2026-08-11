@@ -1,0 +1,21 @@
+{
+  "id": 7782069,
+  "name": "Gouki The Tyrant Ogre",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 \"Gouki\" Link Monster + 1 Warrior, Dinosaur, or Cyberse monster\r\nIf this card battles, your opponent cannot activate cards or effects until the end of the Damage Step. If this card is Fusion Summoned: You can target cards on the field up to the total Link Rating of \"Gouki\" monsters used as this card's material (if you used a Link-3 or higher monster, neither player can activate those targeted cards or their effects in response to this effect's activation); destroy them. You can only use this effect of \"Gouki The Tyrant Ogre\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/7782069.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 3500,
+  "species": "Warrior",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "level": 8,
+  "is_tuner": false
+}

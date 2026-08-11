@@ -1,0 +1,17 @@
+{
+  "rarity": "Ultra Parallel Rare",
+  "layers": [
+    {
+      "image": "rare",
+      "type": "normal"
+    },
+    {
+      "image": "ultra_rare",
+      "type": "normal"
+    },
+    {
+      "image": "mosaic_rare",
+      "type": "normal"
+    }
+  ]
+}

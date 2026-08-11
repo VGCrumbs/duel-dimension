@@ -1,0 +1,29 @@
+{
+  "name": "Yu-Gi-Oh! GX Duel Academy promotional cards",
+  "code": "GX1",
+  "type": "Booster Pack (2006)",
+  "date": "10-01-2006",
+  "image": "https://ygoprodeck.com/pics_sets/GX1.jpg",
+  "pull_type": "distribution",
+  "distribution": "world_superstars",
+  "cards": [
+    {
+      "id": 89252153,
+      "code": "GX1-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57116033,
+      "code": "GX1-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 26647858,
+      "code": "GX1-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "id": 19739265,
+  "name": "Sol and Luna",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Target 1 monster you control and 1 monster your opponent controls; apply the following effect on each monster, depending on its battle position.\r\n● Face-up: Change it to face-down Defense Position.\r\n● Face-down: Change it to face-up Defense Position.\r\nYou can only activate 1 \"Sol and Luna\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/19739265.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Quick-Play"
+}

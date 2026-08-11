@@ -1,0 +1,21 @@
+{
+  "id": 93509766,
+  "name": "Kyoro Ryu-Ge Kaiva",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can shuffle this card from your hand into the Deck; add 1 \"Ryu-Ge Realm - Dino Domains\" from your Deck to your hand. During the Main Phase, if 2 or more cards were destroyed this turn (Quick Effect): You can Special Summon this card from your hand. You can place 1 \"Ryu-Ge Realm - Dino Domains\" you control on the bottom of the Deck, then target other cards on the field, up to the number of different Monster Types on the field; destroy them. You can only use each effect of \"Kyoro Ryu-Ge Kaiva\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/93509766.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 3000,
+  "species": "Dinosaur",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1200,
+  "level": 10,
+  "is_tuner": false
+}

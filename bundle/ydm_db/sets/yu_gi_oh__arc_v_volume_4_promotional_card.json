@@ -1,0 +1,16 @@
+{
+  "name": "Yu-Gi-Oh! ARC-V Volume 4 promotional card",
+  "code": "YA04",
+  "type": "Single",
+  "date": "06-11-2018",
+  "image": "https://ygoprodeck.com/pics_sets/YA04.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 89907227,
+      "code": "YA04-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

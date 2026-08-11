@@ -1,0 +1,695 @@
+{
+  "name": "Legendary 5D&apos;s Decks",
+  "code": "L5DD",
+  "type": "Booster Pack (2025)",
+  "date": "06-11-2025",
+  "image": "https://ygoprodeck.com/pics_sets/L5DD.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 48686504,
+      "code": "L5DD-ENA01",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 17720747,
+      "code": "L5DD-ENA02",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11747708,
+      "code": "L5DD-ENA03",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 89252157,
+      "code": "L5DD-ENA04",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 98884569,
+      "code": "L5DD-ENA05",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 59438930,
+      "code": "L5DD-ENA06",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 26118970,
+      "code": "L5DD-ENA07",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 12213463,
+      "code": "L5DD-ENA08",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 60643553,
+      "code": "L5DD-ENA09",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 58062306,
+      "code": "L5DD-ENA10",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29177818,
+      "code": "L5DD-ENA11",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 93708824,
+      "code": "L5DD-ENA12",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29107423,
+      "code": "L5DD-ENA13",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 87126721,
+      "code": "L5DD-ENA14",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 83764719,
+      "code": "L5DD-ENA15",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 73628505,
+      "code": "L5DD-ENA16",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44887817,
+      "code": "L5DD-ENA17",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44887817,
+      "code": "L5DD-ENA17",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 71645242,
+      "code": "L5DD-ENA18",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 71645242,
+      "code": "L5DD-ENA18",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69584564,
+      "code": "L5DD-ENA19",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 65079854,
+      "code": "L5DD-ENA20",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 53503015,
+      "code": "L5DD-ENA21",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 84335863,
+      "code": "L5DD-ENA22",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 69167267,
+      "code": "L5DD-ENA23",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 69167267,
+      "code": "L5DD-ENA23",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10045474,
+      "code": "L5DD-ENA24",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 99092624,
+      "code": "L5DD-ENA25",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 73580471,
+      "code": "L5DD-ENA26",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 4290468,
+      "code": "L5DD-ENA27",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 33698022,
+      "code": "L5DD-ENA28",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 53325667,
+      "code": "L5DD-ENA29",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 72218246,
+      "code": "L5DD-ENA30",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 72924435,
+      "code": "L5DD-ENA31",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40139997,
+      "code": "L5DD-ENA32",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 76524506,
+      "code": "L5DD-ENA33",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 2009101,
+      "code": "L5DD-ENC01",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 49003716,
+      "code": "L5DD-ENC02",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 72714392,
+      "code": "L5DD-ENC03",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 94145021,
+      "code": "L5DD-ENC04",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81105204,
+      "code": "L5DD-ENC05",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 54594017,
+      "code": "L5DD-ENC06",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 73652465,
+      "code": "L5DD-ENC07",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 77152542,
+      "code": "L5DD-ENC08",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 14558127,
+      "code": "L5DD-ENC09",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81470373,
+      "code": "L5DD-ENC10",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 52038441,
+      "code": "L5DD-ENC11",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 71187462,
+      "code": "L5DD-ENC12",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 8571567,
+      "code": "L5DD-ENC13",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 34976176,
+      "code": "L5DD-ENC14",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 70465810,
+      "code": "L5DD-ENC15",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 42141493,
+      "code": "L5DD-ENC16",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 5318639,
+      "code": "L5DD-ENC17",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 14087893,
+      "code": "L5DD-ENC18",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 91351370,
+      "code": "L5DD-ENC19",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 25789292,
+      "code": "L5DD-ENC20",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24224830,
+      "code": "L5DD-ENC21",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 7602800,
+      "code": "L5DD-ENC22",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 53567095,
+      "code": "L5DD-ENC23",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59839761,
+      "code": "L5DD-ENC24",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 80254726,
+      "code": "L5DD-ENC25",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69973414,
+      "code": "L5DD-ENC26",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 69031175,
+      "code": "L5DD-ENC27",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76913983,
+      "code": "L5DD-ENC28",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 33236860,
+      "code": "L5DD-ENC29",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 9012916,
+      "code": "L5DD-ENC30",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 95040215,
+      "code": "L5DD-ENC31",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54082269,
+      "code": "L5DD-ENC32",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 73218989,
+      "code": "L5DD-ENC33",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 10602628,
+      "code": "L5DD-ENC34",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44508094,
+      "code": "L5DD-ENS01",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 73580471,
+      "code": "L5DD-ENS02",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 9012916,
+      "code": "L5DD-ENS03",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17201951,
+      "code": "L5DD-ENY01",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54656950,
+      "code": "L5DD-ENY02",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 80054655,
+      "code": "L5DD-ENY03",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 16449363,
+      "code": "L5DD-ENY04",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 43834302,
+      "code": "L5DD-ENY05",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89932017,
+      "code": "L5DD-ENY06",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 63977008,
+      "code": "L5DD-ENY07",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 60283232,
+      "code": "L5DD-ENY08",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 37799519,
+      "code": "L5DD-ENY09",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 97682931,
+      "code": "L5DD-ENY10",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 57458399,
+      "code": "L5DD-ENY11",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 77202120,
+      "code": "L5DD-ENY12",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 9742784,
+      "code": "L5DD-ENY13",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11069680,
+      "code": "L5DD-ENY14",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 53855409,
+      "code": "L5DD-ENY15",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 97268402,
+      "code": "L5DD-ENY16",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 14558127,
+      "code": "L5DD-ENY17",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 84192580,
+      "code": "L5DD-ENY18",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 31006879,
+      "code": "L5DD-ENY19",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 96363153,
+      "code": "L5DD-ENY20",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 97474300,
+      "code": "L5DD-ENY21",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 88901994,
+      "code": "L5DD-ENY22",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 57496978,
+      "code": "L5DD-ENY23",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 8529136,
+      "code": "L5DD-ENY24",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 2295440,
+      "code": "L5DD-ENY25",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 1050684,
+      "code": "L5DD-ENY26",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24224830,
+      "code": "L5DD-ENY27",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 65681983,
+      "code": "L5DD-ENY28",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24299458,
+      "code": "L5DD-ENY29",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 60306277,
+      "code": "L5DD-ENY30",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 10045474,
+      "code": "L5DD-ENY31",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 16327715,
+      "code": "L5DD-ENY32",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 42711820,
+      "code": "L5DD-ENY33",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60800381,
+      "code": "L5DD-ENY34",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 77075360,
+      "code": "L5DD-ENY35",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44508094,
+      "code": "L5DD-ENY36",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 30983281,
+      "code": "L5DD-ENY37",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 50091196,
+      "code": "L5DD-ENY38",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 74892653,
+      "code": "L5DD-ENY39",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 24696097,
+      "code": "L5DD-ENY40",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 63436931,
+      "code": "L5DD-ENY41",
+      "rarity": "Common",
+      "image_index": 0
+    }
+  ]
+}

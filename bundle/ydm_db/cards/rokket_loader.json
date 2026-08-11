@@ -1,0 +1,21 @@
+{
+  "id": 25554552,
+  "name": "Rokket Loader",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is Normal or Special Summoned: You can add 1 Level 7 DARK Dragon monster from your Deck to your hand, also you cannot Special Summon from the Extra Deck for the rest of this turn, except DARK monsters. You can banish this card from your GY, then target 1 face-up monster on the field; it becomes DARK until the end of this turn. You can only use each effect of \"Rokket Loader\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/25554552.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 1500,
+  "species": "Dragon",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1500,
+  "level": 4,
+  "is_tuner": false
+}

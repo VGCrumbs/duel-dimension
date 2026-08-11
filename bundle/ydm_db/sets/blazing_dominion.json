@@ -1,0 +1,761 @@
+{
+  "name": "Blazing Dominion",
+  "code": "BLZD",
+  "type": "Booster Pack (2026)",
+  "date": "07-05-2026",
+  "image": "https://ygoprodeck.com/pics_sets/BLZD.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare_with_starlight_rare",
+  "cards": [
+    {
+      "id": 83445539,
+      "code": "BLZD-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19434243,
+      "code": "BLZD-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19434243,
+      "code": "BLZD-EN002",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56838842,
+      "code": "BLZD-EN003",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 82323997,
+      "code": "BLZD-EN004",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 18711696,
+      "code": "BLZD-EN005",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 45116390,
+      "code": "BLZD-EN006",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81101309,
+      "code": "BLZD-EN007",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 18595008,
+      "code": "BLZD-EN008",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44994712,
+      "code": "BLZD-EN009",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 70488851,
+      "code": "BLZD-EN010",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17473466,
+      "code": "BLZD-EN011",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17473466,
+      "code": "BLZD-EN011",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 43871165,
+      "code": "BLZD-EN012",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 10266279,
+      "code": "BLZD-EN013",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10266279,
+      "code": "BLZD-EN013",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56651978,
+      "code": "BLZD-EN014",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56651978,
+      "code": "BLZD-EN014",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 82159583,
+      "code": "BLZD-EN015",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19144622,
+      "code": "BLZD-EN016",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19144622,
+      "code": "BLZD-EN016",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 82933935,
+      "code": "BLZD-EN017",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 18321034,
+      "code": "BLZD-EN018",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44716748,
+      "code": "BLZD-EN019",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 71801447,
+      "code": "BLZD-EN020",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17209452,
+      "code": "BLZD-EN021",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17209452,
+      "code": "BLZD-EN021",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 45538320,
+      "code": "BLZD-EN022",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44694191,
+      "code": "BLZD-EN023",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 70088809,
+      "code": "BLZD-EN024",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70088809,
+      "code": "BLZD-EN024",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6083904,
+      "code": "BLZD-EN025",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 43471513,
+      "code": "BLZD-EN026",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 79966218,
+      "code": "BLZD-EN027",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79966218,
+      "code": "BLZD-EN027",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6361316,
+      "code": "BLZD-EN028",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 42759961,
+      "code": "BLZD-EN029",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 78744660,
+      "code": "BLZD-EN030",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 5148778,
+      "code": "BLZD-EN031",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31533473,
+      "code": "BLZD-EN032",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 78021082,
+      "code": "BLZD-EN033",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4026187,
+      "code": "BLZD-EN034",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4026187,
+      "code": "BLZD-EN034",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31411835,
+      "code": "BLZD-EN035",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 67809530,
+      "code": "BLZD-EN036",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67809530,
+      "code": "BLZD-EN036",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 3294539,
+      "code": "BLZD-EN037",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 3294539,
+      "code": "BLZD-EN037",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30698243,
+      "code": "BLZD-EN038",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 66787942,
+      "code": "BLZD-EN039",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 93172951,
+      "code": "BLZD-EN040",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 39576656,
+      "code": "BLZD-EN041",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 39576656,
+      "code": "BLZD-EN041",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 65961304,
+      "code": "BLZD-EN042",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92359409,
+      "code": "BLZD-EN043",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92359409,
+      "code": "BLZD-EN043",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38354018,
+      "code": "BLZD-EN044",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38354018,
+      "code": "BLZD-EN044",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 65848113,
+      "code": "BLZD-EN045",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 65848113,
+      "code": "BLZD-EN045",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 91237821,
+      "code": "BLZD-EN046",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 27632520,
+      "code": "BLZD-EN047",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 64626565,
+      "code": "BLZD-EN048",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 90011273,
+      "code": "BLZD-EN049",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27519978,
+      "code": "BLZD-EN050",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27519978,
+      "code": "BLZD-EN050",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53904087,
+      "code": "BLZD-EN051",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 99398682,
+      "code": "BLZD-EN052",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 26387390,
+      "code": "BLZD-EN053",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 52782439,
+      "code": "BLZD-EN054",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 52782439,
+      "code": "BLZD-EN054",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89176044,
+      "code": "BLZD-EN055",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25661743,
+      "code": "BLZD-EN056",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51669847,
+      "code": "BLZD-EN057",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84054556,
+      "code": "BLZD-EN058",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 20448151,
+      "code": "BLZD-EN059",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57847269,
+      "code": "BLZD-EN060",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 83232904,
+      "code": "BLZD-EN061",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19326613,
+      "code": "BLZD-EN062",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 56725612,
+      "code": "BLZD-EN063",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 82119326,
+      "code": "BLZD-EN064",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 19504025,
+      "code": "BLZD-EN065",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 45508030,
+      "code": "BLZD-EN066",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 82997779,
+      "code": "BLZD-EN067",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 18482473,
+      "code": "BLZD-EN068",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44886582,
+      "code": "BLZD-EN069",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 71275181,
+      "code": "BLZD-EN070",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 17269895,
+      "code": "BLZD-EN071",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44654994,
+      "code": "BLZD-EN072",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 70058649,
+      "code": "BLZD-EN073",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 6547248,
+      "code": "BLZD-EN074",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 43932352,
+      "code": "BLZD-EN075",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 79936051,
+      "code": "BLZD-EN076",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 6325660,
+      "code": "BLZD-EN077",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6325660,
+      "code": "BLZD-EN077",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 42719764,
+      "code": "BLZD-EN078",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 78114463,
+      "code": "BLZD-EN079",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 78114463,
+      "code": "BLZD-EN079",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 5208118,
+      "code": "BLZD-EN080",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 15778492,
+      "code": "BLZD-EN081",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 41763141,
+      "code": "BLZD-EN082",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 41763141,
+      "code": "BLZD-EN082",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77157846,
+      "code": "BLZD-EN083",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77157846,
+      "code": "BLZD-EN083",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14556954,
+      "code": "BLZD-EN084",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 40041559,
+      "code": "BLZD-EN085",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77435268,
+      "code": "BLZD-EN086",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 3434362,
+      "code": "BLZD-EN087",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 49828011,
+      "code": "BLZD-EN088",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 76213610,
+      "code": "BLZD-EN089",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 2618725,
+      "code": "BLZD-EN090",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 2618725,
+      "code": "BLZD-EN090",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 39706423,
+      "code": "BLZD-EN091",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 1595137,
+      "code": "BLZD-EN092",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 75191028,
+      "code": "BLZD-EN093",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 75191028,
+      "code": "BLZD-EN093",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38984832,
+      "code": "BLZD-EN094",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38984832,
+      "code": "BLZD-EN094",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74378580,
+      "code": "BLZD-EN095",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1463589,
+      "code": "BLZD-EN096",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11212437,
+      "code": "BLZD-EN097",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 30875635,
+      "code": "BLZD-EN098",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25577965,
+      "code": "BLZD-EN099",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89693655,
+      "code": "BLZD-EN100",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 97489701,
+      "code": "BLZD-EN101",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    }
+  ]
+}

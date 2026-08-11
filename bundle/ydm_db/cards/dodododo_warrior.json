@@ -1,0 +1,21 @@
+{
+  "id": 62880279,
+  "name": "Dodododo Warrior",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can send 1 \"Dododo\" monster from your Deck to the GY; Special Summon this card from your hand (its Level becomes 4, also its ATK becomes 1800), also you cannot Special Summon from the Extra Deck for the rest of this turn, except Xyz Monsters. If this card is detached from an Xyz Monster to activate that monster's effect: You can add 1 \"Zubaba\" monster from your Deck to your hand. You can only use each effect of \"Dodododo Warrior\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/62880279.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 2300,
+  "species": "Warrior",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 900,
+  "level": 6,
+  "is_tuner": false
+}

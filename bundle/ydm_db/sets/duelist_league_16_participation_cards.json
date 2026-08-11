@@ -1,0 +1,131 @@
+{
+  "name": "Duelist League 16 participation cards",
+  "code": "DL16",
+  "type": "Booster Pack (2013)",
+  "date": "01-07-2013",
+  "image": "https://ygoprodeck.com/pics_sets/DL16.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack",
+  "cards": [
+    {
+      "id": 37265642,
+      "code": "DL16-EN001",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56387350,
+      "code": "DL16-EN002",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34294855,
+      "code": "DL16-EN003",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57666212,
+      "code": "DL16-EN004",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1557341,
+      "code": "DL16-EN005",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40732515,
+      "code": "DL16-EN006",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 52512994,
+      "code": "DL16-EN007",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 75162696,
+      "code": "DL16-EN008",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 71786742,
+      "code": "DL16-EN009",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 51402908,
+      "code": "DL16-EN010",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 6021033,
+      "code": "DL16-EN011",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 698785,
+      "code": "DL16-EN012",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23171610,
+      "code": "DL16-EN013",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25518020,
+      "code": "DL16-EN014",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35149085,
+      "code": "DL16-EN015",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34460239,
+      "code": "DL16-EN016",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97705809,
+      "code": "DL16-EN017",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80723580,
+      "code": "DL16-EN018",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81489939,
+      "code": "DL16-EN019",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30127518,
+      "code": "DL16-EN020",
+      "rarity": "Rare",
+      "image_index": 0
+    }
+  ]
+}

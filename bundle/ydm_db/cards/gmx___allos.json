@@ -1,0 +1,21 @@
+{
+  "id": 56311997,
+  "name": "GMX - ALLOS",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 \"GMX\" monster + 1 Dinosaur monster\r\nEach time your opponent Normal or Special Summons a monster(s), gain 200 LP. You can only use each of the following effects of \"GMX - ALLOS\" once per turn. You can target 1 \"GMX\" monster or 1 Dinosaur monster in your GY or banishment; Special Summon it. This card cannot attack the turn this effect is activated. At the start of the Damage Step, if this card battles an opponent's monster: You can destroy that monster.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/56311997.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 3000,
+  "species": "Dinosaur",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 900,
+  "level": 8,
+  "is_tuner": false
+}

@@ -1,0 +1,12 @@
+{
+  "id": 85640370,
+  "name": "Tip of the Tinying Tongue",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When your opponent activates a card or effect by declaring exactly 1 card name: Negate that effect, then you can add 1 declared card from your Deck to your hand. If this Set card you control is destroyed by an opponent's card effect: You can target 1 face-up monster your opponent controls; it loses 500 ATK.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/85640370.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

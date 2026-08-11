@@ -1,0 +1,24 @@
+{
+  "id": 84693918,
+  "name": "Solfachord Solfegia",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "[ Pendulum Effect ] \nWhen your opponent's monster effect activated on the field resolves, if you control a \"GranSolfachord\" monster, you can negate that effect, then destroy this card. You can only use this effect of \"Solfachord Solfegia\" once per turn.\n\n[ Monster Effect ] \nIf you control no monsters, or all monsters you control are \"Solfachord\" monsters: You can Special Summon this card from your hand. During your Main Phase: You can activate this effect (you can also Tribute this card); Special Summon 1 \"Solfachord\" monster from your hand, except \"Solfachord Solfegia\", or, if you Tributed this card when you activated this effect, you can Special Summon from your face-up Extra Deck or GY instead. You can only use each effect of \"Solfachord Solfegia\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/84693918.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 400,
+  "species": "Fairy",
+  "monster_type": "",
+  "is_pendulum": true,
+  "ability": "",
+  "has_effect": true,
+  "pendulum_text": "When your opponent's monster effect activated on the field resolves, if you control a \"GranSolfachord\" monster, you can negate that effect, then destroy this card. You can only use this effect of \"Solfachord Solfegia\" once per turn.",
+  "pendulum_scale_left_blue": 9,
+  "pendulum_scale_right_red": 9,
+  "def": 400,
+  "level": 2,
+  "is_tuner": false
+}

@@ -1,0 +1,25 @@
+{
+  "id": 27096833,
+  "name": "Borreload Liberator Dragon",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "3+ Effect Monsters\r\nYou can only Special Summon \"Borreload Liberator Dragon(s)\" once per turn. Once per turn, during the Battle Phase (Quick Effect): You can place 1 monster your opponent controls in a zone this card points to and take control of it. Your opponent cannot activate cards or effects in response to this effect's activation. Once per Chain, if this card is in your GY (Quick Effect): You can target 1 monster you control; destroy it, and if you do, Special Summon this card.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/27096833.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 3000,
+  "species": "Dragon",
+  "monster_type": "Link",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "link_rating": 4,
+  "link_arrows": [
+    "Left",
+    "Right",
+    "Bottom-Left",
+    "Bottom-Right"
+  ]
+}

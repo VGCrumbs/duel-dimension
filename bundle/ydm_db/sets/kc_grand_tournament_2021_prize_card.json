@@ -1,0 +1,16 @@
+{
+  "name": "KC Grand Tournament 2021 prize card",
+  "code": "2021",
+  "type": "Single",
+  "date": "28-08-2021",
+  "image": "https://ygoprodeck.com/pics_sets/2021.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 46986420,
+      "code": "2021-EN001",
+      "rarity": "Extra Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

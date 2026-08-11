@@ -1,0 +1,49 @@
+{
+  "name": "composition_duel_terminal_normal_parallel_rare_duel_terminal_rare_parallel_rare_duel_terminal_super_p_c212ea15",
+  "pulls": [
+    {
+      "weight": 62,
+      "entries": [
+        {
+          "count": 1,
+          "rarities": [
+            "Duel Terminal Normal Parallel Rare"
+          ]
+        }
+      ]
+    },
+    {
+      "weight": 20,
+      "entries": [
+        {
+          "count": 1,
+          "rarities": [
+            "Duel Terminal Rare Parallel Rare"
+          ]
+        }
+      ]
+    },
+    {
+      "weight": 12,
+      "entries": [
+        {
+          "count": 1,
+          "rarities": [
+            "Duel Terminal Super Parallel Rare"
+          ]
+        }
+      ]
+    },
+    {
+      "weight": 8,
+      "entries": [
+        {
+          "count": 1,
+          "rarities": [
+            "Duel Terminal Ultra Parallel Rare"
+          ]
+        }
+      ]
+    }
+  ]
+}

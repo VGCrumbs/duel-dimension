@@ -1,0 +1,21 @@
+{
+  "id": 19222426,
+  "name": "Elemental HERO Thunder Giant - Voltic Thunder",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2 \"Elemental HERO\" monsters with different Attributes\r\nMust be Fusion Summoned. If this card is Special Summoned and your opponent controls more cards than you do: You can destroy all other cards on the field. You can Tribute this card that was Fusion Summoned using a Normal Monster(s) as material, then target 1 \"Elemental HERO\" monster in your GY; Special Summon it. You can only use each effect of \"Elemental HERO Thunder Giant - Voltic Thunder\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/19222426.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 2400,
+  "species": "Warrior",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1500,
+  "level": 6,
+  "is_tuner": false
+}

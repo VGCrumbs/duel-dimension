@@ -1,0 +1,12 @@
+{
+  "id": 9591819,
+  "name": "Gagaga Escape",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "When your opponent activates a monster effect while you control a \"Gagaga\" monster: Negate the activation, then you can discard 1 card, and if you do, Special Summon 1 \"Gagaga\" monster from your Deck. You can banish this card from your GY; change as many \"Gagaga\" monsters you control as possible to Defense Position, and if you do, \"Gagaga\" monsters you control cannot be destroyed by battle or card effects this turn. You can only use each effect of \"Gagaga Escape\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/9591819.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Counter"
+}

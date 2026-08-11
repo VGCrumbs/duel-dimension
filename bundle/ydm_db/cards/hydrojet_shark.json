@@ -1,0 +1,21 @@
+{
+  "id": 90315086,
+  "name": "Hydrojet Shark",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If a WATER Xyz Monster is on the field, you can Special Summon this card (from your hand), but you cannot Special Summon \"Hydrojet Shark\" for the rest of this turn. You can only use 1 of the following effects of \"Hydrojet Shark\" per turn, and only once that turn. During your Main Phase: You can send 1 Fish \"Shark\" monster or 1 \"Xyz\" Spell/Trap from your Deck to the GY. You can banish this card from your GY; add 1 \"Aqua Jet\" card from your Deck or GY to your hand.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/90315086.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WATER",
+  "atk": 1000,
+  "species": "Fish",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "level": 4,
+  "is_tuner": false
+}

@@ -1,0 +1,20 @@
+{
+  "id": 27632520,
+  "name": "Fairy Tail - Wiccat",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2 Level 4 Spellcaster monsters\r\nEach \"Fairy Tail\" monster you control whose original Attribute is LIGHT, is unaffected by your opponent's activated effects. You can only use each of the following effects of \"Fairy Tail - Wiccat\" once per turn. You can detach up to 2 materials from this card; send \"Fairy Tail\" cards from your Deck to the GY, equal to the number detached. If this card is in your GY (Quick Effect): You can target 1 \"Fairy Tail\" monster you control whose original Attribute is LIGHT; Special Summon this card, and if you do, send that monster to the GY.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/27632520.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 1850,
+  "species": "Spellcaster",
+  "monster_type": "Xyz",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1000,
+  "rank": 4
+}

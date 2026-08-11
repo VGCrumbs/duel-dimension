@@ -1,0 +1,21 @@
+{
+  "id": 5121528,
+  "name": "B.E.S. Derringer Core",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can reveal 1 other \"B.E.S.\" monster in your hand; Special Summon this card from your hand, then place 3 counters on this card. During the Main Phase (Quick Effect): You can remove 1 counter from this card and activate 1 of these effects;\r\n● Add 1 \"Boss Rush\" or 1 Spell/Trap that mentions it, from your Deck to your hand.\r\n● Special Summon 1 Level 9 or lower \"B.E.S.\" monster from your GY.\r\nYou can only use each effect of \"B.E.S. Derringer Core\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/5121528.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 1900,
+  "species": "Machine",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 3000,
+  "level": 10,
+  "is_tuner": false
+}

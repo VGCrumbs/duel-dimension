@@ -1,0 +1,12 @@
+{
+  "id": 18190572,
+  "name": "Micro Ray",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Target 1 face-up monster on the field; that target's DEF becomes 0 until the end of this turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/18190572.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

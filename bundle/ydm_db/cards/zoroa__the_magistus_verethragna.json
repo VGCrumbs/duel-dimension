@@ -1,0 +1,21 @@
+{
+  "id": 37260677,
+  "name": "Zoroa, the Magistus Verethragna",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 \"Magistus\" monster + 1 Fusion, Synchro, Xyz, or Link Monster\r\nYou can target 1 Effect Monster in your GY or your opponent controls; equip that Effect Monster to this card. When a monster effect is activated (Quick Effect): You can send 1 face-up \"Magistus\" Monster Card you control to the GY; negate that effect, then you can destroy 1 card your opponent controls. You can only use each effect of \"Zoroa, the Magistus Verethragna\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/37260677.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "FIRE",
+  "atk": 2900,
+  "species": "Spellcaster",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2900,
+  "level": 8,
+  "is_tuner": false
+}

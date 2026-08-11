@@ -1,0 +1,12 @@
+{
+  "id": 20448151,
+  "name": "Clown Crew Rehearsal",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Tribute 1 monster from your hand or field; add 1 \"Clown Crew Biancaviso\" and 1 \"Clown Crew\" Spell/Trap, except \"Clown Crew Rehearsal\", from your Deck to your hand. You can banish this card from your GY; Ritual Summon 1 \"Clown Crew\" Ritual Monster from your hand, by Tributing monsters from your hand or field whose total Levels equal or exceed its Level. You can only use each effect of \"Clown Crew Rehearsal\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/20448151.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

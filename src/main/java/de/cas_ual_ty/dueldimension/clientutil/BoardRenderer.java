@@ -240,8 +240,18 @@ public class BoardRenderer
 
     /** A drawn slot; piles use sequence -1. */
     public record Hit(FieldQuad.Corners corners, int code, int controller, int location, int sequence,
-        int zoneRef, String label, int count)
+        int zoneRef, String label, int count, int art)
     {
+        /**
+         * The shape before per-copy artwork. A hit on something that is not one
+         * physical card -- a pile, a zone -- has no artwork of its own.
+         */
+        public Hit(FieldQuad.Corners corners, int code, int controller, int location, int sequence,
+            int zoneRef, String label, int count)
+        {
+            this(corners, code, controller, location, sequence, zoneRef, label, count, 0);
+        }
+
         public boolean contains(double mouseX, double mouseY)
         {
             return corners.contains(mouseX, mouseY);
@@ -744,7 +754,7 @@ public class BoardRenderer
         BoardSnapshot.Slot slot = sequence < slots.size() ? slots.get(sequence) : BoardSnapshot.Slot.EMPTY;
         boolean monsterZone = location == OcgConstants.LOCATION_MZONE;
         Hit hit = new Hit(projection.quad(rect), slot.code(), controller, location, sequence,
-            EnginePrompt.zoneRef(controller == 1, monsterZone, sequence), label, 0);
+            EnginePrompt.zoneRef(controller == 1, monsterZone, sequence), label, 0, slot.art());
         hits.add(hit);
 
         FieldLayout.Rect cardRect = null;
@@ -1096,7 +1106,7 @@ public class BoardRenderer
             // (client_field.cpp excludes LOCATION_GRAVE from the face-down
             // rotation); banished follows suit unless the engine set it face
             // down, which is a real and distinct game state.
-            Identifier top = pile.controller() == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT;
+            Identifier top = backFor(pile.controller());
             BoardSnapshot.Slot topCard = topOf(pile.location(), pile.controller());
             if(topCard != null && topCard.code() != 0 && !topCard.faceDown()
                 && (pile.location() == OcgConstants.LOCATION_GRAVE
@@ -1158,7 +1168,7 @@ public class BoardRenderer
                 sheared.x2(), bottomY, sheared.x3(), bottomY);
 
             Hit hit = new Hit(corners, slot.code(), controller,
-                OcgConstants.LOCATION_HAND, i, -1, "Hand", 0);
+                OcgConstants.LOCATION_HAND, i, -1, "Hand", 0, slot.art());
             hits.add(hit);
             handPlans.add(new HandPlan(slot, hit));
             x += step;
@@ -1334,12 +1344,61 @@ public class BoardRenderer
         return pile.isEmpty() ? null : pile.get(pile.size() - 1);
     }
 
+    /**
+     * The size the field draws a sleeve from.
+     * <p>
+     * A card on the field is up to about 70 GUI units tall, which at the
+     * client's guiScale of 3 is roughly 210 real pixels, and the card occupies
+     * only 87.5% of a sleeve's square file. 512 therefore lands comfortably
+     * above what is needed at every zoom rather than being resampled up.
+     */
+    private static final int SLEEVE_FIELD_SIZE = 512;
+
+    /**
+     * The back a side's face-down cards wear.
+     * <p>
+     * Seat 0 is this player, and wears the sleeve on the deck they are actually
+     * duelling with — the server names it at the start of the duel rather than
+     * the client reading its own active deck, because an illegal deck is
+     * silently swapped for a starter and the back should follow the swap.
+     * <p>
+     * Seat 1 keeps the plain back on purpose. A sleeve is a thing you see from
+     * your own seat; giving the opponent one too would just make the field
+     * uniform again and lose the signal of which half is yours.
+     * <p>
+     * No UV special case is needed. The edoproArt tests further down ask whether
+     * a texture IS COVER / COVER_OPPONENT / UNKNOWN, and a sleeve is none of
+     * them, so it falls to the letterboxed branch — which is exactly right, as
+     * sleeve art is a square canvas with the card inside CARD_U0..CARD_V1.
+     */
+    private static Identifier backFor(int controller)
+    {
+        if(controller != 0)
+        {
+            return DuelTextures.COVER_OPPONENT;
+        }
+        de.cas_ual_ty.dueldimension.card.CardSleevesType sleeve =
+            de.cas_ual_ty.dueldimension.clientutil.DuelClientState.ownSleeve;
+        if(sleeve == null || sleeve.isCardBack())
+        {
+            return DuelTextures.COVER;
+        }
+        // NOT activeCardMainImageSize. That setting defaults to 64 and governs
+        // the DOWNLOADED card art, which is fetched at whatever size is asked
+        // for; a sleeve is a file already shipped at all seven sizes, so paying
+        // for the large one costs nothing but the texture memory of the single
+        // sleeve on the table. At 64 the field drew a 56-pixel-tall card back
+        // stretched over roughly 210 real pixels, which is what made sleeves
+        // look coarse next to the cards beside them.
+        return sleeve.getMainRL(SLEEVE_FIELD_SIZE);
+    }
+
     private Identifier textureFor(BoardSnapshot.Slot slot, boolean inHand, int controller)
     {
         if(slot.code() == 0 || (slot.faceDown() && !inHand))
         {
             // EDOPro gives each side its own card back (tCover[controler]).
-            return controller == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT;
+            return backFor(controller);
         }
         Properties properties = DdDatabase.PROPERTIES_LIST.get((long)slot.code());
         // A face-up card we have no art for is NOT a face-down card. Falling
@@ -1348,7 +1407,12 @@ public class BoardRenderer
         // EDOPro's cards.cdb, which is far larger than that database, so this
         // hit a good share of the opponent's field. The reference's "unknown
         // card" art says "no picture" without lying about the game state.
+        // Not (byte)0 any more: this copy may have been dressed in the deck
+        // editor, and the index rode here on the slot. adjustImageIndex folds
+        // anything the card does not actually have back to the printed art, so
+        // a stale choice degrades to the right card rather than to nothing.
         return properties == null ? DuelTextures.UNKNOWN
-            : DuelTextures.card(properties, (byte)0, DuelTextures.FIELD_CARD_SIZE);
+            : DuelTextures.card(properties, DuelTextures.artIndex(properties, slot.art()),
+                DuelTextures.FIELD_CARD_SIZE);
     }
 }

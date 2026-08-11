@@ -1,0 +1,21 @@
+{
+  "id": 27118421,
+  "name": "Starving Venom Fusion Dragon of the Four Heavenly Dragons",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2 DARK monsters on the field\r\n(This card is always treated as a \"Predaplant\" card.)\r\nIf this card is Special Summoned: You can target 1 other face-up monster on the field; change its ATK to 0, negate its effects, also it becomes DARK. When your opponent activates a card or effect (Quick Effect): You can Fusion Summon 1 DARK Fusion Monster from your Extra Deck using DARK monsters on either field, including this card. You can only use each effect of \"Starving Venom Fusion Dragon, Four Heavenly Dragons\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/27118421.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2800,
+  "species": "Dragon",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2000,
+  "level": 8,
+  "is_tuner": false
+}

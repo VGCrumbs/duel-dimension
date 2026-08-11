@@ -1,0 +1,16 @@
+{
+  "name": "Yu-Gi-Oh! ARC-V Volume 5 promotional card",
+  "code": "YA05",
+  "type": "Single",
+  "date": "05-03-2019",
+  "image": "https://ygoprodeck.com/pics_sets/YA05.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 21770839,
+      "code": "YA05-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

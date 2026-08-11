@@ -1,0 +1,47 @@
+{
+  "name": "Hobby League 7 participation card A",
+  "code": "HL07",
+  "type": "Booster Pack (2008)",
+  "date": "01-01-2008",
+  "image": "https://ygoprodeck.com/pics_sets/HL07.jpg",
+  "pull_type": "distribution",
+  "distribution": "composition_ultra_parallel_rare",
+  "cards": [
+    {
+      "id": 83764719,
+      "code": "HL07-EN001",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80344569,
+      "code": "HL07-EN002",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89111398,
+      "code": "HL07-EN003",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86445415,
+      "code": "HL07-EN004",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57953380,
+      "code": "HL07-EN005",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13839120,
+      "code": "HL07-EN006",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    }
+  ]
+}

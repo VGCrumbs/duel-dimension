@@ -1,0 +1,16 @@
+{
+  "name": "composition_platinum_rare",
+  "pulls": [
+    {
+      "weight": 44,
+      "entries": [
+        {
+          "count": 1,
+          "rarities": [
+            "Platinum Rare"
+          ]
+        }
+      ]
+    }
+  ]
+}

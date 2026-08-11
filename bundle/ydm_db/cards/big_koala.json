@@ -1,0 +1,21 @@
+{
+  "id": 42129512,
+  "name": "Big Koala",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "A species of huge Des Koala. He's meek, but people are afraid of him because he's very powerful.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/42129512.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 2700,
+  "species": "Beast",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": false,
+  "def": 2000,
+  "level": 7,
+  "is_tuner": false
+}

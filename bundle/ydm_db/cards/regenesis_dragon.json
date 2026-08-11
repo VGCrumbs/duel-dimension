@@ -1,0 +1,21 @@
+{
+  "id": 59323650,
+  "name": "Regenesis Dragon",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If a monster with 2500 original ATK or DEF is on the field, you can Special Summon this card (from your hand). You can only Special Summon \"Regenesis Dragon\" once per turn this way. You can only use each of the following effects of \"Regenesis Dragon\" once per turn. (Quick Effect): You can Tribute this card, then target 1 Spell/Trap your opponent controls; banish it. During your opponent's End Phase, if this card is in the GY because it was sent there this turn: You can add this card to your hand.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/59323650.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WIND",
+  "atk": 2500,
+  "species": "Dragon",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2500,
+  "level": 8,
+  "is_tuner": false
+}

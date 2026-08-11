@@ -1,0 +1,16 @@
+{
+  "name": "Yu-Gi-Oh! ZEXAL Volume 5 promotional card",
+  "code": "YZ05",
+  "type": "Single",
+  "date": "01-07-2014",
+  "image": "https://ygoprodeck.com/pics_sets/YZ05.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 75253697,
+      "code": "YZ05-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

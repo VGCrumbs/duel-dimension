@@ -113,6 +113,14 @@ public class EngineDuelScreen extends Screen
 
     private int previewCode;
     /**
+     * The artwork of the copy being previewed.
+     * <p>
+     * Carried beside the code rather than looked up from it: which artwork a
+     * copy wears is a property of that physical card, and the code alone cannot
+     * say which of a deck's three Dark Magicians is being pointed at.
+     */
+    private byte previewArt;
+    /**
      * The options behind one command chosen from a pile, or null.
      * <p>
      * A pile is a stack of face-down cards, so "Special Summon" off the Extra
@@ -145,6 +153,17 @@ public class EngineDuelScreen extends Screen
     private final List<Button> menuButtons = new ArrayList<>();
     private List<BoardSnapshot.Slot> pileView;
     private String pileViewLabel = "";
+    /**
+     * How many rows of the open pile are scrolled off the top.
+     * <p>
+     * A graveyard never needed this — it is a handful of cards and the panel
+     * grew to fit. A deck is forty to sixty, which at this tile size is seven
+     * rows and runs off the bottom of the screen, so the panel is now capped to
+     * what fits and the rest is scrolled to.
+     */
+    private int pileViewScroll;
+    /** How far it can scroll; written by the painter, read by the wheel. */
+    private int pileViewMaxScroll;
     private boolean answered;
     /** Attacker zone noted when Attack is clicked; aims on the next prompt. */
     private int pendingAimZone = -1;
@@ -229,6 +248,24 @@ public class EngineDuelScreen extends Screen
         {
             answer(new int[0], 0);
             return;
+        }
+
+        // The answer to "View Deck". It arrives whenever the server gets round
+        // to it rather than on the click, because unlike every other pile the
+        // deck's contents are not in the board packet -- they are asked for.
+        // Taken rather than read, so one answer opens the panel exactly once.
+        List<BoardSnapshot.Slot> deck = DuelClientState.deckView;
+        if(deck != null)
+        {
+            DuelClientState.deckView = null;
+            if(!deck.isEmpty())
+            {
+                pileView = deck;
+                // The same wording the deck's own pile label carries, and the
+                // same number: the list IS the count, so the two cannot drift.
+                pileViewLabel = "Deck (" + deck.size() + ")";
+                pileViewScroll = 0;
+            }
         }
 
         // No gate needed here any more: the prompt is only ever set by a
@@ -578,6 +615,19 @@ public class EngineDuelScreen extends Screen
     private static final int MIN_PICKER_CARD_W = 30;
 
     /**
+     * True while the picker panel is up and taking the mouse.
+     * <p>
+     * The three sites that draw it, click it and scroll it each spelled this
+     * out; the preview now needs the same answer, and four copies of a
+     * condition is three too many for one that decides whether the board
+     * underneath is reachable at all.
+     */
+    private boolean pickerOpen()
+    {
+        return picker != null && shownPrompt != null && !answered;
+    }
+
+    /**
      * The picker: the choosable cards as cards, over a dimmed board.
      * <p>
      * Drawn after everything else and before the tooltips, so it sits over the
@@ -586,7 +636,7 @@ public class EngineDuelScreen extends Screen
     private void renderPicker(GuiGraphicsExtractor poseStack, int mouseX, int mouseY)
     {
         EnginePrompt prompt = shownPrompt;
-        if(picker == null || prompt == null || answered)
+        if(!pickerOpen())
         {
             return;
         }
@@ -629,6 +679,25 @@ public class EngineDuelScreen extends Screen
             }
 
             Properties card = DdDatabase.PROPERTIES_LIST.get((long)option.cardCode());
+            // Pointing at a choice reads it in the sidebar, the same as
+            // pointing at a card on the field or in a pile view. Without this
+            // the player was being asked to choose between cards they had no
+            // way to read: the picker covers the board, so the sidebar kept
+            // showing whatever was last pointed at underneath it.
+            //
+            // Only a cell showing its FACE previews. A face-down position cell
+            // and a card the database cannot name are both drawn as a back, and
+            // the sidebar must not name what a back is hiding.
+            //
+            // The art is whatever drawPickerCard blits into the cell, so the
+            // two ask the same question. Set beside the code rather than left
+            // alone: a dressed copy previewed a moment ago on the field would
+            // otherwise lend this card its artwork.
+            if(hovered && !pickerCardIsBack(prompt, option, card))
+            {
+                previewCode = option.cardCode();
+                previewArt = (byte)artForOption(option);
+            }
             drawPickerCard(poseStack, prompt, option, card, cardX, cardY, at);
 
             // For a position choice the card is the same every time; the label
@@ -691,6 +760,57 @@ public class EngineDuelScreen extends Screen
     }
 
     /**
+     * The artwork the copy behind a picker option wears.
+     * <p>
+     * The server decides this and puts it on the option, which is the only
+     * answer that works everywhere: a card being picked out of a DECK is in no
+     * board snapshot at all — the deck is only counted for the client — so
+     * there was nothing here to read, and every deck choice came back wearing
+     * its printed artwork. An option carrying 0 has either been deliberately
+     * left undressed (a card this player may not identify) or belongs to a
+     * prompt that names no location, so the board lookup below stays as the
+     * second answer rather than being replaced.
+     * <p>
+     * The passcode is checked against the slot before the art is believed. A
+     * prompt and a board arrive as separate messages, so a card can have moved
+     * between them; without that guard a stale sequence would lend one card
+     * another's artwork, which is a worse error than simply showing the printed
+     * one. The option's own art needs no such check — the server compares the
+     * code inside the same call frame that builds the option, with the engine
+     * blocked, so the two cannot disagree.
+     */
+    private int artForOption(EnginePrompt.Option option)
+    {
+        if(option.art() != 0)
+        {
+            return option.art();
+        }
+        BoardSnapshot snapshot = currentBoard();
+        if(snapshot == null || option.sequence() < 0)
+        {
+            return 0;
+        }
+        BoardSnapshot.Side side = option.controller() == 0
+            ? snapshot.self() : snapshot.opponent();
+        java.util.List<BoardSnapshot.Slot> pile = switch(option.location())
+        {
+            case OcgConstants.LOCATION_MZONE -> side.monsters();
+            case OcgConstants.LOCATION_SZONE -> side.spells();
+            case OcgConstants.LOCATION_HAND -> side.hand();
+            case OcgConstants.LOCATION_GRAVE -> side.grave();
+            case OcgConstants.LOCATION_REMOVED -> side.banished();
+            case OcgConstants.LOCATION_EXTRA -> side.extra();
+            default -> java.util.List.of();
+        };
+        if(option.sequence() >= pile.size())
+        {
+            return 0;
+        }
+        BoardSnapshot.Slot slot = pile.get(option.sequence());
+        return slot.code() == option.cardCode() ? slot.art() : 0;
+    }
+
+    /**
      * One card of the picker, drawn the way its prompt wants it.
      * <p>
      * A position choice shows the same card in each posture it is being offered
@@ -700,17 +820,13 @@ public class EngineDuelScreen extends Screen
     private void drawPickerCard(GuiGraphicsExtractor poseStack, EnginePrompt prompt,
         EnginePrompt.Option option, Properties card, int cardX, int cardY, PickerLayout at)
     {
-        boolean faceDown = prompt.kind() == EnginePrompt.Kind.POSITION
-            && (option.zone() & OcgConstants.POS_FACEDOWN) != 0;
         boolean defence = prompt.kind() == EnginePrompt.Kind.POSITION
             && (option.zone() & OcgConstants.POS_DEFENSE) != 0;
 
-        // The back: for a face-down position because that is what it will look
-        // like, and for a card the database lacks because it at least keeps the
-        // cell the same shape as its neighbours.
-        boolean back = card == null || faceDown;
+        boolean back = pickerCardIsBack(prompt, option, card);
         Identifier texture = back ? DuelTextures.COVER
-            : DuelTextures.cardSmooth(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE);
+            : DuelTextures.cardSmooth(card, (byte)artForOption(option),
+                DuelTextures.PREVIEW_CARD_SIZE);
 
         int drawX = cardX;
         int drawY = cardY;
@@ -751,6 +867,23 @@ public class EngineDuelScreen extends Screen
                 DuelTextures.CARD_U1, DuelTextures.CARD_V1, DdBlitUtil.NO_TINT);
         }
         poseStack.pose().popMatrix();
+    }
+
+    /**
+     * Whether a picker cell shows the card's back rather than its face.
+     * <p>
+     * The back is drawn for a face-down position because that is what the card
+     * will look like, and for a card the database lacks because it at least
+     * keeps the cell the same shape as its neighbours.
+     * <p>
+     * Asked by the drawing and by the hover preview off the one answer: the
+     * sidebar may only ever say what the cell is already showing.
+     */
+    private static boolean pickerCardIsBack(EnginePrompt prompt, EnginePrompt.Option option,
+        Properties card)
+    {
+        return card == null || (prompt.kind() == EnginePrompt.Kind.POSITION
+            && (option.zone() & OcgConstants.POS_FACEDOWN) != 0);
     }
 
     /**
@@ -850,7 +983,7 @@ public class EngineDuelScreen extends Screen
     private boolean clickPicker(double mouseX, double mouseY)
     {
         EnginePrompt prompt = shownPrompt;
-        if(picker == null || prompt == null || answered)
+        if(!pickerOpen())
         {
             return false;
         }
@@ -1031,6 +1164,15 @@ public class EngineDuelScreen extends Screen
         }
         else
         {
+            // Above Surrender, because it is the harmless one and a menu whose
+            // first row concedes the duel is a menu people learn not to open.
+            // The click only asks -- the deck is not in the board packet, so
+            // nothing can be shown until the server answers; see tick().
+            entries.add(new MenuEntry("View Deck", 0, () ->
+            {
+                ClientPlayNetworking.send(new PromptMessages.ViewOwnDeck());
+                closeMenu();
+            }));
             entries.add(new MenuEntry("Surrender", 0, () ->
             {
                 ClientPlayNetworking.send(new PromptMessages.Surrender());
@@ -1367,18 +1509,29 @@ public class EngineDuelScreen extends Screen
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta)
     {
+        // The pile view first, for the same reason mouseClicked tests it first:
+        // it is DRAWN over the picker and the two panels are centred on the same
+        // point, so the wheel belongs to whichever is on top. A deck is the one
+        // pile too tall to fit, and this is how the rest of it is reached.
+        if(pileView != null && pileViewMaxScroll > 0)
+        {
+            pileViewScroll = Math.clamp(pileViewScroll - (int)Math.signum(delta),
+                0, pileViewMaxScroll);
+            return true;
+        }
         // A graveyard can hold more cards than the picker shows at once.
-        if(picker != null && shownPrompt != null && !answered)
+        if(pickerOpen())
         {
             pickerScroll = Math.max(0, pickerScroll - (int)Math.signum(delta));
             return true;
         }
-        // Reading a long effect. Anywhere over the SIDEBAR, not just inside
-        // the text well: the well is a narrow band low in a tall panel, and
-        // requiring the cursor to be in it made reading a card a matter of
-        // aiming. Nothing else in the sidebar scrolls, so there is nothing for
-        // this to be confused with.
-        if(descriptionMaxScroll > 0 && mouseX < SIDEBAR_W)
+        // Reading a long effect. Anywhere at all, not just over the sidebar:
+        // the card being read is the one the pointer is resting on out on the
+        // FIELD, so requiring the cursor to come back to the sidebar meant
+        // letting go of the thing you were reading about to read it. The picker
+        // above has already had its chance at the wheel and nothing else on this
+        // screen wants it, so there is nothing for this to be confused with.
+        if(descriptionMaxScroll > 0)
         {
             descriptionScroll = Math.clamp(
                 descriptionScroll - (int)Math.signum(delta) * DESCRIPTION_SCROLL_STEP,
@@ -1399,6 +1552,21 @@ public class EngineDuelScreen extends Screen
         // test would otherwise happily claim.
         if(button == 0 && grabDescriptionBar(mouseX, mouseY))
         {
+            return true;
+        }
+        // The pile view before the picker, because it is DRAWN over the picker
+        // (renderPileView runs after renderPicker) and both panels are centred
+        // on the same point, so they overlap almost completely. openPile is
+        // reachable while a picker is up -- a click on a graveyard outside the
+        // panel falls through to the board -- and with the picker tested first
+        // a click in the overlap selected the picker card hidden UNDER the pile
+        // view while the sidebar was reading out the pile card on top of it:
+        // pointing at one card and choosing another, which is the one thing the
+        // hover preview must never allow. The panel on top takes the click, and
+        // its own header has been promising "click to close" all along.
+        if(button == 0 && pileView != null)
+        {
+            pileView = null;
             return true;
         }
         if(button == 0 && clickPicker(mouseX, mouseY))
@@ -1432,11 +1600,6 @@ public class EngineDuelScreen extends Screen
                 sortOrder.clear();
                 return true;
             }
-        }
-        if(button == 0 && pileView != null)
-        {
-            pileView = null;
-            return true;
         }
         if(super.mouseClicked(event, doubleClick))
         {
@@ -1521,6 +1684,7 @@ public class EngineDuelScreen extends Screen
             default -> List.of();
         };
         pileViewLabel = hit.label();
+        pileViewScroll = 0;
         if(pileView.isEmpty())
         {
             pileView = null;
@@ -1641,9 +1805,16 @@ public class EngineDuelScreen extends Screen
         // Hover picks the preview card and opens that card's command menu.
         BoardRenderer.Hit hovered = boardRenderer.hitAt(mouseX, mouseY,
             hit -> hit.code() != 0 ? 1 : 0);
-        if(hovered != null && hovered.code() != 0)
+        // ...unless a panel is over the board. The picker and the pile view
+        // both swallow the mouse, so a card they happen to be covering is not
+        // something the player is pointing at -- and since the board is hit
+        // tested before either of them draws, letting it write the preview
+        // would pull the sidebar off the card being pointed at inside the
+        // panel every time the cursor crossed a gap between two cells.
+        if(hovered != null && hovered.code() != 0 && !pickerOpen() && pileView == null)
         {
             previewCode = hovered.code();
+            previewArt = (byte)hovered.art();
         }
         // EDOPro opens the command menu on click, not on hover; hovering only
         // drives the card preview.
@@ -2052,14 +2223,17 @@ public class EngineDuelScreen extends Screen
         }
         poseStack.fill(0, 0, width, height, 0xC0000000);
 
-        boolean won = DuelClientState.won;
-        String headline = won ? "VICTORY" : "DEFEAT";
-        int colour = won ? 0xFFD700 : 0xFF4C4C;
-        int bandTop = height / 2 - 30;
+        String outcome = DuelClientState.result == null ? "" : DuelClientState.result.trim();
+        boolean won = outcome.equalsIgnoreCase("Victory");
+        boolean drew = outcome.equalsIgnoreCase("Draw");
+        String headline = won ? "VICTORY" : drew ? "DRAW" : "DEFEAT";
+        int colour = won ? 0xFFD700 : drew ? 0xFFC2C9D6 : 0xFF4C4C;
+        int bandH = 60;
+        int bandTop = height / 2 - bandH / 2;
 
-        poseStack.fill(0, bandTop, width, bandTop + 60, 0xB0101014);
+        poseStack.fill(0, bandTop, width, bandTop + bandH, 0xB0101014);
         poseStack.fill(0, bandTop, width, bandTop + 1, 0xC0000000 | colour);
-        poseStack.fill(0, bandTop + 59, width, bandTop + 60, 0xC0000000 | colour);
+        poseStack.fill(0, bandTop + bandH - 1, width, bandTop + bandH, 0xC0000000 | colour);
 
         poseStack.pose().pushMatrix();
         // The GUI matrix is 2D now; the z of the old three-argument scale had
@@ -2067,14 +2241,16 @@ public class EngineDuelScreen extends Screen
         poseStack.pose().scale(3F, 3F);
         // The headline carries the same colour as the band's edges, which are
         // filled with an alpha of their own; as text it needs its own.
-        poseStack.centeredText(font, headline, Math.round(width / 2F / 3F),
-            Math.round((bandTop + 12) / 3F), 0xFF000000 | colour);
+        // Centred in the band on both axes. The y used to be a fixed +12,
+        // which sat the headline high on purpose to leave room for a second
+        // line underneath it; that line is gone, so the offset that made sense
+        // beside it now just looks off-centre. Derived from the band and the
+        // font instead of being another number to keep in step by hand.
+        float scale = 3F;
+        int textTop = bandTop + Math.round((bandH - font.lineHeight * scale) / 2F);
+        poseStack.centeredText(font, headline, Math.round(width / 2F / scale),
+            Math.round(textTop / scale), 0xFF000000 | colour);
         poseStack.pose().popMatrix();
-
-        if(DuelClientState.result != null && !DuelClientState.result.isBlank())
-        {
-            poseStack.centeredText(font, DuelClientState.result, width / 2, bandTop + 44, 0xFFB0B0B0);
-        }
 
         // No countdown. The result screen takes over at RESULT_STINGER_MS and
         // says everything this banner was counting towards, so a "returning
@@ -2364,7 +2540,7 @@ public class EngineDuelScreen extends Screen
 
         // Sample the card out of its letterboxed square, or it stretches.
         DdBlitUtil.blit(poseStack,
-            DuelTextures.cardSmooth(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE),
+            DuelTextures.cardSmooth(card, previewArt, DuelTextures.PREVIEW_CARD_SIZE),
             imageX, SIDEBAR_PAD, imageW, imageH,
             DuelTextures.CARD_U0, DuelTextures.CARD_V0,
             DuelTextures.CARD_U1, DuelTextures.CARD_V1, DdBlitUtil.NO_TINT);
@@ -2393,7 +2569,13 @@ public class EngineDuelScreen extends Screen
         poseStack.pose().scale(0.75F, 0.75F);
         int scaledX = Math.round(SIDEBAR_PAD / 0.75F);
         int scaledY = Math.round(y / 0.75F) + 2;
-        int scaledW = Math.round(imageW / 0.75F);
+        // The text spans the SIDEBAR, not the card image above it. It used to be
+        // imageW, and imageW is only 70% of the column -- the preview is
+        // deliberately small to give its height back to the description -- so
+        // the words stopped a third of the way short of the panel edge and wrapped
+        // far more than they needed to. The +2 border is what the well draws
+        // outside this, so the span leaves room for it.
+        int scaledW = Math.round((SIDEBAR_W - SIDEBAR_PAD) / 0.75F) - scaledX - 2;
         int limit = Math.round(descriptionBottom / 0.75F);
 
         boolean typeChip = true;
@@ -2578,20 +2760,39 @@ public class EngineDuelScreen extends Screen
         int cardH = Math.round(cardW / DuelTextures.CARD_ASPECT);
         int columns = Math.max(1, Math.min(10, (width - SIDEBAR_W - 40) / (cardW + 4)));
         int rows = (pileView.size() + columns - 1) / columns;
+        // The panel used to grow to whatever the pile needed, which was fine
+        // while the only piles were graveyards. A forty-card deck is seven rows
+        // and ran a hundred and fifty pixels off the bottom of the screen, so
+        // the height is capped at what fits under the top bar and the remainder
+        // is scrolled to.
+        int visibleRows = Math.max(1, Math.min(rows,
+            (height - TOP_BAR_H - 30) / (cardH + 4)));
+        // Floored at zero, because visibleRows has a floor of 1 and rows does
+        // not: an EMPTY pile is nought rows against one visible, and a negative
+        // maximum makes the clamp below throw IllegalArgumentException rather
+        // than draw an empty panel. Both callers currently refuse to open an
+        // empty pile, so this is the guard that keeps a third one from turning
+        // a blank panel into a crash.
+        pileViewMaxScroll = Math.max(0, rows - visibleRows);
+        pileViewScroll = Math.clamp(pileViewScroll, 0, pileViewMaxScroll);
         int panelW = columns * (cardW + 4) + 8;
-        int panelH = rows * (cardH + 4) + 26;
+        int panelH = visibleRows * (cardH + 4) + 26;
         int left = SIDEBAR_W + (width - SIDEBAR_W - panelW) / 2;
         int top = Math.max(TOP_BAR_H, (height - panelH) / 2);
 
         poseStack.fill(left, top, left + panelW, top + panelH, 0xF0100010);
-        poseStack.centeredText(font, pileViewLabel + " — click to close",
+        poseStack.centeredText(font, pileViewLabel
+                + (pileViewMaxScroll > 0 ? " — scroll to see more, click to close" : " — click to close"),
             left + panelW / 2, top + 6, 0xFFFFD700);
 
-        for(int i = 0; i < pileView.size(); i++)
+        int first = pileViewScroll * columns;
+        int last = Math.min(pileView.size(), first + visibleRows * columns);
+        for(int i = first; i < last; i++)
         {
             BoardSnapshot.Slot slot = pileView.get(i);
-            int x = left + 4 + (i % columns) * (cardW + 4);
-            int y = top + 20 + (i / columns) * (cardH + 4);
+            int cell = i - first;
+            int x = left + 4 + (cell % columns) * (cardW + 4);
+            int y = top + 20 + (cell / columns) * (cardH + 4);
             Properties card = slot.code() == 0 ? null : DdDatabase.PROPERTIES_LIST.get((long)slot.code());
             // Pointing at a card in the pile reads it in the sidebar, the same
             // as pointing at one on the field.
@@ -2599,6 +2800,7 @@ public class EngineDuelScreen extends Screen
                 && mouseY >= y && mouseY < y + cardH + 4)
             {
                 previewCode = slot.code();
+                previewArt = (byte)slot.art();
                 DdBlitUtil.fullBlit(poseStack, DuelTextures.SLOT_ACTIVE,
                     x - 1, y - 1, cardW + 2, cardH + 2);
             }
@@ -2609,7 +2811,7 @@ public class EngineDuelScreen extends Screen
             else
             {
                 DdBlitUtil.blit(poseStack,
-                    DuelTextures.cardSmooth(card, (byte)0, DuelTextures.FIELD_CARD_SIZE),
+                    DuelTextures.cardSmooth(card, (byte)slot.art(), DuelTextures.FIELD_CARD_SIZE),
                     x, y, cardW, cardH,
                     DuelTextures.CARD_U0, DuelTextures.CARD_V0,
                     DuelTextures.CARD_U1, DuelTextures.CARD_V1, DdBlitUtil.NO_TINT);

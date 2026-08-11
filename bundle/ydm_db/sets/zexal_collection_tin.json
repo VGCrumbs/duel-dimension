@@ -1,0 +1,155 @@
+{
+  "name": "Zexal Collection Tin",
+  "code": "ZTIN",
+  "type": "Collector's Set",
+  "date": "07-03-2013",
+  "image": "https://ygoprodeck.com/pics_sets/ZTIN.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 83274244,
+      "code": "ZTIN-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29669359,
+      "code": "ZTIN-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 55067058,
+      "code": "ZTIN-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 82052602,
+      "code": "ZTIN-EN004",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 18446701,
+      "code": "ZTIN-EN005",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 36834155,
+      "code": "ZTIN-EN006",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63223260,
+      "code": "ZTIN-EN007",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 9718968,
+      "code": "ZTIN-EN008",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35112613,
+      "code": "ZTIN-EN009",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62107612,
+      "code": "ZTIN-EN010",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 98555327,
+      "code": "ZTIN-EN011",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35950025,
+      "code": "ZTIN-EN012",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 55935416,
+      "code": "ZTIN-EN013",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 61344030,
+      "code": "ZTIN-EN014",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97433739,
+      "code": "ZTIN-EN015",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34838437,
+      "code": "ZTIN-EN016",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60222582,
+      "code": "ZTIN-EN017",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97617181,
+      "code": "ZTIN-EN018",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34796454,
+      "code": "ZTIN-EN019",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57036718,
+      "code": "ZTIN-EN020",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 83021423,
+      "code": "ZTIN-EN021",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 26082117,
+      "code": "ZTIN-ENV01",
+      "rarity": "Ultimate Rare",
+      "image_index": 0
+    },
+    {
+      "id": 47805931,
+      "code": "ZTIN-ENV02",
+      "rarity": "Ultimate Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17494901,
+      "code": "ZTIN-ENV03",
+      "rarity": "Ultimate Rare",
+      "image_index": 0
+    }
+  ]
+}

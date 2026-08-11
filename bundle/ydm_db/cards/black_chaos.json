@@ -1,0 +1,21 @@
+{
+  "id": 98684220,
+  "name": "Black Chaos",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Cannot be Normal Summoned/Set. Must be Special Summoned (from your hand) by shuffling 1 Spellcaster or Warrior Ritual Monster from your hand or GY into the Deck. You can only Special Summon \"Black Chaos\" once per turn this way. You can discard this card; place 1 Continuous Trap that mentions \"Light and Darkness Ritual\" from your Deck or GY, face-up on your field. While you have a Ritual Spell in your GY, this card is unaffected by your opponent's activated effects. Once per turn, during your Main Phase: You can banish 2 cards your opponent controls.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/98684220.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 3000,
+  "species": "Spellcaster",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2500,
+  "level": 8,
+  "is_tuner": false
+}

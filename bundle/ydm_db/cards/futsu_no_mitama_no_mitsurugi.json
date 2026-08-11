@@ -1,0 +1,21 @@
+{
+  "id": 55397172,
+  "name": "Futsu no Mitama no Mitsurugi",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can Ritual Summon this card with \"Mitsurugi Ritual\". If your opponent Special Summons a monster(s) (except during the Damage Step): You can target 1 Reptile monster in your GY, except \"Futsu no Mitama no Mitsurugi\"; Special Summon it. You can only activate this effect of \"Futsu no Mitama no Mitsurugi\" once per Chain. If this card is Tributed: You can add 1 \"Mitsurugi\" card from your Deck to your hand, except \"Futsu no Mitama no Mitsurugi\", then you can Special Summon this card. You can only use this effect of \"Futsu no Mitama no Mitsurugi\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/55397172.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2000,
+  "species": "Reptile",
+  "monster_type": "Ritual",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 3400,
+  "level": 8,
+  "is_tuner": false
+}

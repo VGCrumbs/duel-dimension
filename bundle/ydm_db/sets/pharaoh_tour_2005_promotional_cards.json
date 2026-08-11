@@ -1,0 +1,23 @@
+{
+  "name": "Pharaoh Tour 2005 promotional cards",
+  "code": "PT1",
+  "type": "Booster Pack (2005)",
+  "date": "17-12-2005",
+  "image": "https://ygoprodeck.com/pics_sets/PT1.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 24311372,
+      "code": "PT1-EN001",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81059524,
+      "code": "PT1-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

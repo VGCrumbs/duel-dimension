@@ -1,0 +1,12 @@
+{
+  "id": 26022485,
+  "name": "Enervating Mist",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Your opponent's hand size limit becomes 5.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/26022485.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Continuous"
+}

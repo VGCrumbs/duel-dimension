@@ -1,0 +1,20 @@
+{
+  "id": 90091224,
+  "name": "Dark Rebellion Xyz Dragon of the Four Heavenly Dragons",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2 Level 4 DARK monsters\r\n(This card is always treated as a \"The Phantom Knights\" card.)\r\nIf this card is Special Summoned: You can target an equal number of cards on each field; destroy them. When your opponent activates a card or effect (Quick Effect): You can detach 1 material from this card; Special Summon 1 Rank 4 DARK Xyz Monster from your Extra Deck, using this card you control (this is treated as an Xyz Summon, transfer this card's materials). You can only use each effect of \"Dark Rebellion Xyz Dragon, Four Heavenly Dragons\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/90091224.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 2500,
+  "species": "Dragon",
+  "monster_type": "Xyz",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2000,
+  "rank": 4
+}

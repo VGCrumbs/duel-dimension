@@ -1,0 +1,12 @@
+{
+  "id": 62104532,
+  "name": "The Phantom Knights' Rank-Up-Magic Requiem",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Target 1 \"The Phantom Knights\" or \"Xyz Dragon\" monster in your GY or banishment; Special Summon it, but negate its effects, then apply the following effect.\r\n● Choose 1 DARK Xyz Monster you control, and Special Summon from your Extra Deck, 1 \"The Phantom Knights\" or \"Xyz Dragon\" Xyz Monster that is 1 Rank higher than that monster, by using it as material (this is treated as an Xyz Summon, transfer its materials).\r\nYou can only activate 1 \"The Phantom Knights' Rank-Up-Magic Requiem\" per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/62104532.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

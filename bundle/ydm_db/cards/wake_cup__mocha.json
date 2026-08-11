@@ -1,0 +1,21 @@
+{
+  "id": 91818544,
+  "name": "WAKE CUP! Mocha",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Once per turn, during your End Phase: You can change this card to face-down Defense Position. You can only use each of the following effects of \"WAKE CUP! Mocha\" once per turn. You can target 1 face-down Defense Position monster on the field; Special Summon this card from your hand, and if you do, change that monster to Attack Position. If this card is flipped face-up: You can target 1 face-up monster on the field; it gains 1000 ATK, but send it to the GY during the End Phase.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/91818544.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WIND",
+  "atk": 1000,
+  "species": "Aqua",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "Flip",
+  "has_effect": true,
+  "def": 100,
+  "level": 3,
+  "is_tuner": false
+}

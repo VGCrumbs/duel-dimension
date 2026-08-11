@@ -1,0 +1,12 @@
+{
+  "id": 14442329,
+  "name": "JJ \"Kewl Tune\"",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can Normal Summon 1 Tuner during your Main Phase each turn, in addition to your Normal Summon/Set (you can only gain this effect once per turn). Each \"Kewl Tune Loudness War\" you control gains 3300 ATK while your opponent has a Tuner in their field or GY. You can Tribute 1 Tuner; add to your hand or Special Summon, 1 \"Kewl Tune\" monster from your Deck, also you cannot Special Summon for the rest of this turn, except Tuners. You can only use this effect of \"JJ \"Kewl Tune\"\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/14442329.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Field"
+}

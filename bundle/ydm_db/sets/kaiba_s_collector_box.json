@@ -1,0 +1,16 @@
+{
+  "name": "Kaiba's Collector Box",
+  "code": "KACB",
+  "type": "Single",
+  "date": "17-11-2017",
+  "image": "https://ygoprodeck.com/pics_sets/KACB.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 89631139,
+      "code": "KACB-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

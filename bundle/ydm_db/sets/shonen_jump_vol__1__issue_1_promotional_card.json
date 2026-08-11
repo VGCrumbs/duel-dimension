@@ -1,0 +1,53 @@
+{
+  "name": "Shonen Jump Vol. 1, Issue 1 promotional card",
+  "code": "JMP",
+  "type": "Booster Pack (2002)",
+  "date": "26-11-2002",
+  "image": "https://ygoprodeck.com/pics_sets/JMP.jpg",
+  "pull_type": "distribution",
+  "distribution": "battles_of_legend__armageddon",
+  "cards": [
+    {
+      "id": 89631139,
+      "code": "JMP-001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74677427,
+      "code": "JMP-002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89631139,
+      "code": "JMP-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74677427,
+      "code": "JMP-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 50287060,
+      "code": "JMP-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23995348,
+      "code": "JMP-EN005",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23995348,
+      "code": "JMP-EN005",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

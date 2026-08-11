@@ -1,0 +1,21 @@
+{
+  "id": 30275298,
+  "name": "Cyber End Dragon, the Final Strike Dragon",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "3 Machine monsters with 2100 or more ATK\r\nMust be Fusion Summoned. If this card is Fusion Summoned using only LIGHT monsters: You can pay 4000 LP; add 1 \"Limiter Removal\" from your Deck to your hand. You can only use this effect of \"Cyber End Dragon, the Final Strike Dragon\" once per turn. If this card attacks a Defense Position monster, inflict piercing battle damage to your opponent. This card whose current ATK is higher than its original ATK can make up to 3 attacks during each Battle Phase.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/30275298.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 4000,
+  "species": "Machine",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2800,
+  "level": 10,
+  "is_tuner": false
+}

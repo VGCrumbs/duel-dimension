@@ -1,0 +1,21 @@
+{
+  "id": 44994712,
+  "name": "Predaplant Longinephila",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is Normal or Special Summoned: You can add 1 \"Predap\" card from your Deck to your hand, except \"Predaplant Longinephila\". You can banish this card from your GY, then activate 1 of these effects;\r\n● Place 1 Predator Counter on 1 face-up monster on the field, and if you do, any of those monsters that are Level 2 or higher become Level 1 as long as they have a Predator Counter.\r\n● Set 1 \"Polymerization\" from your GY or banishment.\r\nYou can only use each effect of \"Predaplant Longinephila\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/44994712.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 600,
+  "species": "Plant",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 100,
+  "level": 1,
+  "is_tuner": true
+}

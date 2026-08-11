@@ -1,0 +1,16 @@
+{
+  "name": "Yu-Gi-Oh! GX Special Edition",
+  "code": "GSE",
+  "type": "Single",
+  "date": "01-04-2006",
+  "image": "https://ygoprodeck.com/pics_sets/GSE.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 86188410,
+      "code": "GSE-EN001",
+      "rarity": "Ultra Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": 97662494,
+  "name": "Heraldic Beast Stad Whale",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is Normal or Special Summoned: You can discard 1 card; add 2 \"Heraldry\" Spells/Traps from your Deck to your hand. You can banish this card from your GY, then target 2 \"Heraldic Beast\" monsters in your GY with the same name; Special Summon them in Defense Position, also you cannot Special Summon from the Extra Deck for the rest of this turn, except by Xyz Summon that uses only monsters with \"Heraldic Beast\" or \"Number\" in their original names as material. You can only use each effect of \"Heraldic Beast Stad Whale\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/97662494.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WATER",
+  "atk": 900,
+  "species": "Fish",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1900,
+  "level": 4,
+  "is_tuner": false
+}

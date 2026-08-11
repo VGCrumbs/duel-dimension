@@ -1,0 +1,12 @@
+{
+  "id": 90880453,
+  "name": "Elfnotes: A Plea for Help",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Your opponent cannot target the monster in your center Main Monster Zone with card effects. This card gains the appropriate effects, based on the Attribute(s) of the monster in your center Main Monster Zone.\r\n● FIRE or EARTH: If your Synchro Monster attacks a Defense Position monster, inflict piercing battle damage to your opponent.\r\n● WATER or WIND: Other face-up Spells/Traps you control cannot be destroyed by your opponent's card effects.\r\n● LIGHT or DARK: You take no battle damage.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/90880453.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Continuous"
+}

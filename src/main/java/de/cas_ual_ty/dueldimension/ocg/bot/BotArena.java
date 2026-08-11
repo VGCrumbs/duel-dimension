@@ -95,9 +95,20 @@ public class BotArena
      */
     public static void main(String[] argv) throws Exception
     {
-        Path lib = Path.of(System.getProperty("ocg.lib", "native/ocgcore.dll"));
-        Path scripts = Path.of(System.getProperty("ocg.scripts", "C:/ProjectIgnis/script"));
-        Path cdb = Path.of(System.getProperty("ocg.cdb", "C:/ProjectIgnis/expansions/cards.cdb"));
+        // Unpack the bundled engine if this machine has nothing else; see
+        // DuelFuzzer.main. Must come before defaults() below, which only reports
+        // what is on disk.
+        de.cas_ual_ty.dueldimension.ocg.session.EngineBundle.install();
+
+        // The same discovery the mod itself uses -- properties first, then a
+        // real EDOPro install wherever it is on this machine, then the copy this
+        // jar carries -- rather than one developer's drive letter spelled out
+        // three times.
+        de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime.Paths found =
+            de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime.Paths.defaults();
+        Path lib = found.library();
+        Path scripts = found.scriptsDir();
+        Path cdb = found.cdb();
         int duels = 200;
         long baseSeed = 1;
 

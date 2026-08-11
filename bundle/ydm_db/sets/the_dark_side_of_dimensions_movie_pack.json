@@ -1,0 +1,353 @@
+{
+  "name": "The Dark Side of Dimensions Movie Pack",
+  "code": "MVP1",
+  "type": "Movie Pack",
+  "date": "21-07-2016",
+  "image": "https://i.imgur.com/ocFCnVz.jpg",
+  "pull_type": "distribution",
+  "distribution": "the_dark_side_of_dimensions_movie_pack",
+  "cards": [
+    {
+      "id": 56532353,
+      "code": "MVP1-001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93927067,
+      "code": "MVP1-002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29311166,
+      "code": "MVP1-003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 55410871,
+      "code": "MVP1-004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22804410,
+      "code": "MVP1-005",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68299524,
+      "code": "MVP1-006",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95697223,
+      "code": "MVP1-007",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21082832,
+      "code": "MVP1-008",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68077936,
+      "code": "MVP1-009",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 94561645,
+      "code": "MVP1-010",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 20960340,
+      "code": "MVP1-011",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 57354389,
+      "code": "MVP1-012",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93749093,
+      "code": "MVP1-013",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 20747792,
+      "code": "MVP1-014",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56132807,
+      "code": "MVP1-015",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 82627406,
+      "code": "MVP1-016",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29021114,
+      "code": "MVP1-017",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 55010259,
+      "code": "MVP1-018",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 82404868,
+      "code": "MVP1-019",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 18809562,
+      "code": "MVP1-020",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54297661,
+      "code": "MVP1-021",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81782376,
+      "code": "MVP1-022",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 17787975,
+      "code": "MVP1-023",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54175023,
+      "code": "MVP1-024",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80560728,
+      "code": "MVP1-025",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 16964437,
+      "code": "MVP1-026",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 43959432,
+      "code": "MVP1-027",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89448140,
+      "code": "MVP1-028",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 16832845,
+      "code": "MVP1-029",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 42237854,
+      "code": "MVP1-030",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 78625592,
+      "code": "MVP1-031",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 15610297,
+      "code": "MVP1-032",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 41114306,
+      "code": "MVP1-033",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 78509901,
+      "code": "MVP1-034",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4998619,
+      "code": "MVP1-035",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40392714,
+      "code": "MVP1-036",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77387463,
+      "code": "MVP1-037",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 3775068,
+      "code": "MVP1-038",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30270176,
+      "code": "MVP1-039",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 72664875,
+      "code": "MVP1-040",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 9659580,
+      "code": "MVP1-041",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35058588,
+      "code": "MVP1-042",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 71442223,
+      "code": "MVP1-043",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 8837932,
+      "code": "MVP1-044",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34325937,
+      "code": "MVP1-045",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 38517737,
+      "code": "MVP1-046",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46613515,
+      "code": "MVP1-047",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 45531624,
+      "code": "MVP1-048",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 71525232,
+      "code": "MVP1-049",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 8910971,
+      "code": "MVP1-050",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34318086,
+      "code": "MVP1-051",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7198399,
+      "code": "MVP1-052",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 71703785,
+      "code": "MVP1-053",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46986414,
+      "code": "MVP1-054",
+      "rarity": "Ultra Rare",
+      "image_index": 7
+    },
+    {
+      "id": 89631139,
+      "code": "MVP1-055",
+      "rarity": "Ultra Rare",
+      "image_index": 6
+    },
+    {
+      "id": 38033121,
+      "code": "MVP1-056",
+      "rarity": "Ultra Rare",
+      "image_index": 4
+    },
+    {
+      "id": 10000020,
+      "code": "MVP1-057",
+      "rarity": "Ultra Rare",
+      "image_index": 2
+    }
+  ]
+}

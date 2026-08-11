@@ -1,0 +1,21 @@
+{
+  "id": 26462013,
+  "name": "Primite Dragon Nether Berzelius",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 \"Primite\" monster + 1+ Normal Monsters\r\nGains 1000 ATK for each Normal Monster used for its Fusion Summon. Negate the activated effects of monsters your opponent controls, whose Levels/Ranks/Link Ratings are less than or equal to the number of Normal Monsters in your field and GY. If this card is sent from the field to the GY: You can Special Summon 1 Normal Monster from your Deck in Defense Position.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/26462013.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 1600,
+  "species": "Dragon",
+  "monster_type": "Fusion",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "level": 8,
+  "is_tuner": false
+}

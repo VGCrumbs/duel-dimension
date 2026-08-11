@@ -123,7 +123,12 @@ public class HumanResponseSource implements ResponseSource
         }
         BoardSnapshot field = board == null ? BoardSnapshot.EMPTY
             : BoardSnapshot.of(board.observe(), turn, phase, turnPlayer);
-        EnginePrompt payload = translator.toPrompt(decoded, field);
+        // The lookup is handed over per call, not held: one translator serves
+        // both seats. It is safe to query from here because respond() IS the
+        // duel thread -- the core is blocked inside its own callback waiting for
+        // this method to return, which is the only moment a query is legal.
+        EnginePrompt payload = translator.toPrompt(decoded, field,
+            board == null ? null : board::coverOf);
 
         if(payload == null || (payload.options().isEmpty() && payload.kind() != EnginePrompt.Kind.DECLARE_CARD))
         {

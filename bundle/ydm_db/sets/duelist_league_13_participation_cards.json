@@ -1,0 +1,131 @@
+{
+  "name": "Duelist League 13 participation cards",
+  "code": "DL13",
+  "type": "Booster Pack (2011)",
+  "date": "01-12-2011",
+  "image": "https://ygoprodeck.com/pics_sets/DL13.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack",
+  "cards": [
+    {
+      "id": 9076207,
+      "code": "DL13-EN001",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95956346,
+      "code": "DL13-EN002",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84834865,
+      "code": "DL13-EN003",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14618326,
+      "code": "DL13-EN004",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 41006930,
+      "code": "DL13-EN005",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 26185991,
+      "code": "DL13-EN006",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93107608,
+      "code": "DL13-EN007",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60229110,
+      "code": "DL13-EN008",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 1571945,
+      "code": "DL13-EN009",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 15894048,
+      "code": "DL13-EN010",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79409334,
+      "code": "DL13-EN011",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 36042004,
+      "code": "DL13-EN012",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44330098,
+      "code": "DL13-EN013",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23615409,
+      "code": "DL13-EN014",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90928333,
+      "code": "DL13-EN015",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10667321,
+      "code": "DL13-EN016",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4064256,
+      "code": "DL13-EN017",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 47325505,
+      "code": "DL13-EN018",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80604092,
+      "code": "DL13-EN019",
+      "rarity": "Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59344077,
+      "code": "DL13-EN020",
+      "rarity": "Rare",
+      "image_index": 0
+    }
+  ]
+}

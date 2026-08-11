@@ -1,0 +1,16 @@
+{
+  "name": "X-Saber Power-Up",
+  "code": "XSPU",
+  "type": "Single",
+  "date": "23-11-2010",
+  "image": "https://ygoprodeck.com/pics_sets/XSPU.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 78422252,
+      "code": "XSPU-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

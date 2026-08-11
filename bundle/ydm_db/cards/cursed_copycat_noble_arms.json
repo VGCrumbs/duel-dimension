@@ -1,0 +1,12 @@
+{
+  "id": 23249029,
+  "name": "Cursed Copycat Noble Arms",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "The equipped monster gains 200 ATK/DEF for each Equip Spell in your field and GY. While this card is equipped to a Warrior monster: You can activate this effect; you cannot Special Summon for the rest of this turn, except Warrior monsters, also Special Summon 1 Warrior monster with the same Attribute and Level as the equipped monster but a different name from your Deck, and if you do, equip it with this card, then destroy the monster this card was equipped to. You can only use this effect of \"Cursed Copycat Noble Arms\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/23249029.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Equip"
+}

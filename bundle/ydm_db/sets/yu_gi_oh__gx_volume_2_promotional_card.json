@@ -1,0 +1,16 @@
+{
+  "name": "Yu-Gi-Oh! GX Volume 2 promotional card",
+  "code": "YG02",
+  "type": "Single",
+  "date": "04-11-2008",
+  "image": "https://ygoprodeck.com/pics_sets/YG02.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 71564252,
+      "code": "YG02-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

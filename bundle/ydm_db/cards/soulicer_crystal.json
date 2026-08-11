@@ -1,0 +1,21 @@
+{
+  "id": 24514503,
+  "name": "Soulicer Crystal",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Cannot be destroyed by card effects. You can only use each of the following effects of \"Soulicer Crystal\" once per turn. If your opponent controls at least 2 more monsters than you do: You can Special Summon this card from your hand. You can target 1 Effect Monster your opponent controls; negate its effects.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/24514503.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 300,
+  "species": "Aqua",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1900,
+  "level": 6,
+  "is_tuner": false
+}

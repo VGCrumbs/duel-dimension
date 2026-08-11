@@ -1,0 +1,179 @@
+{
+  "name": "Yu-Gi-Oh! Championship Series 2010 Prize Cards",
+  "code": "YCSW",
+  "type": "Booster Pack (2010)",
+  "date": "16-05-2010",
+  "image": "https://ygoprodeck.com/pics_sets/YCSW.jpg",
+  "pull_type": "distribution",
+  "distribution": "ots_tournament_pack",
+  "cards": [
+    {
+      "id": 85771019,
+      "code": "YCSW-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85771019,
+      "code": "YCSW-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11260714,
+      "code": "YCSW-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11260714,
+      "code": "YCSW-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 47664723,
+      "code": "YCSW-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 47664723,
+      "code": "YCSW-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30757396,
+      "code": "YCSW-EN004",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30757396,
+      "code": "YCSW-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29515122,
+      "code": "YCSW-EN005",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29515122,
+      "code": "YCSW-EN005",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63746411,
+      "code": "YCSW-EN006",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63746411,
+      "code": "YCSW-EN006",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37910722,
+      "code": "YCSW-EN007",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37910722,
+      "code": "YCSW-EN007",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30100551,
+      "code": "YCSW-EN008",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30100551,
+      "code": "YCSW-EN008",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23187256,
+      "code": "YCSW-EN009",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23187256,
+      "code": "YCSW-EN009",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95474755,
+      "code": "YCSW-EN010",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95474755,
+      "code": "YCSW-EN010",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4538826,
+      "code": "YCSW-EN011",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 4538826,
+      "code": "YCSW-EN011",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60025883,
+      "code": "YCSW-EN012",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60025883,
+      "code": "YCSW-EN012",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 47484352,
+      "code": "YCSW-EN013",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 47484352,
+      "code": "YCSW-EN013",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86893702,
+      "code": "YCSW-EN014",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 86893702,
+      "code": "YCSW-EN014",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

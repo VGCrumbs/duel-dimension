@@ -1,0 +1,12 @@
+{
+  "id": 25661743,
+  "name": "Prohibited Power Patron Portal - Terminus",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Send 1 \"Power Patron\" monster from your Deck/Extra Deck to the GY, then you can add 1 DARK Fairy monster from your Deck to your hand, also you cannot declare attacks for the rest of this turn, except with \"Power Patron\" monsters. At the start of the Damage Step, if your \"Power Patron\" monster battles an opponent's monster: You can banish this card from your GY; banish (face-down) that opponent's monster. You can only use each effect of \"Prohibited Power Patron Portal - Terminus\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/25661743.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Normal"
+}

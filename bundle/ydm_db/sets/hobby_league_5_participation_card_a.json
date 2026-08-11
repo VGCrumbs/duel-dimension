@@ -1,0 +1,47 @@
+{
+  "name": "Hobby League 5 participation card A",
+  "code": "HL05",
+  "type": "Booster Pack (2007)",
+  "date": "01-01-2007",
+  "image": "https://ygoprodeck.com/pics_sets/HL05.jpg",
+  "pull_type": "distribution",
+  "distribution": "composition_ultra_parallel_rare",
+  "cards": [
+    {
+      "id": 32710364,
+      "code": "HL05-EN001",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 41172955,
+      "code": "HL05-EN002",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95326659,
+      "code": "HL05-EN003",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 87621407,
+      "code": "HL05-EN004",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95519486,
+      "code": "HL05-EN005",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    },
+    {
+      "id": 73915051,
+      "code": "HL05-EN006",
+      "rarity": "Ultra Parallel Rare",
+      "image_index": 0
+    }
+  ]
+}

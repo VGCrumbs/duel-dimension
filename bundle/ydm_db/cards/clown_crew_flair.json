@@ -1,0 +1,21 @@
+{
+  "id": 42759961,
+  "name": "Clown Crew Flair",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can Ritual Summon this card with a \"Clown Crew\" card. You can reveal this card in your hand; add 1 \"Clown Crew\" card from your Deck to your hand, except a Ritual Monster, then discard 1 card. You can only use this effect of \"Clown Crew Flair\" once per turn. If this card is Tributed: You can activate 1 of these effects (but you can only use each of these effects of \"Clown Crew Flair\" once per turn);\r\n● Shuffle all Ritual Monsters from the field and the GYs into the Deck.\r\n● Change 1 Effect Monster on the field to face-down Defense Position.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/42759961.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 500,
+  "species": "Beast-Warrior",
+  "monster_type": "Ritual",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1000,
+  "level": 1,
+  "is_tuner": false
+}

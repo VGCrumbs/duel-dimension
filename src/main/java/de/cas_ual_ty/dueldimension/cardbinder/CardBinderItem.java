@@ -103,7 +103,15 @@ public class CardBinderItem extends Item implements MenuProvider
 
         if(player.getItemInHand(hand) == stack)
         {
-            player.openMenu(this);
+            if(world.isClientSide())
+            {
+                // The binder is a READER now: it reports how much of each pack
+                // has been collected and holds nothing. That makes it a plain
+                // client screen over the already-synced profile rather than a
+                // container menu, so there is no menu to open and no server
+                // round trip to wait on.
+                de.cas_ual_ty.dueldimension.DuelDimension.proxy.openCollectionBinder();
+            }
             return InteractionResult.SUCCESS;
         }
 

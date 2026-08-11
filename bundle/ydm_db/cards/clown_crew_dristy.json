@@ -1,0 +1,23 @@
+{
+  "id": 30109445,
+  "name": "Clown Crew Dristy",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2 Ritual, Fusion, Synchro, Xyz, and/or Pendulum Monsters\r\nYour Tribute Summoned monsters can make a second attack during each Battle Phase. If this card is Tributed: You can activate 1 of these effects (but you can only use each effect of \"Clown Crew Dristy\" once per turn);\r\n● Return all Link Monsters from the field and the GYs to the Extra Deck.\r\n● Each player with a hand shuffles their entire hand into the Deck, then draws the same number of cards they shuffled into the Deck.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/30109445.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 1000,
+  "species": "Beast-Warrior",
+  "monster_type": "Link",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "link_rating": 2,
+  "link_arrows": [
+    "Left",
+    "Right"
+  ]
+}

@@ -37,10 +37,34 @@ public final class Banlists
      * simply offers nothing but "No banlist".
      */
     private static final String PROPERTY = "ocg.lflists";
-    private static final String[] FALLBACKS = {
-        "C:/ProjectIgnis/repositories/lflists",
-        "C:/ProjectIgnis/lflists",
-    };
+    /**
+     * Derived from wherever EDOPro actually is, not from one machine's install.
+     * <p>
+     * Both shapes are tried because the lists moved: a current install keeps
+     * them under repositories/, an older one at the root.
+     * <p>
+     * There is no absolute fallback any more. {@code C:/ProjectIgnis} used to be
+     * spelled out here as a last resort, which meant this one class went looking
+     * on a drive letter even when engine discovery had already reported that
+     * there is no EDOPro anywhere -- and that is precisely the check a machine
+     * with EDOPro installed can never fail honestly. Discovery already keeps
+     * {@code C:/ProjectIgnis} as its own last candidate, so an existing install
+     * is still found; it is now found the same way as everything else.
+     */
+    private static String[] fallbacks()
+    {
+        java.util.List<String> paths = new java.util.ArrayList<>();
+        java.nio.file.Path root =
+            de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime.Paths.edoproRoot();
+        if(root != null)
+        {
+            paths.add(root.resolve("repositories/lflists").toString());
+            paths.add(root.resolve("lflists").toString());
+        }
+        // A server may also ship the lists itself, beside the game.
+        paths.add(de.cas_ual_ty.dueldimension.util.GameDir.resolve("lflists").toString());
+        return paths.toArray(new String[0]);
+    }
 
     private static volatile List<Banlist> loaded;
 
@@ -126,14 +150,21 @@ public final class Banlists
         return List.copyOf(lists);
     }
 
-    private static Path directory()
+    /**
+     * Where the lists were found, or null if nowhere.
+     * <p>
+     * Public so a test can ask rather than repeat a guess about where EDOPro
+     * lives -- a test that hardcodes one machine's path skips silently on every
+     * other machine and passes for the wrong reason on this one.
+     */
+    public static Path directory()
     {
         String override = System.getProperty(PROPERTY);
         if(override != null && Files.isDirectory(Path.of(override)))
         {
             return Path.of(override);
         }
-        for(String fallback : FALLBACKS)
+        for(String fallback : fallbacks())
         {
             Path path = Path.of(fallback);
             if(Files.isDirectory(path))

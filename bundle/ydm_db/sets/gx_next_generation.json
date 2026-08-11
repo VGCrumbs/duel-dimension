@@ -1,0 +1,16 @@
+{
+  "name": "GX Next Generation",
+  "code": "GXNG",
+  "type": "Single",
+  "date": "03-11-2007",
+  "image": "https://ygoprodeck.com/pics_sets/GXNG.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 73891874,
+      "code": "GXNG-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

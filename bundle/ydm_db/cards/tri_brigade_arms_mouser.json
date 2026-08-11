@@ -1,0 +1,23 @@
+{
+  "id": 33781156,
+  "name": "Tri-Brigade Arms Mouser",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "2 Beast, Beast-Warrior, and/or Winged Beast monsters\r\nIf this card is Link Summoned: You can send 2 \"Tri-Brigade\" cards with different names from your Deck and/or Extra Deck to the GY, except \"Tri-Brigade Arms Mouser\", also you cannot Special Summon from the Extra Deck for the rest of this turn, except Beast, Beast-Warrior, or Winged Beast monsters. If this card is sent to the GY: You can target 1 face-up monster on the field; change it to face-down Defense Position. You can only use each effect of \"Tri-Brigade Arms Mouser\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/33781156.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "EARTH",
+  "atk": 1800,
+  "species": "Beast",
+  "monster_type": "Link",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "link_rating": 2,
+  "link_arrows": [
+    "Bottom-Left",
+    "Bottom-Right"
+  ]
+}

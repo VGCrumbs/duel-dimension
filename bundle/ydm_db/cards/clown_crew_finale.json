@@ -1,0 +1,12 @@
+{
+  "id": 84031736,
+  "name": "Clown Crew Finale",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you control a Tribute Summoned monster: Discard any number of cards, then target that many face-up cards on the field; destroy them. You can banish this card from your GY, and Tribute 1 Ritual, Fusion, Synchro, Xyz, Pendulum, or Link Monster from your hand or field; add 1 \"Clown Crew\" monster with a different original Level/Rank/Link Rating from your Deck or GY to your hand. You can only use each effect of \"Clown Crew Finale\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/84031736.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

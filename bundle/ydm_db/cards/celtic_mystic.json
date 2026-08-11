@@ -1,0 +1,21 @@
+{
+  "id": 50073633,
+  "name": "Celtic Mystic",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If this card is Normal or Special Summoned: You can reveal your entire hand, and if you revealed a card that mentions \"Light and Darkness Ritual\", you can draw 3 cards, then discard 2 cards, also for the rest of this turn, you can only Special Summon once from the Extra Deck. You can Tribute this card; Special Summon 1 Ritual Monster that mentions \"Light and Darkness Ritual\" from your hand. You can only use each effect of \"Celtic Mystic\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/50073633.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 1400,
+  "species": "Warrior",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2000,
+  "level": 4,
+  "is_tuner": false
+}

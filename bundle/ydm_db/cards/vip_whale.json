@@ -1,0 +1,21 @@
+{
+  "id": 14556954,
+  "name": "VIP Whale",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can Tribute additional monsters when you Tribute Summon this card face-up. If this card is Tribute Summoned: You can place VIP Counters on this card equal to the number of monsters Tributed for its Tribute Summon. When your opponent activates a card or effect (Quick Effect): You can remove 1 VIP Counter from this card; toss a coin and call it. If you call it right, negate that effect. If you call it wrong, this card's original ATK becomes halved until the end of this turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/14556954.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "LIGHT",
+  "atk": 2400,
+  "species": "Fish",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1000,
+  "level": 6,
+  "is_tuner": false
+}

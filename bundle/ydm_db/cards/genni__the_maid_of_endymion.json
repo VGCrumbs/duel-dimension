@@ -1,0 +1,21 @@
+{
+  "id": 7656689,
+  "name": "Genni, the Maid of Endymion",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "(This card is always treated as a \"Witchcrafter\" card.)\r\nIf you control a Spellcaster monster: You can Special Summon this card from your hand. During the Main Phase (Quick Effect): You can target 1 Spellcaster monster you control; banish it, and if you do, Special Summon 1 \"Witchcrafter\" monster from your Deck, except \"Genni, the Maid of Endymion\". You can only use each effect of \"Genni, the Maid of Endymion\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/7656689.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "WIND",
+  "atk": 300,
+  "species": "Spellcaster",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 500,
+  "level": 1,
+  "is_tuner": false
+}

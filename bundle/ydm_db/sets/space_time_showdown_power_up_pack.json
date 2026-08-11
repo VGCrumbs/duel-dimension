@@ -1,0 +1,341 @@
+{
+  "name": "Space-Time Showdown Power-Up Pack",
+  "code": "YS14",
+  "type": "Booster Pack (2014)",
+  "date": "10-07-2014",
+  "image": "https://ygoprodeck.com/pics_sets/YS14.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare",
+  "cards": [
+    {
+      "id": 87151205,
+      "code": "YS14-EN001",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11091375,
+      "code": "YS14-EN002",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 96005454,
+      "code": "YS14-EN003",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 32012841,
+      "code": "YS14-EN004",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 11321183,
+      "code": "YS14-EN005",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 75953262,
+      "code": "YS14-EN006",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44430454,
+      "code": "YS14-EN007",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 15025844,
+      "code": "YS14-EN008",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 94415058,
+      "code": "YS14-EN009",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 20409757,
+      "code": "YS14-EN010",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56804361,
+      "code": "YS14-EN011",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 93298460,
+      "code": "YS14-EN012",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29687169,
+      "code": "YS14-EN013",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 56681873,
+      "code": "YS14-EN014",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 82176812,
+      "code": "YS14-EN015",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 28565527,
+      "code": "YS14-EN016",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 55969226,
+      "code": "YS14-EN017",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81354330,
+      "code": "YS14-EN018",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 28348939,
+      "code": "YS14-EN019",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 54747648,
+      "code": "YS14-EN020",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 81231742,
+      "code": "YS14-EN021",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 17626381,
+      "code": "YS14-EN022",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 69162969,
+      "code": "YS14-EN023",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 5318639,
+      "code": "YS14-EN024",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 73178098,
+      "code": "YS14-EN025",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 40619825,
+      "code": "YS14-EN026",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 34664411,
+      "code": "YS14-EN027",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 74848038,
+      "code": "YS14-EN028",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 90928333,
+      "code": "YS14-EN029",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 8842266,
+      "code": "YS14-EN030",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 4206964,
+      "code": "YS14-EN031",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 56120475,
+      "code": "YS14-EN032",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 4178474,
+      "code": "YS14-EN033",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 60082869,
+      "code": "YS14-EN034",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29267084,
+      "code": "YS14-EN035",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 21597117,
+      "code": "YS14-EN036",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 92924317,
+      "code": "YS14-EN037",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 83968380,
+      "code": "YS14-EN038",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 77414722,
+      "code": "YS14-EN039",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 3819470,
+      "code": "YS14-EN040",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 53025096,
+      "code": "YS14-ENA01",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81059524,
+      "code": "YS14-ENA02",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 57666212,
+      "code": "YS14-ENA03",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 7572887,
+      "code": "YS14-ENA04",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 30914564,
+      "code": "YS14-ENA05",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 53162898,
+      "code": "YS14-ENA06",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 79575620,
+      "code": "YS14-ENA07",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 403847,
+      "code": "YS14-ENA08",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 32807846,
+      "code": "YS14-ENA09",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 53129443,
+      "code": "YS14-ENA10",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 72302403,
+      "code": "YS14-ENA11",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 44095762,
+      "code": "YS14-ENA12",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 97077563,
+      "code": "YS14-ENA13",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 62279055,
+      "code": "YS14-ENA14",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 49010598,
+      "code": "YS14-ENA15",
+      "rarity": "Common",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,0 +1,389 @@
+{
+  "name": "Duelist's Advance",
+  "code": "DUAD",
+  "type": "Booster Pack (2025)",
+  "date": "03-07-2025",
+  "image": "https://ygoprodeck.com/pics_sets/DUAD.jpg",
+  "pull_type": "distribution",
+  "distribution": "booster_pack_without_rare_with_starlight_rare",
+  "cards": [
+    {
+      "id": 62006866,
+      "code": "DUAD-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 9491461,
+      "code": "DUAD-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35886170,
+      "code": "DUAD-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62880279,
+      "code": "DUAD-EN004",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 62880279,
+      "code": "DUAD-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 8379983,
+      "code": "DUAD-EN005",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 8379983,
+      "code": "DUAD-EN005",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35763582,
+      "code": "DUAD-EN006",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 61168637,
+      "code": "DUAD-EN007",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 97556336,
+      "code": "DUAD-EN008",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97556336,
+      "code": "DUAD-EN008",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34541940,
+      "code": "DUAD-EN009",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34541940,
+      "code": "DUAD-EN009",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60946049,
+      "code": "DUAD-EN010",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60946049,
+      "code": "DUAD-EN010",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97434754,
+      "code": "DUAD-EN011",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23829452,
+      "code": "DUAD-EN012",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 9213491,
+      "code": "DUAD-EN013",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 36218106,
+      "code": "DUAD-EN014",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 62606805,
+      "code": "DUAD-EN015",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95091919,
+      "code": "DUAD-EN016",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 31596518,
+      "code": "DUAD-EN017",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31596518,
+      "code": "DUAD-EN017",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67584223,
+      "code": "DUAD-EN018",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 94979322,
+      "code": "DUAD-EN019",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 30373970,
+      "code": "DUAD-EN020",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 67768675,
+      "code": "DUAD-EN021",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67768675,
+      "code": "DUAD-EN021",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93156774,
+      "code": "DUAD-EN022",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93156774,
+      "code": "DUAD-EN022",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29251488,
+      "code": "DUAD-EN023",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 66646087,
+      "code": "DUAD-EN024",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 92034192,
+      "code": "DUAD-EN025",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 29439831,
+      "code": "DUAD-EN026",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 55423549,
+      "code": "DUAD-EN027",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 91818544,
+      "code": "DUAD-EN028",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 28306253,
+      "code": "DUAD-EN029",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 54701958,
+      "code": "DUAD-EN030",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81196066,
+      "code": "DUAD-EN031",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27184601,
+      "code": "DUAD-EN032",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27184601,
+      "code": "DUAD-EN032",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53589300,
+      "code": "DUAD-EN033",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53589300,
+      "code": "DUAD-EN033",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80073414,
+      "code": "DUAD-EN034",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 26462013,
+      "code": "DUAD-EN035",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 26462013,
+      "code": "DUAD-EN035",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53466722,
+      "code": "DUAD-EN036",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89851827,
+      "code": "DUAD-EN037",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89851827,
+      "code": "DUAD-EN037",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 16246535,
+      "code": "DUAD-EN038",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 52644170,
+      "code": "DUAD-EN039",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 88139289,
+      "code": "DUAD-EN040",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 15123983,
+      "code": "DUAD-EN041",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 41522092,
+      "code": "DUAD-EN042",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 41522092,
+      "code": "DUAD-EN042",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 88917691,
+      "code": "DUAD-EN043",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 88917691,
+      "code": "DUAD-EN043",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 14301396,
+      "code": "DUAD-EN044",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 40706444,
+      "code": "DUAD-EN045",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 40706444,
+      "code": "DUAD-EN045",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77894049,
+      "code": "DUAD-EN046",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13289758,
+      "code": "DUAD-EN047",
+      "rarity": "Common",
+      "image_index": 0
+    },
+    {
+      "id": 40673853,
+      "code": "DUAD-EN048",
+      "rarity": "Common",
+      "image_index": 0
+    }
+  ]
+}

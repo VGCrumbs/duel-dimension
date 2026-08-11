@@ -1,0 +1,21 @@
+{
+  "id": 81916745,
+  "name": "Lycoris Lilyreaper",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "1 Tuner + 1+ non-Tuner monsters\r\nIf a monster(s) is sent from the field to your opponent's GY, while this card is in your Monster Zone, even during the Damage Step: You can gain LP equal to 1 of those monsters' ATK in their GY. If your opponent takes effect damage, while this card is in your GY (except during the Damage Step): You can banish this card; send 1 monster from the field to the GY with ATK less than or equal to the difference in your LP and your opponent's. You can only use each effect of \"Lycoris Lilyreaper\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/81916745.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 800,
+  "species": "Plant",
+  "monster_type": "Synchro",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 2400,
+  "level": 5,
+  "is_tuner": false
+}

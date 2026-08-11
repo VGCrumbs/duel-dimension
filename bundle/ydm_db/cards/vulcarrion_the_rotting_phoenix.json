@@ -1,0 +1,21 @@
+{
+  "id": 58354899,
+  "name": "Vulcarrion the Rotting Phoenix",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "If you control a Zombie monster: You can Special Summon this card from your hand. During your Main Phase: You can return this card from the field to the hand, then you can Special Summon 1 Zombie monster from your hand. You can only use each effect of \"Vulcarrion the Rotting Phoenix\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/58354899.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 1600,
+  "species": "Zombie",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 0,
+  "level": 4,
+  "is_tuner": true
+}

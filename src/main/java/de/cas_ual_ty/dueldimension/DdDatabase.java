@@ -38,7 +38,34 @@ public class DdDatabase
     public static final SimpleDateFormat SET_DATE_PARSER = new SimpleDateFormat("dd-MM-yyyy");
     
     public static boolean databaseReady = false;
-    
+
+    /**
+     * Why there is no usable card database, or null when there is one.
+     * <p>
+     * The download used to fail by returning: a first run with no network
+     * reached neither {@link #readFiles()} nor a log line anyone would read,
+     * and the game then ran with an empty card list where every card in the
+     * world is an unknown card. This is what a player is told instead, in chat
+     * on join and by {@code /dueldimension database}, and it is written in
+     * terms of what they can do about it.
+     */
+    private static volatile String problem = null;
+
+    /** @return why the database is unusable, or null when it is fine */
+    public static String problem()
+    {
+        return DdDatabase.problem;
+    }
+
+    /**
+     * How many cards were actually read. Zero means the list holds nothing but
+     * the dummy, which is the state that looks like the mod working and is not.
+     */
+    public static int cardCount()
+    {
+        return DdDatabase.PROPERTIES_LIST.getList().size();
+    }
+
     public static JsonObject localDbInfo = null;
     public static int localVersionIteration = Integer.MIN_VALUE;
     public static String localVersionId = null;
@@ -48,15 +75,48 @@ public class DdDatabase
     public static String remoteDownloadLink = null;
     public static String remoteVersionId = null;
     
+    /**
+     * Gets the card database ready, downloading it if this installation has
+     * none yet.
+     * <p>
+     * <b>Every path through here ends at {@link #readFiles()}.</b> It used to
+     * return early when the source could not be reached, which skipped the
+     * dummy card, the custom cards and the bundled extras as well -- so a first
+     * run with no network was left worse off than one with an empty database,
+     * and said so only in a stack trace. Now a failure is recorded in
+     * {@link #problem()}, explained in the log in terms of what to do about it,
+     * and shown to the player; the mod still loads, because refusing to load is
+     * not a better answer than loading with no cards.
+     */
     public static void initDatabase()
     {
+        DdDatabase.problem = null;
+
+        // The database this jar carries, before anything asks whether there is
+        // one. Order is the whole point: `firstRun` below is answered by whether
+        // ydm_db exists, and the download it triggers is what a bundled database
+        // exists to make unnecessary -- so the bundle has to be on disk before
+        // the question is put, not while it is being answered.
+        //
+        // It writes only files that are not already there. A player who has been
+        // playing for months keeps every byte of theirs; see
+        // EngineBundle.installCardDatabase.
+        DuelDimension.log("Card database bundle: "
+            + de.cas_ual_ty.dueldimension.ocg.session.EngineBundle.installCardDatabase(
+                DuelDimension.mainFolder.toPath()));
+
+        boolean firstRun = !DuelDimension.mainFolder.exists();
+
         if(!DuelDimension.dbSourceUrl.isEmpty())
         {
             boolean downloadDB = false;
             boolean remoteRead = false;
-            
-            if(!DuelDimension.mainFolder.exists())
+
+            if(firstRun)
             {
+                DuelDimension.log("No card database at " + DuelDimension.mainFolder.getAbsolutePath()
+                    + "; fetching one. This is a one-off download of the whole database"
+                    + " (tens of megabytes) and the game waits for it.");
                 downloadDB = true;
             }
             else
@@ -80,8 +140,12 @@ public class DdDatabase
                 catch(Exception e)
                 {
                     downloadDB = true;
-                    DuelDimension.log("Failed assessing if a new database needs to be downloaded. Doing it anyways...");
-                    e.printStackTrace();
+                    // Said, not thrown at the log. Every one of these used to be
+                    // a bare printStackTrace, so the first thing a player saw on
+                    // a machine with no connection was a stack trace with no
+                    // sentence attached -- which reads as a crash and is not one.
+                    DuelDimension.log("Failed assessing if a new database needs to be downloaded"
+                        + " (" + e + "). Doing it anyways...");
                 }
             }
             
@@ -94,24 +158,73 @@ public class DdDatabase
                 
                 if(DdDatabase.remoteDownloadLink == null)
                 {
-                    DuelDimension.log("Cannot download database.");
-                    return;
+                    // No return: the dummy card, the custom cards and the
+                    // bundled extras still have to be registered, and an
+                    // existing database from a previous run is still perfectly
+                    // readable.
+                    DdDatabase.problem = "the card database index at " + DuelDimension.dbSourceUrl
+                        + " could not be read (no connection, or the source has moved)";
                 }
-                
-                try
+                else
                 {
-                    DdDatabase.downloadDatabase();
-                }
-                catch(IOException e)
-                {
-                    DuelDimension.log("Failed downloading database.");
-                    e.printStackTrace();
-                    return;
+                    try
+                    {
+                        DdDatabase.downloadDatabase();
+
+                        // A download REPLACES ydm_db -- the old folder is
+                        // deleted and the archive's is moved into its place, as
+                        // upstream's own README warns ("The ydm_db folder
+                        // automatically gets deleted entirely whenever a new
+                        // database is downloaded"). Everything the bundle put
+                        // there went with it, including the 3,106 cards this
+                        // fork adds that the downloaded database has never heard
+                        // of. So it is put back, now, in the same run rather
+                        // than at the next launch -- and still without
+                        // overwriting one file the download just wrote.
+                        DuelDimension.log("Card database bundle, after download: "
+                            + de.cas_ual_ty.dueldimension.ocg.session.EngineBundle
+                                .installCardDatabase(DuelDimension.mainFolder.toPath()));
+                    }
+                    catch(IOException e)
+                    {
+                        DdDatabase.problem = "the card database download from "
+                            + DdDatabase.remoteDownloadLink + " failed (" + e + ")";
+                        DuelDimension.warn("Failed downloading database: " + e);
+                    }
                 }
             }
         }
-        
+        else if(firstRun)
+        {
+            DdDatabase.problem = "no download source is configured (dbSourceUrl is empty in"
+                + " config/" + DuelDimension.MOD_ID + ".json) and there is no database at "
+                + DuelDimension.mainFolder.getAbsolutePath();
+        }
+
         DdDatabase.readFiles();
+        DdDatabase.reportProblem();
+    }
+
+    /**
+     * Says once, loudly, what a player would otherwise only discover by finding
+     * every card in the game replaced with an unknown one.
+     */
+    private static void reportProblem()
+    {
+        if(DdDatabase.problem == null)
+        {
+            return;
+        }
+
+        DuelDimension.warn("+---------------------------------------------------------------");
+        DuelDimension.warn("| Duel Dimension has no card database: " + DdDatabase.problem + ".");
+        DuelDimension.warn("| Until that is fixed every card in the game is an unknown card,");
+        DuelDimension.warn("| and no duel can be started.");
+        DuelDimension.warn("| Either restart with a working connection -- the mod downloads");
+        DuelDimension.warn("| the database by itself from " + DuelDimension.dbSourceUrl);
+        DuelDimension.warn("| -- or unpack a copy of ydm_db into");
+        DuelDimension.warn("|   " + DuelDimension.mainFolder.getAbsolutePath());
+        DuelDimension.warn("+---------------------------------------------------------------");
     }
     
     private static boolean readLocalVersion()
@@ -134,13 +247,11 @@ public class DdDatabase
         }
         catch(IOException e)
         {
-            DuelDimension.log("Cannot read local db.json file. Redownloading database...");
-            e.printStackTrace();
+            DuelDimension.log("Cannot read local db.json file (" + e + "). Redownloading database...");
         }
         catch(JsonParseException e)
         {
-            DuelDimension.log("Cannot parse local db.json file. Redownloading database...");
-            e.printStackTrace();
+            DuelDimension.log("Cannot parse local db.json file (" + e + "). Redownloading database...");
         }
         
         return false;
@@ -164,13 +275,16 @@ public class DdDatabase
         }
         catch(IOException e)
         {
-            DuelDimension.log("Cannot read remote db.json file. Staying on current database...");
-            e.printStackTrace();
+            // The ordinary case on a machine with no connection, which is not an
+            // error worth a stack trace: initDatabase() turns it into the boxed
+            // warning that tells a player what to do about it.
+            DuelDimension.log("Cannot read remote db.json file (" + e
+                + "). Staying on current database...");
         }
         catch(JsonParseException | NullPointerException e)
         {
-            DuelDimension.log("Cannot parse remote db.json file. Staying on current database...");
-            e.printStackTrace();
+            DuelDimension.log("Cannot parse remote db.json file (" + e
+                + "). Staying on current database...");
         }
         
         return false;
@@ -183,23 +297,49 @@ public class DdDatabase
         
         DdDatabase.PROPERTIES_LIST.add(Properties.DUMMY);
         DdDatabase.SETS_LIST.add(CardSet.DUMMY);
-        
+
         CustomCards.createAndRegisterEverything();
 
-        DdDatabase.installBundledExtras();
+        // "Is there a database?" has to be answered BEFORE the bundled extras
+        // are installed, and it used to be answered after.
+        //
+        // installBundledExtras() writes into ydm_db and mkdirs its way there,
+        // so by the time the two checks below ran on a clean machine whose
+        // download had failed, ydm_db AND ydm_db/cards both existed -- created
+        // moments earlier by the extras themselves. Neither branch could fire.
+        // The log line about the main folder not existing was unreachable, and
+        // the game came up reporting a database while holding 113 cards: the
+        // dummy, eleven custom ones, and the 101 extras that had just made the
+        // folder they were being tested for.
+        boolean haveMainFolder = DuelDimension.mainFolder.isDirectory();
+        boolean haveCardsFolder = DuelDimension.cardsFolder.isDirectory();
 
-        if(!DuelDimension.mainFolder.exists())
+        if(!haveMainFolder)
         {
             DuelDimension.log(DuelDimension.mainFolder.getAbsolutePath() + " (main folder) does not exist! Aborting...");
+            if(DdDatabase.problem == null)
+            {
+                DdDatabase.problem = "there is no database at "
+                    + DuelDimension.mainFolder.getAbsolutePath();
+            }
             return;
         }
-        
-        if(!DuelDimension.cardsFolder.exists())
+
+        if(!haveCardsFolder)
         {
             DuelDimension.log(DuelDimension.cardsFolder.getAbsolutePath() + " (cards folder) does not exist! Aborting...");
+            if(DdDatabase.problem == null)
+            {
+                DdDatabase.problem = "the database at " + DuelDimension.mainFolder.getAbsolutePath()
+                    + " has no cards folder, so it is incomplete";
+            }
             return;
         }
-        
+
+        // Only now, with a real database to add them to. Extras on their own are
+        // not a database; they are 101 cards that make one look present.
+        DdDatabase.installBundledExtras();
+
         DdDatabase.readCards(DuelDimension.cardsFolder);
         
         if(DuelDimension.distributionsFolder.exists())
@@ -338,111 +478,194 @@ public class DdDatabase
         }
     }
 
+    /**
+     * Fetches the database archive and swaps it in.
+     * <p>
+     * The order is the point. The old database used to be deleted FIRST, so a
+     * download that failed halfway through an update left an installation with
+     * no cards at all where a moment earlier it had a working -- merely stale --
+     * copy. Nothing existing is touched here until the new tree is unpacked and
+     * found to contain a database, and the scratch files are cleaned up however
+     * this ends rather than left behind as tens of megabytes nobody knows the
+     * name of.
+     * <p>
+     * The scratch lives in the game directory beside {@code ydm_db}, not in the
+     * process working directory, so it lands on the same disk as its
+     * destination -- which is what makes the final move a rename rather than a
+     * copy of fourteen thousand files.
+     */
     public static void downloadDatabase() throws IOException
     {
         DuelDimension.log("Downloading database from " + DdDatabase.remoteDownloadLink);
-        
-        // remove main folder and contents
-        if(DuelDimension.mainFolder.exists())
-        {
-            DdIOUtil.deleteRecursively(DuelDimension.mainFolder);
-        }
-        
+
         URL url = new URL(DdDatabase.remoteDownloadLink);
-        
-        // archive containing the files
-        File zip = new File("ydm_db_temp.zip");
-        if(zip.exists())
-        {
-            zip.delete();
-        }
-        
-        // archive to inpack to
-        File temp = new File("ydm_db_temp");
-        if(temp.exists())
-        {
-            temp.delete();
-        }
-        temp.mkdir();
-        
-        // download the zipped db
-        DdIOUtil.downloadFile(url, zip);
-        
-        // --- zip unpack ---
-        
-        ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zip));
-        ZipEntry entry = zipIn.getNextEntry();
-        
-        byte[] buffer = new byte[1024];
-        
-        File currentFile;
-        FileOutputStream zipOut;
-        int length;
-        
-        while(entry != null)
-        {
-            currentFile = new File(temp, entry.getName());
-            
-            if(entry.isDirectory())
-            {
-                currentFile.mkdir();
-            }
-            else
-            {
-                zipOut = new FileOutputStream(currentFile);
-                
-                while((length = zipIn.read(buffer)) > 0)
-                {
-                    zipOut.write(buffer, 0, length);
-                }
-                
-                zipOut.close();
-            }
-            
-            entry = zipIn.getNextEntry();
-        }
-        
-        zipIn.closeEntry();
-        zipIn.close();
-        
-        zip.delete();
-        
-        // --- zip unpack end ---
-        
-        // now move the file out
-        DdIOUtil.doForDeepSearched(temp, (file) -> file.getName().equals(DuelDimension.mainFolder.getName()), (file) ->
-        {
-            try
-            {
-                Files.move(file, DuelDimension.mainFolder);
-            }
-            catch(IOException e)
-            {
-                e.printStackTrace();
-            }
-        });
-        
-        // now delete temp folder
+
+        File zip = de.cas_ual_ty.dueldimension.util.GameDir.file("ydm_db_temp.zip");
+        File temp = de.cas_ual_ty.dueldimension.util.GameDir.file("ydm_db_temp");
+
+        // Leftovers from an attempt that was interrupted. deleteRecursively,
+        // because File.delete() on a non-empty directory fails and returns a
+        // false nobody checked -- so the previous attempt's contents used to
+        // survive into this one and get moved into place alongside the new.
+        DdIOUtil.deleteRecursively(zip);
         DdIOUtil.deleteRecursively(temp);
-        
+
+        if(!temp.mkdirs())
+        {
+            throw new IOException("Could not create " + temp.getAbsolutePath());
+        }
+
+        try
+        {
+            DdIOUtil.downloadFile(url, zip);
+            DdDatabase.unpack(zip, temp);
+
+            // The archive is a repository export: one top-level folder holding
+            // the ydm_db the mod actually wants.
+            File[] unpacked = new File[1];
+            DdIOUtil.doForDeepSearched(temp,
+                (file) -> file.isDirectory() && file.getName().equals(DuelDimension.mainFolder.getName()),
+                (file) -> unpacked[0] = file);
+
+            if(unpacked[0] == null)
+            {
+                throw new IOException("the archive contained no "
+                    + DuelDimension.mainFolder.getName() + " folder");
+            }
+
+            // Only now is anything that already worked touched.
+            if(DuelDimension.mainFolder.exists())
+            {
+                DdIOUtil.deleteRecursively(DuelDimension.mainFolder);
+            }
+            Files.move(unpacked[0], DuelDimension.mainFolder);
+        }
+        finally
+        {
+            DdIOUtil.deleteRecursively(zip);
+            DdIOUtil.deleteRecursively(temp);
+        }
+
         //finally recreate the db.json file
         File dbJson = new File(DuelDimension.mainFolder, "db.json");
-        
+
         if(dbJson.exists())
         {
             dbJson.delete();
         }
         dbJson.createNewFile();
-        
+
         try(FileWriter fw = new FileWriter(dbJson))
         {
             DdIOUtil.GSON.toJson(DdDatabase.remoteDbInfo, fw);
             fw.flush();
         }
-        
+
         DuelDimension.log("Finished downloading database!");
     }
+
+    /**
+     * Unpacks an archive into a folder, and refuses to write outside it.
+     * <p>
+     * The entry names in a zip are attacker-chosen -- the archive comes from a
+     * URL the player can edit in the config -- and an entry called
+     * {@code ../../mods/evil.jar} used to be written exactly there, because the
+     * destination was built with {@code new File(temp, entry.getName())} and
+     * never checked. The bundled-extras path a few lines up has always refused
+     * such names; this is the same refusal for the downloaded one.
+     * <p>
+     * Parent directories are created per entry rather than trusting the archive
+     * to list every folder before the files inside it, which is not something a
+     * zip is required to do.
+     */
+    private static void unpack(File zip, File into) throws IOException
+    {
+        java.nio.file.Path root = into.toPath().toAbsolutePath().normalize();
+
+        try(ZipInputStream zipIn = new ZipInputStream(
+            new BufferedInputStream(new FileInputStream(zip))))
+        {
+            byte[] buffer = new byte[8192];
+
+            for(ZipEntry entry = zipIn.getNextEntry(); entry != null; entry = zipIn.getNextEntry())
+            {
+                java.nio.file.Path target = root.resolve(entry.getName()).normalize();
+                if(!target.startsWith(root))
+                {
+                    throw new IOException("archive entry escapes the unpack folder: "
+                        + entry.getName());
+                }
+
+                if(entry.isDirectory())
+                {
+                    java.nio.file.Files.createDirectories(target);
+                    continue;
+                }
+
+                java.nio.file.Files.createDirectories(target.getParent());
+
+                try(OutputStream out = new BufferedOutputStream(
+                    java.nio.file.Files.newOutputStream(target)))
+                {
+                    int length;
+                    while((length = zipIn.read(buffer)) > 0)
+                    {
+                        out.write(buffer, 0, length);
+                    }
+                }
+            }
+        }
+    }
     
+    /**
+     * Adds any artwork supplied locally for this card.
+     * <p>
+     * <b>Why this has to exist.</b> The card database's source keys an artwork by
+     * PASSCODE — Dark Magician's nine arts are nine consecutive passcodes — so an
+     * alternate printing only has an image there if Konami gave it its own
+     * passcode. Modern full arts do not: "The Dark Magicians" is printed seven
+     * times in RA04-EN054, once per rarity, and every one of them points at the
+     * single artwork 50237654. The source knows the printing exists and knows its
+     * rarity; it has nowhere to put a second picture. No query can retrieve what
+     * the model cannot express, so the images are supplied here instead.
+     * <p>
+     * Drop files in {@code ydm_db/alt_art/&lt;passcode&gt;/}, named so they sort into
+     * the order you want them offered. They are appended after the printed art,
+     * so index 0 stays what it always was and no saved deck changes meaning.
+     * <p>
+     * They join the pipeline as {@code file:} URLs rather than by a separate
+     * path: {@code ImageHandler.downloadRawImage} builds a {@code java.net.URL}
+     * and streams it, and a file URL streams like any other — so a local artwork
+     * is cached, scaled and served exactly as a downloaded one, with nothing else
+     * needing to know the difference.
+     */
+    private static void addLocalArtwork(Properties card)
+    {
+        File folder = new File(new File(DuelDimension.mainFolder, "alt_art"),
+            Long.toString(card.getId()));
+        if(!folder.isDirectory())
+        {
+            return;
+        }
+        File[] files = folder.listFiles((dir, name) ->
+        {
+            String lower = name.toLowerCase(java.util.Locale.ROOT);
+            return lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg");
+        });
+        if(files == null || files.length == 0)
+        {
+            return;
+        }
+        java.util.Arrays.sort(files, java.util.Comparator.comparing(File::getName));
+
+        String[] urls = new String[files.length];
+        for(int i = 0; i < files.length; i++)
+        {
+            urls[i] = files[i].toURI().toString();
+        }
+        card.addArtwork(urls);
+    }
+
     private static void readCards(File cardsFolder)
     {
         DuelDimension.log("Reading card files from: " + cardsFolder.getAbsolutePath());
@@ -459,6 +682,7 @@ public class DdDatabase
             {
                 j = DdIOUtil.parseJsonFile(cardFile).getAsJsonObject();
                 p = DdUtil.buildProperties(j);
+                DdDatabase.addLocalArtwork(p);
                 p.addInformation(new LinkedList<>()); // this throws in case of wrong information
                 DdDatabase.PROPERTIES_LIST.add(p);
             }

@@ -1,0 +1,119 @@
+{
+  "name": "Collectible Tins 2011 Wave 1",
+  "code": "CT08",
+  "type": "Booster Pack (2011)",
+  "date": "25-08-2011",
+  "image": "https://ygoprodeck.com/pics_sets/CT08.jpg",
+  "pull_type": "distribution",
+  "distribution": "mega_pack_3",
+  "cards": [
+    {
+      "id": 69610924,
+      "code": "CT08-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 68597372,
+      "code": "CT08-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93717133,
+      "code": "CT08-EN003",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11411223,
+      "code": "CT08-EN004",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 78651105,
+      "code": "CT08-EN005",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11366199,
+      "code": "CT08-EN006",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 13521194,
+      "code": "CT08-EN007",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 98645731,
+      "code": "CT08-EN008",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 12510878,
+      "code": "CT08-EN009",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59509952,
+      "code": "CT08-EN010",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 16304628,
+      "code": "CT08-EN011",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 42009836,
+      "code": "CT08-EN012",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 34022290,
+      "code": "CT08-EN013",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 36521459,
+      "code": "CT08-EN014",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 84749824,
+      "code": "CT08-EN015",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 44178886,
+      "code": "CT08-EN016",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 31383545,
+      "code": "CT08-EN017",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 88071625,
+      "code": "CT08-EN018",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

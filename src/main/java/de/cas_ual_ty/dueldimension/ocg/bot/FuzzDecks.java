@@ -30,7 +30,17 @@ public final class FuzzDecks
     private static final int SONIC_CHICK = 36472900;
     private static final int JUNK_WARRIOR = 60800381;
 
-    private static volatile Path scriptsDir = Path.of("C:/ProjectIgnis/script");
+    /**
+     * Where the card scripts are, found the same way the game finds them.
+     * <p>
+     * This was one machine's install path written into the source, with no
+     * property to override it: on any other computer the fuzzer and the arena
+     * could not be pointed at the scripts at all without editing this line.
+     * {@code Paths.defaults()} honours {@code -Docg.scripts} first and then
+     * searches, so the tools and the mod now agree about where EDOPro is.
+     */
+    private static volatile Path scriptsDir =
+        de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime.Paths.defaults().scriptsDir();
 
     private FuzzDecks()
     {

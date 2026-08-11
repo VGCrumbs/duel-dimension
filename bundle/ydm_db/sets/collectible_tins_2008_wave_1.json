@@ -1,0 +1,53 @@
+{
+  "name": "Collectible Tins 2008 Wave 1",
+  "code": "CT05",
+  "type": "Booster Pack (2008)",
+  "date": "18-08-2008",
+  "image": "https://ygoprodeck.com/pics_sets/CT05.jpg",
+  "pull_type": "distribution",
+  "distribution": "the_dark_side_of_dimensions_movie_pack_secret_edition__pack",
+  "cards": [
+    {
+      "id": 44508094,
+      "code": "CT05-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70902743,
+      "code": "CT05-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 73580471,
+      "code": "CT05-EN003",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46195773,
+      "code": "CT05-EN004",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23303072,
+      "code": "CT05-ENS01",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 18013090,
+      "code": "CT05-ENS02",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7391448,
+      "code": "CT05-ENS03",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

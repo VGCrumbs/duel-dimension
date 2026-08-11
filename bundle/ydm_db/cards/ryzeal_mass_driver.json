@@ -1,0 +1,12 @@
+{
+  "id": 53276089,
+  "name": "Ryzeal Mass Driver",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Apply the following effect, then you can attach this card to a Rank 4 Xyz Monster you control.\r\n● For the rest of this turn, all \"Ryzeal\" monsters you control gain 1000 ATK.\r\nIf this card is sent to the GY, except from the field: You can target 1 card in your opponent's GY; banish it. You can only use each effect of \"Ryzeal Mass Driver\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/53276089.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Normal"
+}

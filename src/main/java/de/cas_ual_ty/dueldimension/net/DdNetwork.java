@@ -50,6 +50,9 @@ public final class DdNetwork
      */
     public static void register()
     {
+        // The profile and every edit to it, the deck's sleeve included: a sleeve
+        // change is a deck edit, so it is declared and handled beside the other
+        // eight rather than in a channel of its own.
         ProfilePayloads.register();
 
         // The duel channel. This carries every message of an actual duel in
@@ -78,6 +81,8 @@ public final class DdNetwork
             de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate.CODEC);
         clientbound(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OpponentPlayMat.TYPE,
             de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OpponentPlayMat.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OwnSleeve.TYPE,
+            de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OwnSleeve.CODEC);
         serverbound(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.AnswerPrompt.TYPE,
             de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.AnswerPrompt.CODEC);
         serverbound(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.SetChainPreference.TYPE,
@@ -86,6 +91,13 @@ public final class DdNetwork
             de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.SetPlayMat.CODEC);
         serverbound(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.Surrender.TYPE,
             de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.Surrender.CODEC);
+        // Looking through your own deck: an empty request, answered to exactly
+        // one player. Registered clientbound so it can only ever travel from
+        // the server, which is the side that decides whose deck it is.
+        serverbound(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.ViewOwnDeck.TYPE,
+            de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.ViewOwnDeck.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OwnDeckList.TYPE,
+            de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OwnDeckList.CODEC);
 
         // The duel lobby.
         clientbound(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.OpenLobby.TYPE,
@@ -110,6 +122,14 @@ public final class DdNetwork
             de.cas_ual_ty.dueldimension.shop.ShopMessages.Buy.CODEC);
         clientbound(de.cas_ual_ty.dueldimension.set.PackMessages.OpenPack.TYPE,
             de.cas_ual_ty.dueldimension.set.PackMessages.OpenPack.CODEC);
+
+        // The sleeve shop, the second counter of the same shop. Declared beside
+        // the card shop's pair rather than in a channel of its own: it shares
+        // the balance, SyncPoints and every rule about who decides a price.
+        clientbound(de.cas_ual_ty.dueldimension.shop.ShopMessages.OpenSleeveShop.TYPE,
+            de.cas_ual_ty.dueldimension.shop.ShopMessages.OpenSleeveShop.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.shop.ShopMessages.BuySleeve.TYPE,
+            de.cas_ual_ty.dueldimension.shop.ShopMessages.BuySleeve.CODEC);
 
         // What a menu's constructor needs, sent one packet ahead of the menu.
         clientbound(MenuData.TYPE, MenuData.CODEC);
@@ -163,6 +183,12 @@ public final class DdNetwork
             (message, player) -> de.cas_ual_ty.dueldimension.shop.ShopMessages.Buy
                 .sell(player, message.code(), message.count()));
 
+        // The sleeve purchase. Same shape: the message names what to buy and
+        // sell() decides everything else, price and entitlement included.
+        onServer(de.cas_ual_ty.dueldimension.shop.ShopMessages.BuySleeve.TYPE,
+            (message, player) -> de.cas_ual_ty.dueldimension.shop.ShopMessages.BuySleeve
+                .sell(player, message.sleeve()));
+
         onServer(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.AnswerPrompt.TYPE,
             (message, player) ->
                 de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.submitAnswer(player,
@@ -179,6 +205,11 @@ public final class DdNetwork
         onServer(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.Surrender.TYPE,
             (message, player) ->
                 de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.surrender(player));
+        // The message says nothing about whose deck, so the only thing that can
+        // be passed on is who asked.
+        onServer(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.ViewOwnDeck.TYPE,
+            (message, player) ->
+                de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.viewOwnDeck(player));
 
         onServer(de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Wear.TYPE,
             (message, player) ->
@@ -340,6 +371,17 @@ public final class DdNetwork
             de.cas_ual_ty.dueldimension.shop.ShopMessages.SyncPoints.TYPE,
             (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
                 .setDuelPoints(payload.points()));
+        // The sleeve shop opens straight onto its screen rather than through the
+        // proxy. The proxy exists so COMMON code can reach a client-only class;
+        // this method is client-only already -- it is called from the client
+        // initialiser and nowhere else, which is why EditorState, CardPreloadJob
+        // and OrichalcosRenderer are all named directly a few lines from here.
+        // Adding a proxy method would have meant editing the interface and both
+        // of its implementations to say what one line says here.
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.shop.ShopMessages.OpenSleeveShop.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.clientutil.hub.SleeveShopScreen
+                .open(payload.points(), payload.sleeves()));
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
             de.cas_ual_ty.dueldimension.shop.DuelRewardMessages.Result.TYPE,
             (payload, context) -> de.cas_ual_ty.dueldimension.clientutil.DuelClientState
@@ -366,9 +408,17 @@ public final class DdNetwork
             (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
                 .updateEngineDuel(payload));
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OwnSleeve.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
+                .setOwnSleeve(payload.sleeve()));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
             de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OpponentPlayMat.TYPE,
             (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
                 .setOpponentPlayMat(payload.matId()));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OwnDeckList.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
+                .showOwnDeck(payload.codes(), payload.arts()));
 
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
             ProfilePayloads.Sync.TYPE,

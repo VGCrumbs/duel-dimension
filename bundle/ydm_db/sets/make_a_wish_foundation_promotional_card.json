@@ -1,0 +1,16 @@
+{
+  "name": "Make-A-Wish Foundation promotional card",
+  "code": "TYL",
+  "type": "Single",
+  "date": "05-08-2005",
+  "image": "https://ygoprodeck.com/pics_sets/TYL.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 68811206,
+      "code": "TYL-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "id": 64049762,
+  "name": "Blitzclique - Breakaway",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Activate 1 of these effects;\r\n● Place 1 \"Blitzclique\" Continuous Trap from your Deck, face-up on your field.\r\n● Return 1 Thunder monster you control to the hand, then target 1 card on the field; destroy it.\r\nIf a card(s) is destroyed by your \"Blitzclique\" card's effect, while this card is in your GY (except during the Damage Step): You can add this card to your hand. You can only use each effect of \"Blitzclique - Breakaway\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/64049762.jpg"
+  ],
+  "type": "Spell",
+  "spell_type": "Quick-Play"
+}

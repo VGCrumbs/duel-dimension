@@ -1,0 +1,16 @@
+{
+  "name": "Duelist League Series 3 participation card",
+  "code": "DL3",
+  "type": "Single",
+  "date": "28-04-2006",
+  "image": "https://ygoprodeck.com/pics_sets/DL3.jpg",
+  "pull_type": "full",
+  "cards": [
+    {
+      "id": 47355498,
+      "code": "DL3-001",
+      "rarity": "Rare",
+      "image_index": 0
+    }
+  ]
+}

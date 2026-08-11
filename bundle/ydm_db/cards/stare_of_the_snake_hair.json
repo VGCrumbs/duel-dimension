@@ -1,0 +1,21 @@
+{
+  "id": 54077752,
+  "name": "Stare of the Snake Hair",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "You can discard this card; add 1 \"Call of the Haunted\" or 1 Spell/Trap that mentions it from your Deck to your hand. If this card is Special Summoned: You can target 1 Attack Position monster your opponent controls; that face-up monster cannot attack, its effects are negated, also it cannot be used as material for a Fusion, Synchro, Xyz, or Link Summon. You can only use each effect of \"Stare of the Snake Hair\" once per turn.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/54077752.jpg"
+  ],
+  "type": "Monster",
+  "attribute": "DARK",
+  "atk": 1500,
+  "species": "Zombie",
+  "monster_type": "",
+  "is_pendulum": false,
+  "ability": "",
+  "has_effect": true,
+  "def": 1200,
+  "level": 6,
+  "is_tuner": false
+}

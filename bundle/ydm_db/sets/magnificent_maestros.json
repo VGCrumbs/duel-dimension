@@ -1,0 +1,407 @@
+{
+  "name": "Magnificent Maestros",
+  "code": "MAMS",
+  "type": "Booster Pack (2026)",
+  "date": "12-11-2026",
+  "image": "https://ygoprodeck.com/pics_sets/MAMS.jpg",
+  "pull_type": "distribution",
+  "distribution": "battles_of_legend__armageddon",
+  "cards": [
+    {
+      "id": 30397786,
+      "code": "MAMS-EN001",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30397786,
+      "code": "MAMS-EN001",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30397786,
+      "code": "MAMS-EN001",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67886895,
+      "code": "MAMS-EN002",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67886895,
+      "code": "MAMS-EN002",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 67886895,
+      "code": "MAMS-EN002",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93871599,
+      "code": "MAMS-EN003",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93871599,
+      "code": "MAMS-EN003",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93871599,
+      "code": "MAMS-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30275298,
+      "code": "MAMS-EN004",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30275298,
+      "code": "MAMS-EN004",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 30275298,
+      "code": "MAMS-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 66664203,
+      "code": "MAMS-EN005",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 66664203,
+      "code": "MAMS-EN005",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 66664203,
+      "code": "MAMS-EN005",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92058902,
+      "code": "MAMS-EN006",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92058902,
+      "code": "MAMS-EN006",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92058902,
+      "code": "MAMS-EN006",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29053656,
+      "code": "MAMS-EN007",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29053656,
+      "code": "MAMS-EN007",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29053656,
+      "code": "MAMS-EN007",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 65541655,
+      "code": "MAMS-EN008",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 65541655,
+      "code": "MAMS-EN008",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 65541655,
+      "code": "MAMS-EN008",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92936364,
+      "code": "MAMS-EN009",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92936364,
+      "code": "MAMS-EN009",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92936364,
+      "code": "MAMS-EN009",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 28331069,
+      "code": "MAMS-EN010",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 28331069,
+      "code": "MAMS-EN010",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 28331069,
+      "code": "MAMS-EN010",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54725177,
+      "code": "MAMS-EN011",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54725177,
+      "code": "MAMS-EN011",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54725177,
+      "code": "MAMS-EN011",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 91714772,
+      "code": "MAMS-EN012",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 91714772,
+      "code": "MAMS-EN012",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 91714772,
+      "code": "MAMS-EN012",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27118421,
+      "code": "MAMS-EN013",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27118421,
+      "code": "MAMS-EN013",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27118421,
+      "code": "MAMS-EN013",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54603525,
+      "code": "MAMS-EN014",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54603525,
+      "code": "MAMS-EN014",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54603525,
+      "code": "MAMS-EN014",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90091224,
+      "code": "MAMS-EN015",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90091224,
+      "code": "MAMS-EN015",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90091224,
+      "code": "MAMS-EN015",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27096833,
+      "code": "MAMS-EN016",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27096833,
+      "code": "MAMS-EN016",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27096833,
+      "code": "MAMS-EN016",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53481938,
+      "code": "MAMS-EN017",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53481938,
+      "code": "MAMS-EN017",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53481938,
+      "code": "MAMS-EN017",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89875646,
+      "code": "MAMS-EN018",
+      "rarity": "Grand Master Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89875646,
+      "code": "MAMS-EN018",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89875646,
+      "code": "MAMS-EN018",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53183600,
+      "code": "MAMS-EN120",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 53183600,
+      "code": "MAMS-EN120",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90960358,
+      "code": "MAMS-EN121",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 90960358,
+      "code": "MAMS-EN121",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21522601,
+      "code": "MAMS-EN122",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 21522601,
+      "code": "MAMS-EN122",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 9603252,
+      "code": "MAMS-EN123",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 9603252,
+      "code": "MAMS-EN123",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29479265,
+      "code": "MAMS-EN124",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 29479265,
+      "code": "MAMS-EN124",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 24269961,
+      "code": "MAMS-EN125",
+      "rarity": "Starlight Rare",
+      "image_index": 0
+    },
+    {
+      "id": 24269961,
+      "code": "MAMS-EN125",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

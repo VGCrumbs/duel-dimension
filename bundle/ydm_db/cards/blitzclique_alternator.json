@@ -1,0 +1,12 @@
+{
+  "id": 59921227,
+  "name": "Blitzclique Alternator",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Monsters your opponent controls lose 300 ATK/DEF for each Thunder monster you control. You can only use each of the following effects of \"Blitzclique Alternator\" once per turn. You can shuffle 1 other \"Blitzclique\" card from your hand or face-up field into the Deck; add 1 Thunder monster with a different name from your Deck to your hand. You can banish this card from your GY; add 1 \"Blitzclique\" Spell or \"Hideout in the Sky, Coulomb\" from your Deck to your hand.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/59921227.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Continuous"
+}

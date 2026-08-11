@@ -1,0 +1,12 @@
+{
+  "id": 55117418,
+  "name": "Nega-Ton Corepanel",
+  "is_illegal": false,
+  "is_custom": false,
+  "text": "Activate only if you control a face-up \"Koa'ki Meiru\" monster and have \"Iron Core of Koa'ki Meiru\" in your Graveyard. Negate the activation of an Effect Monster's effect, and destroy it.",
+  "images": [
+    "https://images.ygoprodeck.com/images/cards/55117418.jpg"
+  ],
+  "type": "Trap",
+  "trap_type": "Counter"
+}
