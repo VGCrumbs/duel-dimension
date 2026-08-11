@@ -3,3 +3,12 @@
 # are changed when only line endings change.
 src/generated/**/.cache/cache text eol=lf
 src/generated/**/*.json text eol=lf
+
+# The bundled rules engine is shipped BYTE FOR BYTE. Line-ending translation
+# would rewrite 12,702 card scripts on checkout, which changes the content
+# digest the bundle is versioned by -- so every player would re-unpack 28 MB
+# after every build made on a differently configured machine. Worse, it would
+# alter script/COPYING.txt, and a licence notice that has been "helpfully"
+# reformatted is a licence notice that has been altered.
+bundle/** -text
+LICENSE-AGPL-3.0.txt -text
