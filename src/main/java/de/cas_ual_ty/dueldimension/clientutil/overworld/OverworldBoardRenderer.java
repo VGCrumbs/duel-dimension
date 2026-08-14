@@ -883,6 +883,8 @@ public final class OverworldBoardRenderer
                 slot.defence(), cardLift(transform), CardFaces.face(slot, false, controller),
                 CardFaces.underside(slot, controller), fade(0xFFFFFFFF));
 
+            drawHologram(poseStack, collector, transform, camera, zone, slot, location, asked);
+
             de.cas_ual_ty.dueldimension.clientutil.BoardTarget target =
                 new de.cas_ual_ty.dueldimension.clientutil.BoardTarget(slot.code(), asked,
                     location, sequence, -1, "", 1, slot.art());
@@ -978,6 +980,72 @@ public final class OverworldBoardRenderer
         }
         return false;
     }
+
+    /**
+     * The monster standing on a card during a duel.
+     * <p>
+     * Face-up monsters only. A set card is one nobody may identify, and a
+     * monster looming over one would announce what it is to the room -- which
+     * on a board both duellists walk around is a leak rather than a slip. The
+     * client is not even told what an opponent's set monster IS, so the rule is
+     * enforced twice over.
+     */
+    private static void drawHologram(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera, FieldLayout.Rect zone, BoardSnapshot.Slot slot,
+        int location, int asked)
+    {
+        if(!de.cas_ual_ty.dueldimension.clientutil.HologramSettings.enabled()
+            || location != OcgConstants.LOCATION_MZONE || slot.faceDown() || slot.code() == 0)
+        {
+            return;
+        }
+        MonsterSprites.Sheet sheet = MonsterSprites.sheetFor(slot.code(), slot.defence());
+        if(sheet == null)
+        {
+            return;
+        }
+        FieldLayout.Rect card = CardMesh.placement(zone, slot.defence());
+        Vec3 feet = transform.at(card.x() + card.w() / 2F, card.y() + card.h() / 2F,
+            (cardLift(transform) + CardMesh.THICKNESS + 0.002F) * transform.scale());
+        // Measured against a card's LONG side, so a monster is the same height
+        // whether its card is standing or lying -- a defending monster that
+        // shrank to two thirds would read as a weaker one.
+        float height = CardMesh.CARD_H * transform.scale() * sheet.heightInCards();
+        MonsterBillboard.submit(poseStack, collector, camera, camera, feet, height, sheet,
+            MonsterSprites.frameAt(sheet, (long)ticks()), fade(hologramTint(asked)));
+    }
+
+    /**
+     * How solid a monster is drawn, which is not the same on both sides of the
+     * board.
+     * <p>
+     * YOUR OWN are always half there. They stand between you and your own back
+     * row, and you already know what you played -- a duellist needs to SEE their
+     * spell and trap line far more than they need to be reminded of the monster
+     * they summoned a moment ago.
+     * <p>
+     * THEIRS are solid, because those are the ones worth looking at. But they
+     * stand between you and the opponent's back row as well, and that row is
+     * something you have to read and click on -- so they thin out the moment
+     * you look at it, or whenever Shift is held. Shift is the same key the card
+     * text and the stats already answer to: one hold, everything gets out of
+     * the way.
+     */
+    private static int hologramTint(int asked)
+    {
+        if(asked == 0)
+        {
+            return HOLOGRAM_FAINT;
+        }
+        de.cas_ual_ty.dueldimension.clientutil.BoardTarget looking =
+            ClientDuelTargeting.looking();
+        boolean atTheirBackRow = looking != null && looking.controller() == 1
+            && looking.location() == OcgConstants.LOCATION_SZONE;
+        return atTheirBackRow || ClientDuelField.shiftHeld() ? HOLOGRAM_FAINT : 0xFFFFFFFF;
+    }
+
+    /** Half there: enough to read the monster, enough to read through it. */
+    private static final int HOLOGRAM_FAINT = 0x80FFFFFF;
 
     /**
      * Does the engine offer this exact command for this card?

@@ -43,6 +43,12 @@ public class SealConfigScreen extends Screen
             button.setMessage(hoverLabel());
         }).bounds(centreX - 155, height / 2 - 20, 310, 20).build());
 
+        addRenderableWidget(Button.builder(hologramLabel(), button ->
+        {
+            HologramSettings.setEnabled(!HologramSettings.enabled());
+            button.setMessage(hologramLabel());
+        }).bounds(centreX - 155, height / 2 + 4, 310, 20).build());
+
         // The overworld field's dimensions get their own screen: there are four
         // of them and they are sliders, which do not belong in a list of
         // on/off rows.
@@ -51,10 +57,16 @@ public class SealConfigScreen extends Screen
             button -> minecraft.setScreenAndShow(
                 new de.cas_ual_ty.dueldimension.clientutil.overworld
                     .OverworldFieldScreen(this)))
-            .bounds(centreX - 155, height / 2 + 4, 310, 20).build());
+            .bounds(centreX - 155, height / 2 + 28, 310, 20).build());
 
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE,
-            button -> onClose()).bounds(centreX - 100, height / 2 + 40, 200, 20).build());
+            button -> onClose()).bounds(centreX - 100, height / 2 + 60, 200, 20).build());
+    }
+
+    private static Component hologramLabel()
+    {
+        return Component.literal("Monster holograms in duels: "
+            + (HologramSettings.enabled() ? "ON" : "OFF"));
     }
 
     private static Component hoverLabel()

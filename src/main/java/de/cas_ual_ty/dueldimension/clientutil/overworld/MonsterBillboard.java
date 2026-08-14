@@ -83,7 +83,15 @@ public final class MonsterBillboard
 
         // Corner order is bottom-left, top-left, top-right, bottom-right, so v
         // runs from 1 at the feet to 0 at the head.
-        WorldQuad.submit(poseStack, collector, WorldQuad.Kind.SOLID, sheet.texture(), camera,
+        //
+        // The KIND follows the alpha, and it has to. SOLID is an alpha-TESTED
+        // cutout: it writes depth, which is what a solid sprite wants, but a
+        // tint of half alpha through it is not half a sprite -- the test either
+        // keeps a texel or throws it away, so the sprite would come out whole.
+        // Anything short of opaque therefore goes through the blended type,
+        // which is the only one that can draw half of something.
+        WorldQuad.Kind kind = (tint >>> 24) >= 0xFF ? WorldQuad.Kind.SOLID : WorldQuad.Kind.GLOW;
+        WorldQuad.submit(poseStack, collector, kind, sheet.texture(), camera,
             corners, tint, new float[] {u0, u0, u1, u1}, new float[] {1F, 0F, 0F, 1F});
     }
 }
