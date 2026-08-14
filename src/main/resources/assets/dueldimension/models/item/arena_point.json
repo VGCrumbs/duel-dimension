@@ -1,0 +1,6 @@
+{
+    "parent": "minecraft:item/generated",
+    "textures": {
+        "layer0": "dueldimension:duel/overworld/stand_marker"
+    }
+}

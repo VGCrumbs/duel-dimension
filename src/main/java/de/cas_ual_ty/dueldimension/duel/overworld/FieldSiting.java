@@ -18,9 +18,34 @@ import java.util.function.Consumer;
  * @param anchor the FLOOR block at the centre of the area; the board's surface
  *               is the top face of this block
  * @param facing from seat 0's feet towards seat 1's
+ * @param seatA  where seat 0 stands, when somebody has MARKED where that is;
+ *               null for a field the game sited itself, which works its stands
+ *               out from the footprint
+ * @param seatB  the same for seat 1
  */
-public record FieldSiting(BlockPos anchor, Direction facing, FieldSpec spec)
+public record FieldSiting(BlockPos anchor, Direction facing, FieldSpec spec, BlockPos seatA,
+    BlockPos seatB)
 {
+    /** A field the game found for itself, whose stands follow from its shape. */
+    public FieldSiting(BlockPos anchor, Direction facing, FieldSpec spec)
+    {
+        this(anchor, facing, spec, null, null);
+    }
+
+    /**
+     * Was this arena built by hand rather than found?
+     * <p>
+     * Worth asking because the two are trusted differently. A field the game
+     * sited is one it proved the ground for, and it keeps proving it every
+     * second in case somebody builds into it. A field somebody MARKED OUT is a
+     * statement of intent -- the floor under it is whatever they wanted there,
+     * and re-validating it would abandon a duel for the crime of being held
+     * somewhere decorated.
+     */
+    public boolean marked()
+    {
+        return seatA != null && seatB != null;
+    }
     /**
      * Only the four compass directions make a field: {@link Direction#UP} would
      * give a board standing on its edge and a footprint with no floor.
@@ -36,7 +61,8 @@ public record FieldSiting(BlockPos anchor, Direction facing, FieldSpec spec)
     /** The block the given seat stands on. */
     public BlockPos stand(int seat)
     {
-        return FieldFootprint.stand(anchor, facing, spec, seat);
+        BlockPos marked = seat == 0 ? seatA : seatB;
+        return marked != null ? marked : FieldFootprint.stand(anchor, facing, spec, seat);
     }
 
     /** Which way the given seat looks: at the board, and at the other duellist. */

@@ -169,6 +169,20 @@ public final class OverworldDuels
         BlockPos floorA = floorUnder(first);
         BlockPos floorB = floorUnder(second);
 
+        // A marked arena wins outright. The search below exists to GUESS
+        // where a duel should be held; somebody who has put four corners and
+        // two player points in the ground has already answered, and a guess
+        // that overrides an answer is not a feature.
+        FieldSiting built = markedArena(level, floorA, floorB, floorA);
+        if(built != null)
+        {
+            lock(first, built, 0);
+            lock(second, built, 1);
+            open(first, second, level, built);
+            outcome.start();
+            return;
+        }
+
         // The live setting, not a constant: the board can be resized in game.
         // Whatever it is at this moment is frozen into the siting and travels
         // to both clients with it, so a duel is never resized underneath it.
@@ -232,8 +246,23 @@ public final class OverworldDuels
             return;
         }
         ServerLevel level = (ServerLevel)player.level();
-        SitingResult result = SitingSearch.site(new LevelSampler(level), floorUnder(player),
-            opponent.blockPosition().below(), FieldSpec.current());
+        BlockPos playerFloor = floorUnder(player);
+        BlockPos opponentFloor = opponent.blockPosition().below();
+
+        // The same arena, and the same reasoning. A duelist standing at a
+        // marked board is exactly the case somebody built the board FOR.
+        FieldSiting built = markedArena(level, playerFloor, opponentFloor, playerFloor);
+        if(built != null)
+        {
+            placeOpponent(opponent, built);
+            lock(player, built, 0);
+            openAgainst(player, opponent, level, built);
+            outcome.start();
+            return;
+        }
+
+        SitingResult result = SitingSearch.site(new LevelSampler(level), playerFloor,
+            opponentFloor, FieldSpec.current());
         de.cas_ual_ty.dueldimension.DuelDimension.log("siting against "
             + opponent.getType() + " for " + player.getGameProfile().name() + ": "
             + result.getClass().getSimpleName()
@@ -273,6 +302,39 @@ public final class OverworldDuels
         show(player, siting, 0, false);
         tell(player, Component.literal("Stand on the marked square to begin the duel")
             .withStyle(ChatFormatting.YELLOW));
+    }
+
+    /**
+     * The hand-built arena these two are standing at, or null.
+     * <p>
+     * Looked for around the point BETWEEN them, so it is found whether they
+     * came at it from the same end or from opposite ones, and seats are handed
+     * out by proximity: the player nearer a point gets that point. Nobody is
+     * asked to walk anywhere -- a marked arena says exactly where two duellists
+     * belong, so they are simply put there, which is the whole reason for
+     * marking one.
+     *
+     * @param seatZeroNear whichever duellist should be treated as seat zero,
+     *                     given as the block they are standing on
+     */
+    private static FieldSiting markedArena(ServerLevel level, BlockPos floorA, BlockPos floorB,
+        BlockPos seatZeroNear)
+    {
+        BlockPos between = new BlockPos(Math.floorDiv(floorA.getX() + floorB.getX(), 2),
+            Math.floorDiv(floorA.getY() + floorB.getY(), 2),
+            Math.floorDiv(floorA.getZ() + floorB.getZ(), 2));
+        de.cas_ual_ty.dueldimension.duel.overworld.arena.Arena.Built arena =
+            de.cas_ual_ty.dueldimension.duel.overworld.arena.ArenaScan.find(level, between);
+        if(arena == null)
+        {
+            return null;
+        }
+        FieldSiting siting = arena.siting(FieldSpec.current(), arena.nearest(seatZeroNear));
+        de.cas_ual_ty.dueldimension.DuelDimension.log("using a marked arena: "
+            + siting.spec().areaWidth() + "x" + siting.spec().areaDepth()
+            + " anchored at " + siting.anchor() + " facing " + siting.facing()
+            + ", seats at " + siting.stand(0) + " and " + siting.stand(1));
+        return siting;
     }
 
     /** Stands the opponent on its mark, facing across the board. */
@@ -442,7 +504,12 @@ public final class OverworldDuels
             // from under it. Asked with the SAME validator that accepted the
             // site in the first place, against the same footprint, so a board
             // can never be pulled down for failing a check it never passed.
-            if(level.getGameTime() % INTEGRITY_INTERVAL == 0
+            // Not for a marked arena. That check exists to notice somebody
+            // building into ground the game PICKED, and a board somebody laid
+            // out by hand is standing on whatever they laid it out on -- so
+            // asking would abandon the duel for the crime of being held
+            // somewhere with a decorated floor.
+            if(!board.siting().marked() && level.getGameTime() % INTEGRITY_INTERVAL == 0
                 && FieldValidator.check(new LevelSampler(level), board.siting()) != null)
             {
                 fallBack(server, board, "The duel field was disturbed");

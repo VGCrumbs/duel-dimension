@@ -67,6 +67,11 @@ public final class DdItemGroup
                 output.accept(DdItems.MILLENIUM_RING);
                 output.accept(DdItems.MILLENIUM_ROD);
                 output.accept(DdItems.MILLENIUM_SCALE);
+                // The arena markers, next to the duel surfaces they mark out
+                // an area for. Only reachable here, and only placeable by a
+                // player in creative mode.
+                output.accept(DdBlocks.ARENA_CORNER);
+                output.accept(DdBlocks.ARENA_POINT);
                 output.accept(DdBlocks.CARD_SUPPLY);
                 output.accept(DdBlocks.CARD_SHOP);
                 output.accept(DdBlocks.SLEEVE_SHOP);

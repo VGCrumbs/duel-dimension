@@ -1,6 +1,8 @@
 package de.cas_ual_ty.dueldimension;
 
 import de.cas_ual_ty.dueldimension.cardsupply.CardSupplyBlock;
+import de.cas_ual_ty.dueldimension.duel.overworld.arena.ArenaMarkerBlock;
+import de.cas_ual_ty.dueldimension.duel.overworld.arena.ArenaMarkerItem;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -67,8 +69,33 @@ public final class DdBlocks
                 .mapColor(MapColor.COLOR_BLUE).strength(5.0F, 6.0F).sound(SoundType.METAL)
                 .setId(key)));
 
+    /**
+     * The four corners of a hand-built duel arena, and the two squares its
+     * duellists stand on.
+     * <p>
+     * Registered with an item that refuses to place outside creative mode
+     * rather than merely being hard to obtain: see {@link ArenaMarkerItem}.
+     */
+    public static final ArenaMarkerBlock ARENA_CORNER = registerMarker("arena_corner");
+
+    public static final ArenaMarkerBlock ARENA_POINT = registerMarker("arena_point");
+
     private DdBlocks()
     {
+    }
+
+    private static ArenaMarkerBlock registerMarker(String name)
+    {
+        Identifier id = Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, name);
+        ResourceKey<Block> blockKey = ResourceKey.create(Registries.BLOCK, id);
+        ArenaMarkerBlock block = Registry.register(BuiltInRegistries.BLOCK, blockKey,
+            new ArenaMarkerBlock(ArenaMarkerBlock.properties(blockKey)));
+
+        ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, id);
+        Registry.register(BuiltInRegistries.ITEM, itemKey, new ArenaMarkerItem(block,
+            new Item.Properties().setId(itemKey).useBlockDescriptionPrefix()));
+
+        return block;
     }
 
     private static <T extends Block> T register(String name, Function<ResourceKey<Block>, T> factory)

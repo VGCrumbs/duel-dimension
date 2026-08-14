@@ -1,6 +1,7 @@
 package de.cas_ual_ty.dueldimension.duel.overworld;
 
 import de.cas_ual_ty.dueldimension.net.DdNetwork;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -58,6 +59,16 @@ public final class OverworldPayloads
             buffer.writeBlockPos(message.siting().anchor());
             buffer.writeEnum(message.siting().facing());
             writeSpec(message.siting().spec(), buffer);
+            // A marked arena's stands are where somebody PUT them, so they
+            // cannot be worked out from the shape at the other end. Sent as a
+            // flag and a pair rather than always, because the overwhelming
+            // majority of fields are sited rather than built.
+            buffer.writeBoolean(message.siting().marked());
+            if(message.siting().marked())
+            {
+                buffer.writeBlockPos(message.siting().seatA());
+                buffer.writeBlockPos(message.siting().seatB());
+            }
             buffer.writeResourceKey(message.level());
             buffer.writeVarInt(message.seat());
             buffer.writeBoolean(message.locked());
@@ -65,8 +76,14 @@ public final class OverworldPayloads
 
         public static ShowField decode(RegistryFriendlyByteBuf buffer)
         {
-            FieldSiting siting = new FieldSiting(buffer.readBlockPos(),
-                buffer.readEnum(Direction.class), readSpec(buffer));
+            BlockPos anchor = buffer.readBlockPos();
+            Direction facing = buffer.readEnum(Direction.class);
+            de.cas_ual_ty.dueldimension.duel.overworld.FieldSpec spec = readSpec(buffer);
+            boolean marked = buffer.readBoolean();
+            FieldSiting siting = marked
+                ? new FieldSiting(anchor, facing, spec, buffer.readBlockPos(),
+                    buffer.readBlockPos())
+                : new FieldSiting(anchor, facing, spec);
             ResourceKey<Level> level = buffer.readResourceKey(Registries.DIMENSION);
             // Clamped rather than trusted, like every other seat index that
             // crosses the wire: a two-seat board has seats 0 and 1, and -1 for
