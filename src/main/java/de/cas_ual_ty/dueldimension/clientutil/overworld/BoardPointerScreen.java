@@ -116,6 +116,10 @@ public class BoardPointerScreen extends Screen
         float[] field = BoardPicker.aim(transform, from, rayThroughCursor(mouseX, mouseY), REACH);
         hovered = BoardPicker.at(ClientDuelField.boardToDraw(),
             Math.max(0, ClientDuelField.seat()), field);
+        // Tell the board, so the zone under the cursor lights up out there
+        // rather than only in here. The highlight is the whole feedback that
+        // pointing is working.
+        ClientDuelTargeting.point(hovered);
     }
 
     @Override
@@ -271,6 +275,9 @@ public class BoardPointerScreen extends Screen
     @Override
     public void onClose()
     {
+        // The board stops being pointed at when the pointer goes away, or the
+        // last hovered zone would stay lit with nothing hovering it.
+        ClientDuelTargeting.point(null);
         minecraft.setScreenAndShow(null);
     }
 }

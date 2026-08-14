@@ -47,6 +47,21 @@ public final class ClientDuelTargeting
         return actionable;
     }
 
+    /**
+     * Sets the target from a freed cursor rather than from the crosshair.
+     * <p>
+     * While the pointer is open {@link #tick} deliberately holds still -- a
+     * screen is open, and the crosshair is no longer what the duellist is
+     * aiming with. Without this the cursor would move over the board and the
+     * board would not respond to it, which reads as the pointer not working at
+     * all. The pointer knows what it is over; this is how it says so.
+     */
+    public static void point(BoardTarget target)
+    {
+        looking = target;
+        actionable = PromptOptions.actionable(DuelClientState.prompt, false, target);
+    }
+
     /** Forgets the target: the duel ended, or the board went away. */
     public static void clear()
     {
