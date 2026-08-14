@@ -106,7 +106,7 @@ public class BoardMeshTest
         for(FieldSpec spec : new FieldSpec[] {FieldSpec.DEFAULT,
             FieldSpec.fitting(21, 21, 3, 1, 1, 16, 8, 3),
             FieldSpec.fitting(31, 9, 3, 1, 1, 16, 8, 3),
-            new FieldSpec(9, 9, 3, 0.35F, 1, 1, 16, 8, 3)})
+            new FieldSpec(9, 9, 3, 0.35F, 0F, 1, 1, 16, 8, 3)})
         {
             for(Direction facing : Direction.Plane.HORIZONTAL)
             {

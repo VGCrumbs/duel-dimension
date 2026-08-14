@@ -22,6 +22,8 @@ import de.cas_ual_ty.dueldimension.clientutil.FieldLayout;
  * @param areaDepth          blocks between the two duellists
  * @param clearance          blocks of air the area needs above its floor
  * @param matScale           blocks per EDOPro field unit; the board's size
+ * @param matLift            blocks to raise the board above the ground it was
+ *                           validated on, or lower it into it; halves allowed
  * @param lateralTolerance   how far off the shared axis a duellist may stand
  *                           and still count as straight across
  * @param elevationTolerance blocks of height difference allowed between the two
@@ -33,8 +35,8 @@ import de.cas_ual_ty.dueldimension.clientutil.FieldLayout;
  * @param verticalSearch     how far up or down the search may look for a floor
  */
 public record FieldSpec(int areaWidth, int areaDepth, int clearance, float matScale,
-    int lateralTolerance, int elevationTolerance, int maxSeparation, int searchRadius,
-    int verticalSearch)
+    float matLift, int lateralTolerance, int elevationTolerance, int maxSeparation,
+    int searchRadius, int verticalSearch)
 {
     /** The mat's extent in EDOPro field units, from EDOPro's own vertex table. */
     public static final float MAT_UNITS_WIDE = FieldLayout.FIELD_MAX_X - FieldLayout.FIELD_MIN_X;
@@ -45,6 +47,8 @@ public record FieldSpec(int areaWidth, int areaDepth, int clearance, float matSc
     public static final int MAX_SPAN = 63;
     public static final int MAX_CLEARANCE = 32;
     public static final int MAX_SEARCH = 24;
+    /** How far the board may be raised or sunk, in blocks. */
+    public static final float MAX_LIFT = 8F;
 
     /**
      * Clamped and squared off on the way in, so nothing downstream has to
@@ -68,6 +72,10 @@ public record FieldSpec(int areaWidth, int areaDepth, int clearance, float matSc
         searchRadius = Math.clamp(searchRadius, 0, MAX_SEARCH);
         verticalSearch = Math.clamp(verticalSearch, 0, MAX_CLEARANCE);
         matScale = Math.clamp(matScale, 0.05F, fittingScale(areaWidth, areaDepth));
+        // Snapped to halves, because "raise it a bit" in a world made of blocks
+        // means a block or half of one, and a slider that can stop at 0.37 of a
+        // block is a slider nobody can put back where it was.
+        matLift = Math.round(Math.clamp(matLift, -MAX_LIFT, MAX_LIFT) * 2F) / 2F;
     }
 
     /** The largest board that fits inside an area of this size, in blocks per field unit. */
@@ -82,8 +90,8 @@ public record FieldSpec(int areaWidth, int areaDepth, int clearance, float matSc
         int verticalSearch)
     {
         return new FieldSpec(areaWidth, areaDepth, clearance,
-            fittingScale(odd(areaWidth), odd(areaDepth)), lateralTolerance, elevationTolerance,
-            maxSeparation, searchRadius, verticalSearch);
+            fittingScale(odd(areaWidth), odd(areaDepth)), 0F, lateralTolerance,
+            elevationTolerance, maxSeparation, searchRadius, verticalSearch);
     }
 
     /**
@@ -136,6 +144,13 @@ public record FieldSpec(int areaWidth, int areaDepth, int clearance, float matSc
     public int halfDepth()
     {
         return areaDepth / 2;
+    }
+
+    /** The same spec with the board raised or lowered. */
+    public FieldSpec withLift(float lift)
+    {
+        return new FieldSpec(areaWidth, areaDepth, clearance, matScale, lift, lateralTolerance,
+            elevationTolerance, maxSeparation, searchRadius, verticalSearch);
     }
 
     /** Blocks per EDOPro field unit. */

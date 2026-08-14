@@ -151,6 +151,7 @@ public final class OverworldPayloads
         buffer.writeVarInt(spec.areaDepth());
         buffer.writeVarInt(spec.clearance());
         buffer.writeFloat(spec.matScale());
+        buffer.writeFloat(spec.matLift());
         buffer.writeVarInt(spec.lateralTolerance());
         buffer.writeVarInt(spec.elevationTolerance());
         buffer.writeVarInt(spec.maxSeparation());
@@ -170,6 +171,7 @@ public final class OverworldPayloads
         int depth = buffer.readVarInt();
         int clearance = Math.clamp(buffer.readVarInt(), 0, 63);
         float matScale = buffer.readFloat();
+        float matLift = buffer.readFloat();
         int lateral = Math.clamp(buffer.readVarInt(), 0, 63);
         int elevation = Math.clamp(buffer.readVarInt(), 0, 63);
         int separation = Math.clamp(buffer.readVarInt(), 1, 255);
@@ -180,6 +182,7 @@ public final class OverworldPayloads
         // renderer down rather than merely look wrong.
         return new FieldSpec(width, depth, clearance,
             Float.isFinite(matScale) ? matScale : FieldSpec.DEFAULT.matScale(),
+            Float.isFinite(matLift) ? matLift : 0F,
             lateral, elevation, separation, radius, vertical);
     }
 

@@ -77,7 +77,7 @@ public class FieldSpecTest
     @Test
     public void aBoardCanNeverBeBiggerThanTheGroundCheckedForIt()
     {
-        FieldSpec absurd = new FieldSpec(9, 9, 3, 1000F, 1, 1, 16, 8, 3);
+        FieldSpec absurd = new FieldSpec(9, 9, 3, 1000F, 0F, 1, 1, 16, 8, 3);
 
         assertTrue(absurd.matWidth() <= absurd.areaWidth(), "board wider than its area");
         assertTrue(absurd.matDepth() <= absurd.areaDepth(), "board deeper than its area");
@@ -86,13 +86,16 @@ public class FieldSpecTest
     @Test
     public void nonsenseIsClampedRatherThanTrusted()
     {
-        FieldSpec nonsense = new FieldSpec(-40, 9999, -1, -5F, -3, -3, 0, 9999, -1);
+        FieldSpec nonsense = new FieldSpec(-40, 9999, -1, -5F, 99F, -3, -3, 0, 9999, -1);
 
         assertTrue(nonsense.areaWidth() >= FieldSpec.MIN_SPAN);
         assertTrue(nonsense.areaDepth() <= FieldSpec.MAX_SPAN);
         assertTrue(nonsense.clearance() >= 1);
         assertTrue(nonsense.matScale() > 0F);
         assertTrue(nonsense.searchRadius() <= FieldSpec.MAX_SEARCH);
+        assertTrue(Math.abs(nonsense.matLift()) <= FieldSpec.MAX_LIFT, "the lift is bounded");
+        assertEquals(nonsense.matLift() * 2F, Math.round(nonsense.matLift() * 2F), 1e-6F,
+            "the lift lands on a half block");
     }
 
     /**

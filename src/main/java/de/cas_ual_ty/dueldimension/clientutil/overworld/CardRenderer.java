@@ -156,8 +156,14 @@ public final class CardRenderer
             corners[1] = between(transform, part, 1, 2, f0);
             corners[2] = between(transform, part, 1, 2, f1);
             corners[3] = between(transform, part, 0, 3, f1);
+            // Per corner, because the default mapping runs v across the
+            // quad's FIRST edge -- which here is the card's width, not its
+            // height. The stripe is a white row over a grey row meant to lie
+            // flat like the cards it stands for, and mapped the default way it
+            // came out on its side: one white half and one grey half down the
+            // length of the pile instead of bands across it.
             WorldQuad.submit(poseStack, collector, DuelTextures.STACK_SIDE, camera, corners,
-                0xFFFFFFFF, 0F, 0F, 1F, 1F);
+                0xFFFFFFFF, new float[] {0F, 1F, 1F, 0F}, new float[] {0F, 0F, 1F, 1F});
         }
     }
 

@@ -66,6 +66,8 @@ public class OverworldFieldScreen extends Screen
         addRenderableWidget(new FillSlider(x, y, rowWidth(), 20));
         y += ROW_H;
         addRenderableWidget(new ClearanceSlider(x, y, rowWidth(), 20));
+        y += ROW_H;
+        addRenderableWidget(new LiftSlider(x, y, rowWidth(), 20));
         y += ROW_H + 8;
 
         addRenderableWidget(Button.builder(Component.literal("Reset to 9 x 9"), button ->
@@ -85,7 +87,7 @@ public class OverworldFieldScreen extends Screen
         FieldSpec now = OverworldSettings.spec();
         float fitting = FieldSpec.fittingScale(odd(areaWidth), odd(areaDepth));
         OverworldSettings.set(new FieldSpec(areaWidth, areaDepth, clearance, fitting * fill,
-            now.lateralTolerance(), now.elevationTolerance(), now.maxSeparation(),
+            now.matLift(), now.lateralTolerance(), now.elevationTolerance(), now.maxSeparation(),
             now.searchRadius(), now.verticalSearch()));
     }
 
@@ -215,6 +217,47 @@ public class OverworldFieldScreen extends Screen
         {
         }
     }
+
+    /** How high the board floats above the ground it was validated on. */
+    private class LiftSlider extends AbstractSliderButton
+    {
+        LiftSlider(int x, int y, int w, int h)
+        {
+            super(x, y, w, h, Component.empty(),
+                (OverworldSettings.spec().matLift() + LIFT_RANGE) / (LIFT_RANGE * 2F));
+            updateMessage();
+        }
+
+        private float lift()
+        {
+            // Snapped to halves here as well as in the record, so the label a
+            // player reads while dragging is the value they will get.
+            return Math.round((-LIFT_RANGE + (float)value * LIFT_RANGE * 2F) * 2F) / 2F;
+        }
+
+        @Override
+        protected void updateMessage()
+        {
+            float lift = lift();
+            setMessage(Component.literal("Board height:  "
+                + (lift == 0F ? "on the ground"
+                    : (lift > 0F ? "+" : "") + lift + (Math.abs(lift) == 1F ? " block" : " blocks"))));
+        }
+
+        @Override
+        protected void applyValue()
+        {
+            OverworldSettings.set(OverworldSettings.spec().withLift(lift()));
+        }
+
+        @Override
+        public void playDownSound(net.minecraft.client.sounds.SoundManager sounds)
+        {
+        }
+    }
+
+    /** How far the board may be nudged either way from this screen. */
+    private static final float LIFT_RANGE = 3F;
 
     /**
      * The dim is a gradient rather than {@code extractBackground}, which BLURS

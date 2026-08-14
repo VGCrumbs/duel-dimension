@@ -39,10 +39,18 @@ public record FieldTransform(FieldSiting siting)
         return siting().spec().blocksPerFieldUnit();
     }
 
-    /** The world height of the board's surface: the top face of the anchor block. */
+    /**
+     * The world height of the board's surface: the top face of the anchor
+     * block, plus however far the board has been raised.
+     * <p>
+     * The lift is presentation only -- the ground that was validated is still
+     * the ground under the anchor -- but it goes through here, so the cards,
+     * the picker and the drawn board all move together and a board you can see
+     * is a board you can point at.
+     */
     public double surfaceY()
     {
-        return siting().anchor().getY() + 1;
+        return siting().anchor().getY() + 1 + siting().spec().matLift();
     }
 
     /** Which way is right, looking along the board from seat 0. */

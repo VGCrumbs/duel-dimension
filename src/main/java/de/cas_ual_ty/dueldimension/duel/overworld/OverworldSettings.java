@@ -70,6 +70,7 @@ public final class OverworldSettings
     private static final String AREA_DEPTH = "areaDepth";
     private static final String CLEARANCE = "clearance";
     private static final String MAT_SCALE = "matScale";
+    private static final String MAT_LIFT = "matLift";
     private static final String LATERAL_TOLERANCE = "lateralTolerance";
     private static final String ELEVATION_TOLERANCE = "elevationTolerance";
     private static final String MAX_SEPARATION = "maxSeparation";
@@ -85,10 +86,13 @@ public final class OverworldSettings
         text.append("# are forced odd because the field is centred on a block. matScale is the\n");
         text.append("# board's size in blocks per card-field unit; it is capped so the board\n");
         text.append("# can never be bigger than the ground checked for it.\n");
+        text.append("# matLift raises the board off the ground, or sinks it in: -1 is a block\n");
+        text.append("# down, 1.5 a block and a half up. Snapped to halves.\n");
         text.append(AREA_WIDTH).append('=').append(spec.areaWidth()).append('\n');
         text.append(AREA_DEPTH).append('=').append(spec.areaDepth()).append('\n');
         text.append(CLEARANCE).append('=').append(spec.clearance()).append('\n');
         text.append(MAT_SCALE).append('=').append(spec.matScale()).append('\n');
+        text.append(MAT_LIFT).append('=').append(spec.matLift()).append('\n');
         text.append(LATERAL_TOLERANCE).append('=').append(spec.lateralTolerance()).append('\n');
         text.append(ELEVATION_TOLERANCE).append('=').append(spec.elevationTolerance()).append('\n');
         text.append(MAX_SEPARATION).append('=').append(spec.maxSeparation()).append('\n');
@@ -144,6 +148,7 @@ public final class OverworldSettings
             integer(values, AREA_DEPTH, fallback.areaDepth()),
             integer(values, CLEARANCE, fallback.clearance()),
             decimal(values, MAT_SCALE, fallback.matScale()),
+            decimal(values, MAT_LIFT, fallback.matLift()),
             integer(values, LATERAL_TOLERANCE, fallback.lateralTolerance()),
             integer(values, ELEVATION_TOLERANCE, fallback.elevationTolerance()),
             integer(values, MAX_SEPARATION, fallback.maxSeparation()),
