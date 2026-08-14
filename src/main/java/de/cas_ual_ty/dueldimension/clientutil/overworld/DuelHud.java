@@ -768,7 +768,12 @@ public final class DuelHud
         float scale = clockScale(screenW, screenH);
         int textW = Math.round(font.width(clock) * scale);
         int x = barLeft(screenW, screenH) - padX(screenW, screenH) - GAP - textW;
-        int y = TOP + Math.round((caseHeight(screenW, screenH) - font.lineHeight * scale) / 2F);
+        // Centred on the case's own middle, against the digits' VISUAL height
+        // rather than the font's line box: that box carries a descender's worth
+        // of empty space under every glyph, and centring the box leaves the
+        // digits sitting a pixel high against the bar beside them.
+        int digits = Math.round((font.lineHeight - 1) * scale);
+        int y = TOP + Math.round((caseHeight(screenW, screenH) - digits) / 2F);
         extractor.pose().pushMatrix();
         extractor.pose().scale(scale, scale);
         extractor.text(font, clock, Math.round(x / scale), Math.round(y / scale), colour, true);

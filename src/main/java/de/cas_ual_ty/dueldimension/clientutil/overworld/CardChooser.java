@@ -43,12 +43,25 @@ public final class CardChooser
     /** The most cards this will take on before the duel screen is the better tool. */
     public static final int MAX_CARDS = 20;
 
+    /**
+     * What the panel is called, whatever the engine calls it.
+     * <p>
+     * The engine's own titles are instructions written for a screen with room
+     * for them -- "Select the card(s) to place on the field(1-1)" -- and a
+     * panel three cards wide has no such room. It ran straight out of the frame
+     * and past the edge of it. The panel is already unmistakably a row of cards
+     * waiting to be clicked; the header only has to name it.
+     */
+    private static final String TITLE = "Card Select";
+
     private static final int GAP = 6;
     private static final int PAD = 8;
     private static final int HEADER = 16;
     private static final int NAME_LINE = 11;
     private static final int CARD_W = 62;
     private static final int MIN_CARD_W = 34;
+    /** Room for the one glyph a scroll can be halfway through at either end. */
+    private static final int PART_CHAR = 8;
 
     /** How fast a name that does not fit travels, in pixels a second. */
     private static final float SCROLL_SPEED = 22F;
@@ -100,12 +113,19 @@ public final class CardChooser
             cardW -= 4;
         }
 
-        int width = PAD * 2 + columns * cardW + (columns - 1) * GAP;
+        int grid = columns * cardW + (columns - 1) * GAP;
+        // Wide enough for its own header, not only for its cards. A panel sized
+        // to the grid alone is a panel whose title hangs out of it, which is
+        // exactly what it did.
+        int width = Math.max(grid, titleWidth()) + PAD * 2;
         int height = PAD * 2 + HEADER + rows * (cardH + NAME_LINE) + (rows - 1) * GAP;
         int x = (screenW - width) / 2;
         int y = Math.max(ceiling + 4, ceiling + (roomH - height) / 2);
-        return new Layout(x, y, width, height, cardW, cardH, columns, rows, x + PAD,
-            y + PAD + HEADER);
+        // And the grid centred inside whatever that came to, rather than left
+        // against the padding: one card in a panel widened by its title would
+        // otherwise sit off to one side of it.
+        return new Layout(x, y, width, height, cardW, cardH, columns, rows,
+            x + (width - grid) / 2, y + PAD + HEADER);
     }
 
     /**
@@ -129,6 +149,11 @@ public final class CardChooser
             }
         }
         return -1;
+    }
+
+    private static int titleWidth()
+    {
+        return net.minecraft.client.Minecraft.getInstance().font.width(TITLE);
     }
 
     private static int cellX(Layout layout, int cell)
@@ -160,9 +185,8 @@ public final class CardChooser
         NineSlice.draw(extractor, HubTextures.PANEL, layout.x(), layout.y(), layout.width(),
             layout.height());
 
-        String title = prompt.title() == null || prompt.title().isBlank() ? "Select a card"
-            : prompt.title();
-        extractor.text(font, title, layout.x() + PAD, layout.y() + 5, 0xFFF4D089, true);
+        extractor.text(font, TITLE, layout.x() + (layout.width() - font.width(TITLE)) / 2,
+            layout.y() + 5, 0xFFF4D089, true);
 
         int hovered = at(options, screenW, screenH, mouseX, mouseY);
         if(hovered != marqueeCell)
@@ -218,8 +242,29 @@ public final class CardChooser
             return;
         }
         int offset = over ? scrolled(width - room, now - marqueeSince) : 0;
+
+        // Clipped by MEASUREMENT rather than by the scissor alone: whatever is
+        // already past the left edge is not handed to the font at all, and the
+        // tail is cut to the room that is left. A name is not allowed to run
+        // into its neighbour or out of the panel even for the frame it takes a
+        // clip to catch up.
+        int skipped = 0;
+        int start = 0;
+        while(start < name.length())
+        {
+            int step = font.width(name.substring(start, start + 1));
+            if(skipped + step > offset)
+            {
+                break;
+            }
+            skipped += step;
+            start++;
+        }
+        String shown = font.plainSubstrByWidth(name.substring(start), room + PART_CHAR);
+
         extractor.enableScissor(x, y - 1, x + room, y + NAME_LINE);
-        extractor.text(font, name, x - offset, y, over ? 0xFFFFE9B0 : 0xFFC2C9D6, true);
+        extractor.text(font, shown, x - (offset - skipped), y,
+            over ? 0xFFFFE9B0 : 0xFFC2C9D6, true);
         extractor.disableScissor();
     }
 
