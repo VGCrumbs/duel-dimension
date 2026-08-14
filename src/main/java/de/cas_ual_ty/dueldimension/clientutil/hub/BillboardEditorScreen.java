@@ -2,6 +2,7 @@ package de.cas_ual_ty.dueldimension.clientutil.hub;
 
 import de.cas_ual_ty.dueldimension.DdDatabase;
 import de.cas_ual_ty.dueldimension.card.properties.Properties;
+import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
 import de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSprites;
 import de.cas_ual_ty.dueldimension.clientutil.overworld.SpriteLayer;
 import de.cas_ual_ty.dueldimension.clientutil.overworld.Wings;
@@ -108,6 +109,8 @@ public class BillboardEditorScreen extends Screen
     private float wscale = Wings.DEFAULT_SCALE;
 
     private int row;
+    /** Where the controls stopped, which is where the preview begins. */
+    private int contentBottom;
 
     public BillboardEditorScreen(Screen parent, long code)
     {
@@ -271,6 +274,7 @@ public class BillboardEditorScreen extends Screen
             case POSE -> poseTab();
             case WINGS -> wings();
         }
+        contentBottom = rowY();
 
         int footer = height - 24;
         int half = (full() - GAP) / 2;
@@ -364,7 +368,116 @@ public class BillboardEditorScreen extends Screen
         extractor.text(font, MonsterSprites.has(code) ? "editing" : "no billboard yet",
             left(), 17, 0xFF9A9A9A, true);
 
+        drawSlices(extractor);
+
         super.extractRenderState(extractor, mouseX, mouseY, partialTick);
+    }
+
+    /** The sheet's own accent, and the wings' -- blue, as asked for. */
+    private static final int BODY_LINE = 0xFFF4D089;
+    private static final int BODY_FILL = 0x33F4D089;
+    private static final int WING_LINE = 0xFF63C8FF;
+    private static final int WING_FILL = 0x3363C8FF;
+    private static final int POSE_LINE = 0xFF7CE38B;
+
+    /**
+     * The sheet, with the cuts drawn on it.
+     * <p>
+     * Six numbers describe how a sheet is sliced -- a region and a grid -- and
+     * six numbers are six things to hold in your head while looking at a
+     * picture that is not in front of you. Drawing the grid ON the sheet turns
+     * all of them into one glance: the cells either land on the sprites or they
+     * do not, and when they do not it is obvious which way to nudge them.
+     * <p>
+     * The frames actually in the run are tinted, so a first-cell or frame-count
+     * that runs off the end of the art shows up as tinted emptiness rather than
+     * as a monster that mysteriously freezes.
+     */
+    private void drawSlices(GuiGraphicsExtractor extractor)
+    {
+        if(sheet.isBlank())
+        {
+            return;
+        }
+        SpriteLayer body = new SpriteLayer(sheet, bx, by, bw, bh, bcolumns, brows, bfirst,
+            bframes, bticks, bloop);
+        int[] size = MonsterSprites.sizeOf(body.texture());
+        if(size[0] <= 0 || size[1] <= 0)
+        {
+            return;
+        }
+
+        int room = height - 30 - contentBottom - 6;
+        if(room < 24)
+        {
+            return;
+        }
+        int drawW = full();
+        int drawH = Math.round(drawW * size[1] / (float)size[0]);
+        if(drawH > room)
+        {
+            drawH = room;
+            drawW = Math.round(drawH * size[0] / (float)size[1]);
+        }
+        int x = left() + (full() - drawW) / 2;
+        int y = contentBottom + 4;
+
+        // Something behind it, because a sprite sheet is mostly transparent and
+        // a grid drawn over nothing is a grid you cannot line anything up with.
+        extractor.fill(x - 1, y - 1, x + drawW + 1, y + drawH + 1, 0xFF202028);
+        DdBlitUtil.fullBlit(extractor, body.texture(), x, y, drawW, drawH);
+
+        grid(extractor, body, size, x, y, drawW, drawH, BODY_LINE, BODY_FILL,
+            pose ? dfirst : -1);
+        if(winged)
+        {
+            grid(extractor, new SpriteLayer(sheet, wx, wy, ww, wh, wcolumns, wrows, wfirst,
+                wframes, wticks, wloop), size, x, y, drawW, drawH, WING_LINE, WING_FILL, -1);
+        }
+    }
+
+    /** One layer's region and cells, drawn over the sheet. */
+    private void grid(GuiGraphicsExtractor extractor, SpriteLayer layer, int[] size, int x, int y,
+        int drawW, int drawH, int line, int fill, int poseCell)
+    {
+        float scaleX = drawW / (float)size[0];
+        float scaleY = drawH / (float)size[1];
+        float regionW = layer.w() > 0 ? layer.w() : size[0] - layer.x();
+        float regionH = layer.h() > 0 ? layer.h() : size[1] - layer.y();
+        float cellW = regionW / layer.columns();
+        float cellH = regionH / layer.rows();
+
+        for(int cell = 0; cell < layer.columns() * layer.rows(); cell++)
+        {
+            int column = cell % layer.columns();
+            int rowOf = cell / layer.columns();
+            int x0 = x + Math.round((layer.x() + column * cellW) * scaleX);
+            int x1 = x + Math.round((layer.x() + (column + 1) * cellW) * scaleX);
+            int y0 = y + Math.round((layer.y() + rowOf * cellH) * scaleY);
+            int y1 = y + Math.round((layer.y() + (rowOf + 1) * cellH) * scaleY);
+
+            boolean inRun = cell >= layer.first() && cell < layer.first() + layer.frames();
+            if(inRun)
+            {
+                extractor.fill(x0, y0, x1, y1, fill);
+            }
+            int edge = cell == poseCell ? POSE_LINE : line;
+            if(inRun || cell == poseCell)
+            {
+                extractor.fill(x0, y0, x1, y0 + 1, edge);
+                extractor.fill(x0, y1 - 1, x1, y1, edge);
+                extractor.fill(x0, y0, x0 + 1, y1, edge);
+                extractor.fill(x1 - 1, y0, x1, y1, edge);
+            }
+            else
+            {
+                // Outside the run: the cut is still shown, faintly, so a frame
+                // count that is one short is one obvious empty box.
+                int faint = line & 0x40FFFFFF;
+                extractor.fill(x0, y0, x1, y0 + 1, faint);
+                extractor.fill(x0, y0, x0 + 1, y1, faint);
+            }
+        }
     }
 
     /** No dim and no blur: the world behind this panel is the preview. */
