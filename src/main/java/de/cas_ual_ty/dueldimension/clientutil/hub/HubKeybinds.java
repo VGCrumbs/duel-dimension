@@ -70,9 +70,11 @@ public final class HubKeybinds
             }
             return;
         }
-        // Only over a bare world. Any other screen -- the duel screen, the deck
-        // list, the pause menu -- is one the player opened, and is theirs.
-        if(!camera && minecraft.gui.screen() == null)
+        // Only over a bare world, and only if the board is what this player
+        // asked to play on. Any other screen -- the duel screen, the deck list,
+        // the pause menu -- is one they opened, and is theirs.
+        if(!camera && minecraft.gui.screen() == null
+            && !de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.screenPreferred())
         {
             // gui.setScreen: setScreenAndShow forces a frame, and forcing one
             // while the cursor is being handed over is what made the swap

@@ -144,14 +144,24 @@ public final class PromptOptions
      * <p>
      * A card in a zone or in your hand is drawn where you can look at it. A
      * card inside a deck, a graveyard, a banished pile or an extra deck is not
-     * -- the board draws those as ONE object, a stack, deliberately, because
-     * that is what they are. So "select the card to add to your hand" offers
-     * five cards that exist nowhere on the board, and answering it by pointing
-     * is impossible: the prompt appeared with nothing to click and the duel sat
-     * on it.
+     * drawn one by one -- the board draws each of those as ONE object, a stack,
+     * deliberately, because that is what they are -- but the stack itself is
+     * something a duellist can point at, and clicking it offers whatever the
+     * prompt holds in it. That is not an invention either: duelclient.cpp
+     * raises deck_act, grave_act, remove_act and extra_act against the PILE and
+     * not against a card nobody can see, and {@link #optionsFor} has matched
+     * pile clicks that way all along.
      * <p>
-     * Those go to the duel screen, which has a picker built for exactly this,
-     * and the screen hands the board back the moment the question is answered.
+     * Refusing them here anyway was throwing the whole prompt at the duel
+     * screen over an option the board could already have answered -- and a
+     * chain window with one graveyard effect in it is an ordinary turn, not an
+     * edge case, so the screen kept swinging over a board mid-duel and back
+     * again.
+     * <p>
+     * What is left really is unpointable: a card underneath an Xyz monster, a
+     * card in the opponent's hand. Those keep the screen, which has a picker
+     * built for exactly this, and it hands the board back the moment the
+     * question is answered.
      */
     private static boolean pointable(EnginePrompt prompt)
     {
@@ -161,15 +171,33 @@ public final class PromptOptions
             {
                 continue;
             }
-            int location = option.location();
-            if(location != de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_MZONE
-                && location != de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_SZONE
-                && location != de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_HAND)
+            if(!pickable(option.location()))
             {
                 return false;
             }
         }
         return true;
+    }
+
+    /**
+     * Is this somewhere the board actually draws, and the picker actually
+     * returns?
+     * <p>
+     * The same seven the picker knows: its zone table is the monster and
+     * spell/trap rows, its pile table is the four stacks, and the hand is drawn
+     * by the HUD. Kept as one list because a location the board cannot pick is
+     * a prompt the board cannot answer, and the two answers drifting apart is a
+     * duel parked on a question with nothing on screen to click.
+     */
+    private static boolean pickable(int location)
+    {
+        return location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_MZONE
+            || location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_SZONE
+            || location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_HAND
+            || location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_DECK
+            || location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_EXTRA
+            || location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_GRAVE
+            || location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_REMOVED;
     }
 
     /**

@@ -189,10 +189,23 @@ public final class DuelHud
      * rectangle, so the button cannot be somewhere other than where it is
      * clicked.
      */
-    public static int[] cancelBounds(int screenW, int screenH)
+    public static int[] cancelBounds(int screenW, int screenH, boolean menuOpen)
     {
-        if(!de.cas_ual_ty.dueldimension.clientutil.PromptOptions.canDecline(
-            DuelClientState.prompt) || DuelClientState.over)
+        if(DuelClientState.over)
+        {
+            return null;
+        }
+        // Two different things to back out of, and a player means both by
+        // "cancel". A menu open over a card is one step in -- the card has been
+        // picked and nothing has been done with it yet -- and that step can
+        // always be taken back, whatever the engine thinks. Answering the whole
+        // prompt with nothing is the other, and only some prompts take it: a
+        // place selection is not one, which is not a gap here but the rule.
+        // EDOPro reads the cancel flag on MSG_SELECT_PLACE and ignores it, and
+        // the core refuses an empty answer, so a button offered there would
+        // park the duel on a question it had just refused to drop.
+        if(!menuOpen && !de.cas_ual_ty.dueldimension.clientutil.PromptOptions.canDecline(
+            DuelClientState.prompt))
         {
             return null;
         }
@@ -213,9 +226,9 @@ public final class DuelHud
      * the engine will actually accept it.
      */
     public static void drawCancel(GuiGraphicsExtractor extractor, Font font, int mouseX,
-        int mouseY)
+        int mouseY, boolean menuOpen)
     {
-        int[] at = cancelBounds(extractor.guiWidth(), extractor.guiHeight());
+        int[] at = cancelBounds(extractor.guiWidth(), extractor.guiHeight(), menuOpen);
         if(at == null)
         {
             return;
@@ -225,7 +238,7 @@ public final class DuelHud
         de.cas_ual_ty.dueldimension.clientutil.hub.NineSlice.draw(extractor,
             de.cas_ual_ty.dueldimension.clientutil.hub.HubTextures.BUTTON,
             at[0], at[1], at[2], at[3], over ? 1 : 0, 3);
-        String label = cancelLabel();
+        String label = cancelLabel(menuOpen);
         extractor.text(font, label, at[0] + (at[2] - font.width(label)) / 2,
             at[1] + (at[3] - font.lineHeight) / 2 + 1, 0xFFE6EAF2, true);
     }
@@ -235,10 +248,10 @@ public final class DuelHud
      * duel screen calls the very same button "Keep order" there, and so does
      * this.
      */
-    private static String cancelLabel()
+    private static String cancelLabel(boolean menuOpen)
     {
         de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt = DuelClientState.prompt;
-        return prompt != null
+        return !menuOpen && prompt != null
             && prompt.kind() == de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt.Kind.SORT
             ? "Keep order" : "Cancel";
     }

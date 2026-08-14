@@ -299,10 +299,19 @@ public class BoardPointerScreen extends Screen
         // when no menu happened to be sitting over it is a way out a player
         // cannot trust -- and the menu is part of the action being backed out
         // of, not something in the way of it.
-        int[] cancel = DuelHud.cancelBounds(width, height);
+        int[] cancel = DuelHud.cancelBounds(width, height, !choices.isEmpty());
         if(cancel != null && event.x() >= cancel[0] && event.x() < cancel[0] + cancel[2]
             && event.y() >= cancel[1] && event.y() < cancel[1] + cancel[3])
         {
+            // One step at a time. With a menu up, the card that was clicked is
+            // what gets let go of -- not the whole prompt, which the player has
+            // not answered yet and may still want to. With nothing up, and only
+            // if the engine will take it, the prompt itself is declined.
+            if(!choices.isEmpty())
+            {
+                dismiss();
+                return true;
+            }
             decline();
             return true;
         }
@@ -342,18 +351,25 @@ public class BoardPointerScreen extends Screen
 
         updateHover(event.x(), event.y());
 
+        List<Integer> options = PromptOptions.optionsFor(DuelClientState.prompt, false, hovered);
+
         // Your own deck is where the duel's own controls live, the way the 2D
         // board puts them there: looking at it is looking at your deck, and
         // conceding is a thing you do to your own deck rather than a button
         // sitting next to the cards you click all turn.
-        if(hovered != null && hovered.isPile() && hovered.controller() == 0
+        //
+        // Only when the duel is not asking about it, though. A prompt can offer
+        // cards from inside the deck -- "add one of these to your hand" -- and
+        // those are answered by clicking the very same stack. Taking this
+        // branch first put View Deck and Surrender in front of the question and
+        // left no way at all to answer it.
+        if(options.isEmpty() && hovered != null && hovered.isPile() && hovered.controller() == 0
             && hovered.location() == OcgConstants.LOCATION_DECK)
         {
             openChoices(List.of(VIEW_DECK, SURRENDER), event.x(), event.y());
             return true;
         }
 
-        List<Integer> options = PromptOptions.optionsFor(DuelClientState.prompt, false, hovered);
         if(options.isEmpty())
         {
             return super.mouseClicked(event, doubled);
@@ -362,7 +378,7 @@ public class BoardPointerScreen extends Screen
         // has already SAID the thing -- "here" is the whole of the answer to
         // "where do you want it" -- so a list offering one row called "place
         // here" is a dialog asking a question that has just been answered.
-        if(options.size() == 1 && !hovered.hasCard())
+        if(options.size() == 1 && !hovered.isPile() && !hovered.hasCard())
         {
             answer(options.get(0));
             return true;
@@ -474,7 +490,24 @@ public class BoardPointerScreen extends Screen
                 onClose();
                 return true;
             }
+            // Stand down FIRST, then ask. Gui.setPauseScreen returns on the
+            // spot if a screen is already open, and the cursor is one -- so
+            // asking politely from inside it did precisely nothing, and Escape
+            // became a dead key for the whole duel. Asked this way round the
+            // pause screen is built by the game's own code, with the sound and
+            // the singleplayer pause that belong to it.
+            onClose();
             minecraft.pauseGame(false);
+            return true;
+        }
+        // Swapping between the board and the duel screen is a key the tick
+        // handler polls, and a key mapping is not polled at all while a screen
+        // is open. The cursor is now open for the whole duel, so the swap
+        // stopped working the moment it became the resting state -- the same
+        // trap the duel screen already sidesteps by handling this key itself.
+        if(HubKeybinds.DUEL_VIEW.matches(event))
+        {
+            ClientDuelField.toggleScreen(minecraft);
             return true;
         }
         return super.keyPressed(event);
@@ -507,7 +540,7 @@ public class BoardPointerScreen extends Screen
             // like while the camera key is held, and a button drawn where there
             // is no cursor to click it with is a promise the screen cannot
             // keep.
-            DuelHud.drawCancel(extractor, font, mouseX, mouseY);
+            DuelHud.drawCancel(extractor, font, mouseX, mouseY, !choices.isEmpty());
         }
 
         // Last, and never INSTEAD of the rest. Opening a menu used to return

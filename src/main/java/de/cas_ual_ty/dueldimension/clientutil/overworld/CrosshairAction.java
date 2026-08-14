@@ -79,7 +79,7 @@ public final class CrosshairAction
         // An empty square with one thing to do is not a menu: the click has
         // already said "here", which is the whole answer to "where". Answered
         // outright, and the camera is never taken for it.
-        if(options.size() == 1 && !target.hasCard())
+        if(options.size() == 1 && !target.isPile() && !target.hasCard())
         {
             DuelActionController.answer(new int[] {options.get(0)}, 0);
             return true;
