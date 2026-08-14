@@ -111,6 +111,32 @@ public final class CardFaces
     }
 
     /**
+     * The card's own art, whatever face it is turned to -- or its back when
+     * this client was never told what it is.
+     * <p>
+     * For the UNDERSIDE of a card. A set card is lying face DOWN, so its face
+     * is against the table and somebody looking up at it from below is looking
+     * at the face; drawing a back there is drawing a card with two backs.
+     * <p>
+     * It leaks nothing, and that is a property of the DATA rather than of this
+     * method: a client is only sent the code of a face-down card it is allowed
+     * to know about -- its own. The opponent's set card arrives with no code at
+     * all, so this returns their back for the same reason the top face does,
+     * and no viewing angle can produce art that was never sent.
+     */
+    public static Identifier underside(BoardSnapshot.Slot slot, int controller)
+    {
+        if(slot.code() == 0)
+        {
+            return back(controller);
+        }
+        Properties properties = DdDatabase.PROPERTIES_LIST.get((long)slot.code());
+        return properties == null ? DuelTextures.UNKNOWN
+            : DuelTextures.card(properties, DuelTextures.artIndex(properties, slot.art()),
+                DuelTextures.FIELD_CARD_SIZE);
+    }
+
+    /**
      * Is this texture already card-shaped, so it is drawn through the full UV
      * range rather than the {@link DuelTextures#CARD_U0} letterbox window?
      * <p>

@@ -409,8 +409,14 @@ public final class OverworldBoardRenderer
             {
                 continue;
             }
+            // The top shows what this client is allowed to see. The UNDERSIDE
+            // shows the card itself when this client knows it -- a set card is
+            // lying face down, so its face is against the table and somebody
+            // under it is looking at the face. An opponent's set card arrives
+            // with no code, so theirs stays a back.
             CardRenderer.submit(poseStack, collector, transform, camera, zone, controller,
-                slot.defence(), cardLift(transform), CardFaces.face(slot, false, controller), back);
+                slot.defence(), cardLift(transform), CardFaces.face(slot, false, controller),
+                CardFaces.underside(slot, controller));
 
             // A card the engine is offering glows, so a duellist can see what
             // they may do without sweeping the cursor over the whole board.
@@ -420,9 +426,13 @@ public final class OverworldBoardRenderer
                 DuelClientState.prompt, false, new de.cas_ual_ty.dueldimension.clientutil
                     .BoardTarget(slot.code(), asked, location, sequence, -1, "", 1, slot.art())))
             {
+                // Well clear of the card's own top face. At four thousandths
+                // of a unit the glow and the face were close enough for a
+                // depth buffer to call it a draw, and two translucent quads
+                // that cannot be ordered flicker against each other.
                 WorldQuad.submit(poseStack, collector, DuelHighlight.OUTLINE, camera,
                     transform.corners(CardMesh.placement(zone, slot.defence()),
-                        (cardLift(transform) + CardMesh.THICKNESS + 0.004F) * transform.scale()),
+                        (cardLift(transform) + CardMesh.THICKNESS + 0.03F) * transform.scale()),
                     DuelHighlight.tint(DuelHighlight.pulse(ticks())));
             }
         }

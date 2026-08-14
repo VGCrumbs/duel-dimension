@@ -53,7 +53,7 @@ public final class CardMesh
      * to crouch under, thin enough to still read as a card: this is the one
      * number here that is chosen rather than ported.
      */
-    public static final float THICKNESS = 0.03F;
+    public static final float THICKNESS = 0.015F;
 
     /** Which part of the card a face is, and therefore what goes on it. */
     public enum Kind

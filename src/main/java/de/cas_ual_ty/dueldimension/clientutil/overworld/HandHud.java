@@ -48,13 +48,9 @@ public final class HandHud implements HudElement
         // clock -- in the same art the duel screen uses.
         DuelHud.draw(extractor, client.font, board, ClientDuelField.seat());
 
-        // turnPlayer is ALREADY in the viewer's numbering -- the server writes
-        // 0 for "the seat being served" -- so comparing it against the seat
-        // index was right for seat 0 by coincidence and backwards for seat 1.
-        String turn = "Turn " + board.turn() + "  -  "
-            + (board.turnPlayer() == 0 ? "your turn" : "their turn");
-        extractor.centeredText(client.font, turn, middle, DuelHud.below(extractor.guiWidth()), 0xFFC2C9D6);
-
+        // No "Turn 1 - your turn" line: the turn number is already in its own
+        // frame between the life bars, and whose turn it is is what the phase
+        // case's colour says. Three ways of saying it is two too many.
         // What the engine is waiting for, and the key that answers it. A board
         // with no visible question is a board a player waits at.
         de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt =

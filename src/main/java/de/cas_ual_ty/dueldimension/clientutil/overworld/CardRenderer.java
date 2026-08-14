@@ -73,7 +73,13 @@ public final class CardRenderer
 
             if(part.kind() == CardMesh.Kind.EDGE)
             {
-                WorldQuad.submit(poseStack, collector, texture, camera, corners, 0xFFFFFFFF);
+                // Per corner, for the same reason the pile's sides need it: the
+                // default mapping runs v along the quad's FIRST edge, which on
+                // an edge face is the card's width rather than its thickness --
+                // so the white-over-grey strip came out turned a quarter and
+                // read as two blocks of colour instead of a card's edge.
+                WorldQuad.submit(poseStack, collector, texture, camera, corners, 0xFFFFFFFF,
+                    new float[] {0F, 1F, 1F, 0F}, new float[] {0F, 0F, 1F, 1F});
                 continue;
             }
 
@@ -86,7 +92,7 @@ public final class CardRenderer
             float v0 = whole ? 0F : DuelTextures.CARD_V0;
             float u1 = whole ? 1F : DuelTextures.CARD_U1;
             float v1 = whole ? 1F : DuelTextures.CARD_V1;
-            float[][] uv = turned(u0, v0, u1, v1, turns);
+            float[][] uv = turned(part.kind() == CardMesh.Kind.BACK, u0, v0, u1, v1, turns);
             WorldQuad.submit(poseStack, collector, texture, camera, corners, 0xFFFFFFFF,
                 uv[0], uv[1]);
         }
@@ -128,7 +134,8 @@ public final class CardRenderer
             Identifier texture = part.kind() == CardMesh.Kind.FRONT ? top : back;
             Vec3[] corners = worldCorners(transform, part);
             boolean whole = CardFaces.isCardShaped(texture);
-            float[][] uv = turned(whole ? 0F : DuelTextures.CARD_U0,
+            float[][] uv = turned(part.kind() == CardMesh.Kind.BACK,
+                whole ? 0F : DuelTextures.CARD_U0,
                 whole ? 0F : DuelTextures.CARD_V0, whole ? 1F : DuelTextures.CARD_U1,
                 whole ? 1F : DuelTextures.CARD_V1, turns);
             WorldQuad.submit(poseStack, collector, texture, camera, corners, 0xFFFFFFFF,
@@ -198,10 +205,16 @@ public final class CardRenderer
      *
      * @return {us, vs}, in the corner order {@link WorldQuad} expects
      */
-    private static float[][] turned(float u0, float v0, float u1, float v1, int turns)
+    private static float[][] turned(boolean back, float u0, float v0, float u1, float v1,
+        int turns)
     {
-        float[] us = {u0, u0, u1, u1};
-        float[] vs = {v0, v1, v1, v0};
+        // The back face is wound the other way so it looks downwards, which
+        // means its corners walk the rectangle in a different order -- and
+        // handing it the front's texture coordinates turned the art a quarter.
+        // Its own order, so the picture on the underside stands the same way up
+        // as the one on top.
+        float[] us = back ? new float[] {u0, u1, u1, u0} : new float[] {u0, u0, u1, u1};
+        float[] vs = back ? new float[] {v0, v0, v1, v1} : new float[] {v0, v1, v1, v0};
         float[] outU = new float[4];
         float[] outV = new float[4];
         for(int corner = 0; corner < 4; corner++)
