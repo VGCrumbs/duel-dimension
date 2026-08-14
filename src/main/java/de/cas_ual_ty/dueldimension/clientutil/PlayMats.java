@@ -35,13 +35,17 @@ public enum PlayMats
     private final String displayName;
     private final int accent;
     private final Identifier texture;
+    private final Identifier worldTexture;
 
     PlayMats(String id, String displayName, int accent)
     {
         this.id = id;
         this.displayName = displayName;
         this.accent = accent;
-        this.texture = Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "textures/duel/mats/" + id + ".png");
+        this.texture = Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID,
+            "textures/duel/mats/" + id + ".png");
+        this.worldTexture = Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID,
+            "textures/duel/mats/world/" + id + ".png");
     }
 
     public String id()
@@ -52,6 +56,22 @@ public enum PlayMats
     public String displayName()
     {
         return displayName;
+    }
+
+    /**
+     * The same mat with its black backing cut out, for the board in the world.
+     * <p>
+     * On the duel screen the black IS the table -- it is what the board is laid
+     * on. In the world there is already a table: the ground, or whatever the
+     * duel was sited over. A black sheet over it makes the board look like a
+     * rug thrown down rather than a field projected onto the place it is being
+     * played, so the backing is cleared and only the printed squares and trim
+     * remain. Cut out rather than faded, so the cutout render type discards it
+     * outright and nothing is left to sort.
+     */
+    public Identifier worldTexture()
+    {
+        return worldTexture;
     }
 
     public Identifier texture()

@@ -40,6 +40,12 @@ loom {
     }
 }
 
+/**
+ * Jade's jar, if one has been dropped in libs/. Resolved at configuration time
+ * because the source set has to know whether the integration can compile.
+ */
+def jadeApi = fileTree('libs') { include 'Jade-*.jar' }
+
 repositories {
     mavenCentral()
     // ModMenu, for the config screen. Its 26.2 build is Mojang-named like
@@ -79,6 +85,19 @@ dependencies {
     // only classloads them on getOrCreate, which means the "modmenu" entrypoint
     // is inert -- not an error -- when ModMenu is not installed.
     compileOnly 'com.terraformersmc:modmenu:20.0.1'
+
+    // Jade's API, for the callback that hides its tooltip during a duel.
+    //
+    // From libs/ rather than a maven: no public repository serves the 26.2
+    // build -- three were probed and none had it -- and a coordinate that does
+    // not resolve breaks the build for everyone rather than for nobody. Drop a
+    // Jade release in libs/ and JadeIntegration compiles; leave it out and the
+    // integration is left out of the source set, which is the same thing that
+    // happens at runtime for anyone without Jade installed.
+    //
+    // The jar is NOT committed. It is somebody else's work and this repository
+    // does not redistribute it.
+    compileOnly jadeApi
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -320,4 +339,13 @@ test {
 // while real progress was being made underneath it.
 tasks.withType(JavaCompile).configureEach {
     options.compilerArgs << '-Xmaxerrs' << '10000'
+}
+
+// Without Jade's API there is nothing for JadeIntegration to implement, so it
+// is not compiled. Nothing else references it -- the loader reaches it through
+// an entrypoint string -- so its absence costs the rest of the mod nothing.
+if(jadeApi.isEmpty())
+{
+    sourceSets.main.java.exclude '**/JadeIntegration.java'
+    logger.lifecycle('Jade API not in libs/: the Jade integration will not be compiled.')
 }

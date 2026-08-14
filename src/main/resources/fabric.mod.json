@@ -34,6 +34,9 @@
     ],
     "modmenu": [
       "de.cas_ual_ty.dueldimension.fabric.ModMenuIntegration"
+    ],
+    "jade": [
+      "de.cas_ual_ty.dueldimension.fabric.JadeIntegration"
     ]
   },
   "depends": {

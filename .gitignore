@@ -6,3 +6,4 @@ logs/
 crash-reports/
 *.log.gz
 __pycache__/
+libs/*.jar

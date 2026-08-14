@@ -40,8 +40,8 @@ public class BoardMeshTest
         // Two mats, then seven loose zones each: the extra monster zones, the
         // field spell, and the four piles.
         assertEquals(2 + 2 * 7, pieces.size());
-        assertEquals(PlayMats.CLASSIC.texture(), pieces.get(0).texture());
-        assertEquals(PlayMats.CLASSIC.texture(), pieces.get(1).texture());
+        assertEquals(PlayMats.CLASSIC.worldTexture(), pieces.get(0).texture());
+        assertEquals(PlayMats.CLASSIC.worldTexture(), pieces.get(1).texture());
     }
 
     /**
@@ -149,7 +149,7 @@ public class BoardMeshTest
     {
         List<BoardMesh.Piece> pieces = BoardMesh.pieces(new PlayMats[] {null, null});
 
-        assertEquals(PlayMats.CLASSIC.texture(), pieces.get(0).texture());
-        assertEquals(PlayMats.CLASSIC.texture(), pieces.get(1).texture());
+        assertEquals(PlayMats.CLASSIC.worldTexture(), pieces.get(0).texture());
+        assertEquals(PlayMats.CLASSIC.worldTexture(), pieces.get(1).texture());
     }
 }

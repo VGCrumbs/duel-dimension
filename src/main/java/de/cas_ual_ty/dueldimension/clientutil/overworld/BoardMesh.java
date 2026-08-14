@@ -95,7 +95,9 @@ public final class BoardMesh
         for(int controller = 0; controller <= 1; controller++)
         {
             PlayMats mat = mats[controller] == null ? PlayMats.CLASSIC : mats[controller];
-            pieces.add(new Piece(FieldLayout.zoneBand(controller), mat.texture(), 0D));
+            // The world copy, whose black backing has been cut out: in the
+            // world the ground is already the table.
+            pieces.add(new Piece(FieldLayout.zoneBand(controller), mat.worldTexture(), 0D));
         }
 
         for(int controller = 0; controller <= 1; controller++)
