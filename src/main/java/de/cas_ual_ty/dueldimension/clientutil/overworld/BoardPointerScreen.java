@@ -48,8 +48,22 @@ public class BoardPointerScreen extends Screen
     private int choicesX;
     private int choicesY;
 
-    private static final int ROW_H = 14;
-    private static final int ROW_W = 132;
+    /**
+     * The duel screen's own menu metrics: rows 15 apart, each two shorter than
+     * its pitch, and never narrower than 70. Copied rather than chosen so the
+     * menu on the board is the menu a player already knows -- the same rows,
+     * the same icons, the same colours, in the same order.
+     */
+    private static final int ROW_H = 15;
+    private static final int ROW_INSET = 2;
+    private static final int ROW_W_MIN = 70;
+    /** Room for the command icon and the padding either side of the label. */
+    private static final int ROW_LABEL_PAD = 30;
+
+    /** Width of the menu currently open, measured from its widest row. */
+    private int choicesW = ROW_W_MIN;
+    /** The card the open menu is about, which decides its icons' posture. */
+    private BoardTarget chosenAnchor;
 
     public BoardPointerScreen()
     {
@@ -200,7 +214,7 @@ public class BoardPointerScreen extends Screen
         if(!choices.isEmpty())
         {
             int row = (int)((event.y() - choicesY) / ROW_H);
-            if(event.x() >= choicesX && event.x() < choicesX + ROW_W
+            if(event.x() >= choicesX && event.x() < choicesX + choicesW
                 && row >= 0 && row < choices.size())
             {
                 answer(choices.get(row));
@@ -378,7 +392,7 @@ public class BoardPointerScreen extends Screen
         // it -- which is the opposite of what a contextual menu is for.
         if(!choices.isEmpty())
         {
-            drawChoices(extractor);
+            drawChoices(extractor, mouseX, mouseY);
         }
 
         // Shift shows the card's own words, the same as the deck builder's
@@ -423,19 +437,83 @@ public class BoardPointerScreen extends Screen
     private void openChoices(List<Integer> rows, double mouseX, double mouseY)
     {
         choices = rows;
+        chosenAnchor = hovered;
+        choicesW = ROW_W_MIN;
+        for(int index : rows)
+        {
+            choicesW = Math.max(choicesW, font.width(label(index)) + ROW_LABEL_PAD);
+        }
         int tall = rows.size() * ROW_H;
-        choicesX = (int)Math.max(4, Math.min(mouseX, width - ROW_W - 4));
+        choicesX = (int)Math.max(4, Math.min(mouseX, width - choicesW - 4));
         choicesY = (int)Math.max(4, Math.min(mouseY, height - tall - 4));
     }
 
-    private void drawChoices(GuiGraphicsExtractor extractor)
+    /**
+     * The menu, in the duel screen's own art: a dark row with a gold top edge,
+     * the command's icon at its left, and the label beside it. The icon is what
+     * makes a row readable at a glance -- a sword is an attack wherever it is
+     * drawn -- so it comes from the same DuelTextures.commandIcon the screen
+     * uses, told the same two things about the card it belongs to.
+     */
+    private void drawChoices(GuiGraphicsExtractor extractor, int mouseX, int mouseY)
     {
+        int rowH = ROW_H - ROW_INSET;
         for(int row = 0; row < choices.size(); row++)
         {
+            int index = choices.get(row);
+            int x = choicesX;
             int y = choicesY + row * ROW_H;
-            extractor.fill(choicesX, y, choicesX + ROW_W, y + ROW_H, 0xE0101820);
-            extractor.text(font, label(choices.get(row)), choicesX + 4, y + 3, 0xFFF4D089, false);
+            boolean over = mouseX >= x && mouseX < x + choicesW && mouseY >= y && mouseY < y + rowH;
+
+            extractor.fill(x, y, x + choicesW, y + rowH, over ? 0xF0473A22 : 0xE01A1A1E);
+            extractor.fill(x, y, x + choicesW, y + 1, over ? 0xFFFFD700 : 0x60FFD700);
+
+            int textX = x + 5;
+            net.minecraft.resources.Identifier icon = iconFor(index);
+            if(icon != null)
+            {
+                int size = rowH - 4;
+                de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.fullBlit(extractor, icon,
+                    x + 3, y + 2, size, size);
+                textX = x + 6 + size;
+            }
+            extractor.text(font, label(index), textX, y + (rowH - 8) / 2,
+                over ? 0xFFFFFFCC : 0xFFE8E8E8, false);
         }
+    }
+
+    /**
+     * The icon for a row, or null for the rows that are this mod's rather than
+     * the engine's. Which posture and which face the card is showing decides
+     * between the flip and set icons, exactly as it does on the screen.
+     */
+    private net.minecraft.resources.Identifier iconFor(int index)
+    {
+        EnginePrompt prompt = DuelClientState.prompt;
+        if(index < 0 || prompt == null || index >= prompt.options().size())
+        {
+            return null;
+        }
+        boolean faceDown = false;
+        boolean attackPosition = true;
+        BoardSnapshot board = DuelClientState.board;
+        if(chosenAnchor != null && !chosenAnchor.isPile() && board != null)
+        {
+            BoardSnapshot.Side side = chosenAnchor.controller() == 0 ? board.self()
+                : board.opponent();
+            List<BoardSnapshot.Slot> zone = side == null ? null
+                : chosenAnchor.location() == OcgConstants.LOCATION_MZONE ? side.monsters()
+                    : side.spells();
+            if(zone != null && chosenAnchor.sequence() >= 0
+                && chosenAnchor.sequence() < zone.size())
+            {
+                BoardSnapshot.Slot slot = zone.get(chosenAnchor.sequence());
+                faceDown = slot.faceDown();
+                attackPosition = !slot.defence();
+            }
+        }
+        return de.cas_ual_ty.dueldimension.clientutil.DuelTextures.commandIcon(
+            prompt.options().get(index).command(), faceDown, attackPosition);
     }
 
 
