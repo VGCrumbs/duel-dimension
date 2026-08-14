@@ -440,6 +440,18 @@ public final class MonsterSprites
         row(98502113L, "spellcaster/dark_paladin", 4, Loop.PING_PONG);
         row(30208479L, "spellcaster/magician_of_black_chaos", 4, Loop.PING_PONG);
         row(80304126L, "spellcaster/magicians_valkyria", 4, Loop.PING_PONG);
+
+        // The first winged one, and the reason a layer owns a region rather
+        // than a whole file: this sheet holds SIX wing frames across the top
+        // and FIVE body frames below them, at different cell widths. One grid
+        // over the file cannot describe that; two regions can.
+        put(new Definition(89631139L,
+            new SpriteLayer("dragon/blue_eyes_white_dragon", 0, 104, 0, 152, 5, 1, 0, 5,
+                DEFAULT_TICKS, Loop.PING_PONG),
+            null,
+            Wings.of(new SpriteLayer("dragon/blue_eyes_white_dragon", 0, 0, 0, 104, 6, 1, 0, 6,
+                DEFAULT_TICKS, Loop.PING_PONG)),
+            1.4F));
     }
     // =========================================================================
 
