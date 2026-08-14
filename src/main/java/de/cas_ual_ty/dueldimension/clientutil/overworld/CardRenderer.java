@@ -233,7 +233,7 @@ public final class CardRenderer
      *
      * @return {us, vs}, in the corner order {@link WorldQuad} expects
      */
-    private static float[][] turned(boolean back, float u0, float v0, float u1, float v1,
+    public static float[][] turned(boolean back, float u0, float v0, float u1, float v1,
         int turns)
     {
         // The back face is wound the other way so it looks downwards, which

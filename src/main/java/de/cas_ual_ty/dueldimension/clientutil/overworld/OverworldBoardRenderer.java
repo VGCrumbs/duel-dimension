@@ -121,6 +121,7 @@ public final class OverworldBoardRenderer
 
         drawCards(poseStack, collector, transform, camera);
         drawAttacks(poseStack, collector, transform, camera);
+        drawShatters(poseStack, collector, transform, camera);
     }
 
     /**
@@ -133,6 +134,225 @@ public final class OverworldBoardRenderer
      * ground. Without it an attack is a card that was there and then is not,
      * with nothing in between to say who did it.
      */
+    /** How much of the break is the card turning white before anything moves. */
+    private static final float WHITEN = 0.18F;
+    /** How high a shard is thrown, in field units, before gravity takes it. */
+    private static final float SHARD_RISE = 0.55F;
+    /** And how hard it comes back down. */
+    private static final float SHARD_FALL = 1.5F;
+
+    /**
+     * A destroyed card breaking apart, in three dimensions.
+     * <p>
+     * The duel screen already breaks cards, and this is the SAME break: the
+     * same grid of uneven pieces, the same hash deciding where the fracture
+     * runs and how fast each piece leaves, the same easing. Only the geometry
+     * is new. Two boards showing one card destroyed two different ways would be
+     * two effects to keep in step, and there is no reason for a second fracture
+     * pattern to exist.
+     * <p>
+     * What the flat board cannot do, this does. A shard here leaves the mat --
+     * thrown up and out from the point of impact, tumbling about its own axis
+     * as it goes, and falling back under its own weight. The 2D board shrinks
+     * its pieces to suggest that, because a projected quad cannot turn; out
+     * here they really do turn, so they do not have to pretend.
+     * <p>
+     * The card whitens first and stays whole while it does. Glass goes bright
+     * along its fractures a moment before it lets go, and a card that simply
+     * bursts reads as one being deleted rather than one being destroyed.
+     */
+    private static void drawShatters(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera)
+    {
+        List<de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.ShatterView> breaks =
+            DuelClientState.animations.shattersInFlight(System.currentTimeMillis());
+        if(breaks.isEmpty())
+        {
+            return;
+        }
+        int seat = Math.max(0, ClientDuelField.seat());
+        for(de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.ShatterView shatter : breaks)
+        {
+            // A destroyed card goes to the graveyard, so where it broke is
+            // where it came FROM.
+            FieldLayout.Rect zone = zoneOfRef(shatter.fromZone(), seat);
+            if(zone == null)
+            {
+                continue;
+            }
+            FieldLayout.Rect card = CardMesh.placement(zone, false);
+            int controller = (shatter.fromZone() & 16) != 0
+                ? FieldTransform.controllerFor(seat, false)
+                : FieldTransform.controllerFor(seat, true);
+            double lift = (cardLift(transform) + CardMesh.THICKNESS + 0.02F) * transform.scale();
+            float t = shatter.progress();
+
+            if(t < WHITEN)
+            {
+                drawWhitening(poseStack, collector, transform, camera, card, controller, lift,
+                    shatter, t / WHITEN);
+                continue;
+            }
+            drawShards(poseStack, collector, transform, camera, card, controller, lift, shatter,
+                (t - WHITEN) / (1F - WHITEN));
+        }
+    }
+
+    /** The card still whole, going white along every fracture about to open. */
+    private static void drawWhitening(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera, FieldLayout.Rect card, int controller, double lift,
+        de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.ShatterView shatter, float t)
+    {
+        float[][] uv = CardRenderer.turned(false, shatter.u0(), shatter.v0(), shatter.u1(),
+            shatter.v1(), CardRenderer.turnsFor(controller, false));
+        WorldQuad.submit(poseStack, collector, WorldQuad.Kind.SOLID, shatter.texture(), camera,
+            transform.corners(card, lift), fade(0xFFFFFFFF), uv[0], uv[1]);
+        // The white goes OVER the card rather than into its tint, because a
+        // tint can only take colour away and this has to add light.
+        WorldQuad.submit(poseStack, collector, DuelTextures.WHITE, camera,
+            transform.corners(card, lift + 0.004D * transform.scale()),
+            fade(Math.round(t * t * 235F) << 24 | 0xFFFFFF));
+    }
+
+    /** And then the pieces. */
+    private static void drawShards(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera, FieldLayout.Rect card, int controller, double lift,
+        de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.ShatterView shatter, float t)
+    {
+        int code = shatter.code();
+        int columns = de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.SHARD_COLUMNS;
+        int rows = de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.SHARD_ROWS;
+        float[] cutsX = de.cas_ual_ty.dueldimension.clientutil.DuelAnimations
+            .shardCuts(code, columns, 21);
+        float[] cutsY = de.cas_ual_ty.dueldimension.clientutil.DuelAnimations
+            .shardCuts(code, rows, 22);
+        int turns = CardRenderer.turnsFor(controller, false);
+
+        // Where it broke: off centre so the break is not symmetrical, and well
+        // inside the card so nothing starts on top of the impact. The duel
+        // screen picks it from these same two hashes, so one card breaks at the
+        // same spot on either board.
+        float hitX = card.x() + card.w() * (0.3F + 0.4F * de.cas_ual_ty.dueldimension.clientutil
+            .DuelAnimations.shardNoise(code, 0, 11));
+        float hitY = card.y() + card.h() * (0.3F + 0.4F * de.cas_ual_ty.dueldimension.clientutil
+            .DuelAnimations.shardNoise(code, 0, 12));
+
+        // Out fast, then slowing: a fracture spends its energy at once.
+        float burst = 1F - (1F - t) * (1F - t);
+
+        for(int row = 0; row < rows; row++)
+        {
+            for(int column = 0; column < columns; column++)
+            {
+                int index = row * columns + column;
+                float fu0 = cutsX[column];
+                float fu1 = cutsX[column + 1];
+                float fv0 = cutsY[row];
+                float fv1 = cutsY[row + 1];
+
+                // Each piece on its own schedule, so the group thins out
+                // instead of every shard going on one frame.
+                float fadeFrom = 0.3F + 0.35F * de.cas_ual_ty.dueldimension.clientutil
+                    .DuelAnimations.shardNoise(code, index, 41);
+                float alpha = t <= fadeFrom ? 1F
+                    : Math.max(0F, 1F - (t - fadeFrom) / (1F - fadeFrom));
+                if(alpha <= 0F)
+                {
+                    continue;
+                }
+
+                float x0 = card.x() + card.w() * fu0;
+                float y0 = card.y() + card.h() * fv0;
+                float x1 = card.x() + card.w() * fu1;
+                float y1 = card.y() + card.h() * fv1;
+                float midX = (x0 + x1) / 2F;
+                float midY = (y0 + y1) / 2F;
+
+                // Away from the impact, faster the closer it started to it.
+                float awayX = midX - hitX;
+                float awayY = midY - hitY;
+                float reach = Math.max(0.001F, (float)Math.sqrt(awayX * awayX + awayY * awayY));
+                float speed = (0.9F + 1.4F * de.cas_ual_ty.dueldimension.clientutil
+                    .DuelAnimations.shardNoise(code, index, 31))
+                    * (1F + card.w() / (reach * 6F));
+                float driftX = awayX * burst * speed;
+                float driftY = awayY * burst * speed;
+
+                // Up, and then down. Thrown harder the further out it goes, so
+                // the break opens like a shell rather than a puff.
+                float thrown = SHARD_RISE * (0.4F + 0.6F * de.cas_ual_ty.dueldimension.clientutil
+                    .DuelAnimations.shardNoise(code, index, 51));
+                double rise = (thrown * t - SHARD_FALL * t * t * 0.5F) * transform.scale();
+
+                Vec3 centre = transform.at(midX + driftX, midY + driftY, lift + rise);
+                // Tumbling about an axis of its own, which is the thing a flat
+                // board could only suggest by shrinking its pieces.
+                Vec3 axis = tumbleAxis(code, index);
+                float spin = t * (1.6F + 4F * de.cas_ual_ty.dueldimension.clientutil
+                    .DuelAnimations.shardNoise(code, index, 61));
+
+                Vec3[] corners = new Vec3[4];
+                float[] cornerX = {x0, x0, x1, x1};
+                float[] cornerY = {y0, y1, y1, y0};
+                for(int corner = 0; corner < 4; corner++)
+                {
+                    Vec3 at = transform.at(cornerX[corner] + driftX, cornerY[corner] + driftY,
+                        lift + rise);
+                    corners[corner] = centre.add(spin(at.subtract(centre), axis, spin));
+                }
+
+                float[][] uv = CardRenderer.turned(false,
+                    lerp(shatter.u0(), shatter.u1(), fu0), lerp(shatter.v0(), shatter.v1(), fv0),
+                    lerp(shatter.u0(), shatter.u1(), fu1), lerp(shatter.v0(), shatter.v1(), fv1),
+                    turns);
+                // Squared, as the duel screen fades it: light falls away faster
+                // than a straight line looks like it should.
+                WorldQuad.submit(poseStack, collector, shatter.texture(), camera, corners,
+                    fade(Math.round(alpha * alpha * 255F) << 24 | 0xFFFFFF), uv[0], uv[1]);
+            }
+        }
+    }
+
+    private static float lerp(float from, float to, float at)
+    {
+        return from + (to - from) * at;
+    }
+
+    /**
+     * A tumble axis for one shard: fixed for that shard, different from its
+     * neighbours'.
+     * <p>
+     * Out of the same hash as everything else about the break, because this
+     * runs once a frame and the piece that was turning one way last frame has
+     * to still be turning that way in this one.
+     */
+    private static Vec3 tumbleAxis(int code, int index)
+    {
+        double yaw = de.cas_ual_ty.dueldimension.clientutil.DuelAnimations
+            .shardNoise(code, index, 71) * Math.PI * 2D;
+        double pitch = de.cas_ual_ty.dueldimension.clientutil.DuelAnimations
+            .shardNoise(code, index, 81) * Math.PI - Math.PI / 2D;
+        return new Vec3(Math.cos(pitch) * Math.cos(yaw), Math.sin(pitch),
+            Math.cos(pitch) * Math.sin(yaw)).normalize();
+    }
+
+    /**
+     * Rodrigues' rotation: one offset turned about an axis through the shard's
+     * own centre.
+     * <p>
+     * Applied to the OFFSETS rather than to the corners, so a shard turns about
+     * itself and not about the middle of the board -- which is the difference
+     * between a piece tumbling and a piece orbiting.
+     */
+    private static Vec3 spin(Vec3 offset, Vec3 axis, float angle)
+    {
+        double cos = Math.cos(angle);
+        double sin = Math.sin(angle);
+        return offset.scale(cos)
+            .add(axis.cross(offset).scale(sin))
+            .add(axis.scale(axis.dot(offset) * (1D - cos)));
+    }
+
     private static void drawAttacks(PoseStack poseStack, SubmitNodeCollector collector,
         FieldTransform transform, Vec3 camera)
     {

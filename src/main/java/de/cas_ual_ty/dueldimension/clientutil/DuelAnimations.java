@@ -97,8 +97,8 @@ public class DuelAnimations
      * equal squares reads as a card sliding apart into tiles, which is what
      * this used to look like.
      */
-    private static final int SHARD_COLUMNS = 5;
-    private static final int SHARD_ROWS = 4;
+    public static final int SHARD_COLUMNS = 5;
+    public static final int SHARD_ROWS = 4;
     /** However far behind we are, nothing flashes past faster than this. */
     private static final long FLOOR_MS = frames(5);
 
@@ -809,7 +809,7 @@ public class DuelAnimations
      * cover the card exactly. Returned as {@code pieces + 1} edges from 0 to 1,
      * which is the form both the geometry and the texture window want.
      */
-    private static float[] shardCuts(int code, int pieces, int salt)
+    public static float[] shardCuts(int code, int pieces, int salt)
     {
         float[] weight = new float[pieces];
         float total = 0F;
@@ -838,7 +838,7 @@ public class DuelAnimations
      * give the same answer twice — otherwise the card does not break, it
      * seethes. A hash gives that for free and needs nothing remembered.
      */
-    private static float shardNoise(int code, int index, int salt)
+    public static float shardNoise(int code, int index, int salt)
     {
         int hash = code * 0x9E3779B9 + index * 0x85EBCA6B + salt * 0xC2B2AE35;
         hash ^= hash >>> 15;
@@ -1125,6 +1125,38 @@ public class DuelAnimations
      */
     public record AttackView(int fromZone, int toZone, float progress)
     {
+    }
+
+    /**
+     * A card coming apart, for a board that draws its own geometry.
+     * <p>
+     * The same arrangement as {@link AttackView}, and for the same reason: the
+     * world board has nothing in common with this class's projected quads, and
+     * only the TIMING and the fracture are shared. The texture and its window
+     * ride along because working them out means knowing which art a code wears
+     * and whether that art is EDOPro's, and neither of those is the world
+     * board's business.
+     */
+    public record ShatterView(int code, int fromZone, float progress, Identifier texture,
+        float u0, float v0, float u1, float v1)
+    {
+    }
+
+    /** Every card currently breaking, with how far through it is. */
+    public java.util.List<ShatterView> shattersInFlight(long now)
+    {
+        java.util.List<ShatterView> views = new ArrayList<>(shatters.size());
+        for(Playing animation : shatters)
+        {
+            DuelEvent event = animation.event();
+            Identifier texture = artFor(event.code());
+            boolean edoproArt = isEdoproArt(texture);
+            views.add(new ShatterView(event.code(), event.fromZone(), animation.progress(now),
+                texture,
+                edoproArt ? 0F : DuelTextures.CARD_U0, edoproArt ? 0F : DuelTextures.CARD_V0,
+                edoproArt ? 1F : DuelTextures.CARD_U1, edoproArt ? 1F : DuelTextures.CARD_V1));
+        }
+        return views;
     }
 
     /** Every attack currently in flight, with how far through it is. */

@@ -421,25 +421,38 @@ public final class DuelHud
         {
             return;
         }
-        String word = DuelClientState.won ? "VICTORY" : "DEFEAT";
-        int colour = DuelClientState.won ? 0x7CE38B : 0xFF6B6B;
-        float scale = Math.max(2F, chromeScale(screenW, screenH) * 2.6F);
+        // Read from the RESULT, exactly as the duel screen reads it, and not
+        // from the won flag -- which is the server's word about a seat rather
+        // than this viewer's, and had the board congratulating the loser. One
+        // string, one test, and the two boards cannot disagree about who won.
+        String outcome = DuelClientState.result == null ? "" : DuelClientState.result.trim();
+        boolean won = outcome.equalsIgnoreCase("Victory");
+        boolean drew = outcome.equalsIgnoreCase("Draw");
+        String headline = won ? "VICTORY" : drew ? "DRAW" : "DEFEAT";
+        int colour = won ? 0xFFD700 : drew ? 0xFFC2C9D6 : 0xFF4C4C;
+        // And nothing under it. The duel screen used to carry a second line and
+        // dropped it; repeating the engine's own wording beneath a word that
+        // already says it is the line it dropped.
+
         int shade = Math.round(alpha * 255F) << 24;
+        float scale = Math.max(2F, chromeScale(screenW, screenH) * 3F);
+        int bandH = Math.round(font.lineHeight * scale) + 18;
+        int bandTop = Math.round(screenH * 0.36F);
+
+        // The band, but not the duel screen's full-screen dim over it: that
+        // screen is covering a board it is finished with, and this one is
+        // watching a board fade. Blacking it out would hide the very thing
+        // being said goodbye to.
+        extractor.fill(0, bandTop, screenW, bandTop + bandH, Math.round(alpha * 176F) << 24);
+        extractor.fill(0, bandTop, screenW, bandTop + 1, shade | colour);
+        extractor.fill(0, bandTop + bandH - 1, screenW, bandTop + bandH, shade | colour);
 
         extractor.pose().pushMatrix();
         extractor.pose().scale(scale, scale);
-        extractor.centeredText(font, word, Math.round(screenW / 2F / scale),
-            Math.round((screenH * 0.36F) / scale), shade | colour);
+        extractor.centeredText(font, headline, Math.round(screenW / 2F / scale),
+            Math.round((bandTop + (bandH - font.lineHeight * scale) / 2F) / scale),
+            shade | colour);
         extractor.pose().popMatrix();
-
-        // What actually happened, under it and at reading size: "VICTORY" says
-        // the outcome, and the engine's own line says why.
-        String reason = DuelClientState.result;
-        if(reason != null && !reason.isEmpty())
-        {
-            extractor.centeredText(font, reason, screenW / 2,
-                Math.round(screenH * 0.36F + font.lineHeight * scale + 6), shade | 0xE8E8E8);
-        }
     }
 
     /**
