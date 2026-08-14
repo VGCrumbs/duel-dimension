@@ -74,11 +74,20 @@ public final class DuelHud
         // them fit at any size rather than at one authored one.
         int barW = Math.max(90, Math.min(230, screenW / 3 - 12));
 
+        // Through the animation, not straight from the board. A life total
+        // that jumps says a number changed; one that runs down says how much
+        // was taken and by what, which is the whole reason the duel screen
+        // animates it. The state is already being ticked -- tickPlayback does
+        // it on the client tick -- so this is a read, not a second animator.
+        long now = System.currentTimeMillis();
         drawLifeBar(extractor, font, 6, TOP, barW, seat < 0 ? "Seat 1" : "You",
-            board.self().lifePoints(), 0xFF3FA34D);
+            DuelClientState.animations.lifePointState(0, board.self().lifePoints(), now),
+            0xFF3FA34D);
         drawLifeBar(extractor, font, screenW - barW - 6, TOP, barW,
             seat < 0 ? "Seat 2" : "Opponent",
-            board.opponent() == null ? 0 : board.opponent().lifePoints(), 0xFFB03636);
+            DuelClientState.animations.lifePointState(1,
+                board.opponent() == null ? 0 : board.opponent().lifePoints(), now),
+            0xFFB03636);
 
         drawPhaseBar(extractor, board, screenW);
         drawClock(extractor, font, screenW);
@@ -92,16 +101,32 @@ public final class DuelHud
      * single shipped texture the duel screen uses.
      */
     private static void drawLifeBar(GuiGraphicsExtractor extractor, Font font, int x, int y,
-        int barW, String name, int lifePoints, int colour)
+        int barW, String name,
+        de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.LifePointState change, int colour)
     {
-        int filled = Math.max(0, Math.min(barW - 4, Math.round((barW - 4) * lifePoints / 8000F)));
+        int lifePoints = change.displayedLifePoints();
+        int filled = fill(barW, lifePoints);
+        int target = fill(barW, change.targetLifePoints());
         extractor.fillGradient(x + 2, y + 2, x + 2 + filled, y + BAR_H - 2,
             shade(colour, 1.25F), shade(colour, 0.75F));
+        // The stretch between where the bar was and where it is going, flashed
+        // white: the part being lost is shown being lost.
+        if(change.whiteAlpha() > 0F && filled != target)
+        {
+            int alpha = Math.round(change.whiteAlpha() * 255F) << 24;
+            extractor.fill(x + 2 + Math.min(filled, target), y + 2,
+                x + 2 + Math.max(filled, target), y + BAR_H - 2, alpha | 0xFFFFFF);
+        }
         DdBlitUtil.fullBlit(extractor, DuelTextures.LP_FRAME, x, y, barW, BAR_H);
 
         extractor.text(font, name, x + 5, y + 3, 0xFFFFFFFF, false);
         String value = Integer.toString(lifePoints);
         extractor.text(font, value, x + barW - font.width(value) - 5, y + 3, 0xFFFFFFFF, false);
+    }
+
+    private static int fill(int barW, int lifePoints)
+    {
+        return Math.max(0, Math.min(barW - 4, Math.round((barW - 4) * lifePoints / 8000F)));
     }
 
     /** Lit from above, so the bar reads as a rounded surface and not a block. */

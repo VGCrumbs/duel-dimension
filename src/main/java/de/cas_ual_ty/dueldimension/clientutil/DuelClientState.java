@@ -198,6 +198,7 @@ public final class DuelClientState
     public static void openScreenForPrompt()
     {
         if(de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()
+            && !de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.screenPreferred()
             && PromptOptions.boardCanAnswer(prompt))
         {
             return;

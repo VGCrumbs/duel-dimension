@@ -288,14 +288,42 @@ public class BoardPointerScreen extends Screen
         {
             rows.add(DECLINE);
         }
+        // Always available, prompt or no prompt: a duel you cannot leave is
+        // worse than one you can lose, and on a board there is no menu bar to
+        // leave it from.
+        rows.add(SURRENDER);
         return rows;
     }
 
     /** Not an option index: the answer that is no options at all. */
     private static final int DECLINE = -1;
+    /** Nor this one: conceding the duel outright. */
+    private static final int SURRENDER = -2;
+
+    /**
+     * Surrender is armed by one click and taken by the next.
+     * <p>
+     * Every other row here is recoverable -- a wrong option loses a play, and
+     * the duel goes on. This one ends the game, and it sits a few pixels from
+     * the rows a duellist clicks all turn, so it asks twice.
+     */
+    private boolean surrenderArmed;
 
     private void answer(int index)
     {
+        if(index == SURRENDER)
+        {
+            if(!surrenderArmed)
+            {
+                surrenderArmed = true;
+                return;
+            }
+            net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+                new de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.Surrender());
+            onClose();
+            return;
+        }
+        surrenderArmed = false;
         if(index == DECLINE)
         {
             decline();
@@ -362,7 +390,9 @@ public class BoardPointerScreen extends Screen
         int colour = hovered != null
             && PromptOptions.actionable(DuelClientState.prompt, false, hovered)
                 ? 0xFF7CE38B : 0xFFC2C9D6;
-        extractor.centeredText(font, label, width / 2, height - 58, colour);
+        // Above the rows, which are themselves above the hand.
+        extractor.centeredText(font, label, width / 2,
+            looseY(0) - ROW_GAP - font.lineHeight, colour);
 
         List<Integer> loose = looseRows();
         if(!loose.isEmpty())
@@ -390,10 +420,22 @@ public class BoardPointerScreen extends Screen
         return width / 2 - ROW_W / 2;
     }
 
+    /**
+     * Stacked upwards from just above the hand.
+     * <p>
+     * Measured against {@link HandLayout#topEdge} rather than from the bottom
+     * of the screen: the hand sits on the bottom edge now and is sized to the
+     * viewport, so a row placed at a fixed offset from the bottom is a row
+     * written across the cards.
+     */
     private int looseY(int slot)
     {
-        return height - 44 + slot * ROW_H;
+        int rows = Math.max(1, looseRows().size());
+        return HandLayout.topEdge(height) - ROW_GAP - (rows - slot) * ROW_H;
     }
+
+    /** Clear air between the rows and the cards under them. */
+    private static final int ROW_GAP = 6;
 
     private void drawLoose(GuiGraphicsExtractor extractor, List<Integer> loose, int mouseX,
         int mouseY)
@@ -411,6 +453,10 @@ public class BoardPointerScreen extends Screen
 
     private String label(int index)
     {
+        if(index == SURRENDER)
+        {
+            return surrenderArmed ? "Surrender -- click again" : "Surrender";
+        }
         if(index == DECLINE)
         {
             return "Pass";

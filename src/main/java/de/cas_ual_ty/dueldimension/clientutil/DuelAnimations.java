@@ -1114,6 +1114,31 @@ public class DuelAnimations
     }
 
     /** Drops everything, for when a duel ends or is left. */
+    /**
+     * An attack being played, for a renderer that is not the 2D board.
+     * <p>
+     * The zones are packed the way {@link DuelEvent#zoneOf} packs them, which
+     * is the same packing {@code EnginePrompt.zoneRef} uses; a caller unpacks
+     * them with the bits that put them there. Exposed rather than a second
+     * render method, because the world board's geometry has nothing in common
+     * with this class's projected quads and only the TIMING is shared.
+     */
+    public record AttackView(int fromZone, int toZone, float progress)
+    {
+    }
+
+    /** Every attack currently in flight, with how far through it is. */
+    public java.util.List<AttackView> attacksInFlight(long now)
+    {
+        java.util.List<AttackView> views = new ArrayList<>(attacks.size());
+        for(Playing animation : attacks)
+        {
+            views.add(new AttackView(animation.event().fromZone(), animation.event().toZone(),
+                animation.progress(now)));
+        }
+        return views;
+    }
+
     public void clear()
     {
         queue.clear();

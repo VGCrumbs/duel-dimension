@@ -139,6 +139,37 @@ public class DuelDimensionFabricClient implements ClientModInitializer
             // in hand without anyone seeing it happen, and the duel disk is in
             // one of those slots.
             de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.holdHotbar(client);
+            // Swapping between the two views of the duel. Remembered, so the
+            // screen is not handed back the moment the board could take the
+            // question -- which is right when it opened by itself and wrong
+            // when the player asked for it.
+            while(de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds.DUEL_VIEW.consumeClick())
+            {
+                de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField
+                    .toggleScreen(client);
+            }
+
+            // A click while the camera is still the player's acts on whatever
+            // the crosshair is on. Consumed so it does not also reach the world
+            // as a swing; the server refuses a locked duellist's block
+            // interactions anyway, and this stops the arm swinging at nothing.
+            if(de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()
+                && client.gui.screen() == null)
+            {
+                // consumeClick drains the queued presses, which is all that is
+                // needed: with the queue empty the game's own handler finds
+                // nothing to act on, so the click does not also swing at the
+                // air. release() is not ours to call -- it is protected.
+                while(client.options.keyAttack.consumeClick())
+                {
+                    de.cas_ual_ty.dueldimension.clientutil.overworld.CrosshairAction.click(client);
+                }
+                while(client.options.keyUse.consumeClick())
+                {
+                    de.cas_ual_ty.dueldimension.clientutil.overworld.CrosshairAction.click(client);
+                }
+            }
+
             while(de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds.DUEL_ACT.consumeClick())
             {
                 if(de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()

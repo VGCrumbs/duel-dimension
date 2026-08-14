@@ -60,6 +60,18 @@ public final class HandLayout
         return Math.max(4, cardHeight(screenH) / 6);
     }
 
+    /**
+     * The top edge of the fan, including the lift a hovered card takes.
+     * <p>
+     * Anything drawn over the board has to stop above this. The hand moved to
+     * the bottom of the screen and grew, and the prompt rows stayed where they
+     * were -- so they came out written across the cards.
+     */
+    public static int topEdge(int screenH)
+    {
+        return screenH - ABOVE_HOTBAR - cardHeight(screenH) - hoverLift(screenH);
+    }
+
     /** One card's place on screen. */
     public record Slot(int x, int y, int width, int height)
     {

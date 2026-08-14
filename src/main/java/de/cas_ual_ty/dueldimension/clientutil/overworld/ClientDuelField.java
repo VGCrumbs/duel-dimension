@@ -127,6 +127,42 @@ public final class ClientDuelField
         }
     }
 
+    /**
+     * True while the player has asked to watch a world duel on the 2D screen.
+     * <p>
+     * The board and the screen are two views of one duel, and the screen is
+     * normally handed back the moment the board can take the question again.
+     * That is right when the screen opened by itself, for a prompt the board
+     * could not answer -- and wrong when the player asked for it, which is why
+     * asking is remembered rather than inferred from a screen being open.
+     */
+    private static boolean preferScreen;
+
+    /** Is the player deliberately on the duel screen during a world duel? */
+    public static boolean screenPreferred()
+    {
+        return preferScreen;
+    }
+
+    /** Swaps between the board and the duel screen. */
+    public static void toggleScreen(net.minecraft.client.Minecraft client)
+    {
+        if(!locked())
+        {
+            return;
+        }
+        preferScreen = !preferScreen;
+        if(preferScreen)
+        {
+            de.cas_ual_ty.dueldimension.clientutil.DuelClientState.openScreen();
+        }
+        else if(client.gui.screen()
+            instanceof de.cas_ual_ty.dueldimension.clientutil.EngineDuelScreen open)
+        {
+            open.onClose();
+        }
+    }
+
     /** Is this player walking to a mark right now? */
     public static boolean walking()
     {
@@ -152,6 +188,7 @@ public final class ClientDuelField
         seat = -1;
         locked = false;
         heldSlot = -1;
+        preferScreen = false;
         spectatorBoard = null;
     }
 }

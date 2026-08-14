@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import de.cas_ual_ty.dueldimension.clientutil.BoardTarget;
 import de.cas_ual_ty.dueldimension.clientutil.CardFaces;
 import de.cas_ual_ty.dueldimension.clientutil.DuelClientState;
+import de.cas_ual_ty.dueldimension.clientutil.DuelTextures;
 import de.cas_ual_ty.dueldimension.clientutil.FieldLayout;
 import de.cas_ual_ty.dueldimension.clientutil.PlayMats;
 import de.cas_ual_ty.dueldimension.ocg.OcgConstants;
@@ -105,6 +106,96 @@ public final class OverworldBoardRenderer
         }
 
         drawCards(poseStack, collector, transform, camera);
+        drawAttacks(poseStack, collector, transform, camera);
+    }
+
+    /**
+     * The attacks in flight, as a bolt across the board from attacker to
+     * target.
+     * <p>
+     * The timing is the duel screen's -- the same animation state, already
+     * ticked by tickPlayback -- and only the geometry is new, because a lunge
+     * drawn in a projected 2D board has nothing in common with one drawn on the
+     * ground. Without it an attack is a card that was there and then is not,
+     * with nothing in between to say who did it.
+     */
+    private static void drawAttacks(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera)
+    {
+        List<de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.AttackView> attacks =
+            DuelClientState.animations.attacksInFlight(System.currentTimeMillis());
+        if(attacks.isEmpty())
+        {
+            return;
+        }
+        int seat = Math.max(0, ClientDuelField.seat());
+        for(de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.AttackView attack : attacks)
+        {
+            FieldLayout.Rect from = zoneOfRef(attack.fromZone(), seat);
+            FieldLayout.Rect to = zoneOfRef(attack.toZone(), seat);
+            if(from == null)
+            {
+                continue;
+            }
+            float fx = from.x() + from.w() / 2F;
+            float fy = from.y() + from.h() / 2F;
+            // A direct attack has no target zone: it goes at the duellist, so
+            // it runs off the far end of the board rather than to a card.
+            float tx = to == null ? FieldTransform.CENTRE_X : to.x() + to.w() / 2F;
+            float ty = to == null
+                ? (fy > FieldTransform.CENTRE_Y ? FieldLayout.FIELD_MIN_Y : FieldLayout.FIELD_MAX_Y)
+                : to.y() + to.h() / 2F;
+
+            // Out and back: the bolt reaches the target at the halfway point of
+            // the animation and fades from there, which is the beat the 2D
+            // board's lunge keeps.
+            float reach = Math.min(1F, attack.progress() * 2F);
+            float alpha = attack.progress() < 0.5F ? 1F : 1F - (attack.progress() - 0.5F) * 2F;
+            float headX = fx + (tx - fx) * reach;
+            float headY = fy + (ty - fy) * reach;
+
+            // A ribbon along the line, one card wide, lying just over the mat.
+            float dx = headX - fx;
+            float dy = headY - fy;
+            float length = (float)Math.sqrt(dx * dx + dy * dy);
+            if(length < 1e-3F)
+            {
+                continue;
+            }
+            float halfW = 0.28F;
+            float acrossX = -dy / length * halfW;
+            float acrossY = dx / length * halfW;
+            double lift = (CARD_LIFT + CardMesh.THICKNESS + 0.01F) * transform.scale();
+
+            WorldQuad.submit(poseStack, collector, DuelTextures.ATTACK, camera, new Vec3[] {
+                transform.at(fx - acrossX, fy - acrossY, lift),
+                transform.at(headX - acrossX, headY - acrossY, lift),
+                transform.at(headX + acrossX, headY + acrossY, lift),
+                transform.at(fx + acrossX, fy + acrossY, lift)},
+                Math.round(Math.max(0F, alpha) * 255F) << 24 | 0xFFFFFF);
+        }
+    }
+
+    /**
+     * The zone a packed reference names, as a rectangle on the board.
+     * <p>
+     * Unpacked with the bits that packed it -- {@code EnginePrompt.zoneRef}
+     * puts the opponent flag at 16, the monster-zone flag at 8 and the sequence
+     * in the low three -- and then turned from the engine's numbering into the
+     * board's absolute halves.
+     */
+    private static FieldLayout.Rect zoneOfRef(int ref, int seat)
+    {
+        if(ref < 0)
+        {
+            return null;
+        }
+        boolean opponent = (ref & 16) != 0;
+        boolean monsterZone = (ref & 8) != 0;
+        int sequence = ref & 7;
+        int half = FieldTransform.controllerFor(seat, !opponent);
+        return FieldLayout.zone(half, monsterZone ? OcgConstants.LOCATION_MZONE
+            : OcgConstants.LOCATION_SZONE, sequence);
     }
 
     /**

@@ -581,7 +581,9 @@ public class ClientProxy implements ISidedProxy
         // is how a board ends up covered by a screen at the one moment its
         // owner was looking at it.
         if(!update.over() && !update.events().isEmpty()
-            && !de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()
+            && !(de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()
+                && !de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField
+                    .screenPreferred())
             && !(getMinecraft().gui.screen() instanceof EngineDuelScreen))
         {
             // gui.setScreen, not setScreenAndShow: the latter forces a frame,

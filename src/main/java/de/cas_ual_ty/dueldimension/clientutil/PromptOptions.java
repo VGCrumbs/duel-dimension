@@ -90,9 +90,20 @@ public final class PromptOptions
      */
     public static boolean boardCanAnswer(EnginePrompt prompt)
     {
-        return prompt != null && prompt.maxSelect() <= 1
-            && (prompt.kind() == EnginePrompt.Kind.CHOOSE
-                || prompt.kind() == EnginePrompt.Kind.PLACES);
+        if(prompt == null)
+        {
+            return false;
+        }
+        // isSingleChoice is the engine's own test for "one option, sent as one
+        // index", and it is what the duel screen already trusts for exactly
+        // this question -- a MULTI with a maximum of one is a CHOOSE wearing a
+        // different label, and MSG_SELECT_CARD produces precisely that. POSITION
+        // is four postures of one card, which is a list to pick one from and
+        // nothing to do with the board; a summon asks it, so refusing it here
+        // meant every summon pulled the screen over the board.
+        return prompt.isSingleChoice()
+            || ((prompt.kind() == EnginePrompt.Kind.PLACES
+                || prompt.kind() == EnginePrompt.Kind.POSITION) && prompt.maxSelect() <= 1);
     }
 
     /**
@@ -114,7 +125,13 @@ public final class PromptOptions
         for(int i = 0; i < prompt.options().size(); i++)
         {
             EnginePrompt.Option option = prompt.options().get(i);
-            if(!option.hasSlot() && option.cardCode() == 0)
+            // Not about anything on the board is the whole test. Requiring
+            // no card code as well threw away "Yes": a yes/no about an effect
+            // is built slotless but carrying the effect's code on purpose, so
+            // only "No" reached the row and the answer could not be given at
+            // all unless a card with the same code happened to be on the
+            // field -- impossible for a graveyard or deck trigger.
+            if(!option.hasSlot())
             {
                 found.add(i);
             }

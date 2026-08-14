@@ -43,6 +43,20 @@ public final class HubKeybinds
         CATEGORY));
 
     /**
+     * Swaps between the board in the world and the duel screen, mid-duel.
+     * <p>
+     * Both are views of one duel -- the same client state, the same engine, the
+     * same prompt -- so this is a change of where you are looking and not of
+     * what is happening. Worth having because some things really are easier on
+     * the screen: reading a long chain, or a selection with a dozen candidates.
+     */
+    public static final KeyMapping DUEL_VIEW = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+        "key.dueldimension.duel_view",
+        InputConstants.Type.KEYSYM,
+        GLFW.GLFW_KEY_G,
+        CATEGORY));
+
+    /**
      * Acts on the card being looked at during an overworld duel.
      * <p>
      * Its own binding rather than the vanilla use key, which is already

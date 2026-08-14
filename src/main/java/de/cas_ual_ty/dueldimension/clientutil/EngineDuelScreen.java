@@ -277,6 +277,28 @@ public class EngineDuelScreen extends Screen
             pendingAimZone = -1;
             rebuild();
         }
+
+        // Hand the board back as soon as it can take the question.
+        //
+        // This screen opens over a world board for the prompts the board
+        // cannot answer, and then had no way to leave: answer() ends in
+        // rebuild(), Escape is refused while the duel runs, and the act key
+        // will not reopen the pointer while a screen exists. A Normal Summon
+        // asks for a position, which the board could not answer -- so the
+        // first summon of a duel ended world-board play permanently and left
+        // the player on the 2D screen for the rest of it.
+        //
+        // Asked with the OPENER's own predicate, so the thing that closes it
+        // and the thing that opens it cannot disagree about which prompts
+        // belong to which.
+        if(de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()
+            && !de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.screenPreferred()
+            && !DuelClientState.over
+            && (DuelClientState.prompt == null
+                || PromptOptions.boardCanAnswer(DuelClientState.prompt)))
+        {
+            onClose();
+        }
         // The declare-a-card box used to be ticked from here to blink its
         // cursor. EditBox has no tick() any more -- the blink is driven from
         // the frame counter inside the widget -- so there is nothing left for
