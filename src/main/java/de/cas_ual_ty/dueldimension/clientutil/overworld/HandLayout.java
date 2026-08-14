@@ -30,7 +30,7 @@ public final class HandLayout
      * so that the reference 920p at gui scale 3 comes out at the size this was
      * hand-tuned to.
      */
-    private static final float HEIGHT_SHARE = 0.20F;
+    private static final float HEIGHT_SHARE = 0.17F;
     private static final int MIN_CARD_H = 34;
     private static final int MAX_CARD_H = 140;
 

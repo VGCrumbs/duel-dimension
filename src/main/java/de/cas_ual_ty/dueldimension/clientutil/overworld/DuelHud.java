@@ -52,9 +52,8 @@ public final class DuelHud
      */
     private static final int BAR_W_BASE = 256;
     private static final int BAR_H_BASE = 32;
-    private static final int BAR_W_MAX = 190;
-    /** The turn counter is a small square, not a third bar. */
-    private static final int TURN_W = 26;
+    /** How much of the window one life bar takes, at any window size. */
+    private static final float BAR_W_SHARE = 0.30F;
     private static final int TOP = 4;
     /** The frame's raised border, which no text belongs on. */
     private static final int INSET = 6;
@@ -85,8 +84,22 @@ public final class DuelHud
     /** The life frame's drawn height at this width, for anything measuring off it. */
     public static int barHeight(int screenW)
     {
-        int barW = Math.min(BAR_W_MAX, (screenW - EDGE * 2 - GAP * 2) / 2 - TURN_W / 2);
-        return Math.max(10, Math.round(barW * (float)BAR_H_BASE / BAR_W_BASE));
+        return Math.max(9, Math.round(barWidth(screenW) * (float)BAR_H_BASE / BAR_W_BASE));
+    }
+
+    /**
+     * A share of the width, not a cap on it.
+     * <p>
+     * It was a cap, which had it backwards: capping the width makes the bars a
+     * small part of a large screen and the WHOLE of a small one, so the smaller
+     * the window the more of it the instruments ate. A fraction gives them the
+     * same share of any window, which is what "the same size" means when the
+     * window can be any size at all.
+     */
+    private static int barWidth(int screenW)
+    {
+        int room = (screenW - EDGE * 2 - GAP * 2) / 2 - 12;
+        return Math.max(70, Math.min(room, Math.round(screenW * BAR_W_SHARE)));
     }
 
     /** Half again, so the countdown reads without looking for it. */
@@ -117,9 +130,9 @@ public final class DuelHud
         // left over. The frame is a picture of a bar, and a picture pulled to
         // three times its height stops looking like one -- so the height comes
         // from the width through the art's ratio, and the width is capped.
-        int barW = Math.min(BAR_W_MAX, (screenW - EDGE * 2 - GAP * 2) / 2 - TURN_W / 2);
-        int barH = Math.max(10, Math.round(barW * (float)BAR_H_BASE / BAR_W_BASE));
-        int turnW = TURN_W;
+        int barW = barWidth(screenW);
+        int barH = barHeight(screenW);
+        int turnW = Math.max(16, Math.round(barH * 1.3F));
 
         // Through the animation, not straight from the board. A life total
         // that jumps says a number changed; one that runs down says how much
@@ -255,7 +268,7 @@ public final class DuelHud
 
     private static int cellWidth(int screenW)
     {
-        return Math.max(20, Math.min(CELL_W_BASE, Math.round(screenW * 0.075F)));
+        return Math.max(15, Math.min(CELL_W_BASE, Math.round(screenW * 0.062F)));
     }
 
     private static int cellHeight(int screenW)

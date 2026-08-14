@@ -215,7 +215,12 @@ public final class CardRenderer
         // handing it the front's texture coordinates turned the art a quarter.
         // Its own order, so the picture on the underside stands the same way up
         // as the one on top.
-        float[] us = back ? new float[] {u0, u1, u1, u0} : new float[] {u0, u0, u1, u1};
+        // The back's u runs the other way. Its corners walk the rectangle in
+        // the opposite order, which the v order below accounts for -- but it is
+        // also being LOOKED AT from the other side, and a picture that reads
+        // correctly from above reads backwards from underneath. Mirroring u is
+        // what turns it round to face the person who has crouched to see it.
+        float[] us = back ? new float[] {u1, u0, u0, u1} : new float[] {u0, u0, u1, u1};
         float[] vs = back ? new float[] {v0, v0, v1, v1} : new float[] {v0, v1, v1, v0};
         float[] outU = new float[4];
         float[] outV = new float[4];
