@@ -162,6 +162,87 @@ public final class DuelHud
     /** Under this much left, the clock is a warning rather than a fact. */
     private static final long CLOCK_WARN_MS = 60_000L;
 
+    /** The duel screen's own footer button, at the size it is drawn there. */
+    private static final int CANCEL_W = 74;
+    private static final int CANCEL_H = 16;
+
+    /**
+     * The viewport this mod's layouts are measured against: 1634 by 920 at gui
+     * scale 3 is 545 across. Chrome drawn at a scale of one here is chrome
+     * drawn at the size it was designed at.
+     */
+    private static final float REFERENCE_BASE = 545F;
+
+    /** How much larger or smaller than designed a piece of chrome is drawn. */
+    private static float chromeScale(int screenW, int screenH)
+    {
+        return Math.clamp(reference(screenW, screenH) / REFERENCE_BASE, 0.8F, 1.6F);
+    }
+
+    /**
+     * Where the way out sits, as {x, y, width, height}, or null when there is
+     * nothing to back out of.
+     * <p>
+     * Bottom left, which is the one corner of a duel that holds nothing: the
+     * hand is centred along the bottom, the instruments are along the top, and
+     * a card's own menu opens over the card. Drawn and hit-tested from the same
+     * rectangle, so the button cannot be somewhere other than where it is
+     * clicked.
+     */
+    public static int[] cancelBounds(int screenW, int screenH)
+    {
+        if(!de.cas_ual_ty.dueldimension.clientutil.PromptOptions.canDecline(
+            DuelClientState.prompt) || DuelClientState.over)
+        {
+            return null;
+        }
+        float scale = chromeScale(screenW, screenH);
+        int cancelW = Math.round(CANCEL_W * scale);
+        int cancelH = Math.round(CANCEL_H * scale);
+        return new int[] {EDGE, screenH - EDGE - cancelH, cancelW, cancelH};
+    }
+
+    /**
+     * The way out of an action, in the shipped button art the duel screen uses
+     * for the very same word.
+     * <p>
+     * Right-click has always declined, and a right-click is not something a
+     * board teaches you. Backing out of a half-made summon is common enough --
+     * wrong card, wrong zone, changed your mind about the chain -- that it
+     * belongs on the screen where it can be seen, and it is only drawn while
+     * the engine will actually accept it.
+     */
+    public static void drawCancel(GuiGraphicsExtractor extractor, Font font, int mouseX,
+        int mouseY)
+    {
+        int[] at = cancelBounds(extractor.guiWidth(), extractor.guiHeight());
+        if(at == null)
+        {
+            return;
+        }
+        boolean over = mouseX >= at[0] && mouseX < at[0] + at[2]
+            && mouseY >= at[1] && mouseY < at[1] + at[3];
+        de.cas_ual_ty.dueldimension.clientutil.hub.NineSlice.draw(extractor,
+            de.cas_ual_ty.dueldimension.clientutil.hub.HubTextures.BUTTON,
+            at[0], at[1], at[2], at[3], over ? 1 : 0, 3);
+        String label = cancelLabel();
+        extractor.text(font, label, at[0] + (at[2] - font.width(label)) / 2,
+            at[1] + (at[3] - font.lineHeight) / 2 + 1, 0xFFE6EAF2, true);
+    }
+
+    /**
+     * A sort prompt is not cancelled, it is accepted as it stands -- so the
+     * duel screen calls the very same button "Keep order" there, and so does
+     * this.
+     */
+    private static String cancelLabel()
+    {
+        de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt = DuelClientState.prompt;
+        return prompt != null
+            && prompt.kind() == de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt.Kind.SORT
+            ? "Keep order" : "Cancel";
+    }
+
     /**
      * Draws the lot along the top of the screen.
      *

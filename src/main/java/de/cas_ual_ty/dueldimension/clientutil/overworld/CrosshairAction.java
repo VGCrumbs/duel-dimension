@@ -76,6 +76,14 @@ public final class CrosshairAction
             }
             return false;
         }
+        // An empty square with one thing to do is not a menu: the click has
+        // already said "here", which is the whole answer to "where". Answered
+        // outright, and the camera is never taken for it.
+        if(options.size() == 1 && !target.hasCard())
+        {
+            DuelActionController.answer(new int[] {options.get(0)}, 0);
+            return true;
+        }
         // The menu, always -- even for a card with exactly one legal action.
         // A trap in hand can only be Set, and a click that Set it outright was
         // a card committed by a misclick with nothing offered in between. This
@@ -90,8 +98,7 @@ public final class CrosshairAction
     /** Is the engine willing to take "nothing" for an answer right now? */
     private static boolean canDecline()
     {
-        de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt = DuelClientState.prompt;
-        return prompt != null && prompt.cancelable();
+        return PromptOptions.canDecline(DuelClientState.prompt);
     }
 
     /** Is there anything the crosshair could act on right now? */

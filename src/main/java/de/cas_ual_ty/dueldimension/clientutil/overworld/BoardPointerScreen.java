@@ -295,6 +295,18 @@ public class BoardPointerScreen extends Screen
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubled)
     {
+        // Before everything, including an open menu. A way out that only worked
+        // when no menu happened to be sitting over it is a way out a player
+        // cannot trust -- and the menu is part of the action being backed out
+        // of, not something in the way of it.
+        int[] cancel = DuelHud.cancelBounds(width, height);
+        if(cancel != null && event.x() >= cancel[0] && event.x() < cancel[0] + cancel[2]
+            && event.y() >= cancel[1] && event.y() < cancel[1] + cancel[3])
+        {
+            decline();
+            return true;
+        }
+
         // A click inside an open list picks from it; anywhere else dismisses it
         // and starts again from whatever is under the cursor.
         if(!choices.isEmpty())
@@ -346,7 +358,16 @@ public class BoardPointerScreen extends Screen
         {
             return super.mouseClicked(event, doubled);
         }
-        // Even when there is only one row. A trap in hand can be Set and
+        // An empty square with one thing to do is not a menu. Clicking it
+        // has already SAID the thing -- "here" is the whole of the answer to
+        // "where do you want it" -- so a list offering one row called "place
+        // here" is a dialog asking a question that has just been answered.
+        if(options.size() == 1 && !hovered.hasCard())
+        {
+            answer(options.get(0));
+            return true;
+        }
+        // A card always asks, even with one row. A trap in hand can be Set and
         // nothing else, so a click on one used to Set it outright -- no menu,
         // no confirmation, and a card face-down on the field because a cursor
         // was a few pixels off. The menu costs one click and buys the chance to
@@ -376,8 +397,7 @@ public class BoardPointerScreen extends Screen
     /** Is the engine willing to take "nothing" for an answer right now? */
     private static boolean canDecline()
     {
-        EnginePrompt prompt = DuelClientState.prompt;
-        return prompt != null && prompt.cancelable();
+        return PromptOptions.canDecline(DuelClientState.prompt);
     }
 
 
@@ -483,6 +503,11 @@ public class BoardPointerScreen extends Screen
         {
             DuelHud.draw(extractor, font, board, ClientDuelField.seat());
             HandHud.drawHand(extractor, board, hoveredCard);
+            // Only here, and not from the HUD. The HUD is what a duel looks
+            // like while the camera key is held, and a button drawn where there
+            // is no cursor to click it with is a promise the screen cannot
+            // keep.
+            DuelHud.drawCancel(extractor, font, mouseX, mouseY);
         }
 
         // Last, and never INSTEAD of the rest. Opening a menu used to return

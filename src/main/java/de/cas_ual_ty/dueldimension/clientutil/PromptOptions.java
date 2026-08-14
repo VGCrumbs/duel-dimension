@@ -181,6 +181,19 @@ public final class PromptOptions
      * aimed at a card, which is what makes a turn finishable without the
      * screen.
      */
+    /**
+     * Is the engine willing to take "nothing" for an answer right now?
+     * <p>
+     * One copy, because everything that offers a way out asks it -- the cursor,
+     * the crosshair, and the cancel button in the corner. A way out offered
+     * where the engine will not accept one is a click that parks the duel on a
+     * question it has already refused to drop.
+     */
+    public static boolean canDecline(EnginePrompt prompt)
+    {
+        return prompt != null && prompt.cancelable();
+    }
+
     public static List<Integer> looseOptions(EnginePrompt prompt, boolean answered)
     {
         List<Integer> found = new ArrayList<>();
