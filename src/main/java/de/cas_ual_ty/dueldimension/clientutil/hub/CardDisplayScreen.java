@@ -134,6 +134,13 @@ public class CardDisplayScreen extends Screen
                 pressed -> choosePosition(OcgConstants.POS_FACEDOWN_DEFENSE))
             .bounds(panelX + PAD + (buttonW + GAP) * 2, buttonY, buttonW, 18).build());
 
+        // The billboard editor, for whatever card is on the block. Reached from
+        // here because the card is chosen here: put a card down, then build its
+        // monster while looking at it.
+        addRenderableWidget(Button.builder(Component.literal("Billboard..."), pressed ->
+                minecraft.gui.setScreen(new BillboardEditorScreen(this, code)))
+            .bounds(panelX + panelW - PAD - 70, panelY + 3, 70, 14).build());
+
         refresh();
     }
 
