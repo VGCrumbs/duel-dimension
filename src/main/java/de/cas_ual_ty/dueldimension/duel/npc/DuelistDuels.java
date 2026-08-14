@@ -708,10 +708,13 @@ public final class DuelistDuels
             }
             ACTIVE.remove(watcher, duel);
             SEATS.remove(watcher.playerId());
-            // A board in the world stands for a duel; when the duel is over the
-            // board goes with it. Harmless for the duels that never had one.
+            // A board in the world stands for a duel, but a duel that has
+            // just ENDED still has an ending to play -- the last attack, the
+            // damage it dealt, who won -- and all of that happens on the board.
+            // So it lingers rather than going, and the client takes it down
+            // when it has finished. Harmless for the duels that never had one.
             de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels
-                .release(server, watcher.playerId());
+                .finish(server, watcher.playerId());
         }
     }
 

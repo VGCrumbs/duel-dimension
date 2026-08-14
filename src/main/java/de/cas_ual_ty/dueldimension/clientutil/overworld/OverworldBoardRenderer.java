@@ -95,7 +95,7 @@ public final class OverworldBoardRenderer
         for(BoardMesh.Piece piece : BoardMesh.pieces(matsByController()))
         {
             WorldQuad.submit(poseStack, collector, WorldQuad.Kind.SOLID, piece.texture(), camera,
-                transform.corners(piece.rect(), SURFACE_LIFT + piece.lift()), 0xFFFFFFFF);
+                transform.corners(piece.rect(), SURFACE_LIFT + piece.lift()), fade(0xFFFFFFFF));
         }
 
         // The zone being looked at, lit with the same square the 2D board
@@ -115,7 +115,7 @@ public final class OverworldBoardRenderer
             if(lit != null)
             {
                 WorldQuad.submit(poseStack, collector, lit.texture(), camera,
-                    transform.corners(lit.rect(), SURFACE_LIFT + lit.lift()), 0xFFFFFFFF);
+                    transform.corners(lit.rect(), SURFACE_LIFT + lit.lift()), fade(0xFFFFFFFF));
             }
         }
 
@@ -433,9 +433,9 @@ public final class OverworldBoardRenderer
             Vec3 topRight = transform.at(right, edge, cardLift(transform) + HELD_HEIGHT);
 
             WorldQuad.submit(poseStack, collector, WorldQuad.Kind.SOLID, back, camera,
-                new Vec3[] {bottomLeft, topLeft, topRight, bottomRight}, 0xFFFFFFFF);
+                new Vec3[] {bottomLeft, topLeft, topRight, bottomRight}, fade(0xFFFFFFFF));
             WorldQuad.submit(poseStack, collector, WorldQuad.Kind.SOLID, back, camera,
-                new Vec3[] {bottomRight, topRight, topLeft, bottomLeft}, 0xFFFFFFFF);
+                new Vec3[] {bottomRight, topRight, topLeft, bottomLeft}, fade(0xFFFFFFFF));
         }
     }
 
@@ -449,7 +449,7 @@ public final class OverworldBoardRenderer
             return;
         }
         CardRenderer.submitPile(poseStack, collector, transform, camera, zone, controller, count,
-            cardLift(transform), top, back);
+            cardLift(transform), top, back, fade(0xFFFFFFFF));
 
         // A stack the engine is offering something out of glows, exactly as a
         // card does: the extra deck when there is a Special Summon waiting in
@@ -523,7 +523,7 @@ public final class OverworldBoardRenderer
             // with no code, so theirs stays a back.
             CardRenderer.submit(poseStack, collector, transform, camera, zone, controller,
                 slot.defence(), cardLift(transform), CardFaces.face(slot, false, controller),
-                CardFaces.underside(slot, controller));
+                CardFaces.underside(slot, controller), fade(0xFFFFFFFF));
 
             de.cas_ual_ty.dueldimension.clientutil.BoardTarget target =
                 new de.cas_ual_ty.dueldimension.clientutil.BoardTarget(slot.code(), asked,
@@ -538,7 +538,7 @@ public final class OverworldBoardRenderer
                 WorldQuad.submit(poseStack, collector, DuelTextures.ATTACK, camera,
                     transform.corners(CardMesh.placement(zone, slot.defence()),
                         (cardLift(transform) + CardMesh.THICKNESS + 0.045F) * transform.scale()),
-                    0xFFFFFFFF);
+                    fade(0xFFFFFFFF));
             }
 
             // Already picked for a selection that wants several. Green rather
@@ -571,6 +571,26 @@ public final class OverworldBoardRenderer
                     DuelHighlight.tint(DuelHighlight.pulse(ticks())));
             }
         }
+    }
+
+    /**
+     * Every colour the board is drawn in, taken down by however far its ending
+     * has got.
+     * <p>
+     * One multiplier through one function, applied to every tint on the way
+     * out, because a board that faded in parts would not read as a board
+     * fading -- it would read as pieces going missing. Full strength for the
+     * whole of a live duel, so this costs nothing until it matters.
+     */
+    private static int fade(int tint)
+    {
+        float alpha = ClientDuelField.endingAlpha();
+        if(alpha >= 1F)
+        {
+            return tint;
+        }
+        int was = tint >>> 24;
+        return Math.round(was * alpha) << 24 | (tint & 0xFFFFFF);
     }
 
     /**

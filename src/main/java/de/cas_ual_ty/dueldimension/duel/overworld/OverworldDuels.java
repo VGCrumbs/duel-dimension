@@ -351,6 +351,7 @@ public final class OverworldDuels
     private static void openAgainst(ServerPlayer player,
         net.minecraft.world.entity.LivingEntity opponent, ServerLevel level, FieldSiting siting)
     {
+        LINGERING.remove(player.getUUID());
         Board board = new Board(player.getUUID(), opponent.getUUID(), level.dimension(), siting);
         BOARDS.put(player.getUUID(), board);
         show(player, siting, 0, true);
@@ -371,6 +372,33 @@ public final class OverworldDuels
         {
             tickBoards(server);
         }
+        if(!LINGERING.isEmpty())
+        {
+            expireLingering(server);
+        }
+    }
+
+    /**
+     * Takes down a finished board the client never got round to clearing.
+     * <p>
+     * A client that ran its ending has already cleared its own copy, so this
+     * usually sends a hide to somebody who has nothing to hide. That is the
+     * point: the fade is driven where the animations are, and this only catches
+     * the client that disconnected, crashed, or walked into another dimension
+     * halfway through being told it had won.
+     */
+    private static void expireLingering(MinecraftServer server)
+    {
+        long now = server.overworld().getGameTime();
+        LINGERING.entrySet().removeIf(entry ->
+        {
+            if(now < entry.getValue())
+            {
+                return false;
+            }
+            hideIfOnline(server, entry.getKey());
+            return true;
+        });
     }
 
     private static void tickWaiting(MinecraftServer server)
@@ -615,6 +643,10 @@ public final class OverworldDuels
     private static void open(ServerPlayer first, ServerPlayer second, ServerLevel level,
         FieldSiting siting)
     {
+        // A new board cancels the old one's goodbye. Without this, the previous
+        // duel's linger would expire mid-duel and take this board down with it.
+        LINGERING.remove(first.getUUID());
+        LINGERING.remove(second.getUUID());
         Board board = new Board(first.getUUID(), second.getUUID(), level.dimension(), siting);
         BOARDS.put(first.getUUID(), board);
         BOARDS.put(second.getUUID(), board);
@@ -629,6 +661,7 @@ public final class OverworldDuels
      */
     public static void release(MinecraftServer server, UUID player)
     {
+        LINGERING.remove(player);
         Board board = BOARDS.remove(player);
         Waiting waiting = WAITING.remove(player);
         if(waiting != null)
@@ -651,6 +684,49 @@ public final class OverworldDuels
         BOARDS.remove(board.seat1());
         hideIfOnline(server, board.seat0());
         hideIfOnline(server, board.seat1());
+    }
+
+    /**
+     * Boards whose duel is over, and the tick each stops being drawn.
+     * <p>
+     * A duel is decided the moment the engine says so, but the client is
+     * several seconds behind that: the attack that won it and the damage it
+     * dealt are still queued, because they ride the same ordered stream as the
+     * result. Taking the board down on the engine's word meant a duel won by a
+     * direct attack ended with the board simply gone -- the attack never played
+     * at all, because there was nothing left to play it on.
+     * <p>
+     * So a finished board LINGERS. The client runs the ending -- the rest of
+     * the animations, who won, a fade -- and clears its own copy when it is
+     * done, which is why this side does not need to know how long that took.
+     * This is the backstop for the client that never says: a disconnect, a
+     * crash, a chunk unload.
+     */
+    private static final Map<UUID, Long> LINGERING = new java.util.HashMap<>();
+
+    /** Ten seconds, which is longer than any ending and shorter than a nuisance. */
+    public static final int LINGER_TICKS = 200;
+
+    /**
+     * The duel is over: leave the board standing while its ending plays.
+     * <p>
+     * Distinct from {@link #release} on purpose. A duel that ENDED has an
+     * ending to show; a duel that was called off, abandoned or interrupted has
+     * nothing to say and should get out of the way at once.
+     */
+    public static void finish(MinecraftServer server, UUID player)
+    {
+        Board board = BOARDS.remove(player);
+        if(board == null)
+        {
+            release(server, player);
+            return;
+        }
+        BOARDS.remove(board.seat0());
+        BOARDS.remove(board.seat1());
+        long until = server.overworld().getGameTime() + LINGER_TICKS;
+        LINGERING.put(board.seat0(), until);
+        LINGERING.put(board.seat1(), until);
     }
 
     /** Every board goes away: the server is stopping, or all duels were stopped. */

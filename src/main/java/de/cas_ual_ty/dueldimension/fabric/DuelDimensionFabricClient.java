@@ -145,6 +145,9 @@ public class DuelDimensionFabricClient implements ClientModInitializer
             // in hand without anyone seeing it happen, and the duel disk is in
             // one of those slots.
             de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.holdHotbar(client);
+            // The board's own ending: it waits for the last animation, says who
+            // won, fades, and only then goes.
+            de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.advanceEnding();
             // Swapping between the two views of the duel. Remembered, so the
             // screen is not handed back the moment the board could take the
             // question -- which is right when it opened by itself and wrong

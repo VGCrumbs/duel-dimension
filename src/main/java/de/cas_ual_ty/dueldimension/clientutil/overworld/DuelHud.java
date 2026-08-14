@@ -394,6 +394,52 @@ public final class DuelHud
 
         drawPhaseBar(extractor, board, screenW, screenH, barH);
         drawClock(extractor, font, screenW, screenH, barH);
+        drawOutcome(extractor, font, screenW, screenH);
+    }
+
+    /**
+     * Who won, over the board that decided it.
+     * <p>
+     * Drawn from here rather than from either of the two things that call this,
+     * so it appears whether the cursor is up or the camera is the player's --
+     * the duel ending is not a moment to be told different things depending on
+     * which key you happened to be holding.
+     * <p>
+     * It fades with the board, on the same clock, because it is part of the
+     * same goodbye rather than a notice pinned over it.
+     */
+    private static void drawOutcome(GuiGraphicsExtractor extractor, Font font, int screenW,
+        int screenH)
+    {
+        if(!de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.ending())
+        {
+            return;
+        }
+        float alpha = de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField
+            .endingAlpha();
+        if(alpha <= 0F)
+        {
+            return;
+        }
+        String word = DuelClientState.won ? "VICTORY" : "DEFEAT";
+        int colour = DuelClientState.won ? 0x7CE38B : 0xFF6B6B;
+        float scale = Math.max(2F, chromeScale(screenW, screenH) * 2.6F);
+        int shade = Math.round(alpha * 255F) << 24;
+
+        extractor.pose().pushMatrix();
+        extractor.pose().scale(scale, scale);
+        extractor.centeredText(font, word, Math.round(screenW / 2F / scale),
+            Math.round((screenH * 0.36F) / scale), shade | colour);
+        extractor.pose().popMatrix();
+
+        // What actually happened, under it and at reading size: "VICTORY" says
+        // the outcome, and the engine's own line says why.
+        String reason = DuelClientState.result;
+        if(reason != null && !reason.isEmpty())
+        {
+            extractor.centeredText(font, reason, screenW / 2,
+                Math.round(screenH * 0.36F + font.lineHeight * scale + 6), shade | 0xE8E8E8);
+        }
     }
 
     /**

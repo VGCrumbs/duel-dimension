@@ -170,7 +170,16 @@ public final class DuelClientState
             // A player may close the duel screen while waiting for the other
             // seat. The result is not optional, so bring it back for the
             // ordered outcome stinger and the reward that follows it.
-            openScreen();
+            //
+            // Except at a board in the world, which has an ending of its own to
+            // play: the animations that are still queued, who won, and a fade.
+            // Throwing the screen up here would cover all three with a panel at
+            // the moment the duel was decided. ClientDuelField.advanceEnding
+            // opens it when the board has finished.
+            if(!de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked())
+            {
+                openScreen();
+            }
         }
         else
         {

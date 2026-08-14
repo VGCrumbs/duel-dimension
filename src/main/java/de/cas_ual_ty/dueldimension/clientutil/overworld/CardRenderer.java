@@ -52,6 +52,22 @@ public final class CardRenderer
         FieldTransform transform, Vec3 camera, FieldLayout.Rect zone, int controller,
         boolean defence, float lift, Identifier face, Identifier back)
     {
+        submit(poseStack, collector, transform, camera, zone, controller, defence, lift, face,
+            back, 0xFFFFFFFF);
+    }
+
+    /**
+     * The same card, drawn at a given strength.
+     * <p>
+     * Carried as a tint rather than set globally, so a board fading out at the
+     * end of a duel cannot leak into anything else that draws a card -- and so
+     * the fade is a value that travels with the draw instead of a mode
+     * something has to remember to leave.
+     */
+    public static void submit(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera, FieldLayout.Rect zone, int controller,
+        boolean defence, float lift, Identifier face, Identifier back, int tint)
+    {
         FieldLayout.Rect rect = CardMesh.placement(zone, defence);
         int turns = turnsFor(controller, defence);
 
@@ -79,7 +95,7 @@ public final class CardRenderer
                 // so the white-over-grey strip came out turned a quarter and
                 // read as two blocks of colour instead of a card's edge.
                 WorldQuad.submit(poseStack, collector, WorldQuad.Kind.SOLID, texture, camera,
-                    corners, 0xFFFFFFFF, new float[] {0F, 1F, 1F, 0F},
+                    corners, tint, new float[] {0F, 1F, 1F, 0F},
                     new float[] {0F, 0F, 1F, 1F});
                 continue;
             }
@@ -95,7 +111,7 @@ public final class CardRenderer
             float v1 = whole ? 1F : DuelTextures.CARD_V1;
             float[][] uv = turned(part.kind() == CardMesh.Kind.BACK, u0, v0, u1, v1, turns);
             WorldQuad.submit(poseStack, collector, WorldQuad.Kind.SOLID, texture, camera, corners,
-                0xFFFFFFFF, uv[0], uv[1]);
+                tint, uv[0], uv[1]);
         }
     }
 
@@ -116,6 +132,15 @@ public final class CardRenderer
         FieldTransform transform, Vec3 camera, FieldLayout.Rect zone, int controller, int count,
         float lift, Identifier top, Identifier back)
     {
+        submitPile(poseStack, collector, transform, camera, zone, controller, count, lift, top,
+            back, 0xFFFFFFFF);
+    }
+
+    /** The same stack, drawn at a given strength. */
+    public static void submitPile(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera, FieldLayout.Rect zone, int controller, int count,
+        float lift, Identifier top, Identifier back, int tint)
+    {
         if(count <= 0)
         {
             return;
@@ -129,7 +154,8 @@ public final class CardRenderer
         {
             if(part.kind() == CardMesh.Kind.EDGE)
             {
-                submitStripedEdge(poseStack, collector, transform, camera, part, stripes);
+                submitStripedEdge(poseStack, collector, transform, camera, part, stripes,
+                    tint);
                 continue;
             }
             Identifier texture = part.kind() == CardMesh.Kind.FRONT ? top : back;
@@ -140,7 +166,7 @@ public final class CardRenderer
                 whole ? 0F : DuelTextures.CARD_V0, whole ? 1F : DuelTextures.CARD_U1,
                 whole ? 1F : DuelTextures.CARD_V1, turns);
             WorldQuad.submit(poseStack, collector, WorldQuad.Kind.SOLID, texture, camera, corners,
-                0xFFFFFFFF, uv[0], uv[1]);
+                tint, uv[0], uv[1]);
         }
     }
 
@@ -151,7 +177,7 @@ public final class CardRenderer
      * board's does.
      */
     private static void submitStripedEdge(PoseStack poseStack, SubmitNodeCollector collector,
-        FieldTransform transform, Vec3 camera, CardMesh.Face part, int stripes)
+        FieldTransform transform, Vec3 camera, CardMesh.Face part, int stripes, int tint)
     {
         // The face's corners are top, top, bottom, bottom: interpolating
         // between the two pairs walks down the side of the pile.
@@ -171,7 +197,7 @@ public final class CardRenderer
             // came out on its side: one white half and one grey half down the
             // length of the pile instead of bands across it.
             WorldQuad.submit(poseStack, collector, WorldQuad.Kind.SOLID, DuelTextures.STACK_SIDE,
-                camera, corners, 0xFFFFFFFF, new float[] {0F, 1F, 1F, 0F},
+                camera, corners, tint, new float[] {0F, 1F, 1F, 0F},
                 new float[] {0F, 0F, 1F, 1F});
         }
     }

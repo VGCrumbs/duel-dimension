@@ -105,6 +105,87 @@ public final class ClientDuelField
      */
     private static int heldSlot = -1;
 
+    /**
+     * When the board's own ending began -- which is not when the duel ended.
+     * <p>
+     * Zero until the last animation has finished playing. A duel is decided the
+     * moment the engine says so, but the CLIENT is still several seconds behind
+     * that: the attack that won it, the damage it dealt and the monster it
+     * destroyed are all still queued, because they ride the same ordered stream
+     * as the result and are played in turn. Starting the ending on the result
+     * would talk over the very thing being celebrated.
+     */
+    private static long endingBegan;
+
+    /** How long the outcome is held at full strength before it starts to go. */
+    private static final long HOLD_MS = 1400L;
+    /** And how long it takes to go. */
+    private static final long FADE_MS = 1600L;
+
+    /**
+     * How solid the board is drawn, from one down to nothing.
+     * <p>
+     * A duel that was won by a direct attack used to end with the board simply
+     * gone -- the server took it away the instant the engine decided, which was
+     * before the client had played the attack that did it. So the last thing a
+     * duellist saw was their monster standing still, and then nothing at all.
+     * Now the board waits for its own animations, says who won, and goes.
+     */
+    public static float endingAlpha()
+    {
+        if(!de.cas_ual_ty.dueldimension.clientutil.DuelClientState.over)
+        {
+            endingBegan = 0L;
+            return 1F;
+        }
+        // Not while anything is still playing. The result is at the END of the
+        // queue, so a busy animator means the winning blow has not landed yet.
+        if(de.cas_ual_ty.dueldimension.clientutil.DuelClientState.animations.isBusy())
+        {
+            endingBegan = 0L;
+            return 1F;
+        }
+        long now = System.currentTimeMillis();
+        if(endingBegan == 0L)
+        {
+            endingBegan = now;
+        }
+        long since = now - endingBegan;
+        return since < HOLD_MS ? 1F
+            : Math.max(0F, 1F - (since - HOLD_MS) / (float)FADE_MS);
+    }
+
+    /** Is the board saying who won right now? */
+    public static boolean ending()
+    {
+        return present() && de.cas_ual_ty.dueldimension.clientutil.DuelClientState.over;
+    }
+
+    /**
+     * Takes the board down once it has finished saying goodbye, and hands over
+     * to the result screen.
+     * <p>
+     * Done on the CLIENT rather than waiting to be told, so the board goes at
+     * the exact moment it has finished fading rather than whenever a packet
+     * happens to arrive. The server keeps its copy up for longer than this
+     * takes and takes it down afterwards, which makes that side a backstop
+     * rather than the thing being waited on.
+     */
+    public static void advanceEnding()
+    {
+        if(!ending() || endingAlpha() > 0F)
+        {
+            return;
+        }
+        clear();
+        ClientDuelTargeting.clear();
+        endingBegan = 0L;
+        // The result screen, with the reward that follows it. Exactly what a
+        // duel on the screen does at this point -- only now it happens after
+        // the board has had its say instead of instead of it.
+        de.cas_ual_ty.dueldimension.clientutil.DuelClientState.openScreen();
+    }
+
     /** Puts the selected slot back if something moved it during a duel. */
     public static void holdHotbar(net.minecraft.client.Minecraft client)
     {
