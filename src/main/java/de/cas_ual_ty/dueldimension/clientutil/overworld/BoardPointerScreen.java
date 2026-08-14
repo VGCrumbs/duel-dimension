@@ -444,8 +444,109 @@ public class BoardPointerScreen extends Screen
             choicesW = Math.max(choicesW, font.width(label(index)) + ROW_LABEL_PAD);
         }
         int tall = rows.size() * ROW_H;
-        choicesX = (int)Math.max(4, Math.min(mouseX, width - choicesW - 4));
-        choicesY = (int)Math.max(4, Math.min(mouseY, height - tall - 4));
+
+        // Anchored to the CARD, as the duel screen anchors it: above the thing
+        // being acted on and centred over it, so the card stays visible while
+        // its own menu is being read. The cursor is only the fallback, for a
+        // card the camera cannot see the middle of.
+        int[] anchor = anchorOf(chosenAnchor, mouseX, mouseY);
+        int cardX = anchor[0];
+        int cardTop = anchor[1];
+        int cardBottom = anchor[2];
+
+        choicesX = Math.max(4, Math.min(cardX - choicesW / 2, width - choicesW - 4));
+        int above = cardTop - tall - 4;
+        // No room above, so below instead -- the screen's own rule, and for the
+        // same reason: a menu clipped by the top edge is a menu with rows that
+        // cannot be clicked.
+        choicesY = above >= DuelHud.below(width) ? above : cardBottom + 4;
+        choicesY = Math.max(4, Math.min(choicesY, height - tall - 4));
+    }
+
+    /**
+     * Where on the screen a target is, as {x centre, top, bottom}.
+     * <p>
+     * A card in the hand knows its own rectangle. A card on the board is
+     * somewhere in the world, so its middle is projected back to the screen by
+     * REVERSING the very formula the picker uses to turn a cursor into a ray --
+     * which means the anchor and the pick cannot disagree about where a card
+     * is, whatever the camera is doing.
+     */
+    private int[] anchorOf(BoardTarget target, double mouseX, double mouseY)
+    {
+        int[] fallback = {(int)mouseX, (int)mouseY, (int)mouseY};
+        if(target == null)
+        {
+            return fallback;
+        }
+        if(target.location() == OcgConstants.LOCATION_HAND)
+        {
+            BoardSnapshot board = DuelClientState.board;
+            List<BoardSnapshot.Slot> hand = board == null || board.self() == null ? null
+                : board.self().hand();
+            if(hand == null || target.sequence() < 0 || target.sequence() >= hand.size())
+            {
+                return fallback;
+            }
+            HandLayout.Slot slot = HandLayout.slots(width, height, hand.size())[target.sequence()];
+            return new int[] {slot.x() + slot.width() / 2,
+                slot.y() - HandLayout.hoverLift(height), slot.y() + slot.height()};
+        }
+
+        FieldSiting siting = ClientDuelField.siting();
+        if(siting == null)
+        {
+            return fallback;
+        }
+        FieldTransform transform = new FieldTransform(siting);
+        int half = FieldTransform.controllerFor(Math.max(0, ClientDuelField.seat()),
+            target.controller() == 0);
+        de.cas_ual_ty.dueldimension.clientutil.FieldLayout.Rect zone =
+            de.cas_ual_ty.dueldimension.clientutil.FieldLayout.zone(half, target.location(),
+                Math.max(0, target.sequence()));
+        if(zone == null)
+        {
+            return fallback;
+        }
+        double[] middle = project(transform.at(zone.x() + zone.w() / 2F,
+            zone.y() + zone.h() / 2F, 0D));
+        if(middle == null)
+        {
+            return fallback;
+        }
+        // A card is about a card's height on screen; taking half of it either
+        // way gives the menu something to sit above or below.
+        int half2 = Math.max(12, HandLayout.cardHeight(height) / 3);
+        return new int[] {(int)middle[0], (int)middle[1] - half2, (int)middle[1] + half2};
+    }
+
+    /**
+     * A world point as screen coordinates, or null when it is behind the
+     * camera.
+     * <p>
+     * The exact inverse of {@code rayThroughCursor}: that turns a screen point
+     * into a direction by adding the camera's right and up axes scaled by the
+     * normalised coordinates, so this takes the direction apart along the same
+     * three axes and divides out the same field of view.
+     */
+    private double[] project(Vec3 world)
+    {
+        Camera camera = minecraft.gameRenderer.mainCamera();
+        Vec3 delta = world.subtract(camera.position());
+        Vec3 look = viewVector(camera.xRot(), camera.yRot());
+        Vec3 right = viewVector(0F, camera.yRot() + 90F);
+        Vec3 up = viewVector(camera.xRot() - 90F, camera.yRot());
+
+        double along = delta.dot(look);
+        if(along <= 1e-4D)
+        {
+            return null;
+        }
+        double half = Math.tan(Math.toRadians(camera.getFov()) / 2D);
+        double aspect = (double)width / Math.max(1, height);
+        double ndcX = delta.dot(right) / along / (aspect * half);
+        double ndcY = delta.dot(up) / along / half;
+        return new double[] {(ndcX + 1D) * width / 2D, (1D - ndcY) * height / 2D};
     }
 
     /**
