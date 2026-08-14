@@ -62,7 +62,10 @@ public final class HubKeybinds
         }
         if(held && minecraft.gui.screen() == null)
         {
-            minecraft.setScreenAndShow(
+            // gui.setScreen: setScreenAndShow forces a frame, and forcing one
+            // while the cursor is being handed over is what made holding the
+            // key flicker.
+            minecraft.gui.setScreen(
                 new de.cas_ual_ty.dueldimension.clientutil.overworld.BoardPointerScreen(true));
         }
     }

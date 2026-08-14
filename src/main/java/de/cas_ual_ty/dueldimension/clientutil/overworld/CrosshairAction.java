@@ -69,7 +69,7 @@ public final class CrosshairAction
                 // only thing that can make it. Returning false here left a
                 // click that did nothing at all, which reads as a duel that has
                 // stopped rather than as a question waiting to be answered.
-                client.setScreenAndShow(new BoardPointerScreen());
+                client.gui.setScreen(new BoardPointerScreen());
                 return true;
             }
             return false;
@@ -84,7 +84,8 @@ public final class CrosshairAction
         }
         // More than one, so a choice has to be made and the cursor is the only
         // thing that can make it. Borrowed for exactly as long as that takes.
-        client.setScreenAndShow(new BoardPointerScreen());
+        // No forced frame: see BoardPointerScreen.onClose.
+        client.gui.setScreen(new BoardPointerScreen());
         return true;
     }
 

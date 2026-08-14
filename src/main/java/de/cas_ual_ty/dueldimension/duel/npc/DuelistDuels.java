@@ -651,6 +651,30 @@ public final class DuelistDuels
         return playerId != null && SEATS.containsKey(playerId);
     }
 
+    /**
+     * The player a duelist is duelling, or null.
+     * <p>
+     * Read from the live registry rather than remembered on the entity, for the
+     * same reason its neighbour is: a field set when a duel begins and cleared
+     * when it ends is one abnormal ending away from a duelist staring at
+     * somebody forever.
+     */
+    public static java.util.UUID opponentOf(java.util.UUID duelistId)
+    {
+        if(duelistId == null)
+        {
+            return null;
+        }
+        for(java.util.Map.Entry<Watcher, RunningDuel> entry : ACTIVE.entrySet())
+        {
+            if(duelistId.equals(entry.getValue().duelistId) && !entry.getKey().console())
+            {
+                return entry.getKey().playerId();
+            }
+        }
+        return null;
+    }
+
     public static boolean isDueling(java.util.UUID duelistId)
     {
         if(duelistId == null)

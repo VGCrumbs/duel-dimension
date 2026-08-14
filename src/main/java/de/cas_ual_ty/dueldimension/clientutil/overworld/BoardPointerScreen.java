@@ -271,7 +271,7 @@ public class BoardPointerScreen extends Screen
 
         // The phase bar first: ending a turn IS the phase bar, and it is drawn
         // over everything else at the top of the screen.
-        int phase = DuelHud.phaseAt(width, event.x(), event.y());
+        int phase = DuelHud.phaseAt(width, height, event.x(), event.y());
         int phaseOption = DuelHud.optionForPhase(phase);
         if(phaseOption >= 0)
         {
@@ -498,7 +498,7 @@ public class BoardPointerScreen extends Screen
         // No room above, so below instead -- the screen's own rule, and for the
         // same reason: a menu clipped by the top edge is a menu with rows that
         // cannot be clicked.
-        choicesY = above >= DuelHud.below(width) ? above : cardBottom + 4;
+        choicesY = above >= DuelHud.below(width, height) ? above : cardBottom + 4;
         choicesY = Math.max(4, Math.min(choicesY, height - tall - 4));
     }
 
@@ -700,6 +700,11 @@ public class BoardPointerScreen extends Screen
         // The board stops being pointed at when the pointer goes away, or the
         // last hovered zone would stay lit with nothing hovering it.
         ClientDuelTargeting.point(null);
-        minecraft.setScreenAndShow(null);
+        // gui.setScreen, not setScreenAndShow: the latter is that plus a forced
+        // renderFrame, and a frame drawn in the middle of taking the cursor
+        // back is a frame with the pointer half gone -- which is the flicker
+        // felt on every hold and release. The same reason DuelClientState opens
+        // the duel screen this way.
+        minecraft.gui.setScreen(null);
     }
 }

@@ -58,6 +58,8 @@ public final class DuelHud
 
     /** How much of the window one life bar takes, at any window size. */
     private static final float BAR_W_SHARE = 0.30F;
+    /** And never taller than this much of the window, whatever the width says. */
+    private static final float BAR_H_SHARE = 0.055F;
     private static final int TOP = 4;
     /** The frame's raised border, which no text belongs on. */
     private static final int INSET = 6;
@@ -75,20 +77,27 @@ public final class DuelHud
      * happens the moment a height is picked independently of a width.
      */
     private static final int CELL_W_BASE = 50;
+    /**
+     * How much of the window one phase bay takes. Six of them, so the case is
+     * about half the width at any size -- which is the share it has on the duel
+     * screen, where it runs most of the way across the table.
+     */
+    private static final float CELL_W_SHARE = 0.085F;
+    private static final int CELL_W_MAX = 64;
     private static final int CELL_H_BASE = 10;
     private static final int PAD_X_BASE = 8;
     private static final int PAD_Y_BASE = 3;
 
     /** The first line of text that is clear of the instruments above it. */
-    public static int below(int screenW)
+    public static int below(int screenW, int screenH)
     {
-        return barTop(barHeight(screenW)) + cellHeight(screenW) + padY(screenW) + 12;
+        return barTop(barHeight(screenW, screenH)) + cellHeight(screenW, screenH) + padY(screenW, screenH) + 12;
     }
 
     /** The life frame's drawn height at this width, for anything measuring off it. */
-    public static int barHeight(int screenW)
+    public static int barHeight(int screenW, int screenH)
     {
-        return Math.max(9, Math.round(barWidth(screenW) * (float)BAR_H_BASE / BAR_W_BASE));
+        return Math.max(9, Math.round(barWidth(screenW, screenH) * (float)BAR_H_BASE / BAR_W_BASE));
     }
 
     /**
@@ -100,14 +109,49 @@ public final class DuelHud
      * same share of any window, which is what "the same size" means when the
      * window can be any size at all.
      */
-    private static int barWidth(int screenW)
+    private static int barWidth(int screenW, int screenH)
     {
         int room = (screenW - EDGE * 2 - GAP * 2) / 2 - 12;
-        return Math.max(70, Math.min(room, Math.round(screenW * BAR_W_SHARE)));
+        // Three limits, and the smallest wins: a share of the reference width,
+        // a share of the HEIGHT, and whatever room there actually is.
+        //
+        // The height limit is the one an ultrawide needs. A window that is
+        // twice as wide is not a window a player is sitting twice as far from,
+        // so the instruments have no business being twice the size -- and a
+        // life frame that grows to a seventh of the screen's height stops being
+        // a readout and becomes a banner.
+        int byWidth = Math.round(reference(screenW, screenH) * BAR_W_SHARE);
+        int byHeight = Math.round(screenH * BAR_H_SHARE * BAR_W_BASE / BAR_H_BASE);
+        return Math.max(70, Math.min(room, Math.min(byWidth, byHeight)));
     }
 
-    /** Half again, so the countdown reads without looking for it. */
-    private static final float CLOCK_SCALE = 1.5F;
+    /**
+     * The width this window would have if it were the usual shape.
+     * <p>
+     * An ultrawide screen is wider without being any bigger to look at: the
+     * player has not moved back from it, and the extra width is peripheral. So
+     * every share below is taken of the width a 16:9 window of this HEIGHT
+     * would have, and a wider window simply has more room around the same
+     * instruments rather than larger ones.
+     */
+    private static int reference(int screenW, int screenH)
+    {
+        return Math.min(screenW, Math.round(screenH * 16F / 9F));
+    }
+
+    /**
+     * How much larger than the font the countdown is drawn.
+     * <p>
+     * Proportional rather than a flat half-again. A small viewport has already
+     * made the font large relative to everything else -- that is what a gui
+     * scale does -- so multiplying it by a constant on top compounds the two
+     * and the clock ends up shouting on exactly the windows with least room
+     * for it.
+     */
+    private static float clockScale(int screenW, int screenH)
+    {
+        return Math.clamp(reference(screenW, screenH) / 420F, 1F, 1.6F);
+    }
 
     /** Under this much left, the clock is a warning rather than a fact. */
     private static final long CLOCK_WARN_MS = 60_000L;
@@ -125,6 +169,7 @@ public final class DuelHud
             return;
         }
         int screenW = extractor.guiWidth();
+        int screenH = extractor.guiHeight();
         // Laid out as the duel screen lays it out: two bars running from the
         // edges to a small turn counter in the middle, and the phase case
         // centred under them. The screen has a sidebar to leave room for and
@@ -134,8 +179,8 @@ public final class DuelHud
         // left over. The frame is a picture of a bar, and a picture pulled to
         // three times its height stops looking like one -- so the height comes
         // from the width through the art's ratio, and the width is capped.
-        int barW = barWidth(screenW);
-        int barH = barHeight(screenW);
+        int barW = barWidth(screenW, screenH);
+        int barH = barHeight(screenW, screenH);
         int turnW = Math.max(16, Math.round(barH * 1.3F));
 
         // Through the animation, not straight from the board. A life total
@@ -169,8 +214,8 @@ public final class DuelHud
         extractor.centeredText(font, Integer.toString(board.turn()), turnX + turnW / 2,
             TOP + (barH - font.lineHeight) / 2 + 1, 0xFFFFFFFF);
 
-        drawPhaseBar(extractor, board, screenW, barH);
-        drawClock(extractor, font, screenW, barH);
+        drawPhaseBar(extractor, board, screenW, screenH, barH);
+        drawClock(extractor, font, screenW, screenH, barH);
     }
 
     /**
@@ -239,17 +284,17 @@ public final class DuelHud
      * against a seat index belongs here.
      */
     private static void drawPhaseBar(GuiGraphicsExtractor extractor, BoardSnapshot board,
-        int screenW, int barH)
+        int screenW, int screenH, int barH)
     {
         boolean yourTurn = board.turnPlayer() == 0;
-        int cellW = cellWidth(screenW);
-        int cellH = cellHeight(screenW);
+        int cellW = cellWidth(screenW, screenH);
+        int cellH = cellHeight(screenW, screenH);
         int width = PHASE_NAMES.length * cellW;
-        int x = barLeft(screenW);
+        int x = barLeft(screenW, screenH);
         int y = barTop(barH);
 
-        DdBlitUtil.fullBlit(extractor, DuelTextures.PHASE_CASE, x - padX(screenW),
-            y - padY(screenW), width + padX(screenW) * 2, cellH + padY(screenW) * 2);
+        DdBlitUtil.fullBlit(extractor, DuelTextures.PHASE_CASE, x - padX(screenW, screenH),
+            y - padY(screenW, screenH), width + padX(screenW, screenH) * 2, cellH + padY(screenW, screenH) * 2);
 
         for(int phase = 0; phase < PHASE_NAMES.length; phase++)
         {
@@ -278,29 +323,30 @@ public final class DuelHud
             DdBlitUtil.NO_TINT);
     }
 
-    private static int cellWidth(int screenW)
+    private static int cellWidth(int screenW, int screenH)
     {
-        return Math.max(15, Math.min(CELL_W_BASE, Math.round(screenW * 0.062F)));
+        return Math.max(18,
+            Math.min(CELL_W_MAX, Math.round(reference(screenW, screenH) * CELL_W_SHARE)));
     }
 
-    private static int cellHeight(int screenW)
+    private static int cellHeight(int screenW, int screenH)
     {
-        return Math.max(5, Math.round(cellWidth(screenW) * (float)CELL_H_BASE / CELL_W_BASE));
+        return Math.max(5, Math.round(cellWidth(screenW, screenH) * (float)CELL_H_BASE / CELL_W_BASE));
     }
 
-    private static int padX(int screenW)
+    private static int padX(int screenW, int screenH)
     {
-        return Math.round(cellWidth(screenW) * (float)PAD_X_BASE / CELL_W_BASE);
+        return Math.round(cellWidth(screenW, screenH) * (float)PAD_X_BASE / CELL_W_BASE);
     }
 
-    private static int padY(int screenW)
+    private static int padY(int screenW, int screenH)
     {
-        return Math.max(2, Math.round(cellHeight(screenW) * (float)PAD_Y_BASE / CELL_H_BASE));
+        return Math.max(2, Math.round(cellHeight(screenW, screenH) * (float)PAD_Y_BASE / CELL_H_BASE));
     }
 
-    private static int barLeft(int screenW)
+    private static int barLeft(int screenW, int screenH)
     {
-        return (screenW - PHASE_NAMES.length * cellWidth(screenW)) / 2;
+        return (screenW - PHASE_NAMES.length * cellWidth(screenW, screenH)) / 2;
     }
 
     private static int barTop(int barH)
@@ -315,15 +361,15 @@ public final class DuelHud
      * merely readable. The hit test measures the same cells the draw does, from
      * the same helpers, so the bay that lights up is the bay that answers.
      */
-    public static int phaseAt(int screenW, double mouseX, double mouseY)
+    public static int phaseAt(int screenW, int screenH, double mouseX, double mouseY)
     {
-        int cellW = cellWidth(screenW);
-        int y = barTop(barHeight(screenW));
-        if(mouseY < y || mouseY >= y + cellHeight(screenW))
+        int cellW = cellWidth(screenW, screenH);
+        int y = barTop(barHeight(screenW, screenH));
+        if(mouseY < y || mouseY >= y + cellHeight(screenW, screenH))
         {
             return -1;
         }
-        int phase = (int)Math.floor((mouseX - barLeft(screenW)) / (double)cellW);
+        int phase = (int)Math.floor((mouseX - barLeft(screenW, screenH)) / (double)cellW);
         return phase >= 0 && phase < PHASE_NAMES.length ? phase : -1;
     }
 
@@ -413,7 +459,7 @@ public final class DuelHud
      * it is not a budget for the whole turn.
      */
     private static void drawClock(GuiGraphicsExtractor extractor, Font font, int screenW,
-        int barH)
+        int screenH, int barH)
     {
         if(DuelClientState.prompt == null || DuelClientState.promptShownAt == 0
             || DuelClientState.over)
@@ -428,10 +474,11 @@ public final class DuelHud
         // a countdown to losing the turn, which is worth reading at a glance.
         int colour = left <= CLOCK_WARN_MS ? 0xFFFF6B6B : 0xFFC2C9D6;
         extractor.pose().pushMatrix();
-        extractor.pose().scale(CLOCK_SCALE, CLOCK_SCALE);
+        float scale = clockScale(screenW, screenH);
+        extractor.pose().scale(scale, scale);
         extractor.centeredText(font, clock,
-            Math.round(screenW / 2F / CLOCK_SCALE),
-            Math.round((barTop(barH) + cellHeight(screenW) + padY(screenW) + 4) / CLOCK_SCALE),
+            Math.round(screenW / 2F / scale),
+            Math.round((barTop(barH) + cellHeight(screenW, screenH) + padY(screenW, screenH) + 4) / scale),
             colour);
         extractor.pose().popMatrix();
     }

@@ -153,8 +153,46 @@ public class DuelistEntity extends PathfinderMob
             // every tick and would fight the line above.
             setZza(0F);
             setXxa(0F);
+            faceOpponent();
         }
         super.aiStep();
+    }
+
+    /**
+     * Turns to face whoever it is duelling.
+     * <p>
+     * A duelist that has stopped moving otherwise keeps whatever heading it was
+     * left on, which for a placed one is wherever it was put down and for a
+     * wandering one is wherever it happened to stop. Looking at the person you
+     * are duelling is the least a duel deserves, and it costs nothing: the
+     * whole body turns, not only the head, so it reads from any angle -- and it
+     * matters on the world board, where the duellist is standing across a table
+     * looking at them.
+     * <p>
+     * Asked of the live registry every tick rather than remembered, so a duel
+     * that ends by any route leaves the duelist free again.
+     */
+    private void faceOpponent()
+    {
+        java.util.UUID opponent = DuelistDuels.opponentOf(getUUID());
+        if(opponent == null || !(level() instanceof net.minecraft.server.level.ServerLevel level))
+        {
+            return;
+        }
+        net.minecraft.world.entity.player.Player player = level.getPlayerByUUID(opponent);
+        if(player == null)
+        {
+            return;
+        }
+        double dx = player.getX() - getX();
+        double dz = player.getZ() - getZ();
+        float yaw = (float)(Math.atan2(dz, dx) * (180D / Math.PI)) - 90F;
+        setYRot(yaw);
+        setYHeadRot(yaw);
+        setYBodyRot(yaw);
+        // The look control would otherwise spend the next tick turning it back
+        // towards whatever it had decided to watch.
+        getLookControl().setLookAt(player.getX(), player.getEyeY(), player.getZ());
     }
 
     /**
