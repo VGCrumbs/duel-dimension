@@ -69,9 +69,51 @@ public final class OverworldPayloads
                 buffer.readEnum(Direction.class), readSpec(buffer));
             ResourceKey<Level> level = buffer.readResourceKey(Registries.DIMENSION);
             // Clamped rather than trusted, like every other seat index that
-            // crosses the wire: a two-seat board has seats 0 and 1.
-            int seat = Math.clamp(buffer.readVarInt(), 0, 1);
+            // crosses the wire: a two-seat board has seats 0 and 1, and -1 for
+            // somebody who is only watching.
+            int seat = Math.clamp(buffer.readVarInt(), SPECTATOR, 1);
             return new ShowField(siting, level, seat, buffer.readBoolean());
+        }
+    }
+
+    /** The seat of somebody who is watching rather than playing. */
+    public static final int SPECTATOR = -1;
+
+    /**
+     * The duel as a bystander may see it.
+     * <p>
+     * A separate message from the duellists' own {@code DuelUpdate}, carrying a
+     * separately redacted board, because sending either seat's copy to a third
+     * player hands a bystander that duellist's hand. The redaction is
+     * {@link de.cas_ual_ty.dueldimension.ocg.prompt.StrangerView}'s job and
+     * happens before this is built -- never here, where a wire format would be
+     * a poor place to keep a secret.
+     */
+    public record SpectatorBoard(
+        de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot board)
+        implements CustomPacketPayload
+    {
+        public static final CustomPacketPayload.Type<SpectatorBoard> TYPE =
+            DdNetwork.type("overworld_spectator_board");
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, SpectatorBoard> CODEC =
+            CustomPacketPayload.codec(SpectatorBoard::encode, SpectatorBoard::decode);
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
+        {
+            return TYPE;
+        }
+
+        public static void encode(SpectatorBoard message, RegistryFriendlyByteBuf buffer)
+        {
+            message.board().write(buffer);
+        }
+
+        public static SpectatorBoard decode(RegistryFriendlyByteBuf buffer)
+        {
+            return new SpectatorBoard(
+                de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot.read(buffer));
         }
     }
 

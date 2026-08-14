@@ -139,6 +139,9 @@ public final class DdNetwork
             de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.ShowField.CODEC);
         clientbound(de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.HideField.TYPE,
             de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.HideField.CODEC);
+        clientbound(
+            de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.SpectatorBoard.TYPE,
+            de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.SpectatorBoard.CODEC);
         serverbound(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.TurnChoice.TYPE,
             de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.TurnChoice.CODEC);
 
@@ -436,6 +439,10 @@ public final class DdNetwork
             de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.HideField.TYPE,
             (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
                 .hideDuelField());
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.SpectatorBoard.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
+                .showSpectatorBoard(payload));
 
         // The shop: opened by the server (clicking the counter is answered
         // with stock and balance), kept honest by it (every purchase comes

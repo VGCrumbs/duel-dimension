@@ -268,4 +268,10 @@ public interface ISidedProxy
     default void hideDuelField()
     {
     }
+
+    /** A bystander's redacted view of a duel being played nearby. Client only. */
+    default void showSpectatorBoard(
+        de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.SpectatorBoard board)
+    {
+    }
 }

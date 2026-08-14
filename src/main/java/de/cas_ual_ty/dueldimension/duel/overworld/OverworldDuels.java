@@ -373,6 +373,55 @@ public final class OverworldDuels
     }
 
     /**
+     * Shows the duel to anyone standing near enough to watch it.
+     * <p>
+     * The board's geometry is public -- it is a physical object in the world --
+     * and the state that rides with it has already been reduced to what a
+     * bystander may see. Neither duellist's own update is ever forwarded: this
+     * takes a snapshot that was built for a seat and strips it, which is a
+     * projection that can only remove and so cannot reveal.
+     *
+     * @param seatSnapshot either seat's board; both reduce to the same view
+     */
+    public static void showToSpectators(MinecraftServer server, UUID duellist,
+        de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot seatSnapshot)
+    {
+        Board board = BOARDS.get(duellist);
+        if(board == null || server == null || seatSnapshot == null)
+        {
+            return;
+        }
+        ServerLevel level = server.getLevel(board.level());
+        if(level == null)
+        {
+            return;
+        }
+        OverworldPayloads.SpectatorBoard update = new OverworldPayloads.SpectatorBoard(
+            de.cas_ual_ty.dueldimension.ocg.prompt.StrangerView.of(seatSnapshot));
+        OverworldPayloads.ShowField field = new OverworldPayloads.ShowField(board.siting(),
+            board.level(), OverworldPayloads.SPECTATOR, true);
+
+        for(ServerPlayer viewer : net.fabricmc.fabric.api.networking.v1.PlayerLookup
+            .around(level, net.minecraft.world.phys.Vec3.atCenterOf(board.siting().anchor()),
+                SPECTATOR_RANGE))
+        {
+            if(viewer.getUUID().equals(board.seat0()) || viewer.getUUID().equals(board.seat1()))
+            {
+                continue;
+            }
+            ServerPlayNetworking.send(viewer, field);
+            ServerPlayNetworking.send(viewer, update);
+        }
+    }
+
+    /**
+     * How far away a duel can be watched from. Past this the cards are a few
+     * pixels across anyway, and the board is only sent to people who could
+     * plausibly read it.
+     */
+    private static final double SPECTATOR_RANGE = 48D;
+
+    /**
      * The block a player is standing on. Their own block position is the space
      * their feet occupy, so the floor is one below it.
      */

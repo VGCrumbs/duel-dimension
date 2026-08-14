@@ -26,6 +26,7 @@ public final class ClientDuelField
     private static net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> level;
     private static int seat = -1;
     private static boolean locked;
+    private static de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot spectatorBoard;
 
     /** The field standing in the world, or null when there is none to draw here. */
     public static FieldSiting siting()
@@ -33,10 +34,37 @@ public final class ClientDuelField
         return present() ? siting : null;
     }
 
-    /** Which end of the board this player belongs at, or -1 when not duelling. */
+    /** Which end of the board this player belongs at, or -1 when only watching. */
     public static int seat()
     {
         return seat;
+    }
+
+    /** Is this client watching a duel rather than playing one? */
+    public static boolean spectating()
+    {
+        return present() && seat < 0;
+    }
+
+    /**
+     * The board to draw.
+     * <p>
+     * A duellist draws their own state; a spectator draws the separately
+     * redacted copy the server sent them, which is the ONLY board state a
+     * bystander is ever given. Choosing between them here rather than at the
+     * renderer keeps the two from ever being confused for one another.
+     */
+    public static de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot boardToDraw()
+    {
+        return spectating() ? spectatorBoard
+            : de.cas_ual_ty.dueldimension.clientutil.DuelClientState.board;
+    }
+
+    /** Takes a spectator's copy of the duel. */
+    public static void applySpectatorBoard(
+        de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot board)
+    {
+        spectatorBoard = board;
     }
 
     /**
@@ -87,5 +115,6 @@ public final class ClientDuelField
         level = null;
         seat = -1;
         locked = false;
+        spectatorBoard = null;
     }
 }

@@ -106,7 +106,9 @@ public final class OverworldBoardRenderer
     private static void drawCards(PoseStack poseStack, SubmitNodeCollector collector,
         FieldTransform transform, Vec3 camera)
     {
-        BoardSnapshot board = DuelClientState.board;
+        // A duellist draws their own state; a spectator draws the redacted
+        // copy the server sent them. Neither can be handed the other's.
+        BoardSnapshot board = ClientDuelField.boardToDraw();
         if(board == null)
         {
             return;

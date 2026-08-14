@@ -74,6 +74,13 @@ public class DuelDimensionFabricClient implements ClientModInitializer
                 de.cas_ual_ty.dueldimension.DuelDimension.MOD_ID, "preload_progress"),
             new de.cas_ual_ty.dueldimension.clientutil.PreloadHud());
 
+        // Your hand during an overworld duel. addLast for the same reason: it
+        // is the one part of a world duel that must not be painted over.
+        net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry.addLast(
+            net.minecraft.resources.Identifier.fromNamespaceAndPath(
+                de.cas_ual_ty.dueldimension.DuelDimension.MOD_ID, "duel_hand"),
+            new de.cas_ual_ty.dueldimension.clientutil.overworld.HandHud());
+
         // The seal is drawn in the world, not in a GUI. WorldRenderEvents is
         // gone in 26.2; COLLECT_SUBMITS is where geometry is handed to the
         // renderer for the frame, and its context carries both the pose stack

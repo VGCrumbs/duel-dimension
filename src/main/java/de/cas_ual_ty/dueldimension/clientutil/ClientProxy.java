@@ -443,6 +443,14 @@ public class ClientProxy implements ISidedProxy
     }
 
     @Override
+    public void showSpectatorBoard(
+        de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.SpectatorBoard board)
+    {
+        de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField
+            .applySpectatorBoard(board.board());
+    }
+
+    @Override
     public void hideDuelField()
     {
         de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.clear();

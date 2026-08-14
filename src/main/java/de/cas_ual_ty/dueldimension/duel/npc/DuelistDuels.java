@@ -911,6 +911,17 @@ public final class DuelistDuels
                         outbound[seat].add(new PromptMessages.DuelUpdate(board.forSeat(seat),
                             List.of(), false, "", new int[0], new ArrayList<>(pending[seat])));
                         pending[seat].clear();
+                        // Anyone standing at the board sees it too, from the
+                        // same ordered point -- but never this update. Their
+                        // copy is built by stripping this one, so a bystander
+                        // cannot be handed a duellist's hand by an oversight
+                        // about which packet went where.
+                        if(seat == 0 && duel.seats[0] != null)
+                        {
+                            de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels
+                                .showToSpectators(server, duel.seats[0].playerId(),
+                                    board.forSeat(0));
+                        }
                     }
                 }
                 else if(event instanceof DuelSession.Event.Prompt prompt)
