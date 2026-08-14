@@ -254,4 +254,18 @@ public interface ISidedProxy
     default void closeDuelLobby()
     {
     }
+
+    /**
+     * A duel field is standing in the world: where it is, which end this player
+     * belongs at, and whether they are already locked to it. Client only.
+     */
+    default void showDuelField(
+        de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.ShowField field)
+    {
+    }
+
+    /** The duel field is gone. Client only. */
+    default void hideDuelField()
+    {
+    }
 }

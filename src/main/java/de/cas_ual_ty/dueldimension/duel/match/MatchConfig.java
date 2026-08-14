@@ -14,9 +14,31 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
  * @param lifePoints   starting LP, 8000 by convention
  * @param format       single duel or best of three
  * @param turnSeconds  how long a player may take over one decision, 0 for no limit
+ * @param presentation whether the duel is played on a screen or on a board
+ *                     built in the world between the two duellists
  */
-public record MatchConfig(String banlistId, int lifePoints, Format format, int turnSeconds)
+public record MatchConfig(String banlistId, int lifePoints, Format format, int turnSeconds,
+    Presentation presentation)
 {
+    /**
+     * Where the duel is played. Both are the same duel -- the same engine, the
+     * same rules, the same prompts -- and differ only in where it is drawn and
+     * how a card is pointed at.
+     */
+    public enum Presentation
+    {
+        /** The 2D duel screen. */
+        SCREEN,
+        /** A board built in the world, with both duellists standing at it. */
+        OVERWORLD;
+
+        /** What the lobby row reads. */
+        public String label()
+        {
+            return this == SCREEN ? "Duel screen" : "Overworld board";
+        }
+    }
+
     /** How many duels a match is played over. */
     public enum Format
     {
@@ -52,7 +74,7 @@ public record MatchConfig(String banlistId, int lifePoints, Format format, int t
     public static final int TIMER_WARNING_SECONDS = 30;
 
     public static final MatchConfig DEFAULT =
-        new MatchConfig(Banlist.NO_BANLIST_ID, 8000, Format.SINGLE, 180);
+        new MatchConfig(Banlist.NO_BANLIST_ID, 8000, Format.SINGLE, 180, Presentation.SCREEN);
 
     /**
      * Clamps a client-proposed configuration to something legal. A packet is
@@ -64,7 +86,44 @@ public record MatchConfig(String banlistId, int lifePoints, Format format, int t
         int lp = closest(lifePoints, LIFE_POINT_CHOICES);
         int timer = closest(turnSeconds, TIMER_CHOICES);
         return new MatchConfig(banlistId == null ? Banlist.NO_BANLIST_ID : banlistId,
-            lp, format == null ? Format.SINGLE : format, timer);
+            lp, format == null ? Format.SINGLE : format, timer,
+            presentation == null ? Presentation.SCREEN : presentation);
+    }
+
+    // One wither per field, so a caller changing one setting cannot silently
+    // drop another. The lobby used to rebuild this record positionally at four
+    // call sites; adding a field there is a compile error at best and a lost
+    // setting at worst, and this feature added a field.
+
+    public MatchConfig withBanlist(String id)
+    {
+        return new MatchConfig(id, lifePoints, format, turnSeconds, presentation);
+    }
+
+    public MatchConfig withLifePoints(int points)
+    {
+        return new MatchConfig(banlistId, points, format, turnSeconds, presentation);
+    }
+
+    public MatchConfig withFormat(Format value)
+    {
+        return new MatchConfig(banlistId, lifePoints, value, turnSeconds, presentation);
+    }
+
+    public MatchConfig withTurnSeconds(int seconds)
+    {
+        return new MatchConfig(banlistId, lifePoints, format, seconds, presentation);
+    }
+
+    public MatchConfig withPresentation(Presentation value)
+    {
+        return new MatchConfig(banlistId, lifePoints, format, turnSeconds, value);
+    }
+
+    /** Is this duel meant to be played on a board in the world? */
+    public boolean isOverworld()
+    {
+        return presentation == Presentation.OVERWORLD;
     }
 
     private static int closest(int value, int[] allowed)
@@ -90,11 +149,13 @@ public record MatchConfig(String banlistId, int lifePoints, Format format, int t
         buffer.writeVarInt(lifePoints);
         buffer.writeEnum(format);
         buffer.writeVarInt(turnSeconds);
+        buffer.writeEnum(presentation);
     }
 
     public static MatchConfig read(RegistryFriendlyByteBuf buffer)
     {
         return new MatchConfig(buffer.readUtf(), buffer.readVarInt(),
-            buffer.readEnum(Format.class), buffer.readVarInt());
+            buffer.readEnum(Format.class), buffer.readVarInt(),
+            buffer.readEnum(Presentation.class));
     }
 }

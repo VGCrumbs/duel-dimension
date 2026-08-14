@@ -30,7 +30,7 @@ class DuelistDuelsTest
         active.put(player, surrendered);
         assertSame(surrendered, active.get(player));
 
-        DuelistDuels.releaseSeats(surrendered);
+        DuelistDuels.releaseSeats(null, surrendered);
 
         assertFalse(active.containsKey(player));
     }
@@ -46,7 +46,7 @@ class DuelistDuelsTest
         Map<DuelistDuels.Watcher, DuelistDuels.RunningDuel> active = active();
         active.put(player, rematch);
 
-        DuelistDuels.releaseSeats(surrendered);
+        DuelistDuels.releaseSeats(null, surrendered);
 
         assertSame(rematch, active.remove(player));
     }

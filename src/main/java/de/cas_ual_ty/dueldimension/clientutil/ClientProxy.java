@@ -436,6 +436,19 @@ public class ClientProxy implements ISidedProxy
     }
 
     @Override
+    public void showDuelField(
+        de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.ShowField field)
+    {
+        de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.apply(field);
+    }
+
+    @Override
+    public void hideDuelField()
+    {
+        de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.clear();
+    }
+
+    @Override
     public void openCoinToss(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CoinToss toss)
     {
         getMinecraft().gui.setScreen(

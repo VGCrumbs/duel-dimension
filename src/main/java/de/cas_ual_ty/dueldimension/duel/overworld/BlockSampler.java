@@ -24,7 +24,9 @@ public interface BlockSampler
 
     /**
      * Can the board rest on this block's top face, and can a player stand on
-     * it? A full block yes; a slab in its lower half yes; a torch or air no.
+     * it safely for the length of a duel? A full block yes, a dirt path yes; a
+     * bottom slab no, because half a block down is a step and not a floor; a
+     * torch, air, or a cactus no.
      */
     boolean isGround(BlockPos pos);
 }

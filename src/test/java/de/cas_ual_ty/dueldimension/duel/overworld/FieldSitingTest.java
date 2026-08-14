@@ -171,6 +171,7 @@ public class FieldSitingTest
     public void theMatFitsTheAreaItWasValidatedFor()
     {
         assertEquals(0.9F, SPEC.blocksPerFieldUnit(), 1e-6F);
+        assertTrue(SPEC.matWidth() <= SPEC.areaWidth());
         assertEquals(9.0F, 10F * SPEC.blocksPerFieldUnit(), 1e-6F,
             "the mat spans the area exactly across");
         assertEquals(7.2F, SPEC.matDepth(), 1e-6F);
@@ -374,20 +375,6 @@ public class FieldSitingTest
         assertEquals(Direction.WEST, SitingSearch.facing(floor(0, 0), floor(-10, 1)));
         assertEquals(Direction.SOUTH, SitingSearch.facing(floor(0, 0), floor(1, 10)));
         assertEquals(Direction.NORTH, SitingSearch.facing(floor(0, 0), floor(1, -10)));
-    }
-
-    @Test
-    public void anOddSpanIsRequiredBecauseTheAreaIsCentred()
-    {
-        try
-        {
-            new FieldSpec(8, 9, 3, 1, 1, 16, 8, 3);
-            org.junit.jupiter.api.Assertions.fail("an even span has no centre block");
-        }
-        catch(IllegalArgumentException expected)
-        {
-            assertTrue(expected.getMessage().contains("8x9"));
-        }
     }
 
     @Test

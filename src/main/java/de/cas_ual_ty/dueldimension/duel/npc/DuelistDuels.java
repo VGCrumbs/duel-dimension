@@ -642,7 +642,14 @@ public final class DuelistDuels
         return false;
     }
 
-    static void releaseSeats(RunningDuel duel)
+    /**
+     * Frees both seats of a finished duel, and takes down the board if it was
+     * being played on one.
+     *
+     * @param server may be null in tests; a board can only be taken off a
+     *               client that a server can reach
+     */
+    static void releaseSeats(net.minecraft.server.MinecraftServer server, RunningDuel duel)
     {
         for(Watcher watcher : duel.seats)
         {
@@ -652,6 +659,10 @@ public final class DuelistDuels
             }
             ACTIVE.remove(watcher, duel);
             SEATS.remove(watcher.playerId());
+            // A board in the world stands for a duel; when the duel is over the
+            // board goes with it. Harmless for the duels that never had one.
+            de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels
+                .release(server, watcher.playerId());
         }
     }
 
@@ -733,6 +744,11 @@ public final class DuelistDuels
         Watcher watcher = Watcher.of(player);
         RunningDuel duel = ACTIVE.remove(watcher);
         SEATS.remove(player.getUUID());
+        // Abandonment does not go through releaseSeats -- it drops the entries
+        // itself, because the player it belonged to has already gone -- so the
+        // board has to be taken down here as well.
+        de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels
+            .release(player.level().getServer(), player.getUUID());
         if(duel == null)
         {
             return;
@@ -1023,7 +1039,7 @@ public final class DuelistDuels
                 }
             }
         }
-        finished.forEach(DuelistDuels::releaseSeats);
+        finished.forEach(duel -> releaseSeats(server, duel));
     }
 
     /**
@@ -1107,7 +1123,14 @@ public final class DuelistDuels
         de.cas_ual_ty.dueldimension.duel.match.MatchStateMachine machine = duel.machine;
         de.cas_ual_ty.dueldimension.duel.match.MatchConfig config = duel.config;
 
-        String error = startPlayerDuel(first, second);
+        // With the config, not without it. Game two used to be started through
+        // the two-argument overload, which substitutes MatchConfig.DEFAULT, so
+        // everything the two of them agreed in the lobby -- the banlist their
+        // decks were checked against, and now where the duel is played -- was
+        // silently dropped for the second and third games of a match. The
+        // config was only re-attached to the new RunningDuel afterwards, which
+        // is too late to affect the duel it configures.
+        String error = startPlayerDuel(first, second, config);
         if(error != null)
         {
             machine.cancel(error);

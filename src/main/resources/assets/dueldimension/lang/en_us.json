@@ -240,5 +240,13 @@
   "key.dueldimension.toggle_disk": "Equip / unequip duel disk",
   "key.dueldimension.foil_test": "Foil blend test (debug)",
   "death.attack.orichalcos": "%1$s had their soul taken",
-  "item.dueldimension.orichalcos_debug": "Seal of Orichalcos (Debug)"
+  "item.dueldimension.orichalcos_debug": "Seal of Orichalcos (Debug)",
+  "dueldimension.overworld.refusal.different_world": "You are not in the same world, so there is nowhere to build a duel field. Playing on the duel screen instead.",
+  "dueldimension.overworld.refusal.too_far": "You are too far apart to duel across a board in the world. Playing on the duel screen instead.",
+  "dueldimension.overworld.refusal.too_close": "You are standing in the same spot, so there is no line to build a duel field along. Playing on the duel screen instead.",
+  "dueldimension.overworld.refusal.not_across": "There is no room for a duel field near you. Playing on the duel screen instead.",
+  "dueldimension.overworld.refusal.uneven_elevation": "There is no level ground for a duel field near you. Playing on the duel screen instead.",
+  "dueldimension.overworld.refusal.uneven_ground": "The ground here is not level enough for a duel field. Playing on the duel screen instead.",
+  "dueldimension.overworld.refusal.obstructed": "There is not enough clear space for a duel field here. Playing on the duel screen instead.",
+  "dueldimension.overworld.refusal.no_room": "There is no room for a duel field here. Playing on the duel screen instead."
 }

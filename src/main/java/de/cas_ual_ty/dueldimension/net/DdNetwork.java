@@ -135,6 +135,10 @@ public final class DdNetwork
         // answer comes back from one.
         clientbound(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CoinToss.TYPE,
             de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CoinToss.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.ShowField.TYPE,
+            de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.ShowField.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.HideField.TYPE,
+            de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.HideField.CODEC);
         serverbound(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.TurnChoice.TYPE,
             de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.TurnChoice.CODEC);
 
@@ -420,6 +424,18 @@ public final class DdNetwork
             de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CoinToss.TYPE,
             (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
                 .openCoinToss(payload));
+
+        // Where a duel is standing in the world. Geometry only -- nothing about
+        // the duel itself rides this, so it is safe to hand to any client that
+        // is party to the field.
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.ShowField.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
+                .showDuelField(payload));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.HideField.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
+                .hideDuelField());
 
         // The shop: opened by the server (clicking the counter is answered
         // with stock and balance), kept honest by it (every purchase comes

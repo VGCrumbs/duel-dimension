@@ -1,0 +1,444 @@
+package de.cas_ual_ty.dueldimension.duel.overworld;
+
+import de.cas_ual_ty.dueldimension.duel.overworld.FieldValidator.Refusal;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Duels played on a board built in the world: siting them, walking the players
+ * to their marks, holding them there, and taking the board away again.
+ * <p>
+ * <b>The one invariant.</b> This class can never stop a duel from happening. The
+ * two players agreed a duel, and where it is drawn is not part of that
+ * agreement -- so every path through here ends in either {@link Outcome#start()}
+ * or, only when a player has actually gone, {@link Outcome#cancel}. A field that
+ * cannot be sited, a player who never walks over, a board that gets built on:
+ * all of them fall back to the ordinary duel screen with the duel intact. That
+ * is also why a griefer cannot cost anyone a game by dropping a block on the
+ * field.
+ * <p>
+ * Everything geometric is delegated to {@link SitingSearch} and
+ * {@link FieldValidator}, which are pure and tested; what lives here is the
+ * server-side lifecycle those two cannot express.
+ */
+public final class OverworldDuels
+{
+    private OverworldDuels()
+    {
+    }
+
+    /** What the caller wants done once this class has finished deciding. */
+    public interface Outcome
+    {
+        /** Start the duel now. Called exactly once, board or no board. */
+        void start();
+
+        /** Do not start it: somebody is no longer here. */
+        void cancel(String reason);
+    }
+
+    /** How long the two get to walk to their marks before the duel gives up on the idea. */
+    public static final int WALK_TIMEOUT_TICKS = 30 * 20;
+
+    /**
+     * How far off their mark a duellist may be and still count as arrived. A
+     * block, because a player aiming at a marked square lands on it and not on
+     * its centre, and the lock snaps them the rest of the way.
+     */
+    private static final double ARRIVAL_TOLERANCE = 1.0D;
+
+    /**
+     * How far a locked duellist may drift before the server puts them back.
+     * Generous enough that knockback jitter does not fight the client, tight
+     * enough that a player cannot walk off the mark.
+     */
+    private static final double DRIFT_TOLERANCE = 0.6D;
+
+    /** A duel whose players have been shown their marks and have not both reached them. */
+    private record Waiting(UUID seat0, UUID seat1, ResourceKey<Level> level, FieldSiting siting,
+        long deadline, Outcome outcome)
+    {
+    }
+
+    /** A duel being played on a board. */
+    public record Board(UUID seat0, UUID seat1, ResourceKey<Level> level, FieldSiting siting)
+    {
+        /** Which seat this player has, or -1. */
+        public int seatOf(UUID player)
+        {
+            if(seat0.equals(player))
+            {
+                return 0;
+            }
+            return seat1.equals(player) ? 1 : -1;
+        }
+    }
+
+    // Both maps are keyed by BOTH players, so any question about one player is
+    // one lookup. Membership is the state: a player is locked exactly when they
+    // are in BOARDS, which means a crash between two writes can strand nobody.
+    private static final Map<UUID, Waiting> WAITING = new ConcurrentHashMap<>();
+    private static final Map<UUID, Board> BOARDS = new ConcurrentHashMap<>();
+
+    /** The board this player is duelling on, or null. */
+    public static Board boardOf(UUID player)
+    {
+        return BOARDS.get(player);
+    }
+
+    /** Is this player standing at a board right now, and so not free to walk away? */
+    public static boolean isLocked(UUID player)
+    {
+        return BOARDS.containsKey(player);
+    }
+
+    /** Is this player either walking to a mark or standing at a board? */
+    public static boolean isEngaged(UUID player)
+    {
+        return WAITING.containsKey(player) || BOARDS.containsKey(player);
+    }
+
+    /**
+     * Site a duel and either start it now or after both players have walked to
+     * their marks.
+     *
+     * @param first  seat 0, who takes the opening turn
+     * @param second seat 1
+     */
+    public static void prepare(MinecraftServer server, ServerPlayer first, ServerPlayer second,
+        Outcome outcome)
+    {
+        if(first.level() != second.level())
+        {
+            // Nothing to site: they are not in the same world to build in.
+            refuse(first, second, Refusal.DIFFERENT_WORLD);
+            outcome.start();
+            return;
+        }
+
+        ServerLevel level = (ServerLevel)first.level();
+        LevelSampler sampler = new LevelSampler(level);
+        BlockPos floorA = floorUnder(first);
+        BlockPos floorB = floorUnder(second);
+
+        // The live setting, not a constant: the board can be resized in game.
+        // Whatever it is at this moment is frozen into the siting and travels
+        // to both clients with it, so a duel is never resized underneath it.
+        SitingResult result = SitingSearch.site(sampler, floorA, floorB, FieldSpec.current());
+        if(result instanceof SitingResult.Refused refused)
+        {
+            refuse(first, second, refused.reason());
+            outcome.start();
+            return;
+        }
+
+        FieldSiting siting = result.siting();
+        if(result instanceof SitingResult.Ready)
+        {
+            lock(first, siting, 0);
+            lock(second, siting, 1);
+            open(first, second, level, siting);
+            outcome.start();
+            return;
+        }
+
+        // They have to walk. The markers go down, the duel waits, and the
+        // deadline guarantees the wait ends.
+        Waiting waiting = new Waiting(first.getUUID(), second.getUUID(), level.dimension(),
+            siting, level.getGameTime() + WALK_TIMEOUT_TICKS, outcome);
+        WAITING.put(first.getUUID(), waiting);
+        WAITING.put(second.getUUID(), waiting);
+        show(first, siting, 0, false);
+        show(second, siting, 1, false);
+        tell(first, Component.literal("Stand on the marked square to begin the duel")
+            .withStyle(ChatFormatting.YELLOW));
+        tell(second, Component.literal("Stand on the marked square to begin the duel")
+            .withStyle(ChatFormatting.YELLOW));
+    }
+
+    /**
+     * Watches for arrivals, expires waits, and keeps locked duellists on their
+     * marks. Cheap when nothing is happening, which is nearly always: two empty
+     * maps and an immediate return.
+     */
+    public static void tick(MinecraftServer server)
+    {
+        if(!WAITING.isEmpty())
+        {
+            tickWaiting(server);
+        }
+        if(!BOARDS.isEmpty())
+        {
+            tickBoards(server);
+        }
+    }
+
+    private static void tickWaiting(MinecraftServer server)
+    {
+        // Collected first because both keys point at one Waiting and settling
+        // it removes both -- iterating the map while doing that is asking for
+        // a duel to be started twice.
+        List<Waiting> pending = new ArrayList<>(new java.util.LinkedHashSet<>(WAITING.values()));
+        for(Waiting waiting : pending)
+        {
+            ServerPlayer first = server.getPlayerList().getPlayer(waiting.seat0());
+            ServerPlayer second = server.getPlayerList().getPlayer(waiting.seat1());
+            if(first == null || second == null)
+            {
+                settle(waiting);
+                waiting.outcome().cancel("a player left before the duel began");
+                continue;
+            }
+
+            ServerLevel level = server.getLevel(waiting.level());
+            if(level == null || first.level() != level || second.level() != level)
+            {
+                // Somebody stepped through a portal. The duel is still on; the
+                // board is not.
+                settle(waiting);
+                hide(first);
+                hide(second);
+                tell(first, refusalMessage(Refusal.DIFFERENT_WORLD));
+                tell(second, refusalMessage(Refusal.DIFFERENT_WORLD));
+                waiting.outcome().start();
+                continue;
+            }
+
+            if(arrived(first, waiting.siting(), 0) && arrived(second, waiting.siting(), 1))
+            {
+                settle(waiting);
+                lock(first, waiting.siting(), 0);
+                lock(second, waiting.siting(), 1);
+                open(first, second, level, waiting.siting());
+                waiting.outcome().start();
+                continue;
+            }
+
+            if(level.getGameTime() >= waiting.deadline())
+            {
+                settle(waiting);
+                hide(first);
+                hide(second);
+                Component gaveUp = Component.literal(
+                    "Nobody reached the duel field; playing on the duel screen instead")
+                    .withStyle(ChatFormatting.YELLOW);
+                tell(first, gaveUp);
+                tell(second, gaveUp);
+                waiting.outcome().start();
+            }
+        }
+    }
+
+    private static void tickBoards(MinecraftServer server)
+    {
+        for(Board board : new java.util.LinkedHashSet<>(BOARDS.values()))
+        {
+            // A board belongs to one world. Without this the hold would keep
+            // teleporting a duellist to the board's x/y/z in whatever dimension
+            // they had ended up in -- pinning them to a spot in the Nether that
+            // corresponds to nothing, every tick, until the duel ended.
+            if(elsewhere(server, board, 0) || elsewhere(server, board, 1))
+            {
+                release(server, board.seat0());
+                Component left = Component.literal(
+                    "The duel field was left behind; playing on the duel screen instead")
+                    .withStyle(ChatFormatting.YELLOW);
+                tell(server.getPlayerList().getPlayer(board.seat0()), left);
+                tell(server.getPlayerList().getPlayer(board.seat1()), left);
+                continue;
+            }
+            for(int seat = 0; seat < 2; seat++)
+            {
+                ServerPlayer player = server.getPlayerList()
+                    .getPlayer(seat == 0 ? board.seat0() : board.seat1());
+                if(player == null)
+                {
+                    continue;
+                }
+                hold(player, board.siting(), seat);
+            }
+        }
+    }
+
+    /** Is this seat's player online but in a different world from the board? */
+    private static boolean elsewhere(MinecraftServer server, Board board, int seat)
+    {
+        ServerPlayer player = server.getPlayerList()
+            .getPlayer(seat == 0 ? board.seat0() : board.seat1());
+        return player != null && !player.level().dimension().equals(board.level());
+    }
+
+    /**
+     * Puts a duellist back on their mark if they have drifted off it.
+     * <p>
+     * Position only: their view is their own, because looking around the field
+     * is how an overworld duel is played. The client suppresses its own
+     * movement so this normally never fires; it stays because the client is not
+     * the authority on where a player is.
+     */
+    private static void hold(ServerPlayer player, FieldSiting siting, int seat)
+    {
+        BlockPos stand = siting.stand(seat);
+        double x = stand.getX() + 0.5D;
+        double y = stand.getY() + 1;
+        double z = stand.getZ() + 0.5D;
+        if(player.distanceToSqr(x, y, z) > DRIFT_TOLERANCE * DRIFT_TOLERANCE)
+        {
+            player.connection.teleport(x, y, z, player.getYRot(), player.getXRot());
+        }
+    }
+
+    /**
+     * Puts a duellist on their mark and turns them to face the board and the
+     * other duellist. The one time their view is taken from them, because a
+     * duel that opens with a player facing the wrong way reads as broken.
+     */
+    private static void lock(ServerPlayer player, FieldSiting siting, int seat)
+    {
+        BlockPos stand = siting.stand(seat);
+        Direction look = siting.look(seat);
+        // A little downward, because the board is on the ground in front of
+        // them and level is looking over it.
+        player.connection.teleport(stand.getX() + 0.5D, stand.getY() + 1, stand.getZ() + 0.5D,
+            look.toYRot(), 25F);
+    }
+
+    private static void open(ServerPlayer first, ServerPlayer second, ServerLevel level,
+        FieldSiting siting)
+    {
+        Board board = new Board(first.getUUID(), second.getUUID(), level.dimension(), siting);
+        BOARDS.put(first.getUUID(), board);
+        BOARDS.put(second.getUUID(), board);
+        show(first, siting, 0, true);
+        show(second, siting, 1, true);
+    }
+
+    /**
+     * Takes the board away from whichever duel this player was in, and tells
+     * both ends. Safe to call for a player who was never at a board, which is
+     * how the duel-ended hooks can call it unconditionally.
+     */
+    public static void release(MinecraftServer server, UUID player)
+    {
+        Board board = BOARDS.remove(player);
+        Waiting waiting = WAITING.remove(player);
+        if(waiting != null)
+        {
+            WAITING.remove(waiting.seat0());
+            WAITING.remove(waiting.seat1());
+            hideIfOnline(server, waiting.seat0());
+            hideIfOnline(server, waiting.seat1());
+            // The invariant holds even here: a wait torn down from outside is
+            // still owed an answer, or the match state machine sits in DUELING
+            // with no duel under it forever.
+            waiting.outcome().cancel("the duel was called off");
+        }
+        if(board == null)
+        {
+            hideIfOnline(server, player);
+            return;
+        }
+        BOARDS.remove(board.seat0());
+        BOARDS.remove(board.seat1());
+        hideIfOnline(server, board.seat0());
+        hideIfOnline(server, board.seat1());
+    }
+
+    /** Every board goes away: the server is stopping, or all duels were stopped. */
+    public static void releaseAll(MinecraftServer server)
+    {
+        for(UUID player : new ArrayList<>(BOARDS.keySet()))
+        {
+            release(server, player);
+        }
+        for(UUID player : new ArrayList<>(WAITING.keySet()))
+        {
+            WAITING.remove(player);
+            hideIfOnline(server, player);
+        }
+    }
+
+    /**
+     * The block a player is standing on. Their own block position is the space
+     * their feet occupy, so the floor is one below it.
+     */
+    public static BlockPos floorUnder(ServerPlayer player)
+    {
+        return player.blockPosition().below();
+    }
+
+    /**
+     * Close enough to their mark to be called there: the right column, and
+     * within a block vertically. Exact equality would refuse a player standing
+     * on the correct square in a way the block grid disagrees with -- on a
+     * slab, on a path, half inside the block edge.
+     */
+    private static boolean arrived(ServerPlayer player, FieldSiting siting, int seat)
+    {
+        BlockPos stand = siting.stand(seat);
+        double dx = player.getX() - (stand.getX() + 0.5D);
+        double dz = player.getZ() - (stand.getZ() + 0.5D);
+        double dy = player.getY() - (stand.getY() + 1);
+        return dx * dx + dz * dz <= ARRIVAL_TOLERANCE * ARRIVAL_TOLERANCE && Math.abs(dy) <= 1.5D;
+    }
+
+    private static void settle(Waiting waiting)
+    {
+        WAITING.remove(waiting.seat0());
+        WAITING.remove(waiting.seat1());
+    }
+
+    private static void show(ServerPlayer player, FieldSiting siting, int seat, boolean locked)
+    {
+        ServerPlayNetworking.send(player,
+            new OverworldPayloads.ShowField(siting, seat, locked));
+    }
+
+    private static void hide(ServerPlayer player)
+    {
+        ServerPlayNetworking.send(player, new OverworldPayloads.HideField());
+    }
+
+    private static void hideIfOnline(MinecraftServer server, UUID id)
+    {
+        ServerPlayer player = server == null ? null : server.getPlayerList().getPlayer(id);
+        if(player != null && !player.hasDisconnected())
+        {
+            hide(player);
+        }
+    }
+
+    private static void refuse(ServerPlayer first, ServerPlayer second, Refusal reason)
+    {
+        Component message = refusalMessage(reason);
+        tell(first, message);
+        tell(second, message);
+    }
+
+    private static Component refusalMessage(Refusal reason)
+    {
+        return Component.translatable(reason.key()).withStyle(ChatFormatting.YELLOW);
+    }
+
+    private static void tell(ServerPlayer player, Component message)
+    {
+        if(player != null && !player.hasDisconnected())
+        {
+            player.sendSystemMessage(message);
+        }
+    }
+}

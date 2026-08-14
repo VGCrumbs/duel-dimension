@@ -81,6 +81,12 @@ public class DuelDimensionFabricClient implements ClientModInitializer
         net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.COLLECT_SUBMITS
             .register(de.cas_ual_ty.dueldimension.clientutil.OrichalcosRenderer::render);
 
+        // Where to stand for an overworld duel. Same event, same reasons; it
+        // returns immediately unless this client has been sent a field.
+        net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.COLLECT_SUBMITS
+            .register(de.cas_ual_ty.dueldimension.clientutil.overworld
+                .PlacementGuideRenderer::render);
+
         // THIS client's own card database, which is a separate copy from the
         // server's and is what every card the player looks at is drawn from.
         // A client whose download failed shows a world of unknown cards and
@@ -88,6 +94,12 @@ public class DuelDimensionFabricClient implements ClientModInitializer
         // where it is standing everything is fine. Skipped in singleplayer,
         // where the integrated server has already said it about the same
         // database in the same JVM.
+        // A board belongs to the world it was built in. Remembering one across
+        // a disconnect would draw it into the next world the player joins.
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT
+            .register((handler, client) ->
+                de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.clear());
+
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.JOIN
             .register((handler, sender, client) ->
             {

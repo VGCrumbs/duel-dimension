@@ -259,6 +259,39 @@ public class DuelDimensionFabric implements ModInitializer
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(
             de.cas_ual_ty.dueldimension.duel.match.DuelLobby::tickPending);
 
+        // The overworld field's size, which is editable in game and read here
+        // so a server picks up whatever was last set rather than the built-in.
+        de.cas_ual_ty.dueldimension.duel.overworld.OverworldSettings.load();
+
+        // Overworld duels: watches for two duellists reaching their marks, and
+        // keeps them there once they have. Two empty maps and an immediate
+        // return when nobody is duelling on a board, which is nearly always.
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(
+            de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels::tick);
+
+        // Nothing a duellist standing at a board does with a block should reach
+        // the block. They are pinned in place with their hands on a duel, and
+        // an errant right-click that opens a chest or places a torch in the
+        // field is exactly the accident the lock exists to prevent. Refused
+        // server side rather than merely hidden client side, because the client
+        // is not the authority on what the world does.
+        net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents.BEFORE.register(
+            (level, player, pos, state, entity) ->
+                !de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels
+                    .isLocked(player.getUUID()));
+        net.fabricmc.fabric.api.event.player.UseBlockCallback.EVENT.register(
+            (player, level, hand, hit) ->
+                de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels
+                    .isLocked(player.getUUID())
+                    ? net.minecraft.world.InteractionResult.FAIL
+                    : net.minecraft.world.InteractionResult.PASS);
+        net.fabricmc.fabric.api.event.player.AttackBlockCallback.EVENT.register(
+            (player, level, hand, pos, direction) ->
+                de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels
+                    .isLocked(player.getUUID())
+                    ? net.minecraft.world.InteractionResult.FAIL
+                    : net.minecraft.world.InteractionResult.PASS);
+
         // Renamed in 26.2: "world" became "level" throughout this API.
         ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(
             (player, origin, destination) ->

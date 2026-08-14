@@ -283,10 +283,60 @@ public final class DuelLobby
 
             ServerPlayer first = winnerFirst ? winner : other;
             ServerPlayer second = winnerFirst ? other : winner;
+
+            // An overworld duel is the same duel, sited on the ground first.
+            // The manager promises to answer exactly once -- start, however the
+            // siting went, or cancel only if somebody has actually left -- so
+            // the duel cannot be lost to a board that would not fit.
+            if(toss.config().isOverworld())
+            {
+                de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels.prepare(server, first,
+                    second, new de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels.Outcome()
+                    {
+                        @Override
+                        public void start()
+                        {
+                            startDuel(server, toss, first.getUUID(), second.getUUID());
+                        }
+
+                        @Override
+                        public void cancel(String reason)
+                        {
+                            de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels
+                                .release(server, first.getUUID());
+                            toss.machine().cancel(reason);
+                        }
+                    });
+                return;
+            }
+            startDuel(server, toss, first.getUUID(), second.getUUID());
+        }
+
+        /**
+         * Starts the duel the toss and the siting settled on.
+         * <p>
+         * Takes ids rather than players and resolves them again, because an
+         * overworld duel can wait half a minute for two people to walk to their
+         * marks and a {@code ServerPlayer} does not survive a relog.
+         */
+        private static void startDuel(MinecraftServer server, Toss toss, UUID firstId,
+            UUID secondId)
+        {
+            ServerPlayer first = server.getPlayerList().getPlayer(firstId);
+            ServerPlayer second = server.getPlayerList().getPlayer(secondId);
+            if(first == null || second == null)
+            {
+                de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels.release(server, firstId);
+                toss.machine().cancel("a player left before the duel began");
+                return;
+            }
+
             String error = de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels
                 .startPlayerDuel(first, second, toss.config());
             if(error != null)
             {
+                // The board goes with it: there is no duel for it to stand for.
+                de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels.release(server, firstId);
                 toss.machine().cancel(error);
                 for(ServerPlayer player : List.of(first, second))
                 {

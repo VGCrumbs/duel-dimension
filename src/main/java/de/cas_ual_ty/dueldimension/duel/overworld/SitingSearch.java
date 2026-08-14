@@ -6,7 +6,9 @@ import net.minecraft.core.Direction;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Finds where two duellists can hold an overworld duel: first by asking whether
@@ -59,10 +61,10 @@ public final class SitingSearch
         {
             return new SitingResult.Move(nearest);
         }
-        // Report what was wrong with where they were standing if that was the
-        // problem, so the message names something the player can act on rather
-        // than the generic "no room".
-        return new SitingResult.Refused(pair != null ? pair : Refusal.NO_ROOM);
+        // NO_ROOM even when their stance was also wrong: the search looked
+        // everywhere within its radius and found nothing, so telling them to
+        // straighten up would be telling them to fix what was not the problem.
+        return new SitingResult.Refused(Refusal.NO_ROOM);
     }
 
     /**
@@ -74,21 +76,32 @@ public final class SitingSearch
      * player cannot see". The whole square is only a few hundred columns, so
      * sorting it costs nothing next to one block read.
      * <p>
-     * The preferred facing is exhausted everywhere before any other facing is
+     * The preferred facing is exhausted everywhere before either other facing is
      * tried anywhere: a field further away that keeps the duellists on the
-     * sides they were already standing on is the better answer, and the last
-     * facing tried is the one that swaps them over.
+     * sides they were already standing on is the better answer than a nearer
+     * one that turns the board under them.
      */
     public static FieldSiting search(BlockSampler sampler, BlockPos around, Direction preferred,
         FieldSpec spec)
     {
         List<BlockPos> columns = candidates(around, spec);
+        // Where the floor is in a column does not depend on which way the board
+        // faces, and finding it is a vertical scan. Remembered across the
+        // facings rather than repeated: measured at 188,000 block reads for one
+        // failing search before this, on the server thread.
+        Map<BlockPos, Integer> floors = new HashMap<>();
         for(Direction facing : facings(preferred))
         {
             for(BlockPos column : columns)
             {
-                FieldSiting candidate = at(sampler, column, facing, spec);
-                if(candidate != null)
+                int floorY = floors.computeIfAbsent(column, at -> floorAt(sampler, at, spec));
+                if(floorY == NO_FLOOR)
+                {
+                    continue;
+                }
+                FieldSiting candidate = new FieldSiting(
+                    new BlockPos(column.getX(), floorY, column.getZ()), facing, spec);
+                if(FieldValidator.check(sampler, candidate) == null)
                 {
                     return candidate;
                 }
@@ -124,31 +137,16 @@ public final class SitingSearch
         return value * value;
     }
 
-    /**
-     * A field centred on this column, if one fits. The floor is found first and
-     * the field validated once against it, rather than validating the whole
-     * field at every height in range: a 9x9 field is over three hundred block
-     * reads and the search visits hundreds of columns.
-     */
-    private static FieldSiting at(BlockSampler sampler, BlockPos column, Direction facing,
-        FieldSpec spec)
-    {
-        int floorY = floorAt(sampler, column, spec);
-        if(floorY == NO_FLOOR)
-        {
-            return null;
-        }
-        FieldSiting candidate = new FieldSiting(
-            new BlockPos(column.getX(), floorY, column.getZ()), facing, spec);
-        return FieldValidator.check(sampler, candidate) == null ? candidate : null;
-    }
-
-    private static final int NO_FLOOR = Integer.MIN_VALUE;
+    /** No floor within reach of a column. Never packed into a BlockPos. */
+    public static final int NO_FLOOR = Integer.MIN_VALUE;
 
     /**
      * The height of the ground in this column, searched from the given level
      * outwards -- level first, then down, then up, so a field prefers the floor
      * the players are already standing on over a roof above them.
+     *
+     * @return the floor's y, or {@link #NO_FLOOR}, which a caller must test
+     *         for: it is not a coordinate, and truncates if used as one
      */
     public static int floorAt(BlockSampler sampler, BlockPos column, FieldSpec spec)
     {
@@ -199,14 +197,18 @@ public final class SitingSearch
     }
 
     /**
-     * The preferred facing, then the two that turn the board a quarter, then
-     * the one that swaps which duellist stands where. Swapping sides is a valid
-     * field but a surprising one, so it is the last resort rather than an
-     * equal-ranked alternative.
+     * The preferred facing, then the two that turn the board a quarter turn.
+     * <p>
+     * The opposite facing is deliberately absent: it can never change the
+     * answer. The footprint is symmetric about the anchor on both axes, so
+     * negating both is a permutation of the same cells, and the two stand
+     * blocks merely swap -- a field and its opposite are accepted or refused
+     * together, always. Trying it was a whole extra pass re-deciding what the
+     * first pass had already decided, which was half the search's block reads.
      */
     private static Direction[] facings(Direction preferred)
     {
         return new Direction[] {preferred, preferred.getClockWise(),
-            preferred.getCounterClockWise(), preferred.getOpposite()};
+            preferred.getCounterClockWise()};
     }
 }

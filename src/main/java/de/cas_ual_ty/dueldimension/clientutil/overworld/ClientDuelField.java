@@ -1,0 +1,79 @@
+package de.cas_ual_ty.dueldimension.clientutil.overworld;
+
+import de.cas_ual_ty.dueldimension.duel.overworld.FieldSiting;
+import de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads;
+
+/**
+ * What this client knows about the duel field it is standing at.
+ * <p>
+ * One holder for the whole client, like {@code DuelClientState}, because a
+ * player is at one board at a time and everything that draws or reads the board
+ * -- the markers, the mesh, the picker, the input mode -- has to agree about
+ * which one. Written only by the packet handler on the client thread.
+ * <p>
+ * Holds nothing about the duel: no cards, no hand, no life points. Those
+ * already have a home that redacts them per seat, and duplicating any of it
+ * here would be a second place to get hidden information wrong.
+ */
+public final class ClientDuelField
+{
+    private ClientDuelField()
+    {
+    }
+
+    private static FieldSiting siting;
+    private static int seat = -1;
+    private static boolean locked;
+
+    /** The field standing in the world, or null when there is none. */
+    public static FieldSiting siting()
+    {
+        return siting;
+    }
+
+    /** Which end of the board this player belongs at, or -1 when not duelling. */
+    public static int seat()
+    {
+        return seat;
+    }
+
+    /**
+     * True once this player is standing at the board and the duel is under way;
+     * false while they still have to walk to their mark. The difference is what
+     * separates a marker to walk to from a duel to play.
+     */
+    public static boolean locked()
+    {
+        return locked;
+    }
+
+    /** Is there a field to draw at all? */
+    public static boolean present()
+    {
+        return siting != null;
+    }
+
+    /** Is this player walking to a mark right now? */
+    public static boolean walking()
+    {
+        return siting != null && !locked;
+    }
+
+    public static void apply(OverworldPayloads.ShowField field)
+    {
+        siting = field.siting();
+        seat = field.seat();
+        locked = field.locked();
+    }
+
+    /**
+     * Forgets the field. Also called when leaving a world, because a board
+     * remembered across a disconnect would be drawn into the next one.
+     */
+    public static void clear()
+    {
+        siting = null;
+        seat = -1;
+        locked = false;
+    }
+}

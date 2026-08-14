@@ -146,7 +146,10 @@ public final class FieldValidator
         {
             return Refusal.TOO_CLOSE;
         }
-        if(Math.abs(dx) > spec.maxSeparation() || Math.abs(dz) > spec.maxSeparation())
+        // Real distance, not per axis. A per-axis limit is a square, so a
+        // diagonal pair 22 blocks apart passed while a straight pair 17 apart
+        // was refused: the further of the two accepted over the nearer.
+        if(dx * dx + dz * dz > spec.maxSeparation() * spec.maxSeparation())
         {
             return Refusal.TOO_FAR;
         }

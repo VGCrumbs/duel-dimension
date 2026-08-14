@@ -42,9 +42,22 @@ public class DuelLobbyScreen extends Screen
         return (width - panelW()) / 2;
     }
 
+    /**
+     * Tall enough for the rows it actually has: five settings, the ready row
+     * and the notice. Written as a sum rather than a round number because a row
+     * was added once and the panel did not grow with it.
+     */
+    private int panelH()
+    {
+        return 40 + SETTING_ROWS * ROW_H + 34 + 20 + 16;
+    }
+
+    private static final int SETTING_ROWS = 5;
+    private static final int ROW_H = 22;
+
     private int panelY()
     {
-        return Math.max(20, height / 2 - 110);
+        return Math.max(20, (height - panelH()) / 2);
     }
 
     @Override
@@ -61,36 +74,45 @@ public class DuelLobbyScreen extends Screen
             Component.literal("Banlist:  " + banlistName()), pressed -> cycleBanlist());
         banlist.active = host;
         addRenderableWidget(banlist);
-        y += 22;
+        y += ROW_H;
 
         HubWidgets.TextureButton life = new HubWidgets.TextureButton(x, y, w, 18,
             Component.literal("Life Points:  " + room.config().lifePoints()),
             pressed -> cycle(MatchConfig.LIFE_POINT_CHOICES, room.config().lifePoints(),
-                value -> propose(new MatchConfig(room.config().banlistId(), value,
-                    room.config().format(), room.config().turnSeconds()))));
+                value -> propose(room.config().withLifePoints(value))));
         life.active = host;
         addRenderableWidget(life);
-        y += 22;
+        y += ROW_H;
 
         HubWidgets.TextureButton format = new HubWidgets.TextureButton(x, y, w, 18,
             Component.literal("Format:  " + (room.config().format() == MatchConfig.Format.SINGLE
                 ? "Single duel" : "Match, best of 3")),
-            pressed -> propose(new MatchConfig(room.config().banlistId(), room.config().lifePoints(),
+            pressed -> propose(room.config().withFormat(
                 room.config().format() == MatchConfig.Format.SINGLE
-                    ? MatchConfig.Format.MATCH_BEST_OF_THREE : MatchConfig.Format.SINGLE,
-                room.config().turnSeconds())));
+                    ? MatchConfig.Format.MATCH_BEST_OF_THREE : MatchConfig.Format.SINGLE)));
         format.active = host;
         addRenderableWidget(format);
-        y += 22;
+        y += ROW_H;
 
         HubWidgets.TextureButton timer = new HubWidgets.TextureButton(x, y, w, 18,
             Component.literal("Turn timer:  " + (room.config().turnSeconds() == 0
                 ? "none" : room.config().turnSeconds() + "s")),
             pressed -> cycle(MatchConfig.TIMER_CHOICES, room.config().turnSeconds(),
-                value -> propose(new MatchConfig(room.config().banlistId(),
-                    room.config().lifePoints(), room.config().format(), value))));
+                value -> propose(room.config().withTurnSeconds(value))));
         timer.active = host;
         addRenderableWidget(timer);
+        y += ROW_H;
+
+        // Where the duel is played. Not a rule and not negotiable mid-duel: a
+        // board that cannot be sited falls back to the screen on its own, so
+        // this row promises a preference rather than a guarantee.
+        HubWidgets.TextureButton where = new HubWidgets.TextureButton(x, y, w, 18,
+            Component.literal("Played on:  " + room.config().presentation().label()),
+            pressed -> propose(room.config().withPresentation(
+                room.config().isOverworld() ? MatchConfig.Presentation.SCREEN
+                    : MatchConfig.Presentation.OVERWORLD)));
+        where.active = host;
+        addRenderableWidget(where);
         y += 34;
 
         boolean mine = room.host() ? room.hostReady() : room.guestReady();
@@ -126,8 +148,7 @@ public class DuelLobbyScreen extends Screen
         }
         int index = room.banlistIds().indexOf(room.config().banlistId());
         String next = room.banlistIds().get((index + 1) % room.banlistIds().size());
-        propose(new MatchConfig(next, room.config().lifePoints(), room.config().format(),
-            room.config().turnSeconds()));
+        propose(room.config().withBanlist(next));
     }
 
     /** Steps to the next offered value, wrapping. */
@@ -159,7 +180,7 @@ public class DuelLobbyScreen extends Screen
         extractor.fillGradient(0, 0, width, height, 0xC0101010, 0xD0101010);
         int x = panelX();
         int y = panelY();
-        NineSlice.draw(extractor, HubTextures.PANEL, x, y, panelW(), 200);
+        NineSlice.draw(extractor, HubTextures.PANEL, x, y, panelW(), panelH());
 
         String title = "Duel Lobby";
         extractor.text(font, title, x + (panelW() - font.width(title)) / 2, y + 10, 0xFFF4D089, true);
@@ -177,7 +198,7 @@ public class DuelLobbyScreen extends Screen
 
         // Why this player cannot be ready, if they cannot. Said here rather
         // than at the duel, which is too late to do anything about it.
-        int noticeY = y + 176;
+        int noticeY = y + panelH() - 24;
         if(room.problems().isEmpty())
         {
             extractor.text(font, "Your deck is legal for these settings",
