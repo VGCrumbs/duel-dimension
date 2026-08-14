@@ -87,6 +87,13 @@ public class DuelDimensionFabricClient implements ClientModInitializer
             .register(de.cas_ual_ty.dueldimension.clientutil.overworld
                 .PlacementGuideRenderer::render);
 
+        // The board itself, once both duellists are standing at it. Registered
+        // after the guide so it draws over the markers in the frame they both
+        // exist, which is the frame the duel begins.
+        net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents.COLLECT_SUBMITS
+            .register(de.cas_ual_ty.dueldimension.clientutil.overworld
+                .OverworldBoardRenderer::render);
+
         // THIS client's own card database, which is a separate copy from the
         // server's and is what every card the player looks at is drawn from.
         // A client whose download failed shows a world of unknown cards and

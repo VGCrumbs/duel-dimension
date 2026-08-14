@@ -2,6 +2,7 @@ package de.cas_ual_ty.dueldimension.clientutil.overworld;
 
 import de.cas_ual_ty.dueldimension.duel.overworld.FieldSiting;
 import de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads;
+import net.minecraft.client.Minecraft;
 
 /**
  * What this client knows about the duel field it is standing at.
@@ -22,13 +23,14 @@ public final class ClientDuelField
     }
 
     private static FieldSiting siting;
+    private static net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> level;
     private static int seat = -1;
     private static boolean locked;
 
-    /** The field standing in the world, or null when there is none. */
+    /** The field standing in the world, or null when there is none to draw here. */
     public static FieldSiting siting()
     {
-        return siting;
+        return present() ? siting : null;
     }
 
     /** Which end of the board this player belongs at, or -1 when not duelling. */
@@ -47,21 +49,30 @@ public final class ClientDuelField
         return locked;
     }
 
-    /** Is there a field to draw at all? */
+    /**
+     * Is there a field to draw, here, now?
+     * <p>
+     * The dimension is part of the question. A board remembered while its owner
+     * steps through a portal would otherwise be drawn at the same coordinates
+     * in the Nether, over ground that has nothing to do with it.
+     */
     public static boolean present()
     {
-        return siting != null;
+        Minecraft client = Minecraft.getInstance();
+        return siting != null && client.level != null
+            && client.level.dimension().equals(level);
     }
 
     /** Is this player walking to a mark right now? */
     public static boolean walking()
     {
-        return siting != null && !locked;
+        return present() && !locked;
     }
 
     public static void apply(OverworldPayloads.ShowField field)
     {
         siting = field.siting();
+        level = field.level();
         seat = field.seat();
         locked = field.locked();
     }
@@ -73,6 +84,7 @@ public final class ClientDuelField
     public static void clear()
     {
         siting = null;
+        level = null;
         seat = -1;
         locked = false;
     }

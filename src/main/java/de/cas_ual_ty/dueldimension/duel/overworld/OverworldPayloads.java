@@ -5,6 +5,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.level.Level;
 
 /**
  * What the server tells a client about a duel field standing in the world.
@@ -28,11 +31,14 @@ public final class OverworldPayloads
     /**
      * There is a field here, and this is your place at it.
      *
+     * @param level  which world it stands in; a board drawn from memory in the
+     *               wrong dimension is a board floating over unrelated ground,
+     *               and the server had exactly this bug before the client did
      * @param seat   which end of the board this player belongs at
      * @param locked true once the duel has them in position, false while they
      *               still have to walk to their mark
      */
-    public record ShowField(FieldSiting siting, int seat, boolean locked)
+    public record ShowField(FieldSiting siting, ResourceKey<Level> level, int seat, boolean locked)
         implements CustomPacketPayload
     {
         public static final CustomPacketPayload.Type<ShowField> TYPE =
@@ -52,6 +58,7 @@ public final class OverworldPayloads
             buffer.writeBlockPos(message.siting().anchor());
             buffer.writeEnum(message.siting().facing());
             writeSpec(message.siting().spec(), buffer);
+            buffer.writeResourceKey(message.level());
             buffer.writeVarInt(message.seat());
             buffer.writeBoolean(message.locked());
         }
@@ -60,10 +67,11 @@ public final class OverworldPayloads
         {
             FieldSiting siting = new FieldSiting(buffer.readBlockPos(),
                 buffer.readEnum(Direction.class), readSpec(buffer));
+            ResourceKey<Level> level = buffer.readResourceKey(Registries.DIMENSION);
             // Clamped rather than trusted, like every other seat index that
             // crosses the wire: a two-seat board has seats 0 and 1.
             int seat = Math.clamp(buffer.readVarInt(), 0, 1);
-            return new ShowField(siting, seat, buffer.readBoolean());
+            return new ShowField(siting, level, seat, buffer.readBoolean());
         }
     }
 

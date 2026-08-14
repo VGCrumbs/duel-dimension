@@ -404,8 +404,8 @@ public final class OverworldDuels
 
     private static void show(ServerPlayer player, FieldSiting siting, int seat, boolean locked)
     {
-        ServerPlayNetworking.send(player,
-            new OverworldPayloads.ShowField(siting, seat, locked));
+        ServerPlayNetworking.send(player, new OverworldPayloads.ShowField(siting,
+            player.level().dimension(), seat, locked));
     }
 
     private static void hide(ServerPlayer player)
