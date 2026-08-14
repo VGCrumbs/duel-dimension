@@ -186,6 +186,25 @@ public final class ClientDuelField
         de.cas_ual_ty.dueldimension.clientutil.DuelClientState.openScreen();
     }
 
+    /**
+     * Shift, asked of the window rather than of a key event.
+     * <p>
+     * A question about a key being HELD while the view moves, not about one
+     * having been pressed -- and asked from the renderer as well as from the
+     * cursor, neither of which is given key events. One copy, because the card
+     * text and the card's stats appear on the same hold and appearing on
+     * slightly different holds would read as one of them being broken.
+     */
+    public static boolean shiftHeld()
+    {
+        com.mojang.blaze3d.platform.Window window =
+            net.minecraft.client.Minecraft.getInstance().getWindow();
+        return com.mojang.blaze3d.platform.InputConstants.isKeyDown(window,
+            org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT)
+            || com.mojang.blaze3d.platform.InputConstants.isKeyDown(window,
+                org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT);
+    }
+
     /** Puts the selected slot back if something moved it during a duel. */
     public static void holdHotbar(net.minecraft.client.Minecraft client)
     {

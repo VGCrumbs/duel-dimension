@@ -745,6 +745,8 @@ public final class OverworldBoardRenderer
                 slot.defence(), cardLift(transform), CardFaces.face(slot, false, controller),
                 CardFaces.underside(slot, controller), fade(0xFFFFFFFF));
 
+            drawStats(poseStack, collector, transform, camera, zone, slot, location);
+
             de.cas_ual_ty.dueldimension.clientutil.BoardTarget target =
                 new de.cas_ual_ty.dueldimension.clientutil.BoardTarget(slot.code(), asked,
                     location, sequence, -1, "", 1, slot.art());
@@ -811,6 +813,111 @@ public final class OverworldBoardRenderer
         }
         int was = tint >>> 24;
         return Math.round(was * alpha) << 24 | (tint & 0xFFFFFF);
+    }
+
+    /** EDOPro recolours a stat against its printed value; this is that palette. */
+    private static final int STAT_PLAIN = 0xFFFFFFFF;
+    private static final int STAT_HIGHER = 0xFF66B2FF;
+    private static final int STAT_LOWER = 0xFFFF4C4C;
+    private static final int STAT_SLASH = 0xFF9A9A9A;
+
+    /**
+     * Field units per pixel of the stat caption.
+     * <p>
+     * A card is 0.7 units across and the longest caption a duel produces is
+     * about forty-five pixels, so this sits it comfortably inside the card's
+     * own width at any board size -- and BECAUSE it is in field units, a board
+     * scaled up scales its captions with it rather than growing a board with
+     * the same tiny numbers on it.
+     */
+    private static final float STAT_UNITS_PER_PIXEL = 0.014F;
+
+    /** Drawn after the board, or the board it lies on is drawn over the top of it. */
+    private static final int STAT_ORDER = 1_000_000;
+    private static final int STAT_LIGHT = 0xF000F0;
+
+    /**
+     * A monster's ATK and DEF, lying on the card, as the duel screen draws them.
+     * <p>
+     * Only while SHIFT is held. On the screen these are always up because the
+     * screen has nothing else to be; out here the board IS the view, and
+     * twelve captions permanently scattered across it turn a table of cards
+     * into a spreadsheet. Held on the same key as the card's own text, so one
+     * hold answers both questions a duellist has about a card.
+     * <p>
+     * Only when the numbers are actually known, too: the core reports -1 for a
+     * value this viewer is not entitled to, and a face-down monster captioned
+     * with a confident 0/0 would be worse than no caption at all.
+     */
+    private static void drawStats(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera, FieldLayout.Rect zone, BoardSnapshot.Slot slot,
+        int location)
+    {
+        if(location != OcgConstants.LOCATION_MZONE || slot.faceDown() || slot.code() == 0
+            || slot.attack() < 0 || slot.defense() < 0 || !ClientDuelField.shiftHeld())
+        {
+            return;
+        }
+        net.minecraft.client.gui.Font font = net.minecraft.client.Minecraft.getInstance().font;
+        if(font == null)
+        {
+            return;
+        }
+        String attack = Integer.toString(slot.attack());
+        String defense = Integer.toString(slot.defense());
+        int attackColour = slot.attack() > slot.baseAttack() ? STAT_HIGHER
+            : slot.attack() < slot.baseAttack() ? STAT_LOWER : STAT_PLAIN;
+        int defenseColour = slot.defense() > slot.baseDefense() ? STAT_HIGHER
+            : slot.defense() < slot.baseDefense() ? STAT_LOWER : STAT_PLAIN;
+
+        FieldLayout.Rect card = CardMesh.placement(zone, slot.defence());
+        // Which way round the caption reads is decided by where the READER is,
+        // not by whose card it is. Both duellists walk around one board, so a
+        // caption turned to face its owner would be upside down for half the
+        // people it is for -- and the duel screen writes both sides' stats the
+        // right way up for whoever is looking.
+        boolean far = ClientDuelField.seat() == 1;
+        float towards = far ? -1F : 1F;
+        // Just inside the edge nearest the reader, which is where the duel
+        // screen puts it: on the card, over the art's lower band.
+        float midX = card.x() + card.w() / 2F;
+        float edgeY = far ? card.y() + 0.12F : card.y() + card.h() - 0.12F;
+
+        double lift = (cardLift(transform) + CardMesh.THICKNESS + 0.05F) * transform.scale();
+        Vec3 origin = transform.at(midX, edgeY, lift);
+        // The basis is READ off the transform rather than worked out from the
+        // facing, so the caption cannot end up rotated a quarter turn against
+        // the card it is written on -- which is the mistake this board's UVs
+        // have made three times over.
+        Vec3 right = transform.at(midX + towards, edgeY, lift).subtract(origin);
+        Vec3 down = transform.at(midX, edgeY + towards, lift).subtract(origin);
+        Vec3 normal = right.cross(down).normalize();
+
+        int width = font.width(attack) + font.width("/") + font.width(defense);
+        poseStack.pushPose();
+        poseStack.translate(origin.x - camera.x, origin.y - camera.y, origin.z - camera.z);
+        poseStack.mulPose(new org.joml.Matrix4f().set(
+            (float)right.x, (float)right.y, (float)right.z, 0F,
+            (float)down.x, (float)down.y, (float)down.z, 0F,
+            (float)normal.x, (float)normal.y, (float)normal.z, 0F,
+            0F, 0F, 0F, 1F));
+        poseStack.scale(STAT_UNITS_PER_PIXEL, STAT_UNITS_PER_PIXEL, STAT_UNITS_PER_PIXEL);
+
+        int x = -width / 2;
+        submitStat(poseStack, collector, font, x, attack, attackColour);
+        x += font.width(attack);
+        submitStat(poseStack, collector, font, x, "/", STAT_SLASH);
+        x += font.width("/");
+        submitStat(poseStack, collector, font, x, defense, defenseColour);
+        poseStack.popPose();
+    }
+
+    private static void submitStat(PoseStack poseStack, SubmitNodeCollector collector,
+        net.minecraft.client.gui.Font font, int x, String text, int colour)
+    {
+        collector.order(STAT_ORDER).submitText(poseStack, x, -4,
+            net.minecraft.network.chat.Component.literal(text).getVisualOrderText(), false,
+            net.minecraft.client.gui.Font.DisplayMode.NORMAL, STAT_LIGHT, colour, 0, 0);
     }
 
     /**

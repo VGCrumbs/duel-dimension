@@ -16,6 +16,7 @@
     "client.SlotWrapperAccessor",
     "client.MinecraftDuelClickMixin",
     "client.DuelMovementMixin",
+    "client.BlockOutlineMixin",
     "client.XaeroHudMixin",
     "client.KeyMappingAccessor"
   ],

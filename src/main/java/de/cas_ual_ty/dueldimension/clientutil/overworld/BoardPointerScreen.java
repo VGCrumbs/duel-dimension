@@ -1105,12 +1105,7 @@ public class BoardPointerScreen extends Screen
      */
     private static boolean shiftHeld()
     {
-        com.mojang.blaze3d.platform.Window window =
-            net.minecraft.client.Minecraft.getInstance().getWindow();
-        return com.mojang.blaze3d.platform.InputConstants.isKeyDown(window,
-            org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT)
-            || com.mojang.blaze3d.platform.InputConstants.isKeyDown(window,
-                org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT);
+        return ClientDuelField.shiftHeld();
     }
 
     @Override
