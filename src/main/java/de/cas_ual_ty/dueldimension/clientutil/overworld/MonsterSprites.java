@@ -101,6 +101,7 @@ public final class MonsterSprites
     {
         monster(46986414L, "dark_magician", 4, Loop.PING_PONG);
         monster(38033121L, "dark_magician_girl", 4, Loop.PING_PONG);
+        monster(70781052L, "summoned_skull", 4, Loop.PING_PONG);
     }
     // =========================================================================
 
