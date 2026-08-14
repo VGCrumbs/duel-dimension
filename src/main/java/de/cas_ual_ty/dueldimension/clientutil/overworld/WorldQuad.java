@@ -55,6 +55,18 @@ public final class WorldQuad
         Identifier texture, Vec3 camera, Vec3[] corners, int tint, float u0, float v0, float u1,
         float v1)
     {
+        submit(poseStack, collector, texture, camera, corners, tint,
+            new float[] {u0, u0, u1, u1}, new float[] {v0, v1, v1, v0});
+    }
+
+    /**
+     * The same again, with a texture coordinate per corner -- which is how a
+     * card's art is turned to face its owner without turning the card itself
+     * off its zone.
+     */
+    public static void submit(PoseStack poseStack, SubmitNodeCollector collector,
+        Identifier texture, Vec3 camera, Vec3[] corners, int tint, float[] us, float[] vs)
+    {
         // Relative to the camera in doubles before anything becomes a float:
         // world coordinates run to millions and a float loses whole blocks out
         // there, which shows up as a board that jitters far from spawn.
@@ -68,6 +80,11 @@ public final class WorldQuad
             zs[corner] = (float)(corners[corner].z - camera.z);
         }
 
+        // The face's normal, from its own winding, rather than a hardcoded
+        // "up". The board's pieces are all ground-plane quads; a card is a
+        // solid, and its four edges point sideways.
+        float[] normal = normalOf(xs, ys, zs);
+
         PoseStack.Pose pose = poseStack.last();
         collector.submitCustomGeometry(poseStack,
             // The one entity render type established as truly unlit, by
@@ -78,21 +95,41 @@ public final class WorldQuad
             net.minecraft.client.renderer.rendertype.RenderTypes.breezeWind(texture, 0F, 0F),
             (unused, buffer) ->
             {
-                vertex(buffer, pose, xs[0], ys[0], zs[0], u0, v0, tint);
-                vertex(buffer, pose, xs[1], ys[1], zs[1], u0, v1, tint);
-                vertex(buffer, pose, xs[2], ys[2], zs[2], u1, v1, tint);
-                vertex(buffer, pose, xs[3], ys[3], zs[3], u1, v0, tint);
+                for(int corner = 0; corner < 4; corner++)
+                {
+                    vertex(buffer, pose, xs[corner], ys[corner], zs[corner], us[corner],
+                        vs[corner], tint, normal);
+                }
             });
     }
 
+    /** The unit normal of the quad, from the cross product of two of its edges. */
+    private static float[] normalOf(float[] xs, float[] ys, float[] zs)
+    {
+        float ax = xs[1] - xs[0];
+        float ay = ys[1] - ys[0];
+        float az = zs[1] - zs[0];
+        float bx = xs[3] - xs[0];
+        float by = ys[3] - ys[0];
+        float bz = zs[3] - zs[0];
+        float nx = ay * bz - az * by;
+        float ny = az * bx - ax * bz;
+        float nz = ax * by - ay * bx;
+        float length = (float)Math.sqrt(nx * nx + ny * ny + nz * nz);
+        // A degenerate quad has no normal to speak of; straight up is the
+        // answer that cannot make anything worse.
+        return length < 1e-6F ? new float[] {0F, 1F, 0F}
+            : new float[] {nx / length, ny / length, nz / length};
+    }
+
     private static void vertex(VertexConsumer buffer, PoseStack.Pose pose, float x, float y,
-        float z, float u, float v, int tint)
+        float z, float u, float v, int tint, float[] normal)
     {
         buffer.addVertex(pose, x, y, z)
             .setColor(tint)
             .setUv(u, v)
             .setOverlay(OverlayTexture.NO_OVERLAY)
             .setLight(PROJECTED_LIGHT)
-            .setNormal(0F, 1F, 0F);
+            .setNormal(normal[0], normal[1], normal[2]);
     }
 }

@@ -1,8 +1,13 @@
 package de.cas_ual_ty.dueldimension.clientutil.overworld;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import de.cas_ual_ty.dueldimension.clientutil.CardFaces;
 import de.cas_ual_ty.dueldimension.clientutil.DuelClientState;
+import de.cas_ual_ty.dueldimension.clientutil.FieldLayout;
 import de.cas_ual_ty.dueldimension.clientutil.PlayMats;
+import de.cas_ual_ty.dueldimension.ocg.OcgConstants;
+import de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot;
+import net.minecraft.resources.Identifier;
 import de.cas_ual_ty.dueldimension.duel.overworld.FieldSiting;
 import de.cas_ual_ty.dueldimension.duel.overworld.FieldTransform;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
@@ -34,6 +39,13 @@ public final class OverworldBoardRenderer
     /** How far the board floats over the ground: enough not to z-fight the floor. */
     private static final double SURFACE_LIFT = 0.02D;
 
+    /**
+     * How high a card sits above the board, in field units. Above every piece
+     * of the board including a lit zone square, so a card is never in a
+     * coplanar fight with the square it is standing on.
+     */
+    private static final float CARD_LIFT = 0.02F;
+
     public static void render(LevelRenderContext context)
     {
         FieldSiting siting = ClientDuelField.siting();
@@ -59,6 +71,74 @@ public final class OverworldBoardRenderer
         {
             WorldQuad.submit(poseStack, collector, piece.texture(), camera,
                 transform.corners(piece.rect(), SURFACE_LIFT + piece.lift()), 0xFFFFFFFF);
+        }
+
+        drawCards(poseStack, collector, transform, camera);
+    }
+
+    /**
+     * The cards on the field, as real objects standing on the board.
+     * <p>
+     * Read from {@code DuelClientState.board} and from nothing else. That is
+     * the paced, ordered view the animations commit into; a prompt's own field
+     * snapshot is a settled server state captured when the core asked, and
+     * preferring it is the documented cause of cards appearing before the
+     * animation that puts them there. On a world board it would also show a
+     * face-down card's zone filling before the move that justifies it.
+     */
+    private static void drawCards(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera)
+    {
+        BoardSnapshot board = DuelClientState.board;
+        if(board == null)
+        {
+            return;
+        }
+        int seat = Math.max(0, ClientDuelField.seat());
+
+        for(boolean own : new boolean[] {true, false})
+        {
+            BoardSnapshot.Side side = own ? board.self() : board.opponent();
+            if(side == null)
+            {
+                continue;
+            }
+            // The snapshot is seat-relative -- "self" is whoever is being
+            // served -- and the board is not, because both duellists walk
+            // around the same one. This is where that is translated, and the
+            // only place it is.
+            int controller = FieldTransform.controllerFor(seat, own);
+            Identifier back = CardFaces.back(controller);
+
+            drawRow(poseStack, collector, transform, camera, side.monsters(), controller,
+                OcgConstants.LOCATION_MZONE, back);
+            drawRow(poseStack, collector, transform, camera, side.spells(), controller,
+                OcgConstants.LOCATION_SZONE, back);
+        }
+    }
+
+    private static void drawRow(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera, List<BoardSnapshot.Slot> slots, int controller,
+        int location, Identifier back)
+    {
+        if(slots == null)
+        {
+            return;
+        }
+        for(int sequence = 0; sequence < slots.size(); sequence++)
+        {
+            BoardSnapshot.Slot slot = slots.get(sequence);
+            if(slot == null || !slot.present())
+            {
+                continue;
+            }
+            FieldLayout.Rect zone = FieldLayout.zone(controller, location, sequence);
+            if(zone == null)
+            {
+                continue;
+            }
+            CardRenderer.submit(poseStack, collector, transform, camera, zone, controller,
+                slot.defence(), CARD_LIFT, CardFaces.face(slot, false, controller), back);
         }
     }
 

@@ -1352,7 +1352,7 @@ public class BoardRenderer
      * only 87.5% of a sleeve's square file. 512 therefore lands comfortably
      * above what is needed at every zoom rather than being resampled up.
      */
-    private static final int SLEEVE_FIELD_SIZE = 512;
+    private static final int SLEEVE_FIELD_SIZE = CardFaces.SLEEVE_FIELD_SIZE;
 
     /**
      * The back a side's face-down cards wear.
@@ -1371,57 +1371,20 @@ public class BoardRenderer
      * them, so it falls to the letterboxed branch — which is exactly right, as
      * sleeve art is a square canvas with the card inside CARD_U0..CARD_V1.
      */
+    /**
+     * Both of these moved to {@link CardFaces} when the world board needed the
+     * same answers. They stay as delegates so this class's call sites read the
+     * same as before -- what matters is that there is now ONE implementation of
+     * "what does a face-down card look like", because the failure mode of two
+     * that disagree is a set card showing its art.
+     */
     private static Identifier backFor(int controller)
     {
-        if(controller != 0)
-        {
-            // The opponent's own sleeve, not a fixed back. Falling through to
-            // COVER_OPPONENT when they have none keeps the two sides distinct
-            // for the common case where only one player has sleeved up.
-            de.cas_ual_ty.dueldimension.card.CardSleevesType theirs =
-                de.cas_ual_ty.dueldimension.clientutil.DuelClientState.opponentSleeve;
-            if(theirs == null || theirs.isCardBack())
-            {
-                return DuelTextures.COVER_OPPONENT;
-            }
-            return theirs.getMainRL(SLEEVE_FIELD_SIZE);
-        }
-        de.cas_ual_ty.dueldimension.card.CardSleevesType sleeve =
-            de.cas_ual_ty.dueldimension.clientutil.DuelClientState.ownSleeve;
-        if(sleeve == null || sleeve.isCardBack())
-        {
-            return DuelTextures.COVER;
-        }
-        // NOT activeCardMainImageSize. That setting defaults to 64 and governs
-        // the DOWNLOADED card art, which is fetched at whatever size is asked
-        // for; a sleeve is a file already shipped at all seven sizes, so paying
-        // for the large one costs nothing but the texture memory of the single
-        // sleeve on the table. At 64 the field drew a 56-pixel-tall card back
-        // stretched over roughly 210 real pixels, which is what made sleeves
-        // look coarse next to the cards beside them.
-        return sleeve.getMainRL(SLEEVE_FIELD_SIZE);
+        return CardFaces.back(controller);
     }
 
     private Identifier textureFor(BoardSnapshot.Slot slot, boolean inHand, int controller)
     {
-        if(slot.code() == 0 || (slot.faceDown() && !inHand))
-        {
-            // EDOPro gives each side its own card back (tCover[controler]).
-            return backFor(controller);
-        }
-        Properties properties = DdDatabase.PROPERTIES_LIST.get((long)slot.code());
-        // A face-up card we have no art for is NOT a face-down card. Falling
-        // back to the card back made every engine card missing from the mod's
-        // own database look like a set monster -- and the engine plays from
-        // EDOPro's cards.cdb, which is far larger than that database, so this
-        // hit a good share of the opponent's field. The reference's "unknown
-        // card" art says "no picture" without lying about the game state.
-        // Not (byte)0 any more: this copy may have been dressed in the deck
-        // editor, and the index rode here on the slot. adjustImageIndex folds
-        // anything the card does not actually have back to the printed art, so
-        // a stale choice degrades to the right card rather than to nothing.
-        return properties == null ? DuelTextures.UNKNOWN
-            : DuelTextures.card(properties, DuelTextures.artIndex(properties, slot.art()),
-                DuelTextures.FIELD_CARD_SIZE);
+        return CardFaces.face(slot, inHand, controller);
     }
 }
