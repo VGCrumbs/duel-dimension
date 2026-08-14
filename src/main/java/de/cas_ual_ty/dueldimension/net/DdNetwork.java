@@ -62,6 +62,11 @@ public final class DdNetwork
         // first packet of it cannot be sent because its type was never declared.
         de.cas_ual_ty.dueldimension.duel.network.DuelPayloads.register();
 
+        // The card display pedestal: an editor opened by the server, and the
+        // choice sent back. Declared and handled together, because a message
+        // with nobody to receive it is the failure that looks like nothing.
+        registerCardDisplay();
+
         // Outfits: what a duellist is wearing. The wear request is a client's
         // to make, the answer everybody's to see.
         serverbound(de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Wear.TYPE,
@@ -558,7 +563,69 @@ public final class DdNetwork
                 .doForBinderContainer(context.player(),
                     container -> container.setClientList(payload.page(), payload.list())));
 
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.duel.overworld.display.CardDisplayMessages.OpenEditor.TYPE,
+            (payload, context) -> context.client().execute(() ->
+                context.client().gui.setScreen(
+                    new de.cas_ual_ty.dueldimension.clientutil.hub.CardDisplayScreen(
+                        payload.pos(), payload.code(), payload.art(), payload.position()))));
+
         // The rest of the client receivers land with the screens they feed.
+    }
+
+    /**
+     * What a card display editor may do, checked again on arrival.
+     * <p>
+     * A packet naming a block position is a packet that can name ANY block
+     * position, and a client that has been asked nicely to be in creative mode
+     * is a client that can decline. So the mode, the distance and the block
+     * itself are all re-tested here: the screen is a convenience, and this is
+     * the rule.
+     */
+    private static void registerCardDisplay()
+    {
+        clientbound(de.cas_ual_ty.dueldimension.duel.overworld.display.CardDisplayMessages
+            .OpenEditor.TYPE, de.cas_ual_ty.dueldimension.duel.overworld.display
+            .CardDisplayMessages.OpenEditor.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.duel.overworld.display.CardDisplayMessages
+            .SetCard.TYPE, de.cas_ual_ty.dueldimension.duel.overworld.display.CardDisplayMessages
+            .SetCard.CODEC);
+
+        onServer(de.cas_ual_ty.dueldimension.duel.overworld.display.CardDisplayMessages
+            .SetCard.TYPE, (message, player) ->
+        {
+            if(!player.isCreative()
+                || !player.level().isLoaded(message.pos())
+                || player.distanceToSqr(message.pos().getX() + 0.5D, message.pos().getY() + 0.5D,
+                    message.pos().getZ() + 0.5D) > 64D)
+            {
+                return;
+            }
+            if(player.level().getBlockEntity(message.pos())
+                instanceof de.cas_ual_ty.dueldimension.duel.overworld.display
+                    .CardDisplayTileEntity display)
+            {
+                display.set(message.code(), message.art(), position(message.position()));
+            }
+        });
+    }
+
+    /**
+     * One position bit, and one this mod actually draws.
+     * <p>
+     * The wire carries an int, and an int can be anything. Face-down ATTACK is
+     * a real engine position but not one a display should offer, so anything
+     * unrecognised becomes face-up attack rather than something the renderer
+     * has no opinion about.
+     */
+    private static int position(int asked)
+    {
+        return switch(asked)
+        {
+            case de.cas_ual_ty.dueldimension.ocg.OcgConstants.POS_FACEUP_DEFENSE,
+                de.cas_ual_ty.dueldimension.ocg.OcgConstants.POS_FACEDOWN_DEFENSE -> asked;
+            default -> de.cas_ual_ty.dueldimension.ocg.OcgConstants.POS_FACEUP_ATTACK;
+        };
     }
 
     // ---- helpers the payload classes share ----

@@ -253,5 +253,7 @@
   "item.dueldimension.duelist_placer": "Duelist Placer",
   "key.dueldimension.duel_view": "Duel: swap board / screen",
   "block.dueldimension.arena_corner": "Duel Arena Corner",
-  "block.dueldimension.arena_point": "Duel Arena Player Point"
+  "block.dueldimension.arena_point": "Duel Arena Player Point",
+  "block.dueldimension.card_display": "Card Display",
+  "gui.dueldimension.card_display.title": "Card Display"
 }

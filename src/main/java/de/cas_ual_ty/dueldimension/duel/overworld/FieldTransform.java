@@ -27,7 +27,7 @@ import net.minecraft.world.phys.Vec3;
  * every card is on the wrong side of the board, which is the kind of mistake
  * that looks like a rendering bug for a day.
  */
-public record FieldTransform(FieldSiting siting)
+public record FieldTransform(FieldSiting siting) implements CardSpace
 {
     /** The middle of the mat in field units: the point the anchor block sits under. */
     public static final float CENTRE_X = (FieldLayout.FIELD_MIN_X + FieldLayout.FIELD_MAX_X) / 2F;

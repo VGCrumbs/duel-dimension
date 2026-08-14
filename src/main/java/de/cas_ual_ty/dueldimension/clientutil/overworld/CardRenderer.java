@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import de.cas_ual_ty.dueldimension.clientutil.CardFaces;
 import de.cas_ual_ty.dueldimension.clientutil.DuelTextures;
 import de.cas_ual_ty.dueldimension.clientutil.FieldLayout;
-import de.cas_ual_ty.dueldimension.duel.overworld.FieldTransform;
+import de.cas_ual_ty.dueldimension.duel.overworld.CardSpace;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
@@ -49,7 +49,7 @@ public final class CardRenderer
      *                   whichever way the card is turned
      */
     public static void submit(PoseStack poseStack, SubmitNodeCollector collector,
-        FieldTransform transform, Vec3 camera, FieldLayout.Rect zone, int controller,
+        CardSpace transform, Vec3 camera, FieldLayout.Rect zone, int controller,
         boolean defence, float lift, Identifier face, Identifier back)
     {
         submit(poseStack, collector, transform, camera, zone, controller, defence, lift, face,
@@ -65,7 +65,7 @@ public final class CardRenderer
      * something has to remember to leave.
      */
     public static void submit(PoseStack poseStack, SubmitNodeCollector collector,
-        FieldTransform transform, Vec3 camera, FieldLayout.Rect zone, int controller,
+        CardSpace transform, Vec3 camera, FieldLayout.Rect zone, int controller,
         boolean defence, float lift, Identifier face, Identifier back, int tint)
     {
         FieldLayout.Rect rect = CardMesh.placement(zone, defence);
@@ -129,7 +129,7 @@ public final class CardRenderer
      * @param top   what is showing on the top of the pile
      */
     public static void submitPile(PoseStack poseStack, SubmitNodeCollector collector,
-        FieldTransform transform, Vec3 camera, FieldLayout.Rect zone, int controller, int count,
+        CardSpace transform, Vec3 camera, FieldLayout.Rect zone, int controller, int count,
         float lift, Identifier top, Identifier back)
     {
         submitPile(poseStack, collector, transform, camera, zone, controller, count, lift, top,
@@ -138,7 +138,7 @@ public final class CardRenderer
 
     /** The same stack, drawn at a given strength. */
     public static void submitPile(PoseStack poseStack, SubmitNodeCollector collector,
-        FieldTransform transform, Vec3 camera, FieldLayout.Rect zone, int controller, int count,
+        CardSpace transform, Vec3 camera, FieldLayout.Rect zone, int controller, int count,
         float lift, Identifier top, Identifier back, int tint)
     {
         if(count <= 0)
@@ -177,7 +177,7 @@ public final class CardRenderer
      * board's does.
      */
     private static void submitStripedEdge(PoseStack poseStack, SubmitNodeCollector collector,
-        FieldTransform transform, Vec3 camera, CardMesh.Face part, int stripes, int tint)
+        CardSpace transform, Vec3 camera, CardMesh.Face part, int stripes, int tint)
     {
         // The face's corners are top, top, bottom, bottom: interpolating
         // between the two pairs walks down the side of the pile.
@@ -203,7 +203,7 @@ public final class CardRenderer
     }
 
     /** A point a fraction of the way from one of the face's corners to another. */
-    private static Vec3 between(FieldTransform transform, CardMesh.Face part, int from, int to,
+    private static Vec3 between(CardSpace transform, CardMesh.Face part, int from, int to,
         float fraction)
     {
         float x = part.x()[from] + (part.x()[to] - part.x()[from]) * fraction;
@@ -213,7 +213,7 @@ public final class CardRenderer
         return transform.at(x, y, height * transform.scale());
     }
 
-    private static Vec3[] worldCorners(FieldTransform transform, CardMesh.Face part)
+    private static Vec3[] worldCorners(CardSpace transform, CardMesh.Face part)
     {
         Vec3[] corners = new Vec3[4];
         for(int corner = 0; corner < 4; corner++)

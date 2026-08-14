@@ -113,6 +113,13 @@ public class DuelDimensionFabricClient implements ClientModInitializer
             .register(de.cas_ual_ty.dueldimension.clientutil.overworld
                 .PlacementGuideRenderer::render);
 
+        // The card on a display pedestal, and the monster standing on it.
+        // The first block entity renderer in this mod; vanilla's own registry
+        // is private on 26.2, so Fabric's is the way in.
+        net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry.register(
+            de.cas_ual_ty.dueldimension.DdTileEntityTypes.CARD_DISPLAY,
+            de.cas_ual_ty.dueldimension.clientutil.overworld.CardDisplayRenderer::new);
+
         // The arena markers a builder has put down, and the board they
         // describe while TAB is held. Registered before the duel's own board so
         // a preview never draws over a duel actually being played.

@@ -72,6 +72,7 @@ public final class DdItemGroup
                 // player in creative mode.
                 output.accept(DdBlocks.ARENA_CORNER);
                 output.accept(DdBlocks.ARENA_POINT);
+                output.accept(DdBlocks.CARD_DISPLAY);
                 output.accept(DdBlocks.CARD_SUPPLY);
                 output.accept(DdBlocks.CARD_SHOP);
                 output.accept(DdBlocks.SLEEVE_SHOP);

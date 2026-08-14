@@ -29,6 +29,19 @@ public final class DdTileEntityTypes
         new BlockEntityType<>((pos, state) -> new DuelTileEntity(DdTileEntityTypes.DUEL, pos, state),
             Set.of(DdBlocks.DUEL_PLAYMAT, DdBlocks.DUEL_TABLE)));
 
+    /**
+     * The card display's own, because it keeps something: a passcode, an
+     * artwork and which way the card is lying. The duel type above keeps
+     * nothing, which is why it can be shared between two blocks and this
+     * cannot be shared with anything.
+     */
+    public static final BlockEntityType<de.cas_ual_ty.dueldimension.duel.overworld.display
+        .CardDisplayTileEntity> CARD_DISPLAY = register("card_display",
+            new BlockEntityType<>((pos, state) ->
+                new de.cas_ual_ty.dueldimension.duel.overworld.display.CardDisplayTileEntity(
+                    DdTileEntityTypes.CARD_DISPLAY, pos, state),
+                Set.of(DdBlocks.CARD_DISPLAY)));
+
     private DdTileEntityTypes()
     {
     }

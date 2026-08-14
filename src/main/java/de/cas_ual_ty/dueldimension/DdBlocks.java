@@ -80,6 +80,17 @@ public final class DdBlocks
 
     public static final ArenaMarkerBlock ARENA_POINT = registerMarker("arena_point");
 
+    /**
+     * A pedestal holding one card, for looking at. A builder's block like the
+     * markers above, so it is placed the same way -- creative only, at the
+     * moment of placing.
+     */
+    public static final de.cas_ual_ty.dueldimension.duel.overworld.display.CardDisplayBlock
+        CARD_DISPLAY = register("card_display",
+            key -> new de.cas_ual_ty.dueldimension.duel.overworld.display.CardDisplayBlock(
+                BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(5.0F, 6.0F)
+                    .sound(SoundType.METAL).noLootTable().setId(key)));
+
     private DdBlocks()
     {
     }
