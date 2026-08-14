@@ -115,25 +115,72 @@ public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns,
     }
 
     /**
-     * How wide one cell is against its height.
+     * How wide one WHOLE cell is against its height, trim ignored.
      * <p>
      * Measured from this LAYER's own region and grid rather than from the file,
      * which is the whole reason a layer carries a region at all: wings and a
      * body sharing one sheet have different cell shapes, and a proportion
      * remembered against the file would give one of them the other's.
+     * <p>
+     * Deliberately blind to the trim, and that is what makes a crop a crop.
+     * This is the size the sprite occupies in the world; {@link #spanX} and
+     * {@link #spanY} say how much of that box the trim leaves. Fold the trim in
+     * here instead and the two stop being separable: cutting a margin away
+     * would resize the monster, because the same number would be describing
+     * both how big it is and how much of it is being read.
      */
     public float aspect()
     {
-        int[] size = MonsterSprites.sizeOf(texture());
-        float regionW = w > 0 ? w : Math.max(1, size[0]) - x;
-        float regionH = h > 0 ? h : Math.max(1, size[1]) - y;
-        // The TRIMMED cell, because that is the picture being drawn. Taking
-        // the shape of the untrimmed one would stretch a cropped sprite back
-        // out to fill the space its margins used to occupy.
-        float cellW = regionW / Math.max(1, columns) - trimX * 2F;
-        float cellH = regionH / Math.max(1, rows) - trimY * 2F;
+        float cellW = cellW();
+        float cellH = cellH();
         return cellW <= 0F || cellH <= 0F ? 0.5F : cellW / cellH;
     }
+
+    /**
+     * One cell's width in pixels.
+     * <p>
+     * The sheet is measured only when the region does not say. A layer that
+     * states its own width knows its cells without opening the file, and asking
+     * anyway would drag the texture manager into arithmetic that does not need
+     * it -- which is also what made this impossible to test off a running game.
+     */
+    private float cellW()
+    {
+        float regionW = w > 0 ? w : Math.max(1, MonsterSprites.sizeOf(texture())[0]) - x;
+        return regionW / Math.max(1, columns);
+    }
+
+    private float cellH()
+    {
+        float regionH = h > 0 ? h : Math.max(1, MonsterSprites.sizeOf(texture())[1]) - y;
+        return regionH / Math.max(1, rows);
+    }
+
+    /**
+     * How much of the cell's width the trim leaves, as a fraction.
+     * <p>
+     * Never zero and never negative. The editor's trim runs to 128 pixels and
+     * some cells are narrower than 256 -- Blue-Eyes' wings are about 85 across
+     * -- so a slider can ask for more than there is. A negative span would not
+     * fail, which is the problem: it would turn the box inside out and draw the
+     * sprite mirrored, and mirrored is a thing this code does on purpose
+     * elsewhere. Clamping keeps an over-trim looking like an over-trim.
+     */
+    public float spanX()
+    {
+        float cellW = cellW();
+        return cellW <= 0F ? 1F : Math.clamp((cellW - trimX * 2F) / cellW, MIN_SPAN, 1F);
+    }
+
+    /** How much of the cell's height the trim leaves, as a fraction. */
+    public float spanY()
+    {
+        float cellH = cellH();
+        return cellH <= 0F ? 1F : Math.clamp((cellH - trimY * 2F) / cellH, MIN_SPAN, 1F);
+    }
+
+    /** A sliver, rather than nothing at all, when the trim is asked to eat a whole cell. */
+    private static final float MIN_SPAN = 0.02F;
 
     /**
      * The same layer at a different pace, for the editor's speed control.

@@ -1016,7 +1016,7 @@ public final class OverworldBoardRenderer
         MonsterBillboard.submit(poseStack, collector, camera, camera, feet, height, body,
             MonsterSprites.frameAt(body, (long)ticks()), wings,
             wings == null ? 0 : MonsterSprites.frameAt(wings.layer(), (long)ticks()),
-            fade(hologramTint(asked)));
+            fade(hologramTint(asked)), slot.code());
     }
 
     /**

@@ -124,7 +124,7 @@ public class CardDisplayRenderer
             DisplayCard.LENGTH * MonsterSprites.heightFor(state.code), body,
             MonsterSprites.frameAt(body, state.gameTime), wings,
             wings == null ? 0 : MonsterSprites.frameAt(wings.layer(), state.gameTime),
-            0xFFFFFFFF);
+            0xFFFFFFFF, state.code);
     }
 
     /**

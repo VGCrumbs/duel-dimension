@@ -3,6 +3,8 @@ package de.cas_ual_ty.dueldimension.clientutil.hub;
 import de.cas_ual_ty.dueldimension.DdDatabase;
 import de.cas_ual_ty.dueldimension.card.properties.Properties;
 import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
+import de.cas_ual_ty.dueldimension.clientutil.overworld.BillboardOutline;
+import de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSheets;
 import de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSprites;
 import de.cas_ual_ty.dueldimension.clientutil.overworld.SpriteLayer;
 import de.cas_ual_ty.dueldimension.clientutil.overworld.Wings;
@@ -48,9 +50,9 @@ public class BillboardEditorScreen extends Screen
     private final long code;
 
     private static final int PANEL_W = 232;
-    private static final int ROW_H = 18;
+    private static final int ROW_H = 15;
     private static final int RESET_W = 14;
-    private static final int GAP = 3;
+    private static final int GAP = 2;
     private static final int PAD = 7;
     private static final int HEADER = 46;
 
@@ -112,9 +114,6 @@ public class BillboardEditorScreen extends Screen
     private int wtrimY;
     private float wscale = Wings.DEFAULT_SCALE;
 
-    /** Whether the cuts are drawn over the sheet. Off is how you see the art. */
-    private boolean outline = true;
-
     private int row;
     /** Where the controls stopped, which is where the preview begins. */
     private int contentBottom;
@@ -125,6 +124,9 @@ public class BillboardEditorScreen extends Screen
         this.parent = parent;
         this.code = code;
         read();
+        // The hologram standing in the world is the thing being cropped, so it
+        // is the thing that gets the box drawn round it.
+        BillboardOutline.watch(code);
     }
 
     /** Loads the card's current definition, or sensible starting values. */
@@ -290,19 +292,21 @@ public class BillboardEditorScreen extends Screen
         int sheets = height - 46;
         int third = (full() - GAP * 2) / 3;
         addRenderableWidget(Button.builder(Component.literal("Folder"), pressed ->
-                de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSheets.open())
+                MonsterSheets.open())
             .bounds(left(), sheets, third, 18).build());
         addRenderableWidget(Button.builder(Component.literal("Reload"), pressed ->
             {
-                de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSheets.reload();
+                MonsterSheets.reload();
                 rebuildWidgets();
             }).bounds(left() + third + GAP, sheets, third, 18).build());
-        addRenderableWidget(Button.builder(
-            Component.literal(outline ? "Cuts ON" : "Cuts OFF"), pressed ->
-            {
-                outline = !outline;
-                pressed.setMessage(Component.literal(outline ? "Cuts ON" : "Cuts OFF"));
-            }).bounds(left() + (third + GAP) * 2, sheets, third, 18).build());
+        // One switch for both boxes -- the cuts over the sheet and the box round
+        // the hologram are two views of the same rectangle, and a pair of
+        // toggles for one idea is a thing to get out of step.
+        addRenderableWidget(Button.builder(Component.literal(outlineLabel()), pressed ->
+        {
+            BillboardOutline.show(!BillboardOutline.shown());
+            pressed.setMessage(Component.literal(outlineLabel()));
+        }).bounds(left() + (third + GAP) * 2, sheets, third, 18).build());
 
         int footer = height - 24;
         int half = (full() - GAP) / 2;
@@ -440,7 +444,7 @@ public class BillboardEditorScreen extends Screen
         }
 
         int room = height - 52 - contentBottom - 6;
-        if(room < 24)
+        if(room < 20)
         {
             return;
         }
@@ -459,7 +463,7 @@ public class BillboardEditorScreen extends Screen
         extractor.fill(x - 1, y - 1, x + drawW + 1, y + drawH + 1, 0xFF202028);
         DdBlitUtil.fullBlit(extractor, body.texture(), x, y, drawW, drawH);
 
-        if(!outline)
+        if(!BillboardOutline.shown())
         {
             return;
         }
@@ -533,10 +537,29 @@ public class BillboardEditorScreen extends Screen
         return false;
     }
 
+    private static String outlineLabel()
+    {
+        return BillboardOutline.shown() ? "Outline ON" : "Outline OFF";
+    }
+
     @Override
     public void onClose()
     {
         minecraft.gui.setScreen(parent);
+    }
+
+    /**
+     * Stops outlining when this screen goes away.
+     * <p>
+     * {@code removed} rather than {@code onClose}, because the screen can leave
+     * by routes that never call onClose -- and a box left drawn round a monster
+     * nobody is editing is a rendering bug with no way to switch it off.
+     */
+    @Override
+    public void removed()
+    {
+        BillboardOutline.stop();
+        super.removed();
     }
 
     // ------------------------------------------------------------- widgets --
