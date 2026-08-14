@@ -182,7 +182,20 @@ public final class DuelClientState
         }
     }
 
-    /** Brings the duel screen up if the player closed it. */
+    /**
+     * Brings the duel screen up if the player closed it.
+     * <p>
+     * The second of the two openers, the other being
+     * {@code ClientProxy.updateEngineDuel}. On a world board that one is
+     * suppressed entirely -- an opponent's turn is watched by looking at the
+     * board -- while this one still runs, because it is called for a PROMPT and
+     * for the result, and a duel you cannot answer is not a duel.
+     * <p>
+     * That is deliberately an interim: phases 12 and 13 replace the prompt
+     * screen with world-space targeting and a HUD, at which point this branches
+     * too. Until then an overworld duel is played on the board and answered on
+     * the screen, which is playable rather than half-built.
+     */
     public static void openScreen()
     {
         net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();

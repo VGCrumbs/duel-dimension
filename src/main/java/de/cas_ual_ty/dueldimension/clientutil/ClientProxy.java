@@ -539,7 +539,15 @@ public class ClientProxy implements ISidedProxy
         // unseen and then replayed in a rush at the next prompt, so a duel
         // update reopens the screen too -- that is what makes an opponent's
         // sequence watchable rather than something that happens off-screen.
+        //
+        // Not on a world board, where the opponent's sequence is watchable by
+        // looking at it. This is one of TWO places that open the duel screen --
+        // the other is DuelClientState.openScreen -- and they have to be
+        // considered together: branching only this one would leave the board
+        // covered by a screen the moment the opponent moved, and branching only
+        // the other would leave it covered the moment you were asked anything.
         if(!update.over() && !update.events().isEmpty()
+            && !de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()
             && !(getMinecraft().gui.screen() instanceof EngineDuelScreen))
         {
             // gui.setScreen, not setScreenAndShow: the latter forces a frame,

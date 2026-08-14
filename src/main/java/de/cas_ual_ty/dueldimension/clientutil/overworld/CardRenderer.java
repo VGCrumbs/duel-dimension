@@ -69,12 +69,7 @@ public final class CardRenderer
                 case EDGE -> DuelTextures.STACK_SIDE;
             };
 
-            Vec3[] corners = new Vec3[4];
-            for(int corner = 0; corner < 4; corner++)
-            {
-                corners[corner] = transform.at(part.x()[corner], part.y()[corner],
-                    part.height()[corner] * transform.scale());
-            }
+            Vec3[] corners = worldCorners(transform, part);
 
             if(part.kind() == CardMesh.Kind.EDGE)
             {
@@ -95,6 +90,97 @@ public final class CardRenderer
             WorldQuad.submit(poseStack, collector, texture, camera, corners, 0xFFFFFFFF,
                 uv[0], uv[1]);
         }
+    }
+
+    /**
+     * A pile of cards: one solid as tall as the stack, with its side striped
+     * once per card.
+     * <p>
+     * The stripes are cut by hand rather than by letting the texture repeat,
+     * because the wrap mode here is not repeat -- a v of forty stretches the
+     * stripe into one long smear. The 2D board found that out first and does
+     * the same slicing; this is that fact reused rather than rediscovered.
+     *
+     * @param count how many cards are in the pile, which is both its height and
+     *              the number of stripes down its side
+     * @param top   what is showing on the top of the pile
+     */
+    public static void submitPile(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera, FieldLayout.Rect zone, int controller, int count,
+        float lift, Identifier top, Identifier back)
+    {
+        if(count <= 0)
+        {
+            return;
+        }
+        FieldLayout.Rect rect = CardMesh.placement(zone, false);
+        float height = PileMesh.height(count);
+        int turns = turnsFor(controller, false);
+        int stripes = PileMesh.stripes(count);
+
+        for(CardMesh.Face part : CardMesh.faces(rect, lift, height))
+        {
+            if(part.kind() == CardMesh.Kind.EDGE)
+            {
+                submitStripedEdge(poseStack, collector, transform, camera, part, stripes);
+                continue;
+            }
+            Identifier texture = part.kind() == CardMesh.Kind.FRONT ? top : back;
+            Vec3[] corners = worldCorners(transform, part);
+            boolean whole = CardFaces.isCardShaped(texture);
+            float[][] uv = turned(whole ? 0F : DuelTextures.CARD_U0,
+                whole ? 0F : DuelTextures.CARD_V0, whole ? 1F : DuelTextures.CARD_U1,
+                whole ? 1F : DuelTextures.CARD_V1, turns);
+            WorldQuad.submit(poseStack, collector, texture, camera, corners, 0xFFFFFFFF,
+                uv[0], uv[1]);
+        }
+    }
+
+    /**
+     * One side of a pile, cut into a quad per card so the stripe texture reads
+     * as many thin cards rather than as one stretched band. The last slice may
+     * be partial and samples only that much of the stripe, exactly as the 2D
+     * board's does.
+     */
+    private static void submitStripedEdge(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera, CardMesh.Face part, int stripes)
+    {
+        // The face's corners are top, top, bottom, bottom: interpolating
+        // between the two pairs walks down the side of the pile.
+        for(int slice = 0; slice < stripes; slice++)
+        {
+            float f0 = (float)slice / stripes;
+            float f1 = (float)(slice + 1) / stripes;
+            Vec3[] corners = new Vec3[4];
+            corners[0] = between(transform, part, 0, 3, f0);
+            corners[1] = between(transform, part, 1, 2, f0);
+            corners[2] = between(transform, part, 1, 2, f1);
+            corners[3] = between(transform, part, 0, 3, f1);
+            WorldQuad.submit(poseStack, collector, DuelTextures.STACK_SIDE, camera, corners,
+                0xFFFFFFFF, 0F, 0F, 1F, 1F);
+        }
+    }
+
+    /** A point a fraction of the way from one of the face's corners to another. */
+    private static Vec3 between(FieldTransform transform, CardMesh.Face part, int from, int to,
+        float fraction)
+    {
+        float x = part.x()[from] + (part.x()[to] - part.x()[from]) * fraction;
+        float y = part.y()[from] + (part.y()[to] - part.y()[from]) * fraction;
+        float height = part.height()[from]
+            + (part.height()[to] - part.height()[from]) * fraction;
+        return transform.at(x, y, height * transform.scale());
+    }
+
+    private static Vec3[] worldCorners(FieldTransform transform, CardMesh.Face part)
+    {
+        Vec3[] corners = new Vec3[4];
+        for(int corner = 0; corner < 4; corner++)
+        {
+            corners[corner] = transform.at(part.x()[corner], part.y()[corner],
+                part.height()[corner] * transform.scale());
+        }
+        return corners;
     }
 
     /**

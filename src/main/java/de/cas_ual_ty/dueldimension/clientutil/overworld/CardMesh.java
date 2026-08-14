@@ -97,12 +97,21 @@ public final class CardMesh
      */
     public static List<Face> faces(FieldLayout.Rect rect, float lift)
     {
+        return faces(rect, lift, THICKNESS);
+    }
+
+    /**
+     * The same, at an explicit height -- which is how a pile of forty cards is
+     * drawn as one solid forty cards tall instead of as forty solids.
+     */
+    public static List<Face> faces(FieldLayout.Rect rect, float lift, float thickness)
+    {
         float x0 = rect.x();
         float x1 = rect.x() + rect.w();
         float y0 = rect.y();
         float y1 = rect.y() + rect.h();
         float bottom = lift;
-        float top = lift + THICKNESS;
+        float top = lift + Math.max(thickness, THICKNESS);
 
         List<Face> faces = new ArrayList<>(6);
 

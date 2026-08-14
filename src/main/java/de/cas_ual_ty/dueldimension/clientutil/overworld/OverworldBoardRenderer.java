@@ -114,7 +114,58 @@ public final class OverworldBoardRenderer
                 OcgConstants.LOCATION_MZONE, back);
             drawRow(poseStack, collector, transform, camera, side.spells(), controller,
                 OcgConstants.LOCATION_SZONE, back);
+
+            // The four piles. A deck and an extra deck show their backs
+            // because that is all anyone may see of them; a graveyard and a
+            // banished pile show their top card, because both are public --
+            // and the top card is the last one to arrive, which is what makes
+            // a graveyard read as a graveyard rather than as a list.
+            drawPile(poseStack, collector, transform, camera, controller,
+                OcgConstants.LOCATION_DECK, side.deckCount(), back, back);
+            drawPile(poseStack, collector, transform, camera, controller,
+                OcgConstants.LOCATION_EXTRA, size(side.extra()), back, back);
+            drawPile(poseStack, collector, transform, camera, controller,
+                OcgConstants.LOCATION_GRAVE, size(side.grave()),
+                topFace(side.grave(), controller, back), back);
+            drawPile(poseStack, collector, transform, camera, controller,
+                OcgConstants.LOCATION_REMOVED, size(side.banished()),
+                topFace(side.banished(), controller, back), back);
         }
+    }
+
+    private static void drawPile(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera, int controller, int location, int count,
+        Identifier top, Identifier back)
+    {
+        FieldLayout.Rect zone = FieldLayout.zone(controller, location, 0);
+        if(zone == null || count <= 0)
+        {
+            return;
+        }
+        CardRenderer.submitPile(poseStack, collector, transform, camera, zone, controller, count,
+            CARD_LIFT, top, back);
+    }
+
+    private static int size(List<BoardSnapshot.Slot> slots)
+    {
+        return slots == null ? 0 : slots.size();
+    }
+
+    /**
+     * What is showing on top of a public pile: its most recent card, which is
+     * the last one in the list. Asked through {@link CardFaces} like every
+     * other face, so a face-down banished card is still face down on top of its
+     * pile.
+     */
+    private static Identifier topFace(List<BoardSnapshot.Slot> slots, int controller,
+        Identifier back)
+    {
+        if(slots == null || slots.isEmpty())
+        {
+            return back;
+        }
+        BoardSnapshot.Slot top = slots.get(slots.size() - 1);
+        return top == null ? back : CardFaces.face(top, false, controller);
     }
 
     private static void drawRow(PoseStack poseStack, SubmitNodeCollector collector,
