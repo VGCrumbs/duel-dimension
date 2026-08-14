@@ -332,13 +332,7 @@ public class BoardPointerScreen extends Screen
     /** Minecraft's own view-vector formula, from {@code Entity.calculateViewVector}. */
     private static Vec3 viewVector(float pitch, float yaw)
     {
-        float f = pitch * ((float)Math.PI / 180F);
-        float g = -yaw * ((float)Math.PI / 180F);
-        float cosYaw = net.minecraft.util.Mth.cos(g);
-        float sinYaw = net.minecraft.util.Mth.sin(g);
-        float cosPitch = net.minecraft.util.Mth.cos(f);
-        float sinPitch = net.minecraft.util.Mth.sin(f);
-        return new Vec3(sinYaw * cosPitch, -sinPitch, cosYaw * cosPitch);
+        return BoardProjection.viewVector(pitch, yaw);
     }
 
     /**
@@ -901,22 +895,7 @@ public class BoardPointerScreen extends Screen
      */
     private double[] project(Vec3 world)
     {
-        Camera camera = minecraft.gameRenderer.mainCamera();
-        Vec3 delta = world.subtract(camera.position());
-        Vec3 look = viewVector(camera.xRot(), camera.yRot());
-        Vec3 right = viewVector(0F, camera.yRot() + 90F);
-        Vec3 up = viewVector(camera.xRot() - 90F, camera.yRot());
-
-        double along = delta.dot(look);
-        if(along <= 1e-4D)
-        {
-            return null;
-        }
-        double half = Math.tan(Math.toRadians(camera.getFov()) / 2D);
-        double aspect = (double)width / Math.max(1, height);
-        double ndcX = delta.dot(right) / along / (aspect * half);
-        double ndcY = delta.dot(up) / along / half;
-        return new double[] {(ndcX + 1D) * width / 2D, (1D - ndcY) * height / 2D};
+        return BoardProjection.project(world, width, height);
     }
 
     /**

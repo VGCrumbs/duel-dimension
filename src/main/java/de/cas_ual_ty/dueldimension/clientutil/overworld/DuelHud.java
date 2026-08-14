@@ -394,6 +394,11 @@ public final class DuelHud
 
         drawPhaseBar(extractor, board, screenW, screenH, barH);
         drawClock(extractor, font, screenW, screenH, barH);
+        // Held upright over the cards they belong to, rather than lying on
+        // them: see StatOverlay. Drawn from here so the cursor and the bare
+        // camera both get them, and drawn BEFORE the outcome so a duel that has
+        // just been decided is not captioned over its own result.
+        StatOverlay.draw(extractor, font, board, seat);
         drawOutcome(extractor, font, screenW, screenH);
     }
 
