@@ -362,7 +362,9 @@ public final class MonsterSprites
             Math.max(0, optional(object, "first", 0)),
             Math.max(1, optional(object, "frames", 1)),
             Math.max(1, optional(object, "ticks", DEFAULT_TICKS)),
-            object.has("loop") ? Loop.valueOf(object.get("loop").getAsString()) : Loop.LOOP);
+            object.has("loop") ? Loop.valueOf(object.get("loop").getAsString()) : Loop.LOOP,
+            Math.max(0, optional(object, "trimX", 0)),
+            Math.max(0, optional(object, "trimY", 0)));
     }
 
     private static int optional(JsonObject object, String key, int fallback)
@@ -406,6 +408,8 @@ public final class MonsterSprites
         object.addProperty("frames", layer.frames());
         object.addProperty("ticks", layer.ticks());
         object.addProperty("loop", layer.loop().name());
+        object.addProperty("trimX", layer.trimX());
+        object.addProperty("trimY", layer.trimY());
         return object;
     }
 

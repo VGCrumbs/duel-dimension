@@ -29,10 +29,19 @@ import net.minecraft.resources.Identifier;
  * @param first   which cell this run starts at
  * @param frames  how many it runs for
  * @param ticks   how long each frame is held
+ * @param trimX   pixels taken off the left AND right of every cell
+ * @param trimY   pixels taken off the top AND bottom of every cell
  */
 public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns, int rows,
-    int first, int frames, int ticks, MonsterSprites.Loop loop)
+    int first, int frames, int ticks, MonsterSprites.Loop loop, int trimX, int trimY)
 {
+    /** A layer that takes the whole of each cell, which is most of them. */
+    public SpriteLayer(String sheet, int x, int y, int w, int h, int columns, int rows,
+        int first, int frames, int ticks, MonsterSprites.Loop loop)
+    {
+        this(sheet, x, y, w, h, columns, rows, first, frames, ticks, loop, 0, 0);
+    }
+
     /** A whole file as one row of frames, which is the commonest sheet there is. */
     public static SpriteLayer row(String sheet, int frames, MonsterSprites.Loop loop)
     {
@@ -92,10 +101,14 @@ public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns,
         float cellW = regionW / columns;
         float cellH = regionH / rows;
 
-        float left = (x + column * cellW) / fileW;
-        float right = (x + (column + 1) * cellW) / fileW;
-        float top = (y + row * cellH) / fileH;
-        float bottom = (y + (row + 1) * cellH) / fileH;
+        // The trim comes off both sides of the cell equally, which is what
+        // makes it a crop rather than a nudge: the sampled box stays centred on
+        // the cell, so tightening it never moves the sprite, it only stops
+        // taking in what was never part of it.
+        float left = (x + column * cellW + trimX) / fileW;
+        float right = (x + (column + 1) * cellW - trimX) / fileW;
+        float top = (y + row * cellH + trimY) / fileH;
+        float bottom = (y + (row + 1) * cellH - trimY) / fileH;
         float insetU = 1F / fileW;
         float insetV = 1F / fileH;
         return new float[] {left + insetU, top + insetV, right - insetU, bottom - insetV};
@@ -114,9 +127,12 @@ public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns,
         int[] size = MonsterSprites.sizeOf(texture());
         float regionW = w > 0 ? w : Math.max(1, size[0]) - x;
         float regionH = h > 0 ? h : Math.max(1, size[1]) - y;
-        float cellW = regionW / Math.max(1, columns);
-        float cellH = regionH / Math.max(1, rows);
-        return cellH <= 0F ? 0.5F : cellW / cellH;
+        // The TRIMMED cell, because that is the picture being drawn. Taking
+        // the shape of the untrimmed one would stretch a cropped sprite back
+        // out to fill the space its margins used to occupy.
+        float cellW = regionW / Math.max(1, columns) - trimX * 2F;
+        float cellH = regionH / Math.max(1, rows) - trimY * 2F;
+        return cellW <= 0F || cellH <= 0F ? 0.5F : cellW / cellH;
     }
 
     /** The same layer at a different pace, for the editor's speed control. */

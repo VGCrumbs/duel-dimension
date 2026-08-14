@@ -88,6 +88,8 @@ public class BillboardEditorScreen extends Screen
     private int bframes = 4;
     private int bticks = MonsterSprites.DEFAULT_TICKS;
     private MonsterSprites.Loop bloop = MonsterSprites.Loop.PING_PONG;
+    private int btrimX;
+    private int btrimY;
     private float scale = 1F;
 
     private boolean pose;
@@ -106,7 +108,12 @@ public class BillboardEditorScreen extends Screen
     private MonsterSprites.Loop wloop = MonsterSprites.Loop.LOOP;
     private float anchor = Wings.DEFAULT_ANCHOR;
     private float spacing = Wings.DEFAULT_SPACING;
+    private int wtrimX;
+    private int wtrimY;
     private float wscale = Wings.DEFAULT_SCALE;
+
+    /** Whether the cuts are drawn over the sheet. Off is how you see the art. */
+    private boolean outline = true;
 
     private int row;
     /** Where the controls stopped, which is where the preview begins. */
@@ -140,6 +147,8 @@ public class BillboardEditorScreen extends Screen
         bframes = body.frames();
         bticks = body.ticks();
         bloop = body.loop();
+        btrimX = body.trimX();
+        btrimY = body.trimY();
         scale = definition.scale();
 
         pose = definition.defence() != null;
@@ -160,6 +169,8 @@ public class BillboardEditorScreen extends Screen
             wframes = layer.frames();
             wticks = layer.ticks();
             wloop = layer.loop();
+            wtrimX = layer.trimX();
+            wtrimY = layer.trimY();
             anchor = wings.anchor();
             spacing = wings.spacing();
             wscale = wings.scale();
@@ -176,14 +187,14 @@ public class BillboardEditorScreen extends Screen
             return;
         }
         SpriteLayer body = new SpriteLayer(sheet, bx, by, bw, bh, bcolumns, brows, bfirst,
-            bframes, bticks, bloop);
+            bframes, bticks, bloop, btrimX, btrimY);
         SpriteLayer defence = pose
             ? new SpriteLayer(sheet, bx, by, bw, bh, bcolumns, brows, dfirst, 1, bticks,
-                MonsterSprites.Loop.LOOP)
+                MonsterSprites.Loop.LOOP, btrimX, btrimY)
             : null;
         Wings wings = winged
             ? new Wings(new SpriteLayer(sheet, wx, wy, ww, wh, wcolumns, wrows, wfirst, wframes,
-                wticks, wloop), anchor, spacing, wscale)
+                wticks, wloop, wtrimX, wtrimY), anchor, spacing, wscale)
             : null;
         MonsterSprites.put(new MonsterSprites.Definition(code, body, defence, wings, scale));
         MonsterSprites.save();
@@ -286,9 +297,11 @@ public class BillboardEditorScreen extends Screen
                 de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSheets.reload();
                 rebuildWidgets();
             }).bounds(left() + third + GAP, sheets, third, 18).build());
-        addRenderableWidget(Button.builder(Component.literal("Sheets " + de.cas_ual_ty
-                .dueldimension.clientutil.overworld.MonsterSheets.names().size()), pressed ->
+        addRenderableWidget(Button.builder(
+            Component.literal(outline ? "Cuts ON" : "Cuts OFF"), pressed ->
             {
+                outline = !outline;
+                pressed.setMessage(Component.literal(outline ? "Cuts ON" : "Cuts OFF"));
             }).bounds(left() + (third + GAP) * 2, sheets, third, 18).build());
 
         int footer = height - 24;
@@ -337,6 +350,8 @@ public class BillboardEditorScreen extends Screen
             count("Crop y", 0, 1024, 0, () -> by, value -> by = value));
         pair(count("Crop w", 0, 1024, 0, () -> bw, value -> bw = value),
             count("Crop h", 0, 1024, 0, () -> bh, value -> bh = value));
+        pair(count("Trim x", 0, 128, 0, () -> btrimX, value -> btrimX = value),
+            count("Trim y", 0, 128, 0, () -> btrimY, value -> btrimY = value));
     }
 
     private void poseTab()
@@ -360,6 +375,8 @@ public class BillboardEditorScreen extends Screen
             count("Crop y", 0, 1024, 0, () -> wy, value -> wy = value));
         pair(count("Crop w", 0, 1024, 0, () -> ww, value -> ww = value),
             count("Crop h", 0, 1024, 0, () -> wh, value -> wh = value));
+        pair(count("Trim x", 0, 128, 0, () -> wtrimX, value -> wtrimX = value),
+            count("Trim y", 0, 128, 0, () -> wtrimY, value -> wtrimY = value));
         wide(amount("Size", 0.05F, 2F, Wings.DEFAULT_SCALE, () -> wscale,
             value -> wscale = value));
         wide(amount("Height", 0F, 1.5F, Wings.DEFAULT_ANCHOR, () -> anchor,
@@ -415,7 +432,7 @@ public class BillboardEditorScreen extends Screen
             return;
         }
         SpriteLayer body = new SpriteLayer(sheet, bx, by, bw, bh, bcolumns, brows, bfirst,
-            bframes, bticks, bloop);
+            bframes, bticks, bloop, btrimX, btrimY);
         int[] size = MonsterSprites.sizeOf(body.texture());
         if(size[0] <= 0 || size[1] <= 0)
         {
@@ -442,12 +459,17 @@ public class BillboardEditorScreen extends Screen
         extractor.fill(x - 1, y - 1, x + drawW + 1, y + drawH + 1, 0xFF202028);
         DdBlitUtil.fullBlit(extractor, body.texture(), x, y, drawW, drawH);
 
+        if(!outline)
+        {
+            return;
+        }
         grid(extractor, body, size, x, y, drawW, drawH, BODY_LINE, BODY_FILL,
             pose ? dfirst : -1);
         if(winged)
         {
             grid(extractor, new SpriteLayer(sheet, wx, wy, ww, wh, wcolumns, wrows, wfirst,
-                wframes, wticks, wloop), size, x, y, drawW, drawH, WING_LINE, WING_FILL, -1);
+                wframes, wticks, wloop, wtrimX, wtrimY), size, x, y, drawW, drawH, WING_LINE,
+                WING_FILL, -1);
         }
     }
 
@@ -466,10 +488,13 @@ public class BillboardEditorScreen extends Screen
         {
             int column = cell % layer.columns();
             int rowOf = cell / layer.columns();
-            int x0 = x + Math.round((layer.x() + column * cellW) * scaleX);
-            int x1 = x + Math.round((layer.x() + (column + 1) * cellW) * scaleX);
-            int y0 = y + Math.round((layer.y() + rowOf * cellH) * scaleY);
-            int y1 = y + Math.round((layer.y() + (rowOf + 1) * cellH) * scaleY);
+            // The box actually SAMPLED, trim included, because a box drawn
+            // where the cell is rather than where the crop is would show a
+            // trim as having done nothing.
+            int x0 = x + Math.round((layer.x() + column * cellW + layer.trimX()) * scaleX);
+            int x1 = x + Math.round((layer.x() + (column + 1) * cellW - layer.trimX()) * scaleX);
+            int y0 = y + Math.round((layer.y() + rowOf * cellH + layer.trimY()) * scaleY);
+            int y1 = y + Math.round((layer.y() + (rowOf + 1) * cellH - layer.trimY()) * scaleY);
 
             boolean inRun = cell >= layer.first() && cell < layer.first() + layer.frames();
             if(inRun)
