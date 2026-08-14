@@ -1,10 +1,7 @@
 package de.cas_ual_ty.dueldimension.clientutil.overworld;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import de.cas_ual_ty.dueldimension.clientutil.CardFaces;
 import de.cas_ual_ty.dueldimension.duel.overworld.display.CardDisplayTileEntity;
-import de.cas_ual_ty.dueldimension.duel.overworld.display.PedestalSpace;
-import de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -16,18 +13,19 @@ import net.minecraft.world.phys.Vec3;
 /**
  * The card on a display block, and the monster standing on the card.
  * <p>
- * The first block entity renderer in this mod, and it draws the duel board's
- * own geometry: the same six quads, the same textures, the same thickness. A
- * card here is not a picture OF a card in a duel, it is the same object in a
- * different place -- which is the whole reason {@code CardSpace} exists.
+ * The first block entity renderer in this mod. It draws the card ITSELF, in
+ * {@link DisplayCard}, rather than borrowing the duel board's renderer: that
+ * one is built around a mapping from EDOPro's field units into the world, and a
+ * card on a pedestal has none of the neighbours that mapping exists to place it
+ * among. A pedestal is a block, so its card is measured in blocks.
  * <p>
- * <b>On the camera argument.</b> The level renderer has already translated the
- * pose by (this block - the eye) before {@code submit} is called, so a corner
- * handed to {@link WorldQuad} must be measured from the BLOCK rather than from
- * the eye. Passing the block's own corner as the "camera" makes the two
- * translations cancel exactly. The billboard still needs the real eye, because
- * where the viewer is standing is the one thing it cannot work out from the
- * block.
+ * <b>Two frames of reference, and only two.</b> The level renderer has already
+ * translated the pose by (this block - the eye) before {@code submit} is
+ * called, so anything drawn in BLOCK-LOCAL coordinates lands on this block and
+ * needs to know nothing else -- which is how the card is drawn. The billboard
+ * is the exception: which way it turns depends on where the viewer is standing,
+ * which is the one fact block-local coordinates cannot express, so it works in
+ * world space and is given both.
  */
 public class CardDisplayRenderer
     implements BlockEntityRenderer<CardDisplayTileEntity, CardDisplayRenderer.State>
@@ -91,23 +89,9 @@ public class CardDisplayRenderer
                 + " for the display block at " + state.blockPos);
         }
 
-        Vec3 block = Vec3.atLowerCornerOf(state.blockPos);
-        // The middle of the block's upper face, which is where a card put down
-        // on it would lie.
-        Vec3 surface = block.add(0.5D, 1D, 0.5D);
-        PedestalSpace space = new PedestalSpace(surface, PedestalSpace.CARD_ON_BLOCK);
-
-        // Built as a board slot so every question about which face shows is
-        // answered by the same code that answers it in a duel -- including the
-        // one that matters here, that a face-down card shows its back.
-        BoardSnapshot.Slot slot = new BoardSnapshot.Slot(true, (int)state.code, state.faceDown,
-            state.defence, 0, 0, 0, 0, 0, 0, 0, null, false, state.art);
-
-        CardRenderer.submit(poseStack, collector, space, block, PedestalSpace.lone(), 0,
-            state.defence, 0F, CardFaces.face(slot, false, 0), CardFaces.underside(slot, 0),
-            0xFFFFFFFF);
-
-        drawMonster(state, poseStack, collector, camera, block, surface);
+        DisplayCard.submit(poseStack, collector, (int)state.code, state.art, state.defence,
+            state.faceDown, 0xFFFFFFFF);
+        drawMonster(state, poseStack, collector, camera);
     }
 
     /**
@@ -118,7 +102,7 @@ public class CardDisplayRenderer
      * what it is to the whole room.
      */
     private static void drawMonster(State state, PoseStack poseStack,
-        SubmitNodeCollector collector, CameraRenderState camera, Vec3 block, Vec3 surface)
+        SubmitNodeCollector collector, CameraRenderState camera)
     {
         if(state.faceDown)
         {
@@ -129,12 +113,14 @@ public class CardDisplayRenderer
         {
             return;
         }
-        // On top of the card rather than on top of the block, so the monster
-        // stands on the thing it belongs to and not through it.
-        Vec3 feet = surface.add(0D,
-            (CardMesh.THICKNESS + 0.002F) * PedestalSpace.CARD_ON_BLOCK, 0D);
+        // World space for this one, because which way it turns depends on where
+        // the viewer is standing. The block's own corner is handed in as the
+        // origin, which cancels the translation the level renderer already
+        // applied -- the same two frames meeting, from the other side.
+        Vec3 block = Vec3.atLowerCornerOf(state.blockPos);
+        Vec3 feet = block.add(0.5D, DisplayCard.surface() + 0.002D, 0.5D);
         MonsterBillboard.submit(poseStack, collector, block, camera.pos, feet,
-            PedestalSpace.CARD_ON_BLOCK * sheet.heightInCards(), sheet,
+            DisplayCard.LENGTH * sheet.heightInCards(), sheet,
             MonsterSprites.frameAt(sheet, state.gameTime), 0xFFFFFFFF);
     }
 
