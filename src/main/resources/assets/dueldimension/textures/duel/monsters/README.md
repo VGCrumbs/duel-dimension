@@ -3,6 +3,13 @@
 Billboarded figures that stand on a face-up monster card. Drop a sheet here,
 add one line to `MonsterSprites`, and that card has a monster.
 
+## Where a sheet goes
+
+In the folder for the card's **type** — `spellcaster/`, `warrior/`, `fiend/`,
+`dragon/`, `zombie/` and so on. The type is printed on the card, so two people
+filing the same sprite put it in the same place; make the folder if it does not
+exist yet. The folder is part of the name in the registry line.
+
 ## The sheet
 
 - **A grid of equal cells**, read left to right and then down. One row is the
@@ -24,7 +31,7 @@ a 900×300 sheet of three both work without saying so anywhere.
 In `clientutil/overworld/MonsterSprites.java`, in the block marked *the list*:
 
 ```java
-monster(46986414L, "dark_magician", 4, Loop.PING_PONG);
+monster(46986414L, "spellcaster/dark_magician", 4, Loop.PING_PONG);
 ```
 
 The passcode, the file's name without its extension, how many frames, and how
@@ -42,7 +49,7 @@ A grid usually has cells left over. Those are the pose the monster holds while
 its card is lying down:
 
 ```java
-posed(26202165L, "sangan", 4, 2, 7, Loop.LOOP);
+posed(26202165L, "fiend/sangan", 4, 2, 7, Loop.LOOP);
 ```
 
 Four cells across, two down, the first seven are the animation — so the eighth
@@ -56,8 +63,8 @@ one that needs both:
 
 ```java
 monster(12345678L,
-    sheet("some_monster", 4, Loop.PING_PONG),          // face-up attack
-    sheet("some_monster_defence", 2, Loop.LOOP));      // face-up defence
+    sheet("warrior/some_monster", 4, Loop.PING_PONG),          // face-up attack
+    sheet("warrior/some_monster_defence", 2, Loop.LOOP));      // face-up defence
 ```
 
 `grid(name, columns, rows, first, frames, loop)` is the same thing said in full,
@@ -73,7 +80,7 @@ Every helper takes an optional last argument: a multiple of the standard
 height.
 
 ```java
-posed(36262024L, "red_eyes_b_chick", 4, 2, 7, Loop.LOOP, 0.5F);
+posed(36262024L, "dragon/red_eyes_b_chick", 4, 2, 7, Loop.LOOP, 0.5F);
 ```
 
 A multiple rather than a measurement, because what wants saying about a monster

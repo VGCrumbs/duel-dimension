@@ -21,9 +21,16 @@ import java.util.Optional;
  * that can be measured IS measured, at the moment the sprite is first drawn,
  * because a number a person has to type is a number that can be wrong.
  * <p>
+ * Sheets are filed by the card's own TYPE -- {@code spellcaster/},
+ * {@code warrior/}, {@code fiend/} and so on -- and that folder is part of the
+ * name in the line below. A flat folder of thirty files is one nobody can find
+ * anything in, and the type is the one grouping that comes from the game rather
+ * than from somebody's filing preference: it is printed on the card, so two
+ * people sorting the same sprite put it in the same place.
+ * <p>
  * The sheet's shape is the only contract, and it is short:
  * <ul>
- * <li>one row, frames left to right, every cell the same width;</li>
+ * <li>a grid of equal cells, read left to right and then down;</li>
  * <li>the monster's feet on the bottom edge of every cell -- the billboard
  *     stands the sprite on its card, so padding under the feet makes it
  *     hover;</li>
@@ -124,45 +131,45 @@ public final class MonsterSprites
     // database by name rather than typed from memory.
     static
     {
-        monster(46986414L, "dark_magician", 4, Loop.PING_PONG);
-        monster(38033121L, "dark_magician_girl", 4, Loop.PING_PONG);
-        monster(70781052L, "summoned_skull", 4, Loop.PING_PONG);
+        monster(46986414L, "spellcaster/dark_magician", 4, Loop.PING_PONG);
+        monster(38033121L, "spellcaster/dark_magician_girl", 4, Loop.PING_PONG);
+        monster(70781052L, "fiend/summoned_skull", 4, Loop.PING_PONG);
         // Four across and two down: seven frames of animation, and the eighth
         // cell is the pose it holds while lying in defence.
-        posed(26202165L, "sangan", 4, 2, 7, Loop.LOOP);
-        posed(36262024L, "red_eyes_b_chick", 4, 2, 7, Loop.LOOP, 0.5F);
+        posed(26202165L, "fiend/sangan", 4, 2, 7, Loop.LOOP);
+        posed(36262024L, "dragon/red_eyes_b_chick", 4, 2, 7, Loop.LOOP, 0.5F);
         // The whole grid is the flap; nothing left over, so nothing to hold
         // while lying down -- it uses the same animation either way.
-        monster(28279543L, "curse_of_dragon", 4, 2, Loop.LOOP);
-        posed(102380L, "lava_golem", 4, 2, 7, Loop.LOOP);
-        posed(32274490L, "skull_servant", 4, 2, 7, Loop.LOOP);
-        posed(25833572L, "gate_guardian", 4, 2, 7, Loop.LOOP);
-        posed(6368038L, "gaia_the_fierce_knight", 4, 2, 7, Loop.LOOP);
-        posed(30243636L, "hungry_burger", 4, 2, 7, Loop.LOOP);
-        posed(60482781L, "mystic_swordsman_lv6", 4, 2, 7, Loop.LOOP);
-        posed(74591968L, "mystic_swordsman_lv4", 4, 2, 7, Loop.LOOP);
-        posed(47507260L, "mystic_swordsman_lv2", 4, 2, 7, Loop.LOOP);
-        posed(50005633L, "swordstalker", 4, 2, 7, Loop.LOOP);
-        posed(20394040L, "lava_battleguard", 4, 2, 7, Loop.LOOP);
-        posed(40453765L, "swamp_battleguard", 4, 2, 7, Loop.LOOP);
-        posed(34627841L, "kaibaman", 4, 2, 7, Loop.LOOP);
+        monster(28279543L, "dragon/curse_of_dragon", 4, 2, Loop.LOOP);
+        posed(102380L, "fiend/lava_golem", 4, 2, 7, Loop.LOOP);
+        posed(32274490L, "zombie/skull_servant", 4, 2, 7, Loop.LOOP);
+        posed(25833572L, "warrior/gate_guardian", 4, 2, 7, Loop.LOOP);
+        posed(6368038L, "warrior/gaia_the_fierce_knight", 4, 2, 7, Loop.LOOP);
+        posed(30243636L, "warrior/hungry_burger", 4, 2, 7, Loop.LOOP);
+        posed(60482781L, "warrior/mystic_swordsman_lv6", 4, 2, 7, Loop.LOOP);
+        posed(74591968L, "warrior/mystic_swordsman_lv4", 4, 2, 7, Loop.LOOP);
+        posed(47507260L, "warrior/mystic_swordsman_lv2", 4, 2, 7, Loop.LOOP);
+        posed(50005633L, "warrior/swordstalker", 4, 2, 7, Loop.LOOP);
+        posed(20394040L, "warrior/lava_battleguard", 4, 2, 7, Loop.LOOP);
+        posed(40453765L, "warrior/swamp_battleguard", 4, 2, 7, Loop.LOOP);
+        posed(34627841L, "warrior/kaibaman", 4, 2, 7, Loop.LOOP);
         // Six and five frames respectively, with a gap before the pose in the
         // last cell -- which is why posed() takes the LAST cell rather than
         // everything after the animation.
-        posed(81383947L, "white_magician_pikeru", 4, 2, 6, Loop.LOOP);
-        posed(46128076L, "ebon_magician_curran", 4, 2, 5, Loop.LOOP);
+        posed(81383947L, "spellcaster/white_magician_pikeru", 4, 2, 6, Loop.LOOP);
+        posed(46128076L, "spellcaster/ebon_magician_curran", 4, 2, 5, Loop.LOOP);
         // One row of four, back and forth, with no separate pose for lying
         // down -- so the same four frames play in either battle position.
-        monster(8124921L, "right_leg_of_the_forbidden_one", 4, Loop.PING_PONG);
-        monster(70903634L, "right_arm_of_the_forbidden_one", 4, Loop.PING_PONG);
-        monster(44519536L, "left_leg_of_the_forbidden_one", 4, Loop.PING_PONG);
-        monster(7902349L, "left_arm_of_the_forbidden_one", 4, Loop.PING_PONG);
-        monster(13893596L, "exodius_the_ultimate_forbidden_lord", 4, Loop.PING_PONG);
-        monster(12600382L, "exodia_necross", 4, Loop.PING_PONG);
-        monster(92377303L, "dark_sage", 4, Loop.PING_PONG);
-        monster(98502113L, "dark_paladin", 4, Loop.PING_PONG);
-        monster(30208479L, "magician_of_black_chaos", 4, Loop.PING_PONG);
-        monster(80304126L, "magicians_valkyria", 4, Loop.PING_PONG);
+        monster(8124921L, "spellcaster/right_leg_of_the_forbidden_one", 4, Loop.PING_PONG);
+        monster(70903634L, "spellcaster/right_arm_of_the_forbidden_one", 4, Loop.PING_PONG);
+        monster(44519536L, "spellcaster/left_leg_of_the_forbidden_one", 4, Loop.PING_PONG);
+        monster(7902349L, "spellcaster/left_arm_of_the_forbidden_one", 4, Loop.PING_PONG);
+        monster(13893596L, "spellcaster/exodius_the_ultimate_forbidden_lord", 4, Loop.PING_PONG);
+        monster(12600382L, "spellcaster/exodia_necross", 4, Loop.PING_PONG);
+        monster(92377303L, "spellcaster/dark_sage", 4, Loop.PING_PONG);
+        monster(98502113L, "spellcaster/dark_paladin", 4, Loop.PING_PONG);
+        monster(30208479L, "spellcaster/magician_of_black_chaos", 4, Loop.PING_PONG);
+        monster(80304126L, "spellcaster/magicians_valkyria", 4, Loop.PING_PONG);
     }
     // =========================================================================
 
