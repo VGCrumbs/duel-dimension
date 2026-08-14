@@ -137,7 +137,7 @@ public final class MonsterSprites
         // Four across and two down: seven frames of animation, and the eighth
         // cell is the pose it holds while lying in defence.
         posed(26202165L, "fiend/sangan", 4, 2, 7, Loop.LOOP);
-        posed(36262024L, "dragon/red_eyes_b_chick", 4, 2, 7, Loop.LOOP, 0.5F);
+        posed(36262024L, "dragon/red_eyes_b_chick", 4, 2, 7, Loop.PING_PONG, 0.5F);
         // The whole grid is the flap; nothing left over, so nothing to hold
         // while lying down -- it uses the same animation either way.
         monster(28279543L, "dragon/curse_of_dragon", 4, 2, Loop.LOOP);
