@@ -594,11 +594,28 @@ public final class DdNetwork
         onServer(de.cas_ual_ty.dueldimension.duel.overworld.display.CardDisplayMessages
             .SetCard.TYPE, (message, player) ->
         {
-            if(!player.isCreative()
-                || !player.level().isLoaded(message.pos())
-                || player.distanceToSqr(message.pos().getX() + 0.5D, message.pos().getY() + 0.5D,
-                    message.pos().getZ() + 0.5D) > 64D)
+            // Refused OUT LOUD. Every one of these is a legitimate refusal and
+            // every one of them looks identical from the other side -- a card
+            // chosen and nothing happening -- so a rejected edit says which
+            // rule stopped it rather than leaving a builder to guess between
+            // four of them.
+            if(!player.isCreative())
             {
+                de.cas_ual_ty.dueldimension.DuelDimension.log("card display refused for "
+                    + player.getGameProfile().name() + ": not in creative mode");
+                return;
+            }
+            if(!player.level().isLoaded(message.pos()))
+            {
+                de.cas_ual_ty.dueldimension.DuelDimension.log("card display refused at "
+                    + message.pos() + ": that chunk is not loaded");
+                return;
+            }
+            if(player.distanceToSqr(message.pos().getX() + 0.5D, message.pos().getY() + 0.5D,
+                message.pos().getZ() + 0.5D) > 64D)
+            {
+                de.cas_ual_ty.dueldimension.DuelDimension.log("card display refused at "
+                    + message.pos() + ": " + player.getGameProfile().name() + " is too far away");
                 return;
             }
             if(player.level().getBlockEntity(message.pos())
@@ -606,6 +623,14 @@ public final class DdNetwork
                     .CardDisplayTileEntity display)
             {
                 display.set(message.code(), message.art(), position(message.position()));
+                de.cas_ual_ty.dueldimension.DuelDimension.log("card display at " + message.pos()
+                    + " now shows " + message.code() + " in position "
+                    + position(message.position()));
+            }
+            else
+            {
+                de.cas_ual_ty.dueldimension.DuelDimension.log("card display refused at "
+                    + message.pos() + ": no display block there");
             }
         });
     }

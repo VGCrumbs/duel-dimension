@@ -257,7 +257,7 @@ public class CardDisplayScreen extends Screen
         // a display wants to know what they are adjusting.
         Properties current = code == 0L ? null : DdDatabase.PROPERTIES_LIST.get(code);
         String heading = title.getString()
-            + (current == null ? "  --  empty" : "  --  " + current.getName());
+            + (current == null ? " - empty" : " - " + current.getName());
         extractor.text(font, font.plainSubstrByWidth(heading, panelW - PAD * 2),
             panelX + PAD, panelY + 5, 0xFFF4D089, true);
 

@@ -73,6 +73,8 @@ public class CardDisplayRenderer
     {
         if(state.code == 0L)
         {
+            // Nothing chosen yet. Not a failure -- a display block starts
+            // empty, and an empty one is a bare pedestal.
             return;
         }
         Vec3 block = Vec3.atLowerCornerOf(state.blockPos);
