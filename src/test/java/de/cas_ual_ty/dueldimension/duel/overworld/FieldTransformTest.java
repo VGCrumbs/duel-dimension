@@ -48,10 +48,12 @@ public class FieldTransformTest
             maxZ = Math.max(maxZ, corner.z);
         }
 
-        // Facing east: the mat's ten units run north-south (across), its eight
-        // units run east-west (along the facing).
-        assertEquals(9.0D, maxZ - minZ, 1e-6D, "the mat spans the area exactly across");
-        assertEquals(7.2D, maxX - minX, 1e-6D, "and leaves the duellists room along it");
+        // Facing east: the mat's width runs north-south (across) and its depth
+        // runs east-west (along the facing). Measured from the spec, because
+        // the field is a setting and these numbers move with it.
+        assertEquals(SPEC.matWidth(), maxZ - minZ, 1e-5D, "the mat spans the area across");
+        assertEquals(SPEC.matDepth(), maxX - minX, 1e-5D,
+            "and leaves the duellists room along it");
         assertEquals(0.5D, (minX + maxX) / 2D, 1e-6D, "centred on the anchor block");
         assertEquals(0.5D, (minZ + maxZ) / 2D, 1e-6D, "centred on the anchor block");
     }

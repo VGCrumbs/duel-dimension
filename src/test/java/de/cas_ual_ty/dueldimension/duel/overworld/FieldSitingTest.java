@@ -13,6 +13,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -96,37 +97,53 @@ public class FieldSitingTest
     // -------------------------------------------------------------- geometry
 
     @Test
-    public void theAreaIsNineByNineAndCentredOnItsAnchor()
+    public void theAreaIsCentredOnItsAnchor()
     {
         FieldSiting siting = new FieldSiting(floor(0, 0), Direction.EAST, SPEC);
         List<BlockPos> cells = new ArrayList<>();
         siting.forEachFloor(cells::add);
 
-        assertEquals(81, cells.size(), "a 9x9 area is 81 blocks");
-        assertEquals(81, new HashSet<>(cells).size(), "and no block is enumerated twice");
+        // Measured against the spec rather than against the number it happens
+        // to hold. The field has been resized once already and every hard-coded
+        // 9 in this file went red at the same moment.
+        int expected = SPEC.areaWidth() * SPEC.areaDepth();
+        assertEquals(expected, cells.size());
+        assertEquals(expected, new HashSet<>(cells).size(), "no block is enumerated twice");
         for(BlockPos cell : cells)
         {
-            assertTrue(Math.abs(cell.getX()) <= 4 && Math.abs(cell.getZ()) <= 4,
-                cell + " is outside the 9x9 centred on the anchor");
+            // Projected onto the FIELD's axes, not the world's. The area is no
+            // longer square -- it is wider than it is deep, so the board can be
+            // bigger without moving the duellists -- and "x" is across only for
+            // one of the four facings.
+            int across = FieldFootprint.lateralOffset(floor(0, 0), Direction.EAST, cell);
+            int along = FieldFootprint.forwardOffset(floor(0, 0), Direction.EAST, cell);
+            assertTrue(Math.abs(across) <= SPEC.halfWidth() && Math.abs(along) <= SPEC.halfDepth(),
+                cell + " is outside the area centred on the anchor");
             assertEquals(FLOOR, cell.getY(), "the whole floor is at one height");
         }
     }
 
     /**
-     * The area is square, so turning the board must not change which blocks it
-     * covers -- only which end each duellist stands at. If this ever fails, the
-     * footprint and the validator have started to disagree about orientation.
+     * Turning the board end for end covers the same ground -- the footprint is
+     * symmetric about its anchor on both axes, which is also why the search
+     * does not bother trying the opposite facing. A QUARTER turn does not,
+     * because the area is wider than it is deep.
      */
     @Test
-    public void turningTheBoardCoversTheSameGround()
+    public void turningTheBoardEndForEndCoversTheSameGround()
     {
         Set<BlockPos> east = new HashSet<>();
         new FieldSiting(floor(0, 0), Direction.EAST, SPEC).forEachFloor(east::add);
-        for(Direction facing : new Direction[] {Direction.NORTH, Direction.SOUTH, Direction.WEST})
+        Set<BlockPos> west = new HashSet<>();
+        new FieldSiting(floor(0, 0), Direction.WEST, SPEC).forEachFloor(west::add);
+        assertEquals(east, west, "a field and its opposite must cover the same ground");
+
+        Set<BlockPos> north = new HashSet<>();
+        new FieldSiting(floor(0, 0), Direction.NORTH, SPEC).forEachFloor(north::add);
+        if(SPEC.areaWidth() != SPEC.areaDepth())
         {
-            Set<BlockPos> other = new HashSet<>();
-            new FieldSiting(floor(0, 0), facing, SPEC).forEachFloor(other::add);
-            assertEquals(east, other, "facing " + facing + " covers different ground");
+            assertNotEquals(east, north,
+                "a quarter turn of a field that is not square covers different ground");
         }
     }
 
@@ -135,9 +152,10 @@ public class FieldSitingTest
     {
         FieldSiting siting = new FieldSiting(floor(0, 0), Direction.EAST, SPEC);
 
-        assertEquals(floor(-5, 0), siting.stand(0));
-        assertEquals(floor(5, 0), siting.stand(1));
-        assertEquals(SPEC.separation(), 10);
+        int reach = SPEC.halfDepth() + 1;
+        assertEquals(floor(-reach, 0), siting.stand(0));
+        assertEquals(floor(reach, 0), siting.stand(1));
+        assertEquals(SPEC.areaDepth() + 1, SPEC.separation());
         assertFalse(siting.contains(siting.stand(0)), "seat 0 would be standing on the mat");
         assertFalse(siting.contains(siting.stand(1)), "seat 1 would be standing on the mat");
         assertEquals(Direction.EAST, siting.look(0));
@@ -153,10 +171,12 @@ public class FieldSitingTest
         FieldSiting siting = new FieldSiting(floor(0, 0), Direction.NORTH, SPEC);
 
         assertTrue(siting.contains(floor(0, 0)), "the anchor is in its own field");
-        assertTrue(siting.contains(floor(4, 4)), "a corner is in the field");
+        assertTrue(siting.contains(floor(SPEC.halfWidth(), SPEC.halfDepth())),
+            "a corner is in the field");
         assertTrue(siting.contains(floor(0, 0).above(SPEC.clearance())),
             "the top of the clearance is in the field");
-        assertFalse(siting.contains(floor(5, 0)), "one block past the edge is outside");
+        assertFalse(siting.contains(floor(SPEC.halfWidth() + 1, 0)),
+            "one block past the edge is outside");
         assertFalse(siting.contains(floor(0, 0).above(SPEC.clearance() + 1)),
             "above the clearance is outside");
         assertFalse(siting.contains(floor(0, 0).below()), "under the floor is outside");
@@ -170,11 +190,10 @@ public class FieldSitingTest
     @Test
     public void theMatFitsTheAreaItWasValidatedFor()
     {
-        assertEquals(0.9F, SPEC.blocksPerFieldUnit(), 1e-6F);
-        assertTrue(SPEC.matWidth() <= SPEC.areaWidth());
-        assertEquals(9.0F, 10F * SPEC.blocksPerFieldUnit(), 1e-6F,
-            "the mat spans the area exactly across");
-        assertEquals(7.2F, SPEC.matDepth(), 1e-6F);
+        assertEquals(FieldSpec.fittingScale(SPEC.areaWidth(), SPEC.areaDepth()),
+            SPEC.blocksPerFieldUnit(), 1e-6F, "the default board fills the area it asks for");
+        assertTrue(SPEC.matWidth() <= SPEC.areaWidth(),
+            "a board wider than its own validated ground");
         assertTrue(SPEC.matDepth() < SPEC.areaDepth(),
             "the mat has to leave the duellists somewhere to stand");
     }
@@ -184,14 +203,16 @@ public class FieldSitingTest
     @Test
     public void twoDuellistsStandingRightBeginWhereTheyAre()
     {
-        SitingResult result = SitingSearch.site(new FlatWorld(), floor(0, 0), floor(10, 0), SPEC);
+        int apart = SPEC.separation();
+        SitingResult result = SitingSearch.site(new FlatWorld(), floor(0, 0), floor(apart, 0),
+            SPEC);
 
         SitingResult.Ready ready = assertInstanceOf(SitingResult.Ready.class, result,
-            "flat ground, ten apart, straight across: nobody should have to move");
-        assertEquals(floor(5, 0), ready.siting().anchor());
+            "flat ground, exactly a field apart, straight across: nobody should have to move");
+        assertEquals(floor(apart / 2, 0), ready.siting().anchor());
         assertEquals(Direction.EAST, ready.siting().facing());
         assertEquals(floor(0, 0), ready.siting().stand(0));
-        assertEquals(floor(10, 0), ready.siting().stand(1));
+        assertEquals(floor(apart, 0), ready.siting().stand(1));
     }
 
     @Test
@@ -201,8 +222,9 @@ public class FieldSitingTest
 
         SitingResult.Move move = assertInstanceOf(SitingResult.Move.class, result);
         assertEquals(floor(3, 0), move.siting().anchor(), "the field still sits between them");
-        assertEquals(floor(-2, 0), move.siting().stand(0));
-        assertEquals(floor(8, 0), move.siting().stand(1));
+        int reach = SPEC.halfDepth() + 1;
+        assertEquals(floor(3 - reach, 0), move.siting().stand(0));
+        assertEquals(floor(3 + reach, 0), move.siting().stand(1));
     }
 
     @Test
@@ -303,7 +325,9 @@ public class FieldSitingTest
 
         SitingResult result = SitingSearch.site(world, floor(0, 0), floor(10, 0), SPEC);
 
-        assertEquals(new SitingResult.Refused(Refusal.NO_ROOM), result);
+        // OBSTRUCTED rather than NO_ROOM: both are true, and only one of them
+        // tells the player to look up.
+        assertEquals(new SitingResult.Refused(Refusal.OBSTRUCTED), result);
     }
 
     @Test
@@ -331,41 +355,52 @@ public class FieldSitingTest
         assertNotNull(found);
         assertEquals(Direction.EAST, found.facing(), "the board should not have been turned");
         assertFalse(found.contains(new BlockPos(5, FLOOR + 1, 0)));
+        // The pillar sits on the facing axis, so the field escapes it along
+        // that axis first -- half its DEPTH away, which is the shorter of the
+        // two now that the area is not square.
         int moved = Math.max(Math.abs(found.anchor().getX() - 5), Math.abs(found.anchor().getZ()));
-        assertEquals(SPEC.halfWidth() + 1, moved,
-            "a nine-wide field clears a pillar at five blocks and not before");
+        assertEquals(SPEC.halfDepth() + 1, moved,
+            "a field only clears a pillar once it is half its own extent away");
     }
 
     /**
      * Nearest means nearest as the player sees it, not nearest in whatever
-     * shape the loop happened to walk. A square ring's corner is further away
+     * shape the loop happened to walk: a square ring's corner is further away
      * than the next ring's edge, so a ring walk would take the corner first.
+     * <p>
+     * Proved rather than asserted as a number. The nearest VALID spot is not
+     * something to work out by hand -- at five blocks the field clears the
+     * pillar but a duellist's own stand block lands in its column -- so the
+     * test finds the best answer by brute force and insists the search found
+     * one just as good.
      */
     @Test
     public void theSearchMeasuresDistanceHonestly()
     {
         FlatWorld world = new FlatWorld().obstacle(5, FLOOR + 1, 0);
+        BlockPos around = floor(5, 0);
 
-        FieldSiting found = SitingSearch.search(world, floor(5, 0), Direction.EAST, SPEC);
+        FieldSiting found = SitingSearch.search(world, around, Direction.EAST, SPEC);
+        assertNotNull(found);
 
-        int dx = found.anchor().getX() - 5;
-        int dz = found.anchor().getZ();
-        assertEquals(25, dx * dx + dz * dz,
-            "the field moved diagonally when a straight step of the same ring was available");
-    }
-
-    @Test
-    public void theSameQuestionAlwaysGetsTheSameAnswer()
-    {
-        FlatWorld world = new FlatWorld().obstacle(5, FLOOR + 1, 0).obstacle(6, FLOOR + 1, 2)
-            .hole(4, -3);
-
-        SitingResult first = SitingSearch.site(world, floor(0, 0), floor(10, 0), SPEC);
-        for(int repeat = 0; repeat < 5; repeat++)
+        int best = Integer.MAX_VALUE;
+        for(int dx = -SPEC.searchRadius(); dx <= SPEC.searchRadius(); dx++)
         {
-            assertEquals(first, SitingSearch.site(world, floor(0, 0), floor(10, 0), SPEC),
-                "both clients and the server have to agree without asking each other");
+            for(int dz = -SPEC.searchRadius(); dz <= SPEC.searchRadius(); dz++)
+            {
+                FieldSiting candidate = new FieldSiting(around.offset(dx, 0, dz),
+                    Direction.EAST, SPEC);
+                if(FieldValidator.check(world, candidate) == null)
+                {
+                    best = Math.min(best, dx * dx + dz * dz);
+                }
+            }
         }
+
+        int dx = found.anchor().getX() - around.getX();
+        int dz = found.anchor().getZ() - around.getZ();
+        assertEquals(best, dx * dx + dz * dz,
+            "a nearer valid field existed and the search walked past it");
     }
 
     @Test

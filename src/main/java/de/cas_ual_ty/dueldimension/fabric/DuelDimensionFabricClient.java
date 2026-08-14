@@ -120,8 +120,11 @@ public class DuelDimensionFabricClient implements ClientModInitializer
                 if(de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()
                     && client.gui.screen() == null)
                 {
-                    de.cas_ual_ty.dueldimension.clientutil.overworld.BoardMenuScreen
-                        .openIfActionable(client);
+                    // Hands over the mouse; it does not put a list on the
+                    // screen. What to do with a card is decided by pointing at
+                    // it, which is the whole reason the board is in the world.
+                    client.setScreenAndShow(new de.cas_ual_ty.dueldimension.clientutil.overworld
+                        .BoardPointerScreen());
                 }
             }
         });

@@ -244,11 +244,11 @@
   "dueldimension.overworld.refusal.different_world": "You are not in the same world, so there is nowhere to build a duel field. Playing on the duel screen instead.",
   "dueldimension.overworld.refusal.too_far": "You are too far apart to duel across a board in the world. Playing on the duel screen instead.",
   "dueldimension.overworld.refusal.too_close": "You are standing in the same spot, so there is no line to build a duel field along. Playing on the duel screen instead.",
-  "dueldimension.overworld.refusal.not_across": "There is no room for a duel field near you. Playing on the duel screen instead.",
-  "dueldimension.overworld.refusal.uneven_elevation": "There is no level ground for a duel field near you. Playing on the duel screen instead.",
-  "dueldimension.overworld.refusal.uneven_ground": "The ground here is not level enough for a duel field. Playing on the duel screen instead.",
-  "dueldimension.overworld.refusal.obstructed": "There is not enough clear space for a duel field here. Playing on the duel screen instead.",
-  "dueldimension.overworld.refusal.no_room": "There is no room for a duel field here. Playing on the duel screen instead.",
+  "dueldimension.overworld.refusal.not_across": "There is nowhere flat and clear enough for a duel field near you. A duel field needs a flat, clear area with headroom; you can make it smaller in the mod's settings. Playing on the duel screen instead.",
+  "dueldimension.overworld.refusal.uneven_elevation": "There is no level ground for a duel field near you. A duel field needs a flat, clear area with headroom; you can make it smaller in the mod's settings. Playing on the duel screen instead.",
+  "dueldimension.overworld.refusal.uneven_ground": "The ground here is not level enough for a duel field. A duel field needs a flat, clear area with headroom; you can make it smaller in the mod's settings. Playing on the duel screen instead.",
+  "dueldimension.overworld.refusal.obstructed": "There is not enough clear space for a duel field here -- something is in the way, or the ceiling is too low. A duel field needs a flat, clear area with headroom; you can make it smaller in the mod's settings. Playing on the duel screen instead.",
+  "dueldimension.overworld.refusal.no_room": "There is nowhere flat and clear enough for a duel field near you. A duel field needs a flat, clear area with headroom; you can make it smaller in the mod's settings. Playing on the duel screen instead.",
   "key.dueldimension.duel_act": "Duel: act on card",
   "item.dueldimension.duelist_placer": "Duelist Placer"
 }

@@ -87,16 +87,32 @@ public record FieldSpec(int areaWidth, int areaDepth, int clearance, float matSc
     }
 
     /**
-     * Nine by nine with the board filling it, which is where this started and
-     * what the config file falls back to. Kept as the shipped default rather
-     * than as the only possibility.
+     * Eleven across by nine deep, with the board filling it.
+     * <p>
+     * The two spans do different jobs, which is why they are no longer equal.
+     * The DEPTH sets how far apart the duellists stand ({@link #separation} is
+     * {@code areaDepth + 1}, so nine keeps them the ten blocks apart they have
+     * always been). The WIDTH only has to cover the board, so widening it to
+     * eleven makes the board bigger without moving anybody: the mat goes from
+     * 9.0 x 7.2 blocks to 11.0 x 8.8, roughly a block further out on every
+     * side, while the walk to the mark is unchanged.
+     * <p>
+     * The board can grow this way precisely because the ground it grew onto is
+     * validated with it -- a board is never allowed to be larger than the area
+     * that was checked for it, which is the one invariant this record enforces
+     * itself.
      * <p>
      * The separation limit is twenty because that is how far a worn duel disk
      * carries a challenge ({@code DuelReach.CHALLENGE_RANGE}). The two numbers
      * have to agree: a challenge you can shout across a courtyard and then
      * cannot hold a board duel over is a feature refusing itself.
+     * <p>
+     * The search radius went from eight to twelve when the field widened. A
+     * bigger field is refused by more places, so it has to look at more of
+     * them; the floor scan is remembered across facings, so the extra reach
+     * costs far less than it once would have.
      */
-    public static final FieldSpec DEFAULT = fitting(9, 9, 3, 1, 1, 20, 8, 3);
+    public static final FieldSpec DEFAULT = fitting(11, 9, 3, 1, 1, 20, 12, 3);
 
     /** The spec the server is currently siting duels with. */
     public static FieldSpec current()

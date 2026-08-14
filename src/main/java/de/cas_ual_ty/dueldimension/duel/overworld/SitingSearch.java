@@ -50,7 +50,8 @@ public final class SitingSearch
         // already stand on. If that works and they are already in the right
         // places, nobody has to move at all.
         FieldSiting natural = new FieldSiting(midpoint, facing, spec);
-        if(pair == null && FieldValidator.check(sampler, natural) == null)
+        Refusal underfoot = FieldValidator.check(sampler, natural);
+        if(pair == null && underfoot == null)
         {
             boolean placed = natural.stand(0).equals(floorA) && natural.stand(1).equals(floorB);
             return placed ? new SitingResult.Ready(natural) : new SitingResult.Move(natural);
@@ -61,10 +62,16 @@ public final class SitingSearch
         {
             return new SitingResult.Move(nearest);
         }
-        // NO_ROOM even when their stance was also wrong: the search looked
-        // everywhere within its radius and found nothing, so telling them to
-        // straighten up would be telling them to fix what was not the problem.
-        return new SitingResult.Refused(Refusal.NO_ROOM);
+        // What was wrong WHERE THEY STAND, in preference to the generic "no
+        // room". Both are true once the search comes back empty, but only one
+        // of them tells a player whether to look up at a ceiling, down at a
+        // hole, or around at the furniture -- and "no room" was reported twice
+        // before anybody could act on it.
+        if(underfoot != null)
+        {
+            return new SitingResult.Refused(underfoot);
+        }
+        return new SitingResult.Refused(pair != null ? pair : Refusal.NO_ROOM);
     }
 
     /**

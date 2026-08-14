@@ -20,15 +20,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class FieldSpecTest
 {
     @Test
-    public void theShippedDefaultIsNineByNineWithTheBoardFillingIt()
+    public void theShippedDefaultFillsTheAreaItAsksFor()
     {
         FieldSpec spec = FieldSpec.DEFAULT;
 
-        assertEquals(9, spec.areaWidth());
-        assertEquals(9, spec.areaDepth());
-        assertEquals(0.9F, spec.matScale(), 1e-6F);
-        assertEquals(9.0F, spec.matWidth(), 1e-5F);
-        assertEquals(7.2F, spec.matDepth(), 1e-5F);
+        assertEquals(11, spec.areaWidth(), "widened so the board can be bigger");
+        assertEquals(9, spec.areaDepth(), "but the duellists stand where they always did");
+        assertEquals(10, spec.separation(), "ten blocks apart, unchanged");
+        assertEquals(FieldSpec.fittingScale(11, 9), spec.matScale(), 1e-6F);
+        assertEquals(11F, spec.matWidth(), 1e-4F, "the board spans the area across");
+        assertTrue(spec.matDepth() < spec.areaDepth(),
+            "and leaves the duellists room to stand along it");
     }
 
     /**

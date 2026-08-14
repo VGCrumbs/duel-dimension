@@ -104,11 +104,16 @@ public class FieldIntegrityTest
     @Test
     public void buildingBesideTheFieldIsNotADisturbance()
     {
-        assertNull(FieldValidator.check(new World().place(5, FLOOR + 1, 5), SITING),
+        int outside = SPEC.halfWidth() + 1;
+        assertNull(FieldValidator.check(new World().place(outside, FLOOR + 1, outside), SITING),
             "one block past the edge is somebody else's business");
         assertNull(FieldValidator.check(new World().place(0, FLOOR + SPEC.clearance() + 1, 0),
             SITING), "above the headroom the field asked for");
-        assertNull(FieldValidator.check(new World().dig(6, 0), SITING),
+        // Diagonally out, not straight out: straight out along the facing is
+        // where a duellist STANDS, and digging the ground from under them is
+        // very much a disturbance.
+        assertNull(FieldValidator.check(
+            new World().dig(SPEC.halfWidth() + 1, SPEC.halfDepth() + 1), SITING),
             "digging outside the footprint");
     }
 
