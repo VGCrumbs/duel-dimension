@@ -120,6 +120,7 @@ public final class OverworldBoardRenderer
         }
 
         drawCards(poseStack, collector, transform, camera);
+        drawEquipLinks(poseStack, collector, transform, camera);
         drawAttacks(poseStack, collector, transform, camera);
         drawShatters(poseStack, collector, transform, camera);
     }
@@ -486,6 +487,133 @@ public final class OverworldBoardRenderer
     private static float length(float fx, float fy, float tx, float ty)
     {
         return (float)Math.sqrt((tx - fx) * (tx - fx) + (ty - fy) * (ty - fy));
+    }
+
+    /**
+     * The line between an equip card and what it is equipped to, and the mark
+     * the reference puts on the far end.
+     * <p>
+     * EDOPro does not draw the pairing at all -- it MARKS it. Hovering a card
+     * sets {@code is_showequip} on its partner
+     * ({@code ClientField::SetShowMark}) and the partner then wears
+     * {@code tEquip} over its face ({@code drawing.cpp}). That badge is kept
+     * here at the reference's own size, {@code vSymbol} being 0.7 field units
+     * square, which is exactly the width of a card. The line is this project's
+     * own addition and the 2D board's too: with three equips out, a badge tells
+     * you that SOMETHING is attached and a line tells you what.
+     * <p>
+     * The core reports one direction only -- {@code card::equiping_target} --
+     * so both ends are found by sweeping every on-field slot for an equip whose
+     * own zone or whose target zone is the one being looked at. EDOPro builds
+     * its reverse {@code equipped} set exactly the same way.
+     * <p>
+     * Only while a card is being looked at, as on the screen. A board with
+     * every pairing permanently strung together is a board nobody can read.
+     */
+    private static void drawEquipLinks(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera)
+    {
+        de.cas_ual_ty.dueldimension.clientutil.BoardTarget looking =
+            ClientDuelTargeting.looking();
+        BoardSnapshot board = DuelClientState.board;
+        if(looking == null || looking.isPile() || board == null)
+        {
+            return;
+        }
+        int seat = Math.max(0, ClientDuelField.seat());
+        for(int asked = 0; asked < 2; asked++)
+        {
+            BoardSnapshot.Side side = asked == 0 ? board.self() : board.opponent();
+            if(side == null)
+            {
+                continue;
+            }
+            linksIn(poseStack, collector, transform, camera, side.monsters(), asked,
+                OcgConstants.LOCATION_MZONE, looking, seat);
+            linksIn(poseStack, collector, transform, camera, side.spells(), asked,
+                OcgConstants.LOCATION_SZONE, looking, seat);
+        }
+    }
+
+    private static void linksIn(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera, List<BoardSnapshot.Slot> slots, int asked,
+        int location, de.cas_ual_ty.dueldimension.clientutil.BoardTarget looking, int seat)
+    {
+        if(slots == null)
+        {
+            return;
+        }
+        for(int sequence = 0; sequence < slots.size(); sequence++)
+        {
+            BoardSnapshot.Slot slot = slots.get(sequence);
+            if(slot == null || !slot.present() || slot.equip() == null)
+            {
+                continue;
+            }
+            boolean fromLooked = looking.isAt(asked, location, sequence);
+            boolean toLooked = looking.isAt(slot.equip().controller(), slot.equip().location(),
+                slot.equip().sequence());
+            if(!fromLooked && !toLooked)
+            {
+                continue;
+            }
+            // The badge belongs on the end NOT being looked at, because the end
+            // that is being looked at is the one the player already found.
+            FieldLayout.Rect here = zoneOf(asked, location, sequence, seat);
+            FieldLayout.Rect there = zoneOf(slot.equip().controller(), slot.equip().location(),
+                slot.equip().sequence(), seat);
+            if(here == null || there == null)
+            {
+                continue;
+            }
+            drawLink(poseStack, collector, transform, camera, fromLooked ? here : there,
+                fromLooked ? there : here);
+        }
+    }
+
+    /** A zone in board space, from a controller the engine numbered. */
+    private static FieldLayout.Rect zoneOf(int asked, int location, int sequence, int seat)
+    {
+        return FieldLayout.zone(FieldTransform.controllerFor(seat, asked == 0), location,
+            sequence);
+    }
+
+    /** Amber, so an equip link never reads as the red attack line. */
+    private static final int LINK_TINT = 0xD9FFD14D;
+    /** Half the link's thickness, in field units. */
+    private static final float LINK_HALF = 0.035F;
+
+    private static void drawLink(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera, FieldLayout.Rect from, FieldLayout.Rect to)
+    {
+        float x1 = from.x() + from.w() / 2F;
+        float y1 = from.y() + from.h() / 2F;
+        float x2 = to.x() + to.w() / 2F;
+        float y2 = to.y() + to.h() / 2F;
+        double lift = (cardLift(transform) + CardMesh.THICKNESS + 0.04F) * transform.scale();
+
+        float dx = x2 - x1;
+        float dy = y2 - y1;
+        float length = (float)Math.sqrt(dx * dx + dy * dy);
+        if(length > 1e-3F)
+        {
+            // Perpendicular, turned the way that survives at()'s flip of the
+            // field's y axis -- the same correction the attack ribbon needed.
+            float rightX = dy / length * LINK_HALF;
+            float rightY = -dx / length * LINK_HALF;
+            WorldQuad.submit(poseStack, collector, DuelTextures.WHITE, camera, new Vec3[] {
+                transform.at(x1 + rightX, y1 + rightY, lift),
+                transform.at(x2 + rightX, y2 + rightY, lift),
+                transform.at(x2 - rightX, y2 - rightY, lift),
+                transform.at(x1 - rightX, y1 - rightY, lift)}, fade(LINK_TINT));
+        }
+
+        // vSymbol is a square the width of a card, centred on the partner.
+        float half = to.w() / 2F;
+        WorldQuad.submit(poseStack, collector, DuelTextures.EQUIP, camera,
+            transform.corners(new FieldLayout.Rect(x2 - half, y2 - half, half * 2F, half * 2F),
+                lift + 0.01D * transform.scale()),
+            fade(0xFFFFFFFF));
     }
 
     /** How high a leap goes, as a share of how far it travels. */

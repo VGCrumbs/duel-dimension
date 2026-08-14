@@ -47,6 +47,19 @@ public record BoardTarget(int code, int controller, int location, int sequence, 
         return count > 0;
     }
 
+    /**
+     * Is this the exact slot named by a controller, a location and a sequence?
+     * <p>
+     * The same test {@code EnginePrompt.Option.isAt} makes, so a target and an
+     * option agree about what "this card" means -- and now the equip links ask
+     * it too, of the zones the core names in {@code card::equiping_target}.
+     */
+    public boolean isAt(int controller, int location, int sequence)
+    {
+        return this.controller == controller && this.location == location
+            && this.sequence == sequence;
+    }
+
     /** Do these two point at the same thing on the field? */
     public boolean sameSlot(BoardTarget other)
     {
