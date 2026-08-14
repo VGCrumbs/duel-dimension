@@ -72,17 +72,27 @@ public final class MonsterBillboard
             top.add(rightX * half, 0D, rightZ * half),
             feet.add(rightX * half, 0D, rightZ * half)};
 
-        // Half a texel in from each side. Sampling exactly on the seam between
-        // two cells borrows a column of the next frame while the quad is
-        // scaled, which reads as a sliver of the wrong pose down one edge --
-        // the same correction the phase bar's atlas needs, for the same reason.
-        float cell = 1F / sheet.frames();
-        float inset = cell * 0.001F;
-        float u0 = frame * cell + inset;
-        float u1 = (frame + 1) * cell - inset;
+        // Which cell of the file this frame is, reading across and then down.
+        int cell = sheet.cell(frame);
+        int column = cell % sheet.columns();
+        int row = cell / sheet.columns();
+        float cellW = 1F / sheet.columns();
+        float cellH = 1F / sheet.rows();
+        // Half a texel in from every side. Sampling exactly on the seam between
+        // two cells borrows a strip of its neighbour while the quad is scaled,
+        // which reads as a sliver of the wrong pose down one edge -- the same
+        // correction the phase bar's atlas needs, for the same reason. It
+        // matters more on a grid than on a row, because a cell now has
+        // neighbours above and below it as well.
+        float insetU = cellW * 0.001F;
+        float insetV = cellH * 0.001F;
+        float u0 = column * cellW + insetU;
+        float u1 = (column + 1) * cellW - insetU;
+        float v0 = row * cellH + insetV;
+        float v1 = (row + 1) * cellH - insetV;
 
         // Corner order is bottom-left, top-left, top-right, bottom-right, so v
-        // runs from 1 at the feet to 0 at the head.
+        // runs from the cell's bottom at the feet to its top at the head.
         //
         // The KIND follows the alpha, and it has to. SOLID is an alpha-TESTED
         // cutout: it writes depth, which is what a solid sprite wants, but a
@@ -92,6 +102,6 @@ public final class MonsterBillboard
         // which is the only one that can draw half of something.
         WorldQuad.Kind kind = (tint >>> 24) >= 0xFF ? WorldQuad.Kind.SOLID : WorldQuad.Kind.GLOW;
         WorldQuad.submit(poseStack, collector, kind, sheet.texture(), camera,
-            corners, tint, new float[] {u0, u0, u1, u1}, new float[] {1F, 0F, 0F, 1F});
+            corners, tint, new float[] {u0, u0, u1, u1}, new float[] {v1, v0, v0, v1});
     }
 }

@@ -57,17 +57,31 @@ public final class MonsterSprites
     }
 
     /**
-     * One animation.
+     * One animation, taken from a grid of cells.
+     * <p>
+     * A grid rather than a row, because seven frames in a row would be a sheet
+     * seven cells wide and one tall -- a very long, very thin file that wastes
+     * most of a texture. Four by two is how a spritesheet is actually drawn,
+     * and a run of frames is then just a start and a count reading across and
+     * then down. A single-row sheet is the same thing with one row.
+     * <p>
+     * That start and count are also what lets ONE file hold two animations. A
+     * monster whose eighth cell is its defence pose declares seven frames from
+     * cell zero and one frame from cell seven, and neither has to know the
+     * other exists.
      *
-     * @param texture       the sheet
-     * @param frames        how many cells across it
+     * @param columns       cells across the file
+     * @param rows          cells down it
+     * @param first         which cell this animation begins at, reading across
+     *                      and then down
+     * @param frames        how many cells it runs for
      * @param ticksPerFrame how long each is held
      * @param loop          how the frames follow one another
      * @param heightInCards how tall the monster stands, measured in card
      *                      lengths, so it scales with the board it is on
      */
-    public record Sheet(Identifier texture, int frames, int ticksPerFrame, Loop loop,
-        float heightInCards)
+    public record Sheet(Identifier texture, int columns, int rows, int first, int frames,
+        int ticksPerFrame, Loop loop, float heightInCards)
     {
         /**
          * How wide one cell is against its height, measured from the file.
@@ -79,6 +93,12 @@ public final class MonsterSprites
         public float aspect()
         {
             return aspectOf(this);
+        }
+
+        /** Which cell of the file a given frame of this animation is. */
+        public int cell(int frame)
+        {
+            return first + Math.clamp(frame, 0, frames - 1);
         }
     }
 
@@ -102,6 +122,9 @@ public final class MonsterSprites
         monster(46986414L, "dark_magician", 4, Loop.PING_PONG);
         monster(38033121L, "dark_magician_girl", 4, Loop.PING_PONG);
         monster(70781052L, "summoned_skull", 4, Loop.PING_PONG);
+        // Four across and two down: seven frames of animation, and the eighth
+        // cell is the pose it holds while lying in defence.
+        posed(26202165L, "sangan", 4, 2, 7, Loop.LOOP);
     }
     // =========================================================================
 
@@ -117,12 +140,32 @@ public final class MonsterSprites
         BY_CODE.put(code, new Entry(attack, defence));
     }
 
-    /** A sheet at the default height and pace. */
+    /**
+     * A monster whose sheet ends with a defence pose.
+     * <p>
+     * The animation runs from the first cell for as many frames as it has, and
+     * whatever cells are left over are the pose it holds lying down -- which is
+     * one cell in every case so far, and does not have to be.
+     */
+    public static void posed(long code, String name, int columns, int rows, int frames, Loop loop)
+    {
+        int cells = columns * rows;
+        monster(code, grid(name, columns, rows, 0, frames, loop),
+            grid(name, columns, rows, frames, Math.max(1, cells - frames), Loop.LOOP));
+    }
+
+    /** A sheet of one row, which is what most of them are. */
     public static Sheet sheet(String name, int frames, Loop loop)
     {
+        return grid(name, Math.max(1, frames), 1, 0, frames, loop);
+    }
+
+    /** A run of cells out of a grid, at the default height and pace. */
+    public static Sheet grid(String name, int columns, int rows, int first, int frames, Loop loop)
+    {
         return new Sheet(Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID,
-            "textures/duel/monsters/" + name + ".png"), Math.max(1, frames), DEFAULT_TICKS, loop,
-            DEFAULT_HEIGHT);
+            "textures/duel/monsters/" + name + ".png"), Math.max(1, columns), Math.max(1, rows),
+            Math.max(0, first), Math.max(1, frames), DEFAULT_TICKS, loop, DEFAULT_HEIGHT);
     }
 
     /**
@@ -207,7 +250,8 @@ public final class MonsterSprites
             try(InputStream stream = resource.get().open();
                 NativeImage image = NativeImage.read(stream))
             {
-                aspect = image.getWidth() / (float)sheet.frames() / image.getHeight();
+                aspect = image.getWidth() / (float)sheet.columns()
+                    / (image.getHeight() / (float)sheet.rows());
             }
             catch(Exception failed)
             {

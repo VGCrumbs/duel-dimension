@@ -5,7 +5,9 @@ add one line to `MonsterSprites`, and that card has a monster.
 
 ## The sheet
 
-- **One row**, frames left to right, every cell the same width.
+- **A grid of equal cells**, read left to right and then down. One row is the
+  common case and the short call; more than one row is how you fit seven frames
+  in a file without it being seven cells wide and one tall.
 - **Feet on the bottom edge of every cell.** The billboard stands the sprite on
   its card, so a cell with padding under the feet makes the monster hover. This
   is the one rule the code cannot check for you.
@@ -34,6 +36,19 @@ Magician's four frames are him drifting downwards, so looping them would snap
 him back to the top every second while playing them back again is the float they
 were drawn to be.
 
+## A sheet whose last cell is a defence pose
+
+A grid usually has cells left over. Those are the pose the monster holds while
+its card is lying down:
+
+```java
+posed(26202165L, "sangan", 4, 2, 7, Loop.LOOP);
+```
+
+Four cells across, two down, the first seven are the animation — so the eighth
+is the defence pose. The two are ordinary sheets sharing one file, neither
+knowing the other is there.
+
 ## A monster that lies down differently
 
 Most do not, and a card with one sprite uses it in either battle position. For
@@ -44,6 +59,9 @@ monster(12345678L,
     sheet("some_monster", 4, Loop.PING_PONG),          // face-up attack
     sheet("some_monster_defence", 2, Loop.LOOP));      // face-up defence
 ```
+
+`grid(name, columns, rows, first, frames, loop)` is the same thing said in full,
+for a run of cells that is not the whole file.
 
 A face-DOWN card never shows a sprite at all. That is not a style choice: a set
 card is one nobody may identify, and a monster looming over it would announce
