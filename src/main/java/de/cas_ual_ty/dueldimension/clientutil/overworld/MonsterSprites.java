@@ -126,6 +126,9 @@ public final class MonsterSprites
         // cell is the pose it holds while lying in defence.
         posed(26202165L, "sangan", 4, 2, 7, Loop.LOOP);
         posed(36262024L, "red_eyes_b_chick", 4, 2, 7, Loop.LOOP);
+        // The whole grid is the flap; nothing left over, so nothing to hold
+        // while lying down -- it uses the same animation either way.
+        monster(28279543L, "curse_of_dragon", 4, 2, Loop.LOOP);
     }
     // =========================================================================
 
@@ -153,6 +156,17 @@ public final class MonsterSprites
         int cells = columns * rows;
         monster(code, grid(name, columns, rows, 0, frames, loop),
             grid(name, columns, rows, frames, Math.max(1, cells - frames), Loop.LOOP));
+    }
+
+    /**
+     * A monster whose whole grid is one animation, with no pose left over.
+     * <p>
+     * The counterpart to {@link #posed}: same grid, but every cell is a frame,
+     * so the card uses that one animation whichever way it is lying.
+     */
+    public static void monster(long code, String name, int columns, int rows, Loop loop)
+    {
+        monster(code, grid(name, columns, rows, 0, columns * rows, loop), null);
     }
 
     /** A sheet of one row, which is what most of them are. */
