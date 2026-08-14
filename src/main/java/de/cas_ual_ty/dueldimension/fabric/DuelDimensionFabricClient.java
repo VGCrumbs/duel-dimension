@@ -113,6 +113,12 @@ public class DuelDimensionFabricClient implements ClientModInitializer
             .register(de.cas_ual_ty.dueldimension.clientutil.overworld
                 .PlacementGuideRenderer::render);
 
+        // The monster sprites: the shipped list, then whatever the player has
+        // edited on top of it. Read here rather than from a static block --
+        // that one first ran in the middle of drawing a frame, which is fine
+        // for a constant and no place to be opening files.
+        de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSprites.load();
+
         // The card on a display pedestal, and the monster standing on it.
         // The first block entity renderer in this mod; vanilla's own registry
         // is private on 26.2, so Fabric's is the way in.

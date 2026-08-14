@@ -1,46 +1,43 @@
 package de.cas_ual_ty.dueldimension.clientutil.overworld;
 
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.mojang.blaze3d.platform.NativeImage;
 import de.cas_ual_ty.dueldimension.DuelDimension;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 
 import java.io.InputStream;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 /**
  * Which monsters have a sprite, and what it looks like.
  * <p>
- * <b>Adding one is a file and a line.</b> Drop the sheet in
- * {@code textures/duel/monsters/} and write one {@link #monster} call below.
- * Nothing else: not the pixel dimensions, not the aspect ratio, not a model, not
- * a registry entry somewhere else that has to agree with this one. Everything
- * that can be measured IS measured, at the moment the sprite is first drawn,
- * because a number a person has to type is a number that can be wrong.
+ * Thirty definitions ship with the mod, one line each in the block below. Over
+ * them sits a file the player can edit --
+ * {@code config/dueldimension/monster_sprites.json} -- which adds new monsters
+ * and replaces shipped ones by passcode. That layering is the whole point: an
+ * edit survives an update, a shipped definition nobody touched improves with
+ * one, and deleting the file puts everything back exactly as it came.
  * <p>
- * Sheets are filed by the card's own TYPE -- {@code spellcaster/},
- * {@code warrior/}, {@code fiend/} and so on -- and that folder is part of the
- * name in the line below. A flat folder of thirty files is one nobody can find
- * anything in, and the type is the one grouping that comes from the game rather
- * than from somebody's filing preference: it is printed on the card, so two
- * people sorting the same sprite put it in the same place.
- * <p>
- * The sheet's shape is the only contract, and it is short:
- * <ul>
- * <li>a grid of equal cells, read left to right and then down;</li>
- * <li>the monster's feet on the bottom edge of every cell -- the billboard
- *     stands the sprite on its card, so padding under the feet makes it
- *     hover;</li>
- * <li>transparent background, and no {@code .mcmeta} -- the game's own
- *     animation would fight this one.</li>
- * </ul>
- * <p>
- * A monster may have a different sprite standing up and lying down. Most will
- * not, and a card with only one sprite uses it for both: that is the common
- * case, so it is the short call.
+ * A definition has a body, an optional pose for lying down, optional wings, and
+ * a size. Each layer names its own region of a sheet, so one file can carry a
+ * body and a pair of wings at different cell sizes -- which is how sheets are
+ * actually drawn, and what a single grid over the whole file cannot describe.
  */
 public final class MonsterSprites
 {
@@ -64,62 +61,344 @@ public final class MonsterSprites
     }
 
     /**
-     * One animation, taken from a grid of cells.
-     * <p>
-     * A grid rather than a row, because seven frames in a row would be a sheet
-     * seven cells wide and one tall -- a very long, very thin file that wastes
-     * most of a texture. Four by two is how a spritesheet is actually drawn,
-     * and a run of frames is then just a start and a count reading across and
-     * then down. A single-row sheet is the same thing with one row.
-     * <p>
-     * That start and count are also what lets ONE file hold two animations. A
-     * monster whose eighth cell is its defence pose declares seven frames from
-     * cell zero and one frame from cell seven, and neither has to know the
-     * other exists.
+     * Everything about one card's monster.
      *
-     * @param columns       cells across the file
-     * @param rows          cells down it
-     * @param first         which cell this animation begins at, reading across
-     *                      and then down
-     * @param frames        how many cells it runs for
-     * @param ticksPerFrame how long each is held
-     * @param loop          how the frames follow one another
-     * @param heightInCards how tall the monster stands, measured in card
-     *                      lengths, so it scales with the board it is on
+     * @param defence the pose held lying down, or null to use the body's own
+     *                animation in either position
+     * @param wings   a second layer drawn behind and mirrored, or null
+     * @param scale   a multiple of the standard height, so a hatchling is 0.5
      */
-    public record Sheet(Identifier texture, int columns, int rows, int first, int frames,
-        int ticksPerFrame, Loop loop, float heightInCards)
-    {
-        /**
-         * How wide one cell is against its height, measured from the file.
-         * <p>
-         * Measured rather than declared, and cached, so a sheet drawn at any
-         * size stands at the right width without anybody writing its
-         * proportions down twice.
-         */
-        public float aspect()
-        {
-            return aspectOf(this);
-        }
-
-        /** Which cell of the file a given frame of this animation is. */
-        public int cell(int frame)
-        {
-            return first + Math.clamp(frame, 0, frames - 1);
-        }
-    }
-
-    /** What a card has: a sprite standing, and one lying down. */
-    public record Entry(Sheet attack, Sheet defence)
+    public record Definition(long code, SpriteLayer body, SpriteLayer defence, Wings wings,
+        float scale)
     {
     }
-
-    private static final Map<Long, Entry> BY_CODE = new HashMap<>();
 
     /** How tall a monster stands by default, in card lengths. */
     public static final float DEFAULT_HEIGHT = 2.2F;
     /** And how long it holds each frame. Five ticks gives four frames a second. */
     public static final int DEFAULT_TICKS = 5;
+
+    private static final Map<Long, Definition> BY_CODE = new LinkedHashMap<>();
+
+    // ------------------------------------------------------------- reading --
+
+    public static Definition of(long code)
+    {
+        return BY_CODE.get(code);
+    }
+
+    /**
+     * The layer to draw for a card in a given position, or null if it has none.
+     * <p>
+     * A card with only a body uses it lying down as well. That is not a
+     * compromise: most monsters are drawn once, and a defence pose is the
+     * exception a card opts into rather than a hole every card has to fill.
+     */
+    public static SpriteLayer layerFor(long code, boolean defence)
+    {
+        Definition definition = BY_CODE.get(code);
+        if(definition == null)
+        {
+            return null;
+        }
+        return defence && definition.defence() != null ? definition.defence() : definition.body();
+    }
+
+    public static Wings wingsFor(long code)
+    {
+        Definition definition = BY_CODE.get(code);
+        return definition == null ? null : definition.wings();
+    }
+
+    /** The body's drawn height, in card lengths. */
+    public static float heightFor(long code)
+    {
+        Definition definition = BY_CODE.get(code);
+        return DEFAULT_HEIGHT * (definition == null ? 1F : definition.scale());
+    }
+
+    public static boolean has(long code)
+    {
+        return BY_CODE.containsKey(code);
+    }
+
+    /** Every definition, in the order they were declared. */
+    public static Collection<Definition> all()
+    {
+        return List.copyOf(BY_CODE.values());
+    }
+
+    /**
+     * Which frame of a run is showing, from the world's own clock.
+     * <p>
+     * Whole ticks, and no partial tick: a sheet is a stepped animation, and
+     * interpolating between two cells does nothing but risk a torn frame at
+     * high frame rates. Driven by the LEVEL's game time rather than by the
+     * duel's animator, because that animator is a playback queue that waits on
+     * prompts -- an idle sprite tied to it would freeze every time a duellist
+     * was asked a question.
+     */
+    public static int frameAt(SpriteLayer layer, long gameTime)
+    {
+        if(layer == null || layer.frames() <= 1)
+        {
+            return 0;
+        }
+        long step = Math.floorDiv(gameTime, Math.max(1, layer.ticks()));
+        if(layer.loop() == Loop.LOOP)
+        {
+            return (int)Math.floorMod(step, layer.frames());
+        }
+        // There and back again: 0 1 2 3 2 1, which is 2n-2 long rather than n.
+        // The two ends are NOT repeated -- holding the first and last cell for
+        // two frames each is a stutter at both ends of every sweep.
+        int span = layer.frames() * 2 - 2;
+        int at = (int)Math.floorMod(step, span);
+        return at < layer.frames() ? at : span - at;
+    }
+
+    // ------------------------------------------------------------- editing --
+
+    /** Adds a definition, or replaces the one already held for that card. */
+    public static void put(Definition definition)
+    {
+        if(definition != null)
+        {
+            BY_CODE.put(definition.code(), definition);
+        }
+    }
+
+    public static void remove(long code)
+    {
+        BY_CODE.remove(code);
+    }
+
+    // ------------------------------------------------------------ measuring --
+
+    private static final Map<Identifier, int[]> SIZES = new HashMap<>();
+
+    /**
+     * A sheet's size in pixels, read from the file itself and remembered.
+     * <p>
+     * The FILE's size, not a cell's. This used to cache a CELL's proportions
+     * against the texture, which was correct while one file held one animation
+     * and silently wrong the moment wings shared a sheet with a body at a
+     * different cell width: whichever drew first taught the cache its shape and
+     * the other inherited it. A file has exactly one size, so caching that
+     * cannot be wrong, and each layer works its own cell out from its own
+     * region.
+     */
+    public static int[] sizeOf(Identifier texture)
+    {
+        int[] known = SIZES.get(texture);
+        if(known != null)
+        {
+            return known;
+        }
+        int[] size = {512, 256};
+        Optional<Resource> resource = Minecraft.getInstance().getResourceManager()
+            .getResource(texture);
+        if(resource.isPresent())
+        {
+            try(InputStream stream = resource.get().open();
+                NativeImage image = NativeImage.read(stream))
+            {
+                size = new int[] {image.getWidth(), image.getHeight()};
+            }
+            catch(Exception failed)
+            {
+                DuelDimension.warn("could not measure the monster sheet " + texture + ": "
+                    + failed);
+            }
+        }
+        else
+        {
+            DuelDimension.warn("no monster sheet at " + texture);
+        }
+        SIZES.put(texture, size);
+        return size;
+    }
+
+    /** Forgets the measurements, for a resource reload or a redrawn sheet. */
+    public static void clearMeasurements()
+    {
+        SIZES.clear();
+    }
+
+    // ----------------------------------------------------------- persisting --
+
+    private static Path file()
+    {
+        return FabricLoader.getInstance().getConfigDir()
+            .resolve("dueldimension").resolve("monster_sprites.json");
+    }
+
+    /**
+     * Builds the shipped list, then lays the player's file over it.
+     * <p>
+     * Called from the client initialiser rather than from a static block. The
+     * old list was built the first time anything touched this class, which was
+     * in the middle of drawing a frame -- fine for a constant, and no place at
+     * all to be opening files.
+     */
+    public static void load()
+    {
+        BY_CODE.clear();
+        defaults();
+        Path path = file();
+        if(!Files.isRegularFile(path))
+        {
+            return;
+        }
+        try(Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8))
+        {
+            JsonElement root = JsonParser.parseReader(reader);
+            if(!root.isJsonArray())
+            {
+                DuelDimension.warn(path + " is not a list of sprites; ignoring it");
+                return;
+            }
+            int read = 0;
+            for(JsonElement element : root.getAsJsonArray())
+            {
+                // One bad entry costs one sprite rather than the whole file. A
+                // hand-edited list is a hand-edited list.
+                Definition definition = readDefinition(element);
+                if(definition != null)
+                {
+                    BY_CODE.put(definition.code(), definition);
+                    read++;
+                }
+            }
+            DuelDimension.log("monster sprites: " + read + " read from " + path);
+        }
+        catch(Exception unreadable)
+        {
+            DuelDimension.warn("could not read " + path + ": " + unreadable);
+        }
+    }
+
+    /**
+     * Writes out every definition that differs from the shipped one.
+     * <p>
+     * Only the differences. A file that restated all thirty shipped definitions
+     * would freeze them at today's values and quietly refuse every later
+     * improvement -- the player would have pinned the whole list by editing one
+     * monster.
+     */
+    public static void save()
+    {
+        Map<Long, Definition> current = new LinkedHashMap<>(BY_CODE);
+        BY_CODE.clear();
+        defaults();
+        Map<Long, Definition> shipped = new LinkedHashMap<>(BY_CODE);
+        BY_CODE.clear();
+        BY_CODE.putAll(current);
+
+        JsonArray root = new JsonArray();
+        for(Definition definition : BY_CODE.values())
+        {
+            if(!definition.equals(shipped.get(definition.code())))
+            {
+                root.add(writeDefinition(definition));
+            }
+        }
+        try
+        {
+            Path path = file();
+            Files.createDirectories(path.getParent());
+            Files.writeString(path, new GsonBuilder().setPrettyPrinting().create().toJson(root),
+                StandardCharsets.UTF_8);
+        }
+        catch(Exception unwritable)
+        {
+            DuelDimension.warn("could not save the monster sprites: " + unwritable);
+        }
+    }
+
+    private static Definition readDefinition(JsonElement element)
+    {
+        try
+        {
+            JsonObject object = element.getAsJsonObject();
+            long code = object.get("card").getAsLong();
+            SpriteLayer body = readLayer(object.getAsJsonObject("body"));
+            SpriteLayer defence = object.has("defence")
+                ? readLayer(object.getAsJsonObject("defence")) : null;
+            Wings wings = null;
+            if(object.has("wings"))
+            {
+                JsonObject carried = object.getAsJsonObject("wings");
+                wings = new Wings(readLayer(carried.getAsJsonObject("layer")),
+                    carried.get("anchor").getAsFloat(), carried.get("spacing").getAsFloat(),
+                    carried.get("scale").getAsFloat());
+            }
+            float scale = object.has("scale") ? object.get("scale").getAsFloat() : 1F;
+            return new Definition(code, body, defence, wings, Math.max(0.05F, scale));
+        }
+        catch(Exception malformed)
+        {
+            DuelDimension.warn("skipping a malformed monster sprite: " + malformed);
+            return null;
+        }
+    }
+
+    private static SpriteLayer readLayer(JsonObject object)
+    {
+        return new SpriteLayer(object.get("sheet").getAsString(),
+            optional(object, "x", 0), optional(object, "y", 0),
+            optional(object, "w", 0), optional(object, "h", 0),
+            Math.max(1, optional(object, "columns", 1)),
+            Math.max(1, optional(object, "rows", 1)),
+            Math.max(0, optional(object, "first", 0)),
+            Math.max(1, optional(object, "frames", 1)),
+            Math.max(1, optional(object, "ticks", DEFAULT_TICKS)),
+            object.has("loop") ? Loop.valueOf(object.get("loop").getAsString()) : Loop.LOOP);
+    }
+
+    private static int optional(JsonObject object, String key, int fallback)
+    {
+        return object.has(key) ? object.get(key).getAsInt() : fallback;
+    }
+
+    private static JsonObject writeDefinition(Definition definition)
+    {
+        JsonObject object = new JsonObject();
+        object.addProperty("card", definition.code());
+        object.add("body", writeLayer(definition.body()));
+        if(definition.defence() != null)
+        {
+            object.add("defence", writeLayer(definition.defence()));
+        }
+        if(definition.wings() != null)
+        {
+            JsonObject wings = new JsonObject();
+            wings.add("layer", writeLayer(definition.wings().layer()));
+            wings.addProperty("anchor", definition.wings().anchor());
+            wings.addProperty("spacing", definition.wings().spacing());
+            wings.addProperty("scale", definition.wings().scale());
+            object.add("wings", wings);
+        }
+        object.addProperty("scale", definition.scale());
+        return object;
+    }
+
+    private static JsonObject writeLayer(SpriteLayer layer)
+    {
+        JsonObject object = new JsonObject();
+        object.addProperty("sheet", layer.sheet());
+        object.addProperty("x", layer.x());
+        object.addProperty("y", layer.y());
+        object.addProperty("w", layer.w());
+        object.addProperty("h", layer.h());
+        object.addProperty("columns", layer.columns());
+        object.addProperty("rows", layer.rows());
+        object.addProperty("first", layer.first());
+        object.addProperty("frames", layer.frames());
+        object.addProperty("ticks", layer.ticks());
+        object.addProperty("loop", layer.loop().name());
+        return object;
+    }
 
     // ================================================================= the list
     //
@@ -129,18 +408,14 @@ public final class MonsterSprites
     // quietest possible way -- no error, no warning, just a card that never
     // grows a monster -- so every number here was read out of the shipped card
     // database by name rather than typed from memory.
-    static
+    private static void defaults()
     {
-        monster(46986414L, "spellcaster/dark_magician", 4, Loop.PING_PONG);
-        monster(38033121L, "spellcaster/dark_magician_girl", 4, Loop.PING_PONG);
-        monster(70781052L, "fiend/summoned_skull", 4, Loop.PING_PONG);
-        // Four across and two down: seven frames of animation, and the eighth
-        // cell is the pose it holds while lying in defence.
+        row(46986414L, "spellcaster/dark_magician", 4, Loop.PING_PONG);
+        row(38033121L, "spellcaster/dark_magician_girl", 4, Loop.PING_PONG);
+        row(70781052L, "fiend/summoned_skull", 4, Loop.PING_PONG);
         posed(26202165L, "fiend/sangan", 4, 2, 7, Loop.LOOP);
         posed(36262024L, "dragon/red_eyes_b_chick", 4, 2, 7, Loop.PING_PONG, 0.5F);
-        // The whole grid is the flap; nothing left over, so nothing to hold
-        // while lying down -- it uses the same animation either way.
-        monster(28279543L, "dragon/curse_of_dragon", 4, 2, Loop.LOOP);
+        whole(28279543L, "dragon/curse_of_dragon", 4, 2, Loop.LOOP);
         posed(102380L, "fiend/lava_golem", 4, 2, 7, Loop.LOOP);
         posed(32274490L, "zombie/skull_servant", 4, 2, 7, Loop.LOOP);
         posed(25833572L, "warrior/gate_guardian", 4, 2, 7, Loop.LOOP);
@@ -153,213 +428,46 @@ public final class MonsterSprites
         posed(20394040L, "warrior/lava_battleguard", 4, 2, 7, Loop.LOOP);
         posed(40453765L, "warrior/swamp_battleguard", 4, 2, 7, Loop.LOOP);
         posed(34627841L, "warrior/kaibaman", 4, 2, 7, Loop.LOOP);
-        // Six and five frames respectively, with a gap before the pose in the
-        // last cell -- which is why posed() takes the LAST cell rather than
-        // everything after the animation.
         posed(81383947L, "spellcaster/white_magician_pikeru", 4, 2, 6, Loop.LOOP);
         posed(46128076L, "spellcaster/ebon_magician_curran", 4, 2, 5, Loop.LOOP);
-        // One row of four, back and forth, with no separate pose for lying
-        // down -- so the same four frames play in either battle position.
-        monster(8124921L, "spellcaster/right_leg_of_the_forbidden_one", 4, Loop.PING_PONG);
-        monster(70903634L, "spellcaster/right_arm_of_the_forbidden_one", 4, Loop.PING_PONG);
-        monster(44519536L, "spellcaster/left_leg_of_the_forbidden_one", 4, Loop.PING_PONG);
-        monster(7902349L, "spellcaster/left_arm_of_the_forbidden_one", 4, Loop.PING_PONG);
-        monster(13893596L, "spellcaster/exodius_the_ultimate_forbidden_lord", 4, Loop.PING_PONG);
-        monster(12600382L, "spellcaster/exodia_necross", 4, Loop.PING_PONG);
-        monster(92377303L, "spellcaster/dark_sage", 4, Loop.PING_PONG);
-        monster(98502113L, "spellcaster/dark_paladin", 4, Loop.PING_PONG);
-        monster(30208479L, "spellcaster/magician_of_black_chaos", 4, Loop.PING_PONG);
-        monster(80304126L, "spellcaster/magicians_valkyria", 4, Loop.PING_PONG);
+        row(8124921L, "spellcaster/right_leg_of_the_forbidden_one", 4, Loop.PING_PONG);
+        row(70903634L, "spellcaster/right_arm_of_the_forbidden_one", 4, Loop.PING_PONG);
+        row(44519536L, "spellcaster/left_leg_of_the_forbidden_one", 4, Loop.PING_PONG);
+        row(7902349L, "spellcaster/left_arm_of_the_forbidden_one", 4, Loop.PING_PONG);
+        row(13893596L, "spellcaster/exodius_the_ultimate_forbidden_lord", 4, Loop.PING_PONG);
+        row(12600382L, "spellcaster/exodia_necross", 4, Loop.PING_PONG);
+        row(92377303L, "spellcaster/dark_sage", 4, Loop.PING_PONG);
+        row(98502113L, "spellcaster/dark_paladin", 4, Loop.PING_PONG);
+        row(30208479L, "spellcaster/magician_of_black_chaos", 4, Loop.PING_PONG);
+        row(80304126L, "spellcaster/magicians_valkyria", 4, Loop.PING_PONG);
     }
     // =========================================================================
 
-    /** A monster with one sprite, used whichever way its card is lying. */
-    public static void monster(long code, String sheet, int frames, Loop loop)
+    /** One row of frames, used in either battle position. */
+    private static void row(long code, String sheet, int frames, Loop loop)
     {
-        monster(code, sheet(sheet, frames, loop), null);
+        put(new Definition(code, SpriteLayer.row(sheet, frames, loop), null, null, 1F));
     }
 
-    /** A monster with a different sprite for each battle position. */
-    public static void monster(long code, Sheet attack, Sheet defence)
+    /** A whole grid of frames, used in either battle position. */
+    private static void whole(long code, String sheet, int columns, int rows, Loop loop)
     {
-        BY_CODE.put(code, new Entry(attack, defence));
+        put(new Definition(code,
+            SpriteLayer.grid(sheet, columns, rows, 0, columns * rows, loop), null, null, 1F));
     }
 
-    /**
-     * A monster whose sheet ends with a defence pose.
-     * <p>
-     * The animation runs from the first cell for as many frames as it has, and
-     * the LAST cell of the grid is the pose it holds lying down.
-     * <p>
-     * The last cell rather than "whatever is left over", because a sheet with
-     * five frames of animation in an eight-cell grid has two blank cells
-     * between the two -- an artist fills the row they are working on and puts
-     * the pose in the corner. Taking everything after the animation would have
-     * cycled the pose through those blanks and made a defending monster blink
-     * out of existence two thirds of the time.
-     */
-    public static void posed(long code, String name, int columns, int rows, int frames, Loop loop)
+    /** A grid whose LAST cell is the pose held lying down. */
+    private static void posed(long code, String sheet, int columns, int rows, int frames,
+        Loop loop)
     {
-        posed(code, name, columns, rows, frames, loop, 1F);
+        posed(code, sheet, columns, rows, frames, loop, 1F);
     }
 
-    /**
-     * The same, drawn at a fraction of the usual height.
-     * <p>
-     * A multiple rather than a measurement, because what a monster needs saying
-     * about it is how big it is FOR a monster -- a hatchling is half of one --
-     * and the number that answers that should not change if the standard height
-     * is ever retuned. One number, in the one line the monster already has.
-     */
-    public static void posed(long code, String name, int columns, int rows, int frames, Loop loop,
-        float scale)
+    private static void posed(long code, String sheet, int columns, int rows, int frames,
+        Loop loop, float scale)
     {
-        monster(code, grid(name, columns, rows, 0, frames, loop, scale),
-            grid(name, columns, rows, columns * rows - 1, 1, Loop.LOOP, scale));
-    }
-
-    /**
-     * A monster whose whole grid is one animation, with no pose left over.
-     * <p>
-     * The counterpart to {@link #posed}: same grid, but every cell is a frame,
-     * so the card uses that one animation whichever way it is lying.
-     */
-    public static void monster(long code, String name, int columns, int rows, Loop loop)
-    {
-        monster(code, name, columns, rows, loop, 1F);
-    }
-
-    /** The same, at a fraction of the usual height. */
-    public static void monster(long code, String name, int columns, int rows, Loop loop,
-        float scale)
-    {
-        monster(code, grid(name, columns, rows, 0, columns * rows, loop, scale), null);
-    }
-
-    /** A sheet of one row, which is what most of them are. */
-    public static Sheet sheet(String name, int frames, Loop loop)
-    {
-        return grid(name, Math.max(1, frames), 1, 0, frames, loop);
-    }
-
-    /** A run of cells out of a grid, at the default height and pace. */
-    public static Sheet grid(String name, int columns, int rows, int first, int frames, Loop loop)
-    {
-        return grid(name, columns, rows, first, frames, loop, 1F);
-    }
-
-    /** The same, at a fraction of the usual height. */
-    public static Sheet grid(String name, int columns, int rows, int first, int frames, Loop loop,
-        float scale)
-    {
-        return new Sheet(Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID,
-            "textures/duel/monsters/" + name + ".png"), Math.max(1, columns), Math.max(1, rows),
-            Math.max(0, first), Math.max(1, frames), DEFAULT_TICKS, loop,
-            DEFAULT_HEIGHT * Math.max(0.05F, scale));
-    }
-
-    /**
-     * The sprite for a card in a given position, or null if it has none.
-     * <p>
-     * A card with only an attack sprite uses it lying down as well. That is not
-     * a compromise: most monsters are drawn once, and a defence sprite is the
-     * exception a card opts into rather than a hole every card has to fill.
-     */
-    public static Sheet sheetFor(long code, boolean defence)
-    {
-        Entry entry = BY_CODE.get(code);
-        if(entry == null)
-        {
-            return null;
-        }
-        if(defence && entry.defence() != null)
-        {
-            return entry.defence();
-        }
-        return entry.attack();
-    }
-
-    public static boolean has(long code)
-    {
-        return BY_CODE.containsKey(code);
-    }
-
-    /**
-     * Which cell is showing, from the world's own clock.
-     * <p>
-     * Whole ticks, and no partial tick: a sheet is a stepped animation, and
-     * interpolating between two cells does nothing but risk a torn frame at
-     * high frame rates. Driven by the LEVEL's game time rather than by the
-     * duel's animator, because that animator is a playback queue that waits on
-     * prompts -- an idle sprite tied to it would freeze every time a duellist
-     * was asked a question.
-     */
-    public static int frameAt(Sheet sheet, long gameTime)
-    {
-        if(sheet.frames() <= 1)
-        {
-            return 0;
-        }
-        long step = Math.floorDiv(gameTime, Math.max(1, sheet.ticksPerFrame()));
-        if(sheet.loop() == Loop.LOOP)
-        {
-            return (int)Math.floorMod(step, sheet.frames());
-        }
-        // There and back again: 0 1 2 3 2 1, which is 2n-2 long rather than n.
-        // The two ends are NOT repeated -- holding the first and last cell for
-        // two frames each is a stutter at both ends of every sweep.
-        int span = sheet.frames() * 2 - 2;
-        int at = (int)Math.floorMod(step, span);
-        return at < sheet.frames() ? at : span - at;
-    }
-
-    // ------------------------------------------------------------- measuring --
-
-    private static final Map<Identifier, Float> ASPECTS = new HashMap<>();
-
-    /**
-     * One cell's width over its height, read from the file itself.
-     * <p>
-     * Read once and remembered. A sheet that cannot be read -- a typo in a
-     * name, a resource pack that dropped it -- falls back to a cell twice as
-     * tall as it is wide, which is the shape a standing figure is drawn at, so
-     * a mistake is a slightly wrong sprite rather than no sprite at all.
-     */
-    private static float aspectOf(Sheet sheet)
-    {
-        Float known = ASPECTS.get(sheet.texture());
-        if(known != null)
-        {
-            return known;
-        }
-        float aspect = 0.5F;
-        Optional<Resource> resource = Minecraft.getInstance().getResourceManager()
-            .getResource(sheet.texture());
-        if(resource.isPresent())
-        {
-            try(InputStream stream = resource.get().open();
-                NativeImage image = NativeImage.read(stream))
-            {
-                aspect = image.getWidth() / (float)sheet.columns()
-                    / (image.getHeight() / (float)sheet.rows());
-            }
-            catch(Exception failed)
-            {
-                DuelDimension.warn("could not measure the monster sheet " + sheet.texture()
-                    + ", assuming a cell twice as tall as it is wide: " + failed);
-            }
-        }
-        else
-        {
-            DuelDimension.warn("no monster sheet at " + sheet.texture());
-        }
-        ASPECTS.put(sheet.texture(), aspect);
-        return aspect;
-    }
-
-    /** Forgets the measurements, for a resource reload. */
-    public static void clearMeasurements()
-    {
-        ASPECTS.clear();
+        put(new Definition(code, SpriteLayer.grid(sheet, columns, rows, 0, frames, loop),
+            SpriteLayer.grid(sheet, columns, rows, columns * rows - 1, 1, Loop.LOOP), null,
+            scale));
     }
 }

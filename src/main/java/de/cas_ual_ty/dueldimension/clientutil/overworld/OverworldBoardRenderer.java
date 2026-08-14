@@ -999,20 +999,24 @@ public final class OverworldBoardRenderer
         {
             return;
         }
-        MonsterSprites.Sheet sheet = MonsterSprites.sheetFor(slot.code(), slot.defence());
-        if(sheet == null)
+        SpriteLayer body = MonsterSprites.layerFor(slot.code(), slot.defence());
+        if(body == null)
         {
             return;
         }
+        Wings wings = MonsterSprites.wingsFor(slot.code());
         FieldLayout.Rect card = CardMesh.placement(zone, slot.defence());
         Vec3 feet = transform.at(card.x() + card.w() / 2F, card.y() + card.h() / 2F,
             (cardLift(transform) + CardMesh.THICKNESS + 0.002F) * transform.scale());
         // Measured against a card's LONG side, so a monster is the same height
         // whether its card is standing or lying -- a defending monster that
         // shrank to two thirds would read as a weaker one.
-        float height = CardMesh.CARD_H * transform.scale() * sheet.heightInCards();
-        MonsterBillboard.submit(poseStack, collector, camera, camera, feet, height, sheet,
-            MonsterSprites.frameAt(sheet, (long)ticks()), fade(hologramTint(asked)));
+        float height = CardMesh.CARD_H * transform.scale()
+            * MonsterSprites.heightFor(slot.code());
+        MonsterBillboard.submit(poseStack, collector, camera, camera, feet, height, body,
+            MonsterSprites.frameAt(body, (long)ticks()), wings,
+            wings == null ? 0 : MonsterSprites.frameAt(wings.layer(), (long)ticks()),
+            fade(hologramTint(asked)));
     }
 
     /**

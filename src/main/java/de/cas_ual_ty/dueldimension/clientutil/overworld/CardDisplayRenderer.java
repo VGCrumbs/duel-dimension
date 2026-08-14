@@ -108,11 +108,12 @@ public class CardDisplayRenderer
         {
             return;
         }
-        MonsterSprites.Sheet sheet = MonsterSprites.sheetFor(state.code, state.defence);
-        if(sheet == null)
+        SpriteLayer body = MonsterSprites.layerFor(state.code, state.defence);
+        if(body == null)
         {
             return;
         }
+        Wings wings = MonsterSprites.wingsFor(state.code);
         // World space for this one, because which way it turns depends on where
         // the viewer is standing. The block's own corner is handed in as the
         // origin, which cancels the translation the level renderer already
@@ -120,8 +121,10 @@ public class CardDisplayRenderer
         Vec3 block = Vec3.atLowerCornerOf(state.blockPos);
         Vec3 feet = block.add(0.5D, DisplayCard.surface() + 0.002D, 0.5D);
         MonsterBillboard.submit(poseStack, collector, block, camera.pos, feet,
-            DisplayCard.LENGTH * sheet.heightInCards(), sheet,
-            MonsterSprites.frameAt(sheet, state.gameTime), 0xFFFFFFFF);
+            DisplayCard.LENGTH * MonsterSprites.heightFor(state.code), body,
+            MonsterSprites.frameAt(body, state.gameTime), wings,
+            wings == null ? 0 : MonsterSprites.frameAt(wings.layer(), state.gameTime),
+            0xFFFFFFFF);
     }
 
     /**
