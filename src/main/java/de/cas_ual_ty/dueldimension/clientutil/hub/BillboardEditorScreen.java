@@ -291,34 +291,46 @@ public class BillboardEditorScreen extends Screen
 
         int sheets = height - 46;
         int third = (full() - GAP * 2) / 3;
+        // Pick a file and it becomes the sheet being edited, because the next
+        // thing anybody does after importing one is type its name in by hand.
+        addRenderableWidget(Button.builder(Component.literal("Import"), pressed ->
+        {
+            String taken = MonsterSheets.take(MonsterSheets.choose());
+            if(taken != null)
+            {
+                sheet = taken;
+                apply();
+            }
+            rebuildWidgets();
+        }).bounds(left(), sheets, third, 18).build());
         addRenderableWidget(Button.builder(Component.literal("Folder"), pressed ->
                 MonsterSheets.open())
-            .bounds(left(), sheets, third, 18).build());
+            .bounds(left() + third + GAP, sheets, third, 18).build());
         addRenderableWidget(Button.builder(Component.literal("Reload"), pressed ->
             {
                 MonsterSheets.reload();
                 rebuildWidgets();
-            }).bounds(left() + third + GAP, sheets, third, 18).build());
+            }).bounds(left() + (third + GAP) * 2, sheets, third, 18).build());
+
+        int footer = height - 24;
         // One switch for both boxes -- the cuts over the sheet and the box round
         // the hologram are two views of the same rectangle, and a pair of
-        // toggles for one idea is a thing to get out of step.
+        // toggles for one idea is a thing to get out of step. Bracketed for on,
+        // the same way the tabs above say which of them is the live one.
         addRenderableWidget(Button.builder(Component.literal(outlineLabel()), pressed ->
         {
             BillboardOutline.show(!BillboardOutline.shown());
             pressed.setMessage(Component.literal(outlineLabel()));
-        }).bounds(left() + (third + GAP) * 2, sheets, third, 18).build());
-
-        int footer = height - 24;
-        int half = (full() - GAP) / 2;
+        }).bounds(left(), footer, third, 18).build());
         addRenderableWidget(Button.builder(Component.literal("Remove"), pressed ->
         {
             MonsterSprites.remove(code);
             MonsterSprites.save();
             sheet = "";
             rebuildWidgets();
-        }).bounds(left(), footer, half, 18).build());
+        }).bounds(left() + third + GAP, footer, third, 18).build());
         addRenderableWidget(Button.builder(Component.literal("Done"), pressed -> onClose())
-            .bounds(left() + half + GAP, footer, half, 18).build());
+            .bounds(left() + (third + GAP) * 2, footer, third, 18).build());
     }
 
     private void body()
@@ -543,7 +555,7 @@ public class BillboardEditorScreen extends Screen
 
     private static String outlineLabel()
     {
-        return BillboardOutline.shown() ? "Outline ON" : "Outline OFF";
+        return BillboardOutline.shown() ? "[Outline]" : "Outline";
     }
 
     @Override
@@ -621,17 +633,37 @@ public class BillboardEditorScreen extends Screen
     {
         Button button = Button.builder(Component.literal(loopName(get.get())), pressed ->
         {
-            set.accept(get.get() == MonsterSprites.Loop.LOOP
-                ? MonsterSprites.Loop.PING_PONG : MonsterSprites.Loop.LOOP);
+            set.accept(after(get.get()));
             apply();
             pressed.setMessage(Component.literal(loopName(get.get())));
         }).bounds(0, 0, 10, ROW_H).build();
         return new Field(button, () -> set.accept(fallback));
     }
 
+    /**
+     * The next setting round. Three of them now, so a button that flipped
+     * between two has to become one that cycles.
+     */
+    private static MonsterSprites.Loop after(MonsterSprites.Loop loop)
+    {
+        return switch(loop)
+        {
+            case LOOP -> MonsterSprites.Loop.PING_PONG;
+            case PING_PONG -> MonsterSprites.Loop.BOB;
+            case BOB -> MonsterSprites.Loop.LOOP;
+        };
+    }
+
     private static String loopName(MonsterSprites.Loop loop)
     {
-        return loop == MonsterSprites.Loop.LOOP ? "loop" : "back/forth";
+        return switch(loop)
+        {
+            case LOOP -> "loop";
+            case PING_PONG -> "back/forth";
+            // Named for what the frame count means here, because that is the
+            // one thing about this setting that is not obvious from watching it.
+            case BOB -> "bob";
+        };
     }
 
     /** A whole number, printing its own value so the label is the truth. */

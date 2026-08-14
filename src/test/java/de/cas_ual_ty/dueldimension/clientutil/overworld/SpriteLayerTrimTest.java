@@ -3,6 +3,7 @@ package de.cas_ual_ty.dueldimension.clientutil.overworld;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -22,6 +23,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * space the margin had occupied and dragged its feet down. The measure of that
  * is where a sampled texel lands in the world: it has to land where it already
  * was, whatever has been cut off around it.
+ * <p>
+ * The tests are written as comparisons against an untrimmed layer wherever they
+ * can be, so that the one-texel sampling inset -- which is a separate concern
+ * and applies everywhere -- cannot make them wrong when it changes.
  * <p>
  * Every layer here states its own region, which keeps the arithmetic off the
  * texture manager and lets it be checked without a game running.
@@ -46,28 +51,34 @@ class SpriteLayerTrimTest
     @Test
     void theDivisionsBetweenCellsAreNeverTrimmed()
     {
+        SpriteLayer plain = strip(0, 0);
         SpriteLayer cropped = strip(12, 0);
         for(int cell = 1; cell < COLUMNS - 1; cell++)
         {
-            float[] window = cropped.windowAt(cell);
-            assertEquals(0F, window[0], 1e-6F, "cell " + cell + " lost art at its left division");
-            assertEquals(1F, window[2], 1e-6F, "cell " + cell + " lost art at its right division");
+            assertEquals(plain.windowAt(cell)[0], cropped.windowAt(cell)[0], 1e-6F,
+                "cell " + cell + " lost art at its left division");
+            assertEquals(plain.windowAt(cell)[2], cropped.windowAt(cell)[2], 1e-6F,
+                "cell " + cell + " lost art at its right division");
         }
     }
 
     @Test
     void theEndsOfTheRunAreTrimmedOnTheirOutsideOnly()
     {
+        SpriteLayer plain = strip(0, 0);
         SpriteLayer cropped = strip(12, 0);
         float inset = 12F / CELL_W;
 
-        float[] first = cropped.windowAt(0);
-        assertEquals(inset, first[0], 1e-6F, "the first cell was not trimmed on its outer edge");
-        assertEquals(1F, first[2], 1e-6F, "the first cell was trimmed on its inner edge");
+        assertEquals(inset, cropped.windowAt(0)[0] - plain.windowAt(0)[0], 1e-6F,
+            "the first cell was not trimmed on its outer edge");
+        assertEquals(plain.windowAt(0)[2], cropped.windowAt(0)[2], 1e-6F,
+            "the first cell was trimmed on its inner edge");
 
-        float[] last = cropped.windowAt(COLUMNS - 1);
-        assertEquals(0F, last[0], 1e-6F, "the last cell was trimmed on its inner edge");
-        assertEquals(1F - inset, last[2], 1e-6F, "the last cell was not trimmed on its outer edge");
+        int last = COLUMNS - 1;
+        assertEquals(plain.windowAt(last)[0], cropped.windowAt(last)[0], 1e-6F,
+            "the last cell was trimmed on its inner edge");
+        assertEquals(inset, plain.windowAt(last)[2] - cropped.windowAt(last)[2], 1e-6F,
+            "the last cell was not trimmed on its outer edge");
     }
 
     @Test
@@ -76,30 +87,32 @@ class SpriteLayerTrimTest
         // Not a special case -- the same rule. One row means its top and its
         // bottom are both on the boundary, so both are cut, which is what makes
         // a vertical crop work at all on the strip sheets most of these are.
+        SpriteLayer plain = strip(0, 0);
         SpriteLayer cropped = strip(0, 20);
         float inset = 20F / CELL_H;
         for(int cell = 0; cell < COLUMNS; cell++)
         {
-            float[] window = cropped.windowAt(cell);
-            assertEquals(inset, window[1], 1e-6F, "cell " + cell + " kept its top margin");
-            assertEquals(1F - inset, window[3], 1e-6F, "cell " + cell + " kept its bottom margin");
+            assertEquals(inset, cropped.windowAt(cell)[1] - plain.windowAt(cell)[1], 1e-6F,
+                "cell " + cell + " kept its top margin");
+            assertEquals(inset, plain.windowAt(cell)[3] - cropped.windowAt(cell)[3], 1e-6F,
+                "cell " + cell + " kept its bottom margin");
         }
     }
+
+    // ------------------------------------ one rectangle, sampled and drawn --
 
     @Test
-    void aTrimOfNothingLeavesTheWholeCell()
+    void everyEdgeIsPulledInByOneTexelWithNoTrimAtAll()
     {
-        for(int cell = 0; cell < COLUMNS; cell++)
-        {
-            float[] window = strip(0, 0).windowAt(cell);
-            assertEquals(0F, window[0], 1e-6F);
-            assertEquals(0F, window[1], 1e-6F);
-            assertEquals(1F, window[2], 1e-6F);
-            assertEquals(1F, window[3], 1e-6F);
-        }
+        // The sampling inset, which is not the trim: it applies to internal
+        // divisions too, because a sample taken at any exact boundary reads
+        // across it once the sprite is scaled down.
+        float[] window = strip(0, 0).windowAt(1);
+        assertEquals(1F / CELL_W, window[0], 1e-6F);
+        assertEquals(1F / CELL_H, window[1], 1e-6F);
+        assertEquals(1F - 1F / CELL_W, window[2], 1e-6F);
+        assertEquals(1F - 1F / CELL_H, window[3], 1e-6F);
     }
-
-    // ----------------------------------------------------- nothing moves --
 
     /** Where one source texel lands, in blocks -- the scale the art is drawn at. */
     private static final float PER_TEXEL = HEIGHT / CELL_H;
@@ -137,11 +150,13 @@ class SpriteLayerTrimTest
     }
 
     @Test
-    void theArtIsNeverDistortedByACrop()
+    void theArtIsNeverStretchedByACrop()
     {
-        // Square texels: one texel is as wide as it is tall no matter what has
-        // been cut off. A crop that failed this would squash the sprite on one
-        // axis, which is the exact failure a separate x and y trim invites.
+        // Square texels: one texel is as wide as it is tall, and the same size
+        // it was before anything was cut. Failing this is what a UV inset with
+        // no matching change to the geometry does -- the same picture across a
+        // slightly larger box, worse on the axis with fewer texels, and worse
+        // again the tighter the crop.
         for(int trim : new int[] {0, 5, 16, 40})
         {
             for(SpriteLayer cropped : new SpriteLayer[] {
@@ -149,12 +164,11 @@ class SpriteLayerTrimTest
             {
                 float half = HEIGHT * cropped.aspect() / 2F;
                 float[] window = cropped.windowAt(0);
-                float across = half * 2F * (window[2] - window[0]) / (CELL_W
-                    * (window[2] - window[0]));
-                float down = HEIGHT * (window[3] - window[1]) / (CELL_H
-                    * (window[3] - window[1]));
+                float across = half * 2F / CELL_W;
+                float down = HEIGHT / CELL_H;
                 assertEquals(across, down, 1e-5F, "a crop of " + trim + " distorted the art");
                 assertEquals(PER_TEXEL, across, 1e-5F, "a crop of " + trim + " resized the art");
+                assertTrue(window[2] > window[0]);
             }
         }
     }
@@ -187,5 +201,64 @@ class SpriteLayerTrimTest
                     "a trim of " + trim + " inverted cell " + cell + " down");
             }
         }
+    }
+
+    // ------------------------------------------------------- the bobbing --
+
+    /** One picture, and a frame count that means how long the bob takes. */
+    private static SpriteLayer bobber(int frames, int ticks)
+    {
+        return new SpriteLayer("test/sheet", 0, 0, 512, 256, 1, 1, 0, frames, ticks,
+            MonsterSprites.Loop.BOB, 0, 0);
+    }
+
+    @Test
+    void aBobbingLayerAlwaysShowsItsFirstCell()
+    {
+        SpriteLayer layer = bobber(8, 3);
+        for(long tick = 0L; tick < 64L; tick++)
+        {
+            assertEquals(0, MonsterSprites.frameAt(layer, tick),
+                "a bobbing layer changed picture at tick " + tick);
+        }
+    }
+
+    @Test
+    void theBobComesRoundOverTheFrameCount()
+    {
+        SpriteLayer layer = bobber(8, 3);
+        long period = 8L * 3L;
+        for(long tick = 0L; tick < 40L; tick++)
+        {
+            assertEquals(MonsterSprites.bobAt(layer, tick),
+                MonsterSprites.bobAt(layer, tick + period), 1e-6F,
+                "the bob did not repeat after " + period + " ticks");
+        }
+    }
+
+    @Test
+    void theBobRisesAndFalls()
+    {
+        SpriteLayer layer = bobber(4, 1);
+        assertEquals(0F, MonsterSprites.bobAt(layer, 0L), 1e-5F);
+        assertEquals(MonsterSprites.BOB_RISE, MonsterSprites.bobAt(layer, 1L), 1e-5F);
+        assertEquals(0F, MonsterSprites.bobAt(layer, 2L), 1e-5F);
+        assertEquals(-MonsterSprites.BOB_RISE, MonsterSprites.bobAt(layer, 3L), 1e-5F);
+        // And a longer count is a slower, finer bob rather than a taller one.
+        SpriteLayer longer = bobber(16, 1);
+        assertNotEquals(0F, MonsterSprites.bobAt(longer, 1L));
+        assertTrue(Math.abs(MonsterSprites.bobAt(longer, 1L)) < MonsterSprites.BOB_RISE);
+    }
+
+    @Test
+    void nothingElseBobs()
+    {
+        for(long tick = 0L; tick < 20L; tick++)
+        {
+            assertEquals(0F, MonsterSprites.bobAt(strip(0, 0), tick), 1e-6F);
+        }
+        // A period of one has nowhere to go, and must sit still rather than
+        // divide by a step count it does not have.
+        assertEquals(0F, MonsterSprites.bobAt(bobber(1, 5), 7L), 1e-6F);
     }
 }

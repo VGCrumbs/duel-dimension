@@ -70,22 +70,17 @@ public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns,
     /**
      * The texture coordinates of one frame, as {u0, v0, u1, v1}.
      * <p>
-     * Pulled in by a whole TEXEL on every side, and the unit is the point. This
-     * was a fraction of the cell -- a thousandth of it -- which on a sheet of
-     * six cells across 512 pixels comes to eight hundredths of a texel: near
-     * enough to nothing, and nothing is not enough.
+     * Nothing but {@link #windowAt} converted into the file's coordinates.
+     * There is no inset applied here, and there must not be: the window is what
+     * the GEOMETRY is sized and placed from as well, so any edge this method
+     * pulled in on its own would be an edge the quad still covered -- the same
+     * picture drawn across a slightly larger box, which is a stretch.
      * <p>
-     * The sheet's own edges are where it showed. The first cell begins at u = 0
-     * and the last ends at u = 1, so a sample reaching past either one does not
-     * find empty space -- it WRAPS, and comes back with the far side of the
-     * sheet. A wing at the left edge grew a copy of the tip belonging to the
-     * wing at the right edge, floating out beside it with nothing attached.
-     * <p>
-     * A whole texel rather than the usual half, because these sheets are drawn
-     * small on screen and a scaled-down sample reads a neighbourhood rather
-     * than a point. The art has margins to spare -- no sprite in any of these
-     * sheets touches its cell's edge -- so the cost is nothing and the bleed is
-     * gone.
+     * It used to pull in one texel on every side, which on a 128-pixel cell is
+     * the art drawn 1.6% too wide against 0.8% too tall. Small, but anisotropic,
+     * and it grew as a crop tightened, because a fixed texel is a larger share
+     * of a smaller box. One rectangle, read twice, is the only arrangement in
+     * which the picture and the quad cannot disagree.
      */
     public float[] uv(int frame)
     {
@@ -102,13 +97,11 @@ public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns,
         float cellH = regionH / Math.max(1, rows);
 
         float[] window = windowAt(at);
-        float left = (x + (column + window[0]) * cellW) / fileW;
-        float top = (y + (row + window[1]) * cellH) / fileH;
-        float right = (x + (column + window[2]) * cellW) / fileW;
-        float bottom = (y + (row + window[3]) * cellH) / fileH;
-        float insetU = 1F / fileW;
-        float insetV = 1F / fileH;
-        return new float[] {left + insetU, top + insetV, right - insetU, bottom - insetV};
+        return new float[] {
+            (x + (column + window[0]) * cellW) / fileW,
+            (y + (row + window[1]) * cellH) / fileH,
+            (x + (column + window[2]) * cellW) / fileW,
+            (y + (row + window[3]) * cellH) / fileH};
     }
 
     /**
@@ -176,6 +169,15 @@ public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns,
      * single row, which is what most of these sheets are -- has both of its
      * edges on the boundary and so gets trimmed at both. That is not a special
      * case, it is the same rule.
+     * <p>
+     * Every edge is then pulled in by one texel, outer and internal alike. That
+     * is a different job from the trim, which is why it applies everywhere: a
+     * sample taken at an exact boundary reads a neighbourhood rather than a
+     * point once the sprite is scaled down, and brings back whatever is on the
+     * other side -- the next frame along, or, at the region's edge, the far
+     * side of the sheet wrapped around. The trim is a judgement about the art;
+     * this is arithmetic about sampling, and the geometry follows both because
+     * both are in the same rectangle.
      */
     public float[] windowAt(int cell)
     {
@@ -190,13 +192,19 @@ public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns,
         // across. An inverted box would not fail, which is the problem: it
         // would draw the sprite mirrored, and mirrored is a thing this code
         // does on purpose elsewhere.
-        float insetX = cellW <= 0F ? 0F : Math.clamp(trimX / cellW, 0F, LIMIT);
-        float insetY = cellH <= 0F ? 0F : Math.clamp(trimY / cellH, 0F, LIMIT);
+        // Capped well short of half, so that even a cell two texels across is
+        // left with a box rather than an inverted one.
+        float bleedX = cellW <= 0F ? 0F : Math.min(1F / cellW, 0.25F);
+        float bleedY = cellH <= 0F ? 0F : Math.min(1F / cellH, 0.25F);
+        float insetX = cellW <= 0F ? 0F
+            : Math.clamp(trimX / cellW, 0F, Math.max(0F, LIMIT - bleedX));
+        float insetY = cellH <= 0F ? 0F
+            : Math.clamp(trimY / cellH, 0F, Math.max(0F, LIMIT - bleedY));
         return new float[] {
-            column == 0 ? insetX : 0F,
-            row == 0 ? insetY : 0F,
-            column == across - 1 ? 1F - insetX : 1F,
-            row == down - 1 ? 1F - insetY : 1F};
+            (column == 0 ? insetX : 0F) + bleedX,
+            (row == 0 ? insetY : 0F) + bleedY,
+            (column == across - 1 ? 1F - insetX : 1F) - bleedX,
+            (row == down - 1 ? 1F - insetY : 1F) - bleedY};
     }
 
     /** The same, for a frame of this run rather than a cell of the region. */

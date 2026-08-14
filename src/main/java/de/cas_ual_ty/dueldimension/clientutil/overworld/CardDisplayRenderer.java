@@ -119,9 +119,14 @@ public class CardDisplayRenderer
         // origin, which cancels the translation the level renderer already
         // applied -- the same two frames meeting, from the other side.
         Vec3 block = Vec3.atLowerCornerOf(state.blockPos);
-        Vec3 feet = block.add(0.5D, DisplayCard.surface() + 0.002D, 0.5D);
+        float height = DisplayCard.LENGTH * MonsterSprites.heightFor(state.code);
+        // The whole creature rises together, wings included, because it is one
+        // creature -- so the lift goes on the point everything is measured from
+        // rather than on the body alone.
+        Vec3 feet = block.add(0.5D, DisplayCard.surface() + 0.002D
+            + MonsterSprites.bobAt(body, state.gameTime) * height, 0.5D);
         MonsterBillboard.submit(poseStack, collector, block, camera.pos, feet,
-            DisplayCard.LENGTH * MonsterSprites.heightFor(state.code), body,
+            height, body,
             MonsterSprites.frameAt(body, state.gameTime), wings,
             wings == null ? 0 : MonsterSprites.frameAt(wings.layer(), state.gameTime),
             0xFFFFFFFF, state.code);

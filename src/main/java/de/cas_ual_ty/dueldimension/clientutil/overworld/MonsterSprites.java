@@ -57,7 +57,20 @@ public final class MonsterSprites
     public enum Loop
     {
         LOOP,
-        PING_PONG
+        PING_PONG,
+        /**
+         * One picture, moved rather than redrawn.
+         * <p>
+         * Plenty of monsters are worth putting on a board and are not worth
+         * drawing four times, and a sprite that holds perfectly still beside
+         * ones that do not reads as broken rather than as still. A slow rise
+         * and fall costs a single cell of art and buys what the frames were
+         * really for, which is looking alive.
+         * <p>
+         * The frame count stops meaning a number of pictures and starts meaning
+         * the length of the bob -- how many steps it takes to come round again.
+         */
+        BOB
     }
 
     /**
@@ -140,7 +153,9 @@ public final class MonsterSprites
      */
     public static int frameAt(SpriteLayer layer, long gameTime)
     {
-        if(layer == null || layer.frames() <= 1)
+        // A bobbing layer's frame count is a period, not a run of pictures, so
+        // it holds the first cell however high that count goes.
+        if(layer == null || layer.frames() <= 1 || layer.loop() == Loop.BOB)
         {
             return 0;
         }
@@ -155,6 +170,36 @@ public final class MonsterSprites
         int span = layer.frames() * 2 - 2;
         int at = (int)Math.floorMod(step, span);
         return at < layer.frames() ? at : span - at;
+    }
+
+    /**
+     * How far a bobbing sprite rises above and falls below where it stands, as
+     * a fraction of its own height.
+     * <p>
+     * Small on purpose. This is a monster hovering over its card, not one
+     * jumping off it: a few percent reads as breathing, and much more reads as
+     * a mistake in the placement.
+     */
+    public static final float BOB_RISE = 0.04F;
+
+    /**
+     * How high a bobbing sprite sits this tick, as a fraction of its height.
+     * <p>
+     * A sine sampled at whole steps rather than a continuous one, so the
+     * movement lands on the same beat as the animated sprites beside it -- and
+     * because these are pixel drawings, where stepping between positions looks
+     * more right than gliding between them. Zero for every other kind of layer,
+     * so a caller may add it without asking first.
+     */
+    public static float bobAt(SpriteLayer layer, long gameTime)
+    {
+        if(layer == null || layer.loop() != Loop.BOB || layer.frames() < 2)
+        {
+            return 0F;
+        }
+        int steps = layer.frames();
+        long step = Math.floorDiv(gameTime, Math.max(1, layer.ticks()));
+        return BOB_RISE * (float)Math.sin(2D * Math.PI * Math.floorMod(step, steps) / steps);
     }
 
     // ------------------------------------------------------------- editing --

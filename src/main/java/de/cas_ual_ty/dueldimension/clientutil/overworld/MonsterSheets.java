@@ -156,6 +156,90 @@ public final class MonsterSheets
     }
 
     /**
+     * Asks the system for an image file.
+     * <p>
+     * Through LWJGL's file dialogue, which Minecraft already ships and which
+     * this mod already uses to find a deck -- so a sheet is picked the way
+     * anything is picked anywhere else. Telling somebody a folder they then
+     * have to find, copy into, and name correctly is three chances to get it
+     * wrong before the editor has seen the file at all.
+     * <p>
+     * Null on cancel, and null if the native library is missing rather than a
+     * crash: the folder button still works, and a dialogue that cannot open is
+     * a convenience gone, not a feature broken.
+     *
+     * @return the chosen file, or null
+     */
+    public static Path choose()
+    {
+        try
+        {
+            org.lwjgl.PointerBuffer filters = org.lwjgl.BufferUtils.createPointerBuffer(1);
+            filters.put(org.lwjgl.system.MemoryUtil.memUTF8("*.png"));
+            filters.flip();
+            String start = folder().toAbsolutePath() + java.io.File.separator;
+            String picked = org.lwjgl.util.tinyfd.TinyFileDialogs.tinyfd_openFileDialog(
+                "Choose a sprite sheet (.png)", start, filters, "PNG image", false);
+            return picked == null ? null : Path.of(picked);
+        }
+        catch(Throwable unavailable)
+        {
+            return null;
+        }
+    }
+
+    /**
+     * Copies a chosen image in beside the others and registers it.
+     * <p>
+     * Copied rather than referenced where it lies, because a sheet read from
+     * somebody's Downloads folder is a sheet that stops existing the next time
+     * they tidy up, and a monster whose art vanished is a puzzle to work out
+     * from an empty square on a board.
+     * <p>
+     * A file already in the folder is left exactly where it is -- picking it is
+     * then just a way of naming it, and copying a file onto itself is an error
+     * rather than a no-op.
+     *
+     * @return the name to put in a definition, or null if it could not be taken
+     */
+    public static String take(Path file)
+    {
+        if(file == null)
+        {
+            return null;
+        }
+        try
+        {
+            Files.createDirectories(folder());
+            String given = file.getFileName().toString();
+            int dot = given.lastIndexOf('.');
+            String name = (dot > 0 ? given.substring(0, dot) : given)
+                .toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9._-]", "_");
+            if(name.isBlank())
+            {
+                DuelDimension.warn("could not name the sheet " + file);
+                return null;
+            }
+            Path target = folder().resolve(name + ".png");
+            // Existence first, and the order matters: isSameFile throws when
+            // asked about a file that is not there, which is the ordinary case
+            // -- importing something new -- so testing sameness first would
+            // fail every import that had any work to do.
+            if(!Files.exists(target) || !Files.isSameFile(file, target))
+            {
+                Files.copy(file, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+            reload();
+            return name;
+        }
+        catch(Exception refused)
+        {
+            DuelDimension.warn("could not import the sheet " + file + ": " + refused);
+            return null;
+        }
+    }
+
+    /**
      * Opens the folder in whatever the desktop uses for folders.
      * <p>
      * The point of an import folder is putting files in it, and telling

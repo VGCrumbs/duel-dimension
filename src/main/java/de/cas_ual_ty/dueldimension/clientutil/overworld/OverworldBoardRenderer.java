@@ -1013,6 +1013,9 @@ public final class OverworldBoardRenderer
         // shrank to two thirds would read as a weaker one.
         float height = CardMesh.CARD_H * transform.scale()
             * MonsterSprites.heightFor(slot.code());
+        // Straight up in world space, which is the axis the sprite stands on
+        // however the field beneath it is turned.
+        feet = feet.add(0D, MonsterSprites.bobAt(body, (long)ticks()) * height, 0D);
         MonsterBillboard.submit(poseStack, collector, camera, camera, feet, height, body,
             MonsterSprites.frameAt(body, (long)ticks()), wings,
             wings == null ? 0 : MonsterSprites.frameAt(wings.layer(), (long)ticks()),
