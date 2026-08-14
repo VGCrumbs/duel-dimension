@@ -102,6 +102,15 @@ public final class HandHud implements HudElement
         drawHand(extractor, board, -1);
     }
 
+    /** The game's tick count, which is what the pulse breathes on. */
+    private static float ticks()
+    {
+        Minecraft client = Minecraft.getInstance();
+        return client.level == null ? 0F
+            : client.level.getGameTime() % 100000L
+                + client.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+    }
+
     /**
      * The cards in your hand, drawn where {@link HandLayout} says.
      * <p>
@@ -129,7 +138,14 @@ public final class HandHud implements HudElement
             HandLayout.Slot at = slots[card];
             // The hovered card stands up out of the fan, the way a card being
             // considered leaves the hand before it is played.
-            int lift = card == highlighted ? HandLayout.HOVER_LIFT : 0;
+            int lift = card == highlighted ? HandLayout.hoverLift(extractor.guiHeight()) : 0;
+            // A card the engine is offering says so before it is pointed at,
+            // which is what stops a turn being a hunt across the whole hand.
+            if(DuelHighlight.handCardIsOffered(board, card))
+            {
+                DuelHighlight.around(extractor, at.x(), at.y() - lift, at.width(), at.height(),
+                    ticks());
+            }
             // inHand is true: a set card in your OWN hand is one you are
             // allowed to look at, and this overlay is only ever drawn for its
             // owner. The concealment that matters happened on the server.

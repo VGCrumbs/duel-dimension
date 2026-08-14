@@ -37,6 +37,15 @@ public final class OverworldBoardRenderer
     {
     }
 
+    /** The game's tick count, which the glow's pulse breathes on. */
+    private static float ticks()
+    {
+        Minecraft client = Minecraft.getInstance();
+        return client.level == null ? 0F
+            : client.level.getGameTime() % 100000L
+                + client.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+    }
+
     /** How far the board floats over the ground: enough not to z-fight the floor. */
     private static final double SURFACE_LIFT = 0.02D;
 
@@ -134,10 +143,14 @@ public final class OverworldBoardRenderer
             int controller = FieldTransform.controllerFor(seat, own);
             Identifier back = CardFaces.back(controller);
 
+            // The engine numbers controllers from the seat it is asking; the
+            // board's halves are absolute. Both are needed here -- one to draw
+            // in the right place, one to ask what is legal.
+            int asked = own ? 0 : 1;
             drawRow(poseStack, collector, transform, camera, side.monsters(), controller,
-                OcgConstants.LOCATION_MZONE, back);
+                asked, OcgConstants.LOCATION_MZONE, back);
             drawRow(poseStack, collector, transform, camera, side.spells(), controller,
-                OcgConstants.LOCATION_SZONE, back);
+                asked, OcgConstants.LOCATION_SZONE, back);
 
             // The four piles. A deck and an extra deck show their backs
             // because that is all anyone may see of them; a graveyard and a
@@ -154,6 +167,79 @@ public final class OverworldBoardRenderer
             drawPile(poseStack, collector, transform, camera, controller,
                 OcgConstants.LOCATION_REMOVED, size(side.banished()),
                 topFace(side.banished(), controller, back), back);
+
+            // The other duellist's hand stands up in front of them, backs out,
+            // the way a hand of cards is held. NOT this client's own -- that
+            // stays a flat overlay, because a row of card-high cards standing
+            // between a duellist and the board is a duellist who cannot see
+            // the board.
+            //
+            // Only backs can be drawn here whatever this code did: a hand the
+            // server did not send belongs to arrives with no codes in it at
+            // all. A spectator, who owns neither hand, sees both stand up.
+            if(!own || ClientDuelField.seat() < 0)
+            {
+                drawStandingHand(poseStack, collector, transform, camera, controller,
+                    size(side.hand()), back);
+            }
+        }
+    }
+
+    /**
+     * How tall a held card stands, in blocks. A metre: the size a card would be
+     * if a person were holding it up, which is what makes the opponent's hand
+     * read as a hand rather than as decoration on the far side of the table.
+     */
+    private static final float HELD_HEIGHT = 1.0F;
+
+    /** How far in front of their edge of the mat the cards are held. */
+    private static final float HELD_INSET = 0.5F;
+
+    /**
+     * The other duellist's hand, as cards standing on end.
+     * <p>
+     * Drawn as two faces rather than a solid: a card held up is seen from one
+     * side or the other and never from its edge-on middle, and both faces are
+     * the same back anyway. Wound in opposite directions so each is visible
+     * from its own side, which is what lets a spectator walk round the table
+     * and still see a hand rather than a row of nothing.
+     */
+    private static void drawStandingHand(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera, int controller, int cards, Identifier back)
+    {
+        if(cards <= 0)
+        {
+            return;
+        }
+        // Their own edge of the mat, stepped inwards so the cards stand in
+        // front of the duellist rather than through them.
+        float edge = controller == 0
+            ? de.cas_ual_ty.dueldimension.clientutil.FieldLayout.FIELD_MAX_Y - HELD_INSET
+            : de.cas_ual_ty.dueldimension.clientutil.FieldLayout.FIELD_MIN_Y + HELD_INSET;
+
+        float widthUnits = HELD_HEIGHT * de.cas_ual_ty.dueldimension.clientutil
+            .DuelTextures.CARD_ASPECT / transform.scale();
+        // Laid across the middle of the mat, overlapping when there are enough
+        // of them to need it, exactly as a real hand fans.
+        float span = Math.min(6.5F, cards * widthUnits * 1.05F);
+        float step = cards <= 1 ? 0F : span / (cards - 1);
+        float start = FieldTransform.CENTRE_X - (cards <= 1 ? 0F : span / 2F);
+
+        for(int card = 0; card < cards; card++)
+        {
+            float middle = start + step * card;
+            float left = middle - widthUnits / 2F;
+            float right = middle + widthUnits / 2F;
+
+            Vec3 bottomLeft = transform.at(left, edge, CARD_LIFT);
+            Vec3 bottomRight = transform.at(right, edge, CARD_LIFT);
+            Vec3 topLeft = transform.at(left, edge, CARD_LIFT + HELD_HEIGHT);
+            Vec3 topRight = transform.at(right, edge, CARD_LIFT + HELD_HEIGHT);
+
+            WorldQuad.submit(poseStack, collector, back, camera,
+                new Vec3[] {bottomLeft, topLeft, topRight, bottomRight}, 0xFFFFFFFF);
+            WorldQuad.submit(poseStack, collector, back, camera,
+                new Vec3[] {bottomRight, topRight, topLeft, bottomLeft}, 0xFFFFFFFF);
         }
     }
 
@@ -194,7 +280,7 @@ public final class OverworldBoardRenderer
 
     private static void drawRow(PoseStack poseStack, SubmitNodeCollector collector,
         FieldTransform transform, Vec3 camera, List<BoardSnapshot.Slot> slots, int controller,
-        int location, Identifier back)
+        int asked, int location, Identifier back)
     {
         if(slots == null)
         {
@@ -214,6 +300,20 @@ public final class OverworldBoardRenderer
             }
             CardRenderer.submit(poseStack, collector, transform, camera, zone, controller,
                 slot.defence(), CARD_LIFT, CardFaces.face(slot, false, controller), back);
+
+            // A card the engine is offering glows, so a duellist can see what
+            // they may do without sweeping the cursor over the whole board.
+            // Asked through the same filter that decides the click, so the glow
+            // and the click can never disagree.
+            if(de.cas_ual_ty.dueldimension.clientutil.PromptOptions.actionable(
+                DuelClientState.prompt, false, new de.cas_ual_ty.dueldimension.clientutil
+                    .BoardTarget(slot.code(), asked, location, sequence, -1, "", 1, slot.art())))
+            {
+                WorldQuad.submit(poseStack, collector, DuelHighlight.OUTLINE, camera,
+                    transform.corners(CardMesh.placement(zone, slot.defence()),
+                        (CARD_LIFT + CardMesh.THICKNESS + 0.004F) * transform.scale()),
+                    DuelHighlight.tint(DuelHighlight.pulse(ticks())));
+            }
         }
     }
 

@@ -95,6 +95,38 @@ public final class ClientDuelField
             && client.level.dimension().equals(level);
     }
 
+    /**
+     * Which hotbar slot was selected when the duel began, or -1 outside one.
+     * <p>
+     * The hotbar is hidden for the length of a duel. A hidden hotbar that can
+     * still be scrolled is worse than a visible one -- what is in hand changes
+     * with nothing on screen to say so -- so the slot is pinned to whatever it
+     * was, and released when the board goes.
+     */
+    private static int heldSlot = -1;
+
+    /** Puts the selected slot back if something moved it during a duel. */
+    public static void holdHotbar(net.minecraft.client.Minecraft client)
+    {
+        if(client.player == null)
+        {
+            return;
+        }
+        if(!locked())
+        {
+            heldSlot = -1;
+            return;
+        }
+        if(heldSlot < 0)
+        {
+            heldSlot = client.player.getInventory().getSelectedSlot();
+        }
+        else if(client.player.getInventory().getSelectedSlot() != heldSlot)
+        {
+            client.player.getInventory().setSelectedSlot(heldSlot);
+        }
+    }
+
     /** Is this player walking to a mark right now? */
     public static boolean walking()
     {
@@ -119,6 +151,7 @@ public final class ClientDuelField
         level = null;
         seat = -1;
         locked = false;
+        heldSlot = -1;
         spectatorBoard = null;
     }
 }

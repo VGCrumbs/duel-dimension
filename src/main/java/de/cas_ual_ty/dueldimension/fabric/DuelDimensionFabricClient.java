@@ -74,6 +74,25 @@ public class DuelDimensionFabricClient implements ClientModInitializer
                 de.cas_ual_ty.dueldimension.DuelDimension.MOD_ID, "preload_progress"),
             new de.cas_ual_ty.dueldimension.clientutil.PreloadHud());
 
+        // The hotbar and its item name are hidden while a duel is on: the
+        // bottom of the screen belongs to the hand, and a duellist locked in
+        // place with their hands on a duel has no use for a hotbar. Replaced
+        // rather than removed, so it is the mod's own state that hides it and
+        // everything comes back the moment the duel ends.
+        for(net.minecraft.resources.Identifier hidden : new net.minecraft.resources.Identifier[] {
+            net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.HOTBAR,
+            net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements.HELD_ITEM_TOOLTIP})
+        {
+            net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
+                .replaceElement(hidden, original -> (extractor, delta) ->
+            {
+                if(!de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked())
+                {
+                    original.extractRenderState(extractor, delta);
+                }
+            });
+        }
+
         // Your hand during an overworld duel. addLast for the same reason: it
         // is the one part of a world duel that must not be painted over.
         net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry.addLast(
@@ -115,6 +134,11 @@ public class DuelDimensionFabricClient implements ClientModInitializer
             .register(client ->
         {
             de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelTargeting.tick(client);
+            // The hotbar is hidden during a duel, so the slot it is on must not
+            // wander either: scrolling an invisible hotbar would change what is
+            // in hand without anyone seeing it happen, and the duel disk is in
+            // one of those slots.
+            de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.holdHotbar(client);
             while(de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds.DUEL_ACT.consumeClick())
             {
                 if(de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()

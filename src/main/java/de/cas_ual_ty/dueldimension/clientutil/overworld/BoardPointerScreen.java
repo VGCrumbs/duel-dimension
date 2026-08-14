@@ -292,6 +292,15 @@ public class BoardPointerScreen extends Screen
             HandHud.drawHand(extractor, board, hoveredCard);
         }
 
+        // Shift shows the card's own words, the same as the deck builder's
+        // preview and for the same reason: the wording is what a duellist is
+        // squinting at mid-turn, and the card is already on screen at the size
+        // the board draws it.
+        if(hovered != null && shiftHeld())
+        {
+            CardBubble.draw(extractor, font, hovered.code(), mouseX, mouseY, width, height);
+        }
+
         String label = hovered == null ? "Point at a card" : hovered.label();
         int colour = hovered != null
             && PromptOptions.actionable(DuelClientState.prompt, false, hovered)
@@ -348,6 +357,21 @@ public class BoardPointerScreen extends Screen
         var prompt = DuelClientState.prompt;
         return prompt == null || index >= prompt.options().size() ? "?"
             : prompt.options().get(index).label();
+    }
+
+    /**
+     * Shift, asked of the window rather than of a key event, because this is a
+     * question about a key being HELD while the mouse moves and not about one
+     * having been pressed. The same test the deck builder's preview uses.
+     */
+    private static boolean shiftHeld()
+    {
+        com.mojang.blaze3d.platform.Window window =
+            net.minecraft.client.Minecraft.getInstance().getWindow();
+        return com.mojang.blaze3d.platform.InputConstants.isKeyDown(window,
+            org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT)
+            || com.mojang.blaze3d.platform.InputConstants.isKeyDown(window,
+                org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT);
     }
 
     @Override

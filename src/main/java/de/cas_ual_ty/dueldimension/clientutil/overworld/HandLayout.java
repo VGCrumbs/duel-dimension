@@ -20,17 +20,45 @@ public final class HandLayout
     {
     }
 
-    /** How tall a card is drawn, in pixels; its width follows the card's shape. */
-    public static final int CARD_H = 81;
-    public static final int CARD_W = Math.round(CARD_H * DuelTextures.CARD_ASPECT);
-    /** How much of a card stays visible when the hand is too wide to lay flat. */
-    private static final int MIN_STEP = 12;
-    private static final int GAP = 3;
-    /** Clear of the hotbar, the experience bar and the preload bar above them. */
-    private static final int ABOVE_HOTBAR = 76;
+    /**
+     * How tall a card is drawn, as a share of the screen.
+     * <p>
+     * A share rather than a count of pixels, because a gui-scaled viewport is
+     * anything from about 200 to 900 units tall depending on the window and the
+     * player's gui scale, and a fixed 61 is a comfortable hand on one of those
+     * and a postage stamp or a wall of cards on the others. The fraction is set
+     * so that the reference 920p at gui scale 3 comes out at the size this was
+     * hand-tuned to.
+     */
+    private static final float HEIGHT_SHARE = 0.20F;
+    private static final int MIN_CARD_H = 34;
+    private static final int MAX_CARD_H = 140;
 
-    /** How far the card under the cursor rises out of the fan. */
-    public static final int HOVER_LIFT = 10;
+    /** How tall a card is drawn on a viewport of this height. */
+    public static int cardHeight(int screenH)
+    {
+        return Math.clamp(Math.round(screenH * HEIGHT_SHARE), MIN_CARD_H, MAX_CARD_H);
+    }
+
+    /** A card's width follows its height, because a card has a shape. */
+    public static int cardWidth(int screenH)
+    {
+        return Math.round(cardHeight(screenH) * DuelTextures.CARD_ASPECT);
+    }
+    /**
+     * How far the fan sits off the bottom edge.
+     * <p>
+     * Almost nothing: the hotbar is hidden for the length of a duel, so the
+     * bottom of the screen is the hand's, and a hand floating above an empty
+     * strip looks like it is avoiding something that is not there.
+     */
+    private static final int ABOVE_HOTBAR = 2;
+
+    /** How far the card under the cursor rises out of the fan, at that size. */
+    public static int hoverLift(int screenH)
+    {
+        return Math.max(4, cardHeight(screenH) / 6);
+    }
 
     /** One card's place on screen. */
     public record Slot(int x, int y, int width, int height)
@@ -54,20 +82,25 @@ public final class HandLayout
         {
             return new Slot[0];
         }
-        int usable = Math.max(CARD_W, screenW - 40);
-        int step = CARD_W + GAP;
+        int cardW = cardWidth(screenH);
+        int cardH = cardHeight(screenH);
+        int usable = Math.max(cardW, screenW - 40);
+        // The gap and the minimum sliver scale too, or a hand of fifteen at a
+        // small gui scale overlaps to nothing while the cards themselves shrank.
+        int gap = Math.max(1, cardW / 15);
+        int step = cardW + gap;
         if(cards * step > usable)
         {
-            step = Math.max(MIN_STEP, (usable - CARD_W) / Math.max(1, cards - 1));
+            step = Math.max(Math.max(6, cardW / 4), (usable - cardW) / Math.max(1, cards - 1));
         }
-        int spread = CARD_W + step * (cards - 1);
+        int spread = cardW + step * (cards - 1);
         int x = (screenW - spread) / 2;
-        int y = screenH - ABOVE_HOTBAR - CARD_H;
+        int y = screenH - ABOVE_HOTBAR - cardH;
 
         Slot[] slots = new Slot[cards];
         for(int card = 0; card < cards; card++)
         {
-            slots[card] = new Slot(x + step * card, y, CARD_W, CARD_H);
+            slots[card] = new Slot(x + step * card, y, cardW, cardH);
         }
         return slots;
     }
