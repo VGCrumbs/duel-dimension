@@ -85,6 +85,45 @@ public final class CardTextureCache
 
     private static final long[] residentBytes = new long[CardImageManager.CLASSES];
 
+    /**
+     * When each resident texture was last drawn.
+     * <p>
+     * A budget alone is not enough once the VISIBLE set is bigger than it. The
+     * 256 class holds 96 textures and a maximised shop shows about 102 packs,
+     * so the sweep evicted art that was still on screen, the next frame asked
+     * for it again, and that eviction pushed out another -- every pack blinking
+     * between its art and the placeholder for as long as the window stayed
+     * large. Anything drawn recently is therefore off limits to the sweep.
+     */
+    private static final Map<Identifier, Long>[] TOUCHED_AT = newTouchMaps();
+
+    @SuppressWarnings("unchecked")
+    private static Map<Identifier, Long>[] newTouchMaps()
+    {
+        Map<Identifier, Long>[] maps = new Map[CardImageManager.CLASSES];
+        for(int i = 0; i < maps.length; i++)
+        {
+            maps[i] = new java.util.HashMap<>();
+        }
+        return maps;
+    }
+
+    /**
+     * Frames actually drawn, counted by {@link #beginFrame()}.
+     * <p>
+     * Protection is measured in FRAMES rather than milliseconds so it means
+     * "currently on screen" and nothing else. It also keeps the eviction tests
+     * honest: no frame is ever drawn in a unit test, so this stays 0, no entry
+     * is protected, and the LRU is exercised exactly as before.
+     */
+    private static volatile long frame;
+
+    /** Called once per rendered frame, before anything is drawn. */
+    public static void beginFrame()
+    {
+        frame++;
+    }
+
     private static int ticks;
 
     static
@@ -123,6 +162,10 @@ public final class CardTextureCache
         // RGBA, one byte a channel, no mipmaps on these.
         int bytes = size * size * 4;
         Map<Identifier, Integer> resident = RESIDENT[index];
+        synchronized(TOUCHED_AT[index])
+        {
+            TOUCHED_AT[index].put(id, frame);
+        }
         synchronized(resident)
         {
             Integer had = resident.put(id, bytes);
@@ -202,12 +245,32 @@ public final class CardTextureCache
                 {
                     continue;
                 }
+                long drawnFrame = frame;
                 for(Iterator<Map.Entry<Identifier, Integer>> it = resident.entrySet().iterator();
                     it.hasNext() && residentBytes[index] > BUDGET_BYTES[index];)
                 {
                     Map.Entry<Identifier, Integer> eldest = it.next();
+                    Long drawn;
+                    synchronized(TOUCHED_AT[index])
+                    {
+                        drawn = TOUCHED_AT[index].get(eldest.getKey());
+                    }
+                    // frame == 0 means nothing has been rendered -- a unit test --
+                    // so nothing is protected and the LRU behaves as written.
+                    if(drawnFrame > 0 && drawn != null && drawn >= drawnFrame)
+                    {
+                        // On screen right now. The budget is a target, not a
+                        // promise: going over it costs memory, while evicting
+                        // what is being drawn costs a reload every frame and
+                        // shows as flickering.
+                        continue;
+                    }
                     releaser.release(eldest.getKey(), index);
                     residentBytes[index] -= eldest.getValue();
+                    synchronized(TOUCHED_AT[index])
+                    {
+                        TOUCHED_AT[index].remove(eldest.getKey());
+                    }
                     it.remove();
                 }
             }

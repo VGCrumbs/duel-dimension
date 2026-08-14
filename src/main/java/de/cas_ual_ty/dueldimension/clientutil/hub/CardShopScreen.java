@@ -81,6 +81,10 @@ public class CardShopScreen extends Screen
      */
     private int lastScroll;
     private long lastFrameAt;
+    /** When the player last actually scrolled, which is what the gate reads. */
+    private long lastScrollAt;
+    /** How long after a scroll the grid still counts as moving. */
+    private static final long SCROLL_QUIET_MS = 250L;
     /**
      * Whether this frame may ASK for art it has never seen. False while the
      * list is moving faster than the eye reads it -- EDOPro does not queue a
@@ -773,6 +777,8 @@ public class CardShopScreen extends Screen
         }
         double top = mouseY - scrollGrab - trackY();
         scroll = (int)Math.clamp(Math.round(top / travel * max), 0, max);
+        // Dragging the bar is scrolling too, and it is the faster of the two.
+        lastScrollAt = System.currentTimeMillis();
     }
 
     /** Holds the scroll position inside what there is to scroll through. */
@@ -1263,9 +1269,11 @@ public class CardShopScreen extends Screen
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta)
     {
-        // Nothing is told about the scroll here any more; the grid measures how
-        // far it has actually travelled, which is what the gate is stated
-        // against. See CardImageManager.drawThumb.
+        // The art gate is told the player is moving. Measured travel cannot be
+        // used for this: a resize reflows the grid and re-clamps `scroll`,
+        // which reads as movement nobody made, and the packs blink between
+        // their art and the placeholder as the gate follows it.
+        lastScrollAt = System.currentTimeMillis();
         // Only over the cells. Consuming every scroll on the screen moved the
         // grid while the pointer was on the preview panel or an open dropdown,
         // and left no other region able to be given the wheel.
@@ -1357,13 +1365,17 @@ public class CardShopScreen extends Screen
         // any layout number for longer than a frame.
         geom = null;
 
-        // The scroll-velocity gate, asked once a frame before anything draws.
-        // Same rule and same helper the collection uses, which is the point:
-        // one place decides what "moving too fast to bother loading" means.
+        // Gated on the player's INPUT, not on a position delta.
+        //
+        // Measuring how far the grid moved sounds equivalent and is not: a
+        // resize reflows the grid and re-clamps `scroll`, so the delta flips
+        // between zero and non-zero from one frame to the next with no input at
+        // all. The gate alternated with it and every pack blinked between its
+        // art and the placeholder. Asking "did they scroll recently" cannot
+        // oscillate, because only a real scroll sets it.
         long now = System.currentTimeMillis();
-        long sinceLastFrame = lastFrameAt == 0L ? 16L : Math.max(1L, now - lastFrameAt);
+        loadImages = now - lastScrollAt >= SCROLL_QUIET_MS;
         lastFrameAt = now;
-        loadImages = CardImageManager.drawThumb(lastScroll, scroll, sinceLastFrame);
         lastScroll = scroll;
         // The dim Forge's renderBackground drew, not extractBackground: that
         // BLURS in 26.2, the blur is once-per-frame, and the frame a screen

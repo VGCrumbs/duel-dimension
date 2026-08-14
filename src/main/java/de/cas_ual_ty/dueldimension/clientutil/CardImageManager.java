@@ -445,6 +445,10 @@ public final class CardImageManager
      */
     public static void refreshCachedTextures()
     {
+        // Once per frame, before anything is drawn: this is what tells the
+        // cache which textures are on screen NOW, so the sweep cannot evict
+        // one that is about to be drawn again.
+        CardTextureCache.beginFrame();
         Minecraft client = Minecraft.getInstance();
         if(client == null || client.getTextureManager() == null)
         {
