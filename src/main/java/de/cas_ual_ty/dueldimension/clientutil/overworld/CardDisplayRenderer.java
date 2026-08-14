@@ -42,6 +42,9 @@ public class CardDisplayRenderer
         public long gameTime;
     }
 
+    /** The last block a card was drawn for, so the log says it once. */
+    private static net.minecraft.core.BlockPos lastDrawnAt;
+
     public CardDisplayRenderer(BlockEntityRendererProvider.Context context)
     {
     }
@@ -77,6 +80,17 @@ public class CardDisplayRenderer
             // empty, and an empty one is a bare pedestal.
             return;
         }
+        // Said once per position rather than per frame. "It is drawn in the
+        // wrong place" and "it is drawn for the wrong block" look identical
+        // from outside and want completely different fixes, and this is the one
+        // fact that separates them.
+        if(!state.blockPos.equals(lastDrawnAt))
+        {
+            lastDrawnAt = state.blockPos.immutable();
+            de.cas_ual_ty.dueldimension.DuelDimension.log("drawing card " + state.code
+                + " for the display block at " + state.blockPos);
+        }
+
         Vec3 block = Vec3.atLowerCornerOf(state.blockPos);
         // The middle of the block's upper face, which is where a card put down
         // on it would lie.
