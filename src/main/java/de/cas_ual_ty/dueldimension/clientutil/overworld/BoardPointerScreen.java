@@ -80,7 +80,7 @@ public class BoardPointerScreen extends Screen
     }
 
     /**
-     * No blur, and barely any dim.
+     * No blur, and no dim.
      * <p>
      * The default draws a blurred, darkened copy of the world behind a screen,
      * which is right for a menu that replaces what is behind it and wrong for
@@ -89,14 +89,18 @@ public class BoardPointerScreen extends Screen
      * rather than left to the base class, which reaches
      * {@code extractBlurredBackground} through {@code extractBackground}.
      * <p>
-     * A trace of shade stays, so the cards and the rows read against a bright
-     * sky without hiding the board under them.
+     * Nothing is drawn in its place either: a dim that appears the instant the
+     * cursor does is a step change in brightness, and the point of freeing the
+     * mouse is that it is the same view with a pointer in it.
      */
     @Override
     public void extractBackground(GuiGraphicsExtractor extractor, int mouseX, int mouseY,
         float partialTick)
     {
-        extractor.fillGradient(0, 0, width, height, 0x18101010, 0x28101010);
+        // Nothing at all. Even a trace of shade is a step change the moment the
+        // cursor appears, and freeing the mouse is meant to be the same view
+        // with a pointer in it rather than a different screen. The rows and the
+        // hand carry their own backing where they need one.
     }
 
     /**
