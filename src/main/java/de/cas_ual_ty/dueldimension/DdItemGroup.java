@@ -59,6 +59,7 @@ public final class DdItemGroup
             .title(Component.translatable("itemGroup." + DuelDimension.MOD_ID + ".main"))
             .displayItems((parameters, output) ->
             {
+                output.accept(DdItems.DUELIST_PLACER);
                 output.accept(DdItems.MILLENIUM_EYE);
                 output.accept(DdItems.MILLENIUM_KEY);
                 output.accept(DdItems.MILLENIUM_NECKLACE);

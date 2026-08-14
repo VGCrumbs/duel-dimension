@@ -187,6 +187,75 @@ public final class OverworldDuels
     }
 
     /**
+     * Sites a duel between a player and something that is not one -- an NPC
+     * duelist standing at a table.
+     * <p>
+     * The opponent does not walk to its mark and is not sent anything: it has
+     * no client to tell and no legs worth waiting for, so it is simply put
+     * where it belongs. Only the player has to arrive.
+     * <p>
+     * Everything else is the two-player path: the same siting, the same board,
+     * the same promise that a duel happens whether or not a field could be
+     * found for it.
+     */
+    public static void prepareAgainst(MinecraftServer server, ServerPlayer player,
+        net.minecraft.world.entity.LivingEntity opponent, Outcome outcome)
+    {
+        if(server == null || player.level() != opponent.level())
+        {
+            outcome.start();
+            return;
+        }
+        ServerLevel level = (ServerLevel)player.level();
+        SitingResult result = SitingSearch.site(new LevelSampler(level), floorUnder(player),
+            opponent.blockPosition().below(), FieldSpec.current());
+        if(result instanceof SitingResult.Refused refused)
+        {
+            tell(player, refusalMessage(refused.reason()));
+            outcome.start();
+            return;
+        }
+
+        FieldSiting siting = result.siting();
+        // The opponent is placed rather than asked. Seat 1 by convention, the
+        // same as the second player in a two-player duel.
+        placeOpponent(opponent, siting);
+        if(result instanceof SitingResult.Ready)
+        {
+            lock(player, siting, 0);
+            openAgainst(player, opponent, level, siting);
+            outcome.start();
+            return;
+        }
+
+        Waiting waiting = new Waiting(player.getUUID(), opponent.getUUID(), level.dimension(),
+            siting, level.getGameTime() + WALK_TIMEOUT_TICKS, outcome);
+        WAITING.put(player.getUUID(), waiting);
+        show(player, siting, 0, false);
+        tell(player, Component.literal("Stand on the marked square to begin the duel")
+            .withStyle(ChatFormatting.YELLOW));
+    }
+
+    /** Stands the opponent on its mark, facing across the board. */
+    private static void placeOpponent(net.minecraft.world.entity.LivingEntity opponent,
+        FieldSiting siting)
+    {
+        BlockPos stand = siting.stand(1);
+        Direction look = siting.look(1);
+        opponent.snapTo(stand.getX() + 0.5D, stand.getY() + 1, stand.getZ() + 0.5D,
+            look.toYRot(), 0F);
+        opponent.setYHeadRot(look.toYRot());
+    }
+
+    private static void openAgainst(ServerPlayer player,
+        net.minecraft.world.entity.LivingEntity opponent, ServerLevel level, FieldSiting siting)
+    {
+        Board board = new Board(player.getUUID(), opponent.getUUID(), level.dimension(), siting);
+        BOARDS.put(player.getUUID(), board);
+        show(player, siting, 0, true);
+    }
+
+    /**
      * Watches for arrivals, expires waits, and keeps locked duellists on their
      * marks. Cheap when nothing is happening, which is nearly always: two empty
      * maps and an immediate return.
@@ -213,7 +282,13 @@ public final class OverworldDuels
         {
             ServerPlayer first = server.getPlayerList().getPlayer(waiting.seat0());
             ServerPlayer second = server.getPlayerList().getPlayer(waiting.seat1());
-            if(first == null || second == null)
+            // Seat 1 may be an NPC, which is never in the player list. It was
+            // put on its mark when the field was sited and does not have to be
+            // waited for.
+            boolean againstEntity = !BOARDS.containsKey(waiting.seat1())
+                && second == null && server.getPlayerList().getPlayer(waiting.seat0()) != null
+                && waiting.seat1() != null && !isOnline(server, waiting.seat1());
+            if(first == null || (second == null && !againstEntity))
             {
                 settle(waiting);
                 waiting.outcome().cancel("a player left before the duel began");
@@ -221,7 +296,8 @@ public final class OverworldDuels
             }
 
             ServerLevel level = server.getLevel(waiting.level());
-            if(level == null || first.level() != level || second.level() != level)
+            if(level == null || first.level() != level
+                || (second != null && second.level() != level))
             {
                 // Somebody stepped through a portal. The duel is still on; the
                 // board is not.
@@ -230,16 +306,29 @@ public final class OverworldDuels
                 hide(second);
                 tell(first, refusalMessage(Refusal.DIFFERENT_WORLD));
                 tell(second, refusalMessage(Refusal.DIFFERENT_WORLD));
+                // second may be absent for a duel against an NPC; tell and hide
+                // both tolerate that.
                 waiting.outcome().start();
                 continue;
             }
 
-            if(arrived(first, waiting.siting(), 0) && arrived(second, waiting.siting(), 1))
+            if(arrived(first, waiting.siting(), 0)
+                && (second == null || arrived(second, waiting.siting(), 1)))
             {
                 settle(waiting);
                 lock(first, waiting.siting(), 0);
-                lock(second, waiting.siting(), 1);
-                open(first, second, level, waiting.siting());
+                if(second != null)
+                {
+                    lock(second, waiting.siting(), 1);
+                    open(first, second, level, waiting.siting());
+                }
+                else
+                {
+                    Board board = new Board(first.getUUID(), waiting.seat1(), level.dimension(),
+                        waiting.siting());
+                    BOARDS.put(first.getUUID(), board);
+                    show(first, waiting.siting(), 0, true);
+                }
                 waiting.outcome().start();
                 continue;
             }
@@ -545,6 +634,11 @@ public final class OverworldDuels
         return dx * dx + dz * dz <= ARRIVAL_TOLERANCE * ARRIVAL_TOLERANCE && Math.abs(dy) <= 1.5D;
     }
 
+    private static boolean isOnline(MinecraftServer server, UUID id)
+    {
+        return server.getPlayerList().getPlayer(id) != null;
+    }
+
     private static void settle(Waiting waiting)
     {
         WAITING.remove(waiting.seat0());
@@ -553,13 +647,20 @@ public final class OverworldDuels
 
     private static void show(ServerPlayer player, FieldSiting siting, int seat, boolean locked)
     {
+        if(player == null)
+        {
+            return;
+        }
         ServerPlayNetworking.send(player, new OverworldPayloads.ShowField(siting,
             player.level().dimension(), seat, locked));
     }
 
     private static void hide(ServerPlayer player)
     {
-        ServerPlayNetworking.send(player, new OverworldPayloads.HideField());
+        if(player != null)
+        {
+            ServerPlayNetworking.send(player, new OverworldPayloads.HideField());
+        }
     }
 
     private static void hideIfOnline(MinecraftServer server, UUID id)

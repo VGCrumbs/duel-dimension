@@ -34,10 +34,71 @@ public class DuelistEntity extends PathfinderMob
     private static final EntityDataAccessor<String> PROFILE =
         SynchedEntityData.defineId(DuelistEntity.class, EntityDataSerializers.STRING);
 
+    /**
+     * Placed by hand and meant to stay put, rather than a duelist that lives in
+     * the world and wanders. Server-side only: the client has no reason to know
+     * why a duelist is standing still, only that it is.
+     */
+    private boolean stationary;
+
+    /**
+     * Duels on a board in the world rather than on the screen. Set by the
+     * placer, since a duelist put down by hand is one somebody is testing the
+     * world board with.
+     */
+    private boolean duelsOnBoard;
+
     public DuelistEntity(EntityType<? extends PathfinderMob> type, Level level)
     {
         super(type, level);
         setPersistenceRequired();
+    }
+
+    public boolean isStationary()
+    {
+        return stationary;
+    }
+
+    public void setStationary(boolean value)
+    {
+        stationary = value;
+    }
+
+    public boolean duelsOnBoard()
+    {
+        return duelsOnBoard;
+    }
+
+    public void setDuelsOnBoard(boolean value)
+    {
+        duelsOnBoard = value;
+    }
+
+    /** The next starter deck along, wrapping. For testing against several in turn. */
+    public void cycleProfile()
+    {
+        java.util.List<de.cas_ual_ty.dueldimension.ocg.deck.StarterDecks.Entry> all =
+            StarterDecks.ALL;
+        if(all.isEmpty())
+        {
+            return;
+        }
+        int at = 0;
+        for(int index = 0; index < all.size(); index++)
+        {
+            if(all.get(index).id().equals(getProfileId()))
+            {
+                at = index;
+                break;
+            }
+        }
+        setProfileId(all.get((at + 1) % all.size()).id());
+    }
+
+    /** What this duelist is called, for a message about it. */
+    public String displayName()
+    {
+        return displayName(getProfileId());
     }
 
     public static AttributeSupplier.Builder createAttributes()
@@ -68,13 +129,14 @@ public class DuelistEntity extends PathfinderMob
             @Override
             public boolean canUse()
             {
-                return !DuelistDuels.isDueling(DuelistEntity.this.getUUID()) && super.canUse();
+                return !stationary && !DuelistDuels.isDueling(DuelistEntity.this.getUUID())
+                    && super.canUse();
             }
 
             @Override
             public boolean canContinueToUse()
             {
-                return !DuelistDuels.isDueling(DuelistEntity.this.getUUID())
+                return !stationary && !DuelistDuels.isDueling(DuelistEntity.this.getUUID())
                     && super.canContinueToUse();
             }
         });
@@ -98,8 +160,8 @@ public class DuelistEntity extends PathfinderMob
     @Override
     public void aiStep()
     {
-        if(!level().isClientSide()
-            && de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.isDueling(getUUID()))
+        if(!level().isClientSide() && (stationary
+            || de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.isDueling(getUUID())))
         {
             getNavigation().stop();
             net.minecraft.world.phys.Vec3 motion = getDeltaMovement();
@@ -154,6 +216,44 @@ public class DuelistEntity extends PathfinderMob
         {
             return InteractionResult.SUCCESS;
         }
+        // The placer removes and re-decks duelists; it must not also start a
+        // duel with the one it is being pointed at.
+        if(player.getItemInHand(hand).getItem()
+            instanceof de.cas_ual_ty.dueldimension.duel.npc.DuelistPlacerItem)
+        {
+            return InteractionResult.PASS;
+        }
+        if(duelsOnBoard && player instanceof net.minecraft.server.level.ServerPlayer challenger)
+        {
+            // The field is sited BEFORE the duel starts, so the board is
+            // already standing when the first card is drawn. If it cannot be
+            // sited the duel happens anyway, on the screen -- the overworld
+            // layer never stops a duel from happening.
+            de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels.prepareAgainst(
+                challenger.level().getServer(), challenger, this,
+                new de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels.Outcome()
+                {
+                    @Override
+                    public void start()
+                    {
+                        DuelistDuels.challenge(DuelistEntity.this, challenger);
+                        // A duel that refused to start leaves no board behind.
+                        if(!DuelistDuels.isDueling(challenger.getUUID()))
+                        {
+                            de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels
+                                .release(challenger.level().getServer(), challenger.getUUID());
+                        }
+                    }
+
+                    @Override
+                    public void cancel(String reason)
+                    {
+                        challenger.sendSystemMessage(
+                            net.minecraft.network.chat.Component.literal(reason));
+                    }
+                });
+            return InteractionResult.CONSUME;
+        }
         DuelistDuels.challenge(this, player);
         return InteractionResult.CONSUME;
     }
@@ -168,6 +268,8 @@ public class DuelistEntity extends PathfinderMob
     {
         super.addAdditionalSaveData(output);
         output.putString("Profile", getProfileId());
+        output.putBoolean("Stationary", stationary);
+        output.putBoolean("DuelsOnBoard", duelsOnBoard);
     }
 
     @Override
@@ -175,6 +277,8 @@ public class DuelistEntity extends PathfinderMob
     {
         super.readAdditionalSaveData(input);
         input.getString("Profile").ifPresent(this::setProfileId);
+        stationary = input.getBooleanOr("Stationary", false);
+        duelsOnBoard = input.getBooleanOr("DuelsOnBoard", false);
     }
 
     @Override

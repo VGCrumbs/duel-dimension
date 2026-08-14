@@ -59,6 +59,15 @@ public final class DdItems
     public static final Item MILLENIUM_ROD = register("millennium_rod", one(CosmeticItem::new));
     public static final Item MILLENIUM_SCALE = register("millennium_scale", one(CosmeticItem::new));
 
+    /**
+     * A testing tool: places duelists that stand still and duel on a world
+     * board. Not obtainable outside creative, and it says what it is on the
+     * tin -- see {@link de.cas_ual_ty.dueldimension.duel.npc.DuelistPlacerItem}.
+     */
+    public static final de.cas_ual_ty.dueldimension.duel.npc.DuelistPlacerItem DUELIST_PLACER =
+        register("duelist_placer",
+            de.cas_ual_ty.dueldimension.duel.npc.DuelistPlacerItem::new);
+
     public static final DeckBoxItem DECK_BOX = register("deck_box",
         properties -> new DeckBoxItem(properties.stacksTo(1)));
     public static final PatreonDeckBoxItem PATREON_DECK_BOX = register("patreon_deck_box",

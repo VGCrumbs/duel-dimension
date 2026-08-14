@@ -263,6 +263,12 @@ public class DuelDimensionFabric implements ModInitializer
         // so a server picks up whatever was last set rather than the built-in.
         de.cas_ual_ty.dueldimension.duel.overworld.OverworldSettings.load();
 
+        // A worn duel disk lets you call somebody out from across a courtyard
+        // rather than from arm's length. Reconciled every tick so a disk taken
+        // off never leaves the extra reach behind.
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(
+            de.cas_ual_ty.dueldimension.duel.dueldisk.DuelReach::tick);
+
         // Overworld duels: watches for two duellists reaching their marks, and
         // keeps them there once they have. Two empty maps and an immediate
         // return when nobody is duelling on a board, which is nearly always.
