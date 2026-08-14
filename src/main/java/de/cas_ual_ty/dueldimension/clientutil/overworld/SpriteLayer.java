@@ -61,9 +61,22 @@ public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns,
     /**
      * The texture coordinates of one frame, as {u0, v0, u1, v1}.
      * <p>
-     * Half a texel in on every side. Sampling exactly on the seam between two
-     * cells borrows a strip of the neighbour while the quad is scaled, which
-     * reads as a sliver of the wrong pose down one edge.
+     * Pulled in by a whole TEXEL on every side, and the unit is the point. This
+     * was a fraction of the cell -- a thousandth of it -- which on a sheet of
+     * six cells across 512 pixels comes to eight hundredths of a texel: near
+     * enough to nothing, and nothing is not enough.
+     * <p>
+     * The sheet's own edges are where it showed. The first cell begins at u = 0
+     * and the last ends at u = 1, so a sample reaching past either one does not
+     * find empty space -- it WRAPS, and comes back with the far side of the
+     * sheet. A wing at the left edge grew a copy of the tip belonging to the
+     * wing at the right edge, floating out beside it with nothing attached.
+     * <p>
+     * A whole texel rather than the usual half, because these sheets are drawn
+     * small on screen and a scaled-down sample reads a neighbourhood rather
+     * than a point. The art has margins to spare -- no sprite in any of these
+     * sheets touches its cell's edge -- so the cost is nothing and the bleed is
+     * gone.
      */
     public float[] uv(int frame)
     {
@@ -83,8 +96,8 @@ public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns,
         float right = (x + (column + 1) * cellW) / fileW;
         float top = (y + row * cellH) / fileH;
         float bottom = (y + (row + 1) * cellH) / fileH;
-        float insetU = (right - left) * 0.001F;
-        float insetV = (bottom - top) * 0.001F;
+        float insetU = 1F / fileW;
+        float insetV = 1F / fileH;
         return new float[] {left + insetU, top + insetV, right - insetU, bottom - insetV};
     }
 
