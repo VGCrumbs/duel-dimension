@@ -89,6 +89,15 @@ public class BoardPointerScreen extends Screen
     /** The card the open menu is about, which decides its icons' posture. */
     private BoardTarget chosenAnchor;
 
+    /**
+     * When the open menu is a pile's, the options each of its rows stands for.
+     * <p>
+     * A pile's rows are verbs rather than cards, so a row does not answer the
+     * prompt -- it names a group of cards the verb could mean, which the duel
+     * screen's picker then shows. Null whenever the menu is an ordinary card's.
+     */
+    private List<List<Integer>> pileGroups;
+
     /** The duel's resting cursor: no menu up, and it stays until the key takes it. */
     public BoardPointerScreen()
     {
@@ -144,6 +153,7 @@ public class BoardPointerScreen extends Screen
     private void dismiss()
     {
         choices = List.of();
+        pileGroups = null;
         chosenAnchor = null;
         surrenderArmed = false;
         if(pinned)
@@ -324,6 +334,14 @@ public class BoardPointerScreen extends Screen
             if(event.x() >= choicesX && event.x() < choicesX + choicesW
                 && row >= 0 && row < choices.size())
             {
+                if(pileGroups != null && row < pileGroups.size())
+                {
+                    List<Integer> group = pileGroups.get(row);
+                    String verb = label(group.get(0));
+                    dismiss();
+                    openPileList(verb, group);
+                    return true;
+                }
                 answer(choices.get(row));
                 return true;
             }
@@ -374,21 +392,29 @@ public class BoardPointerScreen extends Screen
         {
             return super.mouseClicked(event, doubled);
         }
-        // An empty square with one thing to do is not a menu. Clicking it
-        // has already SAID the thing -- "here" is the whole of the answer to
-        // "where do you want it" -- so a list offering one row called "place
-        // here" is a dialog asking a question that has just been answered.
-        if(options.size() == 1 && !hovered.isPile() && !hovered.hasCard())
+        // A pile is a stack of face-down cards, so what it can offer are
+        // VERBS and not cards: three summonable monsters gave three rows all
+        // reading "Special Summon" with nothing to tell them apart. Picking the
+        // verb opens the list of cards it could mean -- always, even when there
+        // is only one, because a player told "Special Summon" and then asked
+        // for tributes has been made to pay for something they were never
+        // shown. Exactly what the duel screen does, and for the same reason.
+        if(hovered.isPile())
+        {
+            openPile(options, event.x(), event.y());
+            return true;
+        }
+
+        // Some clicks are already the whole answer: an empty square asked
+        // "where", a tribute asked "which", an attack asked "what are you
+        // hitting". Those go straight through. A card in HAND asks first, even
+        // with one row, so a trap is not Set on the field by a cursor a few
+        // pixels off.
+        if(PromptOptions.answersOutright(DuelClientState.prompt, hovered, options))
         {
             answer(options.get(0));
             return true;
         }
-        // A card always asks, even with one row. A trap in hand can be Set and
-        // nothing else, so a click on one used to Set it outright -- no menu,
-        // no confirmation, and a card face-down on the field because a cursor
-        // was a few pixels off. The menu costs one click and buys the chance to
-        // change your mind, which on a board you point at with your head is
-        // worth every bit of it.
         openChoices(options, event.x(), event.y());
         return true;
     }
@@ -593,6 +619,10 @@ public class BoardPointerScreen extends Screen
      */
     private void openChoices(List<Integer> rows, double mouseX, double mouseY)
     {
+        // Whatever the last menu's rows stood for, these are not it. Cleared
+        // here rather than at each call site, so a menu can never be read
+        // against the groups of the one before it.
+        pileGroups = null;
         choices = rows;
         chosenAnchor = hovered;
         choicesW = ROW_W_MIN;
@@ -777,6 +807,54 @@ public class BoardPointerScreen extends Screen
 
 
 
+
+    /**
+     * A pile's menu: one row per verb, each opening the cards it could mean.
+     * <p>
+     * One verb and there is nothing to choose between, so the list opens
+     * straight away -- the choosing that matters is WHICH card, and that is the
+     * list itself.
+     */
+    private void openPile(List<Integer> options, double mouseX, double mouseY)
+    {
+        EnginePrompt prompt = DuelClientState.prompt;
+        java.util.LinkedHashMap<Integer, List<Integer>> byCommand = new java.util.LinkedHashMap<>();
+        for(int index : options)
+        {
+            byCommand.computeIfAbsent(prompt.options().get(index).command(),
+                command -> new java.util.ArrayList<>()).add(index);
+        }
+        if(byCommand.size() == 1)
+        {
+            List<Integer> group = byCommand.values().iterator().next();
+            openPileList(label(group.get(0)), group);
+            return;
+        }
+        List<Integer> rows = new java.util.ArrayList<>();
+        for(List<Integer> group : byCommand.values())
+        {
+            rows.add(group.get(0));
+        }
+        openChoices(rows, mouseX, mouseY);
+        pileGroups = List.copyOf(byCommand.values());
+    }
+
+    /**
+     * Hands the question to the duel screen's picker.
+     * <p>
+     * Not a second picker built on the board. The screen already draws a grid
+     * of cards with their artwork, names and a way back, and a player choosing
+     * between three monsters they cannot see needs exactly that -- so the board
+     * steps aside for as long as the choosing takes and gets itself back the
+     * moment it is done.
+     */
+    private void openPileList(String verb, List<Integer> group)
+    {
+        de.cas_ual_ty.dueldimension.clientutil.EngineDuelScreen screen =
+            new de.cas_ual_ty.dueldimension.clientutil.EngineDuelScreen();
+        minecraft.gui.setScreen(screen);
+        screen.showPileChoices(verb, group);
+    }
 
     private String label(int index)
     {

@@ -76,19 +76,19 @@ public final class CrosshairAction
             }
             return false;
         }
-        // An empty square with one thing to do is not a menu: the click has
-        // already said "here", which is the whole answer to "where". Answered
-        // outright, and the camera is never taken for it.
-        if(options.size() == 1 && !target.isPile() && !target.hasCard())
+        // Some clicks are already the whole answer -- an empty square asked
+        // "where", a tribute asked "which" -- and those never cost the player
+        // their camera.
+        if(PromptOptions.answersOutright(DuelClientState.prompt, target, options))
         {
             DuelActionController.answer(new int[] {options.get(0)}, 0);
             return true;
         }
-        // The menu, always -- even for a card with exactly one legal action.
-        // A trap in hand can only be Set, and a click that Set it outright was
-        // a card committed by a misclick with nothing offered in between. This
-        // opens AT the card, already listing what can be done with it: the
-        // player pointed and asked once, and is not asked to point again.
+        // Anything with something to be DONE to it asks first, even with one
+        // row: a trap can only be Set, and a click that Set it outright was a
+        // card committed by a misclick with nothing offered in between. This
+        // opens AT the card, already listing what can be done with it, so the
+        // player who pointed and asked once is not asked to point again.
         // Borrowed for exactly as long as the answer takes, and no forced
         // frame: see BoardPointerScreen.onClose.
         client.gui.setScreen(new BoardPointerScreen(target, options));

@@ -169,6 +169,11 @@ public final class OverworldBoardRenderer
             float t = attack.progress();
             float reach = Math.min(1F, t * 2.2F);
             float alpha = t < 0.8F ? 1F : 1F - (t - 0.8F) / 0.2F;
+            // How high the leap goes, in field units: proportional to the
+            // distance, because a swing at the monster opposite is not the same
+            // motion as one across the whole table, and capped so a direct
+            // attack down the length of the board does not go over the roof.
+            float rise = Math.min(length(fx, fy, tx, ty) * ARC_RISE, ARC_MAX);
 
             float dx = tx - fx;
             float dy = ty - fy;
@@ -186,16 +191,28 @@ public final class OverworldBoardRenderer
             double lift = (cardLift(transform) + CardMesh.THICKNESS + 0.03F) * transform.scale();
 
             // The line: white, tinted red, from the attacker to however far it
-            // has reached.
-            float headX = fx + dx * reach;
-            float headY = fy + dy * reach;
+            // has reached -- and arcing, which is why it is cut into segments
+            // rather than drawn as one quad. A single quad can only be flat,
+            // and a flat ribbon on a board that has a third dimension reads as
+            // a sticker sliding across the mat.
             int lineTint = Math.round(Math.max(0F, alpha) * 0.8F * 255F) << 24 | 0xFF2626;
-            WorldQuad.submit(poseStack, collector, DuelTextures.WHITE, camera, new Vec3[] {
-                transform.at(fx + rightX * LINE_HALF, fy + rightY * LINE_HALF, lift),
-                transform.at(headX + rightX * LINE_HALF, headY + rightY * LINE_HALF, lift),
-                transform.at(headX - rightX * LINE_HALF, headY - rightY * LINE_HALF, lift),
-                transform.at(fx - rightX * LINE_HALF, fy - rightY * LINE_HALF, lift)},
-                lineTint);
+            for(int step = 0; step < ARC_SEGMENTS; step++)
+            {
+                float a0 = reach * step / ARC_SEGMENTS;
+                float a1 = reach * (step + 1) / ARC_SEGMENTS;
+                float x0 = fx + dx * a0;
+                float y0 = fy + dy * a0;
+                float x1 = fx + dx * a1;
+                float y1 = fy + dy * a1;
+                double lift0 = lift + arc(a0) * rise * transform.scale();
+                double lift1 = lift + arc(a1) * rise * transform.scale();
+                WorldQuad.submit(poseStack, collector, DuelTextures.WHITE, camera, new Vec3[] {
+                    transform.at(x0 + rightX * LINE_HALF, y0 + rightY * LINE_HALF, lift0),
+                    transform.at(x1 + rightX * LINE_HALF, y1 + rightY * LINE_HALF, lift1),
+                    transform.at(x1 - rightX * LINE_HALF, y1 - rightY * LINE_HALF, lift1),
+                    transform.at(x0 - rightX * LINE_HALF, y0 - rightY * LINE_HALF, lift0)},
+                    lineTint);
+            }
 
             // The sword: one size, riding the line, point first. Its corners
             // are built from the direction rather than from an angle, so there
@@ -208,19 +225,55 @@ public final class OverworldBoardRenderer
                 float cy = fy + dy * travel;
                 float half = SWORD_SIZE / 2F;
                 int swordTint = Math.round(Math.max(0F, alpha) * 255F) << 24 | 0xFFFFFF;
+                // The tip and the hilt take their heights from the arc at their
+                // OWN points along it, which pitches the blade to the curve
+                // without a single angle being worked out: climbing it points
+                // up, falling it points down, and at the top it is level. One
+                // arc drives the line and the sword, so the two cannot part
+                // company halfway across the table.
+                float step = half / length;
+                double liftTip = lift + arc(travel + step) * rise * transform.scale();
+                double liftHilt = lift + arc(travel - step) * rise * transform.scale();
                 WorldQuad.submit(poseStack, collector, DuelTextures.ATTACK, camera, new Vec3[] {
                     transform.at(cx + forwardX * half - rightX * half,
-                        cy + forwardY * half - rightY * half, lift),
+                        cy + forwardY * half - rightY * half, liftTip),
                     transform.at(cx - forwardX * half - rightX * half,
-                        cy - forwardY * half - rightY * half, lift),
+                        cy - forwardY * half - rightY * half, liftHilt),
                     transform.at(cx - forwardX * half + rightX * half,
-                        cy - forwardY * half + rightY * half, lift),
+                        cy - forwardY * half + rightY * half, liftHilt),
                     transform.at(cx + forwardX * half + rightX * half,
-                        cy + forwardY * half + rightY * half, lift)},
+                        cy + forwardY * half + rightY * half, liftTip)},
                     swordTint);
             }
         }
     }
+
+    /**
+     * The leap, as a fraction of its full height at a point along the flight.
+     * <p>
+     * A parabola through nought at both ends and one in the middle, which is
+     * the whole of it: it leaves the attacker on the mat, is highest halfway
+     * across, and lands on the target. Clamped because the sword asks for the
+     * height slightly ahead of and behind itself, and beyond either end the
+     * curve would dive under the table.
+     */
+    private static float arc(float along)
+    {
+        float clamped = Math.clamp(along, 0F, 1F);
+        return 4F * clamped * (1F - clamped);
+    }
+
+    private static float length(float fx, float fy, float tx, float ty)
+    {
+        return (float)Math.sqrt((tx - fx) * (tx - fx) + (ty - fy) * (ty - fy));
+    }
+
+    /** How high a leap goes, as a share of how far it travels. */
+    private static final float ARC_RISE = 0.18F;
+    /** And never higher than this, in field units, however long the flight. */
+    private static final float ARC_MAX = 1.6F;
+    /** How many quads the arcing line is cut into. */
+    private static final int ARC_SEGMENTS = 12;
 
     /** Half the attack line's thickness, in field units. */
     private static final float LINE_HALF = 0.05F;
@@ -300,14 +353,14 @@ public final class OverworldBoardRenderer
             // banished pile show their top card, because both are public --
             // and the top card is the last one to arrive, which is what makes
             // a graveyard read as a graveyard rather than as a list.
-            drawPile(poseStack, collector, transform, camera, controller,
+            drawPile(poseStack, collector, transform, camera, controller, asked,
                 OcgConstants.LOCATION_DECK, side.deckCount(), back, back);
-            drawPile(poseStack, collector, transform, camera, controller,
+            drawPile(poseStack, collector, transform, camera, controller, asked,
                 OcgConstants.LOCATION_EXTRA, size(side.extra()), back, back);
-            drawPile(poseStack, collector, transform, camera, controller,
+            drawPile(poseStack, collector, transform, camera, controller, asked,
                 OcgConstants.LOCATION_GRAVE, size(side.grave()),
                 topFace(side.grave(), controller, back), back);
-            drawPile(poseStack, collector, transform, camera, controller,
+            drawPile(poseStack, collector, transform, camera, controller, asked,
                 OcgConstants.LOCATION_REMOVED, size(side.banished()),
                 topFace(side.banished(), controller, back), back);
 
@@ -387,7 +440,7 @@ public final class OverworldBoardRenderer
     }
 
     private static void drawPile(PoseStack poseStack, SubmitNodeCollector collector,
-        FieldTransform transform, Vec3 camera, int controller, int location, int count,
+        FieldTransform transform, Vec3 camera, int controller, int asked, int location, int count,
         Identifier top, Identifier back)
     {
         FieldLayout.Rect zone = FieldLayout.zone(controller, location, 0);
@@ -397,6 +450,28 @@ public final class OverworldBoardRenderer
         }
         CardRenderer.submitPile(poseStack, collector, transform, camera, zone, controller, count,
             cardLift(transform), top, back);
+
+        // A stack the engine is offering something out of glows, exactly as a
+        // card does: the extra deck when there is a Special Summon waiting in
+        // it, a graveyard when something down there can be brought back. The
+        // cards inside are face down and can say nothing for themselves, so the
+        // pile has to say it for them -- otherwise the one place a duellist
+        // cannot see is the one place they have to keep guessing about.
+        //
+        // Asked through the same filter that decides the click, so a pile that
+        // glows is a pile that will offer something when clicked.
+        if(de.cas_ual_ty.dueldimension.clientutil.PromptOptions.actionable(
+            DuelClientState.prompt, false, new de.cas_ual_ty.dueldimension.clientutil
+                .BoardTarget(0, asked, location, -1, -1, "", count, 0)))
+        {
+            // On top of the whole stack, not of one card: a full deck stands
+            // forty cards proud of the mat, and a glow left at card height
+            // would be buried inside it.
+            WorldQuad.submit(poseStack, collector, DuelHighlight.OUTLINE, camera,
+                transform.corners(CardMesh.placement(zone, false),
+                    (cardLift(transform) + PileMesh.height(count) + 0.03F) * transform.scale()),
+                DuelHighlight.tint(DuelHighlight.pulse(ticks())));
+        }
     }
 
     private static int size(List<BoardSnapshot.Slot> slots)

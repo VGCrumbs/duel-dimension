@@ -76,6 +76,32 @@ public final class PromptOptions
     }
 
     /**
+     * Is this click already the whole answer, or does it still have to ask?
+     * <p>
+     * One thing asks: a card in HAND with exactly one option. That is where a
+     * misclick costs something irreversible -- a trap can only be Set, so a
+     * cursor a few pixels off used to put it face-down on the field with
+     * nothing offered in between, and a card played from hand does not come
+     * back. The menu costs one click and buys the chance to change your mind.
+     * <p>
+     * Everything else answers on the click, because everything else has already
+     * been asked. An empty square is the answer to "where", a tribute is the
+     * answer to "which", and an attack target is the answer to "what are you
+     * hitting" -- a one-row menu there says the thing just clicked back to the
+     * player and asks them to click it twice. More than one option is a real
+     * choice wherever it is, and always asks.
+     */
+    public static boolean answersOutright(EnginePrompt prompt, BoardTarget target,
+        List<Integer> options)
+    {
+        if(prompt == null || target == null || options.size() != 1)
+        {
+            return false;
+        }
+        return target.location() != de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_HAND;
+    }
+
+    /**
      * Can a duellist standing at a world board answer this prompt without the
      * duel screen?
      * <p>
@@ -152,31 +178,65 @@ public final class PromptOptions
      * not against a card nobody can see, and {@link #optionsFor} has matched
      * pile clicks that way all along.
      * <p>
-     * Refusing them here anyway was throwing the whole prompt at the duel
-     * screen over an option the board could already have answered -- and a
-     * chain window with one graveyard effect in it is an ordinary turn, not an
-     * edge case, so the screen kept swinging over a board mid-duel and back
-     * again.
+     * Refusing every such prompt was throwing the whole question at the duel
+     * screen over one option the board could already have answered -- and a
+     * chain window with a graveyard effect in it alongside a card on the field
+     * is an ordinary turn, not an edge case, so the screen kept swinging over
+     * the board mid-duel and back again.
      * <p>
-     * What is left really is unpointable: a card underneath an Xyz monster, a
-     * card in the opponent's hand. Those keep the screen, which has a picker
-     * built for exactly this, and it hands the board back the moment the
-     * question is answered.
+     * But a question whose answers are ALL inside piles is a different thing.
+     * "Send a card from your Extra Deck to the graveyard" names six monsters
+     * nobody can see, and pointing at the stack they are in says nothing about
+     * which -- so the board would be asking a player to choose between six
+     * identical card backs. That belongs on the screen, whose picker draws each
+     * one with its artwork and its name, exactly as it does in a duel played
+     * entirely on the screen. The rule is therefore not "are any options in a
+     * pile" but "is there anything to point AT": at least one option somewhere
+     * a duellist can actually look at.
+     * <p>
+     * And what stays unpointable altogether is unpointable in either case: a
+     * card underneath an Xyz monster, a card in the opponent's hand.
      */
     private static boolean pointable(EnginePrompt prompt)
     {
+        boolean anySlot = false;
+        boolean anyVisible = false;
         for(EnginePrompt.Option option : prompt.options())
         {
             if(!option.hasSlot())
             {
+                // Loose: a phase action, or one side of a Yes/No. Neither is in
+                // a pile and neither stops the board answering.
                 continue;
             }
+            anySlot = true;
             if(!pickable(option.location()))
             {
                 return false;
             }
+            if(!isPile(option.location()))
+            {
+                anyVisible = true;
+            }
         }
-        return true;
+        return !anySlot || anyVisible;
+    }
+
+    /**
+     * Is this one of the four stacks -- drawn as a single object, with its
+     * cards face down inside it?
+     * <p>
+     * A card in one can be REACHED by clicking the stack, which is why a prompt
+     * with one of these among things on the board still belongs to the board.
+     * It cannot be told apart from its neighbours by pointing, which is why a
+     * prompt made of nothing else does not.
+     */
+    private static boolean isPile(int location)
+    {
+        return location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_DECK
+            || location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_EXTRA
+            || location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_GRAVE
+            || location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_REMOVED;
     }
 
     /**

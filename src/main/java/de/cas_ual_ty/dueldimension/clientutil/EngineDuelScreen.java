@@ -291,7 +291,13 @@ public class EngineDuelScreen extends Screen
         // Asked with the OPENER's own predicate, so the thing that closes it
         // and the thing that opens it cannot disagree about which prompts
         // belong to which.
-        if(de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()
+        // Not while a pile's card list is open. That list IS the question as
+        // far as the player is concerned -- they asked which cards a verb could
+        // mean and are reading the answer -- and the prompt underneath it is an
+        // idle prompt the board can answer, so without this the screen handed
+        // the board back on the very tick the list appeared.
+        if(pileChoices == null
+            && de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()
             && !de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.screenPreferred()
             && !DuelClientState.over
             && (DuelClientState.prompt == null
@@ -1184,6 +1190,19 @@ public class EngineDuelScreen extends Screen
      * asked for tributes has been asked to pay for something they were never
      * shown.
      */
+    /**
+     * The same list, asked for from the world board.
+     * <p>
+     * A pile out there has the same problem it has here -- its cards are face
+     * down, so a row reading "Special Summon" never says WHAT -- and the answer
+     * is this screen's picker, which is already built for it. The board hands
+     * the question over rather than growing a second picker of its own.
+     */
+    public void showPileChoices(String label, List<Integer> indices)
+    {
+        openPileChoices(label, indices);
+    }
+
     private void openPileChoices(String label, List<Integer> indices)
     {
         closeMenu();
