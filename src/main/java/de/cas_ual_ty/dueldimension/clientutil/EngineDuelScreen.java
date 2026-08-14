@@ -2462,9 +2462,9 @@ public class EngineDuelScreen extends Screen
 
         long now = System.currentTimeMillis();
         boolean yourTurn = board.turnPlayer() == 0;
-        drawLifeBar(poseStack, left, 6, barW, "You", board.self().lifePoints(), 0xFF3FA34D,
+        drawLifeBar(poseStack, left, 6, barW, DuelClientState.selfName, board.self().lifePoints(), 0xFF3FA34D,
             animations.lifePointState(0, board.self().lifePoints(), now), yourTurn, now);
-        drawLifeBar(poseStack, right - barW, 6, barW, "Opponent",
+        drawLifeBar(poseStack, right - barW, 6, barW, DuelClientState.opponentName,
             board.opponent().lifePoints(), 0xFFC1362F,
             animations.lifePointState(1, board.opponent().lifePoints(), now), !yourTurn, now);
 

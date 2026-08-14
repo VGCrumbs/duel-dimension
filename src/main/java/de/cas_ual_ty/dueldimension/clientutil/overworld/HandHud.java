@@ -43,46 +43,38 @@ public final class HandHud implements HudElement
     private static void drawReadout(GuiGraphicsExtractor extractor, Minecraft client,
         BoardSnapshot board)
     {
-        int middle = extractor.guiWidth() / 2;
         // The duel's own instruments -- life bars, the phase case, the answer
         // clock -- in the same art the duel screen uses.
         DuelHud.draw(extractor, client.font, board, ClientDuelField.seat());
 
-        // No "Turn 1 - your turn" line: the turn number is already in its own
-        // frame between the life bars, and whose turn it is is what the phase
-        // case's colour says. Three ways of saying it is two too many.
-        // What the engine is waiting for, and the key that answers it. A board
-        // with no visible question is a board a player waits at.
-        de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt =
-            de.cas_ual_ty.dueldimension.clientutil.DuelClientState.prompt;
-        if(prompt == null)
-        {
-            return;
-        }
-        String asking = prompt.title() == null || prompt.title().isEmpty()
-            ? "Your move" : prompt.title();
-        extractor.centeredText(client.font, asking, middle, DuelHud.below(extractor.guiWidth()) + 12, 0xFFFFE84A);
-        String hint = "[" + de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds.DUEL_ACT
-            .getTranslatedKeyMessage().getString() + "] act"
-            + (ClientDuelTargeting.actionable() ? "  -  "
-                + (ClientDuelTargeting.looking() == null ? ""
-                    : ClientDuelTargeting.looking().label()) : "");
-        extractor.centeredText(client.font, hint, middle, DuelHud.below(extractor.guiWidth()) + 24, 0xFF7CE38B);
+        // Nothing else. The turn number is already in its own frame between
+        // the life bars, whose turn it is is what the phase case's colour
+        // says, and what is being asked is written on the cards that light up
+        // -- three ways of saying one thing is two too many.
+    }
+
+    /** The game's tick count, which the offered-card glow breathes on. */
+    private static float ticks()
+    {
+        Minecraft client = Minecraft.getInstance();
+        return client.level == null ? 0F
+            : client.level.getGameTime() % 100000L
+                + client.getDeltaTracker().getGameTimeDeltaPartialTick(false);
     }
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor, DeltaTracker delta)
     {
         // A spectator has no hand, and the board they were sent has somebody
-        // else's -- redacted, but still not theirs to have laid out along the
+        // else's -- redacted, but still not theirs to have laid along the
         // bottom of their screen as though it were.
         if(!ClientDuelField.locked() || ClientDuelField.seat() < 0)
         {
             return;
         }
         // The pointer draws its own copy, because a HUD element is not
-        // extracted while a screen is open. Drawing here as well would be
-        // drawing it twice on the frames where both could run.
+        // extracted while a screen is open. Drawing here as well would draw it
+        // twice on the frames where both could run.
         if(Minecraft.getInstance().gui.screen() instanceof BoardPointerScreen)
         {
             return;
@@ -99,15 +91,6 @@ public final class HandHud implements HudElement
         }
         drawReadout(extractor, client, board);
         drawHand(extractor, board, -1);
-    }
-
-    /** The game's tick count, which is what the pulse breathes on. */
-    private static float ticks()
-    {
-        Minecraft client = Minecraft.getInstance();
-        return client.level == null ? 0F
-            : client.level.getGameTime() % 100000L
-                + client.getDeltaTracker().getGameTimeDeltaPartialTick(false);
     }
 
     /**

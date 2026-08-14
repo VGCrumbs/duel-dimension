@@ -46,8 +46,18 @@ public final class DuelHud
     private static final float ATLAS_W = 1200F;
     private static final float ATLAS_H = 120F;
 
-    private static final int BAR_H = 14;
+    /**
+     * The life frame's own proportions, so it is never drawn at a shape it was
+     * not drawn at: 256 wide by 32 tall in the file.
+     */
+    private static final int BAR_W_BASE = 256;
+    private static final int BAR_H_BASE = 32;
+    private static final int BAR_W_MAX = 190;
+    /** The turn counter is a small square, not a third bar. */
+    private static final int TURN_W = 26;
     private static final int TOP = 4;
+    /** The frame's raised border, which no text belongs on. */
+    private static final int INSET = 6;
     /** Clear of the window's own edge, as the screen's bars are. */
     private static final int EDGE = 6;
     /** Between a bar and the turn counter. */
@@ -69,8 +79,18 @@ public final class DuelHud
     /** The first line of text that is clear of the instruments above it. */
     public static int below(int screenW)
     {
-        return barTop() + cellHeight(screenW) + padY(screenW) + 12;
+        return barTop(barHeight(screenW)) + cellHeight(screenW) + padY(screenW) + 12;
     }
+
+    /** The life frame's drawn height at this width, for anything measuring off it. */
+    public static int barHeight(int screenW)
+    {
+        int barW = Math.min(BAR_W_MAX, (screenW - EDGE * 2 - GAP * 2) / 2 - TURN_W / 2);
+        return Math.max(10, Math.round(barW * (float)BAR_H_BASE / BAR_W_BASE));
+    }
+
+    /** Half again, so the countdown reads without looking for it. */
+    private static final float CLOCK_SCALE = 1.5F;
 
     /** Under this much left, the clock is a warning rather than a fact. */
     private static final long CLOCK_WARN_MS = 60_000L;
@@ -93,8 +113,13 @@ public final class DuelHud
         // centred under them. The screen has a sidebar to leave room for and
         // this does not, so the bars take the width the sidebar was using
         // rather than a third of the screen apiece.
-        int turnW = Math.max(22, screenW / 22);
-        int barW = (screenW - turnW - EDGE * 2 - GAP * 2) / 2;
+        // Sized from the art's own shape rather than stretched to whatever is
+        // left over. The frame is a picture of a bar, and a picture pulled to
+        // three times its height stops looking like one -- so the height comes
+        // from the width through the art's ratio, and the width is capped.
+        int barW = Math.min(BAR_W_MAX, (screenW - EDGE * 2 - GAP * 2) / 2 - TURN_W / 2);
+        int barH = Math.max(10, Math.round(barW * (float)BAR_H_BASE / BAR_W_BASE));
+        int turnW = TURN_W;
 
         // Through the animation, not straight from the board. A life total
         // that jumps says a number changed; one that runs down says how much
@@ -102,24 +127,25 @@ public final class DuelHud
         // animates it. The state is already being ticked -- tickPlayback does
         // it on the client tick -- so this is a read, not a second animator.
         long now = System.currentTimeMillis();
-        drawLifeBar(extractor, font, EDGE, TOP, barW, seat < 0 ? "Seat 1" : "You",
+        drawLifeBar(extractor, font, EDGE, TOP, barW, barH,
+            seat < 0 ? "Seat 1" : DuelClientState.selfName,
             DuelClientState.animations.lifePointState(0, board.self().lifePoints(), now),
             0xFF3FA34D);
-        drawLifeBar(extractor, font, screenW - EDGE - barW, TOP, barW,
-            seat < 0 ? "Seat 2" : "Opponent",
+        drawLifeBar(extractor, font, screenW - EDGE - barW, TOP, barW, barH,
+            seat < 0 ? "Seat 2" : DuelClientState.opponentName,
             DuelClientState.animations.lifePointState(1,
                 board.opponent() == null ? 0 : board.opponent().lifePoints(), now),
             0xFFB03636);
 
         // The turn number between them, in its own frame: the same three
         // elements in the same order as the screen's top bar.
-        int turnX = EDGE + barW + GAP;
-        DdBlitUtil.fullBlit(extractor, DuelTextures.LP_FRAME, turnX, TOP, turnW, BAR_H);
+        int turnX = (screenW - turnW) / 2;
+        DdBlitUtil.fullBlit(extractor, DuelTextures.LP_FRAME, turnX, TOP, turnW, barH);
         String turn = Integer.toString(board.turn());
-        extractor.centeredText(font, turn, turnX + turnW / 2, TOP + 3, 0xFFFFFFFF);
+        extractor.centeredText(font, turn, turnX + turnW / 2, TOP + (barH - 8) / 2, 0xFFFFFFFF);
 
-        drawPhaseBar(extractor, board, screenW);
-        drawClock(extractor, font, screenW);
+        drawPhaseBar(extractor, board, screenW, barH);
+        drawClock(extractor, font, screenW, barH);
     }
 
     /**
@@ -130,13 +156,13 @@ public final class DuelHud
      * single shipped texture the duel screen uses.
      */
     private static void drawLifeBar(GuiGraphicsExtractor extractor, Font font, int x, int y,
-        int barW, String name,
+        int barW, int barH, String name,
         de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.LifePointState change, int colour)
     {
         int lifePoints = change.displayedLifePoints();
         int filled = fill(barW, lifePoints);
         int target = fill(barW, change.targetLifePoints());
-        extractor.fillGradient(x + 2, y + 2, x + 2 + filled, y + BAR_H - 2,
+        extractor.fillGradient(x + 2, y + 2, x + 2 + filled, y + barH - 2,
             shade(colour, 1.25F), shade(colour, 0.75F));
         // The stretch between where the bar was and where it is going, flashed
         // white: the part being lost is shown being lost.
@@ -144,13 +170,25 @@ public final class DuelHud
         {
             int alpha = Math.round(change.whiteAlpha() * 255F) << 24;
             extractor.fill(x + 2 + Math.min(filled, target), y + 2,
-                x + 2 + Math.max(filled, target), y + BAR_H - 2, alpha | 0xFFFFFF);
+                x + 2 + Math.max(filled, target), y + barH - 2, alpha | 0xFFFFFF);
         }
-        DdBlitUtil.fullBlit(extractor, DuelTextures.LP_FRAME, x, y, barW, BAR_H);
+        DdBlitUtil.fullBlit(extractor, DuelTextures.LP_FRAME, x, y, barW, barH);
 
-        extractor.text(font, name, x + 5, y + 3, 0xFFFFFFFF, false);
+        // Inside the coloured well, not on the frame around it. The frame is
+        // a picture with a raised border, and text laid at its edge sits half
+        // on the metal -- so both ends start where the fill starts, and a long
+        // name gives way to the number rather than growing under it.
         String value = Integer.toString(lifePoints);
-        extractor.text(font, value, x + barW - font.width(value) - 5, y + 3, 0xFFFFFFFF, false);
+        int valueW = font.width(value);
+        int room = barW - INSET * 2 - valueW - 4;
+        String shown = name;
+        while(font.width(shown) > room && shown.length() > 1)
+        {
+            shown = shown.substring(0, shown.length() - 1);
+        }
+        int textY = y + (barH - font.lineHeight) / 2 + 1;
+        extractor.text(font, shown, x + INSET, textY, 0xFFFFFFFF, false);
+        extractor.text(font, value, x + barW - INSET - valueW, textY, 0xFFFFFFFF, false);
     }
 
     private static int fill(int barW, int lifePoints)
@@ -176,14 +214,14 @@ public final class DuelHud
      * against a seat index belongs here.
      */
     private static void drawPhaseBar(GuiGraphicsExtractor extractor, BoardSnapshot board,
-        int screenW)
+        int screenW, int barH)
     {
         boolean yourTurn = board.turnPlayer() == 0;
         int cellW = cellWidth(screenW);
         int cellH = cellHeight(screenW);
         int width = PHASE_NAMES.length * cellW;
         int x = barLeft(screenW);
-        int y = barTop();
+        int y = barTop(barH);
 
         DdBlitUtil.fullBlit(extractor, DuelTextures.PHASE_CASE, x - padX(screenW),
             y - padY(screenW), width + padX(screenW) * 2, cellH + padY(screenW) * 2);
@@ -240,9 +278,9 @@ public final class DuelHud
         return (screenW - PHASE_NAMES.length * cellWidth(screenW)) / 2;
     }
 
-    private static int barTop()
+    private static int barTop(int barH)
     {
-        return TOP + BAR_H + PHASE_GAP;
+        return TOP + barH + PHASE_GAP;
     }
 
     /**
@@ -255,7 +293,7 @@ public final class DuelHud
     public static int phaseAt(int screenW, double mouseX, double mouseY)
     {
         int cellW = cellWidth(screenW);
-        int y = barTop();
+        int y = barTop(barHeight(screenW));
         if(mouseY < y || mouseY >= y + cellHeight(screenW))
         {
             return -1;
@@ -349,7 +387,8 @@ public final class DuelHud
      * restarts with each question. That is what a player watching it sees, and
      * it is not a budget for the whole turn.
      */
-    private static void drawClock(GuiGraphicsExtractor extractor, Font font, int screenW)
+    private static void drawClock(GuiGraphicsExtractor extractor, Font font, int screenW,
+        int barH)
     {
         if(DuelClientState.prompt == null || DuelClientState.promptShownAt == 0
             || DuelClientState.over)
@@ -360,7 +399,15 @@ public final class DuelHud
         long left = limit - (System.currentTimeMillis() - DuelClientState.promptShownAt);
         long seconds = Math.max(0, (left + 999) / 1000);
         String clock = seconds / 60 + ":" + (seconds % 60 < 10 ? "0" : "") + seconds % 60;
-        extractor.centeredText(font, clock, screenW / 2, below(screenW) - 11,
-            left <= CLOCK_WARN_MS ? 0xFFFF6B6B : 0xFFC2C9D6);
+        // Below the case rather than tucked under it, and drawn larger: it is
+        // a countdown to losing the turn, which is worth reading at a glance.
+        int colour = left <= CLOCK_WARN_MS ? 0xFFFF6B6B : 0xFFC2C9D6;
+        extractor.pose().pushMatrix();
+        extractor.pose().scale(CLOCK_SCALE, CLOCK_SCALE);
+        extractor.centeredText(font, clock,
+            Math.round(screenW / 2F / CLOCK_SCALE),
+            Math.round((barTop(barH) + cellHeight(screenW) + padY(screenW) + 4) / CLOCK_SCALE),
+            colour);
+        extractor.pose().popMatrix();
     }
 }

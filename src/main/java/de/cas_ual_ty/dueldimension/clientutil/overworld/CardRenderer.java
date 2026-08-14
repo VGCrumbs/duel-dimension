@@ -78,8 +78,9 @@ public final class CardRenderer
                 // an edge face is the card's width rather than its thickness --
                 // so the white-over-grey strip came out turned a quarter and
                 // read as two blocks of colour instead of a card's edge.
-                WorldQuad.submit(poseStack, collector, texture, camera, corners, 0xFFFFFFFF,
-                    new float[] {0F, 1F, 1F, 0F}, new float[] {0F, 0F, 1F, 1F});
+                WorldQuad.submit(poseStack, collector, WorldQuad.Kind.SOLID, texture, camera,
+                    corners, 0xFFFFFFFF, new float[] {0F, 1F, 1F, 0F},
+                    new float[] {0F, 0F, 1F, 1F});
                 continue;
             }
 
@@ -93,8 +94,8 @@ public final class CardRenderer
             float u1 = whole ? 1F : DuelTextures.CARD_U1;
             float v1 = whole ? 1F : DuelTextures.CARD_V1;
             float[][] uv = turned(part.kind() == CardMesh.Kind.BACK, u0, v0, u1, v1, turns);
-            WorldQuad.submit(poseStack, collector, texture, camera, corners, 0xFFFFFFFF,
-                uv[0], uv[1]);
+            WorldQuad.submit(poseStack, collector, WorldQuad.Kind.SOLID, texture, camera, corners,
+                0xFFFFFFFF, uv[0], uv[1]);
         }
     }
 
@@ -138,8 +139,8 @@ public final class CardRenderer
                 whole ? 0F : DuelTextures.CARD_U0,
                 whole ? 0F : DuelTextures.CARD_V0, whole ? 1F : DuelTextures.CARD_U1,
                 whole ? 1F : DuelTextures.CARD_V1, turns);
-            WorldQuad.submit(poseStack, collector, texture, camera, corners, 0xFFFFFFFF,
-                uv[0], uv[1]);
+            WorldQuad.submit(poseStack, collector, WorldQuad.Kind.SOLID, texture, camera, corners,
+                0xFFFFFFFF, uv[0], uv[1]);
         }
     }
 
@@ -169,8 +170,9 @@ public final class CardRenderer
             // flat like the cards it stands for, and mapped the default way it
             // came out on its side: one white half and one grey half down the
             // length of the pile instead of bands across it.
-            WorldQuad.submit(poseStack, collector, DuelTextures.STACK_SIDE, camera, corners,
-                0xFFFFFFFF, new float[] {0F, 1F, 1F, 0F}, new float[] {0F, 0F, 1F, 1F});
+            WorldQuad.submit(poseStack, collector, WorldQuad.Kind.SOLID, DuelTextures.STACK_SIDE,
+                camera, corners, 0xFFFFFFFF, new float[] {0F, 1F, 1F, 0F},
+                new float[] {0F, 0F, 1F, 1F});
         }
     }
 

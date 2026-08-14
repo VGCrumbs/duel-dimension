@@ -222,6 +222,17 @@ public final class DuelClientState
         }
     }
 
+    /**
+     * What to call the two duellists, from the server.
+     * <p>
+     * Volatile because they are written by the network thread and read by the
+     * renderer, which is the rule every other static here follows. They fall
+     * back to the words the bars used to carry, so a duel that started before
+     * the names arrived still reads.
+     */
+    public static volatile String selfName = "You";
+    public static volatile String opponentName = "Opponent";
+
     /** Serial of the prompt on screen, quoted back with its answer. */
     public static volatile int promptSerial;
 

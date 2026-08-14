@@ -94,7 +94,7 @@ public final class OverworldBoardRenderer
 
         for(BoardMesh.Piece piece : BoardMesh.pieces(matsByController()))
         {
-            WorldQuad.submit(poseStack, collector, piece.texture(), camera,
+            WorldQuad.submit(poseStack, collector, WorldQuad.Kind.SOLID, piece.texture(), camera,
                 transform.corners(piece.rect(), SURFACE_LIFT + piece.lift()), 0xFFFFFFFF);
         }
 
@@ -160,41 +160,73 @@ public final class OverworldBoardRenderer
                 ? (fy > FieldTransform.CENTRE_Y ? FieldLayout.FIELD_MIN_Y : FieldLayout.FIELD_MAX_Y)
                 : to.y() + to.h() / 2F;
 
-            // Out and back: the bolt reaches the target at the halfway point of
-            // the animation and fades from there, which is the beat the 2D
-            // board's lunge keeps.
-            float reach = Math.min(1F, attack.progress() * 2F);
-            float alpha = attack.progress() < 0.5F ? 1F : 1F - (attack.progress() - 0.5F) * 2F;
-            float headX = fx + (tx - fx) * reach;
-            float headY = fy + (ty - fy) * reach;
+            // The duel screen's own beats, because an attack should read the
+            // same in both places: the LINE stretches out first, and the sword
+            // launches along it once the direction has been established. The
+            // sword keeps its size the whole way -- it is a sword flying, not
+            // a sword being stretched, which is what drawing one quad from
+            // attacker to target produced.
+            float t = attack.progress();
+            float reach = Math.min(1F, t * 2.2F);
+            float alpha = t < 0.8F ? 1F : 1F - (t - 0.8F) / 0.2F;
 
-            // A ribbon along the line, one card wide, lying just over the mat.
-            float dx = headX - fx;
-            float dy = headY - fy;
+            float dx = tx - fx;
+            float dy = ty - fy;
             float length = (float)Math.sqrt(dx * dx + dy * dy);
             if(length < 1e-3F)
             {
                 continue;
             }
-            // The perpendicular, turned the other way on purpose. This vector
-            // is built in FIELD space and then put through at(), which maps
-            // field y to the NEGATIVE facing -- so a right-hand turn here comes
-            // out as a left-hand one in the world, and the sword arrived
-            // mirrored. Turning it here rather than swapping the texture's u
-            // keeps the winding, and so the facing, as it was.
-            float halfW = 0.28F;
-            float acrossX = dy / length * halfW;
-            float acrossY = -dx / length * halfW;
-            double lift = (cardLift(transform) + CardMesh.THICKNESS + 0.01F) * transform.scale();
+            // Perpendicular, turned the way that survives at()'s flip of the
+            // field's y axis -- the same correction the ribbon needed.
+            float rightX = dy / length;
+            float rightY = -dx / length;
+            float forwardX = dx / length;
+            float forwardY = dy / length;
+            double lift = (cardLift(transform) + CardMesh.THICKNESS + 0.03F) * transform.scale();
 
-            WorldQuad.submit(poseStack, collector, DuelTextures.ATTACK, camera, new Vec3[] {
-                transform.at(fx - acrossX, fy - acrossY, lift),
-                transform.at(headX - acrossX, headY - acrossY, lift),
-                transform.at(headX + acrossX, headY + acrossY, lift),
-                transform.at(fx + acrossX, fy + acrossY, lift)},
-                Math.round(Math.max(0F, alpha) * 255F) << 24 | 0xFFFFFF);
+            // The line: white, tinted red, from the attacker to however far it
+            // has reached.
+            float headX = fx + dx * reach;
+            float headY = fy + dy * reach;
+            int lineTint = Math.round(Math.max(0F, alpha) * 0.8F * 255F) << 24 | 0xFF2626;
+            WorldQuad.submit(poseStack, collector, DuelTextures.WHITE, camera, new Vec3[] {
+                transform.at(fx + rightX * LINE_HALF, fy + rightY * LINE_HALF, lift),
+                transform.at(headX + rightX * LINE_HALF, headY + rightY * LINE_HALF, lift),
+                transform.at(headX - rightX * LINE_HALF, headY - rightY * LINE_HALF, lift),
+                transform.at(fx - rightX * LINE_HALF, fy - rightY * LINE_HALF, lift)},
+                lineTint);
+
+            // The sword: one size, riding the line, point first. Its corners
+            // are built from the direction rather than from an angle, so there
+            // is no handedness to get backwards -- the tip is simply the two
+            // corners nearer the target.
+            if(t > 0.35F)
+            {
+                float travel = Math.min(1F, (t - 0.35F) / 0.5F);
+                float cx = fx + dx * travel;
+                float cy = fy + dy * travel;
+                float half = SWORD_SIZE / 2F;
+                int swordTint = Math.round(Math.max(0F, alpha) * 255F) << 24 | 0xFFFFFF;
+                WorldQuad.submit(poseStack, collector, DuelTextures.ATTACK, camera, new Vec3[] {
+                    transform.at(cx + forwardX * half - rightX * half,
+                        cy + forwardY * half - rightY * half, lift),
+                    transform.at(cx - forwardX * half - rightX * half,
+                        cy - forwardY * half - rightY * half, lift),
+                    transform.at(cx - forwardX * half + rightX * half,
+                        cy - forwardY * half + rightY * half, lift),
+                    transform.at(cx + forwardX * half + rightX * half,
+                        cy + forwardY * half + rightY * half, lift)},
+                    swordTint);
+            }
         }
     }
+
+    /** Half the attack line's thickness, in field units. */
+    private static final float LINE_HALF = 0.05F;
+
+    /** The sword's size, about a card's width -- the screen uses zone width times 0.9. */
+    private static final float SWORD_SIZE = 1.0F;
 
     /**
      * The zone a packed reference names, as a rectangle on the board.
@@ -347,9 +379,9 @@ public final class OverworldBoardRenderer
             Vec3 topLeft = transform.at(left, edge, cardLift(transform) + HELD_HEIGHT);
             Vec3 topRight = transform.at(right, edge, cardLift(transform) + HELD_HEIGHT);
 
-            WorldQuad.submit(poseStack, collector, back, camera,
+            WorldQuad.submit(poseStack, collector, WorldQuad.Kind.SOLID, back, camera,
                 new Vec3[] {bottomLeft, topLeft, topRight, bottomRight}, 0xFFFFFFFF);
-            WorldQuad.submit(poseStack, collector, back, camera,
+            WorldQuad.submit(poseStack, collector, WorldQuad.Kind.SOLID, back, camera,
                 new Vec3[] {bottomRight, topRight, topLeft, bottomLeft}, 0xFFFFFFFF);
         }
     }

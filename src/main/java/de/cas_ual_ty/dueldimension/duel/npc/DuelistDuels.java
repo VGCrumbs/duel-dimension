@@ -294,6 +294,9 @@ public final class DuelistDuels
             .append(Component.literal(npcDeck.displayName()).withStyle(ChatFormatting.LIGHT_PURPLE)));
         serverPlayer.sendSystemMessage(Component.literal("You are playing; prompts will open as the duel needs them.")
             .withStyle(ChatFormatting.DARK_GRAY));
+        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(serverPlayer,
+            new PromptMessages.DuelNames(serverPlayer.getGameProfile().name(),
+                duelist.displayName()));
 
         // Tell the client which cards it will need art for. Only the player's
         // own deck: the opponent's list is hidden information, and their cards
@@ -425,6 +428,10 @@ public final class DuelistDuels
             .append(Component.literal(own.displayName()).withStyle(ChatFormatting.AQUA))
             .append(Component.literal(" vs "))
             .append(Component.literal(theirs.displayName()).withStyle(ChatFormatting.LIGHT_PURPLE)));
+
+        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
+            new PromptMessages.DuelNames(player.getGameProfile().name(),
+                opponent.getGameProfile().name()));
 
         // Only this player's own list: the opponent's deck is hidden
         // information, and their cards are fetched as they reach the field.

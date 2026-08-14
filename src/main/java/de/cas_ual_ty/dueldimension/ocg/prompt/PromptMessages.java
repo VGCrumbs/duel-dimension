@@ -434,6 +434,43 @@ public final class PromptMessages
      * on a screen. The server derives the seat from the sender, so there is
      * nothing here to validate and nothing to get wrong.
      */
+    /**
+     * Who the two duellists are, told to one of them.
+     * <p>
+     * The bars said "You" and "Opponent", which is true of every duel ever
+     * played and so says nothing. Names are not hidden information -- both
+     * players can see each other standing there, and a duelist's name is
+     * written over its head -- so this is a label, not a leak.
+     *
+     * @param self     what to call the seat being told
+     * @param opponent what to call the other one
+     */
+    public record DuelNames(String self, String opponent) implements CustomPacketPayload
+    {
+        public static final CustomPacketPayload.Type<DuelNames> TYPE =
+            DdNetwork.type("prompt_duel_names");
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, DuelNames> CODEC =
+            CustomPacketPayload.codec(DuelNames::encode, DuelNames::decode);
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
+        {
+            return TYPE;
+        }
+
+        public static void encode(DuelNames message, RegistryFriendlyByteBuf buffer)
+        {
+            buffer.writeUtf(message.self(), 64);
+            buffer.writeUtf(message.opponent(), 64);
+        }
+
+        public static DuelNames decode(RegistryFriendlyByteBuf buffer)
+        {
+            return new DuelNames(buffer.readUtf(64), buffer.readUtf(64));
+        }
+    }
+
     public record ViewOwnDeck() implements CustomPacketPayload
     {
         /** Names this message on the wire. */

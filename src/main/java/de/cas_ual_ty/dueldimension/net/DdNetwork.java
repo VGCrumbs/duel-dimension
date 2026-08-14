@@ -135,6 +135,8 @@ public final class DdNetwork
         // answer comes back from one.
         clientbound(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CoinToss.TYPE,
             de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CoinToss.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelNames.TYPE,
+            de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelNames.CODEC);
         clientbound(de.cas_ual_ty.dueldimension.duel.npc.DuelistChallengeMessages.OfferDuel.TYPE,
             de.cas_ual_ty.dueldimension.duel.npc.DuelistChallengeMessages.OfferDuel.CODEC);
         serverbound(de.cas_ual_ty.dueldimension.duel.npc.DuelistChallengeMessages.ChooseDuel.TYPE,
@@ -442,6 +444,14 @@ public final class DdNetwork
         // Where a duel is standing in the world. Geometry only -- nothing about
         // the duel itself rides this, so it is safe to hand to any client that
         // is party to the field.
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelNames.TYPE,
+            (payload, context) ->
+        {
+            de.cas_ual_ty.dueldimension.clientutil.DuelClientState.selfName = payload.self();
+            de.cas_ual_ty.dueldimension.clientutil.DuelClientState.opponentName =
+                payload.opponent();
+        });
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
             de.cas_ual_ty.dueldimension.duel.npc.DuelistChallengeMessages.OfferDuel.TYPE,
             (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy

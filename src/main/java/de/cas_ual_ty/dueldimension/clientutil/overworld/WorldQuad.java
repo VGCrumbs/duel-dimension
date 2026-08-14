@@ -33,6 +33,42 @@ public final class WorldQuad
     public static final int PROJECTED_LIGHT = 0xF000F0;
 
     /**
+     * Whether a quad is a solid thing or a glow over one.
+     * <p>
+     * <b>This is the answer to the flickering.</b> A translucent render type
+     * does not write to the depth buffer -- it blends, and relies on being
+     * drawn in the right order -- so two translucent quads facing the camera at
+     * similar distances have no defined winner and swap places as the camera
+     * moves. Cards, mats and zone squares are not translucent things: they are
+     * opaque pictures with transparent surroundings, which is exactly what an
+     * alpha-TESTED cutout type is for. Cutout discards the clear pixels and
+     * writes depth for the rest, so the card in front is in front because the
+     * depth buffer says so and not because it happened to be drawn later.
+     * <p>
+     * Glows stay translucent, because a glow really is see-through and its
+     * soft edge would be chopped to a hard one by an alpha test.
+     * <p>
+     * Both stay unlit: these vertices carry {@link #PROJECTED_LIGHT}, so a lit
+     * render type lights them to full and the board reads the same at midnight
+     * as at noon.
+     */
+    public enum Kind
+    {
+        /** A card, a mat, a zone square: opaque, and writes depth. */
+        SOLID,
+        /** A highlight or a beam: blended, and drawn over what it marks. */
+        GLOW
+    }
+
+    private static net.minecraft.client.renderer.rendertype.RenderType typeFor(Kind kind,
+        Identifier texture)
+    {
+        return kind == Kind.SOLID
+            ? net.minecraft.client.renderer.rendertype.RenderTypes.entityCutout(texture)
+            : net.minecraft.client.renderer.rendertype.RenderTypes.breezeWind(texture, 0F, 0F);
+    }
+
+    /**
      * Submits one quad, its corners given in world space and drawn relative to
      * the camera.
      * <p>
@@ -50,6 +86,14 @@ public final class WorldQuad
         submit(poseStack, collector, texture, camera, corners, tint, 0F, 0F, 1F, 1F);
     }
 
+    /** The same, saying whether this is a solid thing or a glow over one. */
+    public static void submit(PoseStack poseStack, SubmitNodeCollector collector, Kind kind,
+        Identifier texture, Vec3 camera, Vec3[] corners, int tint)
+    {
+        submit(poseStack, collector, kind, texture, camera, corners, tint,
+            new float[] {0F, 0F, 1F, 1F}, new float[] {0F, 1F, 1F, 0F});
+    }
+
     /** The same, taking only part of the texture. */
     public static void submit(PoseStack poseStack, SubmitNodeCollector collector,
         Identifier texture, Vec3 camera, Vec3[] corners, int tint, float u0, float v0, float u1,
@@ -59,12 +103,26 @@ public final class WorldQuad
             new float[] {u0, u0, u1, u1}, new float[] {v0, v1, v1, v0});
     }
 
+    public static void submit(PoseStack poseStack, SubmitNodeCollector collector, Kind kind,
+        Identifier texture, Vec3 camera, Vec3[] corners, int tint, float u0, float v0, float u1,
+        float v1)
+    {
+        submit(poseStack, collector, kind, texture, camera, corners, tint,
+            new float[] {u0, u0, u1, u1}, new float[] {v0, v1, v1, v0});
+    }
+
     /**
      * The same again, with a texture coordinate per corner -- which is how a
      * card's art is turned to face its owner without turning the card itself
      * off its zone.
      */
     public static void submit(PoseStack poseStack, SubmitNodeCollector collector,
+        Identifier texture, Vec3 camera, Vec3[] corners, int tint, float[] us, float[] vs)
+    {
+        submit(poseStack, collector, Kind.GLOW, texture, camera, corners, tint, us, vs);
+    }
+
+    public static void submit(PoseStack poseStack, SubmitNodeCollector collector, Kind kind,
         Identifier texture, Vec3 camera, Vec3[] corners, int tint, float[] us, float[] vs)
     {
         // Relative to the camera in doubles before anything becomes a float:
@@ -86,13 +144,7 @@ public final class WorldQuad
         float[] normal = normalOf(xs, ys, zs);
 
         PoseStack.Pose pose = poseStack.last();
-        collector.submitCustomGeometry(poseStack,
-            // The one entity render type established as truly unlit, by
-            // FieldQuad and then by the Orichalcos seal. See PROJECTED_LIGHT:
-            // a duel board that dimmed with the block light under it would be
-            // unreadable in a cave and invisible at night, and it is a
-            // projection thrown by a duel disk rather than a painted rug.
-            net.minecraft.client.renderer.rendertype.RenderTypes.breezeWind(texture, 0F, 0F),
+        collector.submitCustomGeometry(poseStack, typeFor(kind, texture),
             (unused, buffer) ->
             {
                 for(int corner = 0; corner < 4; corner++)
