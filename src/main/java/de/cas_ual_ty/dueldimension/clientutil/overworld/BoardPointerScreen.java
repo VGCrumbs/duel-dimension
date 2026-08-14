@@ -218,21 +218,31 @@ public class BoardPointerScreen extends Screen
             return true;
         }
 
-        // The bottom row first: it is drawn over the board, so a click that
-        // lands on it belongs to it and not to whatever card is behind it.
-        List<Integer> loose = looseRows();
-        for(int slot = 0; slot < loose.size(); slot++)
+        // The phase bar first: ending a turn IS the phase bar, and it is drawn
+        // over everything else at the top of the screen.
+        int phase = DuelHud.phaseAt(width, event.x(), event.y());
+        int phaseOption = DuelHud.optionForPhase(phase);
+        if(phaseOption >= 0)
         {
-            int x = looseX(slot);
-            int y = looseY(slot);
-            if(event.x() >= x && event.x() < x + ROW_W && event.y() >= y && event.y() < y + ROW_H)
-            {
-                answer(loose.get(slot));
-                return true;
-            }
+            answer(phaseOption);
+            return true;
         }
 
         updateHover(event.x(), event.y());
+
+        // Your own deck is where the duel's own controls live, the way the 2D
+        // board puts them there: looking at it is looking at your deck, and
+        // conceding is a thing you do to your own deck rather than a button
+        // sitting next to the cards you click all turn.
+        if(hovered != null && hovered.isPile() && hovered.controller() == 0
+            && hovered.location() == OcgConstants.LOCATION_DECK)
+        {
+            choices = List.of(VIEW_DECK, SURRENDER);
+            choicesX = (int)event.x();
+            choicesY = (int)event.y();
+            return true;
+        }
+
         List<Integer> options = PromptOptions.optionsFor(DuelClientState.prompt, false, hovered);
         if(options.isEmpty())
         {
@@ -288,10 +298,6 @@ public class BoardPointerScreen extends Screen
         {
             rows.add(DECLINE);
         }
-        // Always available, prompt or no prompt: a duel you cannot leave is
-        // worse than one you can lose, and on a board there is no menu bar to
-        // leave it from.
-        rows.add(SURRENDER);
         return rows;
     }
 
@@ -299,6 +305,8 @@ public class BoardPointerScreen extends Screen
     private static final int DECLINE = -1;
     /** Nor this one: conceding the duel outright. */
     private static final int SURRENDER = -2;
+    /** Nor this: looking through your own deck, which the server shuffles first. */
+    private static final int VIEW_DECK = -3;
 
     /**
      * Surrender is armed by one click and taken by the next.
@@ -311,6 +319,14 @@ public class BoardPointerScreen extends Screen
 
     private void answer(int index)
     {
+        if(index == VIEW_DECK)
+        {
+            net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+                new de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.ViewOwnDeck());
+            choices = List.of();
+            onClose();
+            return;
+        }
         if(index == SURRENDER)
         {
             if(!surrenderArmed)
@@ -369,11 +385,13 @@ public class BoardPointerScreen extends Screen
         }
 
         // The HUD does not run while a screen is open, so the pointer draws
-        // the hand itself -- otherwise it would disappear at the moment the
-        // cursor arrived to use it.
+        // both the hand and the instruments itself -- otherwise the cards, the
+        // life bars and the phase bar all disappear at the moment the cursor
+        // arrives to use them.
         BoardSnapshot board = DuelClientState.board;
         if(board != null && ClientDuelField.seat() >= 0)
         {
+            DuelHud.draw(extractor, font, board, ClientDuelField.seat());
             HandHud.drawHand(extractor, board, hoveredCard);
         }
 
@@ -417,21 +435,34 @@ public class BoardPointerScreen extends Screen
     /** Where the loose options are drawn, so the hit test and the draw agree. */
     private int looseX(int slot)
     {
-        return width / 2 - ROW_W / 2;
+        int columns = Math.max(1, (looseRows().size() + rowsPerColumn() - 1) / rowsPerColumn());
+        int column = slot / rowsPerColumn();
+        int spread = columns * (ROW_W + ROW_GAP) - ROW_GAP;
+        return (width - spread) / 2 + column * (ROW_W + ROW_GAP);
     }
 
     /**
-     * Stacked upwards from just above the hand.
+     * Stacked upwards from just above the hand, in as many columns as it takes.
      * <p>
      * Measured against {@link HandLayout#topEdge} rather than from the bottom
-     * of the screen: the hand sits on the bottom edge now and is sized to the
-     * viewport, so a row placed at a fixed offset from the bottom is a row
-     * written across the cards.
+     * of the screen, because the hand sits on the bottom edge and is sized to
+     * the viewport -- a row at a fixed offset from the bottom is a row written
+     * across the cards. And wrapped into columns rather than allowed to climb,
+     * because a prompt with a dozen board-less options would otherwise run off
+     * the top of the screen and take its own answer with it.
      */
     private int looseY(int slot)
     {
-        int rows = Math.max(1, looseRows().size());
-        return HandLayout.topEdge(height) - ROW_GAP - (rows - slot) * ROW_H;
+        int perColumn = rowsPerColumn();
+        int row = slot % perColumn;
+        return HandLayout.topEdge(height) - ROW_GAP - (perColumn - row) * ROW_H;
+    }
+
+    /** How many rows fit between the hand and the instruments at the top. */
+    private int rowsPerColumn()
+    {
+        int room = HandLayout.topEdge(height) - ROW_GAP - DuelHud.below(width) - ROW_H;
+        return Math.max(1, room / ROW_H);
     }
 
     /** Clear air between the rows and the cards under them. */
@@ -453,6 +484,10 @@ public class BoardPointerScreen extends Screen
 
     private String label(int index)
     {
+        if(index == VIEW_DECK)
+        {
+            return "View deck";
+        }
         if(index == SURRENDER)
         {
             return surrenderArmed ? "Surrender -- click again" : "Surrender";

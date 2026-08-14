@@ -48,11 +48,25 @@ public final class DuelHud
 
     private static final int BAR_H = 14;
     private static final int TOP = 4;
-    private static final int PHASE_H = 13;
     private static final int PHASE_GAP = 3;
 
+    /**
+     * The case art's own proportions, from the duel screen: a bay is 50 by 10
+     * and the housing stands 8 by 3 proud of it. Every measurement below is
+     * derived from the cell width through these, so the case cannot be
+     * stretched into a shape the art was never drawn at -- which is what
+     * happens the moment a height is picked independently of a width.
+     */
+    private static final int CELL_W_BASE = 50;
+    private static final int CELL_H_BASE = 10;
+    private static final int PAD_X_BASE = 8;
+    private static final int PAD_Y_BASE = 3;
+
     /** The first line of text that is clear of the instruments above it. */
-    public static final int BELOW = TOP + BAR_H + PHASE_GAP + PHASE_H + 15;
+    public static int below(int screenW)
+    {
+        return barTop() + cellHeight(screenW) + padY(screenW) + 12;
+    }
 
     /** Under this much left, the clock is a warning rather than a fact. */
     private static final long CLOCK_WARN_MS = 60_000L;
@@ -150,17 +164,18 @@ public final class DuelHud
         int screenW)
     {
         boolean yourTurn = board.turnPlayer() == 0;
-        int cellW = Math.max(16, Math.min(38, screenW / 22));
+        int cellW = cellWidth(screenW);
+        int cellH = cellHeight(screenW);
         int width = PHASE_NAMES.length * cellW;
-        int x = (screenW - width) / 2;
-        int y = TOP + BAR_H + PHASE_GAP;
+        int x = barLeft(screenW);
+        int y = barTop();
 
-        DdBlitUtil.fullBlit(extractor, DuelTextures.PHASE_CASE, x - 4, y - 3, width + 8,
-            PHASE_H + 6);
+        DdBlitUtil.fullBlit(extractor, DuelTextures.PHASE_CASE, x - padX(screenW),
+            y - padY(screenW), width + padX(screenW) * 2, cellH + padY(screenW) * 2);
 
         for(int phase = 0; phase < PHASE_NAMES.length; phase++)
         {
-            drawPhaseCell(extractor, x + phase * cellW, y, cellW, PHASE_H, phase,
+            drawPhaseCell(extractor, x + phase * cellW, y, cellW, cellH, phase,
                 stateOf(board, phase), yourTurn);
         }
     }
@@ -185,6 +200,97 @@ public final class DuelHud
             DdBlitUtil.NO_TINT);
     }
 
+    private static int cellWidth(int screenW)
+    {
+        return Math.max(18, Math.min(CELL_W_BASE, screenW / 14));
+    }
+
+    private static int cellHeight(int screenW)
+    {
+        return Math.max(5, Math.round(cellWidth(screenW) * (float)CELL_H_BASE / CELL_W_BASE));
+    }
+
+    private static int padX(int screenW)
+    {
+        return Math.round(cellWidth(screenW) * (float)PAD_X_BASE / CELL_W_BASE);
+    }
+
+    private static int padY(int screenW)
+    {
+        return Math.max(2, Math.round(cellHeight(screenW) * (float)PAD_Y_BASE / CELL_H_BASE));
+    }
+
+    private static int barLeft(int screenW)
+    {
+        return (screenW - PHASE_NAMES.length * cellWidth(screenW)) / 2;
+    }
+
+    private static int barTop()
+    {
+        return TOP + BAR_H + PHASE_GAP;
+    }
+
+    /**
+     * Which phase bay a point is over, or -1.
+     * <p>
+     * Ending a turn IS the phase bar, so it has to be clickable rather than
+     * merely readable. The hit test measures the same cells the draw does, from
+     * the same helpers, so the bay that lights up is the bay that answers.
+     */
+    public static int phaseAt(int screenW, double mouseX, double mouseY)
+    {
+        int cellW = cellWidth(screenW);
+        int y = barTop();
+        if(mouseY < y || mouseY >= y + cellHeight(screenW))
+        {
+            return -1;
+        }
+        int phase = (int)Math.floor((mouseX - barLeft(screenW)) / (double)cellW);
+        return phase >= 0 && phase < PHASE_NAMES.length ? phase : -1;
+    }
+
+    /**
+     * The engine option that jumps to this bay's phase, or -1 when the engine
+     * is not offering it. Matched on the option's COMMAND, as the duel screen
+     * does: a phase is offered as "go to battle" or "end turn", never as a
+     * phase number, and only three of the six can be jumped to at all.
+     */
+    public static int optionForPhase(int phase)
+    {
+        de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt = DuelClientState.prompt;
+        if(prompt == null || phase < 0 || phase >= PHASE_VALUES.length)
+        {
+            return -1;
+        }
+        int wanted = commandFor(PHASE_VALUES[phase]);
+        if(wanted == 0)
+        {
+            return -1;
+        }
+        for(int i = 0; i < prompt.options().size(); i++)
+        {
+            if(prompt.options().get(i).command() == wanted)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static int commandFor(int phase)
+    {
+        return switch(phase)
+        {
+            case OcgConstants.PHASE_BATTLE ->
+                de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.PHASE_TO_BATTLE;
+            case OcgConstants.PHASE_MAIN2 ->
+                de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.PHASE_TO_MAIN2;
+            case OcgConstants.PHASE_END ->
+                de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.PHASE_END_TURN;
+            default -> 0;
+        };
+    }
+
     /**
      * Lit for the phase the duel is in, idle for one the engine is offering to
      * jump to, greyed otherwise. Being current wins over being offered, because
@@ -197,7 +303,7 @@ public final class DuelHud
         {
             return PHASE_LIT;
         }
-        return offered(PHASE_VALUES[index]) ? PHASE_IDLE : PHASE_DISABLED;
+        return offered(index) ? PHASE_IDLE : PHASE_DISABLED;
     }
 
     private static boolean isCurrent(BoardSnapshot board, int index)
@@ -215,31 +321,9 @@ public final class DuelHud
      * is offered as "go to battle" or "end turn", not as a phase number, and
      * only three of the six can ever be jumped to.
      */
-    private static boolean offered(int phase)
+    private static boolean offered(int index)
     {
-        de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt = DuelClientState.prompt;
-        int wanted = switch(phase)
-        {
-            case OcgConstants.PHASE_BATTLE ->
-                de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.PHASE_TO_BATTLE;
-            case OcgConstants.PHASE_MAIN2 ->
-                de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.PHASE_TO_MAIN2;
-            case OcgConstants.PHASE_END ->
-                de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.PHASE_END_TURN;
-            default -> 0;
-        };
-        if(prompt == null || wanted == 0)
-        {
-            return false;
-        }
-        for(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt.Option option : prompt.options())
-        {
-            if(option.command() == wanted)
-            {
-                return true;
-            }
-        }
-        return false;
+        return optionForPhase(index) >= 0;
     }
 
     /**
@@ -261,7 +345,7 @@ public final class DuelHud
         long left = limit - (System.currentTimeMillis() - DuelClientState.promptShownAt);
         long seconds = Math.max(0, (left + 999) / 1000);
         String clock = seconds / 60 + ":" + (seconds % 60 < 10 ? "0" : "") + seconds % 60;
-        extractor.centeredText(font, clock, screenW / 2, TOP + BAR_H + PHASE_GAP + PHASE_H + 3,
+        extractor.centeredText(font, clock, screenW / 2, below(screenW) - 11,
             left <= CLOCK_WARN_MS ? 0xFFFF6B6B : 0xFFC2C9D6);
     }
 }

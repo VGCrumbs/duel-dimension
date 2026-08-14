@@ -13,7 +13,8 @@
     "client.GuiGraphicsExtractorAccessor",
     "client.InventoryScreenMixin",
     "client.ItemInHandRendererMixin",
-    "client.SlotWrapperAccessor"
+    "client.SlotWrapperAccessor",
+    "client.MinecraftDuelClickMixin"
   ],
   "injectors": {
     "defaultRequire": 1

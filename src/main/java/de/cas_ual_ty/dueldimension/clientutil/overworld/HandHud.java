@@ -53,7 +53,7 @@ public final class HandHud implements HudElement
         // index was right for seat 0 by coincidence and backwards for seat 1.
         String turn = "Turn " + board.turn() + "  -  "
             + (board.turnPlayer() == 0 ? "your turn" : "their turn");
-        extractor.centeredText(client.font, turn, middle, DuelHud.BELOW, 0xFFC2C9D6);
+        extractor.centeredText(client.font, turn, middle, DuelHud.below(extractor.guiWidth()), 0xFFC2C9D6);
 
         // What the engine is waiting for, and the key that answers it. A board
         // with no visible question is a board a player waits at.
@@ -65,13 +65,13 @@ public final class HandHud implements HudElement
         }
         String asking = prompt.title() == null || prompt.title().isEmpty()
             ? "Your move" : prompt.title();
-        extractor.centeredText(client.font, asking, middle, DuelHud.BELOW + 12, 0xFFFFE84A);
+        extractor.centeredText(client.font, asking, middle, DuelHud.below(extractor.guiWidth()) + 12, 0xFFFFE84A);
         String hint = "[" + de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds.DUEL_ACT
             .getTranslatedKeyMessage().getString() + "] act"
             + (ClientDuelTargeting.actionable() ? "  -  "
                 + (ClientDuelTargeting.looking() == null ? ""
                     : ClientDuelTargeting.looking().label()) : "");
-        extractor.centeredText(client.font, hint, middle, DuelHud.BELOW + 24, 0xFF7CE38B);
+        extractor.centeredText(client.font, hint, middle, DuelHud.below(extractor.guiWidth()) + 24, 0xFF7CE38B);
     }
 
     @Override
