@@ -40,6 +40,22 @@ public final class CardChooser
     {
     }
 
+    /**
+     * Is this pile one a duellist may look through?
+     * <p>
+     * A graveyard and a banished pile are public knowledge -- both duellists
+     * may read either at any time, and the duel screen has always let them. An
+     * Extra Deck is its owner's alone, and a Deck is nobody's: the client is
+     * only ever told how many cards are in it, so there is nothing to show.
+     */
+    public static boolean viewable(int location, int controller)
+    {
+        return location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_GRAVE
+            || location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_REMOVED
+            || (location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_EXTRA
+                && controller == 0);
+    }
+
     /** The most cards this will take on before the duel screen is the better tool. */
     public static final int MAX_CARDS = 20;
 
@@ -134,11 +150,10 @@ public final class CardChooser
      * Measured off the same layout that draws them, so a cell can never be
      * somewhere other than where it is clicked.
      */
-    public static int at(List<Integer> options, int screenW, int screenH, double mouseX,
-        double mouseY)
+    public static int at(int count, int screenW, int screenH, double mouseX, double mouseY)
     {
-        Layout layout = layout(options.size(), screenW, screenH);
-        for(int cell = 0; cell < options.size(); cell++)
+        Layout layout = layout(count, screenW, screenH);
+        for(int cell = 0; cell < count; cell++)
         {
             int cardX = cellX(layout, cell);
             int cardY = cellY(layout, cell);
@@ -174,9 +189,40 @@ public final class CardChooser
         {
             return;
         }
+        List<Identifier> faces = new java.util.ArrayList<>(options.size());
+        List<String> names = new java.util.ArrayList<>(options.size());
+        List<Integer> codes = new java.util.ArrayList<>(options.size());
+        for(int option : options)
+        {
+            EnginePrompt.Option offered = prompt.options().get(option);
+            Properties card = DdDatabase.PROPERTIES_LIST.get((long)offered.cardCode());
+            faces.add(card == null ? DuelTextures.COVER
+                : DuelTextures.cardSmooth(card, (byte)offered.art(),
+                    DuelTextures.PREVIEW_CARD_SIZE));
+            String name = card == null ? offered.label() : card.getName();
+            names.add(name == null ? "" : name);
+            codes.add(card == null ? 0 : offered.cardCode());
+        }
+        drawGrid(extractor, font, TITLE, faces, names, codes, mouseX, mouseY, true);
+    }
+
+    /**
+     * The grid itself: a panel of cards with their names under them.
+     * <p>
+     * Shared by the picker and by the pile viewer, which are the same object
+     * asked two different questions -- "which of these" and "what is in here".
+     * A second grid would be a second set of layout bugs.
+     *
+     * @param pick true when a cell can be clicked, which is what decides
+     *             whether cells light up under the cursor
+     */
+    public static void drawGrid(GuiGraphicsExtractor extractor, Font font, String title,
+        List<Identifier> faces, List<String> names, List<Integer> codes, int mouseX, int mouseY,
+        boolean pick)
+    {
         int screenW = extractor.guiWidth();
         int screenH = extractor.guiHeight();
-        Layout layout = layout(options.size(), screenW, screenH);
+        Layout layout = layout(faces.size(), screenW, screenH);
 
         // Dimmed rather than hidden. The question is about the duel, and a
         // duellist deciding which card to send wants to see the board they are
@@ -184,11 +230,10 @@ public final class CardChooser
         extractor.fill(0, 0, screenW, screenH, 0x90000000);
         NineSlice.draw(extractor, HubTextures.PANEL, layout.x(), layout.y(), layout.width(),
             layout.height());
-
-        extractor.text(font, TITLE, layout.x() + (layout.width() - font.width(TITLE)) / 2,
+        extractor.text(font, title, layout.x() + (layout.width() - font.width(title)) / 2,
             layout.y() + 5, 0xFFF4D089, true);
 
-        int hovered = at(options, screenW, screenH, mouseX, mouseY);
+        int hovered = at(faces.size(), screenW, screenH, mouseX, mouseY);
         if(hovered != marqueeCell)
         {
             // A new cell starts its own clock, so a name always begins from the
@@ -197,28 +242,42 @@ public final class CardChooser
             marqueeSince = System.currentTimeMillis();
         }
 
-        for(int cell = 0; cell < options.size(); cell++)
+        for(int cell = 0; cell < faces.size(); cell++)
         {
-            EnginePrompt.Option option = prompt.options().get(options.get(cell));
             int cardX = cellX(layout, cell);
             int cardY = cellY(layout, cell);
             boolean over = cell == hovered;
 
-            if(over)
+            if(over && pick)
             {
                 NineSlice.draw(extractor, HubTextures.PANEL, cardX - 3, cardY - 3,
                     layout.cardW() + 6, layout.cardH() + 6, NineSlice.HOVER, 3, 0.9F);
             }
-
-            Properties card = DdDatabase.PROPERTIES_LIST.get((long)option.cardCode());
-            Identifier texture = card == null ? DuelTextures.COVER
-                : DuelTextures.cardSmooth(card, (byte)option.art(),
-                    DuelTextures.PREVIEW_CARD_SIZE);
-            DdBlitUtil.fullBlit(extractor, texture, cardX, cardY, layout.cardW(), layout.cardH());
-
-            String name = card == null ? option.label() : card.getName();
-            drawName(extractor, font, name == null ? "" : name, cardX, cardY + layout.cardH() + 1,
+            // The card's own window, not the whole sheet. A shipped card
+            // texture is letterboxed -- the picture sits in the middle of a
+            // square file with transparent margins -- so blitting all of it
+            // into the cell drew the card at six tenths of the width and seven
+            // eighths of the height it was given, which is exactly the skinny
+            // card this produced. The same window CardRenderer samples for the
+            // board, asked the same way.
+            Identifier face = faces.get(cell);
+            boolean whole = de.cas_ual_ty.dueldimension.clientutil.CardFaces.isCardShaped(face);
+            DdBlitUtil.blit(extractor, face, cardX, cardY, layout.cardW(), layout.cardH(),
+                whole ? 0F : DuelTextures.CARD_U0, whole ? 0F : DuelTextures.CARD_V0,
+                whole ? 1F : DuelTextures.CARD_U1, whole ? 1F : DuelTextures.CARD_V1,
+                DdBlitUtil.NO_TINT);
+            drawName(extractor, font, names.get(cell), cardX, cardY + layout.cardH() + 1,
                 layout.cardW(), over, System.currentTimeMillis());
+        }
+
+        // Shift reads the card, the same as it does on the board and in the
+        // deck builder. A name alone says which card it is; a duellist choosing
+        // between three effects needs to know what they DO, and a picker that
+        // covers the board has covered the only other place to find out.
+        if(hovered >= 0 && hovered < codes.size() && codes.get(hovered) != 0
+            && ClientDuelField.shiftHeld())
+        {
+            CardBubble.draw(extractor, font, codes.get(hovered), mouseX, mouseY, screenW, screenH);
         }
     }
 

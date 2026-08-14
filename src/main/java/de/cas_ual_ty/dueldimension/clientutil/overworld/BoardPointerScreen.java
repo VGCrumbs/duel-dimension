@@ -101,6 +101,18 @@ public class BoardPointerScreen extends Screen
     private boolean asking;
 
     /**
+     * The pile a duellist has opened to read, and what to call it.
+     * <p>
+     * A graveyard is public and always has been -- the duel screen lets either
+     * player read either one at any time, and a duellist who cannot check what
+     * is in a graveyard is playing a different game. The board could not, so
+     * the one thing the world board could not do that the screen could was the
+     * most ordinary thing in a duel.
+     */
+    private List<BoardSnapshot.Slot> pileView = List.of();
+    private String pileViewLabel = "";
+
+    /**
      * When the open menu is a pile's, the options each of its rows stands for.
      * <p>
      * A pile's rows are verbs rather than cards, so a row does not answer the
@@ -440,13 +452,24 @@ public class BoardPointerScreen extends Screen
             return true;
         }
 
+        // A pile being read closes on any click. There is nothing in it to
+        // pick -- it is a list, not a question -- so the first click a player
+        // makes is them saying they have finished reading it.
+        if(!pileView.isEmpty())
+        {
+            pileView = List.of();
+            pileViewLabel = "";
+            CardChooser.reset();
+            return true;
+        }
+
         // The card picker is modal while it is up: it covers the board, and a
         // click that fell through it would act on a card the player cannot see
         // and did not aim at.
         if(CardChooser.open())
         {
-            int cell = CardChooser.at(CardChooser.optionsOf(DuelClientState.prompt), width, height,
-                event.x(), event.y());
+            int cell = CardChooser.at(CardChooser.optionsOf(DuelClientState.prompt).size(),
+                width, height, event.x(), event.y());
             if(cell >= 0 && event.button() == 0)
             {
                 answer(cell);
@@ -517,6 +540,16 @@ public class BoardPointerScreen extends Screen
         // those are answered by clicking the very same stack. Taking this
         // branch first put View Deck and Surrender in front of the question and
         // left no way at all to answer it.
+        // Reading a pile is what a pile does when the duel is not asking about
+        // it. Your own deck is the exception below: it holds the duel's own
+        // controls, and its contents are not yours to browse mid-duel anyway.
+        if(options.isEmpty() && hovered != null && hovered.isPile() && hovered.count() > 0
+            && CardChooser.viewable(hovered.location(), hovered.controller()))
+        {
+            openPileView(hovered);
+            return true;
+        }
+
         if(options.isEmpty() && isOwnDeck(hovered))
         {
             openChoices(deckMenu(), event.x(), event.y());
@@ -694,6 +727,13 @@ public class BoardPointerScreen extends Screen
         // duel.
         if(event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE)
         {
+            if(!pileView.isEmpty())
+            {
+                pileView = List.of();
+                pileViewLabel = "";
+                CardChooser.reset();
+                return true;
+            }
             if(!choices.isEmpty())
             {
                 dismiss();
@@ -765,6 +805,11 @@ public class BoardPointerScreen extends Screen
         if(!choices.isEmpty())
         {
             drawChoices(extractor, mouseX, mouseY);
+        }
+
+        if(!pileView.isEmpty())
+        {
+            drawPileView(extractor, mouseX, mouseY);
         }
 
         // Over everything, because it is the question rather than a note about
@@ -1078,6 +1123,70 @@ public class BoardPointerScreen extends Screen
             new de.cas_ual_ty.dueldimension.clientutil.EngineDuelScreen();
         minecraft.gui.setScreen(screen);
         screen.showPileChoices(verb, group);
+    }
+
+    /**
+     * Opens a pile to be read.
+     * <p>
+     * Straight from the board snapshot, which already holds both graveyards and
+     * both banished piles -- they are public, so the server sends them, and
+     * nothing here has to ask for anything.
+     */
+    private void openPileView(BoardTarget target)
+    {
+        BoardSnapshot board = DuelClientState.board;
+        if(board == null)
+        {
+            return;
+        }
+        BoardSnapshot.Side side = target.controller() == 0 ? board.self() : board.opponent();
+        if(side == null)
+        {
+            return;
+        }
+        List<BoardSnapshot.Slot> cards = switch(target.location())
+        {
+            case OcgConstants.LOCATION_GRAVE -> side.grave();
+            case OcgConstants.LOCATION_REMOVED -> side.banished();
+            case OcgConstants.LOCATION_EXTRA -> side.extra();
+            default -> List.of();
+        };
+        if(cards == null || cards.isEmpty())
+        {
+            return;
+        }
+        pileView = List.copyOf(cards);
+        pileViewLabel = (target.controller() == 0 ? "Your " : "Opponent's ") + target.label();
+        CardChooser.reset();
+    }
+
+    /**
+     * The pile, in the picker's own grid.
+     * <p>
+     * Every face asked of {@link de.cas_ual_ty.dueldimension.clientutil.CardFaces}
+     * rather than taken from the code, so a card banished FACE DOWN is a back
+     * here exactly as it is on the board. A viewer that quietly showed one
+     * would be a viewer that leaked it.
+     */
+    private void drawPileView(GuiGraphicsExtractor extractor, int mouseX, int mouseY)
+    {
+        List<net.minecraft.resources.Identifier> faces =
+            new java.util.ArrayList<>(pileView.size());
+        List<String> names = new java.util.ArrayList<>(pileView.size());
+        List<Integer> codes = new java.util.ArrayList<>(pileView.size());
+        for(BoardSnapshot.Slot slot : pileView)
+        {
+            boolean back = de.cas_ual_ty.dueldimension.clientutil.CardFaces.showsBack(slot, false);
+            faces.add(de.cas_ual_ty.dueldimension.clientutil.CardFaces.face(slot, false, 0));
+            de.cas_ual_ty.dueldimension.card.properties.Properties card = back ? null
+                : de.cas_ual_ty.dueldimension.DdDatabase.PROPERTIES_LIST.get((long)slot.code());
+            names.add(card == null ? "" : card.getName());
+            // A back has nothing to read, and saying what it hides would be
+            // the leak the face itself is careful not to be.
+            codes.add(back ? 0 : slot.code());
+        }
+        CardChooser.drawGrid(extractor, font, pileViewLabel, faces, names, codes, mouseX, mouseY,
+            false);
     }
 
     private String label(int index)

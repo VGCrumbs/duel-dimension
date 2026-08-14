@@ -736,6 +736,16 @@ public final class OverworldBoardRenderer
             {
                 continue;
             }
+            // A card that is breaking is drawn by the break, and only by it.
+            // Otherwise the board keeps drawing the card in its zone while the
+            // shatter draws the same card coming apart on top of it, and a
+            // destroyed monster reads as two of itself -- one whole and one in
+            // pieces -- for as long as the animation lasts.
+            if(shattering(asked, location, sequence))
+            {
+                continue;
+            }
+
             // The top shows what this client is allowed to see. The UNDERSIDE
             // shows the card itself when this client knows it -- a set card is
             // lying face down, so its face is against the table and somebody
@@ -811,6 +821,34 @@ public final class OverworldBoardRenderer
         }
         int was = tint >>> 24;
         return Math.round(was * alpha) << 24 | (tint & 0xFFFFFF);
+    }
+
+    /**
+     * Is this zone's card currently coming apart?
+     * <p>
+     * Compared as the engine's own packed zone reference rather than by
+     * unpacking one side or the other: the shatter carries the reference the
+     * event was built with, and rebuilding it here from the same three facts
+     * means the two cannot disagree about which square is breaking.
+     */
+    private static boolean shattering(int asked, int location, int sequence)
+    {
+        List<de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.ShatterView> breaks =
+            DuelClientState.animations.shattersInFlight(System.currentTimeMillis());
+        if(breaks.isEmpty())
+        {
+            return false;
+        }
+        int ref = de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt.zoneRef(asked == 1,
+            location == OcgConstants.LOCATION_MZONE, sequence);
+        for(de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.ShatterView shatter : breaks)
+        {
+            if(shatter.fromZone() == ref)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

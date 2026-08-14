@@ -74,6 +74,12 @@ public final class DuelHud
     private static final float BAR_W_SHARE = 0.30F;
     /** And never taller than this much of the window, whatever the width says. */
     private static final float BAR_H_SHARE = 0.055F;
+    /**
+     * Narrow enough to keep out of the middle's way on any window, wide enough
+     * that four digits and a name still land inside it.
+     */
+    private static final int MIN_BAR_W = 46;
+
     private static final int TOP = 4;
     /** The frame's raised border, which no text belongs on. */
     private static final int INSET = 6;
@@ -146,7 +152,13 @@ public final class DuelHud
         // a readout and becomes a banner.
         int byWidth = Math.round(reference(screenW, screenH) * BAR_W_SHARE);
         int byHeight = Math.round(screenH * BAR_H_SHARE * BAR_W_BASE / BAR_H_BASE);
-        return Math.max(70, Math.min(room, Math.min(byWidth, byHeight)));
+        // The ROOM wins, and the floor is only a floor. It used to be
+        // Math.max(70, ...), which put a seventy-pixel frame on a window with
+        // fifty pixels for it -- so on a small screen the life total was
+        // written straight through the countdown. Both frames take the same
+        // reduction, because they are read against each other and one narrower
+        // than the other reads as an advantage.
+        return Math.max(MIN_BAR_W, Math.min(room, Math.min(byWidth, byHeight)));
     }
 
     /**
