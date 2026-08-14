@@ -69,23 +69,21 @@ public final class CrosshairAction
                 // only thing that can make it. Returning false here left a
                 // click that did nothing at all, which reads as a duel that has
                 // stopped rather than as a question waiting to be answered.
-                client.gui.setScreen(new BoardPointerScreen());
+                // Borrowed with the rows already up, and pinned so that still
+                // holding the camera key does not take them away again.
+                client.gui.setScreen(new BoardPointerScreen(null, loose));
                 return true;
             }
             return false;
         }
-        if(options.size() == 1)
-        {
-            // One legal thing to do with it, so pointing at it and clicking IS
-            // the instruction. Asking which of one is a dialog for its own sake,
-            // and it would cost the player their camera to answer.
-            DuelActionController.answer(new int[] {options.get(0)}, 0);
-            return true;
-        }
-        // More than one, so a choice has to be made and the cursor is the only
-        // thing that can make it. Borrowed for exactly as long as that takes.
-        // No forced frame: see BoardPointerScreen.onClose.
-        client.gui.setScreen(new BoardPointerScreen());
+        // The menu, always -- even for a card with exactly one legal action.
+        // A trap in hand can only be Set, and a click that Set it outright was
+        // a card committed by a misclick with nothing offered in between. This
+        // opens AT the card, already listing what can be done with it: the
+        // player pointed and asked once, and is not asked to point again.
+        // Borrowed for exactly as long as the answer takes, and no forced
+        // frame: see BoardPointerScreen.onClose.
+        client.gui.setScreen(new BoardPointerScreen(target, options));
         return true;
     }
 

@@ -24,6 +24,19 @@ public final class DuelSuppression
     /** Should overlays that are not part of the duel stay off the screen? */
     public static boolean hudHidden()
     {
+        return inDuel();
+    }
+
+    /**
+     * Is this client's player in a duel at all, in either presentation?
+     * <p>
+     * The same question the overlays ask, given its own name because movement
+     * asks it too and "the HUD is hidden" is not a reason to stand still. A
+     * duellist is at a board: walking away from it is not a move the duel has,
+     * and on the world board it would carry the camera off the field entirely.
+     */
+    public static boolean inDuel()
+    {
         return ClientDuelField.locked() || duelOnScreen();
     }
 

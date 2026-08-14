@@ -23,11 +23,13 @@ import java.util.List;
 /**
  * Pointing at the board with a freed cursor.
  * <p>
- * The act key hands over the MOUSE, it does not put a list on the screen. While
- * this is open the camera stops turning, the cursor appears, and the board is
- * still there to be pointed at -- which is §9's interface state, and the reason
- * the board itself is not a screen: with nothing open the mouse turns the head,
- * and with this open it points.
+ * This is where a duellist LIVES. A duel is an hour of pointing at cards and a
+ * few seconds of looking around, so the cursor is the resting state and the
+ * camera is what has to be asked for -- hold the camera key and this goes away
+ * for as long as it is held. The board is still there to be pointed at either
+ * way, which is §9's interface state and the reason the board itself is not a
+ * screen: with this open the mouse points, and with it closed it turns the
+ * head.
  * <p>
  * A screen is how the cursor is freed, because that is how the game frees it.
  * But this one is a pane of glass: no dim, no panel, no rows until a card is
@@ -40,15 +42,26 @@ import java.util.List;
 public class BoardPointerScreen extends Screen
 {
     /**
-     * True when this was opened by HOLDING the free-mouse key rather than by
-     * asking a card a question.
+     * True when this pointer was BORROWED to answer one question, rather than
+     * being the duel's own resting cursor.
      * <p>
-     * A held pointer closes the moment the key is let go; one opened to answer
-     * something stays until it has been answered. Without the distinction, a
-     * card with three options would offer them and take them away again on the
-     * very next tick.
+     * A borrowed pointer is one the player asked for from camera mode: they
+     * were holding the camera key, clicked a card, and this opened over the top
+     * of it carrying that card's menu. It has to survive the key still being
+     * held -- otherwise the tick that watches the key would take it away on the
+     * very frame it appeared -- and it gives the camera straight back once the
+     * question is answered.
+     * <p>
+     * The resting cursor is neither: it is what a duel looks like when nobody
+     * is holding anything, so answering a question with it leaves it exactly
+     * where it was.
      */
-    private boolean heldOpen;
+    private boolean pinned;
+
+    /** A card whose menu should be open the moment this appears, or null. */
+    private BoardTarget opening;
+    /** That card's rows, or the loose rows for a question about no card. */
+    private List<Integer> openingOptions = List.of();
 
     /** What the cursor is over, recomputed as it moves. */
     private BoardTarget hovered;
@@ -76,31 +89,67 @@ public class BoardPointerScreen extends Screen
     /** The card the open menu is about, which decides its icons' posture. */
     private BoardTarget chosenAnchor;
 
+    /** The duel's resting cursor: no menu up, and it stays until the key takes it. */
     public BoardPointerScreen()
     {
-        this(false);
-    }
-
-    public BoardPointerScreen(boolean heldOpen)
-    {
         super(Component.literal("Duel"));
-        this.heldOpen = heldOpen;
-    }
-
-    /** Is this pointer only up for as long as a key is held? */
-    public boolean isHeldOpen()
-    {
-        return heldOpen;
     }
 
     /**
-     * A pointer opened by holding the key stops being one the moment it is used
-     * for something: letting go after clicking a card should not snatch the
-     * card's own menu away before it can be read.
+     * Opens straight onto a menu, borrowed from camera mode.
+     * <p>
+     * The player has already pointed at the card with their whole head and
+     * clicked it. Handing them a cursor and asking them to find the same card
+     * again would be asking the same question twice -- so the menu is already
+     * open, already about that card, and already where the card is.
+     *
+     * @param target the card the menu is about, or null for a question that is
+     *               about no card at all
      */
-    public void keepOpen()
+    public BoardPointerScreen(BoardTarget target, List<Integer> options)
     {
-        heldOpen = false;
+        super(Component.literal("Duel"));
+        this.pinned = true;
+        this.opening = target;
+        this.openingOptions = options;
+    }
+
+    /** Was this borrowed for one question, rather than being the duel's cursor? */
+    public boolean isPinned()
+    {
+        return pinned;
+    }
+
+    @Override
+    protected void init()
+    {
+        if(!openingOptions.isEmpty())
+        {
+            hovered = opening;
+            // Centre as the fallback anchor, for a question about no card.
+            openChoices(openingOptions, width / 2D, height / 2D);
+            opening = null;
+            openingOptions = List.of();
+        }
+    }
+
+    /**
+     * What happens once a question has been answered.
+     * <p>
+     * A borrowed pointer hands the camera back, because that is the whole of
+     * what it was for. The resting cursor only closes the menu: closing the
+     * cursor itself would have the tick reopen it a frame later, which is a
+     * flicker and a lost click.
+     */
+    private void dismiss()
+    {
+        choices = List.of();
+        chosenAnchor = null;
+        surrenderArmed = false;
+        if(pinned)
+        {
+            onClose();
+        }
     }
 
     /** How far down the board the cursor can reach, in blocks. */
@@ -288,7 +337,6 @@ public class BoardPointerScreen extends Screen
         if(hovered != null && hovered.isPile() && hovered.controller() == 0
             && hovered.location() == OcgConstants.LOCATION_DECK)
         {
-            keepOpen();
             openChoices(List.of(VIEW_DECK, SURRENDER), event.x(), event.y());
             return true;
         }
@@ -298,14 +346,12 @@ public class BoardPointerScreen extends Screen
         {
             return super.mouseClicked(event, doubled);
         }
-        if(options.size() == 1)
-        {
-            // One legal thing to do with it, so pointing at it and clicking IS
-            // the instruction. Asking which of one is a dialog for its own sake.
-            answer(options.get(0));
-            return true;
-        }
-        keepOpen();
+        // Even when there is only one row. A trap in hand can be Set and
+        // nothing else, so a click on one used to Set it outright -- no menu,
+        // no confirmation, and a card face-down on the field because a cursor
+        // was a few pixels off. The menu costs one click and buys the chance to
+        // change your mind, which on a board you point at with your head is
+        // worth every bit of it.
         openChoices(options, event.x(), event.y());
         return true;
     }
@@ -324,8 +370,7 @@ public class BoardPointerScreen extends Screen
     private void decline()
     {
         DuelActionController.answer(new int[0], 0);
-        choices = List.of();
-        onClose();
+        dismiss();
     }
 
     /** Is the engine willing to take "nothing" for an answer right now? */
@@ -358,6 +403,8 @@ public class BoardPointerScreen extends Screen
         {
             net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
                 new de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.ViewOwnDeck());
+            // The deck list is a screen of its own, so this one steps aside
+            // whether it was borrowed or not.
             choices = List.of();
             onClose();
             return;
@@ -371,7 +418,7 @@ public class BoardPointerScreen extends Screen
             }
             net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
                 new de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.Surrender());
-            onClose();
+            dismiss();
             return;
         }
         surrenderArmed = false;
@@ -384,17 +431,30 @@ public class BoardPointerScreen extends Screen
         // with a stale serial is dropped in silence and the duel thread stays
         // parked on it.
         DuelActionController.answer(new int[] {index}, 0);
-        choices = List.of();
-        onClose();
+        dismiss();
     }
 
-    /** The act key closes it again, so one key both takes and returns the mouse. */
     @Override
     public boolean keyPressed(KeyEvent event)
     {
-        if(HubKeybinds.DUEL_ACT.matches(event))
+        // Escape means "put this away", and the resting cursor is not a thing
+        // that can be put away -- closing it only opens it again on the next
+        // tick. So it dismisses an open menu, and with no menu open it reaches
+        // the pause screen, which would otherwise be unreachable for the whole
+        // duel.
+        if(event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE)
         {
-            onClose();
+            if(!choices.isEmpty())
+            {
+                dismiss();
+                return true;
+            }
+            if(pinned)
+            {
+                onClose();
+                return true;
+            }
+            minecraft.pauseGame(false);
             return true;
         }
         return super.keyPressed(event);

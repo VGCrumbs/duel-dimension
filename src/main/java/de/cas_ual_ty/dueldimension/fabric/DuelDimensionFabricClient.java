@@ -172,17 +172,12 @@ public class DuelDimensionFabricClient implements ClientModInitializer
                 }
             }
 
+            // Drained and dropped. The cursor is what a duel looks like by
+            // default now -- holding the camera key is what takes it away --
+            // so there is nothing left for a press to hand over. Still drained,
+            // because a count nobody consumes just accumulates.
             while(de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds.DUEL_ACT.consumeClick())
             {
-                if(de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()
-                    && client.gui.screen() == null)
-                {
-                    // Hands over the mouse; it does not put a list on the
-                    // screen. What to do with a card is decided by pointing at
-                    // it, which is the whole reason the board is in the world.
-                    client.setScreenAndShow(new de.cas_ual_ty.dueldimension.clientutil.overworld
-                        .BoardPointerScreen());
-                }
             }
         });
 

@@ -33,40 +33,52 @@ public final class HubKeybinds
      * spelling it the same way, and the id is what gets translated.
      */
     /**
-     * Holds the mouse free for as long as the key is down.
+     * Holds the CAMERA for as long as the key is down, and gives the cursor
+     * back the moment it is let go.
      * <p>
-     * A press-to-toggle makes swapping between looking and pointing a decision;
-     * holding makes it a reflex -- look, hold, click, let go, still looking.
-     * That is the whole reason it is a hold.
+     * The other way round from how this started, and the right way round. A
+     * duel is an hour of pointing at cards and a few seconds of looking around,
+     * so pointing is what a duellist should get for free -- asking for the
+     * common thing and being given the rare one is backwards. Holding is still
+     * what makes it a reflex rather than a decision: look, let go, click.
      * <p>
      * The key's raw state is read from the window rather than through the key
      * mapping, because a mapping is not polled at all while a screen is open --
-     * and the pointer IS a screen, so a mapping could see the press that opens
-     * it and never the release that should close it again.
+     * and the cursor IS a screen, so a mapping would see the press that closes
+     * it and never the release that should bring it back.
      */
-    public static void freeMouseHeld(net.minecraft.client.Minecraft minecraft)
+    public static void cameraHeld(net.minecraft.client.Minecraft minecraft)
     {
-        boolean held = de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()
-            && com.mojang.blaze3d.platform.InputConstants.isKeyDown(minecraft.getWindow(),
-                ((de.cas_ual_ty.dueldimension.mixin.client.KeyMappingAccessor)(Object)TOGGLE_DISK)
-                    .dueldimension$key().getValue());
+        if(!de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked())
+        {
+            return;
+        }
+        boolean camera = com.mojang.blaze3d.platform.InputConstants.isKeyDown(
+            minecraft.getWindow(),
+            ((de.cas_ual_ty.dueldimension.mixin.client.KeyMappingAccessor)(Object)TOGGLE_DISK)
+                .dueldimension$key().getValue());
 
         if(minecraft.gui.screen()
             instanceof de.cas_ual_ty.dueldimension.clientutil.overworld.BoardPointerScreen open)
         {
-            if(!held && open.isHeldOpen())
+            // A pointer borrowed to answer one question keeps the cursor until
+            // it has been answered, even with the key down: it exists BECAUSE
+            // the player clicked something while holding it.
+            if(camera && !open.isPinned())
             {
                 open.onClose();
             }
             return;
         }
-        if(held && minecraft.gui.screen() == null)
+        // Only over a bare world. Any other screen -- the duel screen, the deck
+        // list, the pause menu -- is one the player opened, and is theirs.
+        if(!camera && minecraft.gui.screen() == null)
         {
             // gui.setScreen: setScreenAndShow forces a frame, and forcing one
-            // while the cursor is being handed over is what made holding the
-            // key flicker.
+            // while the cursor is being handed over is what made the swap
+            // flicker.
             minecraft.gui.setScreen(
-                new de.cas_ual_ty.dueldimension.clientutil.overworld.BoardPointerScreen(true));
+                new de.cas_ual_ty.dueldimension.clientutil.overworld.BoardPointerScreen());
         }
     }
 
@@ -167,13 +179,13 @@ public final class HubKeybinds
         }
         // Not during a duel. The disk cannot come off mid-duel anyway, so the
         // key is free -- and during a duel it does something a duellist wants
-        // constantly instead: see freeMouseHeld.
+        // constantly instead: see cameraHeld.
         if(disk && !de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked())
         {
             net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
                 new de.cas_ual_ty.dueldimension.duel.dueldisk.DiskMessages.ToggleDisk());
         }
-        freeMouseHeld(minecraft);
+        cameraHeld(minecraft);
 
         boolean foil = false;
         while(FOIL_TEST.consumeClick())

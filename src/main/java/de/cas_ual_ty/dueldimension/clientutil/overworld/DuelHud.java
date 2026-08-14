@@ -55,6 +55,12 @@ public final class DuelHud
     /** The turn badge's edge, in the duel screen's own two colours. */
     private static final int TURN_YOURS = 0x4CD964;
     private static final int TURN_THEIRS = 0xFF453A;
+    /**
+     * The badge's own shape, from the duel screen: 34 across by 17 down, twice
+     * as wide as it is tall, with the turn number filling it.
+     */
+    private static final int TURN_W_BASE = 34;
+    private static final int TURN_H_BASE = 17;
 
     /** How much of the window one life bar takes, at any window size. */
     private static final float BAR_W_SHARE = 0.30F;
@@ -181,7 +187,17 @@ public final class DuelHud
         // from the width through the art's ratio, and the width is capped.
         int barW = barWidth(screenW, screenH);
         int barH = barHeight(screenW, screenH);
-        int turnW = Math.max(16, Math.round(barH * 1.3F));
+        // The badge stands exactly as tall as the bars either side of it, so
+        // the three read as one band, and exactly twice as wide as it is tall,
+        // which is the shape the duel screen draws it at. Both were being taken
+        // separately before -- a height from the bars and a width from a bare
+        // multiplier -- so every window size gave it a different shape.
+        int turnH = barH;
+        int turnW = Math.round(barH * (TURN_W_BASE / (float)TURN_H_BASE));
+        // And the number grows with the badge instead of sitting in the middle
+        // of it at whatever size the font happens to be. A badge three times
+        // the size with the same small digit in it is what looked stretched.
+        float turnScale = Math.max(0.75F, barH / (float)TURN_H_BASE);
 
         // Through the animation, not straight from the board. A life total
         // that jumps says a number changed; one that runs down says how much
@@ -208,11 +224,21 @@ public final class DuelHud
         // whoever holds the turn, and so does this.
         int turnX = (screenW - turnW) / 2;
         int turnColour = board.turnPlayer() == 0 ? TURN_YOURS : TURN_THEIRS;
-        extractor.fill(turnX, TOP, turnX + turnW, TOP + barH, 0xC0101014);
-        extractor.fill(turnX, TOP, turnX + turnW, TOP + 1, 0xC0000000 | turnColour);
-        extractor.fill(turnX, TOP + barH - 1, turnX + turnW, TOP + barH, 0xC0000000 | turnColour);
-        extractor.centeredText(font, Integer.toString(board.turn()), turnX + turnW / 2,
-            TOP + (barH - font.lineHeight) / 2 + 1, 0xFFFFFFFF);
+        int edge = Math.max(1, Math.round(turnScale));
+        extractor.fill(turnX, TOP, turnX + turnW, TOP + turnH, 0xC0101014);
+        extractor.fill(turnX, TOP, turnX + turnW, TOP + edge, 0xC0000000 | turnColour);
+        extractor.fill(turnX, TOP + turnH - edge, turnX + turnW, TOP + turnH,
+            0xC0000000 | turnColour);
+        // Turn 0 is the engine mid-setup; the screen shows 1 there and so does
+        // this. Coloured rather than white, the same as the screen's badge:
+        // whose turn it is is said with colour and not with words.
+        extractor.pose().pushMatrix();
+        extractor.pose().scale(turnScale, turnScale);
+        extractor.centeredText(font, Integer.toString(Math.max(1, board.turn())),
+            Math.round((turnX + turnW / 2F) / turnScale),
+            Math.round((TOP + (turnH - font.lineHeight * turnScale) / 2F + 1) / turnScale),
+            0xFF000000 | turnColour);
+        extractor.pose().popMatrix();
 
         drawPhaseBar(extractor, board, screenW, screenH, barH);
         drawClock(extractor, font, screenW, screenH, barH);
