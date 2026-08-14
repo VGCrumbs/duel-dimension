@@ -5,6 +5,8 @@ import de.cas_ual_ty.dueldimension.clientutil.DuelActionController;
 import de.cas_ual_ty.dueldimension.clientutil.DuelClientState;
 import de.cas_ual_ty.dueldimension.clientutil.PromptOptions;
 import de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds;
+import de.cas_ual_ty.dueldimension.ocg.OcgConstants;
+import de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot;
 import de.cas_ual_ty.dueldimension.duel.overworld.FieldSiting;
 import de.cas_ual_ty.dueldimension.duel.overworld.FieldTransform;
 import net.minecraft.client.Camera;
@@ -38,6 +40,8 @@ public class BoardPointerScreen extends Screen
 {
     /** What the cursor is over, recomputed as it moves. */
     private BoardTarget hovered;
+    /** Which card of the hand the cursor is over, or -1. */
+    private int hoveredCard = -1;
     /** The options for a card that was clicked and had more than one. */
     private List<Integer> choices = List.of();
     private int choicesX;
@@ -58,6 +62,26 @@ public class BoardPointerScreen extends Screen
     public boolean isPauseScreen()
     {
         return false;
+    }
+
+    /**
+     * No blur, and barely any dim.
+     * <p>
+     * The default draws a blurred, darkened copy of the world behind a screen,
+     * which is right for a menu that replaces what is behind it and wrong for
+     * this one: what is behind it is the board being played on, and blurring
+     * the thing the cursor is pointing at defeats the pointer. Overridden here
+     * rather than left to the base class, which reaches
+     * {@code extractBlurredBackground} through {@code extractBackground}.
+     * <p>
+     * A trace of shade stays, so the cards and the rows read against a bright
+     * sky without hiding the board under them.
+     */
+    @Override
+    public void extractBackground(GuiGraphicsExtractor extractor, int mouseX, int mouseY,
+        float partialTick)
+    {
+        extractor.fillGradient(0, 0, width, height, 0x18101010, 0x28101010);
     }
 
     /**
@@ -103,8 +127,53 @@ public class BoardPointerScreen extends Screen
         return new Vec3(sinYaw * cosPitch, -sinPitch, cosYaw * cosPitch);
     }
 
+    /**
+     * The cards in your own hand, as things that can be pointed at.
+     * <p>
+     * A hand is not on the board -- it must never be, since the board is
+     * visible to anyone who walks up to it -- but it is still where half a
+     * turn's decisions are made, so it has to be clickable or the pointer can
+     * only play cards that are already down.
+     */
+    private BoardTarget handTargetAt(double mouseX, double mouseY)
+    {
+        BoardSnapshot board = DuelClientState.board;
+        if(board == null || board.self() == null || ClientDuelField.seat() < 0)
+        {
+            return null;
+        }
+        List<BoardSnapshot.Slot> hand = board.self().hand();
+        if(hand == null || hand.isEmpty())
+        {
+            return null;
+        }
+        HandLayout.Slot[] slots = HandLayout.slots(width, height, hand.size());
+        hoveredCard = HandLayout.at(slots, mouseX, mouseY);
+        if(hoveredCard < 0)
+        {
+            return null;
+        }
+        BoardSnapshot.Slot card = hand.get(hoveredCard);
+        // Controller 0: the engine numbers the seat it is asking, and this is
+        // that seat's own hand. The same convention BoardRenderer's hand hits
+        // use, so the legality filter matches them identically.
+        return new BoardTarget(card.code(), 0, OcgConstants.LOCATION_HAND, hoveredCard, -1,
+            "Hand", 1, card.art());
+    }
+
     private void updateHover(double mouseX, double mouseY)
     {
+        // The hand is drawn over the board, so a cursor on a card in hand is
+        // pointing at that card and not at whatever zone is behind it.
+        hoveredCard = -1;
+        BoardTarget inHand = handTargetAt(mouseX, mouseY);
+        if(inHand != null)
+        {
+            hovered = inHand;
+            ClientDuelTargeting.point(null);
+            return;
+        }
+
         FieldSiting siting = ClientDuelField.siting();
         if(siting == null || minecraft.player == null)
         {
@@ -212,6 +281,15 @@ public class BoardPointerScreen extends Screen
         {
             drawChoices(extractor);
             return;
+        }
+
+        // The HUD does not run while a screen is open, so the pointer draws
+        // the hand itself -- otherwise it would disappear at the moment the
+        // cursor arrived to use it.
+        BoardSnapshot board = DuelClientState.board;
+        if(board != null && ClientDuelField.seat() >= 0)
+        {
+            HandHud.drawHand(extractor, board, hoveredCard);
         }
 
         String label = hovered == null ? "Point at a card" : hovered.label();

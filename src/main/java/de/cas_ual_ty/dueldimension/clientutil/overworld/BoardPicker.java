@@ -97,7 +97,8 @@ public final class BoardPicker
                 {
                     continue;
                 }
-                BoardTarget hit = inZones(side, controller, field, occupiedOnly);
+                BoardTarget hit = inZones(side, controller, relative(viewerSeat, controller),
+                    field, occupiedOnly);
                 if(hit != null)
                 {
                     return hit;
@@ -111,7 +112,8 @@ public final class BoardPicker
             {
                 continue;
             }
-            BoardTarget pile = inPiles(side, controller, field);
+            BoardTarget pile = inPiles(side, controller, relative(viewerSeat, controller),
+                field);
             if(pile != null)
             {
                 return pile;
@@ -120,8 +122,21 @@ public final class BoardPicker
         return null;
     }
 
-    private static BoardTarget inZones(BoardSnapshot.Side side, int controller, float[] field,
-        boolean occupiedOnly)
+    /**
+     * The controller as the ENGINE numbers it: 0 is whoever is being asked.
+     * <p>
+     * The board's halves are absolute -- both duellists walk around the same
+     * object -- but a prompt's options are built for one seat, so a target that
+     * is going to be compared against them has to speak the engine's numbering
+     * or seat 1 would never match its own cards.
+     */
+    private static int relative(int viewerSeat, int controller)
+    {
+        return controller == viewerSeat ? 0 : 1;
+    }
+
+    private static BoardTarget inZones(BoardSnapshot.Side side, int controller, int relative,
+        float[] field, boolean occupiedOnly)
     {
         for(int[] zone : ZONES)
         {
@@ -136,13 +151,14 @@ public final class BoardPicker
             {
                 continue;
             }
-            return new BoardTarget(occupied ? slot.code() : 0, controller, zone[0], zone[1],
+            return new BoardTarget(occupied ? slot.code() : 0, relative, zone[0], zone[1],
                 -1, label(zone[0], zone[1]), occupied ? 1 : 0, occupied ? slot.art() : 0);
         }
         return null;
     }
 
-    private static BoardTarget inPiles(BoardSnapshot.Side side, int controller, float[] field)
+    private static BoardTarget inPiles(BoardSnapshot.Side side, int controller, int relative,
+        float[] field)
     {
         for(int location : PILES)
         {
@@ -153,7 +169,7 @@ public final class BoardPicker
             }
             // A pile is picked as one thing, so it has no sequence -- which is
             // exactly what BoardTarget.isPile reads.
-            return new BoardTarget(0, controller, location, -1, -1, pileLabel(location),
+            return new BoardTarget(0, relative, location, -1, -1, pileLabel(location),
                 countOf(side, location), 0);
         }
         return null;

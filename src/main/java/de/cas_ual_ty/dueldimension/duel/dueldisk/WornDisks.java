@@ -59,6 +59,19 @@ public final class WornDisks
     /** Puts the disk on, or takes it off. */
     public static void toggle(ServerPlayer player)
     {
+        // Not during a duel. The disk is what the duel is being played on, and
+        // taking it off halfway through is the sort of thing that reads as a
+        // way out of a losing game -- the duel does not stop when it comes off,
+        // so all it would do is leave a duellist duelling with nothing on their
+        // arm. Asked of the live seat registry rather than a flag, like
+        // everything else that wants to know whether a duel is running.
+        if(de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.isSeated(player.getUUID()))
+        {
+            player.sendSystemMessage(net.minecraft.network.chat.Component
+                .literal("You cannot take your duel disk off during a duel")
+                .withStyle(net.minecraft.ChatFormatting.RED));
+            return;
+        }
         if(player == null)
         {
             return;

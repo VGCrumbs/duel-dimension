@@ -81,7 +81,12 @@ public final class OverworldBoardRenderer
         BoardTarget looking = ClientDuelTargeting.looking();
         if(looking != null && ClientDuelTargeting.actionable())
         {
-            BoardMesh.Piece lit = BoardMesh.highlight(looking.controller(), looking.location(),
+            // Back from the engine's numbering to the board's halves: a
+            // target says "mine" or "theirs", and the board has a left and a
+            // right that do not move when the seats change.
+            int half = FieldTransform.controllerFor(Math.max(0, ClientDuelField.seat()),
+                looking.controller() == 0);
+            BoardMesh.Piece lit = BoardMesh.highlight(half, looking.location(),
                 Math.max(looking.sequence(), 0));
             if(lit != null)
             {

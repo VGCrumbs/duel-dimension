@@ -71,15 +71,6 @@ public final class HandHud implements HudElement
         extractor.centeredText(client.font, hint, middle, 46, 0xFF7CE38B);
     }
 
-    /** How tall a card is drawn, in pixels; its width follows the card's shape. */
-    private static final int CARD_H = 54;
-    private static final int CARD_W = Math.round(CARD_H * DuelTextures.CARD_ASPECT);
-    /** How much of a card's width is visible when the hand is too wide to lay flat. */
-    private static final int MIN_STEP = 12;
-    private static final int GAP = 3;
-    /** Clear of the hotbar, the experience bar and the preload bar above them. */
-    private static final int ABOVE_HOTBAR = 76;
-
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor, DeltaTracker delta)
     {
@@ -87,6 +78,13 @@ public final class HandHud implements HudElement
         // else's -- redacted, but still not theirs to have laid out along the
         // bottom of their screen as though it were.
         if(!ClientDuelField.locked() || ClientDuelField.seat() < 0)
+        {
+            return;
+        }
+        // The pointer draws its own copy, because a HUD element is not
+        // extracted while a screen is open. Drawing here as well would be
+        // drawing it twice on the frames where both could run.
+        if(Minecraft.getInstance().gui.screen() instanceof BoardPointerScreen)
         {
             return;
         }
@@ -101,41 +99,46 @@ public final class HandHud implements HudElement
             return;
         }
         drawReadout(extractor, client, board);
+        drawHand(extractor, board, -1);
+    }
 
-        List<BoardSnapshot.Slot> hand = board.self().hand();
+    /**
+     * The cards in your hand, drawn where {@link HandLayout} says.
+     * <p>
+     * Callable because the pointer screen has to draw it as well: a HUD element
+     * is not extracted at all while a screen is open, and the pointer IS a
+     * screen -- so without this the hand would vanish at exactly the moment the
+     * cursor arrived to click it.
+     *
+     * @param highlighted the card under the cursor, or -1
+     */
+    public static void drawHand(GuiGraphicsExtractor extractor, BoardSnapshot board,
+        int highlighted)
+    {
+        List<BoardSnapshot.Slot> hand = board.self() == null ? null : board.self().hand();
         if(hand == null || hand.isEmpty())
         {
             return;
         }
+        HandLayout.Slot[] slots = HandLayout.slots(extractor.guiWidth(), extractor.guiHeight(),
+            hand.size());
 
-        // Overlap the cards when there are too many to lay side by side, the
-        // way a hand of cards actually overlaps -- rather than shrinking them
-        // until they are unreadable, which is the other way a hand of fifteen
-        // could be made to fit.
-        int screenW = extractor.guiWidth();
-        int usable = Math.max(CARD_W, screenW - 40);
-        int step = CARD_W + GAP;
-        if(hand.size() * step > usable)
+        for(int card = 0; card < hand.size(); card++)
         {
-            step = Math.max(MIN_STEP, (usable - CARD_W) / Math.max(1, hand.size() - 1));
-        }
-
-        int spread = CARD_W + step * (hand.size() - 1);
-        int x = (screenW - spread) / 2;
-        int y = extractor.guiHeight() - ABOVE_HOTBAR - CARD_H;
-
-        for(BoardSnapshot.Slot slot : hand)
-        {
+            BoardSnapshot.Slot slot = hand.get(card);
+            HandLayout.Slot at = slots[card];
+            // The hovered card stands up out of the fan, the way a card being
+            // considered leaves the hand before it is played.
+            int lift = card == highlighted ? HandLayout.HOVER_LIFT : 0;
             // inHand is true: a set card in your OWN hand is one you are
             // allowed to look at, and this overlay is only ever drawn for its
             // owner. The concealment that matters happened on the server.
             Identifier texture = CardFaces.face(slot, true, 0);
             boolean whole = CardFaces.isCardShaped(texture);
-            DdBlitUtil.blit(extractor, texture, x, y, CARD_W, CARD_H,
+            DdBlitUtil.blit(extractor, texture, at.x(), at.y() - lift, at.width(), at.height(),
                 whole ? 0F : DuelTextures.CARD_U0, whole ? 0F : DuelTextures.CARD_V0,
                 whole ? 1F : DuelTextures.CARD_U1, whole ? 1F : DuelTextures.CARD_V1,
                 DdBlitUtil.NO_TINT);
-            x += step;
         }
     }
 }
