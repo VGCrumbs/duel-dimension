@@ -54,8 +54,18 @@ public final class DuelistChallenge
         Entity entity = player.level().getEntity(duelistId);
         if(!(entity instanceof DuelistEntity duelist))
         {
+            de.cas_ual_ty.dueldimension.DuelDimension.warn(
+                "challenge reply named entity " + duelistId + ", which is "
+                    + (entity == null ? "not there" : entity.getType().toString()));
             return;
         }
+        // Logged because this decision is invisible from inside the game: a
+        // duel that opens on the screen after the board was asked for looks
+        // exactly like a duel that was never asked about, and the difference
+        // is one boolean that crossed the wire.
+        de.cas_ual_ty.dueldimension.DuelDimension.log("challenge accepted: "
+            + player.getGameProfile().name() + " vs " + duelist.displayName()
+            + ", overworld=" + overworld);
         double reach = DuelReach.CHALLENGE_RANGE + REPLY_SLACK;
         if(player.distanceToSqr(duelist) > reach * reach)
         {
@@ -83,7 +93,10 @@ public final class DuelistChallenge
                 {
                     DuelistDuels.challenge(duelist, player);
                     // A duel that refused to start leaves no board behind.
-                    if(!DuelistDuels.isDueling(player.getUUID()))
+                    // isSeated, NOT isDueling: the latter asks about the
+                    // DUELIST's id and is always false for a player, so this
+                    // guard used to fire every time and take the board with it.
+                    if(!DuelistDuels.isSeated(player.getUUID()))
                     {
                         OverworldDuels.release(player.level().getServer(), player.getUUID());
                     }

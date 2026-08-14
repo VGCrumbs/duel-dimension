@@ -145,6 +145,8 @@ public final class OverworldDuels
             outcome.start();
             return;
         }
+        de.cas_ual_ty.dueldimension.DuelDimension.log("siting a duel between "
+            + first.getGameProfile().name() + " and " + second.getGameProfile().name());
 
         ServerLevel level = (ServerLevel)first.level();
         LevelSampler sampler = new LevelSampler(level);
@@ -203,12 +205,24 @@ public final class OverworldDuels
     {
         if(server == null || player.level() != opponent.level())
         {
+            // Was silent, which made it indistinguishable from a duel that had
+            // never asked for a board -- and silence is exactly what made this
+            // undiagnosable the first two times it was reported.
+            de.cas_ual_ty.dueldimension.DuelDimension.warn("cannot site a duel for "
+                + player.getGameProfile().name() + ": server=" + (server != null)
+                + " sameLevel=" + (player.level() == opponent.level()));
+            tell(player, refusalMessage(Refusal.DIFFERENT_WORLD));
             outcome.start();
             return;
         }
         ServerLevel level = (ServerLevel)player.level();
         SitingResult result = SitingSearch.site(new LevelSampler(level), floorUnder(player),
             opponent.blockPosition().below(), FieldSpec.current());
+        de.cas_ual_ty.dueldimension.DuelDimension.log("siting against "
+            + opponent.getType() + " for " + player.getGameProfile().name() + ": "
+            + result.getClass().getSimpleName()
+            + (result.siting() == null ? "" : " at " + result.siting().anchor()
+                + " facing " + result.siting().facing()));
         if(result instanceof SitingResult.Refused refused)
         {
             tell(player, refusalMessage(refused.reason()));

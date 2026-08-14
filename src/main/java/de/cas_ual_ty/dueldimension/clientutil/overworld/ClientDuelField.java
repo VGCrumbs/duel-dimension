@@ -74,7 +74,11 @@ public final class ClientDuelField
      */
     public static boolean locked()
     {
-        return locked;
+        // present(), not the bare flag. Everything that DRAWS the board is
+        // gated on present(); if the thing that suppresses the duel screen is
+        // not, the two disagree the moment a player changes dimension and the
+        // duellist is left with no board and no screen either.
+        return present() && locked;
     }
 
     /**

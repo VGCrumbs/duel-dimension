@@ -567,11 +567,19 @@ public class ClientProxy implements ISidedProxy
         // sequence watchable rather than something that happens off-screen.
         //
         // Not on a world board, where the opponent's sequence is watchable by
-        // looking at it. This is one of TWO places that open the duel screen --
-        // the other is DuelClientState.openScreen -- and they have to be
-        // considered together: branching only this one would leave the board
-        // covered by a screen the moment the opponent moved, and branching only
-        // the other would leave it covered the moment you were asked anything.
+        // looking at it.
+        //
+        // There are THREE callers of DuelClientState.openScreen, and they were
+        // once described as two, which is how one of them went unexamined:
+        //   - this one, for watching an opponent's turn: suppressed on a board;
+        //   - openScreenForPrompt, for a question: suppressed on a board when
+        //     the board can answer the question;
+        //   - hideDuelField below, for a board that has just gone away mid
+        //     question: NOT suppressed, and must not be, because by then there
+        //     is no board to answer on.
+        // They have to be considered together. Branching one and not the others
+        // is how a board ends up covered by a screen at the one moment its
+        // owner was looking at it.
         if(!update.over() && !update.events().isEmpty()
             && !de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()
             && !(getMinecraft().gui.screen() instanceof EngineDuelScreen))

@@ -626,6 +626,24 @@ public final class DuelistDuels
      * forever. Reading the live registry cannot desynchronise: when the duel
      * leaves ACTIVE the duelist walks again by itself.
      */
+    /**
+     * Is this PLAYER in a duel?
+     * <p>
+     * Not the same question as {@link #isDueling}, which asks about a DUELIST
+     * -- it matches its argument against {@code RunningDuel.duelistId}, the
+     * NPC's id, so handing it a player's UUID quietly answers "no" forever.
+     * That mistake cost an evening: a caller used it to check whether a duel it
+     * had just started was running, got false every time, and tore down the
+     * board it had just built one statement later.
+     * <p>
+     * Read from the live seat registry for the same reason as its neighbour:
+     * a flag is one abnormal ending away from lying.
+     */
+    public static boolean isSeated(java.util.UUID playerId)
+    {
+        return playerId != null && SEATS.containsKey(playerId);
+    }
+
     public static boolean isDueling(java.util.UUID duelistId)
     {
         if(duelistId == null)
