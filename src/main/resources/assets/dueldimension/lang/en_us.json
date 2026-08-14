@@ -248,5 +248,6 @@
   "dueldimension.overworld.refusal.uneven_elevation": "There is no level ground for a duel field near you. Playing on the duel screen instead.",
   "dueldimension.overworld.refusal.uneven_ground": "The ground here is not level enough for a duel field. Playing on the duel screen instead.",
   "dueldimension.overworld.refusal.obstructed": "There is not enough clear space for a duel field here. Playing on the duel screen instead.",
-  "dueldimension.overworld.refusal.no_room": "There is no room for a duel field here. Playing on the duel screen instead."
+  "dueldimension.overworld.refusal.no_room": "There is no room for a duel field here. Playing on the duel screen instead.",
+  "key.dueldimension.duel_act": "Duel: act on card"
 }

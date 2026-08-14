@@ -43,6 +43,21 @@ public final class HubKeybinds
         CATEGORY));
 
     /**
+     * Acts on the card being looked at during an overworld duel.
+     * <p>
+     * Its own binding rather than the vanilla use key, which is already
+     * committed to the item in hand and whose click queue is drained by the
+     * game itself in an order this mod does not control. A duellist is locked
+     * in place with nothing else to do with their hands, so a spare key costs
+     * them nothing and can be rebound.
+     */
+    public static final KeyMapping DUEL_ACT = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+        "key.dueldimension.duel_act",
+        InputConstants.Type.KEYSYM,
+        GLFW.GLFW_KEY_R,
+        CATEGORY));
+
+    /**
      * Opens the foil blend test. Temporary, and goes when the question it asks
      * is answered -- see {@code FoilTestScreen}.
      */

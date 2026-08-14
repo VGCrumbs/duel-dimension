@@ -1036,45 +1036,18 @@ public class EngineDuelScreen extends Screen
 
     // ---- contextual command menu ----
 
-    /** Option indices acting on this exact slot, in ShowMenu's order. */
+    /**
+     * Option indices acting on this exact slot, in ShowMenu's order.
+     * <p>
+     * The body moved to {@link PromptOptions} when the world board needed the
+     * same answer. It stays as a delegate because this class asks it in a dozen
+     * places -- what matters is that there is now ONE filter, so a card the
+     * screen says you may attack with is a card the board says the same about.
+     */
     private List<Integer> optionsFor(BoardRenderer.Hit hit)
     {
-        List<Integer> found = new ArrayList<>();
-        EnginePrompt prompt = shownPrompt;
-        if(prompt == null || answered || hit == null)
-        {
-            return found;
-        }
-        for(int i = 0; i < prompt.options().size(); i++)
-        {
-            EnginePrompt.Option option = prompt.options().get(i);
-            if(prompt.kind() == EnginePrompt.Kind.PLACES)
-            {
-                if(hit.zoneRef() >= 0 && option.zone() == hit.zoneRef())
-                {
-                    found.add(i);
-                }
-            }
-            else if(option.hasSlot() && option.isAt(hit.controller(), hit.location(), hit.sequence()))
-            {
-                found.add(i);
-            }
-            else if(hit.isPile() && option.hasSlot() && option.controller() == hit.controller()
-                && option.location() == hit.location())
-            {
-                // duelclient.cpp raises deck_act/grave_act/remove_act/extra_act
-                // for activations from a pile; the pile is the click target.
-                found.add(i);
-            }
-            else if(!option.hasSlot() && option.cardCode() != 0 && option.cardCode() == hit.code()
-                && !hit.isPile())
-            {
-                found.add(i);
-            }
-        }
-        found.sort(java.util.Comparator.comparingInt(index ->
-            CardCommands.menuIndex(prompt.options().get(index).command())));
-        return found;
+        return PromptOptions.optionsFor(shownPrompt, answered,
+            hit == null ? null : hit.target());
     }
 
     /** Opens the command menu at a card, as EDOPro's wCmdMenu does. */

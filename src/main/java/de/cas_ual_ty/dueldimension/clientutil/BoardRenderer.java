@@ -262,6 +262,17 @@ public class BoardRenderer
             return sequence < 0;
         }
 
+        /**
+         * This hit with its rectangle taken off: what it is, rather than where
+         * on the screen it was. The form the legality filter takes, so the
+         * board in the world can ask the same question without a rectangle.
+         */
+        public de.cas_ual_ty.dueldimension.clientutil.BoardTarget target()
+        {
+            return new de.cas_ual_ty.dueldimension.clientutil.BoardTarget(code, controller,
+                location, sequence, zoneRef, label, count, art);
+        }
+
         public int x()
         {
             return corners.minX();

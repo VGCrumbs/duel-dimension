@@ -1,6 +1,7 @@
 package de.cas_ual_ty.dueldimension.clientutil.overworld;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import de.cas_ual_ty.dueldimension.clientutil.BoardTarget;
 import de.cas_ual_ty.dueldimension.clientutil.CardFaces;
 import de.cas_ual_ty.dueldimension.clientutil.DuelClientState;
 import de.cas_ual_ty.dueldimension.clientutil.FieldLayout;
@@ -71,6 +72,22 @@ public final class OverworldBoardRenderer
         {
             WorldQuad.submit(poseStack, collector, piece.texture(), camera,
                 transform.corners(piece.rect(), SURFACE_LIFT + piece.lift()), 0xFFFFFFFF);
+        }
+
+        // The zone being looked at, lit with the same square the 2D board
+        // uses for a zone the engine is offering -- and only when the engine
+        // IS offering something, so a highlight always means "you may act
+        // here" rather than "your crosshair is here".
+        BoardTarget looking = ClientDuelTargeting.looking();
+        if(looking != null && ClientDuelTargeting.actionable())
+        {
+            BoardMesh.Piece lit = BoardMesh.highlight(looking.controller(), looking.location(),
+                Math.max(looking.sequence(), 0));
+            if(lit != null)
+            {
+                WorldQuad.submit(poseStack, collector, lit.texture(), camera,
+                    transform.corners(lit.rect(), SURFACE_LIFT + lit.lift()), 0xFFFFFFFF);
+            }
         }
 
         drawCards(poseStack, collector, transform, camera);

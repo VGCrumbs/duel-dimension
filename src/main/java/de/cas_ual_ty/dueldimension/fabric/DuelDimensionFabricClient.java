@@ -101,6 +101,24 @@ public class DuelDimensionFabricClient implements ClientModInitializer
         // where it is standing everything is fine. Skipped in singleplayer,
         // where the integrated server has already said it about the same
         // database in the same JVM.
+        // Overworld duels: follow what the duellist is looking at, and act on
+        // it when they press the key. Both are cheap no-ops unless this client
+        // is actually standing at a board.
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents.END_CLIENT_TICK
+            .register(client ->
+        {
+            de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelTargeting.tick(client);
+            while(de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds.DUEL_ACT.consumeClick())
+            {
+                if(de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()
+                    && client.gui.screen() == null)
+                {
+                    de.cas_ual_ty.dueldimension.clientutil.overworld.BoardMenuScreen
+                        .openIfActionable(client);
+                }
+            }
+        });
+
         // A board belongs to the world it was built in. Remembering one across
         // a disconnect would draw it into the next world the player joins.
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT
