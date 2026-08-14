@@ -34,6 +34,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * Everything geometric is delegated to {@link SitingSearch} and
  * {@link FieldValidator}, which are pure and tested; what lives here is the
  * server-side lifecycle those two cannot express.
+ * <p>
+ * <b>Entities are deliberately not a disruption.</b> A cow wandering across the
+ * field does not invalidate it: the board is a projection and passes through
+ * whatever walks over it, and living things move, so a duel that fell back
+ * because a bat flew past would fall back constantly for no benefit anyone
+ * could see. The things that DO pull a board down are the ones that persist and
+ * that a duellist cannot play around -- the ground going away, a wall going up,
+ * a player leaving, dying or being moved.
  */
 public final class OverworldDuels
 {
@@ -67,6 +75,14 @@ public final class OverworldDuels
      * enough that a player cannot walk off the mark.
      */
     private static final double DRIFT_TOLERANCE = 0.6D;
+
+    /**
+     * Past this, they did not drift -- something moved them. A command, a
+     * pearl, a portal, a plugin. The lock exists to stop a player WALKING away,
+     * not to drag them back across the world against something that outranks
+     * it, so this is a fall-back and not a longer piece of elastic.
+     */
+    private static final double TELEPORTED_AWAY = 8D;
 
     /** A duel whose players have been shown their marks and have not both reached them. */
     private record Waiting(UUID seat0, UUID seat1, ResourceKey<Level> level, FieldSiting siting,
@@ -243,6 +259,14 @@ public final class OverworldDuels
         }
     }
 
+    /**
+     * How often a running board re-checks the ground it was built on. Once a
+     * second: a 9x9 field is a few hundred block reads and a duel lasts
+     * minutes, so this is nothing, and a board somebody has built a wall
+     * through should not survive a whole turn.
+     */
+    private static final int INTEGRITY_INTERVAL = 20;
+
     private static void tickBoards(MinecraftServer server)
     {
         for(Board board : new java.util.LinkedHashSet<>(BOARDS.values()))
@@ -261,6 +285,42 @@ public final class OverworldDuels
                 tell(server.getPlayerList().getPlayer(board.seat1()), left);
                 continue;
             }
+            ServerLevel level = server.getLevel(board.level());
+            if(level == null)
+            {
+                continue;
+            }
+
+            // A player who has died is not standing anywhere, and holding a
+            // corpse on its mark would be both grim and useless. The duel
+            // carries on, on the screen, exactly as it does for every other
+            // disruption.
+            if(dead(server, board, 0) || dead(server, board, 1))
+            {
+                fallBack(server, board, "A duellist fell");
+                continue;
+            }
+
+            // Something moved a duellist that outranks a duel: a command, a
+            // pearl, a plugin. Yanking them back would be the lock fighting the
+            // server, so the board yields instead.
+            if(taken(server, board, 0) || taken(server, board, 1))
+            {
+                fallBack(server, board, "A duellist was moved away from the field");
+                continue;
+            }
+
+            // Somebody built a wall through the field, or dug the floor out
+            // from under it. Asked with the SAME validator that accepted the
+            // site in the first place, against the same footprint, so a board
+            // can never be pulled down for failing a check it never passed.
+            if(level.getGameTime() % INTEGRITY_INTERVAL == 0
+                && FieldValidator.check(new LevelSampler(level), board.siting()) != null)
+            {
+                fallBack(server, board, "The duel field was disturbed");
+                continue;
+            }
+
             for(int seat = 0; seat < 2; seat++)
             {
                 ServerPlayer player = server.getPlayerList()
@@ -272,6 +332,46 @@ public final class OverworldDuels
                 hold(player, board.siting(), seat);
             }
         }
+    }
+
+    /**
+     * Takes the board down and leaves the duel running.
+     * <p>
+     * The policy for every disruption, and the reason it is the same one every
+     * time: the engine is the authority on the duel and the presentation is not
+     * part of the rules, so nothing that happens to the ground can decide a
+     * game. It is also what stops a bystander with a stack of dirt from costing
+     * somebody a match.
+     */
+    private static void fallBack(MinecraftServer server, Board board, String why)
+    {
+        release(server, board.seat0());
+        Component message = Component.literal(why + "; playing on the duel screen instead")
+            .withStyle(ChatFormatting.YELLOW);
+        tell(server.getPlayerList().getPlayer(board.seat0()), message);
+        tell(server.getPlayerList().getPlayer(board.seat1()), message);
+    }
+
+    /** Has this seat's player been moved much further than walking could explain? */
+    private static boolean taken(MinecraftServer server, Board board, int seat)
+    {
+        ServerPlayer player = server.getPlayerList()
+            .getPlayer(seat == 0 ? board.seat0() : board.seat1());
+        if(player == null)
+        {
+            return false;
+        }
+        BlockPos stand = board.siting().stand(seat);
+        return player.distanceToSqr(stand.getX() + 0.5D, stand.getY() + 1, stand.getZ() + 0.5D)
+            > TELEPORTED_AWAY * TELEPORTED_AWAY;
+    }
+
+    /** Is this seat's player online and no longer alive? */
+    private static boolean dead(MinecraftServer server, Board board, int seat)
+    {
+        ServerPlayer player = server.getPlayerList()
+            .getPlayer(seat == 0 ? board.seat0() : board.seat1());
+        return player != null && !player.isAlive();
     }
 
     /** Is this seat's player online but in a different world from the board? */

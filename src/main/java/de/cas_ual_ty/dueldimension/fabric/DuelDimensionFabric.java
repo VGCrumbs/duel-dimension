@@ -307,6 +307,17 @@ public class DuelDimensionFabric implements ModInitializer
                 de.cas_ual_ty.dueldimension.duel.profile.FreeModeCommand.register(dispatcher);
             });
 
+        // Nothing owned the shutdown before this. DuelistDuels.stopAll had no
+        // callers at all, so a singleplayer world closed and reopened in the
+        // same JVM inherited the previous world's duel threads, and any board
+        // standing in it outlived the world it was standing in.
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPING
+            .register(server ->
+        {
+            de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels.releaseAll(server);
+            de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.stopAll();
+        });
+
         // The duelist self-test, once the server is actually up.
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STARTED.register(
             de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels::maybeStartSelfTest);

@@ -454,6 +454,16 @@ public class ClientProxy implements ISidedProxy
     public void hideDuelField()
     {
         de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.clear();
+        de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelTargeting.clear();
+        // The board can go while a question is outstanding -- somebody built in
+        // the field, a duellist died, the world changed under it. The duel is
+        // still running and still waiting for an answer, so the screen that can
+        // give one has to come back; otherwise the fallback leaves a player
+        // staring at bare ground with a duel thread parked on their reply.
+        if(DuelClientState.prompt != null)
+        {
+            DuelClientState.openScreen();
+        }
     }
 
     @Override
