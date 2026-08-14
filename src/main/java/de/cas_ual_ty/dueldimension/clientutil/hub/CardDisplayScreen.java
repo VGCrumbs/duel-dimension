@@ -22,15 +22,20 @@ import java.util.Locale;
  * Choosing what a display block shows.
  * <p>
  * A search box, a page of results, and three buttons for which way the card
- * lies. Deliberately its own screen rather than the deck editor with something
- * switched off: the editor is about building a legal deck -- counts, limits,
- * the extra deck's own rules -- and none of that has anything to say about a
- * card on a pedestal. Sharing it would mean teaching it a mode in which every
- * one of its rules is suspended.
+ * lies. Its own screen rather than the deck editor with something switched off:
+ * the editor is about building a legal deck -- counts, limits, the extra deck's
+ * own rules -- and none of that has anything to say about a card on a pedestal.
  * <p>
- * Every choice is sent as it is made rather than gathered up behind an OK. A
+ * <b>Everything is measured against the window.</b> A panel with a fixed number
+ * of columns at a fixed card size is a panel that fits one window: at a gui
+ * scale of three a 1634-wide client is only 545 layout pixels across, and a
+ * grid sized for a bare pixel count runs off both edges with its buttons past
+ * the bottom. So the card size comes from the room there is, and the grid comes
+ * from the card size.
+ * <p>
+ * Every choice is sent as it is made rather than gathered behind an OK. A
  * display block is something a builder adjusts while looking at it, and the
- * useful thing is seeing the change land, not confirming it.
+ * useful thing is seeing the change land.
  */
 public class CardDisplayScreen extends Screen
 {
@@ -43,11 +48,25 @@ public class CardDisplayScreen extends Screen
     private final List<Properties> results = new ArrayList<>();
     private int scroll;
 
-    private static final int COLUMNS = 8;
-    private static final int ROWS = 3;
-    private static final int CARD_W = 52;
-    private static final int GAP = 5;
-    private static final int PANEL_W = COLUMNS * CARD_W + (COLUMNS + 1) * GAP;
+    private static final int GAP = 4;
+    private static final int PAD = 6;
+    private static final int HEADER = 34;
+    private static final int FOOTER = 26;
+    private static final int NAME_LINE = 10;
+    private static final int CARD_W_MAX = 54;
+    private static final int CARD_W_MIN = 28;
+    private static final int MARGIN = 12;
+
+    // Worked out in init and whenever the window changes, so nothing measures
+    // twice and disagrees with itself.
+    private int panelX;
+    private int panelY;
+    private int panelW;
+    private int panelH;
+    private int cardW;
+    private int cardH;
+    private int columns;
+    private int rows;
 
     public CardDisplayScreen(BlockPos pos, long code, byte art, int position)
     {
@@ -58,57 +77,86 @@ public class CardDisplayScreen extends Screen
         this.position = position;
     }
 
-    private static int cardH()
+    /**
+     * Fits the grid to the window.
+     * <p>
+     * The card shrinks until a useful number of rows fit, and stops at a size
+     * below which the artwork stops being recognisable -- past that point a
+     * bigger grid of unreadable cards is worse than a smaller one of legible
+     * ones, and the list scrolls anyway.
+     */
+    private void measure()
     {
-        return Math.round(CARD_W / DuelTextures.CARD_ASPECT);
-    }
+        panelW = Math.min(width - MARGIN * 2, 440);
+        panelH = Math.min(height - MARGIN * 2, 300);
+        panelX = (width - panelW) / 2;
+        panelY = (height - panelH) / 2;
 
-    private int panelH()
-    {
-        return 58 + ROWS * (cardH() + 12) + GAP;
-    }
+        int roomW = panelW - PAD * 2;
+        int roomH = panelH - HEADER - FOOTER;
 
-    private int left()
-    {
-        return (width - PANEL_W) / 2;
-    }
-
-    private int top()
-    {
-        return (height - panelH()) / 2;
+        cardW = CARD_W_MAX;
+        while(true)
+        {
+            cardH = Math.round(cardW / DuelTextures.CARD_ASPECT);
+            columns = Math.max(1, (roomW + GAP) / (cardW + GAP));
+            rows = Math.max(1, (roomH + GAP) / (cardH + NAME_LINE + GAP));
+            if(rows >= 2 || cardW - 4 < CARD_W_MIN)
+            {
+                break;
+            }
+            cardW -= 4;
+        }
     }
 
     @Override
     protected void init()
     {
-        search = new EditBox(font, left() + GAP, top() + 20, PANEL_W - GAP * 2, 16,
+        measure();
+
+        String kept = search == null ? "" : search.getValue();
+        search = new EditBox(font, panelX + PAD, panelY + 18, panelW - PAD * 2, 14,
             Component.literal("Search"));
+        search.setValue(kept);
         search.setResponder(text -> refresh());
         addRenderableWidget(search);
         setInitialFocus(search);
 
-        int buttonY = top() + panelH() - 24;
-        int buttonW = (PANEL_W - GAP * 4) / 3;
-        addRenderableWidget(Button.builder(Component.literal("Attack"),
+        int buttonY = panelY + panelH - FOOTER + 4;
+        int buttonW = (panelW - PAD * 2 - GAP * 2) / 3;
+        addRenderableWidget(Button.builder(label("Attack", OcgConstants.POS_FACEUP_ATTACK),
                 pressed -> choosePosition(OcgConstants.POS_FACEUP_ATTACK))
-            .bounds(left() + GAP, buttonY, buttonW, 18).build());
-        addRenderableWidget(Button.builder(Component.literal("Defence"),
+            .bounds(panelX + PAD, buttonY, buttonW, 18).build());
+        addRenderableWidget(Button.builder(label("Defence", OcgConstants.POS_FACEUP_DEFENSE),
                 pressed -> choosePosition(OcgConstants.POS_FACEUP_DEFENSE))
-            .bounds(left() + GAP * 2 + buttonW, buttonY, buttonW, 18).build());
-        addRenderableWidget(Button.builder(Component.literal("Set"),
+            .bounds(panelX + PAD + buttonW + GAP, buttonY, buttonW, 18).build());
+        addRenderableWidget(Button.builder(label("Set", OcgConstants.POS_FACEDOWN_DEFENSE),
                 pressed -> choosePosition(OcgConstants.POS_FACEDOWN_DEFENSE))
-            .bounds(left() + GAP * 3 + buttonW * 2, buttonY, buttonW, 18).build());
+            .bounds(panelX + PAD + (buttonW + GAP) * 2, buttonY, buttonW, 18).build());
 
         refresh();
+    }
+
+    /** The chosen position wears a mark, so the three buttons say which is on. */
+    private Component label(String name, int which)
+    {
+        return Component.literal(position == which ? "▸ " + name : name);
+    }
+
+    private void choosePosition(int chosen)
+    {
+        position = chosen;
+        send();
+        // The labels carry the state, so they are rebuilt with it.
+        rebuildWidgets();
     }
 
     /**
      * The cards matching what has been typed.
      * <p>
-     * Name only, and case-insensitive. A passcode typed in full matches too,
-     * because a builder placing a specific card usually has its number rather
-     * than its spelling -- and card names are exactly the kind of thing nobody
-     * spells right the first time.
+     * Name only, case-insensitive, plus a whole passcode -- a builder placing a
+     * specific card usually has its number, and card names are exactly the kind
+     * of thing nobody spells right the first time.
      */
     private void refresh()
     {
@@ -126,19 +174,11 @@ public class CardDisplayScreen extends Screen
             {
                 results.add(card);
             }
-            if(results.size() >= 512)
+            if(results.size() >= 4096)
             {
-                // Enough to choose from and few enough to page through. A
-                // builder who has not narrowed it down yet is still typing.
                 break;
             }
         }
-    }
-
-    private void choosePosition(int chosen)
-    {
-        position = chosen;
-        send();
     }
 
     private void send()
@@ -146,13 +186,52 @@ public class CardDisplayScreen extends Screen
         ClientPlayNetworking.send(new CardDisplayMessages.SetCard(pos, code, art, position));
     }
 
+    private int maxScroll()
+    {
+        return Math.max(0, (results.size() + columns - 1) / columns - rows);
+    }
+
+    private int cellX(int cell)
+    {
+        return panelX + PAD + (cell % columns) * (cardW + GAP);
+    }
+
+    private int cellY(int cell)
+    {
+        return panelY + HEADER + (cell / columns) * (cardH + NAME_LINE + GAP);
+    }
+
+    /** Which result the cursor is over, or -1. */
+    private int cellAt(double mouseX, double mouseY)
+    {
+        for(int cell = 0; cell < columns * rows; cell++)
+        {
+            int index = cell + scroll * columns;
+            if(index >= results.size())
+            {
+                break;
+            }
+            int x = cellX(cell);
+            int y = cellY(cell);
+            if(mouseX >= x && mouseX < x + cardW && mouseY >= y && mouseY < y + cardH + NAME_LINE)
+            {
+                return index;
+            }
+        }
+        return -1;
+    }
+
     @Override
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubled)
     {
-        int cell = cellAt(event.x(), event.y());
-        if(cell >= 0)
+        // The grid first. Its cells are drawn by this screen rather than being
+        // widgets, so nothing else is going to claim them -- and asking super
+        // first would hand the click to the search box, which covers none of
+        // them but is focused.
+        int chosen = cellAt(event.x(), event.y());
+        if(chosen >= 0 && event.button() == 0)
         {
-            code = results.get(cell).getId();
+            code = results.get(chosen).getId();
             art = 0;
             send();
             return true;
@@ -163,39 +242,8 @@ public class CardDisplayScreen extends Screen
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY)
     {
-        int rows = (results.size() + COLUMNS - 1) / COLUMNS;
-        int maxScroll = Math.max(0, rows - ROWS);
-        scroll = Math.clamp(scroll - (int)Math.signum(scrollY), 0, maxScroll);
+        scroll = Math.clamp(scroll - (int)Math.signum(scrollY), 0, maxScroll());
         return true;
-    }
-
-    private int cellAt(double mouseX, double mouseY)
-    {
-        for(int cell = 0; cell < COLUMNS * ROWS; cell++)
-        {
-            int index = cell + scroll * COLUMNS;
-            if(index >= results.size())
-            {
-                break;
-            }
-            int x = cellX(cell);
-            int y = cellY(cell);
-            if(mouseX >= x && mouseX < x + CARD_W && mouseY >= y && mouseY < y + cardH())
-            {
-                return index;
-            }
-        }
-        return -1;
-    }
-
-    private int cellX(int cell)
-    {
-        return left() + GAP + (cell % COLUMNS) * (CARD_W + GAP);
-    }
-
-    private int cellY(int cell)
-    {
-        return top() + 42 + (cell / COLUMNS) * (cardH() + 12);
     }
 
     @Override
@@ -203,12 +251,19 @@ public class CardDisplayScreen extends Screen
         float partialTick)
     {
         extractor.fillGradient(0, 0, width, height, 0xC0101014, 0xD0101014);
-        NineSlice.draw(extractor, HubTextures.PANEL, left(), top(), PANEL_W, panelH());
-        extractor.text(font, title.getString(), left() + GAP, top() + 6, 0xFFF4D089, true);
+        NineSlice.draw(extractor, HubTextures.PANEL, panelX, panelY, panelW, panelH);
 
-        for(int cell = 0; cell < COLUMNS * ROWS; cell++)
+        // What is on the block right now, beside the title. A builder adjusting
+        // a display wants to know what they are adjusting.
+        Properties current = code == 0L ? null : DdDatabase.PROPERTIES_LIST.get(code);
+        String heading = title.getString()
+            + (current == null ? "  --  empty" : "  --  " + current.getName());
+        extractor.text(font, font.plainSubstrByWidth(heading, panelW - PAD * 2),
+            panelX + PAD, panelY + 5, 0xFFF4D089, true);
+
+        for(int cell = 0; cell < columns * rows; cell++)
         {
-            int index = cell + scroll * COLUMNS;
+            int index = cell + scroll * columns;
             if(index >= results.size())
             {
                 break;
@@ -216,24 +271,39 @@ public class CardDisplayScreen extends Screen
             Properties card = results.get(index);
             int x = cellX(cell);
             int y = cellY(cell);
-            boolean over = mouseX >= x && mouseX < x + CARD_W && mouseY >= y && mouseY < y + cardH();
+            boolean over = mouseX >= x && mouseX < x + cardW
+                && mouseY >= y && mouseY < y + cardH + NAME_LINE;
             boolean chosen = card.getId() == code;
 
             if(over || chosen)
             {
-                NineSlice.draw(extractor, HubTextures.PANEL, x - 3, y - 3, CARD_W + 6,
-                    cardH() + 6, chosen ? NineSlice.SELECTED : NineSlice.HOVER, 3, 0.9F);
+                NineSlice.draw(extractor, HubTextures.PANEL, x - 2, y - 2, cardW + 4, cardH + 4,
+                    chosen ? NineSlice.SELECTED : NineSlice.HOVER, 3, 0.9F);
             }
             // The card's own window, not the whole file: a shipped card texture
-            // is letterboxed inside a square canvas.
+            // is letterboxed inside a square canvas, and blitting all of it
+            // draws the card at six tenths of the width it was given.
             DdBlitUtil.blit(extractor,
                 DuelTextures.cardSmooth(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE),
-                x, y, CARD_W, cardH(), DuelTextures.CARD_U0, DuelTextures.CARD_V0,
+                x, y, cardW, cardH, DuelTextures.CARD_U0, DuelTextures.CARD_V0,
                 DuelTextures.CARD_U1, DuelTextures.CARD_V1, DdBlitUtil.NO_TINT);
 
-            String name = font.plainSubstrByWidth(card.getName(), CARD_W);
-            extractor.text(font, name, x + (CARD_W - font.width(name)) / 2, y + cardH() + 2,
+            String name = font.plainSubstrByWidth(card.getName(), cardW);
+            extractor.text(font, name, x + (cardW - font.width(name)) / 2, y + cardH + 1,
                 chosen ? 0xFFFFE9B0 : 0xFFC2C9D6, true);
+        }
+
+        if(results.isEmpty())
+        {
+            String none = "No cards match that";
+            extractor.text(font, none, panelX + (panelW - font.width(none)) / 2,
+                panelY + HEADER + 8, 0xFF9A9A9A, true);
+        }
+        else if(maxScroll() > 0)
+        {
+            String more = (scroll + 1) + " / " + (maxScroll() + 1);
+            extractor.text(font, more, panelX + panelW - PAD - font.width(more),
+                panelY + panelH - FOOTER - 9, 0xFF7A8090, true);
         }
 
         super.extractRenderState(extractor, mouseX, mouseY, partialTick);
