@@ -223,8 +223,20 @@ public class DuelistEntity extends PathfinderMob
         {
             return InteractionResult.PASS;
         }
-        if(duelsOnBoard && player instanceof net.minecraft.server.level.ServerPlayer challenger)
+        // Sneaking asks for the duel to be held in the world. A duelist put
+        // down by the placer asks for it by default, because testing the world
+        // board is the only reason it is standing there -- but any duelist can
+        // be challenged to one, including the ones that were already in the
+        // world before the board existed, which is the case this started as.
+        boolean onBoard = duelsOnBoard || player.isShiftKeyDown();
+        if(onBoard && player instanceof net.minecraft.server.level.ServerPlayer challenger)
         {
+            // A duelist that has been called out stands its ground. Without
+            // this it can stroll away during the half minute the challenger
+            // spends walking to their mark, and the duel would begin with one
+            // duellist somewhere else entirely -- the stroll goal is only gated
+            // once the duel is actually running.
+            setStationary(true);
             // The field is sited BEFORE the duel starts, so the board is
             // already standing when the first card is drawn. If it cannot be
             // sited the duel happens anyway, on the screen -- the overworld
@@ -254,6 +266,12 @@ public class DuelistEntity extends PathfinderMob
                 });
             return InteractionResult.CONSUME;
         }
+        // Said at the moment it would have been useful, rather than left for
+        // somebody to find in a changelog: this is the click that just chose
+        // the screen, and the alternative is one modifier key away.
+        player.sendSystemMessage(net.minecraft.network.chat.Component
+            .literal("Sneak and right-click to duel on a board in the world instead")
+            .withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
         DuelistDuels.challenge(this, player);
         return InteractionResult.CONSUME;
     }

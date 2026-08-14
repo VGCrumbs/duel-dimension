@@ -90,8 +90,13 @@ public record FieldSpec(int areaWidth, int areaDepth, int clearance, float matSc
      * Nine by nine with the board filling it, which is where this started and
      * what the config file falls back to. Kept as the shipped default rather
      * than as the only possibility.
+     * <p>
+     * The separation limit is twenty because that is how far a worn duel disk
+     * carries a challenge ({@code DuelReach.CHALLENGE_RANGE}). The two numbers
+     * have to agree: a challenge you can shout across a courtyard and then
+     * cannot hold a board duel over is a feature refusing itself.
      */
-    public static final FieldSpec DEFAULT = fitting(9, 9, 3, 1, 1, 16, 8, 3);
+    public static final FieldSpec DEFAULT = fitting(9, 9, 3, 1, 1, 20, 8, 3);
 
     /** The spec the server is currently siting duels with. */
     public static FieldSpec current()
