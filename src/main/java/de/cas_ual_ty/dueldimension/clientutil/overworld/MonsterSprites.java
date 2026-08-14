@@ -130,7 +130,7 @@ public final class MonsterSprites
         // Four across and two down: seven frames of animation, and the eighth
         // cell is the pose it holds while lying in defence.
         posed(26202165L, "sangan", 4, 2, 7, Loop.LOOP);
-        posed(36262024L, "red_eyes_b_chick", 4, 2, 7, Loop.LOOP);
+        posed(36262024L, "red_eyes_b_chick", 4, 2, 7, Loop.LOOP, 0.5F);
         // The whole grid is the flap; nothing left over, so nothing to hold
         // while lying down -- it uses the same animation either way.
         monster(28279543L, "curse_of_dragon", 4, 2, Loop.LOOP);
@@ -193,8 +193,22 @@ public final class MonsterSprites
      */
     public static void posed(long code, String name, int columns, int rows, int frames, Loop loop)
     {
-        monster(code, grid(name, columns, rows, 0, frames, loop),
-            grid(name, columns, rows, columns * rows - 1, 1, Loop.LOOP));
+        posed(code, name, columns, rows, frames, loop, 1F);
+    }
+
+    /**
+     * The same, drawn at a fraction of the usual height.
+     * <p>
+     * A multiple rather than a measurement, because what a monster needs saying
+     * about it is how big it is FOR a monster -- a hatchling is half of one --
+     * and the number that answers that should not change if the standard height
+     * is ever retuned. One number, in the one line the monster already has.
+     */
+    public static void posed(long code, String name, int columns, int rows, int frames, Loop loop,
+        float scale)
+    {
+        monster(code, grid(name, columns, rows, 0, frames, loop, scale),
+            grid(name, columns, rows, columns * rows - 1, 1, Loop.LOOP, scale));
     }
 
     /**
@@ -205,7 +219,14 @@ public final class MonsterSprites
      */
     public static void monster(long code, String name, int columns, int rows, Loop loop)
     {
-        monster(code, grid(name, columns, rows, 0, columns * rows, loop), null);
+        monster(code, name, columns, rows, loop, 1F);
+    }
+
+    /** The same, at a fraction of the usual height. */
+    public static void monster(long code, String name, int columns, int rows, Loop loop,
+        float scale)
+    {
+        monster(code, grid(name, columns, rows, 0, columns * rows, loop, scale), null);
     }
 
     /** A sheet of one row, which is what most of them are. */
@@ -217,9 +238,17 @@ public final class MonsterSprites
     /** A run of cells out of a grid, at the default height and pace. */
     public static Sheet grid(String name, int columns, int rows, int first, int frames, Loop loop)
     {
+        return grid(name, columns, rows, first, frames, loop, 1F);
+    }
+
+    /** The same, at a fraction of the usual height. */
+    public static Sheet grid(String name, int columns, int rows, int first, int frames, Loop loop,
+        float scale)
+    {
         return new Sheet(Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID,
             "textures/duel/monsters/" + name + ".png"), Math.max(1, columns), Math.max(1, rows),
-            Math.max(0, first), Math.max(1, frames), DEFAULT_TICKS, loop, DEFAULT_HEIGHT);
+            Math.max(0, first), Math.max(1, frames), DEFAULT_TICKS, loop,
+            DEFAULT_HEIGHT * Math.max(0.05F, scale));
     }
 
     /**

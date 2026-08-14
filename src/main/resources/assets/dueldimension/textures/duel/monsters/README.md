@@ -67,6 +67,19 @@ A face-DOWN card never shows a sprite at all. That is not a style choice: a set
 card is one nobody may identify, and a monster looming over it would announce
 what it is to the room.
 
+## A monster that is not the usual size
+
+Every helper takes an optional last argument: a multiple of the standard
+height.
+
+```java
+posed(36262024L, "red_eyes_b_chick", 4, 2, 7, Loop.LOOP, 0.5F);
+```
+
+A multiple rather than a measurement, because what wants saying about a monster
+is how big it is *for a monster* — a hatchling is half of one — and that stays
+true if the standard height is ever retuned.
+
 ## Size and pace
 
 `sheet(...)` uses the defaults in `MonsterSprites` — `DEFAULT_HEIGHT` card
