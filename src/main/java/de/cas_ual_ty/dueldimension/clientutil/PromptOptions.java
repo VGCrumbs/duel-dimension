@@ -172,6 +172,12 @@ public final class PromptOptions
         {
             return false;
         }
+        // Everything hidden and more than one to pick: the picker cannot count
+        // and the board has nothing to point at, so this is the duel screen's.
+        if(allHidden(prompt) && !needsPicker(prompt))
+        {
+            return false;
+        }
         return pointable(prompt) && (aboutTheBoard(prompt) || needsList(prompt));
     }
 
@@ -300,8 +306,6 @@ public final class PromptOptions
      */
     private static boolean pointable(EnginePrompt prompt)
     {
-        boolean anySlot = false;
-        boolean anyVisible = false;
         for(EnginePrompt.Option option : prompt.options())
         {
             if(!option.hasSlot())
@@ -310,17 +314,54 @@ public final class PromptOptions
                 // a pile and neither stops the board answering.
                 continue;
             }
-            anySlot = true;
             if(!pickable(option))
             {
                 return false;
             }
+        }
+        return true;
+    }
+
+    /**
+     * Is every answer to this question inside a stack, where nobody can see it?
+     * <p>
+     * The board used to refuse these outright, because pointing at a stack that
+     * holds six candidates says nothing about which -- six identical backs is
+     * not a choice. It has a picker of its own now, so the question is no
+     * longer whether the board can SEE them but whether it can ASK about them.
+     */
+    private static boolean allHidden(EnginePrompt prompt)
+    {
+        boolean anySlot = false;
+        for(EnginePrompt.Option option : prompt.options())
+        {
+            if(!option.hasSlot())
+            {
+                return false;
+            }
+            anySlot = true;
             if(!isPile(option.location()))
             {
-                anyVisible = true;
+                return false;
             }
         }
-        return !anySlot || anyVisible;
+        return anySlot;
+    }
+
+    /**
+     * Should the board open its card picker for this?
+     * <p>
+     * Only for a question with ONE answer. The picker shows a card at a time
+     * and takes a single click; a selection that wants two out of a graveyard
+     * needs a running count and a confirm, which is what the duel screen's own
+     * picker already has. And only while the list is short enough to lay out --
+     * past that the screen is genuinely the better tool, not a fallback.
+     */
+    public static boolean needsPicker(EnginePrompt prompt)
+    {
+        return prompt != null && prompt.isSingleChoice() && allHidden(prompt)
+            && prompt.options().size() <= de.cas_ual_ty.dueldimension.clientutil.overworld
+                .CardChooser.MAX_CARDS;
     }
 
     /**

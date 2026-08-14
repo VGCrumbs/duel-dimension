@@ -62,6 +62,10 @@ public final class HubKeybinds
             // duellist looking at a board that had simply stopped, with the one
             // thing that could restart it refusing to appear.
             && !de.cas_ual_ty.dueldimension.clientutil.PromptOptions.needsList(
+                de.cas_ual_ty.dueldimension.clientutil.DuelClientState.prompt)
+            // Same for a picker full of cards nobody can see: it is the only
+            // thing that can answer, and it needs a cursor to be answered with.
+            && !de.cas_ual_ty.dueldimension.clientutil.PromptOptions.needsPicker(
                 de.cas_ual_ty.dueldimension.clientutil.DuelClientState.prompt);
 
         if(minecraft.gui.screen()

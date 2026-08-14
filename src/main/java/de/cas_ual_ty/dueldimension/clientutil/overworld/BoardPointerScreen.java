@@ -167,6 +167,10 @@ public class BoardPointerScreen extends Screen
     public void tick()
     {
         DuelSelection.sync(DuelClientState.prompt);
+        if(!CardChooser.open())
+        {
+            CardChooser.reset();
+        }
         if(choices.isEmpty() && PromptOptions.needsList(DuelClientState.prompt))
         {
             openQuestion(PromptOptions.unanchoredOptions(DuelClientState.prompt, false));
@@ -433,6 +437,20 @@ public class BoardPointerScreen extends Screen
                 return true;
             }
             decline();
+            return true;
+        }
+
+        // The card picker is modal while it is up: it covers the board, and a
+        // click that fell through it would act on a card the player cannot see
+        // and did not aim at.
+        if(CardChooser.open())
+        {
+            int cell = CardChooser.at(CardChooser.optionsOf(DuelClientState.prompt), width, height,
+                event.x(), event.y());
+            if(cell >= 0 && event.button() == 0)
+            {
+                answer(cell);
+            }
             return true;
         }
 
@@ -747,6 +765,14 @@ public class BoardPointerScreen extends Screen
         if(!choices.isEmpty())
         {
             drawChoices(extractor, mouseX, mouseY);
+        }
+
+        // Over everything, because it is the question rather than a note about
+        // one: while it is up there is nothing else on screen to be doing.
+        if(CardChooser.open())
+        {
+            CardChooser.draw(extractor, font, DuelClientState.prompt,
+                CardChooser.optionsOf(DuelClientState.prompt), mouseX, mouseY);
         }
 
         // Shift shows the card's own words, the same as the deck builder's
