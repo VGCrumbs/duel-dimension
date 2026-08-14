@@ -125,6 +125,7 @@ public final class MonsterSprites
         // Four across and two down: seven frames of animation, and the eighth
         // cell is the pose it holds while lying in defence.
         posed(26202165L, "sangan", 4, 2, 7, Loop.LOOP);
+        posed(36262024L, "red_eyes_b_chick", 4, 2, 7, Loop.LOOP);
     }
     // =========================================================================
 
