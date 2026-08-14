@@ -2943,6 +2943,48 @@ public class DeckEditorScreen extends Screen
         public void playDownSound(net.minecraft.client.sounds.SoundManager sounds)
         {
         }
+
+        /**
+         * The handle is a card back rather than the vanilla grey block.
+         * <p>
+         * Drawn OVER the stock widget rather than instead of it: the track, the
+         * hover state and the label all still come from vanilla, so this is a
+         * change of face and not a reimplementation of a slider.
+         * <p>
+         * A card back is also the honest icon for the thing being sized -- the
+         * handle grows no larger, but what it stands for is unmistakable.
+         */
+        @Override
+        public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX,
+            int mouseY, float partialTick)
+        {
+            super.extractWidgetRenderState(graphics, mouseX, mouseY, partialTick);
+
+            // Where vanilla puts its handle, to the pixel: getX() + (int)(value
+            // * (width - HANDLE_WIDTH)), read off the bytecode. Truncated, not
+            // rounded -- rounding would sit this half a pixel right of the grey
+            // handle underneath and let it peek out at half the positions.
+            int x = getX() + (int)(value * (getWidth() - HANDLE_WIDTH));
+            // Card-shaped and as tall as the widget, so it reads as a card
+            // standing in the track rather than a square sitting on it.
+            int cardH = getHeight();
+            int cardW = Math.max(HANDLE_WIDTH, Math.round(cardH * DuelTextures.CARD_ASPECT));
+            int cardX = x + (HANDLE_WIDTH - cardW) / 2;
+            DdBlitUtil.blit(graphics,
+                de.cas_ual_ty.dueldimension.duel.profile.Sleeves.DEFAULT
+                    .getMainRL(de.cas_ual_ty.dueldimension.clientutil.ClientProxy
+                        .activeCardMainImageSize),
+                cardX, getY(), cardW, cardH,
+                DuelTextures.CARD_U0, DuelTextures.CARD_V0,
+                DuelTextures.CARD_U1, DuelTextures.CARD_V1, DdBlitUtil.NO_TINT);
+
+            // Vanilla draws its label AFTER the handle, so the card has just
+            // buried it. Put it back, exactly as the superclass drew it -- the
+            // same glyphs at the same place, which costs a second opaque pass
+            // and nothing else.
+            extractScrollingStringOverContents(graphics.textRendererForWidget(this,
+                GuiGraphicsExtractor.HoveredTextEffects.NONE), getMessage(), 2);
+        }
     }
 
     /** Space between the buttons on a control row. */
