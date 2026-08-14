@@ -176,9 +176,15 @@ public final class OverworldBoardRenderer
             {
                 continue;
             }
+            // The perpendicular, turned the other way on purpose. This vector
+            // is built in FIELD space and then put through at(), which maps
+            // field y to the NEGATIVE facing -- so a right-hand turn here comes
+            // out as a left-hand one in the world, and the sword arrived
+            // mirrored. Turning it here rather than swapping the texture's u
+            // keeps the winding, and so the facing, as it was.
             float halfW = 0.28F;
-            float acrossX = -dy / length * halfW;
-            float acrossY = dx / length * halfW;
+            float acrossX = dy / length * halfW;
+            float acrossY = -dx / length * halfW;
             double lift = (cardLift(transform) + CardMesh.THICKNESS + 0.01F) * transform.scale();
 
             WorldQuad.submit(poseStack, collector, DuelTextures.ATTACK, camera, new Vec3[] {

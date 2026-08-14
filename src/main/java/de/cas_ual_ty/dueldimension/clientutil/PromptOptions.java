@@ -101,9 +101,47 @@ public final class PromptOptions
         // is four postures of one card, which is a list to pick one from and
         // nothing to do with the board; a summon asks it, so refusing it here
         // meant every summon pulled the screen over the board.
-        return prompt.isSingleChoice()
-            || ((prompt.kind() == EnginePrompt.Kind.PLACES
-                || prompt.kind() == EnginePrompt.Kind.POSITION) && prompt.maxSelect() <= 1);
+        if(!prompt.isSingleChoice()
+            && !((prompt.kind() == EnginePrompt.Kind.PLACES
+                || prompt.kind() == EnginePrompt.Kind.POSITION) && prompt.maxSelect() <= 1))
+        {
+            return false;
+        }
+        return pointable(prompt);
+    }
+
+    /**
+     * Is everything this prompt offers something a duellist can actually point
+     * at?
+     * <p>
+     * A card in a zone or in your hand is drawn where you can look at it. A
+     * card inside a deck, a graveyard, a banished pile or an extra deck is not
+     * -- the board draws those as ONE object, a stack, deliberately, because
+     * that is what they are. So "select the card to add to your hand" offers
+     * five cards that exist nowhere on the board, and answering it by pointing
+     * is impossible: the prompt appeared with nothing to click and the duel sat
+     * on it.
+     * <p>
+     * Those go to the duel screen, which has a picker built for exactly this,
+     * and the screen hands the board back the moment the question is answered.
+     */
+    private static boolean pointable(EnginePrompt prompt)
+    {
+        for(EnginePrompt.Option option : prompt.options())
+        {
+            if(!option.hasSlot())
+            {
+                continue;
+            }
+            int location = option.location();
+            if(location != de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_MZONE
+                && location != de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_SZONE
+                && location != de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_HAND)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
