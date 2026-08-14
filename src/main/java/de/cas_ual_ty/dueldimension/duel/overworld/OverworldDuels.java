@@ -57,6 +57,22 @@ public final class OverworldDuels
 
         /** Do not start it: somebody is no longer here. */
         void cancel(String reason);
+
+        /**
+         * No board could be built. By default the duel happens anyway, on the
+         * screen -- which is right for two players who have already agreed a
+         * match and had a coin tossed for it, because there is a state machine
+         * waiting on a duel and nothing to be gained by stranding it.
+         * <p>
+         * It is NOT right for a player who has just picked "overworld board"
+         * out of a menu. Starting the other kind of duel silently answers a
+         * question they had already answered, so that caller overrides this to
+         * explain and stop.
+         */
+        default void refused(String reason)
+        {
+            start();
+        }
     }
 
     /** How long the two get to walk to their marks before the duel gives up on the idea. */
@@ -212,7 +228,7 @@ public final class OverworldDuels
                 + player.getGameProfile().name() + ": server=" + (server != null)
                 + " sameLevel=" + (player.level() == opponent.level()));
             tell(player, refusalMessage(Refusal.DIFFERENT_WORLD));
-            outcome.start();
+            outcome.refused(Refusal.DIFFERENT_WORLD.name());
             return;
         }
         ServerLevel level = (ServerLevel)player.level();
@@ -225,8 +241,17 @@ public final class OverworldDuels
                 + " facing " + result.siting().facing()));
         if(result instanceof SitingResult.Refused refused)
         {
+            // The spec goes in the log with it: "there was no room" is a very
+            // different report depending on whether the field being asked for
+            // was eleven by nine or thirty-one by thirty-one, and the answer is
+            // a setting the player can change.
+            de.cas_ual_ty.dueldimension.DuelDimension.log("  refused: " + refused.reason()
+                + ", asking for " + FieldSpec.current().areaWidth() + "x"
+                + FieldSpec.current().areaDepth() + " with "
+                + FieldSpec.current().clearance() + " headroom, searching "
+                + FieldSpec.current().searchRadius() + " blocks out");
             tell(player, refusalMessage(refused.reason()));
-            outcome.start();
+            outcome.refused(refused.reason().name());
             return;
         }
 

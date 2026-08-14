@@ -112,7 +112,7 @@ public record FieldSpec(int areaWidth, int areaDepth, int clearance, float matSc
      * them; the floor scan is remembered across facings, so the extra reach
      * costs far less than it once would have.
      */
-    public static final FieldSpec DEFAULT = fitting(11, 9, 3, 1, 1, 20, 12, 3);
+    public static final FieldSpec DEFAULT = fitting(11, 9, 2, 1, 1, 20, 12, 3);
 
     /** The spec the server is currently siting duels with. */
     public static FieldSpec current()

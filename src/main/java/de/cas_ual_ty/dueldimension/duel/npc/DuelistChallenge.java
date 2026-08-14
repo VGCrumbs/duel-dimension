@@ -102,6 +102,22 @@ public final class DuelistChallenge
                     }
                 }
 
+                /**
+                 * The player picked the board out of a menu, so starting a
+                 * screen duel instead would silently answer a question they
+                 * had already answered. Nothing starts; they can move
+                 * somewhere clearer and click the duelist again.
+                 */
+                @Override
+                public void refused(String reason)
+                {
+                    player.sendSystemMessage(Component.literal(
+                        "No duel field could be built here, so no duel was started."
+                            + " Move somewhere more open and challenge again, or pick"
+                            + " \"Duel screen\" instead.")
+                        .withStyle(ChatFormatting.YELLOW));
+                }
+
                 @Override
                 public void cancel(String reason)
                 {
