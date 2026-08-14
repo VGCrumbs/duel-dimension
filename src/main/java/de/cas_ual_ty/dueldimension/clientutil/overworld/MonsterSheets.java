@@ -124,8 +124,11 @@ public final class MonsterSheets
 
     private static void read(Path root, Path path)
     {
-        String name = root.relativize(path).toString().replace('\\', '/');
-        name = name.substring(0, name.length() - 4).toLowerCase(Locale.ROOT);
+        String relative = root.relativize(path).toString().replace('\\', '/');
+        // Final, because the texture takes a SUPPLIER of this name: a variable
+        // reassigned after the fact is not one a lambda may close over.
+        final String name = relative.substring(0, relative.length() - 4)
+            .toLowerCase(Locale.ROOT);
         try(InputStream stream = Files.newInputStream(path))
         {
             NativeImage image = NativeImage.read(stream);
