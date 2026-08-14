@@ -75,6 +75,55 @@ public final class PromptOptions
         return found;
     }
 
+    /**
+     * Can a duellist standing at a world board answer this prompt without the
+     * duel screen?
+     * <p>
+     * CHOOSE is one option out of a list, and PLACES is picking zones on the
+     * board -- both of which the board does at least as well as the screen, and
+     * PLACES rather better. The rest genuinely cannot be done by looking at
+     * things: MULTI picks several and confirms, SORT puts them in an order,
+     * COUNTERS distributes a total, DECLARE_CARD wants a card NAME typed, and
+     * the position prompt offers the same card in four postures rather than
+     * four things on the board. Those keep the screen, which is what it is good
+     * at, and is why the screen is not going anywhere.
+     */
+    public static boolean boardCanAnswer(EnginePrompt prompt)
+    {
+        return prompt != null && prompt.maxSelect() <= 1
+            && (prompt.kind() == EnginePrompt.Kind.CHOOSE
+                || prompt.kind() == EnginePrompt.Kind.PLACES);
+    }
+
+    /**
+     * The options that are not about anything on the board: ending a phase,
+     * going to battle, declining a chain.
+     * <p>
+     * A card is answered by looking at it, but "End Phase" is not somewhere a
+     * duellist can point. These are what the act key offers when it is not
+     * aimed at a card, which is what makes a turn finishable without the
+     * screen.
+     */
+    public static List<Integer> looseOptions(EnginePrompt prompt, boolean answered)
+    {
+        List<Integer> found = new ArrayList<>();
+        if(prompt == null || answered)
+        {
+            return found;
+        }
+        for(int i = 0; i < prompt.options().size(); i++)
+        {
+            EnginePrompt.Option option = prompt.options().get(i);
+            if(!option.hasSlot() && option.cardCode() == 0)
+            {
+                found.add(i);
+            }
+        }
+        found.sort(Comparator.comparingInt(index ->
+            CardCommands.menuIndex(prompt.options().get(index).command())));
+        return found;
+    }
+
     /** Is there anything at all this player can do with the thing they are pointing at? */
     public static boolean actionable(EnginePrompt prompt, boolean answered, BoardTarget target)
     {

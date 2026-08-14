@@ -65,7 +65,6 @@ public class DuelistPlacerItem extends Item
             duelist.setYHeadRot(duelist.getYRot());
         }
         duelist.setStationary(true);
-        duelist.setDuelsOnBoard(true);
         server.addFreshEntity(duelist);
 
         tell(player, Component.literal("Placed " + duelist.displayName()

@@ -155,7 +155,7 @@ public final class DuelClientState
             prompt = item.promptToShow();
             promptShownAt = System.currentTimeMillis();
             over = false;
-            openScreen();
+            openScreenForPrompt();
         }
         if(item.over())
         {
@@ -183,19 +183,29 @@ public final class DuelClientState
     }
 
     /**
-     * Brings the duel screen up if the player closed it.
+     * Brings the screen up for a prompt, unless the board can answer it.
      * <p>
      * The second of the two openers, the other being
-     * {@code ClientProxy.updateEngineDuel}. On a world board that one is
-     * suppressed entirely -- an opponent's turn is watched by looking at the
-     * board -- while this one still runs, because it is called for a PROMPT and
-     * for the result, and a duel you cannot answer is not a duel.
+     * {@code ClientProxy.updateEngineDuel}, which is suppressed outright on a
+     * world board because an opponent's turn is watched by looking at it.
      * <p>
-     * That is deliberately an interim: phases 12 and 13 replace the prompt
-     * screen with world-space targeting and a HUD, at which point this branches
-     * too. Until then an overworld duel is played on the board and answered on
-     * the screen, which is playable rather than half-built.
+     * This one is conditional rather than suppressed, because some prompts
+     * really cannot be answered by pointing: putting cards in an order, picking
+     * several and confirming, typing a card's name. Those still get the screen
+     * they were built for. Everything a duellist can point at stays on the
+     * board, which is the whole reason for standing at one.
      */
+    public static void openScreenForPrompt()
+    {
+        if(de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()
+            && PromptOptions.boardCanAnswer(prompt))
+        {
+            return;
+        }
+        openScreen();
+    }
+
+    /** Brings the duel screen up if the player closed it. */
     public static void openScreen()
     {
         net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();

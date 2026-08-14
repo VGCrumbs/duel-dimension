@@ -269,6 +269,12 @@ public interface ISidedProxy
     {
     }
 
+    /** Asks which way to play a duelist that has just been clicked. Client only. */
+    default void offerDuelType(
+        de.cas_ual_ty.dueldimension.duel.npc.DuelistChallengeMessages.OfferDuel offer)
+    {
+    }
+
     /** A bystander's redacted view of a duel being played nearby. Client only. */
     default void showSpectatorBoard(
         de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.SpectatorBoard board)

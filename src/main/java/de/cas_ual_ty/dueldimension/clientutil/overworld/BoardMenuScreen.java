@@ -40,19 +40,35 @@ public class BoardMenuScreen extends Screen
 
     public BoardMenuScreen(BoardTarget target, EnginePrompt prompt, List<Integer> options)
     {
-        super(Component.literal(target == null || target.label() == null ? "Card"
+        super(Component.literal(target == null || target.label() == null
+            ? (prompt == null || prompt.title() == null || prompt.title().isEmpty() ? "Duel"
+                : prompt.title())
             : target.label()));
         this.target = target;
         this.prompt = prompt;
         this.options = options;
     }
 
-    /** Opens the menu for what the player is looking at, if anything can be done with it. */
+    /**
+     * Opens the menu for whatever the act key was pressed at.
+     * <p>
+     * Aimed at a card, it offers that card's actions. Aimed at nothing, it
+     * offers the options that are not about anything on the board -- ending a
+     * phase, going to battle, declining a chain. Without that second half a
+     * duellist could play cards from the board and then have no way to end
+     * their turn without the screen, which would make the board a half-place
+     * to duel from.
+     */
     public static void openIfActionable(net.minecraft.client.Minecraft client)
     {
         BoardTarget target = ClientDuelTargeting.looking();
         EnginePrompt prompt = DuelClientState.prompt;
         List<Integer> options = PromptOptions.optionsFor(prompt, false, target);
+        if(options.isEmpty())
+        {
+            target = null;
+            options = PromptOptions.looseOptions(prompt, false);
+        }
         if(options.isEmpty())
         {
             return;

@@ -135,6 +135,10 @@ public final class DdNetwork
         // answer comes back from one.
         clientbound(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CoinToss.TYPE,
             de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CoinToss.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.duel.npc.DuelistChallengeMessages.OfferDuel.TYPE,
+            de.cas_ual_ty.dueldimension.duel.npc.DuelistChallengeMessages.OfferDuel.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.duel.npc.DuelistChallengeMessages.ChooseDuel.TYPE,
+            de.cas_ual_ty.dueldimension.duel.npc.DuelistChallengeMessages.ChooseDuel.CODEC);
         clientbound(de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.ShowField.TYPE,
             de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.ShowField.CODEC);
         clientbound(de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.HideField.TYPE,
@@ -207,6 +211,13 @@ public final class DdNetwork
     {
         ProfilePayloads.registerServerHandlers();
         de.cas_ual_ty.dueldimension.duel.network.DuelPayloads.registerServerHandlers();
+
+        // Which way a duelist is to be played. Re-checked on arrival -- the id
+        // is looked up, confirmed to be a duelist and confirmed to be within
+        // reach -- because a reply is data and not an instruction.
+        onServer(de.cas_ual_ty.dueldimension.duel.npc.DuelistChallengeMessages.ChooseDuel.TYPE,
+            (message, player) -> de.cas_ual_ty.dueldimension.duel.npc.DuelistChallenge
+                .begin(player, message.duelistId(), message.overworld()));
 
         // The engine's four client-to-server messages. Each body is the Forge
         // handler's, minus the enqueueWork and the null check: Fabric has
@@ -431,6 +442,10 @@ public final class DdNetwork
         // Where a duel is standing in the world. Geometry only -- nothing about
         // the duel itself rides this, so it is safe to hand to any client that
         // is party to the field.
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.duel.npc.DuelistChallengeMessages.OfferDuel.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
+                .offerDuelType(payload));
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
             de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.ShowField.TYPE,
             (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy

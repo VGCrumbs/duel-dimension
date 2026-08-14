@@ -41,13 +41,6 @@ public class DuelistEntity extends PathfinderMob
      */
     private boolean stationary;
 
-    /**
-     * Duels on a board in the world rather than on the screen. Set by the
-     * placer, since a duelist put down by hand is one somebody is testing the
-     * world board with.
-     */
-    private boolean duelsOnBoard;
-
     public DuelistEntity(EntityType<? extends PathfinderMob> type, Level level)
     {
         super(type, level);
@@ -62,16 +55,6 @@ public class DuelistEntity extends PathfinderMob
     public void setStationary(boolean value)
     {
         stationary = value;
-    }
-
-    public boolean duelsOnBoard()
-    {
-        return duelsOnBoard;
-    }
-
-    public void setDuelsOnBoard(boolean value)
-    {
-        duelsOnBoard = value;
     }
 
     /** The next starter deck along, wrapping. For testing against several in turn. */
@@ -223,56 +206,16 @@ public class DuelistEntity extends PathfinderMob
         {
             return InteractionResult.PASS;
         }
-        // Sneaking asks for the duel to be held in the world. A duelist put
-        // down by the placer asks for it by default, because testing the world
-        // board is the only reason it is standing there -- but any duelist can
-        // be challenged to one, including the ones that were already in the
-        // world before the board existed, which is the case this started as.
-        boolean onBoard = duelsOnBoard || player.isShiftKeyDown();
-        if(onBoard && player instanceof net.minecraft.server.level.ServerPlayer challenger)
+        // The click ASKS; it does not decide. A duel against a duelist starts
+        // the instant it is asked for and there is no lobby to agree anything
+        // in, so where it is played has to be chosen here -- and chosen before
+        // the duel begins, because once the engine is running the presentation
+        // is settled. Sneaking used to be the shortcut for it, which is not the
+        // same as being offered a choice.
+        if(player instanceof net.minecraft.server.level.ServerPlayer challenger)
         {
-            // A duelist that has been called out stands its ground. Without
-            // this it can stroll away during the half minute the challenger
-            // spends walking to their mark, and the duel would begin with one
-            // duellist somewhere else entirely -- the stroll goal is only gated
-            // once the duel is actually running.
-            setStationary(true);
-            // The field is sited BEFORE the duel starts, so the board is
-            // already standing when the first card is drawn. If it cannot be
-            // sited the duel happens anyway, on the screen -- the overworld
-            // layer never stops a duel from happening.
-            de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels.prepareAgainst(
-                challenger.level().getServer(), challenger, this,
-                new de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels.Outcome()
-                {
-                    @Override
-                    public void start()
-                    {
-                        DuelistDuels.challenge(DuelistEntity.this, challenger);
-                        // A duel that refused to start leaves no board behind.
-                        if(!DuelistDuels.isDueling(challenger.getUUID()))
-                        {
-                            de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels
-                                .release(challenger.level().getServer(), challenger.getUUID());
-                        }
-                    }
-
-                    @Override
-                    public void cancel(String reason)
-                    {
-                        challenger.sendSystemMessage(
-                            net.minecraft.network.chat.Component.literal(reason));
-                    }
-                });
-            return InteractionResult.CONSUME;
+            DuelistChallenge.offer(challenger, this);
         }
-        // Said at the moment it would have been useful, rather than left for
-        // somebody to find in a changelog: this is the click that just chose
-        // the screen, and the alternative is one modifier key away.
-        player.sendSystemMessage(net.minecraft.network.chat.Component
-            .literal("Sneak and right-click to duel on a board in the world instead")
-            .withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
-        DuelistDuels.challenge(this, player);
         return InteractionResult.CONSUME;
     }
 
@@ -287,7 +230,6 @@ public class DuelistEntity extends PathfinderMob
         super.addAdditionalSaveData(output);
         output.putString("Profile", getProfileId());
         output.putBoolean("Stationary", stationary);
-        output.putBoolean("DuelsOnBoard", duelsOnBoard);
     }
 
     @Override
@@ -296,7 +238,6 @@ public class DuelistEntity extends PathfinderMob
         super.readAdditionalSaveData(input);
         input.getString("Profile").ifPresent(this::setProfileId);
         stationary = input.getBooleanOr("Stationary", false);
-        duelsOnBoard = input.getBooleanOr("DuelsOnBoard", false);
     }
 
     @Override

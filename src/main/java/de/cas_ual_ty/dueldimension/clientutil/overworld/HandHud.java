@@ -30,6 +30,47 @@ import java.util.List;
  */
 public final class HandHud implements HudElement
 {
+    /**
+     * Life points, whose turn it is, and what is being asked.
+     * <p>
+     * On the duel screen all of this is drawn around the board. A board in the
+     * world has no frame to put it in, and without it a duellist cannot see
+     * their own life total -- which makes the board a nice thing to look at
+     * rather than a place to play. Text rather than the screen's art on
+     * purpose: it sits over the world and has to stay legible against whatever
+     * happens to be behind it.
+     */
+    private static void drawReadout(GuiGraphicsExtractor extractor, Minecraft client,
+        BoardSnapshot board)
+    {
+        int middle = extractor.guiWidth() / 2;
+        String points = board.self().lifePoints() + "   vs   "
+            + (board.opponent() == null ? 0 : board.opponent().lifePoints());
+        extractor.centeredText(client.font, points, middle, 8, 0xFFF4D089);
+
+        String turn = "Turn " + board.turn() + "  -  "
+            + (board.turnPlayer() == ClientDuelField.seat() ? "your turn" : "their turn");
+        extractor.centeredText(client.font, turn, middle, 20, 0xFFC2C9D6);
+
+        // What the engine is waiting for, and the key that answers it. A board
+        // with no visible question is a board a player waits at.
+        de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt =
+            de.cas_ual_ty.dueldimension.clientutil.DuelClientState.prompt;
+        if(prompt == null)
+        {
+            return;
+        }
+        String asking = prompt.title() == null || prompt.title().isEmpty()
+            ? "Your move" : prompt.title();
+        extractor.centeredText(client.font, asking, middle, 34, 0xFFFFE84A);
+        String hint = "[" + de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds.DUEL_ACT
+            .getTranslatedKeyMessage().getString() + "] act"
+            + (ClientDuelTargeting.actionable() ? "  -  "
+                + (ClientDuelTargeting.looking() == null ? ""
+                    : ClientDuelTargeting.looking().label()) : "");
+        extractor.centeredText(client.font, hint, middle, 46, 0xFF7CE38B);
+    }
+
     /** How tall a card is drawn, in pixels; its width follows the card's shape. */
     private static final int CARD_H = 54;
     private static final int CARD_W = Math.round(CARD_H * DuelTextures.CARD_ASPECT);
@@ -59,6 +100,8 @@ public final class HandHud implements HudElement
         {
             return;
         }
+        drawReadout(extractor, client, board);
+
         List<BoardSnapshot.Slot> hand = board.self().hand();
         if(hand == null || hand.isEmpty())
         {

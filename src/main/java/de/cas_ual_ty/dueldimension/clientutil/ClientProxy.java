@@ -443,6 +443,14 @@ public class ClientProxy implements ISidedProxy
     }
 
     @Override
+    public void offerDuelType(
+        de.cas_ual_ty.dueldimension.duel.npc.DuelistChallengeMessages.OfferDuel offer)
+    {
+        getMinecraft().gui.setScreen(
+            new de.cas_ual_ty.dueldimension.clientutil.hub.DuelTypeScreen(offer));
+    }
+
+    @Override
     public void showSpectatorBoard(
         de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.SpectatorBoard board)
     {
