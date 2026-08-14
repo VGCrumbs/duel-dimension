@@ -117,6 +117,11 @@ public final class MonsterSprites
     // ================================================================= the list
     //
     // One line per monster. Everything below this comment is data.
+    //
+    // The passcodes are LOOKED UP, not remembered. A wrong one fails in the
+    // quietest possible way -- no error, no warning, just a card that never
+    // grows a monster -- so every number here was read out of the shipped card
+    // database by name rather than typed from memory.
     static
     {
         monster(46986414L, "dark_magician", 4, Loop.PING_PONG);
@@ -131,6 +136,16 @@ public final class MonsterSprites
         monster(28279543L, "curse_of_dragon", 4, 2, Loop.LOOP);
         posed(102380L, "lava_golem", 4, 2, 7, Loop.LOOP);
         posed(32274490L, "skull_servant", 4, 2, 7, Loop.LOOP);
+        posed(25833572L, "gate_guardian", 4, 2, 7, Loop.LOOP);
+        posed(6368038L, "gaia_the_fierce_knight", 4, 2, 7, Loop.LOOP);
+        posed(30243636L, "hungry_burger", 4, 2, 7, Loop.LOOP);
+        posed(60482781L, "mystic_swordsman_lv6", 4, 2, 7, Loop.LOOP);
+        posed(74591968L, "mystic_swordsman_lv4", 4, 2, 7, Loop.LOOP);
+        posed(47507260L, "mystic_swordsman_lv2", 4, 2, 7, Loop.LOOP);
+        posed(50005633L, "swordstalker", 4, 2, 7, Loop.LOOP);
+        posed(20394040L, "lava_battleguard", 4, 2, 7, Loop.LOOP);
+        posed(40453765L, "swamp_battleguard", 4, 2, 7, Loop.LOOP);
+        posed(34627841L, "kaibaman", 4, 2, 7, Loop.LOOP);
     }
     // =========================================================================
 
