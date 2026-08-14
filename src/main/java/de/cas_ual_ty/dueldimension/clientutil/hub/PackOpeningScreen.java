@@ -2,8 +2,10 @@ package de.cas_ual_ty.dueldimension.clientutil.hub;
 
 import de.cas_ual_ty.dueldimension.DdDatabase;
 import de.cas_ual_ty.dueldimension.card.properties.Properties;
+import de.cas_ual_ty.dueldimension.clientutil.CardTextureCache;
 import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
 import de.cas_ual_ty.dueldimension.clientutil.DuelTextures;
+import de.cas_ual_ty.dueldimension.clientutil.ImageHandler;
 import de.cas_ual_ty.dueldimension.clientutil.layout.Layout;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -167,6 +169,15 @@ public class PackOpeningScreen extends Screen
      * returns the placeholder, so asking repeatedly is how the real art is
      * picked up once it lands. The calls are cheap after the first, since the
      * pipeline caches per card and size.
+     * <p>
+     * <b>{@link ImageHandler} and not {@link DuelTextures}, deliberately.</b>
+     * DuelTextures admits the Identifier to {@link CardTextureCache} as it
+     * hands it back, and this method throws that Identifier away — so every
+     * card in the pull was marked resident within a tick or two without a
+     * single texture being created, and the reveal then drew nine or
+     * twenty-four 512px cards that all bypassed the first-sighting ration in
+     * one frame. Only the pipeline nudge is wanted here; it lives in
+     * getReplacementImage.
      */
     private void requestArt()
     {
@@ -175,7 +186,7 @@ public class PackOpeningScreen extends Screen
             Properties card = DdDatabase.PROPERTIES_LIST.get((long)code);
             if(card != null)
             {
-                DuelTextures.cardSmooth(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE);
+                ImageHandler.getReplacementImage(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE);
             }
         }
     }
@@ -262,6 +273,30 @@ public class PackOpeningScreen extends Screen
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
     {
+        // The menu is tested BEFORE super, so a click landing on it cannot fall
+        // through to the strip underneath and advance the pull.
+        if(menuCard >= 0)
+        {
+            boolean handled = clickMenu(event.x(), event.y());
+            menuCard = -1;
+            if(handled)
+            {
+                return true;
+            }
+        }
+        if(event.button() == 1)
+        {
+            int over = cardUnder(event.x());
+            // Same rule as the shift peek: only a card already turned over. A
+            // menu on a face-down card would name it before it is revealed.
+            if(over >= 0 && over < codes.size() && over < flip.length && flip[over] >= 1F)
+            {
+                menuCard = over;
+                menuX = (int)event.x();
+                menuY = (int)event.y();
+                return true;
+            }
+        }
         if(super.mouseClicked(event, doubleClick))
         {
             return true;
@@ -320,6 +355,170 @@ public class PackOpeningScreen extends Screen
             return true;
         }
         return super.mouseReleased(event);
+    }
+
+    /** The card whose menu is open, or -1. */
+    private int menuCard = -1;
+    private int menuX;
+    private int menuY;
+    /** Why the last menu choice did nothing, shown until the next one. */
+    private String menuNotice = "";
+
+    private static final int MENU_ROW = 12;
+    /** Narrow enough to still read as a menu when every row is short. */
+    private static final int MENU_W_MIN = 130;
+    /** Text inset either side, counted once so the width and the draw agree. */
+    private static final int MENU_PAD = 6;
+
+    /**
+     * Wide enough for its widest row, because a deck name is whatever the
+     * player typed and a fixed width cut "Add to Starter Deck: Codebreaker"
+     * off mid-word. Bounded by the window so a very long name makes an
+     * ellipsis rather than a menu wider than the screen.
+     */
+    private int menuW(java.util.List<String> rows)
+    {
+        int widest = 0;
+        for(String row : rows)
+        {
+            widest = Math.max(widest, font.width(row));
+        }
+        int room = Math.max(MENU_W_MIN, width - 8);
+        return Math.max(MENU_W_MIN, Math.min(room, widest + MENU_PAD * 2));
+    }
+
+    /** The row as it fits, tailed with an ellipsis when it does not. */
+    private String fit(String row, int room)
+    {
+        if(font.width(row) <= room)
+        {
+            return row;
+        }
+        String tail = "...";
+        int budget = room - font.width(tail);
+        StringBuilder kept = new StringBuilder();
+        for(int i = 0; i < row.length() && font.width(kept.toString() + row.charAt(i)) <= budget; i++)
+        {
+            kept.append(row.charAt(i));
+        }
+        return kept + tail;
+    }
+
+    /** The rows: favourite first, then one per deck the player may edit. */
+    private java.util.List<String> menuRows()
+    {
+        java.util.List<String> rows = new java.util.ArrayList<>();
+        Properties card = cardAt(menuCard);
+        int code = card == null ? 0 : (int)card.getId();
+        rows.add(EditorState.isFavourite(code) ? "Unfavourite" : "Favourite");
+        for(de.cas_ual_ty.dueldimension.duel.profile.DeckList deck : EditorState.ownDecks())
+        {
+            rows.add("Add to " + deck.name());
+        }
+        return rows;
+    }
+
+    private void drawMenu(GuiGraphicsExtractor poseStack)
+    {
+        java.util.List<String> rows = menuRows();
+        int panelW = menuW(rows);
+        int panelH = rows.size() * MENU_ROW + 8;
+        // Pulled back inside the window, so a menu opened near an edge is not
+        // half off the screen and half unclickable.
+        int left = Math.max(0, Math.min(menuX, width - panelW));
+        int top = Math.max(0, Math.min(menuY, height - panelH));
+        NineSlice.draw(poseStack, HubTextures.PANEL, left, top, panelW, panelH);
+        for(int i = 0; i < rows.size(); i++)
+        {
+            poseStack.text(font, fit(rows.get(i), panelW - MENU_PAD * 2),
+                left + MENU_PAD, top + 4 + i * MENU_ROW + 2,
+                i == 0 ? 0xFFF4D089 : 0xFFC2C9D6, true);
+        }
+    }
+
+    /** @return true if the click was inside the menu, whatever it chose */
+    private boolean clickMenu(double mouseX, double mouseY)
+    {
+        java.util.List<String> rows = menuRows();
+        int panelW = menuW(rows);
+        int panelH = rows.size() * MENU_ROW + 8;
+        int left = Math.max(0, Math.min(menuX, width - panelW));
+        int top = Math.max(0, Math.min(menuY, height - panelH));
+        if(mouseX < left || mouseX >= left + panelW || mouseY < top || mouseY >= top + panelH)
+        {
+            return false;
+        }
+        int row = (int)((mouseY - top - 4) / MENU_ROW);
+        Properties card = cardAt(menuCard);
+        if(card == null || row < 0 || row >= rows.size())
+        {
+            return true;
+        }
+        menuNotice = "";
+        if(row == 0)
+        {
+            EditorState.toggleFavourite((int)card.getId());
+            return true;
+        }
+        java.util.List<de.cas_ual_ty.dueldimension.duel.profile.DeckList> decks =
+            EditorState.ownDecks();
+        int at = row - 1;
+        if(at < decks.size())
+        {
+            String refusal = EditorState.addToDeck(decks.get(at), (int)card.getId());
+            menuNotice = refusal == null ? "" : refusal;
+        }
+        return true;
+    }
+
+    /** Whether either shift key is down right now, event or no event. */
+    private static boolean shiftHeld()
+    {
+        com.mojang.blaze3d.platform.Window window =
+            net.minecraft.client.Minecraft.getInstance().getWindow();
+        return com.mojang.blaze3d.platform.InputConstants.isKeyDown(
+                window, org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT)
+            || com.mojang.blaze3d.platform.InputConstants.isKeyDown(
+                window, org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT);
+    }
+
+    /**
+     * The held-shift reading panel: a card's name and its own words.
+     * <p>
+     * Drawn at the bottom rather than under the cursor. The cursor is on the
+     * card, and a panel following it would cover the very thing being read
+     * about; down here it sits in the empty band the hint line already uses.
+     */
+    private void drawPeek(GuiGraphicsExtractor poseStack, Properties peek)
+    {
+        if(peek == null)
+        {
+            return;
+        }
+        int panelW = Math.min(width - 40, 320);
+        int left = (width - panelW) / 2;
+        java.util.List<net.minecraft.util.FormattedCharSequence> body =
+            font.split(Component.literal(peek.getText() == null ? "" : peek.getText()),
+                panelW - 12);
+        // Capped so a wall of text on a long effect cannot grow up over the
+        // cards themselves; the info screen is where the full thing lives.
+        int rows = Math.min(body.size(), 6);
+        int panelH = 16 + rows * 10 + 8;
+        int top = height - 30 - panelH;
+
+        NineSlice.draw(poseStack, HubTextures.PANEL, left, top, panelW, panelH);
+        String name = peek.getName() == null ? "" : peek.getName();
+        poseStack.text(font, name, left + 6, top + 6, 0xFFF4D089, true);
+        for(int i = 0; i < rows; i++)
+        {
+            poseStack.text(font, body.get(i), left + 6, top + 20 + i * 10, 0xFFC2C9D6, true);
+        }
+        if(body.size() > rows)
+        {
+            String more = "...";
+            poseStack.text(font, more, left + panelW - 6 - font.width(more),
+                top + panelH - 12, 0xFF7A8090, true);
+        }
     }
 
     /** Which card the cursor is over, by how far it is from the middle. */
@@ -422,6 +621,34 @@ public class PackOpeningScreen extends Screen
         poseStack.text(font, setName, centreX - font.width(setName) / 2, 18, 0xFFF4D089, true);
         String progress = (focus + 1) + " / " + codes.size();
         poseStack.text(font, progress, centreX - font.width(progress) / 2, 30, 0xFF9FA6B4, true);
+
+        // Hold shift over a card you have already turned to read it, without
+        // leaving the opening and losing your place in the strip.
+        // Not Screen.hasShiftDown(): that reads the modifier carried by a key
+        // or mouse EVENT, and nothing is being pressed here -- the player is
+        // just holding shift while moving the cursor. This asks the window
+        // directly, the same way the deck editor's shift-scroll does.
+        if(shiftHeld())
+        {
+            int over = cardUnder(mouseX);
+            // flip >= 1 means FULLY turned. Anything less is still face down or
+            // mid-turn, and showing its text would hand the player the reveal
+            // before the card does -- the one thing this screen exists for.
+            if(over >= 0 && over < codes.size() && over < flip.length && flip[over] >= 1F)
+            {
+                drawPeek(poseStack, cardAt(over));
+            }
+        }
+
+        if(menuCard >= 0)
+        {
+            drawMenu(poseStack);
+        }
+        if(!menuNotice.isEmpty())
+        {
+            poseStack.text(font, menuNotice, width / 2 - font.width(menuNotice) / 2,
+                height - 34, 0xFFE08A8A, true);
+        }
 
         String hint = allTurned() ? "Click past the end for the summary"
             : "Click, scroll or press Space";

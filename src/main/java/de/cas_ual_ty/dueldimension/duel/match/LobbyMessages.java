@@ -293,4 +293,77 @@ public final class LobbyMessages
         }
         return values;
     }
+
+    /**
+     * Server to client: the toss has been made.
+     * <p>
+     * Sent to BOTH players, because a loser who only saw a wait would not know
+     * why they were waiting. The flip itself happens on the server and is
+     * never re-rolled; this message is the result, not the invitation to one.
+     *
+     * @param won        whether the player receiving this won the toss, and so
+     *                   picks who takes the first turn
+     * @param winnerName who won, named so the loser's screen can say it
+     */
+    public record CoinToss(boolean won, String winnerName) implements CustomPacketPayload
+    {
+        /** Names this message on the wire. */
+        public static final CustomPacketPayload.Type<CoinToss> TYPE =
+            DdNetwork.type("lobby_coin_toss");
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, CoinToss> CODEC =
+            CustomPacketPayload.codec(CoinToss::encode, CoinToss::decode);
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
+        {
+            return TYPE;
+        }
+
+        public static void encode(CoinToss message, RegistryFriendlyByteBuf buffer)
+        {
+            buffer.writeBoolean(message.won());
+            buffer.writeUtf(message.winnerName(), NAME_LIMIT);
+        }
+
+        public static CoinToss decode(RegistryFriendlyByteBuf buffer)
+        {
+            return new CoinToss(buffer.readBoolean(), buffer.readUtf(NAME_LIMIT));
+        }
+    }
+
+    /**
+     * Client to server: the toss winner's answer.
+     * <p>
+     * Believed only from the player who actually won, and only while a toss of
+     * theirs is outstanding -- both checked on arrival, because this decides
+     * the opening turn and nothing else guards it.
+     *
+     * @param goFirst true to take the first turn, false to hand it over
+     */
+    public record TurnChoice(boolean goFirst) implements CustomPacketPayload
+    {
+        /** Names this message on the wire. */
+        public static final CustomPacketPayload.Type<TurnChoice> TYPE =
+            DdNetwork.type("lobby_turn_choice");
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, TurnChoice> CODEC =
+            CustomPacketPayload.codec(TurnChoice::encode, TurnChoice::decode);
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
+        {
+            return TYPE;
+        }
+
+        public static void encode(TurnChoice message, RegistryFriendlyByteBuf buffer)
+        {
+            buffer.writeBoolean(message.goFirst());
+        }
+
+        public static TurnChoice decode(RegistryFriendlyByteBuf buffer)
+        {
+            return new TurnChoice(buffer.readBoolean());
+        }
+    }
 }

@@ -1390,6 +1390,9 @@ public class EngineDuelScreen extends Screen
         answered = true;
         closeMenu();
         DuelClientState.prompt = null;
+        // Answered: the deadline is met, so the clock stops rather than
+        // running on while the opponent takes their turn.
+        DuelClientState.promptShownAt = 0;
         ClientPlayNetworking.send(new PromptMessages.AnswerPrompt(chosen, declaredCode,
             DuelClientState.promptSerial));
         rebuild();
@@ -1888,6 +1891,7 @@ public class EngineDuelScreen extends Screen
 
         super.extractRenderState(poseStack, mouseX, mouseY, partialTick);
         renderPicker(poseStack, mouseX, mouseY);
+        renderWaiting(poseStack);
         renderResult(poseStack);
 
         if(pileView != null)
@@ -2215,6 +2219,38 @@ public class EngineDuelScreen extends Screen
      * is only the fallback for a duel that produced no reward packet -- a
      * spectator, or one that never arrived -- and closes the duel instead.
      */
+    /**
+     * Says so when the duel is not waiting on you.
+     * <p>
+     * Without this a turn spent watching the opponent think is indistinguishable
+     * from a duel that has silently stopped -- the board simply sits there and
+     * nothing says whose move it is.
+     * <p>
+     * Shown only when it is genuinely THEIR turn and nothing is being asked of
+     * this player. During your own turn the engine also pauses between actions,
+     * and a banner appearing in those gaps would flicker on and off while you
+     * play, which is worse than saying nothing.
+     */
+    private void renderWaiting(GuiGraphicsExtractor poseStack)
+    {
+        if(DuelClientState.over || DuelClientState.prompt != null || pickerOpen())
+        {
+            return;
+        }
+        BoardSnapshot board = currentBoard();
+        if(board == null || board == BoardSnapshot.EMPTY || board.turnPlayer() == 0)
+        {
+            return;
+        }
+        String text = "Waiting for opponent";
+        int textW = font.width(text);
+        int boxW = textW + 16;
+        int left = SIDEBAR_W + (width - SIDEBAR_W - boxW) / 2;
+        int top = TOP_BAR_H + 6;
+        poseStack.fill(left, top, left + boxW, top + 16, 0xA0101014);
+        poseStack.text(font, text, left + 8, top + 4, 0xFFC2C9D6, true);
+    }
+
     private void renderResult(GuiGraphicsExtractor poseStack)
     {
         if(!DuelClientState.over)
@@ -2356,6 +2392,43 @@ public class EngineDuelScreen extends Screen
                     phaseCellH(), i, phaseState(board, i), yourTurn);
             }
         }
+
+        drawTurnClock(poseStack, x - phasePadX());
+    }
+
+    /** Under this much left, the clock reads as a warning rather than a fact. */
+    private static final long CLOCK_WARN_MS = 60_000L;
+    /** Clear of the case's angled nose, so the two do not read as one part. */
+    private static final int CLOCK_GAP = 6;
+
+    /**
+     * The countdown to the answer deadline, at the left end of the phase bar.
+     * <p>
+     * It counts the clock the duel actually keeps: HumanResponseSource gives a
+     * player TIMEOUT_MINUTES to answer the question in front of them, and the
+     * run ends when that expires. So the clock restarts with each question,
+     * which is what a player watching it will see -- it is not a budget for the
+     * whole turn.
+     */
+    private void drawTurnClock(GuiGraphicsExtractor poseStack, int caseLeft)
+    {
+        if(shownPrompt == null || DuelClientState.promptShownAt == 0 || DuelClientState.over)
+        {
+            return; // nothing is being asked, so nothing is running out
+        }
+        long limit = java.util.concurrent.TimeUnit.MINUTES.toMillis(
+            de.cas_ual_ty.dueldimension.ocg.prompt.HumanResponseSource.TIMEOUT_MINUTES);
+        long left = limit - (System.currentTimeMillis() - DuelClientState.promptShownAt);
+        // Never below zero: the abort lands on its own, and a clock counting
+        // upwards past the deadline would say the opposite of what it means.
+        long seconds = Math.max(0, (left + 999) / 1000);
+        String clock = String.format("%d:%02d", seconds / 60, seconds % 60);
+        int colour = left <= CLOCK_WARN_MS ? 0xFFC1362F : 0xFFFFFFFF;
+        // Right-aligned onto the case, so a digit rolling over from two to one
+        // does not walk the clock sideways.
+        poseStack.centeredText(font, clock,
+            caseLeft - CLOCK_GAP - font.width(clock) / 2,
+            PHASE_BAR_Y + (phaseCellH() - font.lineHeight) / 2, colour);
     }
 
     /**
@@ -2462,8 +2535,16 @@ public class EngineDuelScreen extends Screen
                 alpha | 0xFFFFFF);
         }
 
-        DdBlitUtil.fullBlit(poseStack, CardRenderUtil.bindMainResourceLocation(DuelTextures.LP_FRAME),
-            x, y, barW, barH);
+        // Straight, not through CardRenderUtil. The life-point frame is not card
+        // art -- it is one shipped PNG, always on screen while a duel runs --
+        // and the bind call it used to go through became a no-op the moment
+        // textures stopped being global state. Now that the same call routes
+        // card art through CardImageManager, sending a UI texture down it would
+        // hand back the "unknown card" placeholder for the first frame or two
+        // and then let the card LRU evict the frame off the HUD. This is
+        // EDOPro's own rule: async iff the count is unbounded and driven by
+        // what the player is looking at (image_manager.cpp:738-773).
+        DdBlitUtil.fullBlit(poseStack, DuelTextures.LP_FRAME, x, y, barW, barH);
 
         poseStack.text(font, name, x + 5, y + 3, 0xFFFFFFFF, false);
         String value = Integer.toString(shownLifePoints);

@@ -107,6 +107,25 @@ game — and a unit test asking a pure question (what does a win pay?) dies on
 | `Screen.renderables` | `Screen.children()` | `renderables` is private now. |
 | `minecraft.setScreen` | `minecraft.setScreenAndShow` | |
 
+### Found while porting EDOPro's ImageManager (card art off the render thread)
+
+All of these were read off `javap -c` against
+`~/.gradle/caches/fabric-loom/26.2/minecraft-client.jar`. This tree runs
+unobfuscated MC, so there is no refmap and a mixin target has to be the runtime
+name exactly — which makes reading the bytecode the only way to be sure.
+
+| what | what the bytecode actually does | why it matters |
+| --- | --- | --- |
+| `TextureManager.getTexture(Identifier)` | on a miss: `new SimpleTexture(id)` → `registerAndLoad` → `loadContentsSafe` (read + decode) → `apply` (GPU), all inline | **A blit is where a first sighting is paid for.** `GuiGraphicsExtractor.innerBlit` resolves `getTexture` eagerly, before it builds the `BlitRenderState`, so a retained-mode GUI does not save you from it. |
+| `TextureContents.load(ResourceManager, Identifier)` | `getResourceOrThrow` → `Resource.open` → `NativeImage.read` → `metadata()`. **No GPU call.** `public static`. | The decode half, safe on a worker. Vanilla runs the same call on an executor: `TextureManager.scheduleLoad` is `CompletableFuture.supplyAsync(() -> loadContents(...), executor)`. |
+| `ReloadableTexture.apply(TextureContents)` | `SamplerCache.getSampler` → `doLoad` (`createTexture` + `createTextureView` + `writeToTexture`) → `NativeImage.close()`. `public`. | The GPU half, render thread only. **It closes the image for you**, so the decode result must not be closed again by the caller on the success path. |
+| `NativeImage.close()` | null-checks `pixels`, frees, zeroes it | Idempotent, so a defensive `close()` in a discard path cannot double-free. |
+| `FallbackResourceManager.getResource` | builds a **new** `Resource` per call (`createResource`) | `Resource.metadata()` is a lazy memoisation with no happens-before edge, so it would be a data race — except that no two threads ever hold the same `Resource`. Do not "optimise" this by caching `Resource` objects. |
+| `Minecraft.renderFrame` | `GameRenderer.extract(DeltaTracker, boolean)` at offset 441, then `GameRenderer.render` at 520 | Once a frame, unconditional. It is the only named point in the frame that is neither inside the draw nor inside the task drain, which is what a per-frame pump wants. |
+| `BlockableEventLoop.runAllTasks()` | `while(pollTask());` | **A task submitted through `Minecraft.execute` that re-submits itself is picked up again in the same drain and the frame never ends.** A per-frame pump cannot live there. |
+| `TextureManager.register/release` | `byPath.put` / `byPath.remove`, `release` is null-safe | Both public. Pre-registering under an Identifier is how you hand a texture to a retained-mode GUI that only takes Identifiers. |
+| `DeltaTracker.getRealtimeDeltaTicks()` | wall-clock ms ÷ `msPerTick`, and `Minecraft` builds its timer with `1000/20 = 50` | Multiply by 50 to get milliseconds. Clamped to 0.5 once a frame passes 350 ms, so it under-reports after a real stall. |
+
 ## What is across (phase 0 — done)
 
 The loader-agnostic core: **74 main classes (72 ported + 2 entrypoints), 26 test
@@ -708,6 +727,44 @@ one.
   in this API, and the rarity foils were composited by masking one texture
   against another with a colour mask that no longer exists. Both are decisions
   that should be made while looking at the field, and the field is not ported.
+- **An unowned card is greyed by the DRAW, not by a second image.** It used to
+  be a third identifier — `textures/item_unowned/` — whose bytes
+  `DdCardResourcePack` desaturated pixel by pixel and re-encoded as a PNG,
+  inline on the render thread, because that ran inside the `IoSupplier` MC calls
+  from `Resource.open()`. 29 ms for a 512px preview against 3.6 ms for the same
+  card owned, plus a 16 MB LRU to stop paying it twice, plus a second GPU
+  texture per unowned card. All of it is deleted. **The tint could not do this
+  job**: `graphics.blit` takes an ARGB *multiply*, and multiplication darkens or
+  colourises — it cannot compute the luminance of the three channels that
+  desaturation is. Every `BlendFactor` in 26.2 is per-channel, `withColorLogic`
+  is gone, `GlStateManager` has no `glBlendColor`, and there is no texture
+  swizzle, so no blend-state trick substitutes either. What ships is a mod
+  fragment shader on a copy of the stock pipeline, at both draw sites:
+  `UnownedPipelines.GUI` copies `GUI_TEXTURED` for the two blit sites and
+  `UnownedPipelines.MESH` copies `BREEZE_WIND` for `CardPreviewScreen`'s quad
+  mesh, each with only the fragment shader swapped. Four things worth knowing.
+  **(1) No registration, and none is possible** — `RenderPipelines.register` is
+  private, but `GlDevice` caches compiled pipelines keyed on the pipeline
+  *instance*, so an unregistered one compiles lazily at first use;
+  `FoilPipelines` had already proved this. **(2) The shaders need no wiring
+  either** — `ShaderManager.prepare` calls `listResources("shaders", …)`
+  namespace-agnostically, so `assets/dueldimension/shaders/core/*.fsh` in the
+  mod jar is found. Use the `Identifier` overloads of `withFragmentShader` and
+  `withLocation`; the `String` ones run `Identifier.withDefaultNamespace` and
+  will look for a mod shader under `minecraft:`. **(3) A mod pipeline is not in
+  `getStaticPipelines()`**, so `ShaderManager`'s reload-time validate sweep
+  skips it and a GLSL typo becomes a draw-time crash rather than a startup
+  failure. `UnownedPipelines.refresh()` calls
+  `precompilePipeline(...).isValid()` from the `init()` of all three screens to
+  turn that into a log line. **(4) The fallback is a DIM and must not be called
+  a desaturation** — if the shader will not compile, unowned cards draw through
+  the stock pipeline with `0.62, 0.62, 0.68` multiplied into their tint. Dimmer
+  and cooler than their neighbours, no second image, and honestly labelled.
+  Two things about this change do not show in a diff and have to be looked at in
+  a running client: greyed icons in the deck editor and the binder used to get
+  the blur+clamp mcmeta and now do not, so they **sharpen**; and splitting one
+  pipeline into two changes sort grouping inside a `GuiRenderState` node, which
+  the `encompasses`/`up()` mechanism should protect but only *should*.
 - **Creative tab names were never renamed from the upstream mod.** `itemGroup.ydm`
   = "YDM: Ygo Dueling Mod" and "YDM Cards"/"YDM Sets" were still in `en_us.json`
   on **both** trees, and the Forge main tab had no key at all — it was keyed on
@@ -721,3 +778,211 @@ one.
   lists came across with phase 0 because the deck tests read them).
 - `OutfitSkinFormatTest` is parked with phase 5 — it validates outfit PNGs
   that live with the unported client feature.
+
+---
+
+## Card image loading (ported from EDOPro's `image_manager`)
+
+The subsystem that decides when a card picture is read, decoded, uploaded and
+released. It is a **port**, not a design: every rule below exists in
+`edopro/gframe/image_manager.cpp` and is cited to it. Change it by reading that
+file, not by reasoning from first principles — that was tried twice and both
+attempts were wrong in ways only measurement caught.
+
+### The problem it solves
+
+`TextureManager.getTexture(id)` is a map lookup that, **on a miss, reads the
+file, decodes it and uploads it inline on the calling thread** (verified in
+bytecode: `byPath.get` → ifnull → `new SimpleTexture` → `registerAndLoad`).
+There is no `isLoaded`, no `tryGet`. So the first frame that draws any card
+identifier pays the whole cost, and the cost scales with how many *never before
+drawn* cards enter one frame — which is the definition of scroll velocity.
+
+Measured on the development machine: 0.32 ms per 128px icon, 3.64 ms per 512px
+preview. A 65-card flick is ~21 ms in a single frame; a 24-card pack summary
+~87 ms.
+
+**Rationing this does not work.** It was tried: a fixed count per tick, then a
+time budget. Both trade the stall for a slow fill, and a 1,000-card collection
+took seconds of placeholder art on every launch. The two symptoms are the same
+cost seen from two sides, and only moving the work off the render thread
+removes both.
+
+### EDOPro's method, and ours beside it
+
+| # | EDOPro | Ours |
+| --- | --- | --- |
+| 1 | `LoadCardTexture` does read + decode + resize and returns a CPU image; `addTexture` is the only GPU call | `TextureContents.load` on a worker; `ReloadableTexture.apply` on the render thread |
+| 2 | `imageLoadThreads` workers on `LoadPic`, default 4, no metering of decode | worker threads in `CardImageManager`, decode unmetered |
+| 3 | `to_load.emplace_front` + `front()/pop_front()` — **LIFO both directions** | `toLoad.addFirst`, drained from the front |
+| 4 | `maxImagesPerFrame` uploads per queue per frame, default 50, lock released **before** the upload | uploads counted per frame per size class in `refreshCachedTextures` |
+| 5 | `preloadStatus NONE → LOADING → LOADED`, enqueued once | `tMap[index]` holds the same three states |
+| 6 | returns `tUnknown` immediately, never blocks; callers re-ask every frame | returns `DuelTextures.UNKNOWN`; screens re-ask every frame |
+| 7 | `timestamp_id` epoch, checked **per output row** inside the resampler | `timestampId`, checked between stages |
+| 8 | `obj_clear_thread` frees abandoned images off the render thread | same |
+| 9 | velocity gate: `drawing.cpp:1378`, 10 rows per frame, frame-rate independent | `CardImageManager.drawThumb(prevRow, row, deltaMillis)` |
+
+### The rules that are load-bearing
+
+**LIFO, not FIFO.** The newest request decodes first. A fair queue spends its
+effort on rows that scrolled past long ago while the cards under the player's
+cursor wait — which *is* the "everything slowly fills in" complaint. There is no
+per-request cancellation; sinking to the bottom of the stack is the whole
+supersede mechanism.
+
+**The velocity gate does not request at all.** Above ~10 rows per frame the
+screen substitutes the placeholder *without calling the accessor*, so no map
+entry and no queue entry are made. A gate that still enqueued would only move
+the stall.
+
+**Every producer of an identifier must go through the accessor.** The cache
+adopts what the manager registers and `sweep()` releases it; a second site
+drawing the same identifier raw will therefore miss in `TextureManager` and pay
+the inline cost. This was a real defect — `CardSetSpecialRenderer` drew pack art
+directly and reintroduced the stall for items in a hand or on the ground.
+
+**The resident map is access-ordered, so it must be touched on every HIT.**
+`CardTextureCache.touch` at upload time only leaves it in *insertion* order, and
+the sweep then evicts by upload order rather than by recency. This was also a
+real defect.
+
+**Budgets are bytes per size class, never a count.** A 512px preview is sixteen
+icons. One number cannot mean the same thing for both, and previews must not be
+able to evict the grid.
+
+### Verifying a change
+
+- `./gradlew25.cmd build` — the queue ordering, eviction rule and budget
+  arithmetic are unit-tested; a change that breaks LIFO or the byte accounting
+  fails there.
+- In game: open the collection cold (should populate quickly, not trickle),
+  flick fast through unseen cards (should not stall), then look at a pack item
+  in the inventory and on the ground (the path that bypassed the manager).
+- `HitchWatch` prints tick times, but **its counters watch the producer side
+  only** — `images in flight` and `textures loaded` read 0 during a hub scroll
+  by construction, because no hub screen feeds them. A zero there is not
+  evidence that nothing was loaded.
+
+---
+
+## Custom cards
+
+A card needs three separate things, and they travel by three separate channels.
+All three already exist; adding a card is filling them in, not building them.
+
+### Where they go
+
+    <game dir>/dueldimension_custom/
+        *.cdb          any number of card databases
+        script/        c<passcode>.lua, one per card with behaviour
+
+Outside both the EDOPro install (not ours to write to, and it updates itself)
+and `ydm_db` (deleted recursively whenever the card database refreshes, which
+would take every custom card with it).
+
+### The three channels
+
+| what | where | how it is picked up |
+| --- | --- | --- |
+| rules data — type bits, ATK/DEF, level, race | a `.cdb` in `dueldimension_custom/` | `Paths.cdbChain()` appends it **last**, and `CdbCardProvider` merges in order with later rows winning — EDOPro's expansions rule |
+| behaviour | `dueldimension_custom/script/c<passcode>.lua` | `Paths.scriptRoots()` searches custom **first**, so a custom script overrides a stock one |
+| display — name, text, art | a card JSON in `ydm_db` plus its image | the mod's own database, unchanged |
+
+Custom wins in both chains: last in the database (later rows replace), first in
+the scripts (first hit returns). A custom entry can therefore also *correct* a
+stock card without editing anybody else's files.
+
+### Passcodes
+
+Reserved block: **900,000,000 – 999,999,999** (`Paths.CUSTOM_PASSCODE_FIRST`).
+Konami's printed cards are eight digits and stop well below it. A colliding id
+does not fail loudly — it silently replaces a real card in the chain.
+
+### What only the server needs
+
+ocgcore runs **server-side only**, so the `.cdb` row and the Lua script are
+needed on the server alone. Clients need the JSON and the art to draw the card.
+A server can therefore run custom cards without every player installing
+anything.
+
+### The safety net
+
+`ProfilePayloads.syncEngineUnknown` tells each client which passcodes the engine
+does not know, and the deck editor hides them. A custom card whose `.cdb` row is
+missing simply does not appear, instead of being buildable and then silently
+relocated into the main deck at duel start (see the card image notes above for
+why: `field::add_card` rewrites the location rather than refusing it).
+
+### Effort
+
+Data and art: minutes. A vanilla beater's script: a dozen lines of Lua. Anything
+with a trigger, a chain or a summon condition: real work against EDOPro's script
+API, per card. CLAUDE.md's "never invent behaviour" rule does not apply here —
+it forbids guessing at how *existing* cards work; a custom card's behaviour is
+yours to define.
+
+### Writing a custom card's JSON — the trap
+
+`ydm_db` card JSON is read with `j.get(key).getAsX()`, **not** with a
+null-tolerant lookup, so a missing key throws and `DdDatabase` logs
+`Failed reading card` and skips it. The card then does not exist, with no error
+a player would ever see — it simply is not in the editor.
+
+Which keys are required depends on the type, because `DdUtil.buildProperties`
+picks a subclass and each reads its own:
+
+| card | must also carry |
+| --- | --- |
+| any monster | `attribute`, `atk`, `species`, `monster_type`, `is_pendulum`, `ability`, `has_effect` |
+| has a level (normal, effect, fusion, ritual, synchro) | `def`, `level`, **`is_tuner`** |
+| Xyz | `def`, `rank` |
+| Link | link value and arrows |
+| pendulum | `pendulum_text`, `pendulum_scale_left_blue`, `pendulum_scale_right_red` |
+
+`is_tuner` is the one that bites: it is absent from every Xyz and Link in the
+shipped database, present on every levelled monster, and omitting it from a
+custom levelled monster silently drops the card.
+
+**Copy an existing card of the same shape and edit it** rather than writing the
+JSON from scratch — the field set is then correct by construction.
+
+**A custom card has no download source.** Its `images` list is empty, because
+its art is authored and placed on disk rather than fetched. `getImageURL`
+returns null for such a card and the download task is skipped; do not "fix" an
+empty list by inventing a URL. Art goes straight into the image cache, named by
+passcode and art index:
+
+    ydm_db_images/cards/raw/<passcode>_0.jpg     original aspect
+    ydm_db_images/cards/512/<passcode>_0.png     letterboxed square, RGBA
+    ydm_db_images/cards/128/<passcode>_0.png     same, grid size
+
+Both processed sizes must be written, or the card falls back to the placeholder
+at whichever size is missing.
+
+### Shipping custom cards with the mod
+
+A card authored in `dueldimension_custom/` works on that machine only. To ship
+it, its pieces go in the jar and are unpacked on first run:
+
+    src/main/resources/dueldimension_custom/
+        index.json                     names every file below; a jar cannot be listed
+        custom.cdb                     rules
+        script/c<passcode>.lua         behaviour
+        images/{raw,512,128}/<passcode>_0.*   art
+    src/main/resources/ydm_extras/cards/<name>.json    display, via the existing extras index
+
+`CustomCardBundle.install()` runs from BOTH entry points — the client (after the
+image folders exist, since that is where art lands) and the mod initialiser,
+before `DdDatabase.initDatabase()`. A dedicated server needs it too: the rules
+half is the server's, and a server whose engine lacks a card its players have is
+precisely how a deck gets silently rewritten at duel start.
+
+**It never overwrites an existing file.** The unpacked folder is also where a
+player authors their own cards, so replacing its contents every boot would
+delete their work. A shipped card whose file was edited stays edited; deleting
+it is how the bundled copy returns. This differs deliberately from
+`installBundledExtras`, which *does* correct a stale copy — that folder is
+generated, this one is authored.
+
+Both must be unpacked before the first duel: the engine opens its `.cdb` chain
+lazily but only once, so a file written afterwards is not seen until a restart.

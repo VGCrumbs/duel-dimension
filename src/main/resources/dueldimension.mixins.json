@@ -9,7 +9,11 @@
     "client.AvatarRenderStateMixin",
     "client.AvatarRendererMixin",
     "client.MinecraftPackMixin",
-    "client.GuiGraphicsExtractorAccessor"
+    "client.GameRendererMixin",
+    "client.GuiGraphicsExtractorAccessor",
+    "client.InventoryScreenMixin",
+    "client.ItemInHandRendererMixin",
+    "client.SlotWrapperAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

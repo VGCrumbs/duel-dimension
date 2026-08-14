@@ -27,23 +27,37 @@ artefact. It now declares the set:
 
 | SPDX id | what it covers |
 | --- | --- |
-| `AGPL-3.0-or-later` | ocgcore, CardScripts, `cards.cdb`, `strings.conf`, EDOPro's field art, and the combined program |
-| `GPL-3.0-or-later` | this project's own source, and the sleeve and card art inherited byte-for-byte from `YgoDuelingMod` |
-| `Unlicense` | the bundled card database (`ydm_db`), from `YDM2-DB` |
+| `AGPL-3.0-or-later` | ocgcore, CardScripts, `cards.cdb`, `strings.conf`, most of EDOPro's field art, and the combined program |
+| `GPL-2.0-only` | nine of EDOPro's field textures — Argon Sun's Fluorohydride ones, 124,309 bytes; see below |
+| `MIT` | inside `ocgcore.dll`: the Fluorohydride ancestor and Lua 5.4.8 |
+| `GPL-3.0-or-later` | this project's own source and assets, and the sleeve and card art inherited byte-for-byte from `YgoDuelingMod` |
+| `Unlicense` | the part of the bundled card database (`ydm_db`) that comes from `YDM2-DB`: 10,756 of the 13,862 card files, 357 of the 691 set files, and all 23 `rarity_images` PNGs. The rest is this project's own and falls under its own licence |
 | `CC0-1.0` | eleven of EDOPro's sound effects |
 | `CC-BY-3.0` | `coinflip`, `diceroll` and `draw` |
 | `Apache-2.0` / `LGPL-2.1-or-later` | the nested JNA and sqlite-jdbc jars |
 | `LicenseRef-DuelDimension-NOTICE` | **the exceptions below, which have no licence anyone here can state** |
 
+`GPL-2.0-only` rather than `-or-later` because the notice this project received
+says only `licensed under GNU GPLv2` and does not say "or later"; the narrower
+id is the one that asserts nothing extra. The nine files are `attack.png`,
+`chain.png`, `chaintarget.png`, `equip.png`, `lpf.png`, `mask.png`,
+`negated.png`, `number.png` and `target.png` under
+`assets/dueldimension/textures/duel/`, and the copyright line is preserved
+verbatim in `EDOPRO_CREDITS.md` beside them.
+
+`MIT` is in the declaration because both MIT grants require their notice to
+travel in every copy, and the binary they are compiled into ships here.
+`dueldimension_engine/COPYING.ocgcore.txt` carries both in full.
+
 That last entry is not a licence. It is a pointer to this file, and it is here
 because the honest answer to "what is everything in this jar under?" is
-currently "these, and eleven files nobody can name terms for". Naming a
+currently "these, and fifty-two files nobody can name terms for". Naming a
 `LicenseRef` is how SPDX says exactly that; pretending otherwise is what the
 single-string declaration was doing.
 
 ### The exceptions, named
 
-Forty-six files, **9,565,920 bytes**, ship today with no attributable licence.
+Fifty-two files, **10,203,781 bytes**, ship today with no attributable licence.
 `CREDITS.md` lists them in full with what is known about each. In summary:
 
 - **seven audio files, 5,529,237 bytes**, whose origin no commit records — two
@@ -51,10 +65,30 @@ Forty-six files, **9,565,920 bytes**, ship today with no attributable licence.
   `magic_fade`, and none of the seven present in EDOPro's own `sound/files.txt`;
 - **three sound effects, 104,227 bytes**, credited only as "YGOPro Percy sound
   effects", which is an origin and not a grant;
+- **the two card backs, `textures/duel/backs/tcg.png` and `backs/anime.png`,
+  631,409 bytes.** `EDOPRO_CREDITS.md` and `textures/duel/LICENSE.md` say only
+  that they were "supplied for this mod" and are **not** EDOPro's — a statement
+  of what they are not. They replaced Icematoro's AGPL `cover.png` and
+  `cover2.png`, they match no file in `YgoDuelingMod`, in EDOPro or in this
+  project's Forge tree, and one of them is the retail TCG card back, whose
+  design is Konami's;
+- **the three duelist skins, `textures/entity/duelist/{joey,kaiba,yusei}.png`,
+  5,436 bytes.** Their own `CREDITS.md` — which ships in this jar — names
+  authors for two of them and says of all three: *"if this project is ever
+  distributed publicly, confirm permission with each author first — fan skins
+  are not automatically licensed for redistribution."* That confirmation has
+  not happened. `yusei.png` has no named author at all;
 - **`textures/misc/orichalcos_seal.png`, 328,676 bytes**, added by a commit that
   does not say where it came from, and present in no other tree of this project;
+  `textures/item/16/orichalcos_debug.png`, 1,016 bytes, is the item icon added
+  alongside it by the same commit and is in the same position;
 - **the five `sleeves_millenium_*` designs, 35 files, 3,603,780 bytes**, absent
   from both `YgoDuelingMod` and the Forge tree and untracked until now.
+
+That list was arrived at by hashing **every** binary asset in the built jar
+against `YgoDuelingMod`, the EDOPro install and this project's Forge tree, not
+by reading the commit history — which is how the card backs and the skins were
+found after an earlier pass put the figure at forty-six.
 
 They are not removed, because removing them would break features that work
 today, and because "we do not know" is a reason to find out rather than a

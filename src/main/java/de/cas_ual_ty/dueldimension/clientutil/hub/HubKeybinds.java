@@ -52,6 +52,21 @@ public final class HubKeybinds
         GLFW.GLFW_KEY_J,
         CATEGORY));
 
+    /**
+     * Puts the active duel disk on, or takes it off.
+     * <p>
+     * The disk is worn in the off-hand, which is where every other part of the
+     * mod already looks for it -- the duel start, the Chaos Disk promise and
+     * challenging a player by clicking them. So this asks the SERVER to move
+     * it: the client may not conjure an item into a slot, and the server is
+     * the side that knows which disk the player owns and has active.
+     */
+    public static final KeyMapping TOGGLE_DISK = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+        "key.dueldimension.toggle_disk",
+        InputConstants.Type.KEYSYM,
+        GLFW.GLFW_KEY_LEFT_ALT,
+        CATEGORY));
+
     private HubKeybinds()
     {
     }
@@ -76,6 +91,17 @@ public final class HubKeybinds
         if(pressed)
         {
             minecraft.setScreenAndShow(new DuelHubScreen());
+        }
+
+        boolean disk = false;
+        while(TOGGLE_DISK.consumeClick())
+        {
+            disk = true;
+        }
+        if(disk)
+        {
+            net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+                new de.cas_ual_ty.dueldimension.duel.dueldisk.DiskMessages.ToggleDisk());
         }
 
         boolean foil = false;

@@ -78,7 +78,11 @@ class CardQueryTest
 
         public String subType(Card card)
         {
-            return card.subType();
+            // Qualified by kind, exactly as the editor's own facet is: "Normal"
+            // names a monster type, a spell type AND a trap type, so the bare
+            // name cannot be the thing that is matched.
+            return card.subType() == null ? null
+                : CardQuery.subTypeKey(card.kind(), card.subType());
         }
 
         public java.util.Set<String> abilities(Card card)
@@ -271,21 +275,64 @@ class CardQueryTest
     void aSubTypeNarrowsToThatSubTypeAlone()
     {
         CardQuery<Card> query = new CardQuery<>(FACETS);
-        query.toggleSubType("Fusion");
+        query.toggleSubType(CardQuery.subTypeKey(CardQuery.Kind.MONSTER, "Fusion"));
         assertEquals(List.of(DARK_PALADIN), query.apply(everything()));
     }
 
     @Test
     void aSubTypeNameSharedBetweenKindsStaysWithinTheChosenKind()
     {
-        // "Normal" names a monster type AND a trap type. Choosing Normal alone
-        // finds both, which is right; adding the Trap chip is how a player says
-        // which one they meant.
+        // "Normal" names a monster type AND a trap type. The KEY is what says
+        // which was meant, so a Normal Trap finds only the trap with no kind
+        // chip lit at all -- it used to find the Normal monster too, and lighting
+        // the Trap chip was the only way to say which one you were after.
         CardQuery<Card> query = new CardQuery<>(FACETS);
-        query.toggleSubType("Normal");
-        assertEquals(List.of(BLUE_EYES, MIRROR_FORCE), query.apply(everything()));
-        query.toggleKind(CardQuery.Kind.TRAP);
+        query.toggleSubType(CardQuery.subTypeKey(CardQuery.Kind.TRAP, "Normal"));
         assertEquals(List.of(MIRROR_FORCE), query.apply(everything()));
+
+        // And the monster sense of the same word is a different question.
+        query.clear();
+        query.toggleSubType(CardQuery.subTypeKey(CardQuery.Kind.MONSTER, "Normal"));
+        assertEquals(List.of(BLUE_EYES), query.apply(everything()));
+    }
+
+    @Test
+    void turningOffAKindDropsThatKindsSubTypes()
+    {
+        // A control the bar can no longer show must not go on narrowing. The
+        // query is a static that outlives the screen, so a value cleared only
+        // while the widgets were rebuilt would still be filtering the next time
+        // the editor opened, with nothing on screen to say so.
+        CardQuery<Card> query = new CardQuery<>(FACETS);
+        query.toggleSubType(CardQuery.subTypeKey(CardQuery.Kind.SPELL, "Continuous"));
+        query.toggleKind(CardQuery.Kind.TRAP);
+        assertTrue(query.subTypes().isEmpty(),
+            "a spell sub-type is meaningless once the pool holds only traps");
+    }
+
+    @Test
+    void leavingMonsterBehindClearsTheMonsterOnlyFilters()
+    {
+        // The invariant the whole context-dependent drawer turns on. Attribute,
+        // species, ability and tuner are monster properties, and withinBand
+        // rejects every non-monster once a band is set -- so an ATK band left
+        // behind with only SPELL lit is a permanently empty pool with no
+        // visible cause.
+        CardQuery<Card> query = new CardQuery<>(FACETS);
+        query.toggleAttribute("DARK");
+        query.toggleSpecies("Spellcaster");
+        query.toggleAbility("Toon");
+        query.setTunersOnly(true);
+        query.setAttackRange(2000, 3000);
+
+        query.toggleKind(CardQuery.Kind.SPELL);
+
+        assertTrue(query.attributes().isEmpty());
+        assertTrue(query.species().isEmpty());
+        assertTrue(query.abilities().isEmpty());
+        assertFalse(query.tunersOnly());
+        assertEquals(-1, query.minAttack());
+        assertEquals(-1, query.maxAttack());
     }
 
     @Test
@@ -294,6 +341,28 @@ class CardQueryTest
         CardQuery<Card> query = new CardQuery<>(FACETS);
         query.toggleAbility("Toon");
         assertEquals(List.of(TOON_MERMAID), query.apply(everything()));
+    }
+
+    @Test
+    void tunerIsItsOwnAxisSoItAndsWithPendulum()
+    {
+        // Not a value in the abilities set, and this is why: that axis is
+        // OR-within, so Tuner and Pendulum chosen there would WIDEN to their
+        // union. A player asking for both means the cards that are both -- the
+        // twelve Pendulum Tuners in the real database.
+        Card pendulumTuner = new Card(1L, "Harmonizing Magician", "", CardQuery.Kind.MONSTER,
+            "DARK", "Spellcaster", 4, 1200, 1000, "Effect",
+            java.util.Set.of(CardQuery.TUNER, "Pendulum"));
+        Card plainTuner = new Card(2L, "Junk Synchron", "", CardQuery.Kind.MONSTER,
+            "DARK", "Warrior", 3, 1300, 500, "Effect", java.util.Set.of(CardQuery.TUNER));
+        Card plainPendulum = new Card(3L, "Odd-Eyes Pendulum Dragon", "", CardQuery.Kind.MONSTER,
+            "DARK", "Dragon", 7, 2500, 2000, "Effect", java.util.Set.of("Pendulum"));
+
+        CardQuery<Card> query = new CardQuery<>(FACETS);
+        query.setTunersOnly(true);
+        query.toggleAbility("Pendulum");
+        assertEquals(List.of(pendulumTuner),
+            query.apply(List.of(pendulumTuner, plainTuner, plainPendulum)));
     }
 
     @Test
@@ -330,8 +399,9 @@ class CardQueryTest
     void clearingPutsEveryNewFilterBack()
     {
         CardQuery<Card> query = new CardQuery<>(FACETS);
-        query.toggleSubType("Fusion");
+        query.toggleSubType(CardQuery.subTypeKey(CardQuery.Kind.MONSTER, "Fusion"));
         query.toggleAbility("Toon");
+        query.setTunersOnly(true);
         query.setAttackRange(100, 200);
         query.setDefenceRange(100, 200);
         assertFalse(query.isClear());

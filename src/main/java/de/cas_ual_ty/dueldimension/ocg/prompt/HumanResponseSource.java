@@ -24,8 +24,13 @@ import java.util.function.BiConsumer;
  */
 public class HumanResponseSource implements ResponseSource
 {
-    /** How long a player may think before the duel gives up on them. */
-    private static final long TIMEOUT_MINUTES = 10;
+    /**
+     * How long a player may think before the duel gives up on them. Public
+     * because the duel screen counts this down beside the phase bar: a clock
+     * that disagreed with the deadline it is counting to would be worse than
+     * no clock, so both read the one constant.
+     */
+    public static final long TIMEOUT_MINUTES = 10;
     private static final int MAX_INVALID_ANSWERS = 8;
 
     /** What the player sent back: option indices plus the declared card code, if any. */
@@ -98,7 +103,13 @@ public class HumanResponseSource implements ResponseSource
             // duelclient.cpp stashes it in select_hint and titles the next
             // selection with it; without this every prompt read "Select a card".
             DuelMessage.Hint hint = (DuelMessage.Hint)DuelMessage.decode(message);
-            if(hint.hintType() == DescriptionTable.OcgHints.SELECT_MESSAGE)
+            // ...and only to the player it was addressed to. We read the core's
+            // unfiltered stream, so both seats observe every hint; a real server
+            // splits them first. generic_duel.cpp:843-857 sends hint types
+            // 1, 2, 3 and 5 to `cur_player[player]` alone, and HINT_SELECTMSG is
+            // type 3 -- so without this test seat 0's "select a card to discard"
+            // would title seat 1's next selection.
+            if(hint.hintType() == DescriptionTable.OcgHints.SELECT_MESSAGE && hint.player() == seat)
             {
                 translator.noteSelectHint(hint.description());
             }
@@ -123,12 +134,18 @@ public class HumanResponseSource implements ResponseSource
         }
         BoardSnapshot field = board == null ? BoardSnapshot.EMPTY
             : BoardSnapshot.of(board.observe(), turn, phase, turnPlayer);
-        // The lookup is handed over per call, not held: one translator serves
-        // both seats. It is safe to query from here because respond() IS the
-        // duel thread -- the core is blocked inside its own callback waiting for
-        // this method to return, which is the only moment a query is legal.
+        // The lookup and the seat are handed over per call, not held: one
+        // translator serves both seats. It is safe to query from here because
+        // respond() IS the duel thread -- the core is blocked inside its own
+        // callback waiting for this method to return, which is the only moment
+        // a query is legal.
+        //
+        // `seat` is what makes the options answerable. The client's board is
+        // relative -- it draws its own side as controller 0 -- so an option
+        // still carrying the core's absolute controller matches nothing seat 1
+        // clicks, and that seat can do nothing but end its turn.
         EnginePrompt payload = translator.toPrompt(decoded, field,
-            board == null ? null : board::coverOf);
+            board == null ? null : board::coverOf, seat);
 
         if(payload == null || (payload.options().isEmpty() && payload.kind() != EnginePrompt.Kind.DECLARE_CARD))
         {

@@ -39,6 +39,17 @@ public final class DuelClientState
      */
     public static volatile de.cas_ual_ty.dueldimension.card.CardSleevesType ownSleeve =
         de.cas_ual_ty.dueldimension.duel.profile.Sleeves.DEFAULT;
+
+    /**
+     * The sleeve on the OPPONENT's deck, or the plain back.
+     * <p>
+     * Kept apart from {@link #ownSleeve} rather than shared, so the two halves
+     * of the field stay tellable apart: each side wears its own owner's sleeve,
+     * which is both what a real table looks like and what keeps "mine" and
+     * "theirs" legible when both players have sleeved up.
+     */
+    public static volatile de.cas_ual_ty.dueldimension.card.CardSleevesType opponentSleeve =
+        de.cas_ual_ty.dueldimension.duel.profile.Sleeves.DEFAULT;
     /**
      * The player's own deck list, waiting for the screen to pick it up, or null.
      * <p>
@@ -142,6 +153,7 @@ public final class DuelClientState
         {
             promptSerial = item.promptSerial();
             prompt = item.promptToShow();
+            promptShownAt = System.currentTimeMillis();
             over = false;
             openScreen();
         }
@@ -152,6 +164,7 @@ public final class DuelClientState
             result = item.result();
             overSince = System.currentTimeMillis();
             prompt = null;
+            promptShownAt = 0;
             // The duel is decided; the music has nothing left to carry.
             DuelMusic.stop();
             // A player may close the duel screen while waiting for the other
@@ -187,6 +200,16 @@ public final class DuelClientState
 
     /** Serial of the prompt on screen, quoted back with its answer. */
     public static volatile int promptSerial;
+
+    /**
+     * When the prompt on screen went up, as the clock beside the phase bar
+     * counts from. Stamped here rather than sent by the server because the
+     * deadline is measured from the moment the question is asked, and this is
+     * the ordered point where it becomes the question on screen -- a stamp
+     * taken in the packet handler would start running while earlier events
+     * were still playing out. Zero when nothing is being asked.
+     */
+    public static volatile long promptShownAt;
 
     /** Where the mat choice survives restarts. */
     private static java.nio.file.Path playMatFile()
@@ -333,6 +356,14 @@ public final class DuelClientState
      * Asks the card-image pipeline for these cards now, rather than the first
      * time each is drawn. Requesting an image is what queues its download, so
      * without this a duel spends its first minutes showing placeholders.
+     * <p>
+     * <b>Asks {@link ImageHandler} and not {@link DuelTextures}.</b> The
+     * pipeline nudge is the whole point of warming; the Identifier is not, and
+     * DuelTextures records it with {@link CardTextureCache} as it builds it.
+     * That marked every card in the duel resident without a texture existing —
+     * so the first-sighting ration was already open when the board finally drew
+     * them, and the cache's byte count was carrying a megabyte per card that
+     * was never on the GPU.
      */
     public static void warmUpArt(int[] codes)
     {
@@ -342,8 +373,8 @@ public final class DuelClientState
                 de.cas_ual_ty.dueldimension.DdDatabase.PROPERTIES_LIST.get((long)code);
             if(card != null)
             {
-                DuelTextures.card(card, (byte)0, DuelTextures.FIELD_CARD_SIZE);
-                DuelTextures.card(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE);
+                ImageHandler.getReplacementImage(card, (byte)0, DuelTextures.FIELD_CARD_SIZE);
+                ImageHandler.getReplacementImage(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE);
             }
         }
     }
@@ -382,8 +413,9 @@ public final class DuelClientState
             if(card != null)
             {
                 byte art = DuelTextures.artIndex(card, slot.art());
-                DuelTextures.card(card, art, DuelTextures.FIELD_CARD_SIZE);
-                DuelTextures.card(card, art, DuelTextures.PREVIEW_CARD_SIZE);
+                // Warming, not drawing -- see warmUpArt.
+                ImageHandler.getReplacementImage(card, art, DuelTextures.FIELD_CARD_SIZE);
+                ImageHandler.getReplacementImage(card, art, DuelTextures.PREVIEW_CARD_SIZE);
             }
         }
     }
@@ -391,6 +423,7 @@ public final class DuelClientState
     public static synchronized void reset()
     {
         prompt = null;
+        promptShownAt = 0;
         board = BoardSnapshot.EMPTY;
         over = false;
         overSince = 0;
@@ -400,6 +433,7 @@ public final class DuelClientState
         // Cleared with the rest of the duel, so the next one does not inherit
         // the sleeve of the deck that played the last.
         ownSleeve = de.cas_ual_ty.dueldimension.duel.profile.Sleeves.DEFAULT;
+        opponentSleeve = de.cas_ual_ty.dueldimension.duel.profile.Sleeves.DEFAULT;
         // For the same reason as the sleeve above: a deck list left here would
         // be the PREVIOUS duel's deck, opening itself over the next one.
         deckView = null;

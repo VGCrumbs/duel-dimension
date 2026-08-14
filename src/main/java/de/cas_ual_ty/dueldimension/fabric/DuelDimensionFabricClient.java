@@ -54,6 +54,13 @@ public class DuelDimensionFabricClient implements ClientModInitializer
             de.cas_ual_ty.dueldimension.clientutil.CardPreloadJob.tick();
             // Card textures were never released by anything; this is what
             // keeps a long browse from growing GPU memory without bound.
+            //
+            // Nothing opens a per-tick allowance here any more. The ration that
+            // used to be reset from this line was a nanosecond budget spent per
+            // FRAME and refilled per TICK, so one allowance was shared by three
+            // frames at 60 fps and twelve at 240. The decode is on a worker now
+            // and the uploads are counted per frame in CardImageManager, where
+            // they are actually spent.
             de.cas_ual_ty.dueldimension.clientutil.CardTextureCache.sweep();
         });
 
@@ -104,8 +111,13 @@ public class DuelDimensionFabricClient implements ClientModInitializer
             .register((handler, client) ->
             {
                 de.cas_ual_ty.dueldimension.duel.outfit.WornOutfits.clear();
+                de.cas_ual_ty.dueldimension.clientutil.ClientWornDisks.clear();
                 de.cas_ual_ty.dueldimension.clientutil.OrichalcosRenderer.clear();
-                de.cas_ual_ty.dueldimension.clientutil.CardTextureCache.clear();
+                // Both halves of EDOPro's ClearTexture (image_manager.cpp:339-367):
+                // bump the epoch so everything in flight is abandoned and freed
+                // off the render thread, then release the textures and forget
+                // their status so a later visit asks for them again.
+                de.cas_ual_ty.dueldimension.clientutil.CardImageManager.clearTexture();
                 // A duel interrupted by a disconnect never reports itself over,
                 // so nothing else would ever stop its music -- it would play on
                 // over the title screen.

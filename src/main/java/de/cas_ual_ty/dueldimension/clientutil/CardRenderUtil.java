@@ -23,10 +23,10 @@ import java.util.List;
  * <p>
  * Two jobs that used to be one. "Bind" is gone as an idea — a texture is an
  * argument to a draw now, not a piece of global state set before one — so the
- * binder calls here no longer bind anything: they tell the {@link
- * LimitedTextureBinder} that this image is in use, which is what stops it being
- * released while it is on screen, and they hand back the id for the caller to
- * draw with. The name is kept because every call site is a port of a call site.
+ * binder calls here no longer bind anything: they ask {@link CardImageManager}
+ * for the card's art and hand back the id the caller should draw with, which is
+ * the real art once a worker has decoded it and the placeholder until then. The
+ * name is kept because every call site is a port of a call site.
  * <p>
  * The duel field's half is here too, now that the two things it waited on are
  * settled: a card lying on its side turns the quad about its centre
@@ -38,17 +38,12 @@ public class CardRenderUtil
     public static final Identifier MASK_RL = Identifier.fromNamespaceAndPath(
         DuelDimension.MOD_ID, "textures/gui/rarity_mask.png");
 
-    static LimitedTextureBinder infoTextureBinder;
-    static LimitedTextureBinder mainTextureBinder;
-
-    // called from ClientProxy
-    public static void init(int maxInfoImages, int maxMainImages)
-    {
-        CardRenderUtil.infoTextureBinder =
-            new LimitedTextureBinder(ClientProxy.getMinecraft(), maxInfoImages);
-        CardRenderUtil.mainTextureBinder =
-            new LimitedTextureBinder(ClientProxy.getMinecraft(), maxMainImages);
-    }
+    // The two LimitedTextureBinders that used to live here are gone. They
+    // capped how many card images were resident, by count, on the one path
+    // (item icons and the duel field) that fed them -- no hub screen ever did,
+    // which is why a browse could grow without bound. CardImageManager's own
+    // per-size LRU now covers every path, in bytes rather than in a count, so a
+    // second cap over a subset of the same textures would only fight it.
 
     public static void renderCardInfo(GuiGraphicsExtractor ms, CardHolder card)
     {
@@ -123,10 +118,15 @@ public class CardRenderUtil
     }
 
     /**
-     * Marks a card's inspect-size image as in use and says where it is.
+     * Asks for a card's inspect-size image and says what to draw now.
      * <p>
      * Returning the id is the whole change: the caller draws with it rather
-     * than relying on it having been made current.
+     * than relying on it having been made current. It comes back through
+     * {@link CardImageManager}, which is the placeholder on a first sighting and
+     * the art from the next frame or two -- this and {@code DuelTextures.card}
+     * are the two accessors every piece of card art in the client reaches the
+     * screen through, and an Identifier that skips them is decoded and uploaded
+     * inline on the render thread.
      */
     public static Identifier bindInfoResourceLocation(CardHolder c)
     {
@@ -150,14 +150,12 @@ public class CardRenderUtil
 
     public static Identifier bindInfoResourceLocation(Identifier r)
     {
-        CardRenderUtil.infoTextureBinder.bind(r);
-        return r;
+        return CardImageManager.getTextureCard(r, ClientProxy.activeCardInfoImageSize);
     }
 
     public static Identifier bindMainResourceLocation(Identifier r)
     {
-        CardRenderUtil.mainTextureBinder.bind(r);
-        return r;
+        return CardImageManager.getTextureCard(r, ClientProxy.activeCardMainImageSize);
     }
 
     public static Identifier bindSleeves(CardSleevesType s)

@@ -296,20 +296,13 @@ public final class DuelTextures
         return card(properties, imageIndex, size, true);
     }
 
-    /** Strongly desaturated card art for an unowned editor result or deck copy. */
-    public static Identifier cardUnowned(Properties properties, byte imageIndex, int size)
-    {
-        String image = ImageHandler.getReplacementImage(properties, imageIndex, size);
-        if(image.endsWith("card_loading") || image.endsWith("card_failed"))
-        {
-            return UNKNOWN;
-        }
-        Identifier __id = Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID,
-            DdCardResourcePack.UNOWNED_PATH_PREFIX + image + ".png");
-        // Nothing releases card textures otherwise; see CardTextureCache.
-        CardTextureCache.touch(__id, size);
-        return __id;
-    }
+    // There is no cardUnowned. An unowned card is the SAME image as an owned
+    // one, greyed by the draw -- see UnownedPipelines -- so ownership is an
+    // argument the three call sites pass to their blit rather than a third
+    // identifier over the same file. That identifier cost a second, CPU-built
+    // copy of every unowned card's PNG, and a card shown greyed in a grid and
+    // owned in a preview cost two decodes and two resident textures instead of
+    // one.
 
     private static Identifier card(Properties properties, byte imageIndex, int size, boolean smooth)
     {
@@ -324,8 +317,12 @@ public final class DuelTextures
         Identifier __id = Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID,
             (smooth ? DdCardResourcePack.SMOOTH_PATH_PREFIX : DdCardResourcePack.PATH_PREFIX)
                 + image + ".png");
-        // Nothing releases card textures otherwise; see CardTextureCache.
-        CardTextureCache.touch(__id, size);
-        return __id;
+        // Through the manager, never straight to the caller. An Identifier that
+        // reaches a blit before the manager has registered a texture under it
+        // is read, decoded and uploaded inline on the render thread, which is
+        // the hitch; the manager hands back the placeholder instead and a
+        // worker has the art ready a frame or two later. It is also what makes
+        // the texture releasable -- see CardTextureCache.
+        return CardImageManager.getTextureCard(__id, size);
     }
 }

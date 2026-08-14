@@ -76,6 +76,83 @@ public final class ProfilePayloads
         }
     }
 
+    /**
+     * Server to client: passcodes the DUEL ENGINE does not know.
+     * <p>
+     * The mod's card database and ocgcore's are separate, and ours runs ahead
+     * of it -- a set imported from YGOPRODeck can contain cards EDOPro has not
+     * shipped yet. A card the engine has never heard of is not refused when the
+     * duel starts: {@code field::add_card} rewrites its location, so an unknown
+     * Xyz is silently moved into the MAIN deck and drawn as a normal card.
+     * <p>
+     * Only the server can answer this -- the engine is its -- so it says so
+     * once on join and the editor hides them. Empty when no engine is installed,
+     * in which case nothing is hidden rather than everything.
+     */
+    public record EngineUnknown(List<Integer> codes) implements CustomPacketPayload
+    {
+        public static final CustomPacketPayload.Type<EngineUnknown> TYPE =
+            DdNetwork.type("profile_engine_unknown");
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, EngineUnknown> CODEC =
+            CustomPacketPayload.codec(EngineUnknown::encode, EngineUnknown::decode);
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
+        {
+            return TYPE;
+        }
+
+        public static void encode(EngineUnknown message, RegistryFriendlyByteBuf buffer)
+        {
+            buffer.writeVarInt(message.codes().size());
+            message.codes().forEach(buffer::writeVarInt);
+        }
+
+        public static EngineUnknown decode(RegistryFriendlyByteBuf buffer)
+        {
+            int count = buffer.readVarInt();
+            List<Integer> codes = new java.util.ArrayList<>(count);
+            for(int i = 0; i < count; i++)
+            {
+                codes.add(buffer.readVarInt());
+            }
+            return new EngineUnknown(codes);
+        }
+    }
+
+    /**
+     * Works out which of our cards the engine lacks, and tells this player.
+     * <p>
+     * Computed per call rather than cached: it is one map lookup per card over
+     * a database that is already in memory, it happens once per join, and a
+     * cache would be a third copy of a fact that two databases already disagree
+     * about.
+     */
+    public static void syncEngineUnknown(ServerPlayer player)
+    {
+        List<Integer> unknown = new java.util.ArrayList<>();
+        de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime.Paths paths =
+            de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime.Paths.defaults();
+        de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime engine =
+            paths.missing() != null ? null
+                : de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime.get(paths);
+        if(engine != null)
+        {
+            for(de.cas_ual_ty.dueldimension.card.properties.Properties card
+                : de.cas_ual_ty.dueldimension.DdDatabase.PROPERTIES_LIST)
+            {
+                if(card != null && card.getId() > 0
+                    && engine.cards().get((int)card.getId()) == null)
+                {
+                    unknown.add((int)card.getId());
+                }
+            }
+        }
+        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
+            new EngineUnknown(unknown));
+    }
+
     // ---- client to server ----
 
     /**
@@ -284,6 +361,7 @@ public final class ProfilePayloads
     {
         DdNetwork.clientbound(Sync.TYPE, Sync.CODEC);
         DdNetwork.clientbound(SyncFreeMode.TYPE, SyncFreeMode.CODEC);
+        DdNetwork.clientbound(EngineUnknown.TYPE, EngineUnknown.CODEC);
 
         DdNetwork.serverbound(SaveDeck.TYPE, SaveDeck.CODEC);
         DdNetwork.serverbound(CreateDeck.TYPE, CreateDeck.CODEC);
@@ -348,6 +426,7 @@ public final class ProfilePayloads
         net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
             new Sync(DuelProfiles.get(player)));
         syncFreeMode(player);
+        syncEngineUnknown(player);
     }
 
     /** Sends the world-wide free-mode switch to one client. */

@@ -319,6 +319,41 @@ public final class PromptMessages
      * a starter deck server-side, and the back on the table should be that
      * deck's, not the one that was refused.
      */
+    /**
+     * Server -> client: the sleeve on the deck the OPPONENT is duelling with.
+     * <p>
+     * A sleeve belongs to the cards, not to the seat looking at them. Sending
+     * only the player's own meant the person across the table saw a plain back
+     * on cards that were sleeved -- which is the one audience a sleeve is for.
+     * <p>
+     * This is cosmetic and carries no hidden information: it names a sleeve,
+     * not a deck's contents.
+     */
+    public record OpponentSleeve(String sleeve) implements CustomPacketPayload
+    {
+        public static final CustomPacketPayload.Type<OpponentSleeve> TYPE =
+            DdNetwork.type("prompt_opponent_sleeve");
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, OpponentSleeve> CODEC =
+            CustomPacketPayload.codec(OpponentSleeve::encode, OpponentSleeve::decode);
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
+        {
+            return TYPE;
+        }
+
+        public static void encode(OpponentSleeve message, FriendlyByteBuf buffer)
+        {
+            buffer.writeUtf(message.sleeve(), 64);
+        }
+
+        public static OpponentSleeve decode(FriendlyByteBuf buffer)
+        {
+            return new OpponentSleeve(buffer.readUtf(64));
+        }
+    }
+
     public record OwnSleeve(String sleeve) implements CustomPacketPayload
     {
         /** Names this message on the wire. */

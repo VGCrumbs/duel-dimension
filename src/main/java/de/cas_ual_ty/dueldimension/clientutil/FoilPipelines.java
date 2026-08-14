@@ -1,12 +1,9 @@
 package de.cas_ual_ty.dueldimension.clientutil;
 
-import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.BlendFactor;
 import com.mojang.blaze3d.pipeline.BlendFunction;
-import de.cas_ual_ty.dueldimension.DuelDimension;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.resources.Identifier;
 
 /**
  * The two blends behind a foil card's glint.
@@ -92,52 +89,13 @@ public final class FoilPipelines
     /**
      * {@code GUI_TEXTURED} with a different blend and nothing else changed.
      * <p>
-     * There is no {@code toBuilder}, but every property has a getter, so the
-     * pipeline is read back and rebuilt. Copying rather than writing one from
-     * scratch matters: the shaders, the vertex format and the shader defines
-     * are what make a GUI blit a GUI blit, and guessing any of them would
-     * produce something that draws, just not where or how the rest of the
-     * screen does.
+     * The rebuild-from-getters this used to spell out itself now lives in
+     * {@link PipelineCopy}, because {@link UnownedPipelines} needs the same
+     * thing with the fragment shader overridden instead of the blend. Passing
+     * null for the shader keeps {@code GUI_TEXTURED}'s own.
      */
     private static RenderPipeline copyOfGuiTextured(String name, BlendFunction blend)
     {
-        RenderPipeline base = RenderPipelines.GUI_TEXTURED;
-        RenderPipeline.Builder builder = RenderPipeline.builder()
-            .withLocation(Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID,
-                "pipeline/" + name))
-            .withVertexShader(base.getVertexShader())
-            .withFragmentShader(base.getFragmentShader())
-            .withCull(base.isCull())
-            .withPolygonMode(base.getPolygonMode())
-            .withPrimitiveTopology(base.getPrimitiveTopology())
-            .withDepthStencilState(java.util.Optional.ofNullable(base.getDepthStencilState()))
-            .withColorTargetState(new ColorTargetState(blend));
-
-        for(int binding = 0; binding < base.getVertexFormatBindings().length; binding++)
-        {
-            builder.withVertexBinding(binding, base.getVertexFormatBinding(binding));
-        }
-        for(com.mojang.blaze3d.pipeline.BindGroupLayout layout : base.getBindGroupLayouts())
-        {
-            builder.withBindGroupLayout(layout);
-        }
-        // flags() are the bare defines -- GUI_TEXTURED's is IS_GUI, and it is
-        // what tells the shader it is drawing in screen space rather than in
-        // the world. Losing it would put the quad somewhere else entirely.
-        base.getShaderDefines().flags().forEach(builder::withShaderDefine);
-
-        // values() are name=value defines. The builder only accepts int and
-        // float values, so a string-valued one cannot be copied faithfully.
-        // GUI_TEXTURED has none; if that ever changes, this says so rather than
-        // guessing a type and producing a pipeline that is subtly not the one
-        // it was copied from.
-        if(!base.getShaderDefines().values().isEmpty())
-        {
-            DuelDimension.warn("GUI_TEXTURED now carries value defines "
-                + base.getShaderDefines().values().keySet()
-                + " which " + name + " cannot copy; the foil blend may render wrong.");
-        }
-
-        return builder.build();
+        return PipelineCopy.of(RenderPipelines.GUI_TEXTURED, name, null, blend);
     }
 }

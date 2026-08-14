@@ -122,9 +122,22 @@ public class CardInfoScreen extends Screen
 
         // Monster / Spell / Trap, the same three chips the trunk uses, because
         // narrowing a hundred archetype members to the traps is the same act.
-        int chipW = 40;
+        // The row is measured against the space it has before it is placed.
+        // Marching right from a fixed start with no bound put the last chip off
+        // the screen edge at small widths, where it could be neither seen nor
+        // clicked -- the same authored-size-as-absolute mistake fixed elsewhere.
+        int chipCount = de.cas_ual_ty.dueldimension.duel.profile.CardQuery.Kind.values().length;
         int chipH = 12;
-        int chipX = width / 2 + pad() + font.width("Related cards  (000)") + 8;
+        int columnLeft = width / 2 + pad();
+        int room = Math.max(0, width - pad() - columnLeft);
+        // Narrow before it is nudged: shrinking the chips buys more than
+        // sliding them does, and the labels are short.
+        int chipW = clamp(24, 40, (room - 2 * (chipCount - 1)) / Math.max(1, chipCount));
+        int rowW = chipCount * chipW + 2 * (chipCount - 1);
+        // Right-aligned to the panel when the heading would push it past the
+        // edge, and never left of the column it belongs to.
+        int chipX = Math.max(columnLeft, Math.min(
+            columnLeft + font.width("Related  (000)") + 8, width - pad() - rowW));
         for(de.cas_ual_ty.dueldimension.duel.profile.CardQuery.Kind kind
             : de.cas_ual_ty.dueldimension.duel.profile.CardQuery.Kind.values())
         {
@@ -634,6 +647,58 @@ public class CardInfoScreen extends Screen
     }
 
     /**
+     * When this card was first printed, worked out rather than stored.
+     * <p>
+     * No card file carries a date; the SETS do, so a card's first release is
+     * the earliest date among the sets that contain it. A set with no date is
+     * skipped rather than treated as ancient -- promos and unreleased products
+     * legitimately have none, and letting one of those win would date every
+     * card in it to nothing.
+     * <p>
+     * <b>Cached, and that is not optional.</b> This walks all 691 sets and
+     * their card lists, and renderOverview runs every frame; recomputing it per
+     * frame would be a scan of tens of thousands of entries sixty times a
+     * second. The empty string is cached too, so a card that is in no dated set
+     * is worked out once and not retried.
+     */
+    private String firstRelease;
+
+    private String firstRelease()
+    {
+        if(firstRelease != null)
+        {
+            return firstRelease;
+        }
+        java.util.Date earliest = null;
+        long id = card.getId();
+        for(de.cas_ual_ty.dueldimension.set.CardSet set
+            : de.cas_ual_ty.dueldimension.DdDatabase.SETS_LIST.getList())
+        {
+            if(set == null || set.date == null || set.cards == null)
+            {
+                continue;
+            }
+            if(earliest != null && !set.date.before(earliest))
+            {
+                // Already beaten; no need to look inside this one at all.
+                continue;
+            }
+            for(de.cas_ual_ty.dueldimension.card.CardHolder holder : set.cards)
+            {
+                if(holder != null && holder.getCard() != null && holder.getCard().getId() == id)
+                {
+                    earliest = set.date;
+                    break;
+                }
+            }
+        }
+        firstRelease = earliest == null ? ""
+            : new java.text.SimpleDateFormat("d MMMM yyyy", java.util.Locale.ROOT)
+                .format(earliest);
+        return firstRelease;
+    }
+
+    /**
      * Name, type line and stats, taken from the card model's own description
      * rather than composed here, so this page says what every tooltip says.
      */
@@ -644,6 +709,11 @@ public class CardInfoScreen extends Screen
         List<Component> information = new ArrayList<>();
         information.add(Component.literal(card.getName() == null ? "" : card.getName()));
         card.addFacts(information);
+        String released = firstRelease();
+        if(!released.isEmpty())
+        {
+            information.add(Component.literal("First released: " + released));
+        }
 
         int line = y;
         for(int i = 0; i < information.size(); i++)
@@ -719,7 +789,7 @@ public class CardInfoScreen extends Screen
         int x = width / 2 + pad();
         int y = sourcesTop();
         List<Properties> shown = shownRelated();
-        poseStack.text(font, "Related cards  (" + shown.size() + ")", x, y - 13, 0xFFF4D089, true);
+        poseStack.text(font, "Related  (" + shown.size() + ")", x, y - 13, 0xFFF4D089, true);
         if(shown.isEmpty())
         {
             poseStack.text(font, related.isEmpty()
@@ -791,6 +861,12 @@ public class CardInfoScreen extends Screen
         String query = java.net.URLEncoder.encode(name, java.nio.charset.StandardCharsets.UTF_8);
         return java.net.URI.create(
             "https://www.tcgplayer.com/search/yugioh/product?productLineName=yugioh&q=" + query);
+    }
+
+    /** Bounded, the way every other measured layout here bounds its numbers. */
+    private static int clamp(int min, int max, int value)
+    {
+        return Math.max(min, Math.min(max, value));
     }
 
     private static class StarButton extends HubWidgets.TextureButton

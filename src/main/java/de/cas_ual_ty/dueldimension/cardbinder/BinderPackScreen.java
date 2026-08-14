@@ -3,6 +3,7 @@ package de.cas_ual_ty.dueldimension.cardbinder;
 import de.cas_ual_ty.dueldimension.card.CardHolder;
 import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
 import de.cas_ual_ty.dueldimension.clientutil.DuelTextures;
+import de.cas_ual_ty.dueldimension.clientutil.UnownedPipelines;
 import de.cas_ual_ty.dueldimension.clientutil.hub.EditorState;
 import de.cas_ual_ty.dueldimension.clientutil.hub.HubTextures;
 import de.cas_ual_ty.dueldimension.clientutil.hub.NineSlice;
@@ -21,10 +22,10 @@ import java.util.Set;
  * One pack, card by card: what has been pulled and what is still missing.
  * <p>
  * Every printing in the set gets a tile. Ones held are drawn in full colour;
- * ones still missing are drawn desaturated through the resource pack's existing
- * "unowned" path — the same treatment the deck editor uses for a card the player
- * does not have, so the two screens agree about what "you do not own this" looks
- * like without a second piece of art.
+ * ones still missing are drawn through {@code UnownedPipelines}, which greys
+ * the same image at draw time — the same treatment the deck editor uses for a
+ * card the player does not have, so the two screens agree about what "you do
+ * not own this" looks like without a second piece of art.
  * <p>
  * A card appears once per RARITY it was printed at, because that is what the
  * collection counts. Two tiles of the same art with different rarity labels are
@@ -84,6 +85,12 @@ public class BinderPackScreen extends Screen
     @Override
     protected void init()
     {
+        // A mod pipeline is not in getStaticPipelines(), so nothing validates
+        // its shader at reload and a bad one would surface as a crash at the
+        // first unowned card. Asking here turns that into a log line and the
+        // dim fallback, and re-asking per init picks up a resource reload.
+        UnownedPipelines.refresh();
+
         // Fill the height; take a width that holds whole columns and no more,
         // so the grid is never trailed by a strip of empty panel.
         panelH = Math.max(120, height - MARGIN * 2);
@@ -182,17 +189,17 @@ public class BinderPackScreen extends Screen
                     CARD_W + 4, cardH + 4, NineSlice.HOVER, 3, 0.9F);
             }
 
-            // The unowned path desaturates in the resource pack, so a missing
-            // card still shows WHICH card it is -- that is the point of a
-            // collection page -- while reading instantly as not yet found.
-            DdBlitUtil.blit(poseStack, tile.held()
-                    ? DuelTextures.card(tile.card().getCard(), tile.card().imageIndex,
-                        DuelTextures.ICON_CARD_SIZE)
-                    : DuelTextures.cardUnowned(tile.card().getCard(), tile.card().imageIndex,
-                        DuelTextures.ICON_CARD_SIZE),
+            // A missing card is greyed at draw time, so it still shows WHICH
+            // card it is -- that is the point of a collection page -- while
+            // reading instantly as not yet found. Same image either way; only
+            // the pipeline differs. See UnownedPipelines.
+            DdBlitUtil.blit(poseStack,
+                DuelTextures.card(tile.card().getCard(), tile.card().imageIndex,
+                    DuelTextures.ICON_CARD_SIZE),
                 x, cardY, CARD_W, cardH,
                 DuelTextures.CARD_U0, DuelTextures.CARD_V0,
-                DuelTextures.CARD_U1, DuelTextures.CARD_V1, DdBlitUtil.NO_TINT);
+                DuelTextures.CARD_U1, DuelTextures.CARD_V1, DdBlitUtil.NO_TINT,
+                !tile.held());
 
             String rarity = font.plainSubstrByWidth(shortRarity(tile.rarity()), CARD_W);
             poseStack.text(font, rarity, x + (CARD_W - font.width(rarity)) / 2,

@@ -108,6 +108,8 @@ class PromptArtworkTest
         private final PromptTranslator translator;
         private final Random random = new Random(4242);
         private BoardObserver board;
+        /** Rebases the options, exactly as HumanResponseSource does. */
+        private int seat;
 
         /** One entry per selection the engine offered out of our own deck. */
         final List<List<EnginePrompt.Option>> deckSelections = new ArrayList<>();
@@ -122,6 +124,7 @@ class PromptArtworkTest
         @Override
         public void onDuelStart(int playerIndex, BoardObserver observer)
         {
+            seat = playerIndex;
             board = observer;
         }
 
@@ -140,7 +143,7 @@ class PromptArtworkTest
             // pair is the whole claim -- without it the client is looking at a
             // field that is not on the wire.
             EnginePrompt bare = translator.toPrompt(decoded, field);
-            EnginePrompt prompt = translator.toPrompt(decoded, field, board::coverOf);
+            EnginePrompt prompt = translator.toPrompt(decoded, field, board::coverOf, seat);
             if(prompt == null
                 || (prompt.options().isEmpty() && prompt.kind() != EnginePrompt.Kind.DECLARE_CARD))
             {

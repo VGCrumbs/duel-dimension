@@ -137,6 +137,76 @@ public final class ShopStock
      */
     private static volatile List<SleeveOffer> sleeveCatalogue;
 
+    /** A disk on sale: the id it is registered under, and what it costs. */
+    public record DiskOffer(String disk, int price)
+    {
+        public void write(FriendlyByteBuf buffer)
+        {
+            buffer.writeUtf(disk, 64);
+            buffer.writeVarInt(price);
+        }
+
+        public static DiskOffer read(FriendlyByteBuf buffer)
+        {
+            return new DiskOffer(buffer.readUtf(64), buffer.readVarInt());
+        }
+    }
+
+    private static volatile List<DiskOffer> diskCatalogue;
+
+    /**
+     * What a disk costs.
+     * <p>
+     * Priced in tiers rather than flat, because these are not interchangeable
+     * recolours the way the sleeve set is: the Academia disks are a uniform a
+     * player picks a house from, while Trueman and Kaibaman are the ones worth
+     * saving for. The free plain disk is priced at nothing here as well as
+     * being refused by the shop, so the two answers cannot drift apart.
+     * <p>
+     * The one place the figure is worked out, called both to fill the shop
+     * window and to take the money.
+     */
+    public static int priceOfDisk(String name)
+    {
+        if(!de.cas_ual_ty.dueldimension.duel.profile.DuelDisks.isPurchasable(name))
+        {
+            return 0;
+        }
+        return switch(name)
+        {
+            case "academia_disk", "academia_disk_red", "academia_disk_blue",
+                "academia_disk_yellow" -> 1500;
+            case "rock_spirit_disk", "jewel_disk" -> 2500;
+            case "chaos_disk" -> 4000;
+            case "trueman_disk", "kaibaman_disk" -> 6000;
+            // A disk added later is stock at the middle price rather than free:
+            // new art is paid art unless DuelDisks.FREE says otherwise.
+            default -> 2500;
+        };
+    }
+
+    /**
+     * Every disk on sale, in the order {@code DuelDisks.ALL} lists them, which
+     * is the order the grid lays them out. Built from the registry so a disk
+     * added there appears here without this file mentioning it.
+     */
+    public static List<DiskOffer> disks()
+    {
+        List<DiskOffer> known = diskCatalogue;
+        if(known != null)
+        {
+            return known;
+        }
+        List<DiskOffer> offers = new ArrayList<>();
+        for(String disk : de.cas_ual_ty.dueldimension.duel.profile.DuelDisks.ALL)
+        {
+            offers.add(new DiskOffer(disk, priceOfDisk(disk)));
+        }
+        known = List.copyOf(offers);
+        diskCatalogue = known;
+        return known;
+    }
+
     private ShopStock()
     {
     }

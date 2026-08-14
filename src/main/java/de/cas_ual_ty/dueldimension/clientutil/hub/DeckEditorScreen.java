@@ -3,9 +3,11 @@ package de.cas_ual_ty.dueldimension.clientutil.hub;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import de.cas_ual_ty.dueldimension.card.properties.Properties;
+import de.cas_ual_ty.dueldimension.clientutil.CardImageManager;
 import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
 import de.cas_ual_ty.dueldimension.clientutil.DuelTextures;
-import de.cas_ual_ty.dueldimension.clientutil.DuelTextures;
+import de.cas_ual_ty.dueldimension.clientutil.UnownedPipelines;
+import net.minecraft.resources.Identifier;
 import de.cas_ual_ty.dueldimension.duel.profile.CardQuery;
 import de.cas_ual_ty.dueldimension.duel.profile.DeckLimits;
 import de.cas_ual_ty.dueldimension.clientutil.layout.Layout;
@@ -99,6 +101,11 @@ public class DeckEditorScreen extends Screen
 
     private int trunkScroll;
     /**
+     * Where the grid was on the previous frame, so the scroll-velocity gate can
+     * ask how far it has travelled. {@code drawing.cpp}:1375's {@code prev_pos}.
+     */
+    private int lastTrunkScroll;
+    /**
      * The collection scrollbar's track, recorded as it is drawn.
      * <p>
      * Taken from the draw rather than recomputed, so the box you can click can
@@ -112,6 +119,19 @@ public class DeckEditorScreen extends Screen
     private int trunkBarVisibleRows;
     /** Where in the thumb the drag took hold, or -1 when not dragging. */
     private int trunkBarGrab = -1;
+    /**
+     * The filter drawer's own scrollbar, recorded the same way.
+     * <p>
+     * Its own rather than borrowed: the drawer's bar is drawn at exactly the x
+     * the collection's is, and the collection's is not drawn at all while the
+     * drawer is up -- so one set of remembered numbers meant dragging the bar
+     * you could see scrubbed the grid you could not.
+     */
+    private int filterBarX;
+    private int filterBarY;
+    private int filterBarH;
+    private int filterBarThumbH;
+    private int filterBarGrab = -1;
     /** How far the deck's three sections are scrolled, in pixels. */
     private int deckScroll;
     /** Whether the extra filters are showing; they cover the trunk grid. */
@@ -184,28 +204,27 @@ public class DeckEditorScreen extends Screen
     @Override
     protected void init()
     {
+        // A mod pipeline is not in getStaticPipelines(), so nothing validates
+        // its shader at reload and a bad one would surface as a crash at the
+        // first unowned card. Asking here turns that into a log line and the
+        // dim fallback, and re-asking per init picks up a resource reload.
+        UnownedPipelines.refresh();
+
         Layout layout = Layout.of(LAYOUT);
         pad = layout.i("panel.pad", 8);
         gap = layout.i("card.gap", 2);
         mainColumns = Math.max(1, layout.i("deck.mainColumns", 10));
         extraColumns = Math.max(1, layout.i("deck.extraColumns", 15));
-        trunkColumns = Math.max(1, layout.i("trunk.columns", 8));
         titleH = layout.i("deck.titleHeight", 14);
         headerH = layout.i("deck.headerHeight", 12);
         sectionGap = layout.i("deck.sectionGap", 6);
 
-        panelTop = layout.i("panel.top", 34);
-        panelH = height - panelTop - layout.i("panel.bottom", 30);
-        leftX = pad;
-        leftW = (width - pad * 3) * Math.max(20, Math.min(80, layout.i("panel.leftPercent", 58))) / 100;
-        rightX = leftX + leftW + layout.i("panel.gap", 8);
-        rightW = width - rightX - pad;
-
-        resize();
+        // Everything else -- the panels, both grids, every control row and the
+        // drawer -- comes out of the one ordered pass below.
+        remeasure();
 
         search = new EditBox(font, rightX + pad + 2, panelTop + pad + 2,
-            Math.max(40, rightW - pad * 2 - layout.i("trunk.sortWidth", 56)
-                - layout.i("trunk.dirWidth", 30) - 12), 14, Component.literal("Search"));
+            searchWidth(), 14, Component.literal("Search"));
         search.setResponder(value ->
         {
             EditorState.query().setText(value);
@@ -221,6 +240,10 @@ public class DeckEditorScreen extends Screen
     private void rebuildControls()
     {
         clearWidgets();
+        // Placed from the same measurements the render pass draws against, and
+        // taken again here because the deck's row count -- and so the whole
+        // left column -- moves while the screen is up.
+        remeasure();
 
         if(altCard != null)
         {
@@ -235,31 +258,44 @@ public class DeckEditorScreen extends Screen
         addWidget(search);
 
         Layout layout = Layout.of(LAYOUT);
-        int rowH = layout.i("trunk.searchHeight", 16) + 4;
-        int chipY = panelTop + pad + rowH;
-        int chipX = rightX + pad;
-        int chipW = layout.i("trunk.chipWidth", 42);
+        int chipY = panelTop + pad + layout.i("trunk.searchHeight", 16) + 4;
+        int chipLeft = rightX + pad;
         int chipH = layout.i("trunk.chipHeight", 14);
+        int trunkRoom = Math.max(1, rightW - pad * 2);
+        // The same packing measure() counted the band's height from, run again
+        // with the same inputs rather than remembered -- it is pure, so the two
+        // cannot disagree, and the widgets land exactly where the grid below
+        // them was told they would end.
+        Packed chips = pack(chipFloors(chipH), chipWidths(chipH), trunkRoom, 2);
+
         // Kind chips. A chip is on or off, never disabled, so its third atlas
         // row is the lit state rather than a greyed one.
-        for(CardQuery.Kind kind : CardQuery.Kind.values())
+        CardQuery.Kind[] kinds = CardQuery.Kind.values();
+        for(int i = 0; i < kinds.length; i++)
         {
-            CardQuery.Kind target = kind;
-            addRenderableWidget(new ChipButton(chipX, chipY, chipW, chipH,
-                Component.literal(label(kind)),
+            CardQuery.Kind target = kinds[i];
+            addRenderableWidget(new ChipButton(chipLeft + chips.x()[i],
+                chipY + chips.line()[i] * (chipH + 2), chips.width()[i], chipH,
+                Component.literal(label(target)),
                 () -> EditorState.query().kinds().contains(target), pressed ->
             {
                 EditorState.query().toggleKind(target);
                 EditorState.invalidate();
                 trunkScroll = 0;
+                // The drawer follows the chips: which sub-filters apply is
+                // decided by which kinds can be in the pool, so a kind pressed
+                // without a rebuild would leave the drawer describing the pool
+                // as it was a moment ago.
+                rebuildControls();
             }));
-            chipX += chipW + 2;
         }
 
         // Starred-only, beside the kind chips because it narrows the pool the
         // same way. Drawn as the star itself rather than the word "Favourites":
         // it is the same mark that appears on the cards.
-        addRenderableWidget(new StarChip(chipX, chipY, chipH + 6, chipH,
+        int star = kinds.length;
+        addRenderableWidget(new StarChip(chipLeft + chips.x()[star],
+            chipY + chips.line()[star] * (chipH + 2), chips.width()[star], chipH,
             () -> EditorState.query().favouritesOnly(), pressed ->
         {
             EditorState.query().setFavouritesOnly(!EditorState.query().favouritesOnly());
@@ -269,8 +305,10 @@ public class DeckEditorScreen extends Screen
         }));
 
         // Sort cycles through the offered orders; the arrow flips direction.
-        int sortW = layout.i("trunk.sortWidth", 56);
-        int dirW = layout.i("trunk.dirWidth", 30);
+        // Both sized from the widest label they can ever show, so pressing one
+        // cannot re-flow the row it is in.
+        int sortW = sortWidth();
+        int dirW = dirWidth();
         addRenderableWidget(new HubWidgets.TextureButton(rightX + rightW - pad - sortW - dirW - 2,
             panelTop + pad, sortW, 16, Component.literal(EditorState.query().sort().label()), pressed ->
         {
@@ -286,10 +324,21 @@ public class DeckEditorScreen extends Screen
             rebuildControls();
         }));
 
-        // Clear Filters: greyed out when there is nothing to clear, so the
-        // button itself reports whether anything is narrowing.
+        // Clear Filters, the drawer's toggle and Unowned, measured and wrapped
+        // together. Written out as literals this row needed 264 units of the
+        // 166 the panel has at the smallest window the game allows: Unowned was
+        // entirely off screen and the very button that opens the drawer was
+        // half off it.
+        int buttonsY = chipY + chips.lines() * chipH + (chips.lines() - 1) * 2 + 3;
+        Packed buttons = pack(barButtonFloors(), barButtonWidths(), trunkRoom, 3);
+
+        // Greyed out when there is nothing to clear, so the button itself
+        // reports whether anything is narrowing -- read every frame rather than
+        // assigned once, because typing in the search box gives it something to
+        // clear without rebuilding (a rebuild there would drop focus mid-word).
         HubWidgets.TextureButton clear = new HubWidgets.TextureButton(
-            rightX + pad, chipY + chipH + 3, Math.min(92, rightW - pad * 2), 16,
+            chipLeft + buttons.x()[0], buttonsY + buttons.line()[0] * (DRAWER_ROW_H + 2),
+            buttons.width()[0], DRAWER_ROW_H,
             Component.literal("Clear Filters"), pressed ->
         {
             EditorState.query().clear();
@@ -298,24 +347,24 @@ public class DeckEditorScreen extends Screen
             trunkScroll = 0;
             rebuildControls();
         });
-        clear.active = !EditorState.query().isClear();
+        clear.setActiveSupplier(() -> !EditorState.query().isClear());
         addRenderableWidget(clear);
 
         // The rest of the filters live behind this rather than on the bar:
         // there are sixty of them, which is what the official editors offer and
         // far more than fits beside a search box.
-        int clearW = Math.min(92, rightW - pad * 2);
-        int filtersX = rightX + pad + clearW + 3;
-        addRenderableWidget(new ChipButton(filtersX, chipY + chipH + 3,
-            72, 16, Component.literal(filtersOpen ? "Filters -" : "Filters +"),
+        addRenderableWidget(new ChipButton(chipLeft + buttons.x()[1],
+            buttonsY + buttons.line()[1] * (DRAWER_ROW_H + 2), buttons.width()[1], DRAWER_ROW_H,
+            Component.literal(filtersOpen ? "Filters -" : "Filters +"),
             () -> filtersOpen, pressed ->
         {
             filtersOpen = !filtersOpen;
             openList = null;
             rebuildControls();
         }));
-        addRenderableWidget(new ChipButton(filtersX + 75, chipY + chipH + 3,
-            78, 16, Component.literal("Unowned"), EditorState::showUnowned, pressed ->
+        addRenderableWidget(new ChipButton(chipLeft + buttons.x()[2],
+            buttonsY + buttons.line()[2] * (DRAWER_ROW_H + 2), buttons.width()[2], DRAWER_ROW_H,
+            Component.literal("Unowned"), EditorState::showUnowned, pressed ->
         {
             EditorState.setShowUnowned(!EditorState.showUnowned());
             trunkScroll = 0;
@@ -324,7 +373,10 @@ public class DeckEditorScreen extends Screen
 
         if(filtersOpen)
         {
-            buildFilterDrawer(chipY + chipH + 3 + 20);
+            // The strip's own top, not a second sum that happens to land near
+            // it. The two used to differ by 2, which is exactly how far
+            // maxFilterScroll() over-reached the limit the builder enforced.
+            buildFilterDrawer(filterViewTop());
         }
 
         // Sorting a deck is the same idea as sorting the trunk, so it reuses
@@ -332,67 +384,68 @@ public class DeckEditorScreen extends Screen
         // Both sit INSIDE their panel's padding rather than against the window
         // edge. Done was placed from the window width, which put its right
         // edge on the panel's border now that the panel reaches the bottom.
-        int controlsY = panelTop + panelH - pad - 20;
+        // The row rises with the lines it took, so a wrapped row eats into the
+        // grid above it rather than being drawn over the panel's bottom edge.
+        int deckRowTop = panelTop + panelH - pad
+            - geom.deckControlLines() * BUTTON_ROW_H - (geom.deckControlLines() - 1) * 2;
         // Each sized from its own label rather than from a number picked to
         // suit the longest, so they read as one row instead of three
         // differently-padded boxes. Same measure as Save and Exit uses.
-        Component sortLabel = Component.literal("Sort Deck");
-        Component importLabel = Component.literal("Import");
-        Component exportLabel = Component.literal("Export");
-        // No label: the swatch IS the label. It already shows what the deck is
-        // wearing, and the word beside it only repeated what the picture said.
-        Component sleevesLabel = Component.empty();
-        int rowX = leftX + pad;
+        Packed deckRow = pack(deckRowFloors(), deckRowWidths(),
+            Math.max(1, leftW - pad * 2), BUTTON_GAP);
+        int rowLeft = leftX + pad;
 
-        int sortDeckW = buttonWidth(sortLabel);
-        addRenderableWidget(new HubWidgets.TextureButton(rowX, controlsY, sortDeckW, 20,
-            sortLabel, pressed ->
+        addRenderableWidget(new HubWidgets.TextureButton(rowLeft + deckRow.x()[0],
+            deckRowTop + deckRow.line()[0] * (BUTTON_ROW_H + 2), deckRow.width()[0],
+            BUTTON_ROW_H, SORT_DECK_LABEL, pressed ->
         {
             sortDeck();
             refusal = "";
         }));
-        rowX += sortDeckW + BUTTON_GAP;
 
         // .ydk, beside the deck they act on. Import makes a NEW deck rather
         // than overwriting the open one: a file arriving is not a reason to
         // lose what is already being built.
-        int importW = buttonWidth(importLabel);
-        addRenderableWidget(new HubWidgets.TextureButton(rowX, controlsY, importW, 20,
-            importLabel, pressed -> importDeck()));
-        rowX += importW + BUTTON_GAP;
+        addRenderableWidget(new HubWidgets.TextureButton(rowLeft + deckRow.x()[1],
+            deckRowTop + deckRow.line()[1] * (BUTTON_ROW_H + 2), deckRow.width()[1],
+            BUTTON_ROW_H, IMPORT_LABEL, pressed -> importDeck()));
 
-        int exportW = buttonWidth(exportLabel);
-        addRenderableWidget(new HubWidgets.TextureButton(rowX, controlsY,
-            exportW, 20, exportLabel, pressed ->
+        addRenderableWidget(new HubWidgets.TextureButton(rowLeft + deckRow.x()[2],
+            deckRowTop + deckRow.line()[2] * (BUTTON_ROW_H + 2), deckRow.width()[2],
+            BUTTON_ROW_H, EXPORT_LABEL, pressed ->
         {
             DeckFiles.Result result = DeckFiles.export(EditorState.deck());
             refusal = result.message();
         }));
-        rowX += exportW + BUTTON_GAP;
 
         // What the deck is printed on, on the row that acts on the deck. A
         // sleeve belongs to a DECK exactly as its cards do -- it is stored on
         // the deck and travels with it -- so it is chosen where the deck is
         // worked on rather than in a settings tab beside the mat colour, which
         // is a client preference and a different kind of thing entirely.
-        // Wide enough for the swatch it wears as well as its label.
-        addRenderableWidget(new SleeveButton(rowX, controlsY, SWATCH_ROOM + 8, 20,
-            sleevesLabel));
+        //
+        // No label: the swatch IS the label. It already shows what the deck is
+        // wearing, and the word beside it only repeated what the picture said.
+        addRenderableWidget(new SleeveButton(rowLeft + deckRow.x()[3],
+            deckRowTop + deckRow.line()[3] * (BUTTON_ROW_H + 2), deckRow.width()[3],
+            BUTTON_ROW_H, Component.empty()));
 
         // Named for what it does rather than for being finished with: the deck
         // is written to the server on the way out, and a player leaving an
         // editor should not have to guess whether that happened.
+        int controlsY = panelTop + panelH - pad - BUTTON_ROW_H;
         Component leave = Component.literal("Save and Exit");
-        int leaveW = Math.max(80, font.width(leave) + 16);
+        int leaveW = clamp(Math.min(font.width(leave) + 8, Math.max(1, rightW - pad * 2)),
+            Math.max(1, rightW - pad * 2), Math.max(80, font.width(leave) + 16));
         addRenderableWidget(new HubWidgets.TextureButton(rightX + rightW - pad - leaveW,
-            controlsY, leaveW, 20, leave, pressed -> saveAndExit()));
+            controlsY, leaveW, BUTTON_ROW_H, leave, pressed -> saveAndExit()));
 
         // Card size for the collection, directly above Save and Exit. A slider
         // rather than a cycle of fixed sizes: the useful size depends on how
         // many cards you own and how big the window is, and neither is
         // something a fixed list can answer.
         addRenderableWidget(new TrunkSizeSlider(rightX + rightW - pad - leaveW,
-            controlsY - 22, leaveW, 16));
+            controlsY - SLIDER_GAP - SLIDER_H, leaveW, SLIDER_H));
     }
 
     /**
@@ -539,75 +592,211 @@ public class DeckEditorScreen extends Screen
      * <p>
      * One value per category rather than several. Choosing DARK and LIGHT at
      * once is a rare thing to want and it cost four rows of screen to offer.
+     * <p>
+     * <b>What is offered follows the kind chips.</b> A control appears exactly
+     * when a card it could match can be in the pool -- so the monster group is
+     * gone while only Spell is lit, and a Counter Trap cannot be asked for of a
+     * pool that holds no traps. With nothing lit every kind is in the pool, so
+     * everything is offered: that is the state the drawer is first opened in
+     * and the state Clear Filters returns it to, and an empty drawer there
+     * would be the worst possible first impression of the feature.
+     * {@link CardQuery#toggleKind} is what CLEARS a value whose control has
+     * gone; this method only decides what to build.
      */
     private void buildFilterDrawer(int top)
     {
-        Layout layout = Layout.of(LAYOUT);
+        // MEASURED, then clamped, then placed -- in that order and in one call.
+        // It used to place first, notice the offset was past the end, and lay
+        // itself out a second time WITHOUT removing what the first pass had
+        // added: four dropdowns drawn twice a few units apart, and six edit
+        // boxes that nothing referenced any more but that stayed in children(),
+        // where overControl() found them and they ate clicks invisibly.
+        filterContentHeight = layOutDrawer(top, false);
+        filterScroll = clamp(0, maxFilterScroll(), filterScroll);
+        filterContentHeight = layOutDrawer(top, true);
+    }
+
+    /**
+     * The drawer's rows, at the current offset.
+     *
+     * @param place false to work out only how tall the contents come to, true
+     *              to add the widgets as well
+     * @return the height of the contents, which does not depend on the offset
+     */
+    private int layOutDrawer(int top, boolean place)
+    {
         filterSections.clear();
         int y = top - filterScroll;
         int contentTop = y;
 
-        int inset = 5;
+        int inset = DRAWER_INSET;
         int left = rightX + pad;
-        int usable = rightW - pad * 2 - 8;
-        int columnGap = 6;
-        int selectorW = Math.max(80, (usable - inset * 2 - columnGap) / 2);
-        int rowH = 16;
-        int rowGap = 4;
+        int usable = Math.max(1, rightW - pad * 2 - 8);
+        int selectorW = geom.selectorW();
+        int rowH = DRAWER_ROW_H;
+        int rowGap = DRAWER_ROW_GAP;
+        // One column when two readable ones will not fit, and the drawer
+        // scrolls -- rather than writing out a width the panel does not have.
+        boolean twoColumns = geom.selectorColumns() == 2;
+        int rightColumn = twoColumns ? left + inset + selectorW + DRAWER_COLUMN_GAP
+            : left + inset;
+        int columnStep = twoColumns ? 0 : rowH + rowGap;
 
-        int fieldsTop = y;
-        int fy = y + FRAME_HEADING + inset;
-        selector(left + inset, fy, selectorW, rowH, "Attribute", attributeNames(),
-            EditorState.query().attributes(),
-            chosen -> replaceOnly(EditorState.query().attributes(), chosen,
-                EditorState.query()::toggleAttribute));
-        selector(left + inset + selectorW + columnGap, fy, selectorW, rowH, "Type",
-            speciesNames(), EditorState.query().species(),
-            chosen -> replaceOnly(EditorState.query().species(), chosen,
-                EditorState.query()::toggleSpecies));
-        fy += rowH + rowGap;
-        selector(left + inset, fy, selectorW, rowH, "Card Type", subTypeNames(),
-            EditorState.query().subTypes(),
-            chosen -> replaceOnly(EditorState.query().subTypes(), chosen,
-                EditorState.query()::toggleSubType));
-        selector(left + inset + selectorW + columnGap, fy, selectorW, rowH, "Ability",
-            abilityNames(), EditorState.query().abilities(),
-            chosen -> replaceOnly(EditorState.query().abilities(), chosen,
-                EditorState.query()::toggleAbility));
-        fy += rowH + inset;
-        filterSections.add(new Section("Card", left, fieldsTop, usable, fy - fieldsTop));
+        java.util.Set<CardQuery.Kind> pool = EditorState.query().kindsInPool();
+        int bottom = y;
 
-        // The bands. Text rather than steppers because a player filtering for
-        // 2500 ATK wants to type 2500, not press a button twenty-five times.
-        int bandsTop = fy + FRAME_GAP;
-        int bandY = bandsTop + FRAME_HEADING + inset;
-        int captionW = 34;
-        int boxW = Math.max(30, (selectorW - captionW - 10) / 2);
-        levelMin = band(left + inset + captionW, bandY, boxW, EditorState.query().minLevel(), 0);
-        levelMax = band(left + inset + captionW + boxW + 8, bandY, boxW,
-            EditorState.query().maxLevel(), 0);
-        attackMin = band(left + inset + selectorW + columnGap + captionW, bandY, boxW,
-            EditorState.query().minAttack(), -1);
-        attackMax = band(left + inset + selectorW + columnGap + captionW + boxW + 8, bandY, boxW,
-            EditorState.query().maxAttack(), -1);
-        bandY += rowH + rowGap;
-        defenceMin = band(left + inset + captionW, bandY, boxW,
-            EditorState.query().minDefence(), -1);
-        defenceMax = band(left + inset + captionW + boxW + 8, bandY, boxW,
-            EditorState.query().maxDefence(), -1);
-        int bandsBottom = bandY + rowH + inset;
-        filterSections.add(new Section("Numbers", left, bandsTop, usable, bandsBottom - bandsTop));
-
-        filterContentHeight = bandsBottom - contentTop;
-        int room = filterViewBottom() - top;
-        int limit = Math.max(0, filterContentHeight - room);
-        if(filterScroll > limit)
+        if(pool.contains(CardQuery.Kind.MONSTER))
         {
-            // The contents shrank and the old offset is past the end, so it is
-            // pulled back and the layout redone from the corrected position.
-            filterScroll = limit;
-            buildFilterDrawer(top);
+            int fieldsTop = y;
+            int fy = y + FRAME_HEADING + inset;
+            if(place)
+            {
+                selector(left + inset, fy, selectorW, rowH, "Attribute", plain(attributeNames()),
+                    EditorState.query().attributes(),
+                    chosen -> replaceOnly(EditorState.query().attributes(), chosen,
+                        EditorState.query()::toggleAttribute));
+                selector(rightColumn, fy + columnStep, selectorW, rowH, "Type",
+                    plain(speciesNames()), EditorState.query().species(),
+                    chosen -> replaceOnly(EditorState.query().species(), chosen,
+                        EditorState.query()::toggleSpecies));
+            }
+            fy += rowH + rowGap + columnStep;
+            if(place)
+            {
+                selector(left + inset, fy, selectorW, rowH, "Monster Type", monsterTypeOptions(),
+                    ownedBy(EditorState.query().subTypes(), "MONSTER"),
+                    chosen -> replaceOnly(EditorState.query().subTypes(), chosen,
+                        EditorState.query()::toggleSubType, "MONSTER"));
+                selector(rightColumn, fy + columnStep, selectorW, rowH, "Ability",
+                    plain(abilityNames()), EditorState.query().abilities(),
+                    chosen -> replaceOnly(EditorState.query().abilities(), chosen,
+                        EditorState.query()::toggleAbility));
+            }
+            fy += rowH + rowGap + columnStep;
+            // Tuner is a CHIP rather than an entry in the Ability list because
+            // that list is single-choice: a Tuner entry there would make the
+            // twelve Pendulum Tuners and the one Flip Tuner unaskable. As its
+            // own axis it ANDs with whatever the Ability selector holds.
+            if(place)
+            {
+                tunerChip(left + inset, fy, selectorW, rowH);
+            }
+            fy += rowH + inset;
+            filterSections.add(new Section("Monster", left, fieldsTop, usable, fy - fieldsTop));
+
+            // The bands. Text rather than steppers because a player filtering
+            // for 2500 ATK wants to type 2500, not press a button twenty-five
+            // times. Monster-only for the same reason the rest of this group
+            // is: CardQuery.withinBand rejects every non-monster once a band is
+            // set, so a band offered beside a spell pool could only empty it.
+            int bandsTop = fy + FRAME_GAP;
+            int bandY = bandsTop + FRAME_HEADING + inset;
+            int boxW = geom.bandBoxW();
+            // Two bands to a row when both fit; one when the second column's
+            // caption would otherwise be printed over the first column's max
+            // field.
+            boolean bandPairs = geom.bandColumns() == 2;
+            int bandRight = bandPairs ? rightColumn : left + inset;
+            int bandStep = bandPairs ? 0 : rowH + rowGap;
+            if(place)
+            {
+                levelMin = band(left + inset + BAND_CAPTION, bandY, boxW,
+                    EditorState.query().minLevel(), 0);
+                levelMax = band(left + inset + BAND_CAPTION + boxW + 8, bandY, boxW,
+                    EditorState.query().maxLevel(), 0);
+                attackMin = band(bandRight + BAND_CAPTION, bandY + bandStep, boxW,
+                    EditorState.query().minAttack(), -1);
+                attackMax = band(bandRight + BAND_CAPTION + boxW + 8, bandY + bandStep, boxW,
+                    EditorState.query().maxAttack(), -1);
+            }
+            bandY += rowH + rowGap + bandStep;
+            if(place)
+            {
+                defenceMin = band(left + inset + BAND_CAPTION, bandY, boxW,
+                    EditorState.query().minDefence(), -1);
+                defenceMax = band(left + inset + BAND_CAPTION + boxW + 8, bandY, boxW,
+                    EditorState.query().maxDefence(), -1);
+            }
+            bottom = bandY + rowH + inset;
+            filterSections.add(new Section("Numbers", left, bandsTop, usable, bottom - bandsTop));
         }
+        else if(place)
+        {
+            // Forgotten rather than left pointing at the previous layout's
+            // boxes: applyBands() reads these six every time one of them
+            // changes, and a field surviving into a spell-only drawer would be
+            // read off a widget nothing is drawing.
+            levelMin = null;
+            levelMax = null;
+            attackMin = null;
+            attackMax = null;
+            defenceMin = null;
+            defenceMax = null;
+        }
+
+        if(pool.contains(CardQuery.Kind.SPELL))
+        {
+            bottom = subTypeSection(bottom, contentTop, left, usable, inset, rowH, selectorW,
+                "Spell", "Spell Type", spellTypeOptions(), "SPELL", place);
+        }
+        if(pool.contains(CardQuery.Kind.TRAP))
+        {
+            bottom = subTypeSection(bottom, contentTop, left, usable, inset, rowH, selectorW,
+                "Trap", "Trap Type", trapTypeOptions(), "TRAP", place);
+        }
+
+        return bottom - contentTop;
+    }
+
+    /**
+     * One kind's sub-type selector, in a frame of its own.
+     *
+     * @param after the y the previous section ended at, or the content top when
+     *              this is the first section built
+     * @return the y this section ended at
+     */
+    private int subTypeSection(int after, int contentTop, int left, int usable, int inset,
+        int rowH, int selectorW, String heading, String caption, List<Option> options,
+        String kind, boolean place)
+    {
+        int sectionTop = after == contentTop ? after : after + FRAME_GAP;
+        if(place)
+        {
+            // Scoped to its own kind: all three sub-type selectors share one
+            // set, so an unscoped read shows another selector's value and an
+            // unscoped write erases it.
+            selector(left + inset, sectionTop + FRAME_HEADING + inset, selectorW, rowH, caption,
+                options, ownedBy(EditorState.query().subTypes(), kind),
+                chosen -> replaceOnly(EditorState.query().subTypes(), chosen,
+                    EditorState.query()::toggleSubType, kind));
+        }
+        int bottom = sectionTop + FRAME_HEADING + inset + rowH + inset;
+        filterSections.add(new Section(heading, left, sectionTop, usable, bottom - sectionTop));
+        return bottom;
+    }
+
+    /**
+     * The Tuner chip: on or off, and ANDed with everything else.
+     * <p>
+     * Same shape as the Unowned chip on the bar. It is a filter the player can
+     * see the state of without opening anything, which is the other half of why
+     * it is not a dropdown entry.
+     */
+    private void tunerChip(int x, int y, int width, int height)
+    {
+        ChipButton chip = new ChipButton(x, y, width, height, Component.literal("Tuner"),
+            () -> EditorState.query().tunersOnly(), pressed ->
+        {
+            EditorState.query().setTunersOnly(!EditorState.query().tunersOnly());
+            EditorState.invalidate();
+            trunkScroll = 0;
+            rebuildControls();
+        });
+        // As selector() does: a row scrolled out of the strip is hidden rather
+        // than clipped, so it cannot be clicked through the bar above it.
+        chip.visible = inFilterView(y, height);
+        chip.active = chip.visible;
+        addRenderableWidget(chip);
     }
 
     /**
@@ -620,9 +809,29 @@ public class DeckEditorScreen extends Screen
     private void replaceOnly(java.util.Set<String> current, String chosen,
         java.util.function.Consumer<String> toggle)
     {
+        replaceOnly(current, chosen, toggle, null);
+    }
+
+    /**
+     * Replaces this axis's value, touching only the keys belonging to one kind.
+     * <p>
+     * The three sub-type selectors share ONE set, disambiguated by a
+     * {@code KIND/} prefix. Clearing the whole set before adding therefore let
+     * the Monster selector wipe a Trap value the player had set, and made
+     * "Quick-Play spells or Counter traps" impossible to express. Scoped by
+     * prefix, each selector owns its own slice and leaves the others alone.
+     *
+     * @param kind the prefix to confine this to, or null for an unqualified axis
+     */
+    private void replaceOnly(java.util.Set<String> current, String chosen,
+        java.util.function.Consumer<String> toggle, String kind)
+    {
         for(String value : new java.util.ArrayList<>(current))
         {
-            toggle.accept(value);
+            if(kind == null || value.startsWith(kind + "/"))
+            {
+                toggle.accept(value);
+            }
         }
         if(chosen != null)
         {
@@ -630,11 +839,54 @@ public class DeckEditorScreen extends Screen
         }
     }
 
+    /** What this selector is showing, from the slice of the set it owns. */
+    private static java.util.Set<String> ownedBy(java.util.Set<String> current, String kind)
+    {
+        if(kind == null)
+        {
+            return current;
+        }
+        java.util.Set<String> mine = new java.util.LinkedHashSet<>();
+        for(String value : current)
+        {
+            if(value.startsWith(kind + "/"))
+            {
+                mine.add(value);
+            }
+        }
+        return mine;
+    }
+
+    /**
+     * One row of a selector's list: the value the query stores, and the words
+     * the player reads.
+     * <p>
+     * The two differ on the sub-type axes, whose values are qualified by kind
+     * so that a Continuous Trap is not also a Continuous Spell. A record rather
+     * than a string split at the draw site, so the qualification is a fact
+     * about the list and not a convention every reader has to know.
+     */
+    private record Option(String key, String label)
+    {
+    }
+
+    /** An axis whose values are their own labels: attribute, species, ability. */
+    private static List<Option> plain(List<String> values)
+    {
+        return values.stream().map(value -> new Option(value, value)).toList();
+    }
+
     /** A selector: its caption, and the value chosen, on one line. */
     private void selector(int x, int y, int width, int height, String caption,
-        List<String> values, java.util.Set<String> current, java.util.function.Consumer<String> choose)
+        List<Option> values, java.util.Set<String> current,
+        java.util.function.Consumer<String> choose)
     {
-        String chosen = current.isEmpty() ? "Any" : current.iterator().next();
+        // The LABEL of what is held, not its key: the sub-type axes store
+        // "TRAP/Counter" and the player asked for "Counter". A value with no
+        // kind on it comes back unchanged, so the other axes go through the
+        // same call rather than needing a second path.
+        String chosen = current.isEmpty() ? "Any"
+            : CardQuery.subTypeLabel(current.iterator().next());
         DropdownButton button = new DropdownButton(x, y, width, height, caption, chosen,
             values, choose);
         button.visible = inFilterView(y, height);
@@ -649,12 +901,25 @@ public class DeckEditorScreen extends Screen
 
     private int filterViewBottom()
     {
-        return panelTop + panelH - pad - Layout.of(LAYOUT).i("panel.controls", 28);
+        return trunkContentBottom();
+    }
+
+    /**
+     * How tall the drawer's strip is.
+     * <p>
+     * ONE expression, because the builder and {@link #maxFilterScroll()} used
+     * to measure it separately -- 67 against 69 -- so the scroll limit was
+     * permanently 2 greater than the limit the builder enforced, and at the
+     * bottom of the drawer every wheel click re-entered the builder.
+     */
+    private int filterStripHeight()
+    {
+        return Math.max(0, filterViewBottom() - filterViewTop());
     }
 
     private int maxFilterScroll()
     {
-        return Math.max(0, filterContentHeight - (filterViewBottom() - filterViewTop() - 4));
+        return Math.max(0, filterContentHeight - filterStripHeight());
     }
 
     /**
@@ -779,37 +1044,59 @@ public class DeckEditorScreen extends Screen
     }
 
     /**
-     * Every sub-type a card can carry, monsters first, then spells, then traps
-     * -- the order the kind chips above are in.
+     * A sub-type value as the query stores it, beside the word for it.
+     * <p>
+     * There used to be ONE list holding all twelve, de-duplicated by name --
+     * and since the facet answered a bare name, its single "Continuous" entry
+     * matched 503 spells and 558 traps at once and its "Ritual" matched Ritual
+     * Monsters alongside Ritual Spells. Three per-kind lists, each key carrying
+     * its kind, is what makes those distinct questions. It also puts every list
+     * inside the open list's row count: the merged twelve needed thirteen rows
+     * for "Any" and its values, and "Counter" was the one entry that was never
+     * drawn without scrolling -- the very Counter Trap filter reported missing.
      */
-    private static List<String> subTypeNames()
+    private static Option subTypeOption(CardQuery.Kind kind, String label)
     {
-        List<String> names = new java.util.ArrayList<>(List.of("Normal", "Effect"));
+        return new Option(CardQuery.subTypeKey(kind, label), label);
+    }
+
+    private static List<Option> monsterTypeOptions()
+    {
+        // Normal and Effect are not MonsterType constants: a monster with no
+        // explicit type is one or the other depending on whether it has an
+        // effect, which is the distinction the official editors draw and the
+        // one the subType facet answers with.
+        List<Option> options = new java.util.ArrayList<>();
+        options.add(subTypeOption(CardQuery.Kind.MONSTER, "Normal"));
+        options.add(subTypeOption(CardQuery.Kind.MONSTER, "Effect"));
         for(de.cas_ual_ty.dueldimension.card.properties.MonsterType type
             : de.cas_ual_ty.dueldimension.card.properties.MonsterType.values())
         {
-            names.add(type.name);
+            options.add(subTypeOption(CardQuery.Kind.MONSTER, type.name));
         }
+        return options;
+    }
+
+    private static List<Option> spellTypeOptions()
+    {
+        List<Option> options = new java.util.ArrayList<>();
         for(de.cas_ual_ty.dueldimension.card.properties.SpellType type
             : de.cas_ual_ty.dueldimension.card.properties.SpellType.values())
         {
-            // Normal and Continuous name a spell type AND a trap type, and the
-            // filter matches by name, so listing them twice would be two chips
-            // that do the same thing.
-            if(!names.contains(type.name))
-            {
-                names.add(type.name);
-            }
+            options.add(subTypeOption(CardQuery.Kind.SPELL, type.name));
         }
+        return options;
+    }
+
+    private static List<Option> trapTypeOptions()
+    {
+        List<Option> options = new java.util.ArrayList<>();
         for(de.cas_ual_ty.dueldimension.card.properties.TrapType type
             : de.cas_ual_ty.dueldimension.card.properties.TrapType.values())
         {
-            if(!names.contains(type.name))
-            {
-                names.add(type.name);
-            }
+            options.add(subTypeOption(CardQuery.Kind.TRAP, type.name));
         }
-        return names;
+        return options;
     }
 
     private static List<String> abilityNames()
@@ -872,6 +1159,32 @@ public class DeckEditorScreen extends Screen
 
     // ---- layout ----
 
+    /** Bounded both ways in one expression, since every size here is. */
+    private static int clamp(int min, int max, int value)
+    {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /** One row of buttons, and the collection's card-size slider above it. */
+    private static final int BUTTON_ROW_H = 20;
+    private static final int SLIDER_GAP = 6;
+    private static final int SLIDER_H = 16;
+
+    /**
+     * Where the collection's own content -- grid or drawer -- has to stop.
+     * <p>
+     * The reserve behind it is measured from the widgets actually stacked
+     * there. The authored {@code panel.controls} was 28 -- the button row and
+     * its padding -- and stayed 28 after the card-size slider was added ABOVE
+     * that row, so the open drawer was drawn straight over the slider at every
+     * window size and the slider then repainted on top of it, because
+     * {@code super.extractRenderState} runs after the drawer is described.
+     */
+    private int trunkContentBottom()
+    {
+        return geom.trunkContentBottom();
+    }
+
     private int mainTop()
     {
         // Below the deck NAME as well as the section heading; these two used to
@@ -897,94 +1210,384 @@ public class DeckEditorScreen extends Screen
     }
 
     /**
-     * How many rows a part is drawn with: enough for what it holds, plus one
-     * spare to drop into, never more than it can hold.
-     */
-    /**
-     * Works out how big a card can be drawn, given how many rows the deck
-     * currently needs.
+     * Every derived number for one window size, worked out in one order.
      * <p>
-     * Run every frame rather than once when the screen opens, because the
-     * number of rows follows the deck and the deck changes while the screen is
-     * up. Computing it once meant that adding cards eventually pushed the side
-     * deck off the bottom of its container -- the sizing was answering a
-     * question about a deck that no longer existed.
+     * A pure function of the window, the font, the layout file, the player's
+     * card-size setting and the open deck's contents -- and of NOTHING it
+     * itself produces. That is the invariant that lets {@link #rebuildControls}
+     * place a widget and the render pass draw beside it and have the two agree.
      */
-    private void resize()
+    private record Geom(
+        int leftX, int rightX, int panelTop, int panelH, int leftW, int rightW,
+        int deckColumns, int deckCardW, int deckCardH, int deckRows,
+        int deckControlLines, int deckReserve, int deckViewTop, int deckViewHeight,
+        int trunkChipLines, int trunkButtonLines, int trunkHeaderBottom, int trunkGridTop,
+        int trunkReserve, int trunkContentBottom, int trunkColumns, int trunkCardW,
+        int trunkCardH, int selectorColumns, int selectorW, int bandColumns, int bandBoxW,
+        int listRows)
+    {
+    }
+
+    /** Rebuilt by {@link #remeasure()}; never read before that has run. */
+    private Geom geom;
+
+    /**
+     * The lane a grid leaves clear down its right edge for its scrollbar: the
+     * bar is 4 wide and sits 2 inside the padding. Both grids subtract it from
+     * the width they count columns into, so the last column can never be the
+     * thing the bar is drawn on -- which decided who owned those pixels
+     * differently in the drawing and in the hit test.
+     */
+    private static final int BAR_LANE = 6;
+
+    /** Below this a second selector column is unreadable, so there is one. */
+    private static final int SELECTOR_MIN = 64;
+    /** Below this a band's two fields are unreadable, so they stack. */
+    private static final int BAND_MIN = 24;
+    /** Room to the left of a band's fields for its caption. */
+    private static final int BAND_CAPTION = 34;
+    /** The drawer's inner margin and the gap between its two columns. */
+    private static final int DRAWER_INSET = 5;
+    private static final int DRAWER_COLUMN_GAP = 6;
+    /** One row of the drawer, and the air under it. */
+    private static final int DRAWER_ROW_H = 16;
+    private static final int DRAWER_ROW_GAP = 4;
+
+    /**
+     * Takes the measurements and publishes them.
+     * <p>
+     * <b>Not</b> an override of {@code Screen.resize(int, int)} and deliberately
+     * not named for it: that hook sets the size and calls
+     * {@code repositionElements()}, which rebuilds every widget through
+     * {@code init()}. A method of that name here would start overriding it and
+     * the rebuild would stop happening.
+     * <p>
+     * The panel frame and the two card sizes are copied out into the fields the
+     * rest of the screen reads. They have exactly one writer -- this line -- so
+     * they are a view of the measurement rather than a second opinion about it.
+     */
+    private void remeasure()
+    {
+        geom = measure();
+        leftX = geom.leftX();
+        rightX = geom.rightX();
+        panelTop = geom.panelTop();
+        panelH = geom.panelH();
+        leftW = geom.leftW();
+        rightW = geom.rightW();
+        deckCardW = geom.deckCardW();
+        deckCardH = geom.deckCardH();
+        trunkCardW = geom.trunkCardW();
+        trunkCardH = geom.trunkCardH();
+        trunkColumns = geom.trunkColumns();
+        mainRows = geom.deckRows();
+
+        // Every scroll re-clamped against what was just measured, not against
+        // last frame's numbers. The collection's limit in particular divides by
+        // the column count, and clamping before the count was recomputed meant
+        // the first clamp after init() or a window change used the layout
+        // file's seed of 8 where the real count is twelve to twenty-three.
+        deckScroll = clamp(0, maxDeckScroll(), deckScroll);
+        trunkScroll = clamp(0, maxTrunkScroll(), trunkScroll);
+        filterScroll = clamp(0, maxFilterScroll(), filterScroll);
+        if(openList != null)
+        {
+            openListScroll = clamp(0,
+                Math.max(0, openList.values.size() + 1 - listRows()), openListScroll);
+        }
+    }
+
+    /**
+     * Lays the whole screen out, once, top to bottom.
+     * <p>
+     * The order is the point of the method. The window bounds the panels, the
+     * panels bound the control rows, the rows decide where each grid starts and
+     * the widgets actually stacked at the bottom decide where it stops -- and
+     * only then is a card sized to what is left. Every authored number is a
+     * CEILING and every count comes from the room, which is the difference
+     * between a layout that survives a small window and one that draws its
+     * right-hand controls off the side of it.
+     * <p>
+     * When the room runs out the regions yield in one stated order, so no two
+     * of them invent their own: the pool's cell shrinks, then its rows fall,
+     * then the control rows wrap onto more lines (which costs more pool rows),
+     * then the drawer drops from two selector columns to one and scrolls, then
+     * the deck's columns fall, and last the deck's card reaches
+     * {@code card.minWidth} and the deck scrolls. Nothing is ever drawn outside
+     * its own panel: a region that still will not fit is clipped by that
+     * panel's scissor rather than allowed to paint over its neighbour.
+     * <p>
+     * The floor it all has to survive is <b>320&times;240 GUI units</b>, which
+     * is where {@code Window.calculateScale} stops raising the scale.
+     */
+    private Geom measure()
     {
         Layout layout = Layout.of(LAYOUT);
-
-        // Deck cards fill the row. Their width comes from the columns -- ten
-        // across with exactly `gap` between -- so the pitch is deckCardW + gap
-        // rather than the panel divided by ten. Dividing the panel and then
-        // drawing a smaller card inside each cell is what left the wide empty
-        // channels between columns.
-        //
-        // Width is authoritative for this side. If the stacked sections become
-        // taller than the viewport, the deck's existing scrollbar exposes the
-        // rest instead of shrinking ten cards into only part of their row.
         float aspect = layout.f("card.aspect", 480F / 700F);
-        int usableW = leftW - pad * 2;
-        deckCardW = (usableW - (mainColumns - 1) * gap) / mainColumns;
-        deckCardW = Math.max(layout.i("card.minWidth", 10),
-            Math.min(layout.i("card.maxWidth", 72), deckCardW));
-        deckCardH = Math.max(8, Math.round(deckCardW / aspect));
+        int cardMinW = Math.max(1, layout.i("card.minWidth", 10));
+        int cardMaxW = Math.max(cardMinW, layout.i("card.maxWidth", 72));
 
-        // The collection deliberately stays compact. It used to share the
-        // height-constrained size below with the deck; retaining that size for
-        // the trunk preserves the useful dense catalogue while letting the
-        // deck itself occupy its full ten-column workspace.
-        trunkCardW = deckCardW;
+        // ---- the panels -------------------------------------------------
+        int panelTop = layout.i("panel.top", 34);
+        int panelH = Math.max(1, height - panelTop - layout.i("panel.bottom", 30));
+        // From an EXPLICIT gap. Taking the split out of (width - pad*3)
+        // silently assumed panel.gap equalled panel.pad, so retuning the gap in
+        // the layout file made the two panels stop adding up to the window.
+        int panelGap = layout.i("panel.gap", 8);
+        int split = Math.max(2, width - pad * 2 - panelGap);
+        // Each side needs its padding, its scrollbar's lane and one card. The
+        // percentage is clamped against that rather than trusted.
+        int sideMin = Math.min(split / 2, pad * 2 + BAR_LANE + cardMinW);
+        int leftX = pad;
+        int leftW = clamp(sideMin, split - sideMin,
+            split * clamp(20, 80, layout.i("panel.leftPercent", 58)) / 100);
+        int rightX = leftX + leftW + panelGap;
+        int rightW = Math.max(1, width - rightX - pad);
 
-        // Preserve the collection's former height-aware sizing. Its density is
-        // useful when browsing hundreds of cards and is independent from the
-        // ten-column deck workspace now.
-        int rowsTotal = rowsFor(DeckList.Part.MAIN)
-            + rowsFor(DeckList.Part.EXTRA) + rowsFor(DeckList.Part.SIDE);
-        int heightBudget = deckViewHeight() - (headerH + sectionGap) * 3 - rowsTotal * gap;
-        int fitH = Integer.MAX_VALUE;
-        if(rowsTotal > 0 && heightBudget > 0)
+        // ---- the deck panel's bottom row --------------------------------
+        // Measured from its labels and wrapped, rather than placed from a fixed
+        // origin with no ceiling. Unmeasured, its right edge sat at the same x
+        // at EVERY window size while the panel's inner edge moved with the
+        // window: Export and Sleeves were drawn inside the collection panel,
+        // and overControl() made them swallow clicks there.
+        int deckRoom = Math.max(1, leftW - pad * 2);
+        Packed deckRow = pack(deckRowFloors(), deckRowWidths(), deckRoom, BUTTON_GAP);
+        int deckControlLines = deckRow.lines();
+        int deckReserve = pad + deckControlLines * BUTTON_ROW_H
+            + (deckControlLines - 1) * 2 + 2;
+        int deckViewTop = panelTop + pad + titleH;
+        int deckViewHeight = Math.max(1, panelH - pad * 2 - titleH - deckReserve);
+
+        // ---- the deck grid: count first, size second ---------------------
+        // The ten columns are a CEILING. Dividing by ten and then clamping the
+        // result UP to card.minWidth broke the invariant the division existed
+        // to keep -- at 320 units the honest fit is nine and the floor forced
+        // ten, so the row needed 118 units of the 114 it had and the last
+        // column was drawn under the scrollbar.
+        int deckUsableW = Math.max(1, leftW - pad * 2 - BAR_LANE);
+        int deckColumns = clamp(1, mainColumns, (deckUsableW + gap) / (cardMinW + gap));
+        int deckCardW = clamp(cardMinW, cardMaxW,
+            (deckUsableW - (deckColumns - 1) * gap) / deckColumns);
+        int deckCardH = Math.max(8, Math.round(deckCardW / aspect));
+        int deckRows = rowsFor(DeckList.Part.MAIN, deckColumns);
+
+        // ---- the collection panel's control band, line by line -----------
+        int searchH = layout.i("trunk.searchHeight", 16);
+        int chipH = layout.i("trunk.chipHeight", 14);
+        int trunkRoom = Math.max(1, rightW - pad * 2);
+        int y = panelTop + pad + searchH + 4;
+        // Two runs rather than one, so the authored 14 and 16 heights survive
+        // and the chips-are-filters / buttons-are-actions grouping does too.
+        Packed chips = pack(chipFloors(chipH), chipWidths(chipH), trunkRoom, 2);
+        y += chips.lines() * chipH + (chips.lines() - 1) * 2 + 3;
+        Packed buttons = pack(barButtonFloors(), barButtonWidths(), trunkRoom, 3);
+        y += buttons.lines() * DRAWER_ROW_H + (buttons.lines() - 1) * 2;
+        int trunkHeaderBottom = y;
+        int trunkGridTop = trunkHeaderBottom + 6;
+
+        // ---- what the collection keeps clear at the bottom ---------------
+        int trunkReserve = pad + BUTTON_ROW_H + SLIDER_GAP + SLIDER_H + 2;
+        int trunkContentBottom = panelTop + panelH - trunkReserve;
+
+        // ---- the pool's cell, fitted to the pool's own region -------------
+        // It used to be seeded from the DECK's card width and capped by the
+        // DECK's height budget; the collection's own region only ever picked a
+        // column count out of it.
+        int poolW = Math.max(1, rightW - pad * 2 - BAR_LANE);
+        int poolH = Math.max(1, trunkContentBottom - 12 - trunkGridTop);
+        // The COUNT comes from the smallest cell worth drawing and the SIZE
+        // from the fit, which is what makes a bigger window show more rather
+        // than the same few columns with the rest of it as margin. That
+        // counting cell is trunk.cellMin and not card.minWidth: the latter is
+        // the absolute floor at which a card is still a card, and counting from
+        // it would fill the panel with 10-unit tiles nobody can read.
+        int cellMin = Math.max(cardMinW, layout.i("trunk.cellMin", 18));
+        int maxColumns = Math.max(1, (poolW + gap) / (cellMin + gap));
+        int cols = maxColumns;
+        int widthFit = (poolW + gap) / cols - gap;
+        int minCellH = Math.max(8, Math.round(cellMin / aspect));
+        int poolRows = Math.max(1, (poolH + gap) / (minCellH + gap));
+        int heightFit = Math.round(((poolH + gap) / (float)poolRows - gap) * aspect);
+        int cell = clamp(cardMinW, cardMaxW, Math.min(widthFit, heightFit));
+        // The player's own scale LAST, so it multiplies the size the collection
+        // would otherwise have chosen, and bounded by the region so the largest
+        // setting still leaves one whole column.
+        cell = clamp(cardMinW, Math.max(cardMinW, poolW), Math.round(cell * trunkScale));
+        int trunkCardH = Math.max(8, Math.round(cell / aspect));
+        // Re-fit: a cell that grew must never overrun what it was counted into.
+        int trunkColumns = clamp(1, maxColumns, (poolW + gap) / (cell + gap));
+
+        // ---- the filter drawer -------------------------------------------
+        // The authored 80 was a FLOOR on a value that is already the fair share
+        // of the box, so at 320 units two columns needed 176 inside a 142-wide
+        // frame and the right-hand one was drawn past the edge of the screen.
+        // It is the column COUNT that yields now, and the drawer scrolls.
+        int usable = Math.max(1, rightW - pad * 2 - 8);
+        int share = (usable - DRAWER_INSET * 2 - DRAWER_COLUMN_GAP) / 2;
+        int selectorColumns = share >= SELECTOR_MIN ? 2 : 1;
+        int selectorW = Math.max(1,
+            selectorColumns == 2 ? share : usable - DRAWER_INSET * 2);
+        int bandColumns = selectorColumns;
+        int bandBoxW = (selectorW - BAND_CAPTION - 10) / 2;
+        if(bandBoxW < BAND_MIN)
         {
-            fitH = heightBudget / rowsTotal;
-            // FLOOR, not round. Rounding the width up and then deriving the
-            // height from it rounds up a second time, so a card could end up a
-            // pixel taller than its share of the budget -- and a pixel per row
-            // over ten rows is ten pixels, which is the scrollbar back on
-            // exactly the full deck this exists to fit.
-            int fitW = Math.max(layout.i("card.minWidth", 10), (int)Math.floor(fitH * aspect));
-            trunkCardW = Math.min(trunkCardW, fitW);
+            // One band per row rather than a width the panel does not have.
+            bandColumns = 1;
+            bandBoxW = (usable - DRAWER_INSET * 2 - BAND_CAPTION - 10) / 2;
         }
-        // The player's own scale, last, so it multiplies the size the
-        // collection would otherwise have chosen. Clamped to the same minimum
-        // the automatic sizing uses, and to the panel's width so the largest
-        // setting still leaves at least one column.
-        trunkCardW = Math.max(layout.i("card.minWidth", 10),
-            Math.round(trunkCardW * trunkScale));
-        trunkCardW = Math.min(trunkCardW, Math.max(layout.i("card.minWidth", 10),
-            rightW - pad * 2));
-        trunkCardH = Math.max(8, Math.round(trunkCardW / aspect));
-        // The budget is a hard ceiling, so it is enforced on the number that
-        // actually decides the row pitch rather than trusted to the arithmetic
-        // above. Costs at most one pixel of aspect accuracy. Skipped once the
-        // player has scaled up on purpose -- the collection scrolls, so its
-        // cards are allowed to be taller than one deck row's share.
-        if(trunkScale <= 1F && trunkCardH > fitH)
+        bandBoxW = Math.max(1, bandBoxW);
+
+        int strip = Math.max(0, trunkContentBottom - (trunkGridTop - 4));
+        int listRows = clamp(1, LIST_ROWS_MAX, (strip - 4) / LIST_ROW_H);
+
+        return new Geom(leftX, rightX, panelTop, panelH, leftW, rightW,
+            deckColumns, deckCardW, deckCardH, deckRows,
+            deckControlLines, deckReserve, deckViewTop, deckViewHeight,
+            chips.lines(), buttons.lines(), trunkHeaderBottom, trunkGridTop,
+            trunkReserve, trunkContentBottom, trunkColumns, cell, trunkCardH,
+            selectorColumns, selectorW, bandColumns, bandBoxW, listRows);
+    }
+
+    // ---- rows of controls, measured and wrapped ----
+
+    /**
+     * A row of controls packed into the width it has.
+     * <p>
+     * Positions are relative to the row's left edge, so the same packing can be
+     * measured in {@link #measure()} and placed in {@link #rebuildControls()}
+     * without either knowing where the other put it.
+     */
+    private record Packed(int[] x, int[] line, int[] width, int lines)
+    {
+    }
+
+    /**
+     * Sizes a row from its labels and wraps it, greedily.
+     * <p>
+     * Each control is at most its authored width, at least what its own label
+     * needs, and never wider than the whole line: {@code HubWidgets.drawLabel}
+     * CENTRES its text with no ellipsis, so a control narrower than its label
+     * bleeds out of BOTH ends of itself rather than being clipped.
+     */
+    private static Packed pack(int[] floor, int[] want, int room, int gap)
+    {
+        int count = floor.length;
+        int[] width = new int[count];
+        int[] x = new int[count];
+        int[] line = new int[count];
+        int at = 0;
+        int on = 0;
+        for(int i = 0; i < count; i++)
         {
-            trunkCardH = Math.max(8, fitH);
+            // Clamped to a SHARE of the line, not to the authored width. Taking
+            // the full authored width whenever it fits means only the line
+            // COUNT ever yields, so the bottom row wrapped at the reference
+            // size and the collection fell to a single visible row at 320x240.
+            // A share lets every item give a little instead of one item taking
+            // everything and pushing its neighbour onto a new line.
+            int share = Math.max(1, (room - gap * (count - 1)) / Math.max(1, count));
+            width[i] = clamp(Math.min(floor[i], room), room,
+                Math.min(Math.min(want[i], room), Math.max(share, Math.min(floor[i], room))));
+            // Never a wrap before the first item: a line has to hold something,
+            // even when what it holds is wider than it is.
+            if(i > 0 && at + width[i] > room)
+            {
+                on++;
+                at = 0;
+            }
+            x[i] = at;
+            line[i] = on;
+            at += width[i] + gap;
         }
+        return new Packed(x, line, width, on + 1);
+    }
 
-        // Rows grow with what is actually in each part, plus one spare so there
-        // is always an empty slot to drop onto, capped by what the part can
-        // hold. Reserving every part's full capacity meant ten rows on screen
-        // at all times whatever the deck held.
-        mainRows = rowsFor(DeckList.Part.MAIN);
+    /** The four labels on the deck panel's bottom row, in the order drawn. */
+    private static final Component SORT_DECK_LABEL = Component.literal("Sort Deck");
+    private static final Component IMPORT_LABEL = Component.literal("Import");
+    private static final Component EXPORT_LABEL = Component.literal("Export");
 
-        deckScroll = Math.max(0, Math.min(deckScroll, maxDeckScroll()));
-        // The trunk too. Its row height moves as the deck grows, so a
-        // deck grows -- so a scroll position taken when cards were small can
-        // point past the end once they are large, and the grid draws rows that
-        // are not there while the ones that are cannot be reached.
-        trunkScroll = Math.max(0, Math.min(trunkScroll, maxTrunkScroll()));
+    private int[] deckRowWidths()
+    {
+        return new int[] {buttonWidth(SORT_DECK_LABEL), buttonWidth(IMPORT_LABEL),
+            buttonWidth(EXPORT_LABEL), SWATCH_ROOM + 8};
+    }
+
+    private int[] deckRowFloors()
+    {
+        return new int[] {font.width(SORT_DECK_LABEL) + 8, font.width(IMPORT_LABEL) + 8,
+            font.width(EXPORT_LABEL) + 8, SWATCH_ROOM + 8};
+    }
+
+    /** Monster, Spell, Trap, then the star -- which is square-ish, not a label. */
+    private int[] chipWidths(int chipH)
+    {
+        Layout layout = Layout.of(LAYOUT);
+        int authored = layout.i("trunk.chipWidth", 42);
+        CardQuery.Kind[] kinds = CardQuery.Kind.values();
+        int[] widths = new int[kinds.length + 1];
+        for(int i = 0; i < kinds.length; i++)
+        {
+            widths[i] = authored;
+        }
+        widths[kinds.length] = chipH + 6;
+        return widths;
+    }
+
+    private int[] chipFloors(int chipH)
+    {
+        CardQuery.Kind[] kinds = CardQuery.Kind.values();
+        int[] floors = new int[kinds.length + 1];
+        for(int i = 0; i < kinds.length; i++)
+        {
+            floors[i] = font.width(label(kinds[i])) + 4;
+        }
+        floors[kinds.length] = chipH + 6;
+        return floors;
+    }
+
+    /** Clear Filters, the drawer's own toggle, and Unowned. */
+    private Component filtersLabel()
+    {
+        // Measured against BOTH labels, so pressing it cannot re-flow the row.
+        return Component.literal(font.width("Filters -") > font.width("Filters +")
+            ? "Filters -" : "Filters +");
+    }
+
+    private int[] barButtonWidths()
+    {
+        return new int[] {92, 72, 78};
+    }
+
+    private int[] barButtonFloors()
+    {
+        return new int[] {font.width("Clear Filters") + 8, font.width(filtersLabel()) + 8,
+            font.width("Unowned") + 8};
+    }
+
+    /** The sort button, wide enough for whichever order is showing. */
+    private int sortWidth()
+    {
+        int widest = 0;
+        for(CardQuery.Sort sort : CardQuery.Sort.values())
+        {
+            widest = Math.max(widest, font.width(sort.label()));
+        }
+        return clamp(widest + 8, Math.max(1, rightW - pad * 2),
+            Layout.of(LAYOUT).i("trunk.sortWidth", 56));
+    }
+
+    private int dirWidth()
+    {
+        int widest = Math.max(font.width("ASC"), font.width("DESC"));
+        return clamp(widest + 8, Math.max(1, rightW - pad * 2),
+            Layout.of(LAYOUT).i("trunk.dirWidth", 30));
+    }
+
+    /** Whatever the sort pair leaves of the first line, down to a floor of 40. */
+    private int searchWidth()
+    {
+        return Math.max(40, rightW - pad * 2 - sortWidth() - dirWidth() - 12);
     }
 
     /**
@@ -1010,12 +1613,15 @@ public class DeckEditorScreen extends Screen
     /** The strip of the left panel the deck's sections are drawn in. */
     private int deckViewTop()
     {
-        return panelTop + pad + titleH;
+        return geom.deckViewTop();
     }
 
     private int deckViewHeight()
     {
-        return panelH - pad * 2 - titleH - Layout.of(LAYOUT).i("panel.controls", 28);
+        // The reserve below is the button row as it was actually measured and
+        // wrapped, not the authored 28 -- which described one line and knew
+        // nothing about a row that had to take two.
+        return geom.deckViewHeight();
     }
 
     /** How tall the three sections are altogether, headings included. */
@@ -1040,7 +1646,18 @@ public class DeckEditorScreen extends Screen
 
     private int rowsFor(DeckList.Part part)
     {
-        int columns = partColumns(part);
+        return rowsFor(part, partColumns(part));
+    }
+
+    /**
+     * The overload {@link #measure()} uses.
+     * <p>
+     * It is handed the column count rather than reaching back through
+     * {@link #partColumns} for it, because partColumns reads what measure() is
+     * in the middle of producing.
+     */
+    private int rowsFor(DeckList.Part part, int columns)
+    {
         int max = (int)Math.ceil(part.capacity() / (double)columns);
         int held = EditorState.deck().partFor(part).size();
         int used = (int)Math.ceil(held / (double)columns);
@@ -1063,9 +1680,16 @@ public class DeckEditorScreen extends Screen
         };
     }
 
+    /**
+     * How many columns a part is drawn in.
+     * <p>
+     * The measured count, not the authored ten: {@code rowsFor},
+     * {@code slotIndexAt}, {@code partTop} and the render loop all read it, so
+     * the grid re-flows for drawing and for hit-testing off this one line.
+     */
     private int partColumns(DeckList.Part part)
     {
-        return mainColumns;
+        return geom.deckColumns();
     }
 
     /** Which slot of which part a point falls in, or null. */
@@ -1126,17 +1750,25 @@ public class DeckEditorScreen extends Screen
 
     private int trunkVisibleRows()
     {
-        int bottom = panelTop + panelH - pad - 12
-            - Layout.of(LAYOUT).i("panel.controls", 28);
+        // 12 below the grid for the card count that is printed there, then the
+        // reserve the slider and the button row actually occupy.
+        int bottom = trunkContentBottom() - 12;
         return Math.max(1, (bottom - trunkGridTop()) / (trunkCardH + gap));
     }
 
-    /** Below the search row, the chip row and the Clear row. */
+    /**
+     * Below the search row, the chip rows and the Clear row -- as those rows
+     * actually came out.
+     * <p>
+     * It used to restate that stack as a literal sum while
+     * {@link #rebuildControls} computed the same chain independently. The two
+     * agreed by coincidence, and every consumer of the pool's top went through
+     * the copy -- so a control row that wrapped onto a second line would have
+     * left the grid drawn under it and hit-testing a row out of register.
+     */
     private int trunkGridTop()
     {
-        Layout layout = Layout.of(LAYOUT);
-        int rowH = layout.i("trunk.searchHeight", 16) + 4;
-        return panelTop + pad + rowH + layout.i("trunk.chipHeight", 14) + 3 + 16 + 6;
+        return geom.trunkGridTop();
     }
 
     private int trunkIndexAt(double mouseX, double mouseY)
@@ -1147,7 +1779,6 @@ public class DeckEditorScreen extends Screen
             // is under the cursor either.
             return -1;
         }
-        trunkColumns = Math.max(1, (rightW - pad * 2 + gap) / (trunkCardW + gap));
         int gridTop = trunkGridTop();
         int visibleRows = trunkVisibleRows();
         int cellW = trunkCardW + gap;
@@ -1189,8 +1820,11 @@ public class DeckEditorScreen extends Screen
             return true;
         }
         // The scrollbar before anything else: it sits over the collection grid,
-        // whose card hit test would otherwise swallow the click.
-        if(event.button() == 0 && grabTrunkBar(event.x(), event.y()))
+        // whose card hit test would otherwise swallow the click. Whichever of
+        // the two is actually on screen -- they share an x, and only one of
+        // them is ever drawn.
+        if(event.button() == 0 && (filtersOpen
+            ? grabFilterBar(event.x(), event.y()) : grabTrunkBar(event.x(), event.y())))
         {
             return true;
         }
@@ -1981,6 +2615,7 @@ public class DeckEditorScreen extends Screen
             return super.mouseReleased(event);
         }
         trunkBarGrab = -1;
+        filterBarGrab = -1;
         double mouseX = event.x();
         double mouseY = event.y();
         int button = event.button();
@@ -2018,6 +2653,10 @@ public class DeckEditorScreen extends Screen
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta)
     {
+        // Nothing is told about the scroll here any more. A wheel event says
+        // the list was touched, not how fast it is moving, so it could not tell
+        // a flick from a single click and metered both; drawTrunk measures the
+        // rows the grid actually travelled instead. See CardImageManager.
         if(altCard != null)
         {
             // Along the artwork row, and nowhere else: the grids underneath are
@@ -2049,7 +2688,7 @@ public class DeckEditorScreen extends Screen
         }
         if(openList != null)
         {
-            int overflow = Math.max(0, openList.values.size() + 1 - LIST_ROWS);
+            int overflow = Math.max(0, openList.values.size() + 1 - listRows());
             openListScroll = Math.max(0, Math.min(overflow,
                 openListScroll - (int)Math.signum(delta)));
             return true;
@@ -2149,10 +2788,11 @@ public class DeckEditorScreen extends Screen
         // opens over another that already asked for it took the client down.
         // Same decision as EngineDuelScreen, for the same crash.
         poseStack.fillGradient(0, 0, width, height, 0xC0101010, 0xD0101010);
-        // The deck decides the card size, and the deck changes while this
-        // screen is open, so the size is worked out now rather than when it
-        // opened.
-        resize();
+        // The deck decides the card size and the deck changes while this screen
+        // is open, so the whole layout is worked out now rather than when it
+        // opened. Every number below and in rebuildControls comes out of this
+        // one pass, so the widgets and the art they sit among cannot disagree.
+        remeasure();
         NineSlice.draw(poseStack, HubTextures.PANEL, leftX, panelTop, leftW, panelH);
         NineSlice.draw(poseStack, HubTextures.PANEL, rightX, panelTop, rightW, panelH);
 
@@ -2198,10 +2838,30 @@ public class DeckEditorScreen extends Screen
 
         if(!refusal.isEmpty())
         {
-            int textWidth = font.width(refusal);
-            NineSlice.draw(poseStack, HubTextures.PANEL, width / 2 - textWidth / 2 - 8,
-                height - 52, textWidth + 16, 18);
-            poseStack.text(font, refusal, (int)(width / 2F - textWidth / 2F), (int)(height - 47), 0xFFFF8A80, true);
+            // Wrapped to the window and clamped inside it. The import message
+            // is about 300 units wide, so at the smallest window the game
+            // allows it spanned the whole screen from a negative x -- and it
+            // was anchored at a constant height - 52, which is exactly the
+            // card-size slider's band.
+            int room = Math.max(16, width - 8);
+            List<net.minecraft.util.FormattedCharSequence> lines =
+                font.split(Component.literal(refusal), room - 16);
+            int textWidth = 0;
+            for(net.minecraft.util.FormattedCharSequence line : lines)
+            {
+                textWidth = Math.max(textWidth, font.width(line));
+            }
+            int bannerW = Math.min(room, textWidth + 16);
+            int bannerH = lines.size() * font.lineHeight + 9;
+            int x = clamp(4, Math.max(4, width - bannerW - 4), width / 2 - bannerW / 2);
+            // Above the measured control rows rather than on top of them.
+            int y = Math.max(4, trunkContentBottom() - bannerH - 2);
+            NineSlice.draw(poseStack, HubTextures.PANEL, x, y, bannerW, bannerH);
+            for(int i = 0; i < lines.size(); i++)
+            {
+                poseStack.text(font, lines.get(i), x + 8, y + 5 + i * font.lineHeight,
+                    0xFFFF8A80, true);
+            }
         }
 
         // A hovered card is previewed large, with its name and effect text.
@@ -2272,8 +2932,10 @@ public class DeckEditorScreen extends Screen
         {
             trunkScale = TRUNK_SCALE_MIN + (float)value * (TRUNK_SCALE_MAX - TRUNK_SCALE_MIN);
             // The row the scroll sits on has changed size, so where it points
-            // has to be re-clamped; resize() does that for both grids.
-            resize();
+            // has to be re-clamped; remeasure() does that for both grids, and
+            // against the column count this drag has just changed rather than
+            // against the one the size the player has just left produced.
+            remeasure();
         }
 
         /** Silent: a slider that clicks on every step of a drag is noise. */
@@ -2317,8 +2979,10 @@ public class DeckEditorScreen extends Screen
         DeckFiles.Result result = DeckFiles.importInto(chosen);
         refusal = result.message();
         // The new deck is the open one, and it changed size, so both grids and
-        // both scroll positions have to be worked out again.
-        resize();
+        // both scroll positions have to be worked out again. rebuildControls
+        // re-measures too; this is the one that makes the refusal line below
+        // land against the row that is about to be rebuilt.
+        remeasure();
         rebuildControls();
     }
 
@@ -2370,19 +3034,83 @@ public class DeckEditorScreen extends Screen
      * The panel is anchored to whichever side of the cursor has room and
      * clamped to the screen, so it can never be the thing that overflows.
      */
+    /**
+     * Whether the big hover preview may be drawn at all.
+     * <p>
+     * Behind Shift by default, because the panel covers a third of the
+     * collection and follows the cursor, so browsing a grid means it is nearly
+     * always over the cards being browsed. It is also the most expensive thing
+     * the image pipeline does -- a 512px decode per card hovered -- so not
+     * asking for one per mouse-move is a saving as well as a preference.
+     * <p>
+     * The gate itself is optional; a player who liked it always-on turns
+     * {@code hoverPreviewNeedsShift} off in the mod's settings.
+     */
+    /**
+     * A text scale the GUI can render on whole pixels.
+     * <p>
+     * The font is a bitmap: at a scale that does not land its glyphs on pixel
+     * boundaries the sampler blends neighbouring texels and the text goes soft.
+     * A HALF-size label is therefore only crisp when the GUI scale itself is
+     * even -- at scale 3, 0.5 asks for 1.5 device pixels per GUI pixel and
+     * every stroke smears.
+     * <p>
+     * Snapped to the nearest scale whose product with the GUI scale is a whole
+     * number, and never below one device pixel per GUI pixel, so small text
+     * gets a little larger rather than blurrier.
+     */
+    private float crispScale(float wanted)
+    {
+        double gui = net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScale();
+        if(gui <= 0D)
+        {
+            return wanted;
+        }
+        // The device pixels one GUI pixel of text would occupy, rounded to a
+        // whole number and floored at 1 -- 0 would make the text vanish.
+        long steps = Math.max(1L, Math.round(wanted * gui));
+        return (float)(steps / gui);
+    }
+
+    private boolean previewAllowed()
+    {
+        if(!de.cas_ual_ty.dueldimension.clientutil.HoverPreviewSettings.needsShift())
+        {
+            return true;
+        }
+        // isKeyDown takes the Window OBJECT, not its handle -- the same trap
+        // PackOpeningScreen's shift-peek hit.
+        com.mojang.blaze3d.platform.Window window =
+            net.minecraft.client.Minecraft.getInstance().getWindow();
+        return com.mojang.blaze3d.platform.InputConstants.isKeyDown(window,
+            org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT)
+            || com.mojang.blaze3d.platform.InputConstants.isKeyDown(window,
+                org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT);
+    }
+
     private void drawPreview(GuiGraphicsExtractor poseStack, Properties card, int mouseX,
         int mouseY, int art)
     {
         Layout layout = Layout.of(LAYOUT);
-        int artW = layout.i("preview.width", 78);
-        int artH = Math.round(artW / layout.f("card.aspect", DuelTextures.CARD_ASPECT));
         int inner = 5;
-        int panelW = Math.max(artW, layout.i("preview.textWidth", 132)) + inner * 2;
+        // Bounded by the window before anything is measured against it, so a
+        // small window narrows the panel rather than hanging it off the side.
+        int panelW = Math.min(Math.max(32, width - 8),
+            Math.max(layout.i("preview.width", 78), layout.i("preview.textWidth", 132))
+                + inner * 2);
+        // The ART is what Shift reveals; the name, facts and effect text are
+        // always shown. Hidden art contributes no height, so the panel closes
+        // up around the text rather than leaving a hole where a card was.
+        boolean showArt = previewAllowed();
+        int artW = Math.min(layout.i("preview.width", 78), panelW - inner * 2);
+        int artH = showArt
+            ? Math.round(artW / layout.f("card.aspect", DuelTextures.CARD_ASPECT))
+            : 0;
         int textW = panelW - inner * 2;
 
         // Text is drawn at half size, so it is wrapped to twice the width and
         // its line height is halved to match.
-        float scale = layout.f("preview.textScale", 0.5F);
+        float scale = crispScale(layout.f("preview.textScale", 0.5F));
         int wrapW = Math.round(textW / scale);
         int lineH = Math.max(1, Math.round(9 * scale));
 
@@ -2408,15 +3136,19 @@ public class DeckEditorScreen extends Screen
         java.util.List<net.minecraft.util.FormattedCharSequence> textLines =
             font.split(Component.literal(card.getText() == null ? "" : card.getText()), wrapW);
 
-        int maxLines = layout.i("preview.maxLines", 10);
+        // Everything the panel must show whatever happens, so the description
+        // is given what is LEFT rather than a fixed count of lines. Only the
+        // position used to be clamped, so once the content passed height - 8 the
+        // panel simply ran off the bottom of the screen.
+        int fixed = inner * 2 + artH + (showArt ? 4 : 0) + nameLines.size() * lineH + 2
+            + headerLines.size() * lineH + 3;
+        int maxLines = clamp(1, layout.i("preview.maxLines", 10),
+            (height - 8 - fixed - lineH - 2) / Math.max(1, lineH));
         int maxScroll = Math.max(0, textLines.size() - maxLines);
         previewScroll = Math.min(previewScroll, maxScroll);
-        int shownLines = Math.min(textLines.size() - previewScroll, maxLines);
+        int shownLines = Math.max(0, Math.min(textLines.size() - previewScroll, maxLines));
 
-        int panelH = inner * 2 + artH + 4
-            + nameLines.size() * lineH + 2
-            + headerLines.size() * lineH + 3
-            + shownLines * lineH + (maxScroll > 0 ? lineH + 2 : 0);
+        int panelH = fixed + shownLines * lineH + (maxScroll > 0 ? lineH + 2 : 0);
 
         int x = mouseX + 14;
         if(x + panelW > width - 4)
@@ -2434,19 +3166,25 @@ public class DeckEditorScreen extends Screen
 
         // The hovered COPY's artwork, so pointing at a dressed card shows what
         // that card looks like rather than what its first printing did.
-        DdBlitUtil.blit(poseStack,
-            DuelTextures.card(card, (byte)Math.clamp(art, 0, Byte.MAX_VALUE),
-                DuelTextures.PREVIEW_CARD_SIZE),
-            x + (panelW - artW) / 2, y + inner, artW, artH,
-            DuelTextures.CARD_U0, DuelTextures.CARD_V0,
-            DuelTextures.CARD_U1, DuelTextures.CARD_V1, DdBlitUtil.NO_TINT);
+        if(showArt)
+        {
+            // Only asked for when it is drawn: a 512px decode per card hovered
+            // is the most expensive thing the image pipeline does, and asking
+            // for one the panel is not going to show is the worst version of it.
+            DdBlitUtil.blit(poseStack,
+                DuelTextures.card(card, (byte)Math.clamp(art, 0, Byte.MAX_VALUE),
+                    DuelTextures.PREVIEW_CARD_SIZE),
+                x + (panelW - artW) / 2, y + inner, artW, artH,
+                DuelTextures.CARD_U0, DuelTextures.CARD_V0,
+                DuelTextures.CARD_U1, DuelTextures.CARD_V1, DdBlitUtil.NO_TINT);
+        }
 
         // Everything below is half size. Coordinates are divided by the scale
         // so the text still lands where the panel arithmetic put it.
         poseStack.pose().pushMatrix();
         poseStack.pose().scale(scale, scale);
         float sx = (x + inner) / scale;
-        float sy = (y + inner + artH + 4) / scale;
+        float sy = (y + inner + artH + (showArt ? 4 : 0)) / scale;
         float step = 9F;
 
         for(net.minecraft.util.FormattedCharSequence line : nameLines)
@@ -2498,7 +3236,11 @@ public class DeckEditorScreen extends Screen
             {
                 title += "  [structure]";
             }
-            // Centred in the ribbon rather than sitting on its top edge.
+            // Centred in the ribbon rather than sitting on its top edge, and
+            // cut to the ribbon's own width -- the name gains "  (n/m)" and
+            // "  [structure]" and ran off the panel at any resolution. Same
+            // measure the artwork picker's header uses.
+            title = font.plainSubstrByWidth(title, Math.max(1, leftW - pad * 2 - 4));
             poseStack.text(font, title, (int)(leftX + pad + 2), (int)(panelTop + pad + (titleH - font.lineHeight) / 2F), 0xFFF4D089, true);
         }
 
@@ -2565,7 +3307,10 @@ public class DeckEditorScreen extends Screen
         // fits shows no furniture it does not need.
         // Measured in pixels rather than rows, because the deck's three
         // sections are different heights and a row is not a fixed unit here.
-        pixelScrollbar(poseStack, leftX + leftW - pad + 1, deckViewTop(), deckViewHeight(),
+        // Inside the panel's own padding, in the lane the grid's column count
+        // leaves for it. It used to be drawn one unit OUTSIDE that padding, on
+        // the border art, at every window size.
+        pixelScrollbar(poseStack, leftX + leftW - pad - 2, deckViewTop(), deckViewHeight(),
             deckContentHeight(), deckScroll);
     }
 
@@ -2655,49 +3400,133 @@ public class DeckEditorScreen extends Screen
         }
         clipToFilterView(poseStack, false);
 
-        pixelScrollbar(poseStack, rightX + rightW - pad - 2, top + 2, bottom - top - 4,
+        // Its own bar, recorded from the draw so it can be caught. The
+        // collection's bar is drawn at exactly this x, and while the drawer is
+        // up it is not drawn at all -- so dragging what looks like the drawer's
+        // scrollbar used to scrub the hidden collection behind it.
+        filterBarX = rightX + rightW - pad - 2;
+        filterBarY = top + 2;
+        filterBarH = Math.max(0, bottom - top - 4);
+        filterBarThumbH = pixelScrollbar(poseStack, filterBarX, filterBarY, filterBarH,
             filterContentHeight, filterScroll);
+        if(filterBarThumbH <= 0)
+        {
+            filterBarH = 0;
+        }
     }
 
     /**
-     * Asks for the art of the rows either side of the ones on screen.
-     * <p>
-     * A card's image is only scaled once something asks to draw it, so scrolling
-     * used to meet a fresh page of cold cards every time and show placeholders
-     * until the workers caught up. Asking a page early means the wheel arrives
-     * at art that is already made.
-     * <p>
-     * This is deliberately just a request and not a draw: the readiness gate
-     * queues the work as a side effect of being asked, the request is cheap
-     * once the answer is cached, and duplicate requests are dropped by
-     * ImageHandler rather than piling up behind each other.
+     * Takes hold of the filter drawer's scrollbar.
+     *
+     * @return whether the bar took this click
      */
-    private void warmAhead(List<Properties> shown, int visibleRows)
+    private boolean grabFilterBar(double mouseX, double mouseY)
     {
-        int first = Math.max(0, (trunkScroll - visibleRows) * trunkColumns);
-        int last = Math.min(shown.size(), (trunkScroll + visibleRows * 2) * trunkColumns);
-        int onScreenFirst = Math.max(0, trunkScroll * trunkColumns);
-        int onScreenLast = Math.min(shown.size(),
-            (trunkScroll + visibleRows) * trunkColumns);
+        if(filterBarH <= 0 || maxFilterScroll() <= 0
+            || mouseX < filterBarX - BAR_GRAB || mouseX >= filterBarX + 4 + BAR_GRAB
+            || mouseY < filterBarY || mouseY >= filterBarY + filterBarH)
+        {
+            return false;
+        }
+        int travel = Math.max(1, filterBarH - filterBarThumbH);
+        int thumbY = filterBarY + travel * Math.min(filterScroll, maxFilterScroll())
+            / Math.max(1, maxFilterScroll());
+        filterBarGrab = mouseY >= thumbY && mouseY < thumbY + filterBarThumbH
+            ? (int)(mouseY - thumbY) : filterBarThumbH / 2;
+        dragFilterBar(mouseY);
+        return true;
+    }
+
+    /** Scrubs the drawer to wherever its thumb has been dragged. */
+    private void dragFilterBar(double mouseY)
+    {
+        int travel = filterBarH - filterBarThumbH;
+        int max = maxFilterScroll();
+        if(travel <= 0 || max <= 0)
+        {
+            filterScroll = 0;
+        }
+        else
+        {
+            double top = mouseY - filterBarGrab - filterBarY;
+            filterScroll = (int)Math.clamp(Math.round(top / travel * max), 0, max);
+        }
+        // The drawer's rows are widgets placed at build time, so moving the
+        // offset means building them again -- the same route the wheel takes.
+        rebuildControls();
+    }
+
+    /**
+     * Asks for the art of the one row above and the one row below.
+     * <p>
+     * <b>This replaced a warmer that asked for three pages of icons plus a whole
+     * page of 512px previews, and that warmer is why a collection took seconds
+     * to fill on every launch.</b> EDOPro's entire prefetch is one row either
+     * side ({@code drawing.cpp}:1385-1387, "loads the thumb of one card before
+     * and one after to make the scroll smoother") against a database of 13,864
+     * cards, and it never has more than about eleven thumbs in flight.
+     * <p>
+     * EDOPro expresses it as a draw: its search list loops from row -1 to 9
+     * against a clip rect, so the off-screen row is requested through the
+     * ordinary draw path and it is <em>impossible</em> to warm something the
+     * screen would not draw. Our trunk grid has no scissor around it, so an
+     * extra row would paint outside the panel. Asking for the same two rows
+     * through the same accessor at the same size is the closest thing that does
+     * not change what is on screen: same cards, same call, no draw.
+     * <p>
+     * It goes through {@link CardImageManager} and not {@link ImageHandler}, and
+     * that is the difference from the old warmer. The manager records nothing as
+     * resident until a texture actually exists, so a warmed card that is never
+     * drawn costs a decode and no bookkeeping. The old one recorded residency at
+     * request time, which held the first-sighting gate open for exactly the
+     * cards the wheel was about to reach.
+     * <p>
+     * Gated by the same flag the grid uses: a list flying past is not worth a
+     * decode for the rows on screen, so it is certainly not worth one for the
+     * rows that are not.
+     */
+    private void prefetchRow(List<Properties> shown, int visibleRows, boolean loadImages)
+    {
+        if(!loadImages)
+        {
+            return;
+        }
+        int first = Math.max(0, (trunkScroll - 1) * trunkColumns);
+        int last = Math.min(shown.size(), (trunkScroll + visibleRows + 1) * trunkColumns);
 
         for(int i = first; i < last; i++)
         {
             Properties card = shown.get(i);
-            if(card == null)
+            if(card != null)
             {
-                continue;
-            }
-            DuelTextures.card(card, (byte)0, DuelTextures.ICON_CARD_SIZE);
-            // The hover preview is a different, much larger texture, so warming
-            // the grid icon did nothing for it and the first hover over every
-            // card still waited. Only for the rows actually on screen though: a
-            // 512 is about sixteen times the pixels of a 128, and a card you
-            // MIGHT scroll to is a far weaker bet than one you are looking at.
-            if(i >= onScreenFirst && i < onScreenLast)
-            {
-                DuelTextures.card(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE);
+                // The artwork the grid will actually draw, not artwork 0. The
+                // old warmer asked for 0 regardless, so for every card whose
+                // player owns an alternate printing it warmed a texture the
+                // grid would never blit -- the exact failure EDOPro's
+                // prefetch-by-clipped-draw cannot have.
+                DuelTextures.card(card,
+                    (byte)Math.clamp(EditorState.bestArtOwned(card), 0, Byte.MAX_VALUE),
+                    DuelTextures.ICON_CARD_SIZE);
             }
         }
+    }
+
+    /**
+     * Milliseconds since the previous frame, which is what the scroll-velocity
+     * gate is stated against.
+     * <p>
+     * {@code DeltaTracker.getRealtimeDeltaTicks} is wall clock divided by the
+     * timer's {@code msPerTick}, and {@code Minecraft} builds its timer with
+     * 20 ticks a second, so the tick is 50 ms; multiplying back recovers
+     * EDOPro's {@code delta_time} ({@code game.cpp}:2044) in its own units.
+     * Vanilla clamps the result to half a tick once a frame passes 350 ms, so
+     * after a real stall this reads low and the gate errs towards showing a
+     * placeholder — which is the safe direction.
+     */
+    private static float deltaMillis()
+    {
+        return net.minecraft.client.Minecraft.getInstance().getDeltaTracker()
+            .getRealtimeDeltaTicks() * 50F;
     }
 
     /**
@@ -2716,7 +3545,11 @@ public class DeckEditorScreen extends Screen
             return;
         }
         NineSlice.draw(poseStack, HubTextures.SCROLLBAR, x, y, 4, height, 0, 2);
-        int thumbH = Math.max(12, height * visible / Math.max(1, total));
+        // The 12 is a minimum, so it has to be capped by the track: a track
+        // shorter than the minimum thumb sends thumbY negative and the thumb is
+        // drawn above the bar it belongs to. DuelHubScreen already carries this
+        // cap; these two copies did not get it.
+        int thumbH = Math.min(height, Math.max(12, height * visible / Math.max(1, total)));
         int thumbY = y + (height - thumbH) * offset / overflow;
         NineSlice.draw(poseStack, HubTextures.SCROLLBAR, x, thumbY, 4, thumbH, 1, 2);
 
@@ -2783,22 +3616,37 @@ public class DeckEditorScreen extends Screen
             dragTrunkBar(event.y());
             return true;
         }
+        if(filterBarGrab >= 0)
+        {
+            dragFilterBar(event.y());
+            return true;
+        }
         return super.mouseDragged(event, dragX, dragY);
     }
 
-    /** A scrollbar over a run of pixels rather than a count of rows. */
-    private void pixelScrollbar(GuiGraphicsExtractor poseStack, int x, int y, int height,
+    /**
+     * A scrollbar over a run of pixels rather than a count of rows.
+     *
+     * @return how tall the thumb came out, or 0 when there was nothing to draw,
+     *         so a caller that also has to CATCH this bar records what was
+     *         drawn instead of working it out a second time
+     */
+    private int pixelScrollbar(GuiGraphicsExtractor poseStack, int x, int y, int height,
         int content, int offset)
     {
         int overflow = Math.max(0, content - height);
         if(overflow <= 0 || height <= 0)
         {
-            return;
+            return 0;
         }
         NineSlice.draw(poseStack, HubTextures.SCROLLBAR, x, y, 4, height, 0, 2);
-        int thumbH = Math.max(12, height * height / Math.max(1, content));
+        // Capped by the track, as in scrollbar() above: renderOpenList passes a
+        // height of one row for a one-entry list, which is shorter than the
+        // minimum thumb.
+        int thumbH = Math.min(height, Math.max(12, height * height / Math.max(1, content)));
         int thumbY = y + (height - thumbH) * offset / overflow;
         NineSlice.draw(poseStack, HubTextures.SCROLLBAR, x, thumbY, 4, thumbH, 1, 2);
+        return thumbH;
     }
 
     /** As {@link #clipToDeckView}, for the filter drawer's strip. */
@@ -2837,18 +3685,34 @@ public class DeckEditorScreen extends Screen
 
         if(filtersOpen)
         {
+            // The collection's bar is not drawn, so it must not be catchable
+            // either: its remembered track otherwise still answers clicks that
+            // land on the drawer's bar, which shares its x.
+            trunkBarH = 0;
             renderFilterDrawer(poseStack);
             poseStack.text(font, EditorState.visible().size() + " cards", (int)(rightX + pad), (int)trunkCountY(), 0xFF7A8090, true);
             return;
         }
 
         List<Properties> shown = EditorState.visible();
-        trunkColumns = Math.max(1, (rightW - pad * 2 + gap) / (trunkCardW + gap));
         int gridTop = trunkGridTop();
         int cellW = trunkCardW + gap;
         int visibleRows = trunkVisibleRows();
         NineSlice.draw(poseStack, HubTextures.PANEL_INSET, rightX + pad - 2, gridTop - 2,
             rightW - pad * 2 + 4, visibleRows * (trunkCardH + gap) + 4);
+
+        // drawing.cpp:1375-1378, in rows per frame. Ten rows per 16.6 ms, stated
+        // against elapsed time so it means the same at 60 fps and at 240 -- and
+        // a whole page is nine rows, so this only fires when more than the
+        // entire visible grid turns over inside one frame. Art flying past
+        // faster than the eye reads it is not worth a decode.
+        //
+        // This is what replaced a timestamp of the last wheel event. A
+        // timestamp cannot tell a flick from a single click, so it metered the
+        // click too -- which is what made a collection take seconds to fill.
+        int prevRow = lastTrunkScroll;
+        lastTrunkScroll = trunkScroll;
+        boolean loadImages = CardImageManager.drawThumb(prevRow, trunkScroll, deltaMillis());
 
         for(int row = 0; row < visibleRows; row++)
         {
@@ -2869,26 +3733,34 @@ public class DeckEditorScreen extends Screen
                 // what is still available at a glance rather than on refusal.
                 boolean unowned = !EditorState.owns((int)card.getId());
                 drawCard(poseStack, card, x, y,
-                    !unowned && inDeck >= max ? 0.35F : 1F);
-                if(inDeck > 0)
+                    !unowned && inDeck >= max ? 0.35F : 1F, loadImages);
+                // How many the player OWNS, not how many are in the deck.
+                // The deck count was the smaller question: a collection screen
+                // is asked "how many of these do I have", and the deck's own
+                // copies are visible in the deck list beside it.
+                int owned = EditorState.trunk().countOf((int)card.getId());
+                if(owned > 0)
                 {
-                    String count = inDeck + "/" + max;
+                    String count = Integer.toString(owned);
                     // Half size: at full size this reads as a label on the card
                     // rather than a mark on it, and covers the art it is
                     // annotating. Scaled around the bottom-right corner so it
                     // stays tucked there whatever the card size is.
-                    float scale = layout.f("trunk.countScale", 0.5F);
+                    float scale = crispScale(layout.f("trunk.countScale", 0.5F));
                     poseStack.pose().pushMatrix();
                     poseStack.pose().translate(x + trunkCardW - font.width(count) * scale - 1,
                         y + trunkCardH - font.lineHeight * scale - 1);
                     poseStack.pose().scale(scale, scale);
-                    outlined(poseStack, count, inDeck >= max ? 0xFFFF8A80 : 0xFFF4D089);
+                    // Reddened once every copy owned is already in the deck,
+                    // which is the moment the number stops meaning "spare".
+                    outlined(poseStack, count,
+                        inDeck >= Math.min(owned, max) ? 0xFFFF8A80 : 0xFFF4D089);
                     poseStack.pose().popMatrix();
                 }
             }
         }
 
-        warmAhead(shown, visibleRows);
+        prefetchRow(shown, visibleRows, loadImages);
 
         int rows = (shown.size() + trunkColumns - 1) / trunkColumns;
         scrollbar(poseStack, rightX + rightW - pad - 2, gridTop,
@@ -2934,11 +3806,12 @@ public class DeckEditorScreen extends Screen
      * a deck is built -- which is why it asks for copy 0 rather than for the
      * art the next copy added would wear.
      */
-    private void drawCard(GuiGraphicsExtractor poseStack, Properties card, int x, int y, float alpha)
+    private void drawCard(GuiGraphicsExtractor poseStack, Properties card, int x, int y,
+        float alpha, boolean loadImage)
     {
         drawCard(poseStack, card, x, y, trunkCardW, trunkCardH, alpha,
             EditorState.showUnowned() && !EditorState.owns((int)card.getId()),
-            EditorState.bestArtOwned(card), false);
+            EditorState.bestArtOwned(card), false, loadImage);
     }
 
     /**
@@ -2953,13 +3826,24 @@ public class DeckEditorScreen extends Screen
     private void drawCard(GuiGraphicsExtractor poseStack, Properties card, int x, int y,
         int w, int h, float alpha)
     {
-        drawCard(poseStack, card, x, y, w, h, alpha, false, 0, false);
+        drawCard(poseStack, card, x, y, w, h, alpha, false, 0, false, true);
     }
 
     private void drawCard(GuiGraphicsExtractor poseStack, Properties card, int x, int y,
         int w, int h, float alpha, boolean halfSaturation)
     {
-        drawCard(poseStack, card, x, y, w, h, alpha, halfSaturation, 0, false);
+        drawCard(poseStack, card, x, y, w, h, alpha, halfSaturation, 0, false, true);
+    }
+
+    /**
+     * The deck grids and the drag ghost, which are never scrolling fast enough
+     * to be worth gating: sixty cards at most, and they do not move under the
+     * wheel the way the collection does.
+     */
+    private void drawCard(GuiGraphicsExtractor poseStack, Properties card, int x, int y,
+        int w, int h, float alpha, boolean halfSaturation, int art, boolean altMarker)
+    {
+        drawCard(poseStack, card, x, y, w, h, alpha, halfSaturation, art, altMarker, true);
     }
 
     /**
@@ -2972,9 +3856,16 @@ public class DeckEditorScreen extends Screen
      *                  Only the deck grids do: the mark means "this copy can be
      *                  re-dressed", and a collection entry is a card rather
      *                  than a copy, so there is nothing there to dress
+     * @param loadImage whether this card's art may be ASKED for. False while the
+     *                  collection is flicking past faster than the eye reads it,
+     *                  and it is the request that is suppressed, not the draw:
+     *                  see {@link CardImageManager#drawThumb}. Only the grids
+     *                  pass anything but true -- every other card here is
+     *                  stationary
      */
     private void drawCard(GuiGraphicsExtractor poseStack, Properties card, int x, int y,
-        int w, int h, float alpha, boolean halfSaturation, int art, boolean altMarker)
+        int w, int h, float alpha, boolean halfSaturation, int art, boolean altMarker,
+        boolean loadImage)
     {
         // Fetched at twice the size it is drawn at, and filtered on the way
         // down, so the art is legible rather than a 64-pixel image stretched
@@ -2982,13 +3873,20 @@ public class DeckEditorScreen extends Screen
         // The texture is an argument now rather than a separate bind, and the
         // window is given as its two corners rather than an offset and a size.
         byte imageIndex = (byte)Math.clamp(art, 0, Byte.MAX_VALUE);
-        DdBlitUtil.blit(poseStack,
-            halfSaturation
-                ? DuelTextures.cardUnowned(card, imageIndex, DuelTextures.ICON_CARD_SIZE)
-                : DuelTextures.card(card, imageIndex, DuelTextures.ICON_CARD_SIZE), x, y, w, h,
+        // drawing.cpp:1191. When the gate is shut the placeholder is drawn
+        // WITHOUT going through DuelTextures.card at all -- no map entry, no
+        // queue entry, no decode. Substituting after the call would be no gate
+        // at all: the request is the cost.
+        Identifier face = loadImage
+            ? DuelTextures.card(card, imageIndex, DuelTextures.ICON_CARD_SIZE)
+            : DuelTextures.UNKNOWN;
+        // One image whether the card is owned or not; halfSaturation picks the
+        // pipeline that greys it rather than a second, desaturated copy of the
+        // file. See UnownedPipelines.
+        DdBlitUtil.blit(poseStack, face, x, y, w, h,
             DuelTextures.CARD_U0, DuelTextures.CARD_V0,
             DuelTextures.CARD_U1, DuelTextures.CARD_V1,
-            DdBlitUtil.tint(1F, 1F, 1F, alpha));
+            DdBlitUtil.tint(1F, 1F, 1F, alpha), halfSaturation);
 
         // A fraction of the card rather than a fixed size, so both marks stay
         // in proportion however small the icons get.
@@ -3076,11 +3974,11 @@ public class DeckEditorScreen extends Screen
     {
         private final String caption;
         private final String chosen;
-        private final List<String> values;
+        private final List<Option> values;
         private final java.util.function.Consumer<String> choose;
 
         DropdownButton(int x, int y, int width, int height, String caption, String chosen,
-            List<String> values, java.util.function.Consumer<String> choose)
+            List<Option> values, java.util.function.Consumer<String> choose)
         {
             super(x, y, width, height, Component.literal(caption), pressed ->
             {
@@ -3132,9 +4030,9 @@ public class DeckEditorScreen extends Screen
         {
             return;
         }
-        List<String> values = openList.values;
-        int rowH = 11;
-        int shown = Math.min(values.size() + 1, LIST_ROWS);
+        List<Option> values = openList.values;
+        int rowH = LIST_ROW_H;
+        int shown = Math.min(values.size() + 1, listRows());
         int listX = openList.getX();
         int listW = openList.listWidth();
         int listY = openList.listAnchor();
@@ -3153,7 +4051,9 @@ public class DeckEditorScreen extends Screen
         for(int i = 0; i < shown; i++)
         {
             int index = i + openListScroll;
-            String label = index == 0 ? "Any" : values.get(index - 1);
+            // The label, never the key: the row says "Counter" while choosing
+            // it stores "TRAP/Counter".
+            String label = index == 0 ? "Any" : values.get(index - 1).label();
             int rowY = listY + 2 + i * rowH;
             boolean hovered = mouseX >= listX && mouseX < listX + listW
                 && mouseY >= rowY && mouseY < rowY + rowH;
@@ -3172,9 +4072,9 @@ public class DeckEditorScreen extends Screen
         {
             return false;
         }
-        List<String> values = openList.values;
-        int rowH = 11;
-        int shown = Math.min(values.size() + 1, LIST_ROWS);
+        List<Option> values = openList.values;
+        int rowH = LIST_ROW_H;
+        int shown = Math.min(values.size() + 1, listRows());
         int listX = openList.getX();
         int listW = openList.listWidth();
         int listY = openList.listAnchor();
@@ -3195,7 +4095,8 @@ public class DeckEditorScreen extends Screen
         {
             DropdownButton target = openList;
             openList = null;
-            target.choose.accept(row == 0 ? null : values.get(row - 1));
+            // The key, never the label: what the query stores is qualified.
+            target.choose.accept(row == 0 ? null : values.get(row - 1).key());
             EditorState.invalidate();
             trunkScroll = 0;
             rebuildControls();
@@ -3203,8 +4104,29 @@ public class DeckEditorScreen extends Screen
         return true;
     }
 
-    /** How many rows of a selector's list are shown before it scrolls. */
-    private static final int LIST_ROWS = 12;
+    /** How tall one row of a selector's open list is. */
+    private static final int LIST_ROW_H = 11;
+
+    /**
+     * The most rows a selector's list ever shows -- a ceiling, not a count.
+     * <p>
+     * Twelve rows plus the panel's own 4 is 136 tall, and the drawer's strip is
+     * 127 at 1634&times;920 on GUI scale 4. Drawn at the constant the list ran
+     * over the card-size slider and into the Save and Exit row, and stayed
+     * clickable there because the click test repeated the same arithmetic.
+     */
+    private static final int LIST_ROWS_MAX = 12;
+
+    /**
+     * How many rows an open list shows here and now.
+     * <p>
+     * One method, read by the drawing, the click test and the wheel handler, so
+     * the three cannot drift.
+     */
+    private int listRows()
+    {
+        return geom.listRows();
+    }
 
     /**
      * The favourites chip: the star, lit when only starred cards are showing.

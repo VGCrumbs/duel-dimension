@@ -1,7 +1,6 @@
 {
   "panel.top": 2,
   "panel.bottom": 2,
-  "panel.controls": 28,
   "panel.pad": 8,
   "panel.gap": 8,
   "panel.leftPercent": 44,
@@ -15,7 +14,7 @@
   "deck.sectionGap": 3,
   "deck.mainColumns": 10,
   "deck.extraColumns": 10,
-  "trunk.columns": 8,
+  "trunk.cellMin": 18,
   "trunk.searchHeight": 16,
   "trunk.rowGap": 4,
   "trunk.gridTop": 46,

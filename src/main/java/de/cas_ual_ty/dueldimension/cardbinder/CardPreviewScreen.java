@@ -6,6 +6,7 @@ import de.cas_ual_ty.dueldimension.clientutil.DuelTextures;
 import de.cas_ual_ty.dueldimension.clientutil.BoardPip;
 import de.cas_ual_ty.dueldimension.clientutil.FieldQuad;
 import de.cas_ual_ty.dueldimension.clientutil.ScreenUtil;
+import de.cas_ual_ty.dueldimension.clientutil.UnownedPipelines;
 import de.cas_ual_ty.dueldimension.clientutil.hub.HubTextures;
 import de.cas_ual_ty.dueldimension.clientutil.hub.NineSlice;
 import de.cas_ual_ty.dueldimension.rarity.RarityEntry;
@@ -141,6 +142,17 @@ public class CardPreviewScreen extends Screen
     }
 
     @Override
+    protected void init()
+    {
+        super.init();
+        // A mod pipeline is not in getStaticPipelines(), so nothing validates
+        // its shader at reload and a bad one would surface as a crash at the
+        // first unowned card. Asking here turns that into a log line and the
+        // dim fallback, and re-asking per init picks up a resource reload.
+        UnownedPipelines.refresh();
+    }
+
+    @Override
     public void extractRenderState(GuiGraphicsExtractor poseStack, int mouseX, int mouseY,
         float partialTick)
     {
@@ -207,27 +219,32 @@ public class CardPreviewScreen extends Screen
             // board whatever the front was printed at, and shining a Secret
             // Rare through it would be inventing a card that does not exist.
             // Mirrored in u, because this is the other side of the sheet.
-            mesh(pose, collector, DuelTextures.COVER, scale, 1F, 0F, -1F, 1F, 1F);
+            mesh(pose, collector, DuelTextures.COVER, scale, 1F, 0F, -1F, 1F, 1F, false);
             pose.popPose();
             return;
         }
 
-        Identifier face = held
-            ? DuelTextures.cardSmooth(card.getCard(), card.imageIndex,
-                DuelTextures.PREVIEW_CARD_SIZE)
-            : DuelTextures.cardUnowned(card.getCard(), card.imageIndex,
-                DuelTextures.PREVIEW_CARD_SIZE);
-        // Both of those hand back EDOPro's own unknown.png while the art is
-        // still downloading or after the download failed, and that texture is
+        // One image whether the card is held or not: an unowned face is greyed
+        // by the fragment shader UnownedPipelines.mesh selects, not by a second
+        // desaturated copy of the file.
+        Identifier face = DuelTextures.cardSmooth(card.getCard(), card.imageIndex,
+            DuelTextures.PREVIEW_CARD_SIZE);
+        // That hands back EDOPro's own unknown.png while the art is still
+        // downloading or after the download failed, and that texture is
         // already card-shaped where the mod's cached art is letterboxed inside
         // a square. Sampling the placeholder through the card window would crop
         // and stretch it. Same test BoardRenderer.drawCardAtCorners makes.
         boolean edoproArt = face.equals(DuelTextures.UNKNOWN);
+        // ...and the placeholder is not the card, so it must not be greyed
+        // either. cardUnowned used to return the plain UNKNOWN in exactly this
+        // case, so an unowned card with no art yet has always drawn in full
+        // colour; this is that behaviour carried across deliberately.
         mesh(pose, collector, face, scale,
             edoproArt ? 0F : DuelTextures.CARD_U0,
             edoproArt ? 0F : DuelTextures.CARD_V0,
             edoproArt ? 1F : DuelTextures.CARD_U1 - DuelTextures.CARD_U0,
-            edoproArt ? 1F : DuelTextures.CARD_V1 - DuelTextures.CARD_V0, 1F);
+            edoproArt ? 1F : DuelTextures.CARD_V1 - DuelTextures.CARD_V0, 1F,
+            !held && !edoproArt);
 
         if(rarityEntry == null || !held)
         {
@@ -354,10 +371,16 @@ public class CardPreviewScreen extends Screen
      * right, so the perspective divide is applied before the texture is stepped
      * rather than after, and what error remains is confined to a single small
      * cell.
+     *
+     * @param desaturate the card is not held, so grey it as it is drawn. Only
+     *                   the face passes true: the back is the same board
+     *                   whatever the card, and it is not what the player is
+     *                   missing
      */
     private void mesh(com.mojang.blaze3d.vertex.PoseStack pose,
         net.minecraft.client.renderer.SubmitNodeCollector collector, Identifier texture,
-        float scale, float u0, float v0, float uSpan, float vSpan, float alpha)
+        float scale, float u0, float v0, float uSpan, float vSpan, float alpha,
+        boolean desaturate)
     {
         for(int row = 0; row < STEPS; row++)
         {
@@ -376,7 +399,7 @@ public class CardPreviewScreen extends Screen
                 FieldQuad.drawCorners(pose, collector, texture,
                     new FieldQuad.Corners(a[0], a[1], b[0], b[1], c[0], c[1], d[0], d[1]),
                     u0 + uSpan * tx, v0 + vSpan * ty,
-                    u0 + uSpan * tx1, v0 + vSpan * ty1, 1F, alpha);
+                    u0 + uSpan * tx1, v0 + vSpan * ty1, 1F, alpha, desaturate);
             }
         }
     }

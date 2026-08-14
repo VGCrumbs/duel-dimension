@@ -83,6 +83,36 @@ public class DuelistEntity extends PathfinderMob
     }
 
     /**
+     * A duelist stands still while duelling.
+     * <p>
+     * The stroll goal is already gated, but gating goals only stops the movers
+     * we know about -- a shove from another mob, a path left over from the tick
+     * the duel began on, or any goal added later all move a duelist who is
+     * supposed to be standing at a table. This holds the position outright, so
+     * "does not wander mid-duel" is one rule in one place rather than a promise
+     * every future goal has to remember to keep.
+     * <p>
+     * Horizontal only: gravity still applies, so a duelist standing on ground
+     * that vanishes still falls rather than hanging in the air.
+     */
+    @Override
+    public void aiStep()
+    {
+        if(!level().isClientSide()
+            && de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.isDueling(getUUID()))
+        {
+            getNavigation().stop();
+            net.minecraft.world.phys.Vec3 motion = getDeltaMovement();
+            setDeltaMovement(0D, motion.y, 0D);
+            // Cleared too: a pending "move here" is re-applied by the mover
+            // every tick and would fight the line above.
+            setZza(0F);
+            setXxa(0F);
+        }
+        super.aiStep();
+    }
+
+    /**
      * The synched data is declared into a builder now. The map is immutable
      * once the entity is built, which is why {@code entityData.define} could
      * not survive: it mutated the map after the fact.

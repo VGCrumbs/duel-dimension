@@ -53,10 +53,13 @@ public class PromptTranslator
         int coverOf(int controller, int location, int sequence, int expectedCode);
     }
 
-    /** Without a lookup: bots and tests, which draw nothing. */
+    /**
+     * Without a lookup and for seat 0: bots and tests, which draw nothing and
+     * for which the core's numbering and the viewer's already coincide.
+     */
     public EnginePrompt toPrompt(DuelMessage message, BoardSnapshot field)
     {
-        return toPrompt(message, field, null);
+        return toPrompt(message, field, null, 0);
     }
 
     /**
@@ -66,8 +69,19 @@ public class PromptTranslator
      *               is not in {@code field} at all -- it is only counted -- so
      *               a card picked out of it has nothing on the client side to
      *               read an artwork from.
+     * @param viewer the seat this prompt is being built for, in the CORE's
+     *               numbering. Every controller an option carries is rebased
+     *               against it, because the client's board is relative -- it
+     *               draws controller 0 nearest and hit-tests clicks in those
+     *               terms (BoardRenderer.layoutZone). Handed the core's
+     *               absolute byte, seat 1 found no option matching any card it
+     *               clicked and could do nothing but end its turn. Seat 0 never
+     *               showed it: for that seat the two numberings are the same.
+     *               <p>
+     *               It is a parameter and not a field for the same reason
+     *               {@code covers} is: ONE translator may serve BOTH seats.
      */
-    public EnginePrompt toPrompt(DuelMessage message, BoardSnapshot field, CoverLookup covers)
+    public EnginePrompt toPrompt(DuelMessage message, BoardSnapshot field, CoverLookup covers, int viewer)
     {
         if(message instanceof DuelMessage.SelectIdleCmd idle)
         {
@@ -75,19 +89,22 @@ public class PromptTranslator
             // here must stay the order the response encoder expects.
             List<EnginePrompt.Option> options = new ArrayList<>();
             idle.summonable().forEach(card ->
-                options.add(commandOption(CardCommands.COMMAND_SUMMON, card, field, covers)));
+                options.add(commandOption(CardCommands.COMMAND_SUMMON, card, field, covers, viewer)));
             idle.spSummonable().forEach(card ->
-                options.add(commandOption(CardCommands.COMMAND_SPSUMMON, card, field, covers)));
+                options.add(commandOption(CardCommands.COMMAND_SPSUMMON, card, field, covers, viewer)));
             idle.repositionable().forEach(card ->
-                options.add(commandOption(CardCommands.COMMAND_REPOS, card, field, covers)));
+                options.add(commandOption(CardCommands.COMMAND_REPOS, card, field, covers, viewer)));
             idle.monsterSettable().forEach(card ->
-                options.add(commandOption(CardCommands.COMMAND_MSET, card, field, covers)));
+                options.add(commandOption(CardCommands.COMMAND_MSET, card, field, covers, viewer)));
             idle.spellSettable().forEach(card ->
-                options.add(commandOption(CardCommands.COMMAND_SSET, card, field, covers)));
+                options.add(commandOption(CardCommands.COMMAND_SSET, card, field, covers, viewer)));
             idle.activatable().forEach(card -> options.add(new EnginePrompt.Option(
                 CardCommands.label(CardCommands.COMMAND_ACTIVATE, typeOf(card.code()), 0, text),
                 text.describe(card.description()), card.code(), -1, 0,
-                card.controller(), card.location(), card.sequence(), CardCommands.COMMAND_ACTIVATE,
+                side(card.controller(), viewer), card.location(), card.sequence(),
+                CardCommands.COMMAND_ACTIVATE,
+                // The lookup queries the CORE, so it keeps the core's own
+                // controller; only what the client will hit-test is rebased.
                 artAt(covers, card.controller(), card.location(), card.sequence(), card.code()))));
             if(idle.toBattle())
             {
@@ -110,12 +127,14 @@ public class PromptTranslator
             battle.activatable().forEach(card -> options.add(new EnginePrompt.Option(
                 CardCommands.label(CardCommands.COMMAND_ACTIVATE, typeOf(card.code()), 0, text),
                 text.describe(card.description()), card.code(), -1, 0,
-                card.controller(), card.location(), card.sequence(), CardCommands.COMMAND_ACTIVATE,
+                side(card.controller(), viewer), card.location(), card.sequence(),
+                CardCommands.COMMAND_ACTIVATE,
                 artAt(covers, card.controller(), card.location(), card.sequence(), card.code()))));
             battle.attackable().forEach(card -> options.add(new EnginePrompt.Option(
                 CardCommands.label(CardCommands.COMMAND_ATTACK, typeOf(card.code()), 0, text),
                 card.canDirect() ? "can attack directly" : "", card.code(), -1, 0,
-                card.controller(), card.location(), card.sequence(), CardCommands.COMMAND_ATTACK,
+                side(card.controller(), viewer), card.location(), card.sequence(),
+                CardCommands.COMMAND_ATTACK,
                 artAt(covers, card.controller(), card.location(), card.sequence(), card.code()))));
             if(battle.toMain2())
             {
@@ -133,7 +152,7 @@ public class PromptTranslator
             List<EnginePrompt.Option> options = new ArrayList<>();
             select.cards().forEach(card -> options.add(new EnginePrompt.Option(cardName(card.code()),
                 where(card.loc()), card.code(),
-                card.loc() == null ? -1 : card.loc().controller(),
+                side(card.loc(), viewer),
                 card.loc() == null ? 0 : card.loc().location(),
                 card.loc() == null ? -1 : card.loc().sequence(),
                 artAt(covers, card.loc(), card.code()))));
@@ -146,7 +165,7 @@ public class PromptTranslator
             List<EnginePrompt.Option> options = new ArrayList<>();
             chain.chains().forEach(option -> options.add(new EnginePrompt.Option(
                 "Chain: " + cardName(option.code()), text.describe(option.description()), option.code(),
-                option.loc() == null ? -1 : option.loc().controller(),
+                side(option.loc(), viewer),
                 option.loc() == null ? 0 : option.loc().location(),
                 option.loc() == null ? -1 : option.loc().sequence(),
                 artAt(covers, option.loc(), option.code()))));
@@ -184,12 +203,17 @@ public class PromptTranslator
             for(Responses.Place zone : allowedPlaces(place))
             {
                 boolean monsterZone = zone.location() == OcgConstants.LOCATION_MZONE;
-                boolean opponent = zone.player() != place.player();
+                // Which half of the table this zone is on, to the seat being
+                // asked -- the same question `side` answers everywhere else.
+                // The absolute player survives untouched in allowedPlaces,
+                // which is what the response is encoded from.
+                int controller = side(zone.player(), viewer);
+                boolean opponent = controller == 1;
                 options.add(new EnginePrompt.Option(
                     (monsterZone ? "Monster zone " : "Spell/Trap zone ") + (zone.sequence() + 1),
                     opponent ? "opponent's side" : "your side", 0,
                     EnginePrompt.zoneRef(opponent, monsterZone, zone.sequence()), 0,
-                    zone.player(), zone.location(), zone.sequence()));
+                    controller, zone.location(), zone.sequence()));
             }
             return new EnginePrompt(EnginePrompt.Kind.PLACES, "Choose a zone", options,
                 place.count(), place.count(), false, field);
@@ -234,7 +258,7 @@ public class PromptTranslator
             List<EnginePrompt.Option> options = new ArrayList<>();
             tribute.cards().forEach(card -> options.add(new EnginePrompt.Option(cardName(card.code()),
                 "counts as " + card.releaseParam(), card.code(),
-                card.controller(), card.location(), card.sequence(),
+                side(card.controller(), viewer), card.location(), card.sequence(),
                 artAt(covers, card.controller(), card.location(), card.sequence(), card.code()))));
             return new EnginePrompt(EnginePrompt.Kind.MULTI, "Select tributes", options,
                 tribute.min(), tribute.max(), tribute.cancelable(), field);
@@ -245,7 +269,7 @@ public class PromptTranslator
             List<EnginePrompt.Option> options = new ArrayList<>();
             sum.selectable().forEach(card -> options.add(new EnginePrompt.Option(cardName(card.code()),
                 "value " + card.primary() + (card.alternate() != 0 ? " or " + card.alternate() : ""), card.code(),
-                card.loc() == null ? -1 : card.loc().controller(),
+                side(card.loc(), viewer),
                 card.loc() == null ? 0 : card.loc().location(),
                 card.loc() == null ? -1 : card.loc().sequence(),
                 artAt(covers, card.loc(), card.code()))));
@@ -258,13 +282,13 @@ public class PromptTranslator
             List<EnginePrompt.Option> options = new ArrayList<>();
             unselect.selectable().forEach(card -> options.add(new EnginePrompt.Option(cardName(card.code()),
                 where(card.loc()), card.code(),
-                card.loc() == null ? -1 : card.loc().controller(),
+                side(card.loc(), viewer),
                 card.loc() == null ? 0 : card.loc().location(),
                 card.loc() == null ? -1 : card.loc().sequence(),
                 artAt(covers, card.loc(), card.code()))));
             unselect.unselectable().forEach(card -> options.add(
                 new EnginePrompt.Option("Deselect " + cardName(card.code()), where(card.loc()), card.code(),
-                    card.loc() == null ? -1 : card.loc().controller(),
+                    side(card.loc(), viewer),
                     card.loc() == null ? 0 : card.loc().location(),
                     card.loc() == null ? -1 : card.loc().sequence(),
                     artAt(covers, card.loc(), card.code()))));
@@ -278,7 +302,7 @@ public class PromptTranslator
             sort.cards().forEach(card -> options.add(
                 new EnginePrompt.Option(cardName(card.code()), where(card.controller(),
                     card.location(), card.sequence()), card.code(),
-                    card.controller(), card.location(), card.sequence(),
+                    side(card.controller(), viewer), card.location(), card.sequence(),
                     artAt(covers, card.controller(), card.location(), card.sequence(), card.code()))));
             return new EnginePrompt(EnginePrompt.Kind.SORT,
                 sort.chain() ? "Order the chain" : "Order the cards", options,
@@ -290,7 +314,7 @@ public class PromptTranslator
             List<EnginePrompt.Option> options = new ArrayList<>();
             counter.cards().forEach(card -> options.add(new EnginePrompt.Option(cardName(card.code()),
                 "has " + card.counters(), card.code(), -1, card.counters(),
-                card.controller(), card.location(), card.sequence(), 0,
+                side(card.controller(), viewer), card.location(), card.sequence(), 0,
                 artAt(covers, card.controller(), card.location(), card.sequence(), card.code()))));
             return new EnginePrompt(EnginePrompt.Kind.COUNTERS,
                 "Remove " + counter.count() + " " + text.counterName(counter.counterType()) + " counter(s)",
@@ -696,16 +720,40 @@ public class PromptTranslator
      * current position and type).
      */
     private EnginePrompt.Option commandOption(int command, DuelMessage.IdleOption idle, BoardSnapshot field,
-        CoverLookup covers)
+        CoverLookup covers, int viewer)
     {
         OcgCard card = cards.get(idle.code());
         String detail = card == null ? "" : card.attack() + " ATK / " + card.defense() + " DEF";
-        int position = positionAt(field, idle.controller(), idle.location(), idle.sequence());
+        // The snapshot is already this seat's own view, so it is indexed with
+        // the REBASED controller. The lookup below is the core's, so it is not.
+        int controller = side(idle.controller(), viewer);
+        int position = positionAt(field, controller, idle.location(), idle.sequence());
         return new EnginePrompt.Option(
             CardCommands.label(command, card == null ? 0 : card.type(), position, text),
             detail, idle.code(), -1, 0,
-            idle.controller(), idle.location(), idle.sequence(), command,
+            controller, idle.location(), idle.sequence(), command,
             artAt(covers, idle.controller(), idle.location(), idle.sequence(), idle.code()));
+    }
+
+    /**
+     * The core's controller byte as the seat being asked sees it: 0 is always
+     * their own side, which is the only numbering the client has. The same
+     * convention, and the same name, as {@code DuelistDuels.side} -- an option
+     * and the animation of the card it acts on have to agree on which half of
+     * the table they mean.
+     * <p>
+     * -1 is "no controller" (a phase button, a yes/no) and stays -1: rebasing
+     * it would give a slotless option a slot.
+     */
+    private static int side(int controller, int viewer)
+    {
+        return controller < 0 ? controller : controller == viewer ? 0 : 1;
+    }
+
+    /** The same, for the messages that carry the location as one value. */
+    private static int side(CardLocation location, int viewer)
+    {
+        return location == null ? -1 : side(location.controller(), viewer);
     }
 
     /**
@@ -736,7 +784,15 @@ public class PromptTranslator
         return card == null ? 0 : card.type();
     }
 
-    /** The POS_* of a card on the field, for the reposition caption. */
+    /**
+     * The POS_* of a card on the field, for the reposition caption.
+     *
+     * @param controller the VIEWER-relative side, because {@code field} is a
+     *                   viewer-relative snapshot: {@code self()} is whichever
+     *                   seat this prompt is being built for. Handed the core's
+     *                   absolute byte, seat 1 captioned its own cards from the
+     *                   opponent's zones.
+     */
     private static int positionAt(BoardSnapshot field, int controller, int location, int sequence)
     {
         if(field == null)

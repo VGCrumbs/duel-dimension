@@ -133,21 +133,44 @@ public class ImageHandler
         }
     }
     
+    /**
+     * How often the pipeline is asked, between tick boundaries.
+     * <p>
+     * The deck editor's per-frame count was derived from the loop structure and
+     * never measured: the grid drew a page, {@code warmAhead} asked for three
+     * more plus a page of 512px previews, and the deck panel draws all ninety
+     * positions without culling. That warmer is gone — the prefetch is one row
+     * either side now, which is EDOPro's — so this figure is no longer a
+     * question about it; it is simply how hard the producer side is being
+     * worked, printed beside the two consumer-side figures in a hitch report.
+     * Atomic because the duel warm-up asks from the network thread.
+     */
+    private static final java.util.concurrent.atomic.AtomicInteger REQUESTS =
+        new java.util.concurrent.atomic.AtomicInteger();
+
+    /** Reads and clears the request count, for the tick that just ended. */
+    public static int takeRequests()
+    {
+        return REQUESTS.getAndSet(0);
+    }
+
     public static String getReplacementImage(Properties p, byte imageIndex, int imageSize)
     {
+        REQUESTS.incrementAndGet();
         String imageName = p.getImageName(imageIndex);
         String imagePathName = ImageHandler.tagImage(imageName, imageSize);
-        
+
         if(p.getIsHardcoded())
         {
             return imagePathName;
         }
-        
-        return ImageHandler.getReplacementImage(ADJUSTED_IMAGE_LIST, imageName, imagePathName, p.getImageURL(imageIndex), ImageHandler.CARD_IN_PROGRESS, ImageHandler.CARD_FAILED, imageSize, ImageHandler.getCardImageFile(imagePathName), ImageHandler.getRawCardImageFile(imageName));
+
+        return ImageHandler.getReplacementImage(ADJUSTED_IMAGE_LIST, imageName, imagePathName, p.getImageURL(imageIndex), ImageHandler.CARD_IN_PROGRESS, ImageHandler.CARD_FAILED, imageSize, ImageHandler.getCardImageFile(imagePathName), () -> ImageHandler.getRawCardImageFile(imageName));
     }
     
     public static String getReplacementImage(CardSet s, int imageSize)
     {
+        REQUESTS.incrementAndGet();
         String imageName = s.getImageName();
         String imagePathName = ImageHandler.tagImage(imageName, imageSize);
         
@@ -156,10 +179,21 @@ public class ImageHandler
             return imagePathName;
         }
         
-        return ImageHandler.getReplacementImage(ADJUSTED_IMAGE_LIST, imageName, imagePathName, s.getImageURL(), ImageHandler.SET_IN_PROGRESS, ImageHandler.SET_FAILED, imageSize, ImageHandler.getSetImageFile(imagePathName), ImageHandler.getRawSetImageFile(imageName));
+        return ImageHandler.getReplacementImage(ADJUSTED_IMAGE_LIST, imageName, imagePathName, s.getImageURL(), ImageHandler.SET_IN_PROGRESS, ImageHandler.SET_FAILED, imageSize, ImageHandler.getSetImageFile(imagePathName), () -> ImageHandler.getRawSetImageFile(imageName));
     }
-    
-    public static String getReplacementImage(ImageList list, String imageName, String imagePathName, String imageURL, String inProgress, String failed, int imageSize, File adjusted, File raw)
+
+    /**
+     * @param raw the source image, <b>as a supplier and not a File</b>. Finding
+     *            it costs a {@code File.exists()} — the raw folder holds jpg,
+     *            the probe asks for png first, and it is a guaranteed miss —
+     *            and only the once-per-image makeImageReady branch below ever
+     *            reads it. Java evaluates arguments eagerly, so passing the
+     *            File charged that syscall to EVERY call including the
+     *            finished fast path, which is the one the deck editor makes
+     *            several hundred times a frame while it draws and warms. The
+     *            answer never changed and was thrown away every time.
+     */
+    public static String getReplacementImage(ImageList list, String imageName, String imagePathName, String imageURL, String inProgress, String failed, int imageSize, File adjusted, java.util.function.Supplier<File> raw)
     {
         if(!list.isFinished(imagePathName))
         {
@@ -181,7 +215,7 @@ public class ImageHandler
                 else
                 {
                     // image does not exist and has not been tried, so make it ready and return replacement
-                    ImageHandler.makeImageReady(imageName, imageURL, imageSize, adjusted, raw);
+                    ImageHandler.makeImageReady(imageName, imageURL, imageSize, adjusted, raw.get());
                     return ImageHandler.tagImage(inProgress, imageSize);
                 }
             }
@@ -226,6 +260,14 @@ public class ImageHandler
     @Nullable
     public static Task makeMissingRawTask(String imageName, String imageURL, File raw)
     {
+        if(imageURL == null || imageURL.isEmpty())
+        {
+            // Nothing to fetch from. A card whose art was authored rather than
+            // downloaded has no source, and asking for one is how a custom card
+            // used to crash the editor. Its files are either on disk already or
+            // it shows the placeholder; neither needs the network.
+            return null;
+        }
         if(ImageHandler.RAW_IMAGE_LIST.isFinished(imageName) ||
                 ImageHandler.RAW_IMAGE_LIST.isInProgress(imageName) ||
                 ImageHandler.RAW_IMAGE_LIST.isFailed(imageName))
@@ -597,9 +639,12 @@ public class ImageHandler
         
         public void unInProgress(String imagePathName)
         {
-            if(inProgressList.contains(imagePathName))
+            // Same list, same monitor, and the test belongs inside it too: this
+            // read was outside the lock and the check-then-act it guards was
+            // not atomic either.
+            synchronized(inProgressList)
             {
-                synchronized(inProgressList)
+                if(inProgressList.contains(imagePathName))
                 {
                     inProgressList.remove(imagePathName);
                 }
@@ -629,19 +674,35 @@ public class ImageHandler
             }
         }
         
+        // The three readers take the same monitor their writers take. They did
+        // not: a worker thread finishing a download does addKeepSorted, which
+        // is ArrayList.add(index, value) — it shifts the backing array and can
+        // grow it — while the render thread was mid binary search over the same
+        // list. That is a wrong answer or an IndexOutOfBounds, not a slow one,
+        // and it only shows up under exactly the load these are asked under.
+        // Uncontended monitors are nanoseconds; the search itself is the cost.
         public boolean isInProgress(String imagePathName)
         {
-            return inProgressList.contains(imagePathName);
+            synchronized(inProgressList)
+            {
+                return inProgressList.contains(imagePathName);
+            }
         }
-        
+
         public boolean isFinished(String imagePathName)
         {
-            return finishedList.contains(imagePathName);
+            synchronized(finishedList)
+            {
+                return finishedList.contains(imagePathName);
+            }
         }
-        
+
         public boolean isFailed(String imagePathName)
         {
-            return failedList.contains(imagePathName);
+            synchronized(failedList)
+            {
+                return failedList.contains(imagePathName);
+            }
         }
     }
 }

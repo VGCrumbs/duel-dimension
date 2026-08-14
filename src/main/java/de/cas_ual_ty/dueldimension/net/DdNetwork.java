@@ -83,6 +83,8 @@ public final class DdNetwork
             de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OpponentPlayMat.CODEC);
         clientbound(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OwnSleeve.TYPE,
             de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OwnSleeve.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OpponentSleeve.TYPE,
+            de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OpponentSleeve.CODEC);
         serverbound(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.AnswerPrompt.TYPE,
             de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.AnswerPrompt.CODEC);
         serverbound(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.SetChainPreference.TYPE,
@@ -110,6 +112,31 @@ public final class DdNetwork
             de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Ready.CODEC);
         serverbound(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Leave.TYPE,
             de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Leave.CODEC);
+        // The duel disk shop, and the hub's way into all three shops.
+        serverbound(de.cas_ual_ty.dueldimension.shop.DiskShopMessages.RequestShop.TYPE,
+            de.cas_ual_ty.dueldimension.shop.DiskShopMessages.RequestShop.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.shop.DiskShopMessages.OpenDiskShop.TYPE,
+            de.cas_ual_ty.dueldimension.shop.DiskShopMessages.OpenDiskShop.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.shop.DiskShopMessages.BuyDisk.TYPE,
+            de.cas_ual_ty.dueldimension.shop.DiskShopMessages.BuyDisk.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.shop.DiskShopMessages.SetActiveDisk.TYPE,
+            de.cas_ual_ty.dueldimension.shop.DiskShopMessages.SetActiveDisk.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.shop.DiskShopMessages.BuyStarter.TYPE,
+            de.cas_ual_ty.dueldimension.shop.DiskShopMessages.BuyStarter.CODEC);
+
+        clientbound(de.cas_ual_ty.dueldimension.duel.dueldisk.DiskMessages.WornDisk.TYPE,
+            de.cas_ual_ty.dueldimension.duel.dueldisk.DiskMessages.WornDisk.CODEC);
+
+        // Wearing the duel disk, asked for by the hotkey.
+        serverbound(de.cas_ual_ty.dueldimension.duel.dueldisk.DiskMessages.ToggleDisk.TYPE,
+            de.cas_ual_ty.dueldimension.duel.dueldisk.DiskMessages.ToggleDisk.CODEC);
+
+        // The opening toss: the result goes out to both seats, the winner's
+        // answer comes back from one.
+        clientbound(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CoinToss.TYPE,
+            de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CoinToss.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.TurnChoice.TYPE,
+            de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.TurnChoice.CODEC);
 
         // The card shop, and the pack a purchase opens.
         clientbound(de.cas_ual_ty.dueldimension.shop.ShopMessages.SyncPoints.TYPE,
@@ -240,6 +267,24 @@ public final class DdNetwork
                 de.cas_ual_ty.dueldimension.duel.match.DuelLobby.ready(player, message.ready()));
         onServer(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Leave.TYPE,
             (message, player) -> de.cas_ual_ty.dueldimension.duel.match.DuelLobby.leave(player));
+        onServer(de.cas_ual_ty.dueldimension.shop.DiskShopMessages.RequestShop.TYPE,
+            (message, player) -> de.cas_ual_ty.dueldimension.shop.DiskShopMessages.RequestShop
+                .open(player, message.kind()));
+        onServer(de.cas_ual_ty.dueldimension.shop.DiskShopMessages.BuyDisk.TYPE,
+            (message, player) -> de.cas_ual_ty.dueldimension.shop.DiskShopMessages.BuyDisk
+                .sell(player, message.disk()));
+        onServer(de.cas_ual_ty.dueldimension.shop.DiskShopMessages.BuyStarter.TYPE,
+            (message, player) -> de.cas_ual_ty.dueldimension.shop.DiskShopMessages.BuyStarter
+                .sell(player, message.starter()));
+        onServer(de.cas_ual_ty.dueldimension.shop.DiskShopMessages.SetActiveDisk.TYPE,
+            (message, player) -> de.cas_ual_ty.dueldimension.shop.DiskShopMessages.SetActiveDisk
+                .apply(player, message.disk()));
+        onServer(de.cas_ual_ty.dueldimension.duel.dueldisk.DiskMessages.ToggleDisk.TYPE,
+            (message, player) ->
+                de.cas_ual_ty.dueldimension.duel.dueldisk.WornDisks.toggle(player));
+        onServer(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.TurnChoice.TYPE,
+            (message, player) -> de.cas_ual_ty.dueldimension.duel.match.DuelLobby
+                .chooseTurn(player, message.goFirst()));
 
         onServer(de.cas_ual_ty.dueldimension.carditeminventory.CIIMessages.ChangePage.TYPE,
             (message, player) -> de.cas_ual_ty.dueldimension.carditeminventory.CIIMessages
@@ -313,6 +358,10 @@ public final class DdNetwork
                 .set(payload.player(), payload.outfit()));
 
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            ProfilePayloads.EngineUnknown.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.clientutil.hub.EditorState
+                .setEngineUnknown(payload.codes()));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
             ProfilePayloads.SyncFreeMode.TYPE,
             (payload, context) ->
             {
@@ -359,6 +408,18 @@ public final class DdNetwork
             de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CloseLobby.TYPE,
             (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
                 .closeDuelLobby());
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.duel.dueldisk.DiskMessages.WornDisk.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.clientutil.ClientWornDisks
+                .set(payload.player(), payload.disk(), payload.worn()));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.shop.DiskShopMessages.OpenDiskShop.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
+                .openDiskShop(payload));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CoinToss.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
+                .openCoinToss(payload));
 
         // The shop: opened by the server (clicking the counter is answered
         // with stock and balance), kept honest by it (every purchase comes
@@ -407,6 +468,10 @@ public final class DdNetwork
             de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate.TYPE,
             (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
                 .updateEngineDuel(payload));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OpponentSleeve.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
+                .setOpponentSleeve(payload.sleeve()));
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
             de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.OwnSleeve.TYPE,
             (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy

@@ -34,6 +34,17 @@ public final class HubWidgets
         private Integer labelColour;
         /** Shown while hovered, when a button needs to explain itself. */
         private java.util.List<String> tooltip = java.util.List.of();
+        /**
+         * Whether this button is offered, asked every frame rather than set.
+         * <p>
+         * For a button whose answer can change without the screen rebuilding.
+         * Clear Filters is the case that named this: the deck editor's search
+         * box gives it something to clear on every keystroke, and its responder
+         * deliberately does NOT rebuild the widgets -- a rebuild there drops the
+         * field's focus mid-word -- so the button stayed greyed out over a
+         * filter that was plainly on. Same shape as {@code ChipButton}'s lit.
+         */
+        private java.util.function.BooleanSupplier activeSupplier;
 
         public TextureButton(int x, int y, int width, int height, Component label, OnPress onPress)
         {
@@ -45,6 +56,11 @@ public final class HubWidgets
         public void setLabelColour(int colour)
         {
             labelColour = colour;
+        }
+
+        public void setActiveSupplier(java.util.function.BooleanSupplier supplier)
+        {
+            activeSupplier = supplier;
         }
 
         public void setTooltipLines(java.util.List<String> lines)
@@ -61,6 +77,13 @@ public final class HubWidgets
         protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
             float partialTick)
         {
+            // Answered before the surface is chosen, and written back to
+            // `active` so the CLICK agrees with the picture rather than only
+            // the paint doing.
+            if(activeSupplier != null)
+            {
+                active = activeSupplier.getAsBoolean();
+            }
             int row = !active ? NineSlice.DISABLED
                 : isHoveredOrFocused() ? NineSlice.HOVER : NineSlice.IDLE;
             NineSlice.draw(graphics, HubTextures.BUTTON, getX(), getY(), getWidth(), getHeight(),

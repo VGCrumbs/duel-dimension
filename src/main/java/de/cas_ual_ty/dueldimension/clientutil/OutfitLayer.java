@@ -36,10 +36,21 @@ public class OutfitLayer extends RenderLayer<AvatarRenderState, PlayerModel>
      * How far the outfit sits outside the skin under it.
      * <p>
      * Both are drawn on the same mesh, so without this they would be exactly
-     * coplanar and fight for every pixel. Small enough to read as clothing
-     * rather than padding — the two surfaces are a quarter of a pixel apart.
+     * coplanar and fight for every pixel.
+     * <p>
+     * It has to clear the player's OWN outer layer, not just their body.
+     * {@code PlayerModel.createMesh} extends whatever deformation it is given
+     * by 0.25 for the hat, jacket, sleeves and pants, so a player wearing a
+     * skin with any opaque jacket pixels already occupies 0.25. An outfit
+     * inflated to 0.25 landed exactly there and z-fought against it, which is
+     * why outfits looked broken for anyone without 3D Skin Layers -- that mod
+     * voxelizes the player's outer layer OFF this plane, so it hid the clash
+     * for everyone who had it installed.
+     * <p>
+     * At 0.5 the outfit's body clears the player's jacket and its own outer
+     * layer sits at 0.75, still under a pixel of padding in total.
      */
-    private static final float INFLATE = 0.25F;
+    private static final float INFLATE = 0.5F;
 
     /**
      * Drawn after the body, as an outer layer is. The same number vanilla's own

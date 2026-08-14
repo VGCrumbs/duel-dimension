@@ -134,7 +134,12 @@ public final class DuelProfiles
         boolean changed = false;
         for(StarterDecks.Entry entry : StarterDecks.ALL)
         {
-            if(profile.unlockedStructures().contains(entry.id()))
+            // Only the protagonist's deck per generation is given; the rest are
+            // bought. A deck already unlocked -- granted here before this rule
+            // existed, or paid for since -- is left alone, so nobody loses a
+            // deck they already had.
+            if(!StarterDecks.isFree(entry.id())
+                || profile.unlockedStructures().contains(entry.id()))
             {
                 continue;
             }

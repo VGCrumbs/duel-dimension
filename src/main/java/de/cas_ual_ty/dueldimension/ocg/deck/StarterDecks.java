@@ -74,6 +74,32 @@ public final class StarterDecks
         KAIBA_RELOADED, YUGI_RELOADED, SABER_FORCE, YUYA, LINK_STRIKE,
         CODEBREAKER);
 
+    /**
+     * The one deck per generation that everybody starts with.
+     * <p>
+     * The protagonist's, in each era: Yugi, Jaden, Yusei, Yuma, Yuya and Link
+     * Strike. The rest are bought.
+     * <p>
+     * Free is a <em>rule</em> and never a stored grant, the same decision
+     * {@code Sleeves.FREE} and {@code DuelDisks.FREE} record: nothing is
+     * written to disk for these, so they cannot be lost, cannot be
+     * double-granted, and a deck added to this set later becomes free for
+     * every existing profile without a migration.
+     */
+    public static final java.util.Set<String> FREE = java.util.Set.of(
+        "yugi", "jaden", "yusei", "yuma", "yuya", "link_strike");
+
+    public static boolean isFree(String id)
+    {
+        return FREE.contains(id);
+    }
+
+    /** Everything else is stock. */
+    public static boolean isPurchasable(String id)
+    {
+        return id != null && !isFree(id) && ALL.stream().anyMatch(e -> e.id().equals(id));
+    }
+
     private StarterDecks()
     {
     }

@@ -180,9 +180,32 @@ EDOPro's own textures, with per-file copyright preserved verbatim in
 Icematoro, NaimSantos, LogicalNonsense and Argon Sun each hold copyright on part
 of it, under AGPL-3.0-or-later or GPL-2.0.
 
+Argon Sun's nine Fluorohydride textures in that set are **GPL-2.0**, not AGPL,
+and `fabric.mod.json` declares `GPL-2.0-only` for them — the notice says
+`GNU GPLv2` without "or later", so the narrower id is the one that claims
+nothing extra.
+
 The card backs under `textures/duel/backs/` and the sleeve art under
 `textures/item/*/sleeves_*.png` are **not** EDOPro's and are not covered by that
 licence.
+
+## The card backs
+
+`textures/duel/backs/tcg.png` and `backs/anime.png` are the **project author's
+own work**, supplied for this mod, and are distributed under the project's own
+licence. A review flagged them as shipping with no recorded permission; this is
+that record. They replaced Icematoro's AGPL `cover.png`/`cover2.png`, which is
+why those two no longer appear above and no longer exist in the tree.
+
+## The duelist skins
+
+`textures/entity/duelist/{joey,kaiba,yusei}.png` are fan-made Minecraft skins by
+**JudaiVox**, **XyaMorph** and **Daiosity** respectively. Their own credits file
+required permission to be confirmed with each author before public distribution;
+the project author states that permission has been obtained. See
+`textures/entity/duelist/CREDITS.md` and `textures/entity/outfit/credits.nfo`,
+which carry the author names and source links. For the sleeves that is settled — see the section below. For the two
+card backs it is not: they are on the unresolved list.
 
 ## Sleeve art and the Patreon card art
 
@@ -207,9 +230,21 @@ unresolved.
 ## Unresolved — shipped, and nobody here knows whose
 
 This section exists so these are not mistaken for things that have been checked.
-Every file named below is in the released jar today and appears in no credits
-file in this repository. No claim is made about what any of it is; the point is
-that the question is open and needs an answer from whoever added them.
+Every file named below is in the released jar today, and either appears in no
+credits file in this repository or appears in one that records an origin without
+a grant. No claim is made about what any of it is; the point is that the
+question is open and needs an answer from whoever added them.
+
+**How the list was arrived at.** Every binary asset in the built jar — 576
+`.png` and `.ogg` files under `assets/dueldimension/` — was hashed against
+`YgoDuelingMod`, against the EDOPro install, and against this project's own
+Forge tree. 453 files match `YgoDuelingMod` (GPL-3.0) and 67 match the Forge
+tree; **56 match nothing**, and those 56 plus the three "YGOPro Percy" sound
+effects are what is listed here. An earlier pass worked from commit history
+instead and put the figure at forty-six; hashing found the card backs and the
+duelist skins as well.
+
+**Fifty-two files, 10,203,781 bytes.**
 
 **Seven audio files, 5,529,237 bytes.** `sounds/duel/EDOPRO_SOUND_CREDITS.md`
 does have a background-music section, but it names different files by different
@@ -227,16 +262,52 @@ among them:
 `textures/misc/orichalcos_seal.png` (328,676 bytes) is in the same position. It
 exists only in the Fabric tree — the Forge tree has no file matching
 `*orichalcos*` at all — and the commit that added it describes the feature at
-length without naming a source.
+length without naming a source. `textures/item/16/orichalcos_debug.png` (1,016
+bytes), the item icon added by that same commit, matches nothing upstream
+either and is on the same footing.
 
 **Three EDOPro sound effects with no licence stated.**
-`sounds/duel/EDOPRO_SOUND_CREDITS.md` gives CC0 or CC BY 3.0 for seventeen of
-the twenty SFX shipped, and for these three says only "YGOPro Percy sound
-effects" — which names an origin, not a grant:
+`sounds/duel/EDOPRO_SOUND_CREDITS.md` names twenty SFX and gives CC0 or CC BY
+3.0 for seventeen of them. Seventeen of the twenty are actually shipped —
+`chatmessage`, `playerenter` and `removecounter` are not — and of those
+seventeen, eleven are CC0, three are CC BY 3.0 (`coinflip`, `diceroll`, `draw`),
+and for these three the file says only "YGOPro Percy sound effects", which names
+an origin, not a grant:
 
     sounds/duel/activate.ogg                     41,817
     sounds/duel/specialsummon.ogg                39,001
     sounds/duel/destroyed.ogg                    23,409
+
+**The two card backs — 631,409 bytes.**
+
+    textures/duel/backs/tcg.png                 604,176
+    textures/duel/backs/anime.png                27,233
+
+`textures/duel/EDOPRO_CREDITS.md` and `textures/duel/LICENSE.md` both say these
+were "supplied for this mod" and are **not** EDOPro's — which says what they are
+not and nothing about what they are. They replaced Icematoro's AGPL `cover.png`
+and `cover2.png` (both still present in the Forge tree, both gone from this
+one), and they match no file in `YgoDuelingMod`, in the EDOPro install or in the
+Forge tree. One of the two is the retail TCG card back, whose design is
+Konami's.
+
+**The three duelist skins — 5,436 bytes.**
+
+    textures/entity/duelist/joey.png                985
+    textures/entity/duelist/kaiba.png             1,382
+    textures/entity/duelist/yusei.png             3,069
+
+These have a credits file of their own,
+`textures/entity/duelist/CREDITS.md`, which ships inside the jar. It names
+JudaiVox for Joey and xyamorph for Kaiba, records Yusei's author as "unknown",
+and then says in its own words:
+
+> "if this project is ever distributed publicly, confirm permission with each
+> author first — fan skins are not automatically licensed for redistribution."
+
+The repository is public and the jar ships all three. That confirmation has not
+been made, and it is the one item on this list where the project has already
+written down what needs doing.
 
 **The five `sleeves_millenium_*` designs** — 35 files, 3,603,780 bytes. They are
 in neither `YgoDuelingMod` nor the Forge tree, `git status` showed all of them

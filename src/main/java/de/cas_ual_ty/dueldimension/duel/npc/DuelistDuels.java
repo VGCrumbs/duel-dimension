@@ -359,14 +359,22 @@ public final class DuelistDuels
             ^ second.getUUID().getMostSignificantBits();
         long[] seeds = {seed | 1, seed * 31 + 7, seed * 131 + 17, ~seed};
 
-        PromptTranslator translator = new PromptTranslator(engine.cards(), engine.descriptions());
+        // A translator EACH. It is stateless but for the select hint, which the
+        // core addresses to one player (generic_duel.cpp:843-857) -- one
+        // instance would let seat 0's caption title seat 1's next selection,
+        // and would make any per-seat state added here a cross-seat leak by
+        // default. The lookup and the seat stay per-call arguments regardless.
+        PromptTranslator translator0 = new PromptTranslator(engine.cards(), engine.descriptions());
+        PromptTranslator translator1 = new PromptTranslator(engine.cards(), engine.descriptions());
         DuelSession[] sessionHolder = new DuelSession[1];
 
         // One responder per player, each posting its prompts under its OWN
         // seat number. The seat is what the drain uses to decide who a
         // question is for, so getting it wrong here would send both players
-        // the same prompts and let either answer for the other.
-        HumanResponseSource seat0 = new HumanResponseSource(translator, (prompt, seat) ->
+        // the same prompts and let either answer for the other. It is also
+        // what rebases every option's controller into the numbering that
+        // player's board is drawn in; see HumanResponseSource.respond.
+        HumanResponseSource seat0 = new HumanResponseSource(translator0, (prompt, seat) ->
         {
             DuelSession running = sessionHolder[0];
             if(running != null)
@@ -374,7 +382,7 @@ public final class DuelistDuels
                 running.postPrompt(prompt, seat.pendingSerial(), 0);
             }
         });
-        HumanResponseSource seat1 = new HumanResponseSource(translator, (prompt, seat) ->
+        HumanResponseSource seat1 = new HumanResponseSource(translator1, (prompt, seat) ->
         {
             DuelSession running = sessionHolder[0];
             if(running != null)
@@ -422,12 +430,17 @@ public final class DuelistDuels
         // information, and their cards are fetched as they reach the field.
         int[] warmUp = ownDeck.main().stream().mapToInt(Integer::intValue).distinct().toArray();
         net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, new PromptMessages.DuelUpdate(null, List.of(), false, "", warmUp));
-        // Their own sleeve only -- the opponent's is theirs to see, not this
-        // player's, and telling each side about the other's would be the start
-        // of leaking deck cosmetics both ways for no gain.
+        // Both sleeves. This used to send only the player's own, on the reasoning
+        // that the opponent's was theirs to see -- but a sleeve is worn by the
+        // CARDS, and the person it is shown to is the opponent. Sending one way
+        // meant nobody ever saw anybody else's. A sleeve name is cosmetic and
+        // reveals nothing about what the deck holds.
         net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
             new PromptMessages.OwnSleeve(
                 de.cas_ual_ty.dueldimension.duel.profile.Sleeves.nameOf(own.sleeve())));
+        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
+            new PromptMessages.OpponentSleeve(
+                de.cas_ual_ty.dueldimension.duel.profile.Sleeves.nameOf(theirs.sleeve())));
     }
 
     /** Routes a client's answer to the seat that is waiting for it. */
@@ -678,6 +691,11 @@ public final class DuelistDuels
                 // deck is a list of passcodes and one Dark Magician is every
                 // other Dark Magician. artsFor takes the list itself, by
                 // identity, so the deck's own list is passed and never a copy.
+                // Says what the server is about to hand the engine, because an
+                // Extra Deck card that turns up in the opening hand can only
+                // come from one of two places -- this list, or the way the
+                // client draws it -- and nothing else distinguishes them.
+                logDeckSplit(player, chosen);
                 return new ChosenDeck(
                     new HeadlessDuelRunner.Deck(chosen.main(), chosen.extra())
                         .wearing(chosen.artsFor(chosen.main()), chosen.artsFor(chosen.extra())),
@@ -1229,6 +1247,32 @@ public final class DuelistDuels
      * handed back untouched, so the disk cannot conjure one, and the deck stays
      * exactly the size and contents it was built as.
      */
+    /**
+     * Logs the main/extra split the duel is starting from, and names any card
+     * in the main list that belongs in the Extra Deck. Diagnostic only: it
+     * reports, and deliberately does not relocate anything, because moving a
+     * card here would hide whichever earlier step put it in the wrong list.
+     */
+    private static void logDeckSplit(ServerPlayer player,
+        de.cas_ual_ty.dueldimension.duel.profile.DeckList deck)
+    {
+        StringBuilder strays = new StringBuilder();
+        for(int code : deck.main())
+        {
+            de.cas_ual_ty.dueldimension.card.properties.Properties card =
+                de.cas_ual_ty.dueldimension.DdDatabase.PROPERTIES_LIST.get((long)code);
+            if(card != null && card.getIsInExtraDeck())
+            {
+                strays.append(strays.isEmpty() ? "" : ", ").append(card.getName())
+                    .append(" (").append(code).append(")");
+            }
+        }
+        de.cas_ual_ty.dueldimension.DuelDimension.log("Duel deck for "
+            + player.getGameProfile().name() + " \"" + deck.name() + "\": main="
+            + deck.main().size() + " extra=" + deck.extra().size()
+            + (strays.isEmpty() ? " (no strays)" : " STRAYS IN MAIN: " + strays));
+    }
+
     private static HeadlessDuelRunner.Deck withChaosDiskPromise(ServerPlayer player,
         HeadlessDuelRunner.Deck deck)
     {
@@ -1236,11 +1280,11 @@ public final class DuelistDuels
         {
             return deck;
         }
-        // The off-hand SLOT, not the hand some use() arrived on: the disk is
-        // worn for the duel, and by now nobody is holding an interaction.
-        net.minecraft.world.item.ItemStack offHand =
-            player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND);
-        if(!offHand.is(de.cas_ual_ty.dueldimension.DdItems.CHAOS_DISK))
+        // The disk SLOT, not a held item: the promise belongs to the disk being
+        // worn for this duel, which is now profile state rather than whatever
+        // happens to be in a hand.
+        if(!de.cas_ual_ty.dueldimension.duel.dueldisk.WornDisks.isWearing(player,
+            de.cas_ual_ty.dueldimension.DdItems.CHAOS_DISK))
         {
             return deck;
         }
@@ -1568,7 +1612,10 @@ public final class DuelistDuels
         }
         if(message instanceof DuelMessage.Win win)
         {
-            return new DuelEvent(DuelEvent.Kind.WIN, 0, -1, -1, win.reason(), win.winner());
+            // Relative like every other event here. A draw is winner 2, which
+            // is nobody's side of the table, so only a real winner is rebased.
+            return new DuelEvent(DuelEvent.Kind.WIN, 0, -1, -1, win.reason(),
+                win.winner() < 2 ? side(win.winner(), viewer) : win.winner());
         }
         return null;
     }

@@ -22,11 +22,33 @@ import net.minecraft.network.chat.Component;
 public class DuelHubScreen extends Screen
 {
     /** The panel's size, and the tab strip's, straight from the Forge layout. */
-    private static final int WIDTH = 460;
-    private static final int HEIGHT = 280;
+    /**
+     * The panel's AUTHORED size, and now only a ceiling.
+     * <p>
+     * Fixed, it was larger than the window at small sizes and small GUI scales:
+     * the tab strip was cropped off the top and Close off the bottom, with no
+     * way to reach either. A panel is as big as the window allows, never more,
+     * so the size is measured per init and these two are what it aims for.
+     */
+    private static final int WIDTH_MAX = 460;
+    private static final int HEIGHT_MAX = 280;
+
+    /** This window's panel size: the authored one, shrunk to fit if it must. */
+    private int WIDTH = WIDTH_MAX;
+    private int HEIGHT = HEIGHT_MAX;
     private static final int PAD = 10;
+    /**
+     * The authored tab width, and now only a ceiling.
+     * <p>
+     * Four tabs at 92 fitted the strip exactly; a fifth pushed the last one 36
+     * units past the panel's right edge. A tab strip's width is a fact about
+     * how many tabs there are, so it is worked out rather than written down --
+     * see {@link #tabW()}. Kept as the maximum so three tabs never stretch into
+     * banners.
+     */
     private static final int TAB_W = 92;
     private static final int TAB_H = 22;
+    private static final int TAB_GAP = 4;
 
     /** How wide one wardrobe tile is, and how tall the figure inside it stands. */
     private static final int TILE_W = 78;
@@ -67,6 +89,7 @@ public class DuelHubScreen extends Screen
         PROFILE("Profile", ""),
         DECKS("Decks", ""),
         OUTFIT("Outfit", ""),
+        SHOP("Shop", ""),
         SETTINGS("Settings", "");
 
         private final String label;
@@ -172,6 +195,10 @@ public class DuelHubScreen extends Screen
     @Override
     protected void init()
     {
+        // Measured before anything is placed, because every position below is
+        // derived from these two and from left/top.
+        WIDTH = Math.min(WIDTH_MAX, width - PAD * 2);
+        HEIGHT = Math.min(HEIGHT_MAX, height - PAD * 2);
         left = (width - WIDTH) / 2;
         top = (height - HEIGHT) / 2;
         rebuild();
@@ -180,17 +207,18 @@ public class DuelHubScreen extends Screen
     private void rebuild()
     {
         clearWidgets();
+        int tabW = tabW();
         int tabX = left + PAD;
         for(Section candidate : Section.values())
         {
             Section target = candidate;
-            addRenderableWidget(new HubWidgets.TabButton(tabX, top + PAD, TAB_W, TAB_H,
+            addRenderableWidget(new HubWidgets.TabButton(tabX, top + PAD, tabW, TAB_H,
                 Component.literal(candidate.label), () -> section == target, pressed ->
             {
                 section = target;
                 rebuild();
             }));
-            tabX += TAB_W + 4;
+            tabX += tabW + TAB_GAP;
         }
 
         int bodyTop = top + PAD + TAB_H + 8;
@@ -242,6 +270,22 @@ public class DuelHubScreen extends Screen
         if(section == Section.OUTFIT && EditorState.isSynced())
         {
             buildOutfitRows(top + PAD + TAB_H + 8);
+        }
+
+        if(section == Section.SHOP)
+        {
+            int shopX = left + PAD + 8;
+            int shopY = bodyTop + 44;
+            // Two buttons, not three: the duel disks are reached by clicking
+            // the disk slot in the inventory, and a second door to the same
+            // room is a second thing to keep in step.
+            int shopW = (WIDTH - PAD * 2 - 16 - 8) / 2;
+            addRenderableWidget(new HubWidgets.TextureButton(shopX, shopY, shopW, 20,
+                Component.literal("Cards"), pressed -> openShop(
+                    de.cas_ual_ty.dueldimension.shop.DiskShopMessages.RequestShop.CARDS)));
+            addRenderableWidget(new HubWidgets.TextureButton(shopX + shopW + 8, shopY, shopW, 20,
+                Component.literal("Sleeves"), pressed -> openShop(
+                    de.cas_ual_ty.dueldimension.shop.DiskShopMessages.RequestShop.SLEEVES)));
         }
 
         // The mat picker is rebuilt with the tab rather than kept, so it always
@@ -464,6 +508,9 @@ public class DuelHubScreen extends Screen
             // and painted "Not ported yet:" under the tiles, where the corner
             // of it showed between them.
             case OUTFIT -> { }
+            // SHOP is three buttons and a line of explanation; the buttons are
+            // widgets, added in init(), so there is nothing to paint under them.
+            case SHOP -> shopPanel(graphics, bodyTop);
             default -> waiting(graphics, bodyTop);
         }
 
@@ -617,6 +664,38 @@ public class DuelHubScreen extends Screen
     }
 
     /** A section whose body has not been ported, saying what it waits on. */
+    /**
+     * The Shop tab's body: a line saying what this is, under the three buttons
+     * added in {@link #init()}. The balance is not shown here because each shop
+     * shows its own, sent with its stock -- a second copy here would be a copy
+     * that could disagree.
+     */
+    private void shopPanel(GuiGraphicsExtractor graphics, int bodyTop)
+    {
+        // No caption: two labelled buttons say what this is, and a sentence
+        // explaining them was a sentence to read every time.
+        graphics.text(font, "Shop", left + PAD + 8, bodyTop + 8, 0xFFF4D089, true);
+    }
+
+    /**
+     * One tab's width: the strip shared between however many tabs there are,
+     * never wider than the authored {@link #TAB_W}. Floored well above the
+     * longest label so a sixth tab shrinks the strip rather than clipping text.
+     */
+    private int tabW()
+    {
+        int count = Section.values().length;
+        int room = WIDTH - PAD * 2 - TAB_GAP * (count - 1);
+        return Math.max(48, Math.min(TAB_W, room / count));
+    }
+
+    /** Asks the server to open one; it answers with the stock and the balance. */
+    private void openShop(String kind)
+    {
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+            new de.cas_ual_ty.dueldimension.shop.DiskShopMessages.RequestShop(kind));
+    }
+
     private void waiting(GuiGraphicsExtractor graphics, int bodyTop)
     {
         graphics.text(font, section.label, left + PAD + 8, bodyTop + 8, 0xFFF4D089, true);

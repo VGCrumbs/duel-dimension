@@ -129,7 +129,15 @@ public class HeadlessDuelRunner
         private OcgDuel.PlayerConfig team2 = OcgDuel.PlayerConfig.DEFAULT;
         private OcgDuel.CardProvider cards = code -> null;
         private OcgDuel.ScriptProvider scripts = name -> null;
-        private OcgDuel.LogSink log = (message, type) -> {};
+        /**
+         * Forwards to the game log by DEFAULT rather than requiring every
+         * caller to remember, because the caller that forgets is the one whose
+         * duel is going wrong. A silent sink here cost four rounds of reading
+         * the wrong half of the codebase: the core was reporting "unknown card
+         * code 40706444" on every duel while an Xyz monster was being rerouted
+         * into the main deck, and nothing was listening.
+         */
+        private OcgDuel.LogSink log = HeadlessDuelRunner::logFromCore;
         private final Deck[] decks = {Deck.EMPTY, Deck.EMPTY};
         private final ResponseSource[] responders = new ResponseSource[2];
         private boolean stopOnWin = true;
@@ -222,8 +230,21 @@ public class HeadlessDuelRunner
      */
     public static OcgDuel.ScriptProvider cardScriptsDirectory(Path root)
     {
+        return cardScriptsDirectories(List.of(root));
+    }
+
+    /**
+     * The same, over several checkouts searched in order. EDOPro keeps the
+     * scripts printed since its installer was cut in a separate repository, so
+     * the current one has to be searched BEFORE the base install or a stale
+     * copy of a rewritten card shadows its errata.
+     */
+    public static OcgDuel.ScriptProvider cardScriptsDirectories(List<Path> roots)
+    {
         return name ->
         {
+            for(Path root : roots)
+            {
             for(Path candidate : new Path[] {root.resolve(name), root.resolve("official").resolve(name)})
             {
                 if(Files.isRegularFile(candidate))
@@ -237,6 +258,7 @@ public class HeadlessDuelRunner
                         return null;
                     }
                 }
+            }
             }
             return null;
         };
@@ -601,6 +623,31 @@ public class HeadlessDuelRunner
      */
     // Package-private rather than private so the ordering guarantee can be
     // tested without the native engine, which is 32-bit and Windows-only.
+    /**
+     * The core's own log, named by kind so an engine complaint is not mistaken
+     * for one of ours. Script output is the loudest and least urgent of the
+     * four, so it goes to debug; everything else is worth seeing.
+     */
+    private static void logFromCore(String message, int type)
+    {
+        String kind = switch(type)
+        {
+            case OcgConstants.LOG_TYPE_ERROR -> "error";
+            case OcgConstants.LOG_TYPE_FROM_SCRIPT -> "script";
+            case OcgConstants.LOG_TYPE_FOR_DEBUG -> "debug";
+            default -> "core";
+        };
+        String line = "ocgcore [" + kind + "]: " + message;
+        if(type == OcgConstants.LOG_TYPE_FROM_SCRIPT || type == OcgConstants.LOG_TYPE_FOR_DEBUG)
+        {
+            de.cas_ual_ty.dueldimension.DuelDimension.debug(line);
+        }
+        else
+        {
+            de.cas_ual_ty.dueldimension.DuelDimension.log(line);
+        }
+    }
+
     static void placeGuaranteed(List<Integer> main, int passcode)
     {
         placeGuaranteed(main, passcode, null);
@@ -676,9 +723,14 @@ public class HeadlessDuelRunner
                     // first payload byte, meaning nothing, chose which player
                     // was asked.
                     rejections++;
-                    for(ResponseSource responder : config.responders)
+                    // Told to the ONE responder whose answer was refused, which
+                    // is whoever the still-standing question was asked of. Told
+                    // to both, seat 1's illegal click titled seat 0's next
+                    // prompt "Not allowed: ..." -- a rejection for a move that
+                    // player never made.
+                    if(lastMessage != null)
                     {
-                        responder.onAnswerRejected();
+                        config.responders[lastMessage.promptedPlayer() & 1].onAnswerRejected();
                     }
                     continue;
                 }

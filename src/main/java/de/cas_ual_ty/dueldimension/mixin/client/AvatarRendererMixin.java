@@ -41,6 +41,52 @@ public class AvatarRendererMixin
         {
             carrier.dueldimension$setOutfit(OutfitSkins.worn(player));
         }
+        if(entity instanceof AbstractClientPlayer player
+            && state instanceof net.minecraft.client.renderer.entity.state.AvatarRenderState avatar)
+        {
+            dueldimension$wearDisk(player, avatar);
+        }
+    }
+
+    /**
+     * Draws the duel disk in the off hand while it is the active one.
+     * <p>
+     * The disk is not an item in that slot -- the player's shield is still
+     * sitting there untouched, and comes straight back when the disk is turned
+     * off. What changes is only which of the two the render state carries, so
+     * "switch which item is active" is exactly what this does and nothing is
+     * ever swapped, consumed or lost.
+     * <p>
+     * The off hand is the arm that is not the main one, so this follows a
+     * left-handed player without a second case.
+     */
+    @org.spongepowered.asm.mixin.Unique
+    private void dueldimension$wearDisk(AbstractClientPlayer player,
+        net.minecraft.client.renderer.entity.state.AvatarRenderState state)
+    {
+        net.minecraft.world.item.ItemStack disk =
+            de.cas_ual_ty.dueldimension.clientutil.DiskSlotOverlay.wornDiskFor(player);
+        if(disk.isEmpty())
+        {
+            return;
+        }
+        // The resolver owns "turn this stack into something drawable"; the
+        // render state only carries the result.
+        net.minecraft.client.renderer.item.ItemModelResolver resolver =
+            net.minecraft.client.Minecraft.getInstance().getItemModelResolver();
+        boolean offHandIsLeft = state.mainArm == net.minecraft.world.entity.HumanoidArm.RIGHT;
+        if(offHandIsLeft)
+        {
+            state.leftHandItemStack = disk;
+            resolver.updateForLiving(state.leftHandItemState, disk,
+                net.minecraft.world.item.ItemDisplayContext.THIRD_PERSON_LEFT_HAND, player);
+        }
+        else
+        {
+            state.rightHandItemStack = disk;
+            resolver.updateForLiving(state.rightHandItemState, disk,
+                net.minecraft.world.item.ItemDisplayContext.THIRD_PERSON_RIGHT_HAND, player);
+        }
     }
 
     /**

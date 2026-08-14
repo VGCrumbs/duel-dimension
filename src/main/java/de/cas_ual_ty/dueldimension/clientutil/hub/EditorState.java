@@ -42,6 +42,30 @@ public final class EditorState
     private static Banlist banlist = Banlist.none();
     private static CardQuery<Properties> query;
     private static List<Properties> visible = new ArrayList<>();
+    /**
+     * Passcodes the duel engine does not know, as the SERVER reported them.
+     * <p>
+     * Hidden from the editor entirely: a card the engine has never heard of is
+     * not refused at duel start, it is silently relocated -- an unknown Xyz
+     * ends up in the main deck and is drawn like a normal card. Offering one
+     * for deck building is offering a deck that will not work.
+     */
+    private static java.util.Set<Integer> engineUnknown = java.util.Set.of();
+
+    public static void setEngineUnknown(java.util.List<Integer> codes)
+    {
+        engineUnknown = codes == null || codes.isEmpty()
+            ? java.util.Set.of() : java.util.Set.copyOf(codes);
+        // The pool is memoised behind a dirty flag; without this the cards stay
+        // visible until something else happens to invalidate it.
+        invalidate();
+    }
+
+    /** Whether the engine can actually play this card. */
+    public static boolean engineKnows(int code)
+    {
+        return !engineUnknown.contains(code);
+    }
     private static boolean dirty = true;
     /** Include legal database cards absent from the player's collection. */
     private static boolean showUnowned;
@@ -122,6 +146,10 @@ public final class EditorState
          * How the official editors group a card within its kind. A monster
          * with no explicit type is Normal or Effect depending on whether it
          * has one, which is the distinction those editors draw.
+         * <p>
+         * Qualified by kind, because the names collide across kinds -- see
+         * {@link CardQuery#subTypeKey}. A card with no sub-type still answers
+         * null, which is what makes an unset axis mean "do not narrow".
          */
         @Override
         public String subType(Properties card)
@@ -131,17 +159,19 @@ public final class EditorState
                 de.cas_ual_ty.dueldimension.card.properties.MonsterType type = monster.getMonsterType();
                 if(type != null)
                 {
-                    return type.name;
+                    return CardQuery.subTypeKey(kind(card), type.name);
                 }
-                return monster.hasEffect ? "Effect" : "Normal";
+                return CardQuery.subTypeKey(kind(card), monster.hasEffect ? "Effect" : "Normal");
             }
             if(card instanceof de.cas_ual_ty.dueldimension.card.properties.SpellProperties spell)
             {
-                return spell.spellType == null ? null : spell.spellType.name;
+                return spell.spellType == null ? null
+                    : CardQuery.subTypeKey(kind(card), spell.spellType.name);
             }
             if(card instanceof de.cas_ual_ty.dueldimension.card.properties.TrapProperties trap)
             {
-                return trap.trapType == null ? null : trap.trapType.name;
+                return trap.trapType == null ? null
+                    : CardQuery.subTypeKey(kind(card), trap.trapType.name);
             }
             return null;
         }
@@ -168,6 +198,16 @@ public final class EditorState
             if(monster.getIsPendulum())
             {
                 carried.add(PENDULUM);
+            }
+            // Tuner is a flag rather than an ability name, exactly as Pendulum
+            // is, and it lives on LEVEL monsters only -- Xyz and Link carry no
+            // such field and their JSON has no such key, which is why this is a
+            // type test on the subclass that has it rather than on
+            // MonsterProperties. The query ANDs it rather than reading it as
+            // one of the alternatives here; see CardQuery.tunersOnly.
+            if(card instanceof LevelMonsterProperties levelled && levelled.getIsTuner())
+            {
+                carried.add(CardQuery.TUNER);
             }
             return carried;
         }
@@ -418,6 +458,65 @@ public final class EditorState
     }
 
     /** The player's own builds -- what the Decks view lists. */
+    /**
+     * Appends a card to a deck that is not the one being edited, and saves it.
+     *
+     * <p>Used by the pack opening screen, where the player is nowhere near the
+     * editor. It writes straight to that deck and sends the whole thing,
+     * because DeckEdits.saveDeck REBUILDS a deck from the payload -- anything
+     * left out of the message is wiped, so a partial "just add this one card"
+     * message would empty the deck it was meant to add to.
+     *
+     * <p>Extra-deck monsters go to the extra deck. Putting a Fusion in the main
+     * deck would make the deck illegal the moment it was saved.
+     *
+     * @return null if it went in, else why it did not
+     */
+    public static String addToDeck(DeckList target, int code)
+    {
+        if(target == null || target.origin().isGranted())
+        {
+            return "That deck cannot be changed";
+        }
+        Properties card = DdDatabase.PROPERTIES_LIST.get((long)code);
+        if(card == null)
+        {
+            return "Unknown card";
+        }
+        DeckList.Part part = card.getIsInExtraDeck() ? DeckList.Part.EXTRA : DeckList.Part.MAIN;
+        List<Integer> cards = target.partFor(part);
+        int limit = part == DeckList.Part.EXTRA ? 15 : 60;
+        if(cards.size() >= limit)
+        {
+            return target.name() + "'s " + (part == DeckList.Part.EXTRA ? "extra" : "main")
+                + " deck is full";
+        }
+        // Three of a card is the game's own limit, and the editor enforces it
+        // too; adding a fourth here would build a deck the editor then refuses.
+        int copies = 0;
+        for(DeckList.Part any : DeckList.Part.values())
+        {
+            for(int held : target.partFor(any))
+            {
+                if(held == code)
+                {
+                    copies++;
+                }
+            }
+        }
+        if(copies >= 3)
+        {
+            return "Already three in " + target.name();
+        }
+        cards.add(code);
+        target.artsFor(cards).add(0);
+        send(new ProfilePayloads.SaveDeck(target.name(),
+            List.copyOf(target.main()), List.copyOf(target.extra()), List.copyOf(target.side()),
+            List.copyOf(target.mainArts()), List.copyOf(target.extraArts()),
+            List.copyOf(target.sideArts())));
+        return null;
+    }
+
     public static List<DeckList> ownDecks()
     {
         return new ArrayList<>(profile.ownDecks());
@@ -638,7 +737,11 @@ public final class EditorState
         {
             return "Granted decks cannot be deleted";
         }
-        if(profile.savedRecipes().size() <= 1)
+        // savedDecks(), not savedRecipes(): the latter also requires
+        // published(), so a player whose decks were all private counted ZERO
+        // and every delete fell into the clear-it branch below -- the deck
+        // emptied and its entry stayed. This is the count that was meant.
+        if(profile.savedDecks().size() <= 1)
         {
             // Clearing it is the same outcome and leaves somewhere to build.
             String name = target.name();
@@ -721,7 +824,8 @@ public final class EditorState
         {
             for(Properties card : DdDatabase.PROPERTIES_LIST)
             {
-                if(card != null && card.getId() > 0 && !card.getIllegal())
+                if(card != null && card.getId() > 0 && !card.getIllegal()
+                    && engineKnows((int)card.getId()))
                 {
                     pool.add(card);
                 }
@@ -731,7 +835,11 @@ public final class EditorState
         for(int code : trunk().all().keySet())
         {
             Properties card = DdDatabase.PROPERTIES_LIST.get((long)code);
-            if(card != null)
+            // Owned but unplayable is still hidden: the collection screen is
+            // where a deck is built, and a card that cannot be duelled with has
+            // no business being offered there. It stays in the Trunk, so it
+            // returns the moment the engine learns it.
+            if(card != null && engineKnows(code))
             {
                 pool.add(card);
             }

@@ -1,5 +1,6 @@
 package de.cas_ual_ty.dueldimension.clientutil;
 
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
@@ -46,6 +47,20 @@ public final class DdBlitUtil
     }
 
     /**
+     * The three images that are already card-shaped and must be drawn whole.
+     * <p>
+     * Same test {@code DuelAnimations.isEdoproArt} makes for the duel field.
+     * Kept as a method rather than a Set so it stays three reference compares
+     * on a path that runs for every card drawn.
+     */
+    private static boolean isPlaceholder(Identifier texture)
+    {
+        return texture.equals(DuelTextures.COVER)
+            || texture.equals(DuelTextures.COVER_OPPONENT)
+            || texture.equals(DuelTextures.UNKNOWN);
+    }
+
+    /**
      * Draws part of a texture into a rectangle.
      *
      * @param u0 v0 u1 v1 the part to sample, in 0..1 of the file
@@ -54,6 +69,30 @@ public final class DdBlitUtil
     public static void blit(GuiGraphicsExtractor graphics, Identifier texture,
         int x, int y, int width, int height,
         float u0, float v0, float u1, float v1, int tint)
+    {
+        blit(graphics, texture, x, y, width, height, u0, v0, u1, v1, tint, false);
+    }
+
+    /**
+     * As above, greyed.
+     * <p>
+     * <b>Ownership is an argument to the draw, not a property of the texture.</b>
+     * It used to be the latter: {@code DuelTextures.cardUnowned} handed back a
+     * third identifier whose bytes the resource pack desaturated on the CPU, so
+     * an unowned card was a second image. Now it is the same file drawn through
+     * a pipeline whose fragment shader takes a luminance. The flag defaults to
+     * false through the overload above rather than being added to it, so a call
+     * site that never learns about ownership fails safe as full colour.
+     * <p>
+     * The tint still multiplies on top and still has the last word — see
+     * {@code card_desaturate.fsh} — so a buried card stays dimmed and an
+     * unowned one can still pulse red.
+     *
+     * @param desaturate whether the player does not own this card
+     */
+    public static void blit(GuiGraphicsExtractor graphics, Identifier texture,
+        int x, int y, int width, int height,
+        float u0, float v0, float u1, float v1, int tint, boolean desaturate)
     {
         // The coloured overload works in texels against a stated file size:
         // it divides the offset by that size and adds the region to reach the
@@ -65,7 +104,50 @@ public final class DdBlitUtil
         // precision: SCALE is far finer than any card image, and the actual
         // file size is deliberately not used -- card art is fetched at runtime
         // and its size is a setting, so nothing here can depend on it.
-        graphics.blit(RenderPipelines.GUI_TEXTURED, texture,
+        //
+        // Nothing is timed here any more. This blit used to be where a first
+        // sighting was paid for, so it was also where it could be measured; the
+        // read and decode are on a worker now and the upload is in
+        // CardImageManager.refreshCachedTextures, so the two halves are timed
+        // separately at the places that actually do them.
+        // A placeholder is NOT letterboxed art. unknown.png is 177x254 -- card
+        // shaped, not a card inside a square -- so sampling it through the card
+        // window draws the middle 60% of it, cropped and stretched. The duel
+        // path has always guarded this per call site; hoisting it here covers
+        // the thirteen hub sites that never did, which only became the common
+        // case once the texture ration started refusing first sightings during
+        // a fast scroll.
+        if(isPlaceholder(texture))
+        {
+            u0 = 0F;
+            v0 = 0F;
+            u1 = 1F;
+            v1 = 1F;
+            // And it is not the card, so it must not be greyed. cardUnowned
+            // returned this same plain UNKNOWN while art was loading, failed or
+            // refused by the texture ration, which is why an unowned card with
+            // no art yet has always drawn in full colour. Carrying that across
+            // is what this line is: the flag arrives unconditionally now, so
+            // without it the placeholder would start greying.
+            desaturate = false;
+        }
+        RenderPipeline pipeline = RenderPipelines.GUI_TEXTURED;
+        if(desaturate)
+        {
+            if(UnownedPipelines.available())
+            {
+                pipeline = UnownedPipelines.GUI;
+            }
+            else
+            {
+                // The shader did not compile. This is a DIM, not a
+                // desaturation -- a multiply cannot remove colour -- and it is
+                // multiplied INTO the caller's tint rather than replacing it so
+                // the deck editor's per-card alpha survives.
+                tint = UnownedPipelines.dimmed(tint);
+            }
+        }
+        graphics.blit(pipeline, texture,
             x, y, u0 * SCALE, v0 * SCALE, width, height,
             Math.round((u1 - u0) * SCALE), Math.round((v1 - v0) * SCALE),
             SCALE, SCALE, tint);

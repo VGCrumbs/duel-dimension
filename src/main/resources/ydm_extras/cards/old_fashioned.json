@@ -1,0 +1,10 @@
+{
+  "id": 900000001,
+  "name": "Old Fashioned",
+  "is_illegal": false,
+  "is_custom": true,
+  "text": "A monster equipped with this card can attack your opponents life points directly.",
+  "images": [],
+  "type": "Spell",
+  "spell_type": "Equip"
+}

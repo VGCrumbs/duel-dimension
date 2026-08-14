@@ -1375,7 +1375,16 @@ public class BoardRenderer
     {
         if(controller != 0)
         {
-            return DuelTextures.COVER_OPPONENT;
+            // The opponent's own sleeve, not a fixed back. Falling through to
+            // COVER_OPPONENT when they have none keeps the two sides distinct
+            // for the common case where only one player has sleeved up.
+            de.cas_ual_ty.dueldimension.card.CardSleevesType theirs =
+                de.cas_ual_ty.dueldimension.clientutil.DuelClientState.opponentSleeve;
+            if(theirs == null || theirs.isCardBack())
+            {
+                return DuelTextures.COVER_OPPONENT;
+            }
+            return theirs.getMainRL(SLEEVE_FIELD_SIZE);
         }
         de.cas_ual_ty.dueldimension.card.CardSleevesType sleeve =
             de.cas_ual_ty.dueldimension.clientutil.DuelClientState.ownSleeve;

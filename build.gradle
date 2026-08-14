@@ -292,12 +292,27 @@ jar {
 
 test {
     useJUnitPlatform()
-    // The engine artefacts live outside the repo; same knobs as the Forge tree,
-    // so the same native-core tests run (and skip themselves when absent).
-    systemProperty 'ocg.lib', project.findProperty('ocgLib') ?: 'native/ocgcore.dll'
-    systemProperty 'ocg.scripts', project.findProperty('ocgScripts') ?: 'C:/ProjectIgnis/script'
-    systemProperty 'ocg.cdb', project.findProperty('ocgCdb') ?: 'C:/ProjectIgnis/expansions/cards.cdb'
-    systemProperty 'ocg.strings', project.findProperty('ocgStrings') ?: 'C:/ProjectIgnis/config/strings.conf'
+    // THE BUNDLED ENGINE, not this machine's EDOPro install.
+    //
+    // These defaults used to be C:/ProjectIgnis/..., which meant a green suite
+    // proved the engine worked on the developer's machine and said nothing
+    // whatsoever about the copy that actually ships. That is the same
+    // passes-for-the-wrong-reason trap that hid every portability fault until a
+    // reviewer went looking: the artefact a player receives was never the thing
+    // under test.
+    //
+    // Pointing them at bundle/ makes the suite exercise exactly what goes into
+    // the jar. The -PocgLib / -PocgScripts / -PocgCdb / -PocgStrings overrides
+    // still work, so a run against a real EDOPro install is one flag away.
+    def enginePayload = rootProject.file('bundle/payload/dueldimension_engine')
+    systemProperty 'ocg.lib', project.findProperty('ocgLib')
+        ?: new File(enginePayload, 'native/win32-x86-64/ocgcore.dll').absolutePath
+    systemProperty 'ocg.scripts', project.findProperty('ocgScripts')
+        ?: rootProject.file('bundle/script').absolutePath
+    systemProperty 'ocg.cdb', project.findProperty('ocgCdb')
+        ?: new File(enginePayload, 'expansions/cards.cdb').absolutePath
+    systemProperty 'ocg.strings', project.findProperty('ocgStrings')
+        ?: new File(enginePayload, 'config/strings.conf').absolutePath
 }
 
 // javac stops at 100 errors by default, which hides how much is actually left

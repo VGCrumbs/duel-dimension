@@ -84,6 +84,9 @@ public final class CardQuery<C>
          * monster's Fusion/Synchro/Xyz/Link/Ritual, a spell's Quick-Play or
          * Field, a trap's Counter. Null when it has none, which is what a
          * plain Normal monster has.
+         * <p>
+         * Qualified by kind, through {@link CardQuery#subTypeKey}, because the
+         * names are not unique across kinds -- see that method.
          */
         String subType(C card);
 
@@ -129,8 +132,27 @@ public final class CardQuery<C>
      */
     private boolean favouritesOnly;
     private Set<Long> favourites = java.util.Set.of();
+    /**
+     * Narrow to tuners.
+     * <p>
+     * Its own axis rather than a value in {@link #abilities}, and that is the
+     * whole point of it: that set is OR-within, so Tuner and Pendulum chosen
+     * there together would WIDEN to their union -- while a player asking for
+     * both means the twelve cards that are both. A boolean beside the set ANDs
+     * with it instead.
+     */
+    private boolean tunersOnly;
     private Sort sort = Sort.NAME;
     private boolean descending;
+
+    /**
+     * Tuner, as a filter value.
+     * <p>
+     * The constant lives here because {@link #matches} names it directly.
+     * {@code EditorState.PENDULUM} stays where it is: that value is only ever
+     * compared inside the ability set and is never named by the query.
+     */
+    public static final String TUNER = "Tuner";
 
     public CardQuery(Facets<C> facets)
     {
@@ -160,11 +182,122 @@ public final class CardQuery<C>
         {
             kinds.add(kind);
         }
+        dropInapplicable();
+    }
+
+    /**
+     * The kinds a card in the pool can be.
+     * <p>
+     * What is lit, or all three when nothing is: an empty set means "do not
+     * narrow", so it is every kind rather than none. That is also the state the
+     * bar opens in and the state Clear Filters returns it to, which is why the
+     * sub-filters have to be offered for it.
+     */
+    public Set<Kind> kindsInPool()
+    {
+        return kinds.isEmpty() ? EnumSet.allOf(Kind.class) : EnumSet.copyOf(kinds);
+    }
+
+    /**
+     * Drops every value on an axis the bar can no longer show a control for.
+     * <p>
+     * Here rather than in the screen because this query outlives the screen: a
+     * filter cleared only while the widgets were being rebuilt would still be
+     * narrowing the trunk the next time the editor opened, with nothing on
+     * screen to say so.
+     */
+    private void dropInapplicable()
+    {
+        Set<Kind> pool = kindsInPool();
+        retainSubTypes(pool);
+        if(!pool.contains(Kind.MONSTER))
+        {
+            // Attribute, species, ability and tuner are monster properties, and
+            // a band excludes every non-monster outright (see withinBand), so an
+            // ATK band left set with only SPELL lit is a permanently empty pool
+            // with no visible cause.
+            clearAttributes();
+            clearSpecies();
+            clearAbilities();
+            tunersOnly = false;
+            clearBands();
+        }
+    }
+
+    /** Drops every sub-type whose kind is not among {@code keep}. */
+    public void retainSubTypes(java.util.Collection<Kind> keep)
+    {
+        subTypes.removeIf(key ->
+        {
+            for(Kind kind : keep)
+            {
+                if(key.startsWith(kind.name() + "/"))
+                {
+                    return false;
+                }
+            }
+            return true;
+        });
     }
 
     public Set<String> attributes()
     {
         return attributes;
+    }
+
+    public void clearAttributes()
+    {
+        attributes.clear();
+    }
+
+    public void clearSpecies()
+    {
+        species.clear();
+    }
+
+    public void clearAbilities()
+    {
+        abilities.clear();
+    }
+
+    /** Both ends of all three bands back to unbounded. */
+    public void clearBands()
+    {
+        minLevel = 0;
+        maxLevel = 0;
+        minAttack = -1;
+        maxAttack = -1;
+        minDefence = -1;
+        maxDefence = -1;
+    }
+
+    /**
+     * A sub-type value, qualified by the kind that owns it.
+     * <p>
+     * The names are NOT unique across kinds: "Normal" is a monster type, a
+     * spell type and a trap type; "Continuous" is a spell type and a trap type;
+     * "Ritual" is a monster type and a spell type. Matched by bare name, one
+     * entry therefore meant several things at once -- one "Continuous" that
+     * found 503 spells and 558 traps together, and one "Ritual" that found 148
+     * Ritual Monsters alongside 82 Ritual Spells. The key carries its kind, so
+     * a Continuous Trap can be asked for as a Continuous Trap.
+     */
+    public static String subTypeKey(Kind kind, String label)
+    {
+        return kind.name() + "/" + label;
+    }
+
+    /**
+     * The label out of a key, for showing what is chosen.
+     * <p>
+     * A value with no kind on it comes back unchanged, so the axes that are not
+     * qualified -- attribute, species, ability -- can be shown through this too
+     * rather than needing a second path.
+     */
+    public static String subTypeLabel(String key)
+    {
+        int i = key.indexOf('/');
+        return i < 0 ? key : key.substring(i + 1);
     }
 
     public void toggleAttribute(String attribute)
@@ -256,6 +389,16 @@ public final class CardQuery<C>
         favouritesOnly = value;
     }
 
+    public boolean tunersOnly()
+    {
+        return tunersOnly;
+    }
+
+    public void setTunersOnly(boolean value)
+    {
+        tunersOnly = value;
+    }
+
     /** The starred cards, as ids. Replaced whenever the profile changes. */
     public void setFavourites(Set<Long> value)
     {
@@ -312,6 +455,7 @@ public final class CardQuery<C>
         subTypes.clear();
         abilities.clear();
         favouritesOnly = false;
+        tunersOnly = false;
         minLevel = 0;
         maxLevel = 0;
         minAttack = -1;
@@ -323,7 +467,8 @@ public final class CardQuery<C>
     /** True when nothing is narrowing, so the UI can grey out Clear. */
     public boolean isClear()
     {
-        return text.isEmpty() && !favouritesOnly && kinds.isEmpty() && attributes.isEmpty()
+        return text.isEmpty() && !favouritesOnly && !tunersOnly && kinds.isEmpty()
+            && attributes.isEmpty()
             && species.isEmpty() && subTypes.isEmpty() && abilities.isEmpty()
             && minLevel == 0 && maxLevel == 0
             && minAttack < 0 && maxAttack < 0 && minDefence < 0 && maxDefence < 0;
@@ -403,6 +548,19 @@ public final class CardQuery<C>
             // Any one of the chosen abilities is enough, matching how the
             // other chip rows read: chips widen, rows narrow.
             if(carried == null || carried.stream().noneMatch(abilities::contains))
+            {
+                return false;
+            }
+        }
+        if(tunersOnly)
+        {
+            // ANDed with the abilities above rather than folded into them, so
+            // "pendulum tuners" is a question that can be asked. Tuner rides in
+            // on the same facet because it is the same shape of thing -- a flag
+            // the card carries -- and adding a facet would have broken every
+            // implementation of the interface for one boolean.
+            java.util.Set<String> carried = facets.abilities(card);
+            if(carried == null || !carried.contains(TUNER))
             {
                 return false;
             }

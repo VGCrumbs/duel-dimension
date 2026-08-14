@@ -37,6 +37,9 @@ public final class HitchWatch
     private static long lastReport;
     private static int reports;
 
+    /** Pipeline requests made during the tick that just ended. */
+    private static int imageRequests;
+
     /**
      * The thread that ticks the client, remembered so it can be sampled.
      * <p>
@@ -62,6 +65,12 @@ public final class HitchWatch
         sampled = false;
         startWatchdog();
 
+        // Read and cleared EVERY tick, not only on a report, or it would count
+        // from the last hitch instead of from the last tick -- so the figure
+        // describes the tick that just ended, which is the one that stalled.
+        imageRequests = ImageHandler.takeRequests();
+        reportFilled();
+
         long now = System.currentTimeMillis();
         long previous = lastTick;
         lastTick = now;
@@ -81,12 +90,93 @@ public final class HitchWatch
         // What this mod could plausibly have been doing. If a hitch lands with
         // all of these at rest, the cause is not here and the next place to
         // look is somewhere else entirely -- which is worth knowing too.
-        LOG.warn("[hitch] client tick took {} ms  |  queued tasks {}, images in flight {},"
-                + " textures loaded info {} / main {}  |  report {}",
-            elapsed, queuedTasks(), ImageHandler.inFlight(),
-            CardRenderUtil.infoTextureBinder == null ? -1 : CardRenderUtil.infoTextureBinder.loaded(),
-            CardRenderUtil.mainTextureBinder == null ? -1 : CardRenderUtil.mainTextureBinder.loaded(),
-            reports);
+        //
+        // "images in flight" proved to be the wrong counter, and it cost several
+        // rounds of reasoning to notice: it sums the download and rescale jobs
+        // on worker threads, so it drops to zero forever the moment a PNG is on
+        // disk. It watches the PRODUCER side of the image pipeline. The cost was
+        // on the consumer side -- TextureManager.getTexture decoding and
+        // uploading inline on the render thread -- so a scroll hitch read zero
+        // by construction. It is kept because a zero that is understood is
+        // still evidence.
+        //
+        // The rest is what covers that side: which screen was open, how much
+        // card art is waiting to be decoded and waiting to be uploaded, how much
+        // the cache believes it is holding, and -- the point of the two figures
+        // being separate -- what each HALF of a first sighting costs.
+        //
+        // Decode is on a worker now, so a stall with a large decode queue and a
+        // healthy upload figure means the workers are behind and the render
+        // thread is not the problem. The signature to look for instead is a
+        // stalled frame with NO uploads recorded against it: that is a card
+        // being realised somewhere other than CardImageManager, which means a
+        // producer bypassed getTextureCard or a release forgot to reset the
+        // status, and either restores the original hitch invisibly.
+        LOG.warn("[hitch] client tick took {} ms  |  screen {}  |  queued tasks {},"
+                + " images in flight {}, pipeline requests {}"
+                + "  |  card art: {} queued, {} decoded, resident {} MB"
+                + "  |  decode {}  |  upload {}  |  report {}",
+            elapsed, screen(), queuedTasks(), ImageHandler.inFlight(),
+            imageRequests,
+            CardImageManager.queued(), CardImageManager.decoded(),
+            CardTextureCache.residentBytes() / (1024L * 1024L),
+            CardTextureCache.decodeCost(), CardTextureCache.uploadCost(), reports);
+    }
+
+    /** Whether card art was still being fetched when this tick started. */
+    private static boolean wasFilling;
+
+    /** When the current fill began, so its length can be reported. */
+    private static long fillingSince;
+
+    /**
+     * Says how long a screen took to fill, once it has.
+     * <p>
+     * <b>Unconditional, and that is the point.</b> Everything else here only
+     * prints on a stall, so a screen that fills slowly WITHOUT hitching -- which
+     * is the second of the two complaints this subsystem exists to answer, and
+     * the one the old ration caused -- printed nothing at all. There was no
+     * record on disk of how long a collection took to come in, only of the
+     * frames that stumbled.
+     * <p>
+     * A fill is over when the request stack and every result queue are empty. At
+     * one line per fill this is a report rather than a stream: a stationary
+     * screen with warm art never enters the state at all.
+     */
+    private static void reportFilled()
+    {
+        boolean filling = CardImageManager.pending() > 0;
+        if(filling && !wasFilling)
+        {
+            fillingSince = System.currentTimeMillis();
+        }
+        else if(!filling && wasFilling)
+        {
+            LOG.info("[card-image] {} filled in {} ms  |  resident {} MB"
+                    + "  |  decode {}  |  upload {}",
+                screen(), System.currentTimeMillis() - fillingSince,
+                CardTextureCache.residentBytes() / (1024L * 1024L),
+                CardTextureCache.decodeCost(), CardTextureCache.uploadCost());
+        }
+        wasFilling = filling;
+    }
+
+    /**
+     * The open screen's class name, or "none".
+     * <p>
+     * {@code Minecraft.screen} is gone in 26.2; {@code gui.screen()} is the
+     * accessor, which is what ClientProxy and DuelClientState already use.
+     * Worth the line: the counters say what kind of work stalled, and this says
+     * where the player was standing when it did.
+     */
+    private static String screen()
+    {
+        net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+        if(client == null || client.gui == null || client.gui.screen() == null)
+        {
+            return "none";
+        }
+        return client.gui.screen().getClass().getSimpleName();
     }
 
     /**

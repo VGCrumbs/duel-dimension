@@ -170,9 +170,41 @@ public class SleeveShopScreen extends Screen
         return layout().i("bottom.height", 46);
     }
 
+    /**
+     * The tile SCALES to the space instead of staying at its authored size.
+     * <p>
+     * A fixed 32 filled a wide window with many tiny sleeves rather than fewer
+     * legible ones -- the authored number is a floor, not the answer. Grown
+     * until the chosen grid fills the room it has, bounded so a small window
+     * still shrinks back to what was drawn for it.
+     */
     private int cellW()
     {
+        int min = layout().i("grid.cellWidth", 32);
+        int max = layout().i("grid.cellWidthMax", 64);
+        int gap = layout().i("grid.gap", 4);
+        int cols = gridColumns();
+        int rows = gridRows();
+        // The REGION, never gridLeft(): that centres the grid using this very
+        // method, so asking it here is infinite recursion -- a StackOverflowError
+        // the moment the screen opens.
+        int roomW = (width - gridRegionLeft() - pad() - gap * (cols - 1)) / Math.max(1, cols);
+        // Height matters as much: a cell is card-shaped, so a wide window with a
+        // short one would otherwise grow tiles straight past the detail box.
+        int roomH = Math.round(((height - bottomHeight() - 12 - gridTop()
+            - gap * (rows - 1)) / (float)Math.max(1, rows)) * DuelTextures.CARD_ASPECT);
+        return Math.max(min, Math.min(max, Math.min(roomW, roomH)));
+    }
+
+    /** The authored cell, which is what the column and row counts are chosen against. */
+    private int baseCellW()
+    {
         return layout().i("grid.cellWidth", 32);
+    }
+
+    private int baseCellH()
+    {
+        return Math.round(baseCellW() / DuelTextures.CARD_ASPECT);
     }
 
     /**
@@ -186,9 +218,24 @@ public class SleeveShopScreen extends Screen
         return Math.round(cellW() / DuelTextures.CARD_ASPECT);
     }
 
-    private int gridLeft()
+    /** The left edge of the grid REGION; the tiles are centred within it below. */
+    private int gridRegionLeft()
     {
         return leftWidth() + pad() * 2;
+    }
+
+    /**
+     * Centred in the space beside the left panel, rather than pinned to it.
+     * <p>
+     * With the tiles scaling, a grid anchored left drifted away from the middle
+     * of the window as it grew; centring keeps the selection under the eye.
+     */
+    private int gridLeft()
+    {
+        int region = width - gridRegionLeft() - pad();
+        int gap = layout().i("grid.gap", 4);
+        int used = gridColumns() * cellW() + gap * (gridColumns() - 1);
+        return gridRegionLeft() + Math.max(0, (region - used) / 2);
     }
 
     private int gridTop()
@@ -199,10 +246,15 @@ public class SleeveShopScreen extends Screen
     /** As many columns as the space allows, so the grid fills a wide window. */
     private int gridColumns()
     {
-        int available = width - gridLeft() - pad();
-        int cell = cellW() + layout().i("grid.gap", 4);
-        return Math.max(1, Math.min(layout().i("grid.maxColumns", 12),
-            available / Math.max(1, cell)));
+        // Also the REGION, for the same reason: gridLeft() centres using this
+        // count, so reading it here would recurse.
+        int available = width - gridRegionLeft() - pad();
+        int cell = baseCellW() + layout().i("grid.gap", 4);
+        int fits = Math.max(1, available / Math.max(1, cell));
+        // Never more columns than there are sleeves, or a full row of empty
+        // tiles is drawn beside the last one.
+        return Math.max(1, Math.min(Math.min(layout().i("grid.maxColumns", 12), fits),
+            Math.max(1, offers.size())));
     }
 
     /** As many rows as fit between the header and the detail box. */
@@ -211,7 +263,11 @@ public class SleeveShopScreen extends Screen
         int bottom = height - bottomHeight() - 12;
         int room = bottom - gridTop();
         int gap = layout().i("grid.gap", 4);
-        return Math.max(1, (room + gap) / (cellH() + gap));
+        int fits = Math.max(1, (room + gap) / (baseCellH() + gap));
+        // No more rows than the stock needs, so the grid is as tall as its
+        // contents rather than as tall as the window.
+        int needed = (offers.size() + gridColumns() - 1) / Math.max(1, gridColumns());
+        return Math.max(1, Math.min(fits, Math.max(1, needed)));
     }
 
     /**
@@ -633,10 +689,34 @@ public class SleeveShopScreen extends Screen
     private void drawSleeve(GuiGraphicsExtractor poseStack, CardSleevesType sleeve,
         int x, int y, int width, int height, int tint)
     {
-        Identifier art = sleeve.getMainRL(ClientProxy.activeCardMainImageSize);
+        // The tier is chosen by how big this is DRAWN, not by the duel field's
+        // setting. cardMainImageSize is 64 by default -- right for a card on the
+        // field, and four times too small for a preview panel three hundred
+        // pixels tall, which is why the preview was visibly pixelated. Sleeves
+        // ship at every tier up to 1024, so asking for a fitting one costs
+        // nothing but the texture that was going to be loaded anyway.
+        Identifier art = sleeve.getMainRL(tierFor(Math.max(width, height)));
         DdBlitUtil.blit(poseStack, art, x, y, width, height,
             DuelTextures.CARD_U0, DuelTextures.CARD_V0,
             DuelTextures.CARD_U1, DuelTextures.CARD_V1, tint);
+    }
+
+    /**
+     * The smallest shipped tier at least as large as the space it fills.
+     * <p>
+     * Bounded by what actually exists: 1024 is the largest sleeve texture, and
+     * asking beyond it would resolve to a missing file rather than a big one.
+     */
+    private static int tierFor(int drawnSize)
+    {
+        for(int tier : new int[] {16, 32, 64, 128, 256, 512, 1024})
+        {
+            if(tier >= drawnSize)
+            {
+                return tier;
+            }
+        }
+        return 1024;
     }
 
     /** A frame of four thin bars, so whatever it rings is untouched. */

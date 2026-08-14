@@ -44,6 +44,146 @@ public final class EngineRuntime
     public record Paths(Path library, Path scriptsDir, Path cdb, Path stringsConf)
     {
         /**
+         * Where a current EDOPro keeps everything it has learned since its
+         * installer was cut.
+         * <p>
+         * EDOPro does NOT merge its updates back into {@code expansions/cards.cdb}
+         * -- that file stays at whatever the installer shipped, and every card
+         * printed since arrives as a delta in this repository instead, with the
+         * matching scripts beside it. Reading only the base is reading a
+         * snapshot that stopped moving the day the install was made, which is
+         * how a card the player owns became a card the engine had never heard
+         * of, and an Xyz monster ended up on top of the main deck.
+         */
+        private static Path deltaRepository()
+        {
+            Path root = edoproRoot();
+            if(root == null)
+            {
+                return null;
+            }
+            Path repository = root.resolve("repositories").resolve("delta-bagooska");
+            return Files.isDirectory(repository) ? repository : null;
+        }
+
+        /**
+         * The card databases to read, in the order they layer: the base first,
+         * then the delta over it. {@link de.cas_ual_ty.dueldimension.ocg.CdbCardProvider}
+         * loads a list in order and later rows win, which is the same rule
+         * EDOPro's own expansions mechanism uses.
+         */
+        public List<Path> cdbChain()
+        {
+            java.util.List<Path> chain = new java.util.ArrayList<>();
+            chain.add(cdb);
+            Path repository = deltaRepository();
+            if(repository != null)
+            {
+                Path delta = repository.resolve("cards.delta.cdb");
+                if(Files.isRegularFile(delta))
+                {
+                    chain.add(delta);
+                }
+            }
+            // Custom cards LAST, so they win. CdbCardProvider merges the list in
+            // order and later rows replace earlier ones, which is EDOPro's own
+            // expansions rule -- and it means a custom entry can also correct a
+            // stock card without editing anybody else's database.
+            for(Path custom : customCdbs())
+            {
+                chain.add(custom);
+            }
+            return List.copyOf(chain);
+        }
+
+        /**
+         * Where custom cards live: {@code dueldimension_custom/} in the game
+         * directory, holding any number of {@code .cdb} files and a
+         * {@code script/} folder beside them.
+         * <p>
+         * Deliberately OUTSIDE both the EDOPro install and {@code ydm_db}. The
+         * first is not ours to write into and updates itself; the second is
+         * deleted recursively whenever the card database is refreshed, which
+         * would take every custom card with it.
+         */
+        public static Path customRoot()
+        {
+            return de.cas_ual_ty.dueldimension.util.GameDir.file("dueldimension_custom").toPath();
+        }
+
+        /**
+         * The passcode block reserved for this mod's custom cards.
+         * <p>
+         * Konami's printed cards are eight digits and stop well below this;
+         * EDOPro's own unofficial sets sit in their own ranges. Nine-digit
+         * codes from 900,000,000 are clear of both, so a custom card can never
+         * collide with a real one -- and a colliding id would not fail loudly,
+         * it would silently replace a real card in the chain.
+         */
+        public static final int CUSTOM_PASSCODE_FIRST = 900_000_000;
+        public static final int CUSTOM_PASSCODE_LAST = 999_999_999;
+
+        /** Whether this id belongs to the custom block. */
+        public static boolean isCustomPasscode(int code)
+        {
+            return code >= CUSTOM_PASSCODE_FIRST && code <= CUSTOM_PASSCODE_LAST;
+        }
+
+        /** Every custom database, sorted so the order is the same on every machine. */
+        public static List<Path> customCdbs()
+        {
+            Path root = customRoot();
+            if(!Files.isDirectory(root))
+            {
+                return List.of();
+            }
+            try(java.util.stream.Stream<Path> files = Files.list(root))
+            {
+                return files.filter(p -> p.getFileName().toString().endsWith(".cdb"))
+                    .filter(Files::isRegularFile)
+                    .sorted()
+                    .toList();
+            }
+            catch(java.io.IOException unreadable)
+            {
+                // An unreadable custom folder is not worth refusing to duel
+                // over; the cards in it simply do not exist this session.
+                de.cas_ual_ty.dueldimension.DuelDimension.warn(
+                    "Could not list " + root + ": " + unreadable.getMessage());
+                return List.of();
+            }
+        }
+
+        /**
+         * The script roots to search, newest first: a card reprinted with an
+         * errata has its corrected script in the delta, and the stale copy in
+         * the base install must not shadow it.
+         */
+        public List<Path> scriptRoots()
+        {
+            java.util.List<Path> roots = new java.util.ArrayList<>();
+            // Custom scripts FIRST: the roots are searched in order and the
+            // first hit wins, so this is the same "custom overrides stock"
+            // precedence the database chain gives, expressed the other way up.
+            Path customScripts = customRoot().resolve("script");
+            if(Files.isDirectory(customScripts))
+            {
+                roots.add(customScripts);
+            }
+            Path repository = deltaRepository();
+            if(repository != null)
+            {
+                Path scripts = repository.resolve("script");
+                if(Files.isDirectory(scripts))
+                {
+                    roots.add(scripts);
+                }
+            }
+            roots.add(scriptsDir);
+            return List.copyOf(roots);
+        }
+
+        /**
          * Where the engine's pieces are, in order of preference.
          * <p>
          * <b>An explicit override, then a real EDOPro, then the copy inside this
@@ -406,9 +546,13 @@ public final class EngineRuntime
         try
         {
             OcgApi api = OcgApi.load(paths.library());
-            CdbCardProvider cards = new CdbCardProvider(List.of(paths.cdb()));
-            OcgDuel.ScriptProvider scripts = HeadlessDuelRunner.cardScriptsDirectory(paths.scriptsDir());
-            DescriptionTable descriptions = new DescriptionTable(paths.stringsConf(), List.of(paths.cdb()));
+            // The base plus whatever EDOPro has learned since, in that order:
+            // reading the base alone is reading the day the install was made.
+            CdbCardProvider cards = new CdbCardProvider(paths.cdbChain());
+            OcgDuel.ScriptProvider scripts =
+                HeadlessDuelRunner.cardScriptsDirectories(paths.scriptRoots());
+            DescriptionTable descriptions =
+                new DescriptionTable(paths.stringsConf(), paths.cdbChain());
             instance = new EngineRuntime(api, cards, scripts, descriptions);
             loadError = null;
             return instance;

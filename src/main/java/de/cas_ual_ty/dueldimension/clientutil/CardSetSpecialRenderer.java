@@ -45,9 +45,23 @@ public class CardSetSpecialRenderer implements SpecialModelRenderer<CardSet>
 
         // The front: the set's own art if it is a real set, otherwise the blanc
         // back again (Forge drew set art only when set != CardSet.DUMMY).
-        Identifier front = (set != null && set != CardSet.DUMMY)
-            ? set.getInfoImageResourceLocation()
-            : back;
+        //
+        // Asked THROUGH the manager, like every other producer of this
+        // Identifier. Handing the raw one to the renderer looked harmless --
+        // it is the same texture the shop draws -- but the shop registers it,
+        // the cache adopts it, and sweep() later releases it. The next pack
+        // item drawn in a hand, an inventory or on the ground then missed in
+        // TextureManager and paid read + decode + upload inline on the render
+        // thread: the exact stall this whole subsystem exists to remove,
+        // arriving by the one path nothing was watching. Until it is decoded
+        // the item wears the plain back, as a card does.
+        Identifier front = back;
+        if(set != null && set != CardSet.DUMMY)
+        {
+            Identifier art = CardImageManager.getTextureCard(
+                set.getInfoImageResourceLocation(), ClientProxy.activeSetInfoImageSize);
+            front = art == null || art == DuelTextures.UNKNOWN ? back : art;
+        }
 
         CardSpecialRenderer.drawTwoFaces(pose, collector, front, back);
     }

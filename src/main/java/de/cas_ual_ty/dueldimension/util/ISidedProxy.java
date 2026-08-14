@@ -59,6 +59,11 @@ public interface ISidedProxy
     {
     }
 
+    /** The sleeve on the OPPONENT's deck; server side does nothing. */
+    default void setOpponentSleeve(String sleeve)
+    {
+    }
+
     /**
      * The cards in this player's own deck, shuffled by the server, ready to be
      * shown in the pile panel. Server side does nothing.
@@ -230,6 +235,18 @@ public interface ISidedProxy
 
     default void openDuelLobby(
         de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.OpenLobby room)
+    {
+    }
+
+    /** Opens the duel disk shop, or refreshes it if it is already open. Client only. */
+    default void openDiskShop(
+        de.cas_ual_ty.dueldimension.shop.DiskShopMessages.OpenDiskShop shop)
+    {
+    }
+
+    /** Shows the opening toss and, to its winner, the choice. Client only. */
+    default void openCoinToss(
+        de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CoinToss toss)
     {
     }
 

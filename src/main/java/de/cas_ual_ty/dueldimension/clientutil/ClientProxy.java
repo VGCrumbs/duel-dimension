@@ -48,6 +48,7 @@ public class ClientProxy implements ISidedProxy
      */
     public static boolean keepCachedImages = true;
 
+
     // ---- where they live ----
 
     /**
@@ -101,15 +102,13 @@ public class ClientProxy implements ISidedProxy
     public static int attackAnimationLength = 12;
     public static int announcementAnimationLength = 16;
 
-    /**
-     * How many card images may be resident at once, per size.
-     * <p>
-     * These are the caps {@link LimitedTextureBinder} enforces: a card image is
-     * a real texture and the database holds ten thousand of them, so something
-     * has to decide when to let one go.
-     */
-    public static int maxInfoImages = 64;
-    public static int maxMainImages = 256;
+    // The maxInfoImages/maxMainImages copies that used to be here are gone with
+    // the LimitedTextureBinder they configured. What decides when a card image
+    // is let go is now CardTextureCache, and it decides in BYTES per size class
+    // rather than in a count: a 512px preview is sixteen times the memory of a
+    // 128px icon, so one number could never mean the same thing for both. The
+    // config keys are still read and written by ClientConfig, so nobody's
+    // settings file changes.
 
     /** The settings this client was started with. */
     public static ClientConfig clientConfig;
@@ -135,17 +134,16 @@ public class ClientProxy implements ISidedProxy
         specialAnimationLength = clientConfig.specialAnimationLength.get();
         attackAnimationLength = clientConfig.attackAnimationLength.get();
         announcementAnimationLength = clientConfig.announcementAnimationLength.get();
-        maxInfoImages = clientConfig.maxInfoImages.get();
-        maxMainImages = clientConfig.maxMainImages.get();
     }
 
     /**
      * The client-side setup Forge did from its proxy's init event.
      * <p>
      * Separate from {@link #loadConfig()} because it reads the settings that
-     * one loads. Missing it is not subtle: {@code CardRenderUtil}'s texture
-     * binders stay null, and the first card the duel screen tries to draw takes
-     * the client down with a NullPointerException.
+     * one loads. Missing it is not subtle: the card image folders are never
+     * created, so every download throws, and the loader threads never start, so
+     * no card art is ever decoded and every card in the game stays a
+     * placeholder.
      */
     public static void initClient()
     {
@@ -161,9 +159,18 @@ public class ClientProxy implements ISidedProxy
         DdIOUtil.createDirIfNonExistant(rawSetImagesFolder);
         DdIOUtil.createDirIfNonExistant(rawRarityImagesFolder);
 
+        // Custom cards shipped in the jar. AFTER the folders exist, because
+        // that is where their art is written; nothing here overwrites a file
+        // the player put there themselves.
+        de.cas_ual_ty.dueldimension.ocg.session.CustomCardBundle.install();
+
         ImageHandler.prepareRarityImages(activeCardMainImageSize);
         ImageHandler.prepareRarityImages(activeCardInfoImageSize);
-        CardRenderUtil.init(maxInfoImages, maxMainImages);
+        // The four card-image decode threads. EDOPro spawns its own in the
+        // ImageManager constructor (image_manager.cpp:47-53); this is the same
+        // moment in our lifecycle -- after the settings they read, before the
+        // first screen that could ask for a card.
+        CardImageManager.init();
     }
 
     // ---- world chat, mirrored for the duel screen ----
@@ -240,6 +247,15 @@ public class ClientProxy implements ISidedProxy
         de.cas_ual_ty.dueldimension.duel.DuelManager duelManager)
     {
         return new de.cas_ual_ty.dueldimension.duel.network.ClientDuelManagerProvider(duelManager);
+    }
+
+    @Override
+    public void setOpponentSleeve(String sleeve)
+    {
+        de.cas_ual_ty.dueldimension.card.CardSleevesType named =
+            de.cas_ual_ty.dueldimension.duel.profile.Sleeves.byName(sleeve);
+        DuelClientState.opponentSleeve = named == null
+            ? de.cas_ual_ty.dueldimension.duel.profile.Sleeves.DEFAULT : named;
     }
 
     @Override
@@ -403,6 +419,29 @@ public class ClientProxy implements ISidedProxy
      * place rather than replaced: rebuilding the screen would drop focus and
      * flicker on every click either player made.
      */
+    @Override
+    public void openDiskShop(
+        de.cas_ual_ty.dueldimension.shop.DiskShopMessages.OpenDiskShop shop)
+    {
+        // Updated in place when it is already open, so buying a disk does not
+        // rebuild the screen under the player's cursor and lose their place.
+        if(getMinecraft().gui.screen()
+            instanceof de.cas_ual_ty.dueldimension.clientutil.hub.DiskShopScreen open)
+        {
+            open.update(shop);
+            return;
+        }
+        getMinecraft().gui.setScreen(
+            new de.cas_ual_ty.dueldimension.clientutil.hub.DiskShopScreen(shop));
+    }
+
+    @Override
+    public void openCoinToss(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CoinToss toss)
+    {
+        getMinecraft().gui.setScreen(
+            new de.cas_ual_ty.dueldimension.clientutil.hub.CoinTossScreen(toss));
+    }
+
     @Override
     public void openDuelLobby(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.OpenLobby room)
     {

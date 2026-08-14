@@ -30,3 +30,12 @@ accessible	method	net/minecraft/client/gui/screens/MenuScreens register (Lnet/mi
 # card item used on Forge is gone. So the field is widened and DdCardModels puts
 # the card and card_set types in directly. See CardSpecialRenderer/CardItemModel.
 accessible	field	net/minecraft/client/renderer/item/ItemModels ID_MAPPER Lnet/minecraft/util/ExtraCodecs$LateBoundIdMapper;
+
+# Building a RenderType on a mod-defined pipeline. An unowned card is greyed by
+# a mod fragment shader, and the card preview reaches its pipeline through a
+# RenderType rather than through a blit — but RenderType.create is the only way
+# to make one and it is package-private static. Everything else that recipe
+# needs is public: RenderSetup.builder, withTexture, setTextureTransform,
+# useLightmap and sortOnUpload. So one method is widened rather than the
+# breezeWind recipe being reimplemented. See UnownedPipelines.mesh.
+accessible	method	net/minecraft/client/renderer/rendertype/RenderType create (Ljava/lang/String;Lnet/minecraft/client/renderer/rendertype/RenderSetup;)Lnet/minecraft/client/renderer/rendertype/RenderType;

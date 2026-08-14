@@ -36,8 +36,6 @@ public class DdCardResourcePack implements PackResources
     public static final String PATH_PREFIX = "textures/item/";
     /** Same PNG files as PATH_PREFIX, but with metadata selecting bilinear sampling. */
     public static final String SMOOTH_PATH_PREFIX = "textures/item_smooth/";
-    /** Derived in memory for unowned cards shown by the deck editor. */
-    public static final String UNOWNED_PATH_PREFIX = "textures/item_unowned/";
     private static final byte[] SMOOTH_METADATA =
         "{\"texture\":{\"blur\":true,\"clamp\":true}}"
             .getBytes(java.nio.charset.StandardCharsets.UTF_8);
@@ -72,14 +70,11 @@ public class DdCardResourcePack implements PackResources
         }
 
         String path = id.getPath();
-        if((path.startsWith(SMOOTH_PATH_PREFIX) || path.startsWith(UNOWNED_PATH_PREFIX))
-            && path.endsWith(".png.mcmeta"))
+        if(path.startsWith(SMOOTH_PATH_PREFIX) && path.endsWith(".png.mcmeta"))
         {
             return () -> new java.io.ByteArrayInputStream(SMOOTH_METADATA);
         }
-        boolean unowned = path.startsWith(UNOWNED_PATH_PREFIX);
-        String prefix = unowned ? UNOWNED_PATH_PREFIX
-            : path.startsWith(SMOOTH_PATH_PREFIX) ? SMOOTH_PATH_PREFIX
+        String prefix = path.startsWith(SMOOTH_PATH_PREFIX) ? SMOOTH_PATH_PREFIX
             : path.startsWith(PATH_PREFIX) ? PATH_PREFIX : null;
         if(prefix == null || !path.endsWith(".png"))
         {
@@ -91,45 +86,18 @@ public class DdCardResourcePack implements PackResources
         {
             return null;
         }
-        return unowned ? () -> desaturated(image) : IoSupplier.create(image.toPath());
+        return IoSupplier.create(image.toPath());
     }
 
-    /** Produces a strongly desaturated copy without creating another disk cache. */
-    private static java.io.InputStream desaturated(File source) throws java.io.IOException
-    {
-        java.awt.image.BufferedImage image = javax.imageio.ImageIO.read(source);
-        if(image == null)
-        {
-            return new java.io.FileInputStream(source);
-        }
-        java.awt.image.BufferedImage adjusted = new java.awt.image.BufferedImage(
-            image.getWidth(), image.getHeight(), java.awt.image.BufferedImage.TYPE_INT_ARGB);
-        for(int y = 0; y < image.getHeight(); y++)
-        {
-            for(int x = 0; x < image.getWidth(); x++)
-            {
-                adjusted.setRGB(x, y, unownedColour(image.getRGB(x, y)));
-            }
-        }
-        java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
-        javax.imageio.ImageIO.write(adjusted, "PNG", bytes);
-        return new java.io.ByteArrayInputStream(bytes.toByteArray());
-    }
-
-    static int unownedColour(int argb)
-    {
-        int alpha = argb >>> 24;
-        int red = argb >>> 16 & 0xFF;
-        int green = argb >>> 8 & 0xFF;
-        int blue = argb & 0xFF;
-        int grey = Math.round(red * 0.2126F + green * 0.7152F + blue * 0.0722F);
-        // Keep a small amount of hue so monster, Spell and Trap frames remain
-        // recognizable while ownership status is unmistakable at thumbnail size.
-        red = Math.round(grey + (red - grey) * 0.15F);
-        green = Math.round(grey + (green - grey) * 0.15F);
-        blue = Math.round(grey + (blue - grey) * 0.15F);
-        return alpha << 24 | red << 16 | green << 8 | blue;
-    }
+    // There was a third prefix here, textures/item_unowned/, whose bytes this
+    // class desaturated pixel by pixel and re-encoded as a PNG -- inline on the
+    // render thread, because that ran inside the IoSupplier MC calls from
+    // Resource.open(). It cost 29ms for a 512px preview against 3.6ms for the
+    // same card owned, and needed a 16MB LRU of the encoded results to stop
+    // paying it twice. All of it is gone: an unowned card is the owned card's
+    // file drawn through a desaturating fragment shader. See UnownedPipelines,
+    // which is also where the arithmetic that used to live here now lives, as
+    // the reference the shaders are a transliteration of.
 
     /**
      * Nothing is listed.

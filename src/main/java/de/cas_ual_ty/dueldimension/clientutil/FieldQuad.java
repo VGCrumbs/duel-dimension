@@ -103,6 +103,24 @@ public final class FieldQuad
         Identifier texture, Corners corners,
         float u0, float v0, float u1, float v1, int tint)
     {
+        draw(poseStack, collector, texture, corners, u0, v0, u1, v1, tint, false);
+    }
+
+    /**
+     * As above, greyed, for a card the player does not own.
+     * <p>
+     * The board must keep passing false: this method is shared with
+     * {@code BoardRenderer}, and a duel field draws cards that are in play
+     * rather than cards that are missing from a collection. Hence an overload
+     * with a default rather than a parameter added to the signature above —
+     * a site that never learns about ownership fails safe as full colour.
+     *
+     * @param desaturate draw through {@link UnownedPipelines#MESH} instead
+     */
+    public static void draw(PoseStack poseStack, SubmitNodeCollector collector,
+        Identifier texture, Corners corners,
+        float u0, float v0, float u1, float v1, int tint, boolean desaturate)
+    {
         collector.order(layer++).submitCustomGeometry(poseStack,
             // The one entity render type that is truly UNLIT. Read off the
             // 26.2 pipeline bytecode, not guessed:
@@ -124,7 +142,12 @@ public final class FieldQuad
             // Forge drew these quads with position/colour/tex and no lighting;
             // this is that pipeline in the format this buffer already writes.
             // The two zeros are the wind's texture scroll, declined.
-            net.minecraft.client.renderer.rendertype.RenderTypes.breezeWind(texture, 0F, 0F),
+            //
+            // UnownedPipelines.mesh is that same recipe with one thing changed,
+            // the fragment shader, so an unowned card is greyed by the draw
+            // rather than by a second copy of its image.
+            desaturate ? UnownedPipelines.mesh(texture)
+                : net.minecraft.client.renderer.rendertype.RenderTypes.breezeWind(texture, 0F, 0F),
             (pose, buffer) ->
             {
                 vertex(buffer, pose, corners.x0(), corners.y0(), u0, v0, tint);
@@ -170,14 +193,47 @@ public final class FieldQuad
             shade, shade, shade, alpha);
     }
 
+    /**
+     * As above, greyed, for a card the player does not own. Only the card
+     * preview passes true; the duel field's shapes are not collection entries.
+     */
+    public static void drawCorners(PoseStack poseStack, SubmitNodeCollector collector,
+        Identifier texture, Corners corners,
+        float u0, float v0, float u1, float v1, float shade, float alpha, boolean desaturate)
+    {
+        drawCorners(poseStack, collector, texture, corners, u0, v0, u1, v1,
+            shade, shade, shade, alpha, desaturate);
+    }
+
     /** As above with a full tint, for coloured shapes cut from white.png. */
     public static void drawCorners(PoseStack poseStack, SubmitNodeCollector collector,
         Identifier texture, Corners corners,
         float u0, float v0, float u1, float v1,
         float red, float green, float blue, float alpha)
     {
+        drawCorners(poseStack, collector, texture, corners, u0, v0, u1, v1,
+            red, green, blue, alpha, false);
+    }
+
+    /** As above, greyed. */
+    public static void drawCorners(PoseStack poseStack, SubmitNodeCollector collector,
+        Identifier texture, Corners corners,
+        float u0, float v0, float u1, float v1,
+        float red, float green, float blue, float alpha, boolean desaturate)
+    {
+        if(desaturate && !UnownedPipelines.available())
+        {
+            // The shader did not compile, so this is a DIM and not a
+            // desaturation. Multiplied into the shade the caller asked for
+            // rather than replacing it, so a foil's own alpha still means what
+            // it meant.
+            red *= UnownedPipelines.DIM_RED;
+            green *= UnownedPipelines.DIM_GREEN;
+            blue *= UnownedPipelines.DIM_BLUE;
+            desaturate = false;
+        }
         draw(poseStack, collector, texture, corners, u0, v0, u1, v1,
-            ScreenUtil.colour(red, green, blue, alpha));
+            ScreenUtil.colour(red, green, blue, alpha), desaturate);
     }
 
     /**

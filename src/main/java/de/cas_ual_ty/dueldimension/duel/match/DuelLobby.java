@@ -203,26 +203,142 @@ public final class DuelLobby
                 net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, new LobbyMessages.CloseLobby());
             }
 
-            // The coin flip and the turn choice are still walked through rather
-            // than played: they are the next thing to build, and the machine
-            // records that they happened so the states stay honest.
+            // The toss decides who CHOOSES, not who goes first -- the winner
+            // still has to say. So the machine stops at COIN_FLIP here and the
+            // duel is started later, by the answer.
             room.machine.tryMoveTo(MatchState.COIN_FLIP);
-            room.machine.tryMoveTo(MatchState.TURN_CHOICE);
-            room.machine.tryMoveTo(MatchState.DUELING);
 
+            // The server's own randomness, and only the server's: a flip the
+            // client could see coming is a flip the client could wait out.
+            boolean hostWon = server.overworld().getRandom().nextBoolean();
+            ServerPlayer winner = hostWon ? host : guest;
+            ServerPlayer loser = hostWon ? guest : host;
+            String winnerName = winner.getGameProfile().name();
+
+            PENDING.put(winner.getUUID(), new Toss(room.host, room.guest, winner.getUUID(),
+                room.machine, room.config, server.overworld().getGameTime() + CHOICE_TIMEOUT_TICKS));
+
+            net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(winner,
+                new LobbyMessages.CoinToss(true, winnerName));
+            net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(loser,
+                new LobbyMessages.CoinToss(false, winnerName));
+        }
+
+        /**
+         * How long the winner has to choose before the duel starts without
+         * them. A duel that waits forever on someone who walked away is worse
+         * than one that opens on a default, and the default is the choice
+         * almost everybody makes anyway.
+         */
+        private static final int CHOICE_TIMEOUT_TICKS = 30 * 20;
+
+        /** A toss that has been made and is waiting on its winner. */
+        private record Toss(UUID host, UUID guest, UUID winner, MatchStateMachine machine,
+            MatchConfig config, long deadline)
+        {
+        }
+
+        /** Keyed by the winner, because the winner is who may answer. */
+        private static final Map<UUID, Toss> PENDING = new ConcurrentHashMap<>();
+
+        /**
+         * The winner's answer. Ignored unless this player really is the winner
+         * of an outstanding toss, so a client cannot start a duel by asking.
+         */
+        public static void chooseTurn(ServerPlayer player, boolean goFirst)
+        {
+            if(player == null)
+            {
+                return;
+            }
+            Toss toss = PENDING.remove(player.getUUID());
+            if(toss != null)
+            {
+                begin(player.level().getServer(), toss, goFirst);
+            }
+        }
+
+        /**
+         * Starts the duel a toss decided. The whole of "who goes first" is
+         * which player is passed in first -- seat 0 takes the opening turn --
+         * so the choice is expressed here and nowhere else.
+         */
+        private static void begin(MinecraftServer server, Toss toss, boolean winnerFirst)
+        {
+            if(server == null)
+            {
+                return;
+            }
+            ServerPlayer winner = server.getPlayerList().getPlayer(toss.winner());
+            UUID otherId = toss.winner().equals(toss.host()) ? toss.guest() : toss.host();
+            ServerPlayer other = server.getPlayerList().getPlayer(otherId);
+            if(winner == null || other == null)
+            {
+                toss.machine().cancel("a player left before the duel began");
+                return;
+            }
+
+            toss.machine().tryMoveTo(MatchState.TURN_CHOICE);
+            toss.machine().tryMoveTo(MatchState.DUELING);
+
+            ServerPlayer first = winnerFirst ? winner : other;
+            ServerPlayer second = winnerFirst ? other : winner;
             String error = de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels
-                .startPlayerDuel(host, guest, room.config);
+                .startPlayerDuel(first, second, toss.config());
             if(error != null)
             {
-                room.machine.cancel(error);
-                host.sendSystemMessage(net.minecraft.network.chat.Component.literal(error)
-                    .withStyle(net.minecraft.ChatFormatting.RED));
-                guest.sendSystemMessage(net.minecraft.network.chat.Component.literal(error)
-                    .withStyle(net.minecraft.ChatFormatting.RED));
+                toss.machine().cancel(error);
+                for(ServerPlayer player : List.of(first, second))
+                {
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.literal(error)
+                        .withStyle(net.minecraft.ChatFormatting.RED));
+                }
                 return;
             }
             de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels
-                .attachMatch(host, room.machine, room.config);
+                .attachMatch(first, toss.machine(), toss.config());
+        }
+
+        /**
+         * Expires tosses whose winner never answered, starting the duel with
+         * them going first. Called every server tick; does nothing at all when
+         * no toss is outstanding, which is nearly always.
+         */
+        public static void tickPending(MinecraftServer server)
+        {
+            if(PENDING.isEmpty() || server == null)
+            {
+                return;
+            }
+            long now = server.overworld().getGameTime();
+            for(Map.Entry<UUID, Toss> entry : PENDING.entrySet())
+            {
+                if(now >= entry.getValue().deadline()
+                    && PENDING.remove(entry.getKey(), entry.getValue()))
+                {
+                    begin(server, entry.getValue(), true);
+                }
+            }
+        }
+
+        /** Drops a disconnecting player's toss, won or lost, so none outlives them. */
+        public static void forgetToss(UUID player)
+        {
+            Toss mine = PENDING.remove(player);
+            if(mine != null)
+            {
+                mine.machine().cancel("a player left before the duel began");
+                return;
+            }
+            PENDING.values().removeIf(toss ->
+            {
+                boolean theirs = toss.host().equals(player) || toss.guest().equals(player);
+                if(theirs)
+                {
+                    toss.machine().cancel("a player left before the duel began");
+                }
+                return theirs;
+            });
         }
 
     private static void close(Room room)
@@ -234,6 +350,9 @@ public final class DuelLobby
     /** Drops a disconnecting player's room, so a lobby cannot outlive them. */
     public static void forget(ServerPlayer player)
     {
+        // The room is gone by the time a toss is outstanding, so the toss has
+        // to be dropped separately or the duel starts against an empty seat.
+        forgetToss(player.getUUID());
         Room room = roomOf(player);
         if(room != null)
         {

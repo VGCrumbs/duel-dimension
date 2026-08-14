@@ -35,10 +35,22 @@ public class SealConfigScreen extends Screen
         {
             SealSettings.setEnabled(!SealSettings.enabled());
             button.setMessage(toggleLabel());
+        }).bounds(centreX - 155, height / 2 - 44, 310, 20).build());
+
+        addRenderableWidget(Button.builder(hoverLabel(), button ->
+        {
+            HoverPreviewSettings.setNeedsShift(!HoverPreviewSettings.needsShift());
+            button.setMessage(hoverLabel());
         }).bounds(centreX - 155, height / 2 - 20, 310, 20).build());
 
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE,
             button -> onClose()).bounds(centreX - 100, height / 2 + 30, 200, 20).build());
+    }
+
+    private static Component hoverLabel()
+    {
+        return Component.literal("Deck builder card preview: "
+            + (HoverPreviewSettings.needsShift() ? "HOLD SHIFT" : "ALWAYS"));
     }
 
     private static Component toggleLabel()

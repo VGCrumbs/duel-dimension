@@ -8,61 +8,108 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Releases card textures that have not been looked at lately.
+ * Releases card textures that have not been looked at lately, and records what
+ * the two halves of a first sighting cost.
  * <p>
  * <b>Nothing was releasing them at all.</b> {@code TextureManager} keeps a plain
  * map with no budget and no eviction: {@code tick()} only visits tickable
- * textures and a reload only rebuilds {@code ReloadableTexture}s. The mod has a
- * {@link LimitedTextureBinder} that does release, but only
- * {@code CardRenderUtil.bind*ResourceLocation} feeds it, and
- * {@link DuelTextures#card} does not — it builds an Identifier and hands it
- * straight to the renderer. So every distinct card ever drawn stayed on the GPU
- * for the whole session.
+ * textures and a reload only rebuilds {@code ReloadableTexture}s. So every
+ * distinct card ever drawn stayed on the GPU for the whole session.
  * <p>
- * That was survivable while a card was only loaded when it was actually on
- * screen. It stopped being survivable when the deck editor began warming a page
- * either side of the view plus a full page of 512px previews: at 64KB for a
- * 128px icon and 1MB for a 512px preview, browsing the collection climbs
- * steadily and never comes back down.
+ * <b>This has no EDOPro counterpart, and that is deliberate.</b> EDOPro evicts
+ * nothing — every {@code removeTexture} in {@code image_manager.cpp} is the
+ * destructor, a skin swap, a cover reload, or the wholesale
+ * {@code ClearTexture} — and it can afford that because its thumb is 44x64 =
+ * 11 KB, so all 13,864 cards resident is about 149 MB. Ours is 128x128 square =
+ * 64 KB, 5.8x, and square is the wrong shape: the card occupies u 0.199..0.801
+ * and v 0.0625..0.9375, so of 16,384 texels only about 8,600 show a card and
+ * half the icon's VRAM is padding. The same population at our sizes is 866 MB,
+ * and our preview is 1 MB against EDOPro's 180 KB largest. This is not a parity
+ * gap; it is the price of our texture sizes.
  * <p>
- * <b>Releasing is cheap here, which is what makes this safe.</b> A released
- * Identifier is rebuilt on next use straight from the resource pack, and the
- * scaled PNG behind it is still in {@code ImageHandler}'s byte cache and, for
- * icons, on disk. Evicting the wrong thing costs a texture upload, not a
- * download and not a decode.
+ * <b>Releasing is cheap here, which is what makes it safe.</b> A released
+ * Identifier goes back to {@link CardImageManager.preloadStatus#NONE} in the
+ * same breath, so the next draw re-requests it, a worker decodes it in a few
+ * milliseconds and the next frame or two puts it back. That coupling is not
+ * optional — see {@link #sweep()}.
+ * <p>
+ * There is no ration here any more. {@code NEW_PER_TICK}, {@code BUDGET_NANOS},
+ * {@code IDLE_BUDGET_NANOS}, {@code SCROLL_QUIET_MS}, {@code noteScroll} and
+ * {@code admit} are gone, and the reason is structural rather than a judgement
+ * call: {@code admit} charged a median of measured BLIT samples — which
+ * {@code GuiGraphicsExtractor.innerBlit} proves is decode plus upload fused —
+ * against a budget reset at 20 Hz and spent per frame, so one 4 ms allowance was
+ * shared across three frames at 60 fps and twelve at 240. What it rationed was
+ * permission to stall the render thread, not the stall. With the decode on a
+ * worker there is no multi-millisecond thing left on the render thread to
+ * ration, and EDOPro's own answer — a count of uploads, {@code
+ * image_manager.cpp}:372 — is enough.
  */
 public final class CardTextureCache
 {
     /**
-     * How much card art to leave resident on the GPU.
+     * How much card art to leave resident on the GPU, per size class.
      * <p>
-     * 192MB holds about three thousand 128px icons, or a couple of hundred
-     * 512px previews, or the mixture actually in play. Chosen to be comfortably
-     * more than any one screen needs so that scrolling back and forth over the
-     * same page never evicts anything, while still bounding a session that
-     * browses the whole collection.
+     * 192 MB in total, unchanged — but <b>split</b>, because one shared pool
+     * could not do the job its own comment claimed. Twenty-four previews
+     * arriving is 24 MB, and in a deck editor the least recently touched thing
+     * is a grid icon on a row the player scrolled past two seconds ago and is
+     * about to scroll back to. Evicting it is not free now: it resets the entry
+     * and the card shows a placeholder again. Four pools, one per class, is
+     * EDOPro's own structure ({@code image_manager.h}:104-107) and it happens to
+     * fix this.
+     * <p>
+     * By class: 8 MB of 64px item icons (500 of them, and the inventory bounds
+     * how many can be on screen), 48 MB of 128px grid icons (750, against the
+     * ~240 a deck editor holds at minimum scale, so three pages deep), 24 MB of
+     * 256px info/main art (90, against about 20), and 112 MB of 512px previews
+     * and field cards (112, against the 24 a pack summary holds).
      */
-    private static final long BUDGET_BYTES = 192L * 1024L * 1024L;
+    private static final long[] BUDGET_BYTES =
+    {
+        8L * 1024L * 1024L,
+        48L * 1024L * 1024L,
+        24L * 1024L * 1024L,
+        112L * 1024L * 1024L
+    };
 
     /** Ticks between sweeps. Eviction is not urgent; growth is gradual. */
     private static final int SWEEP_TICKS = 20;
 
-    /** Resident card textures in least-recently-used order. */
-    private static final Map<Identifier, Integer> RESIDENT =
-        new LinkedHashMap<>(256, 0.75F, true);
+    /**
+     * Resident card textures in least-recently-used order, one map per size
+     * class. Access-ordered, so the iterator starts at the least recently used.
+     */
+    @SuppressWarnings("unchecked")
+    static final Map<Identifier, Integer>[] RESIDENT = new Map[CardImageManager.CLASSES];
 
-    private static long residentBytes;
+    private static final long[] residentBytes = new long[CardImageManager.CLASSES];
+
     private static int ticks;
+
+    static
+    {
+        for(int i = 0; i < CardImageManager.CLASSES; i++)
+        {
+            RESIDENT[i] = new LinkedHashMap<>(256, 0.75F, true);
+        }
+    }
 
     private CardTextureCache()
     {
     }
 
     /**
-     * Notes that a card texture is in use, and how big it is.
+     * Notes that a card texture exists and how big it is.
      * <p>
-     * Called from {@link DuelTextures} as the Identifier is handed out, which is
-     * the one place every card draw passes through.
+     * Called from {@link CardImageManager#refreshCachedTextures()} at the moment
+     * {@code register} creates the GPU object, and from nowhere else. The old
+     * cache recorded residency at admit time, before any texture existed, and
+     * then returned early on "already resident" — so a warmed-but-never-drawn
+     * Identifier counted against the budget for ever while occupying no VRAM,
+     * and held the first-sighting gate open for exactly the cards a flick was
+     * about to reach. LOADING is a distinct state from resident, which is
+     * precisely why EDOPro has it ({@code image_manager.h}:43-48).
      *
      * @param size the square edge in pixels, which is what it costs on the GPU
      */
@@ -72,14 +119,16 @@ public final class CardTextureCache
         {
             return;
         }
+        int index = CardImageManager.classOf(size);
         // RGBA, one byte a channel, no mipmaps on these.
         int bytes = size * size * 4;
-        synchronized(RESIDENT)
+        Map<Identifier, Integer> resident = RESIDENT[index];
+        synchronized(resident)
         {
-            Integer had = RESIDENT.put(id, bytes);
+            Integer had = resident.put(id, bytes);
             if(had == null)
             {
-                residentBytes += bytes;
+                residentBytes[index] += bytes;
             }
         }
     }
@@ -87,14 +136,26 @@ public final class CardTextureCache
     /** Bytes of card art believed resident, for a diagnostic line. */
     public static long residentBytes()
     {
-        synchronized(RESIDENT)
+        long total = 0L;
+        for(int i = 0; i < CardImageManager.CLASSES; i++)
         {
-            return residentBytes;
+            synchronized(RESIDENT[i])
+            {
+                total += residentBytes[i];
+            }
         }
+        return total;
+    }
+
+    /** What {@link #sweep()} does to a texture it has decided to drop. */
+    interface Releaser
+    {
+        void release(Identifier id, int sizeIndex);
     }
 
     /**
-     * Drops the least recently used textures until the budget is met.
+     * Drops the least recently used textures until every class is inside its
+     * budget.
      * <p>
      * On the client tick, which is the render thread — {@code release} disposes
      * GPU objects and may not be called from a worker.
@@ -108,24 +169,47 @@ public final class CardTextureCache
         ticks = 0;
 
         Minecraft client = Minecraft.getInstance();
-        if(client.getTextureManager() == null)
+        if(client == null || client.getTextureManager() == null)
         {
             return;
         }
-        synchronized(RESIDENT)
+        sweep((id, sizeIndex) ->
         {
-            if(residentBytes <= BUDGET_BYTES)
+            client.getTextureManager().release(id);
+            CardImageManager.forget(id, sizeIndex);
+        });
+    }
+
+    /**
+     * The eviction rule itself, with the disposal handed in.
+     * <p>
+     * Separated so it can be exercised without a GPU, and because the release
+     * is the only part that needs one. <b>It runs inside the same critical
+     * section as the bookkeeping on purpose:</b> releasing a texture without
+     * putting its status back to NONE leaves {@code getTextureCard} handing out
+     * an Identifier that {@code TextureManager} no longer holds, and the next
+     * blit then decodes and uploads it inline on the render thread. Nothing in
+     * the type system enforces that pairing, which is why it is stated here.
+     */
+    static void sweep(Releaser releaser)
+    {
+        for(int index = 0; index < CardImageManager.CLASSES; index++)
+        {
+            Map<Identifier, Integer> resident = RESIDENT[index];
+            synchronized(resident)
             {
-                return;
-            }
-            // Access order, so the iterator starts at the least recently used.
-            for(Iterator<Map.Entry<Identifier, Integer>> it = RESIDENT.entrySet().iterator();
-                it.hasNext() && residentBytes > BUDGET_BYTES;)
-            {
-                Map.Entry<Identifier, Integer> eldest = it.next();
-                client.getTextureManager().release(eldest.getKey());
-                residentBytes -= eldest.getValue();
-                it.remove();
+                if(residentBytes[index] <= BUDGET_BYTES[index])
+                {
+                    continue;
+                }
+                for(Iterator<Map.Entry<Identifier, Integer>> it = resident.entrySet().iterator();
+                    it.hasNext() && residentBytes[index] > BUDGET_BYTES[index];)
+                {
+                    Map.Entry<Identifier, Integer> eldest = it.next();
+                    releaser.release(eldest.getKey(), index);
+                    residentBytes[index] -= eldest.getValue();
+                    it.remove();
+                }
             }
         }
     }
@@ -134,17 +218,140 @@ public final class CardTextureCache
     public static void clear()
     {
         Minecraft client = Minecraft.getInstance();
-        synchronized(RESIDENT)
+        for(int index = 0; index < CardImageManager.CLASSES; index++)
         {
-            if(client != null && client.getTextureManager() != null)
+            Map<Identifier, Integer> resident = RESIDENT[index];
+            synchronized(resident)
             {
-                for(Identifier id : RESIDENT.keySet())
+                for(Identifier id : resident.keySet())
                 {
-                    client.getTextureManager().release(id);
+                    if(client != null && client.getTextureManager() != null)
+                    {
+                        client.getTextureManager().release(id);
+                    }
+                    // Same pairing as sweep, and for the same reason: a released
+                    // texture whose entry still said LOADED would be handed out
+                    // and decoded inline on the next draw.
+                    CardImageManager.forget(id, index);
                 }
+                resident.clear();
+                residentBytes[index] = 0L;
             }
-            RESIDENT.clear();
-            residentBytes = 0L;
         }
+        // And then the entries that were never resident: a card still LOADING
+        // when the epoch was bumped has a result that is about to be thrown
+        // away, so its entry has to go back to NONE or nothing would ever ask
+        // for that card again.
+        CardImageManager.forgetAll();
+    }
+
+    /** The last {@link Samples#RING} timings for one texture size. */
+    private static final class Samples
+    {
+        /** Enough to give a p99 a hundred samples to stand on, and no more. */
+        private static final int RING = 128;
+
+        private final long[] nanos = new long[RING];
+        private int taken;
+
+        void add(long ns)
+        {
+            nanos[taken % RING] = ns;
+            taken++;
+        }
+
+        /** Sorted copy of the valid part of the ring; empty before any sample. */
+        long[] sorted()
+        {
+            // Before the ring wraps only the first `taken` slots hold a real
+            // measurement; after it wraps, all of them do.
+            long[] copy = java.util.Arrays.copyOf(nanos, Math.min(taken, RING));
+            java.util.Arrays.sort(copy);
+            return copy;
+        }
+    }
+
+    /**
+     * The two halves of a first sighting, measured separately, keyed by size.
+     * <p>
+     * <b>This is the instrument that closes the last gap in the evidence.</b>
+     * The old ring measured one fused number — the blit — and an earlier
+     * estimate went wrong precisely because it assumed decode dominated within
+     * it. Off the game, read plus STB decode is 0.271 ms at 128px and 2.972 ms
+     * at 512px while the staging memcpy is 0.001 ms and 0.018 ms; what cannot be
+     * timed without a live device is {@code vmaCreateImage} +
+     * {@code vkCmdPipelineBarrier} + {@code vkCreateImageView}, which is fixed
+     * per texture. {@link #uploadTook} is what measures it, and it is the one
+     * number that would revise {@code MAX_IMAGES_PER_FRAME} for the 512 class.
+     * <p>
+     * Two rings rather than one, so neither half can hide inside the other.
+     */
+    private static final Map<Integer, Samples> DECODE_NANOS = new java.util.HashMap<>(4);
+    private static final Map<Integer, Samples> UPLOAD_NANOS = new java.util.HashMap<>(4);
+
+    /** Read plus decode, timed on the worker around {@code TextureContents.load}. */
+    public static void decodeTook(int size, long nanos)
+    {
+        synchronized(DECODE_NANOS)
+        {
+            DECODE_NANOS.computeIfAbsent(size, s -> new Samples()).add(nanos);
+        }
+    }
+
+    /** GPU texture creation and upload, timed on the render thread around {@code apply}. */
+    public static void uploadTook(int size, long nanos)
+    {
+        synchronized(UPLOAD_NANOS)
+        {
+            UPLOAD_NANOS.computeIfAbsent(size, s -> new Samples()).add(nanos);
+        }
+    }
+
+    /** Decode cost per size, for a diagnostic line. */
+    public static String decodeCost()
+    {
+        return describe(DECODE_NANOS);
+    }
+
+    /**
+     * Upload cost per size, for a diagnostic line.
+     * <p>
+     * Also the tripwire for the one silent regression this design can suffer. A
+     * card realised anywhere other than {@code refreshCachedTextures} — a
+     * producer that bypassed {@link CardImageManager#getTextureCard}, or a
+     * release that forgot to reset the status — shows up as a stalled frame
+     * with no uploads recorded against it. That is the property the old
+     * {@code refusedThisTick} counter was reaching for and could not deliver,
+     * because it read zero through a whole hitch by construction.
+     */
+    public static String uploadCost()
+    {
+        return describe(UPLOAD_NANOS);
+    }
+
+    private static String describe(Map<Integer, Samples> rings)
+    {
+        StringBuilder out = new StringBuilder();
+        synchronized(rings)
+        {
+            for(Map.Entry<Integer, Samples> e : rings.entrySet())
+            {
+                long[] sorted = e.getValue().sorted();
+                if(sorted.length == 0)
+                {
+                    continue;
+                }
+                out.append(out.isEmpty() ? "" : ", ")
+                    .append(e.getKey()).append("px n=").append(e.getValue().taken)
+                    .append(" p50=").append(ms(sorted[sorted.length / 2]))
+                    .append(" p99=").append(ms(sorted[(sorted.length * 99 - 1) / 100]));
+            }
+        }
+        return out.isEmpty() ? "none yet" : out.toString();
+    }
+
+    private static String ms(long nanos)
+    {
+        return String.format("%.2fms", nanos / 1_000_000D);
     }
 }

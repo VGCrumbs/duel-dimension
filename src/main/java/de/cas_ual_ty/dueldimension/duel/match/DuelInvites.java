@@ -40,6 +40,31 @@ public final class DuelInvites
     {
     }
 
+    /**
+     * Whether this player is holding an unanswered challenge from that one.
+     * <p>
+     * Asked rather than inferred from {@link #accept}'s refusal: clicking a
+     * player has to decide between accepting and challenging BEFORE it acts,
+     * and deciding by reading an error message back would make the two paths
+     * depend on the wording of a string.
+     */
+    public static boolean hasInviteFrom(ServerPlayer target, ServerPlayer challenger)
+    {
+        if(target == null || challenger == null)
+        {
+            return false;
+        }
+        Invite invite = PENDING.get(target.getUUID());
+        return invite != null && invite.challenger.equals(challenger.getUUID());
+    }
+
+    /** The name a pending challenge was sent under, or null if there is none. */
+    public static String challengerName(ServerPlayer target)
+    {
+        Invite invite = target == null ? null : PENDING.get(target.getUUID());
+        return invite == null ? null : invite.challengerName;
+    }
+
     /** Sends a challenge. Returns null on success, else why not. */
     public static String invite(ServerPlayer from, ServerPlayer to)
     {

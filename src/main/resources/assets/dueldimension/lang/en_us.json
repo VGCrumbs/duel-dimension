@@ -232,10 +232,12 @@
   "actionIcon.dueldimension.remove_token_atk": "Remove Token",
   "actionIcon.dueldimension.remove_token_def": "Remove Token",
   "entity.dueldimension.duelist": "Duelist",
+  "key.category.dueldimension.duel_dimension": "Duel Dimension",
   "key.dueldimension.duel_hub": "Open Duel Hub",
   "key.categories.dueldimension": "Duel Dimension",
   "block.dueldimension.card_shop": "Card Shop",
   "block.dueldimension.sleeve_shop": "Sleeve Shop",
+  "key.dueldimension.toggle_disk": "Equip / unequip duel disk",
   "key.dueldimension.foil_test": "Foil blend test (debug)",
   "death.attack.orichalcos": "%1$s had their soul taken",
   "item.dueldimension.orichalcos_debug": "Seal of Orichalcos (Debug)"

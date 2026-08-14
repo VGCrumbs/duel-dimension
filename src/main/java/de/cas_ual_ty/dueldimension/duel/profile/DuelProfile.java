@@ -49,6 +49,24 @@ public final class DuelProfile
      * never be lost from it.
      */
     private final Set<CardSleevesType> sleeves = new LinkedHashSet<>();
+    /**
+     * Disks this player has bought. Same contract as {@link #sleeves} above:
+     * only GRANTS live here, never the free plain disk, which is owned by the
+     * rule in {@link DuelDisks#FREE} and so can never be lost.
+     */
+    private final Set<String> disks = new LinkedHashSet<>();
+    /** Which disk is worn, by name. Empty means the free one. */
+    private String activeDisk = "";
+    /**
+     * Whether the disk is actually ON.
+     * <p>
+     * Its own slot rather than an item in the off-hand: a duel disk is worn
+     * equipment, and borrowing the off-hand made it compete with shields and
+     * totems, put it at risk of being dropped, and meant "am I wearing my
+     * disk" had four different answers scattered across the mod. One boolean
+     * beside the disk it refers to is the whole slot.
+     */
+    private boolean diskWorn;
     private String activeDeck = "";
     /** The outfit this duelist is seen in; empty means their own skin. */
     private String outfit = "";
@@ -75,6 +93,21 @@ public final class DuelProfile
      * Not simply "their decks". Every saved deck used to appear here, which
      * made the recipe list a second copy of the deck list.
      */
+    /**
+     * The player's own decks, published or not.
+     * <p>
+     * Distinct from {@link #savedRecipes()}, which additionally requires
+     * published() and therefore answers "how many recipes have I shared", not
+     * "how many decks do I have". Deleting a deck asked the wrong one of these
+     * and so refused to remove anything until at least two decks were shared.
+     */
+    public List<DeckList> savedDecks()
+    {
+        return decks.stream()
+            .filter(deck -> deck.origin() == DeckList.Origin.SAVED)
+            .toList();
+    }
+
     public List<DeckList> savedRecipes()
     {
         return decks.stream()
@@ -159,6 +192,65 @@ public final class DuelProfile
             return false;
         }
         return sleeves.add(sleeve);
+    }
+
+    /** Same contract as {@link #grantSleeve}, for disks. */
+    public boolean grantDisk(String disk)
+    {
+        if(!DuelDisks.isPurchasable(disk))
+        {
+            // Unknown, or free and therefore owned by the rule that says so.
+            return false;
+        }
+        return disks.add(disk);
+    }
+
+    /** Every disk this player may wear, the free one included. */
+    public Set<String> ownedDisks()
+    {
+        Set<String> all = new LinkedHashSet<>(DuelDisks.FREE);
+        all.addAll(disks);
+        return all;
+    }
+
+    /** The question every disk change has to pass, and the only one. */
+    public boolean ownsDisk(String disk)
+    {
+        return DuelDisks.isKnown(disk) && (DuelDisks.isFree(disk) || disks.contains(disk));
+    }
+
+    /**
+     * The disk this player wears.
+     * <p>
+     * Answered rather than stored blindly: a disk that was active and is
+     * somehow no longer owned falls back to the free one, so losing a grant
+     * can never leave a player unable to duel.
+     */
+    public String activeDisk()
+    {
+        return ownsDisk(activeDisk) ? activeDisk : DuelDisks.DEFAULT;
+    }
+
+    /** Whether the active disk is currently being worn. */
+    public boolean diskWorn()
+    {
+        return diskWorn;
+    }
+
+    public void setDiskWorn(boolean worn)
+    {
+        diskWorn = worn;
+    }
+
+    /** @return true if the disk was owned and is now active */
+    public boolean setActiveDisk(String disk)
+    {
+        if(!ownsDisk(disk))
+        {
+            return false;
+        }
+        activeDisk = disk;
+        return true;
     }
 
     public String outfit()
@@ -265,6 +357,11 @@ public final class DuelProfile
         copy.unlockedStructures.addAll(unlockedStructures);
         copy.favourites.addAll(favourites);
         copy.sleeves.addAll(sleeves);
+        // Copied for the same reason as the sleeves beside them: a field left
+        // out of here is lost on EVERY save, not only on a duplication.
+        copy.disks.addAll(disks);
+        copy.activeDisk = activeDisk;
+        copy.diskWorn = diskWorn;
         copy.activeDeck = activeDeck;
         copy.outfit = outfit;
         return copy;
@@ -359,12 +456,22 @@ public final class DuelProfile
                 .forGetter(profile -> List.copyOf(profile.favourites)),
             Sleeves.CODEC.listOf().optionalFieldOf("Sleeves", List.of())
                 .forGetter(profile -> List.copyOf(profile.sleeves)),
+            // Optional and empty by default, so every profile saved before disks
+            // were sold loads with just the free one.
+            DuelDisks.CODEC.listOf().optionalFieldOf("Disks", List.of())
+                .forGetter(profile -> List.copyOf(profile.disks)),
+            Codec.STRING.optionalFieldOf("ActiveDisk", "")
+                .forGetter(profile -> profile.activeDisk),
+            Codec.BOOL.optionalFieldOf("DiskWorn", false)
+                .forGetter(profile -> profile.diskWorn),
             Codec.STRING.optionalFieldOf("Active", "").forGetter(DuelProfile::activeDeck),
             Codec.STRING.optionalFieldOf("Outfit", "").forGetter(DuelProfile::outfit)
         ).apply(instance, DuelProfile::of));
 
     private static DuelProfile of(Trunk trunk, List<DeckList> decks, List<String> structures,
-        List<Integer> favourites, List<CardSleevesType> sleeves, String activeDeck, String outfit)
+        List<Integer> favourites, List<CardSleevesType> sleeves,
+        List<String> disks, String activeDisk, boolean diskWorn, String activeDeck,
+        String outfit)
     {
         DuelProfile profile = new DuelProfile();
         // Copied rather than kept: the optionalFieldOf default above is a single
@@ -383,6 +490,11 @@ public final class DuelProfile
         // this build no longer has reads as the plain back and lands in the
         // same bin. A profile therefore cleans itself up the next time it saves.
         sleeves.forEach(profile::grantSleeve);
+        // Through grantDisk for the same reason: a free disk saved by an older
+        // rule is dropped rather than kept as a stale grant.
+        disks.forEach(profile::grantDisk);
+        profile.activeDisk = activeDisk;
+        profile.diskWorn = diskWorn;
         profile.activeDeck = activeDeck;
         profile.outfit = outfit;
         return profile;

@@ -206,9 +206,24 @@ public class Properties
         }
     }
     
+    /**
+     * Where this card's art can be downloaded from, or null if nowhere.
+     * <p>
+     * A CUSTOM card legitimately has no source: its art is authored and put on
+     * disk directly, so its {@code images} list is empty. Indexing that blindly
+     * threw {@code ArrayIndexOutOfBoundsException} out of the deck editor's
+     * draw, taking the client down the first time such a card was shown -- and
+     * the URL is only ever needed to FETCH a file that is already there.
+     */
     public String getImageURL(byte imageIndex)
     {
-        return getImages()[adjustImageIndex(imageIndex)];
+        String[] images = getImages();
+        if(images == null || images.length == 0)
+        {
+            return null;
+        }
+        int index = adjustImageIndex(imageIndex);
+        return index >= 0 && index < images.length ? images[index] : null;
     }
     
     public String getImageName(byte imageIndex)

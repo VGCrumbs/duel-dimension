@@ -72,6 +72,9 @@ public class DuelDimensionFabric implements ModInitializer
             // persisted choice on join so this client restores its own outfit
             // and every connected client sees it too.
             de.cas_ual_ty.dueldimension.duel.outfit.WornOutfits.announce(player);
+            // Same for the disk: an arriving client has to be told what
+            // everyone is wearing, and everyone told about them.
+            de.cas_ual_ty.dueldimension.duel.dueldisk.WornDisks.announce(player);
 
             // Said once, on arrival, rather than only when a duel is refused.
             // The engine is not ours -- this mod embeds ocgcore and plays
@@ -172,6 +175,14 @@ public class DuelDimensionFabric implements ModInitializer
         // PROPERTIES_LIST. Nothing that touches a card works before this --
         // a CardHolder resolves its id through that list, so with an empty
         // list every card in the game is an unknown card.
+        // Custom cards shipped in the jar, BEFORE the database is read and
+        // before any duel can start: the engine opens its .cdb chain lazily but
+        // only once, so a file written after that would not be seen until a
+        // restart. A dedicated server unpacks them too -- the rules half is
+        // its, and a server whose engine lacks a card its players have is
+        // exactly how a deck gets silently rewritten.
+        de.cas_ual_ty.dueldimension.ocg.session.CustomCardBundle.install();
+
         de.cas_ual_ty.dueldimension.DdDatabase.initDatabase();
 
         // The background workers that fetch and rescale card images.
@@ -182,9 +193,72 @@ public class DuelDimensionFabric implements ModInitializer
         // happens. The profile itself survives -- it is an attachment marked
         // copyOnDeath -- but the CLIENT's copy does not, and an editor opened
         // after a respawn would show an empty collection without this.
+        // Deferred a tick rather than sent from the event itself. Two things
+        // are still settling while AFTER_RESPAWN runs, and either one alone
+        // produces the empty deck list: the client is mid-respawn and has not
+        // finished swapping levels, so a profile sent into that window can be
+        // dropped; and DuelProfiles.get is getAttachedOrCreate, so reading the
+        // new player before the copyOnDeath copy has landed does not return
+        // nothing -- it MINTS a starting profile and persists it, which is an
+        // empty deck list that looks exactly like the symptom. Running on the
+        // next tick puts the read and the send after both.
         net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents.AFTER_RESPAWN.register(
-            (oldPlayer, newPlayer, alive) ->
-                de.cas_ual_ty.dueldimension.net.ProfilePayloads.sync(newPlayer));
+            (oldPlayer, newPlayer, alive) -> newPlayer.level().getServer().execute(() ->
+            {
+                // The player can log out inside that one-tick gap.
+                if(!newPlayer.hasDisconnected())
+                {
+                    de.cas_ual_ty.dueldimension.net.ProfilePayloads.sync(newPlayer);
+                }
+            }));
+        // Challenging by hand: a duel disk worn in the off-hand turns another
+        // player into something you can click. The same click accepts THEIR
+        // challenge if they got theirs in first, which is what makes two
+        // players who both reach for each other still end up in one duel
+        // rather than two crossed invitations.
+        net.fabricmc.fabric.api.event.player.UseEntityCallback.EVENT.register(
+            (player, level, hand, entity, hitResult) ->
+            {
+                // Server only, and once per click: the event fires for each
+                // hand, and challenging twice per click would immediately
+                // refuse itself as a duplicate.
+                if(level.isClientSide()
+                    || hand != net.minecraft.world.InteractionHand.MAIN_HAND
+                    || !(player instanceof net.minecraft.server.level.ServerPlayer me)
+                    || !(entity instanceof net.minecraft.server.level.ServerPlayer them))
+                {
+                    return net.minecraft.world.InteractionResult.PASS;
+                }
+                // The disk SLOT, matching how the disk is read everywhere else:
+                // worn, not held. A player with their disk off is a player who
+                // is not looking for a duel, so the click falls through.
+                if(!de.cas_ual_ty.dueldimension.duel.dueldisk.WornDisks.isWearing(me))
+                {
+                    return net.minecraft.world.InteractionResult.PASS;
+                }
+
+                boolean accepting = de.cas_ual_ty.dueldimension.duel.match.DuelInvites
+                    .hasInviteFrom(me, them);
+                String error = accepting
+                    ? de.cas_ual_ty.dueldimension.duel.match.DuelInvites
+                        .accept(me, them.getGameProfile().name())
+                    : de.cas_ual_ty.dueldimension.duel.match.DuelInvites.invite(me, them);
+                if(error != null)
+                {
+                    me.sendSystemMessage(net.minecraft.network.chat.Component.literal(error)
+                        .withStyle(net.minecraft.ChatFormatting.RED));
+                }
+                // Consumed either way: the click was aimed at a player while
+                // wearing a disk, so letting it fall through to whatever else
+                // right-clicking a player does would be a surprise.
+                return net.minecraft.world.InteractionResult.SUCCESS;
+            });
+
+        // Expires an opening toss whose winner never answered. Cheap: it
+        // returns immediately unless a toss is actually outstanding.
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(
+            de.cas_ual_ty.dueldimension.duel.match.DuelLobby::tickPending);
+
         // Renamed in 26.2: "world" became "level" throughout this API.
         ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(
             (player, origin, destination) ->
