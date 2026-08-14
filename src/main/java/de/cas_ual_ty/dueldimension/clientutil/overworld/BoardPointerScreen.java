@@ -6,6 +6,7 @@ import de.cas_ual_ty.dueldimension.clientutil.DuelClientState;
 import de.cas_ual_ty.dueldimension.clientutil.PromptOptions;
 import de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds;
 import de.cas_ual_ty.dueldimension.ocg.OcgConstants;
+import de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt;
 import de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot;
 import de.cas_ual_ty.dueldimension.duel.overworld.FieldSiting;
 import de.cas_ual_ty.dueldimension.duel.overworld.FieldTransform;
@@ -209,9 +210,17 @@ public class BoardPointerScreen extends Screen
             return true;
         }
 
+        // Right-click declines, the same as it does on the duel screen, so
+        // passing a chain window is one click and not a hunt for a row.
+        if(event.button() == 1 && canDecline())
+        {
+            decline();
+            return true;
+        }
+
         // The bottom row first: it is drawn over the board, so a click that
         // lands on it belongs to it and not to whatever card is behind it.
-        List<Integer> loose = PromptOptions.looseOptions(DuelClientState.prompt, false);
+        List<Integer> loose = looseRows();
         for(int slot = 0; slot < loose.size(); slot++)
         {
             int x = looseX(slot);
@@ -242,8 +251,56 @@ public class BoardPointerScreen extends Screen
         return true;
     }
 
+    /**
+     * Declining, which is not one of the engine's options: it is an EMPTY
+     * answer.
+     * <p>
+     * The 2D screen synthesises this in six places -- a Cancel button, Escape,
+     * a held right-click during a chain window -- and the board had none of
+     * them, so any prompt a duellist was allowed to pass on simply had no
+     * answer available. A chain window is exactly that prompt, and it arrives
+     * constantly: the duel would sit parked on a question with no way to say
+     * "nothing, thank you".
+     */
+    private void decline()
+    {
+        DuelActionController.answer(new int[0], 0);
+        choices = List.of();
+        onClose();
+    }
+
+    /** Is the engine willing to take "nothing" for an answer right now? */
+    private static boolean canDecline()
+    {
+        EnginePrompt prompt = DuelClientState.prompt;
+        return prompt != null && prompt.cancelable();
+    }
+
+    /**
+     * The rows along the bottom: the engine's own board-less options, and then
+     * the decline, which is the mod's and is marked with an index of -1.
+     */
+    private List<Integer> looseRows()
+    {
+        List<Integer> rows = new java.util.ArrayList<>(
+            PromptOptions.looseOptions(DuelClientState.prompt, false));
+        if(canDecline())
+        {
+            rows.add(DECLINE);
+        }
+        return rows;
+    }
+
+    /** Not an option index: the answer that is no options at all. */
+    private static final int DECLINE = -1;
+
     private void answer(int index)
     {
+        if(index == DECLINE)
+        {
+            decline();
+            return;
+        }
         // The shared sender, which quotes the prompt's serial back: an answer
         // with a stale serial is dropped in silence and the duel thread stays
         // parked on it.
@@ -307,7 +364,7 @@ public class BoardPointerScreen extends Screen
                 ? 0xFF7CE38B : 0xFFC2C9D6;
         extractor.centeredText(font, label, width / 2, height - 58, colour);
 
-        List<Integer> loose = PromptOptions.looseOptions(DuelClientState.prompt, false);
+        List<Integer> loose = looseRows();
         if(!loose.isEmpty())
         {
             // The things that are not on the board -- ending a phase, going to
@@ -354,8 +411,12 @@ public class BoardPointerScreen extends Screen
 
     private String label(int index)
     {
+        if(index == DECLINE)
+        {
+            return "Pass";
+        }
         var prompt = DuelClientState.prompt;
-        return prompt == null || index >= prompt.options().size() ? "?"
+        return prompt == null || index < 0 || index >= prompt.options().size() ? "?"
             : prompt.options().get(index).label();
     }
 

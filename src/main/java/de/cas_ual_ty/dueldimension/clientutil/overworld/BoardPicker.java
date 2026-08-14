@@ -151,8 +151,15 @@ public final class BoardPicker
             {
                 continue;
             }
+            // The engine's own reference for this square, packed the same
+            // way BoardRenderer packs it. Without it a PLACES prompt -- "where
+            // do you want to put this" -- has nothing to match against, so a
+            // summon could be started on the board and never finished.
+            int zoneRef = de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt.zoneRef(
+                relative == 1, zone[0] == OcgConstants.LOCATION_MZONE, zone[1]);
             return new BoardTarget(occupied ? slot.code() : 0, relative, zone[0], zone[1],
-                -1, label(zone[0], zone[1]), occupied ? 1 : 0, occupied ? slot.art() : 0);
+                zoneRef, label(zone[0], zone[1]), occupied ? 1 : 0,
+                occupied ? slot.art() : 0);
         }
         return null;
     }
