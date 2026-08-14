@@ -143,7 +143,16 @@ public final class WorldQuad
         // solid, and its four edges point sideways.
         float[] normal = normalOf(xs, ys, zs);
 
-        PoseStack.Pose pose = poseStack.last();
+        // COPIED, not referenced. PoseStack.last() hands back the live Pose
+        // object and the stack RECYCLES it: the next pushPose overwrites the
+        // very matrix this lambda is holding, and submitCustomGeometry does not
+        // draw until later. On the duel board that never showed, because that
+        // renderer sits at the base of the stack and nothing pops over it. A
+        // block entity is the opposite case -- the level renderer pushes,
+        // translates, submits and pops immediately -- so by the time the quad
+        // was filled its pose had been reused for something else entirely, and
+        // the card came out nowhere near the block it belonged to.
+        PoseStack.Pose pose = poseStack.last().copy();
         collector.submitCustomGeometry(poseStack, typeFor(kind, texture),
             (unused, buffer) ->
             {

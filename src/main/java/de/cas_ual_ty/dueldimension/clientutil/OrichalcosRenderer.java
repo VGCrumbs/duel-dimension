@@ -309,7 +309,10 @@ public final class OrichalcosRenderer
         float cos = Mth.cos(spin);
         float sin = Mth.sin(spin);
 
-        PoseStack.Pose pose = poseStack.last();
+        // Copied: the stack recycles its Pose objects and the draw is
+        // deferred, so a reference held here can be overwritten before it is
+        // read. See WorldQuad.
+        PoseStack.Pose pose = poseStack.last().copy();
         collector.submitCustomGeometry(poseStack,
             // The one entity render type that is truly unlit -- see FieldQuad
             // for how that was established. A seal that dims with the local
@@ -366,7 +369,10 @@ public final class OrichalcosRenderer
         net.minecraft.client.renderer.rendertype.RenderType type =
             net.minecraft.client.renderer.rendertype.RenderTypes
                 .beaconBeam(BeaconRenderer.BEAM_LOCATION, true);
-        PoseStack.Pose pose = poseStack.last();
+        // Copied: the stack recycles its Pose objects and the draw is
+        // deferred, so a reference held here can be overwritten before it is
+        // read. See WorldQuad.
+        PoseStack.Pose pose = poseStack.last().copy();
         int rgb = BEAM_COLOUR & 0xFFFFFF;
 
         column(collector, poseStack, pose, type, core, v0, v1,

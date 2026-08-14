@@ -211,7 +211,9 @@ public final class ArenaRenderer
         poseStack.pushPose();
         poseStack.translate(at.getX() + 0.5D - camera.x, at.getY() - camera.y,
             at.getZ() + 0.5D - camera.z);
-        PoseStack.Pose pose = poseStack.last();
+        // Copied: the stack recycles its Pose objects, and this one is
+        // popped below while the draw is still deferred. See WorldQuad.
+        PoseStack.Pose pose = poseStack.last().copy();
         collector.submitCustomGeometry(poseStack,
             // The one entity render type that is truly unlit, as the placement
             // guide uses: a marker that dimmed with the block light would be

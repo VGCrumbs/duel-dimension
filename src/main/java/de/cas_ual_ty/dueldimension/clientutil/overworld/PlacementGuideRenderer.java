@@ -129,7 +129,9 @@ public final class PlacementGuideRenderer
     {
         poseStack.pushPose();
         poseStack.translate(x - camera.x, y - camera.y, z - camera.z);
-        PoseStack.Pose pose = poseStack.last();
+        // Copied: the stack recycles its Pose objects, and this one is
+        // popped below while the draw is still deferred. See WorldQuad.
+        PoseStack.Pose pose = poseStack.last().copy();
         float halfW = width / 2F;
         float halfD = depth / 2F;
         collector.submitCustomGeometry(poseStack,
