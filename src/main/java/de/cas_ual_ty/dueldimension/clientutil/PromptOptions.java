@@ -107,7 +107,35 @@ public final class PromptOptions
         {
             return false;
         }
-        return pointable(prompt);
+        return pointable(prompt) && aboutTheBoard(prompt);
+    }
+
+    /**
+     * Does this prompt ask about anything that is ON the board?
+     * <p>
+     * "Change this card's Type to the destroyed monster's original Type?" is a
+     * question with two answers and no subject: neither Yes nor No is a card,
+     * a zone or a phase, so there is nothing on the board to point at and the
+     * board can offer no way to answer it. Left to the board, that prompt
+     * arrived with nothing to click and the duel stopped there.
+     * <p>
+     * The duel screen has real buttons for exactly this, so a question with no
+     * subject goes to it -- and comes straight back, because the screen hands
+     * the board over again the moment the question is answered.
+     * <p>
+     * A phase counts as a subject: the phase bar is on screen and is clickable.
+     */
+    private static boolean aboutTheBoard(EnginePrompt prompt)
+    {
+        for(EnginePrompt.Option option : prompt.options())
+        {
+            if(option.hasSlot() || option.zone() >= 0
+                || CardCommands.isPhaseAction(option.command()))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

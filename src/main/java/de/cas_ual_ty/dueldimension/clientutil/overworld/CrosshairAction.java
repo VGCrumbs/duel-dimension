@@ -63,6 +63,15 @@ public final class CrosshairAction
                 DuelActionController.answer(new int[] {loose.get(0)}, 0);
                 return true;
             }
+            if(!loose.isEmpty())
+            {
+                // Several, so a choice has to be made and the cursor is the
+                // only thing that can make it. Returning false here left a
+                // click that did nothing at all, which reads as a duel that has
+                // stopped rather than as a question waiting to be answered.
+                client.setScreenAndShow(new BoardPointerScreen());
+                return true;
+            }
             return false;
         }
         if(options.size() == 1)
