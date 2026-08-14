@@ -162,11 +162,13 @@ public class DuelDimensionFabricClient implements ClientModInitializer
                 // air. release() is not ours to call -- it is protected.
                 while(client.options.keyAttack.consumeClick())
                 {
-                    de.cas_ual_ty.dueldimension.clientutil.overworld.CrosshairAction.click(client);
+                    de.cas_ual_ty.dueldimension.clientutil.overworld.CrosshairAction
+                        .click(client, false);
                 }
                 while(client.options.keyUse.consumeClick())
                 {
-                    de.cas_ual_ty.dueldimension.clientutil.overworld.CrosshairAction.click(client);
+                    de.cas_ual_ty.dueldimension.clientutil.overworld.CrosshairAction
+                        .click(client, true);
                 }
             }
 

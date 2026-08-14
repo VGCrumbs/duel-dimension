@@ -29,7 +29,7 @@ public class MinecraftDuelClickMixin
     @Inject(method = "startAttack", at = @At("HEAD"), cancellable = true)
     private void dueldimension$duelAttack(CallbackInfoReturnable<Boolean> callback)
     {
-        if(CrosshairAction.click(Minecraft.getInstance()))
+        if(CrosshairAction.click(Minecraft.getInstance(), false))
         {
             // false: nothing was swung at, so no swing animation and no
             // continued attack on the block behind the board.
@@ -40,7 +40,9 @@ public class MinecraftDuelClickMixin
     @Inject(method = "startUseItem", at = @At("HEAD"), cancellable = true)
     private void dueldimension$duelUse(CallbackInfo callback)
     {
-        if(CrosshairAction.click(Minecraft.getInstance()))
+        // The secondary click: declines a chain window, and otherwise acts on
+        // whatever the crosshair is on, exactly as the left one does.
+        if(CrosshairAction.click(Minecraft.getInstance(), true))
         {
             callback.cancel();
         }

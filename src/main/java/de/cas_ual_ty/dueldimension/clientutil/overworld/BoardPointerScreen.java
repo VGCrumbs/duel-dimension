@@ -237,9 +237,7 @@ public class BoardPointerScreen extends Screen
         if(hovered != null && hovered.isPile() && hovered.controller() == 0
             && hovered.location() == OcgConstants.LOCATION_DECK)
         {
-            choices = List.of(VIEW_DECK, SURRENDER);
-            choicesX = (int)event.x();
-            choicesY = (int)event.y();
+            openChoices(List.of(VIEW_DECK, SURRENDER), event.x(), event.y());
             return true;
         }
 
@@ -255,9 +253,7 @@ public class BoardPointerScreen extends Screen
             answer(options.get(0));
             return true;
         }
-        choices = options;
-        choicesX = (int)event.x();
-        choicesY = (int)event.y();
+        openChoices(options, event.x(), event.y());
         return true;
     }
 
@@ -286,20 +282,6 @@ public class BoardPointerScreen extends Screen
         return prompt != null && prompt.cancelable();
     }
 
-    /**
-     * The rows along the bottom: the engine's own board-less options, and then
-     * the decline, which is the mod's and is marked with an index of -1.
-     */
-    private List<Integer> looseRows()
-    {
-        List<Integer> rows = new java.util.ArrayList<>(
-            PromptOptions.looseOptions(DuelClientState.prompt, false));
-        if(canDecline())
-        {
-            rows.add(DECLINE);
-        }
-        return rows;
-    }
 
     /** Not an option index: the answer that is no options at all. */
     private static final int DECLINE = -1;
@@ -378,11 +360,6 @@ public class BoardPointerScreen extends Screen
             updateHover(mouseX, mouseY);
         }
 
-        if(!choices.isEmpty())
-        {
-            drawChoices(extractor);
-            return;
-        }
 
         // The HUD does not run while a screen is open, so the pointer draws
         // both the hand and the instruments itself -- otherwise the cards, the
@@ -395,6 +372,15 @@ public class BoardPointerScreen extends Screen
             HandHud.drawHand(extractor, board, hoveredCard);
         }
 
+        // Last, and never INSTEAD of the rest. Opening a menu used to return
+        // before the hand and the instruments were drawn, so the moment a card
+        // offered a choice the whole hand vanished behind the menu asking about
+        // it -- which is the opposite of what a contextual menu is for.
+        if(!choices.isEmpty())
+        {
+            drawChoices(extractor);
+        }
+
         // Shift shows the card's own words, the same as the deck builder's
         // preview and for the same reason: the wording is what a duellist is
         // squinting at mid-turn, and the card is already on screen at the size
@@ -404,22 +390,42 @@ public class BoardPointerScreen extends Screen
             CardBubble.draw(extractor, font, hovered.code(), mouseX, mouseY, width, height);
         }
 
-        String label = hovered == null ? "Point at a card" : hovered.label();
-        int colour = hovered != null
-            && PromptOptions.actionable(DuelClientState.prompt, false, hovered)
-                ? 0xFF7CE38B : 0xFFC2C9D6;
-        // Above the rows, which are themselves above the hand.
-        extractor.centeredText(font, label, width / 2,
-            looseY(0) - ROW_GAP - font.lineHeight, colour);
+        // No label and no strip. What a zone is called is written on the board
+        // in front of the player, and the things that are not on the board are
+        // reachable where they belong: a phase on the phase bar, the duel's own
+        // controls on the deck, and anything else in the same popup a card uses.
+    }
 
-        List<Integer> loose = looseRows();
-        if(!loose.isEmpty())
+    /** The board-less options, in the same popup a card's actions use. */
+    private void openLoose(double mouseX, double mouseY)
+    {
+        List<Integer> loose = PromptOptions.looseOptions(DuelClientState.prompt, false);
+        if(loose.isEmpty())
         {
-            // The things that are not on the board -- ending a phase, going to
-            // battle -- laid along the bottom where a freed cursor can reach
-            // them without hunting.
-            drawLoose(extractor, loose, mouseX, mouseY);
+            return;
         }
+        if(loose.size() == 1)
+        {
+            answer(loose.get(0));
+            return;
+        }
+        openChoices(loose, mouseX, mouseY);
+    }
+
+    /**
+     * Opens a menu beside the cursor, kept on the screen.
+     * <p>
+     * Anchored at the click and then pulled back inside the window, the same as
+     * the deck builder's preview and the duel screen's own menu: a menu that
+     * opens under the bottom edge is a menu whose last row cannot be clicked,
+     * and the rows nearest the bottom are the ones a hand card produces.
+     */
+    private void openChoices(List<Integer> rows, double mouseX, double mouseY)
+    {
+        choices = rows;
+        int tall = rows.size() * ROW_H;
+        choicesX = (int)Math.max(4, Math.min(mouseX, width - ROW_W - 4));
+        choicesY = (int)Math.max(4, Math.min(mouseY, height - tall - 4));
     }
 
     private void drawChoices(GuiGraphicsExtractor extractor)
@@ -432,55 +438,9 @@ public class BoardPointerScreen extends Screen
         }
     }
 
-    /** Where the loose options are drawn, so the hit test and the draw agree. */
-    private int looseX(int slot)
-    {
-        int columns = Math.max(1, (looseRows().size() + rowsPerColumn() - 1) / rowsPerColumn());
-        int column = slot / rowsPerColumn();
-        int spread = columns * (ROW_W + ROW_GAP) - ROW_GAP;
-        return (width - spread) / 2 + column * (ROW_W + ROW_GAP);
-    }
 
-    /**
-     * Stacked upwards from just above the hand, in as many columns as it takes.
-     * <p>
-     * Measured against {@link HandLayout#topEdge} rather than from the bottom
-     * of the screen, because the hand sits on the bottom edge and is sized to
-     * the viewport -- a row at a fixed offset from the bottom is a row written
-     * across the cards. And wrapped into columns rather than allowed to climb,
-     * because a prompt with a dozen board-less options would otherwise run off
-     * the top of the screen and take its own answer with it.
-     */
-    private int looseY(int slot)
-    {
-        int perColumn = rowsPerColumn();
-        int row = slot % perColumn;
-        return HandLayout.topEdge(height) - ROW_GAP - (perColumn - row) * ROW_H;
-    }
 
-    /** How many rows fit between the hand and the instruments at the top. */
-    private int rowsPerColumn()
-    {
-        int room = HandLayout.topEdge(height) - ROW_GAP - DuelHud.below(width) - ROW_H;
-        return Math.max(1, room / ROW_H);
-    }
 
-    /** Clear air between the rows and the cards under them. */
-    private static final int ROW_GAP = 6;
-
-    private void drawLoose(GuiGraphicsExtractor extractor, List<Integer> loose, int mouseX,
-        int mouseY)
-    {
-        for(int slot = 0; slot < loose.size(); slot++)
-        {
-            int x = looseX(slot);
-            int y = looseY(slot);
-            boolean over = mouseX >= x && mouseX < x + ROW_W && mouseY >= y && mouseY < y + ROW_H;
-            extractor.fill(x, y, x + ROW_W, y + ROW_H, over ? 0xE02A3A20 : 0xC0101820);
-            extractor.text(font, label(loose.get(slot)), x + 4, y + 3,
-                over ? 0xFFFFE84A : 0xFFC2C9D6, false);
-        }
-    }
 
     private String label(int index)
     {

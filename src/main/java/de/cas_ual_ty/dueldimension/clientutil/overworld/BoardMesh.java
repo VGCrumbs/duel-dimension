@@ -45,11 +45,24 @@ public final class BoardMesh
     }
 
     /**
-     * Successive layers, a millimetre apart. Coplanar quads on a GPU do not
-     * have a defined winner, and the resulting flicker is the single most
-     * obvious way a world board looks broken.
+     * Successive layers of the board, a centimetre apart.
+     * <p>
+     * A millimetre was not enough. Coplanar quads on a GPU have no defined
+     * winner, and a depth buffer far from the near plane cannot tell a
+     * millimetre from nothing -- so a lit zone and the square under it took
+     * turns being in front, which is the flicker seen while choosing where to
+     * place a card. A centimetre is still invisible at the scale a card is
+     * drawn and is comfortably above the depth buffer's resolution out at the
+     * distance a duellist stands.
      */
-    private static final double LAYER = 0.001D;
+    private static final double LAYER = 0.01D;
+
+    /**
+     * The highest any piece of the BOARD reaches. Anything standing on the
+     * board -- a card, a pile, a glow -- has to start above this, or it is
+     * inside the furniture rather than on it.
+     */
+    public static final double TOP_LAYER = LAYER * 2D;
 
     /**
      * The zones outside the playmat band: the two extra monster zones, the
@@ -112,6 +125,6 @@ public final class BoardMesh
     public static Piece highlight(int controller, int location, int sequence)
     {
         FieldLayout.Rect rect = FieldLayout.zone(controller, location, sequence);
-        return rect == null ? null : new Piece(rect, DuelTextures.SLOT_ACTIVE, LAYER * 2D);
+        return rect == null ? null : new Piece(rect, DuelTextures.SLOT_ACTIVE, TOP_LAYER);
     }
 }

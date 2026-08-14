@@ -34,11 +34,21 @@ public final class CrosshairAction
      * @return true if the duel took the click, so it does not also reach the
      *         world as a swing at the air
      */
-    public static boolean click(Minecraft client)
+    public static boolean click(Minecraft client, boolean secondary)
     {
         if(!ClientDuelField.locked() || client.gui.screen() != null)
         {
             return false;
+        }
+        // Right-click declines, the same as it does with the cursor free and
+        // the same as it does on the duel screen. A chain window is a question
+        // you answer by saying nothing, it arrives constantly, and in camera
+        // mode there is no row to click -- so without this a duellist holding
+        // their own camera could not pass one at all.
+        if(secondary && canDecline())
+        {
+            DuelActionController.answer(new int[0], 0);
+            return true;
         }
         BoardTarget target = ClientDuelTargeting.looking();
         List<Integer> options = PromptOptions.optionsFor(DuelClientState.prompt, false, target);
@@ -67,6 +77,13 @@ public final class CrosshairAction
         // thing that can make it. Borrowed for exactly as long as that takes.
         client.setScreenAndShow(new BoardPointerScreen());
         return true;
+    }
+
+    /** Is the engine willing to take "nothing" for an answer right now? */
+    private static boolean canDecline()
+    {
+        de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt = DuelClientState.prompt;
+        return prompt != null && prompt.cancelable();
     }
 
     /** Is there anything the crosshair could act on right now? */

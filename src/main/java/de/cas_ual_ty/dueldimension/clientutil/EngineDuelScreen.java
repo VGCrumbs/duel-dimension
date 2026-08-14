@@ -1399,6 +1399,18 @@ public class EngineDuelScreen extends Screen
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event)
     {
         int keyCode = event.key();
+
+        // Back to the board. A key binding is not polled while a screen is
+        // open, so the swap key has to be read here as well or the trip is
+        // one-way: out to the screen and no way home without ending the duel.
+        if(de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds.DUEL_VIEW.matches(event)
+            && de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked())
+        {
+            de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField
+                .toggleScreen(minecraft);
+            return true;
+        }
+
         // Escape backs out of whatever is open, in that order.
         if(keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE)
         {
@@ -1780,7 +1792,13 @@ public class EngineDuelScreen extends Screen
         int fieldLeft = SIDEBAR_W;
         // The table sits a little below the header. Only the play space moves:
         // the life bars, turn badge and phase row keep their own positions.
-        int fieldTop = TOP_BAR_H + FIELD_DROP;
+        // Below the phase bar, whatever height the phase bar turned out to be.
+        // Its cells are sized from the window's width, so on a wide window the
+        // case grows past the authored TOP_BAR_H and was drawn straight over
+        // the top of the table -- the board looked stretched upwards because
+        // its top was underneath the instruments.
+        int fieldTop = Math.max(TOP_BAR_H + FIELD_DROP,
+            PHASE_BAR_Y + phaseCellH() + phasePadY() + FIELD_DROP);
         int fieldWidth = width - SIDEBAR_W;
         // Down to the last few pixels: the wide margin here left a dead band
         // between the hand and the bottom edge and crushed the board above it.

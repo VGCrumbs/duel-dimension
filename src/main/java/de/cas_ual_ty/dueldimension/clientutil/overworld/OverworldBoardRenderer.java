@@ -51,11 +51,25 @@ public final class OverworldBoardRenderer
     private static final double SURFACE_LIFT = 0.02D;
 
     /**
-     * How high a card sits above the board, in field units. Above every piece
-     * of the board including a lit zone square, so a card is never in a
-     * coplanar fight with the square it is standing on.
+     * Clear air between the top of the board and the bottom of a card, in field
+     * units. Small: a card lying on a table is on it.
      */
-    private static final float CARD_LIFT = 0.02F;
+    private static final float CARD_GAP = 0.02F;
+
+    /**
+     * How high a card sits above the board, in field units.
+     * <p>
+     * Derived from the board's own top layer rather than guessed. It was
+     * guessed, and guessed low: the board's pieces are lifted in BLOCKS and a
+     * card's in FIELD UNITS, and at 0.9 blocks per unit the card came out at
+     * 0.018 blocks against a mat at 0.02 -- so every card on the field was
+     * being drawn fractionally UNDER the mat it was lying on, and took turns
+     * with it for the pixel.
+     */
+    private static float cardLift(FieldTransform transform)
+    {
+        return (float)((SURFACE_LIFT + BoardMesh.TOP_LAYER) / transform.scale()) + CARD_GAP;
+    }
 
     public static void render(LevelRenderContext context)
     {
@@ -165,7 +179,7 @@ public final class OverworldBoardRenderer
             float halfW = 0.28F;
             float acrossX = -dy / length * halfW;
             float acrossY = dx / length * halfW;
-            double lift = (CARD_LIFT + CardMesh.THICKNESS + 0.01F) * transform.scale();
+            double lift = (cardLift(transform) + CardMesh.THICKNESS + 0.01F) * transform.scale();
 
             WorldQuad.submit(poseStack, collector, DuelTextures.ATTACK, camera, new Vec3[] {
                 transform.at(fx - acrossX, fy - acrossY, lift),
@@ -322,10 +336,10 @@ public final class OverworldBoardRenderer
             float left = middle - widthUnits / 2F;
             float right = middle + widthUnits / 2F;
 
-            Vec3 bottomLeft = transform.at(left, edge, CARD_LIFT);
-            Vec3 bottomRight = transform.at(right, edge, CARD_LIFT);
-            Vec3 topLeft = transform.at(left, edge, CARD_LIFT + HELD_HEIGHT);
-            Vec3 topRight = transform.at(right, edge, CARD_LIFT + HELD_HEIGHT);
+            Vec3 bottomLeft = transform.at(left, edge, cardLift(transform));
+            Vec3 bottomRight = transform.at(right, edge, cardLift(transform));
+            Vec3 topLeft = transform.at(left, edge, cardLift(transform) + HELD_HEIGHT);
+            Vec3 topRight = transform.at(right, edge, cardLift(transform) + HELD_HEIGHT);
 
             WorldQuad.submit(poseStack, collector, back, camera,
                 new Vec3[] {bottomLeft, topLeft, topRight, bottomRight}, 0xFFFFFFFF);
@@ -344,7 +358,7 @@ public final class OverworldBoardRenderer
             return;
         }
         CardRenderer.submitPile(poseStack, collector, transform, camera, zone, controller, count,
-            CARD_LIFT, top, back);
+            cardLift(transform), top, back);
     }
 
     private static int size(List<BoardSnapshot.Slot> slots)
@@ -390,7 +404,7 @@ public final class OverworldBoardRenderer
                 continue;
             }
             CardRenderer.submit(poseStack, collector, transform, camera, zone, controller,
-                slot.defence(), CARD_LIFT, CardFaces.face(slot, false, controller), back);
+                slot.defence(), cardLift(transform), CardFaces.face(slot, false, controller), back);
 
             // A card the engine is offering glows, so a duellist can see what
             // they may do without sweeping the cursor over the whole board.
@@ -402,7 +416,7 @@ public final class OverworldBoardRenderer
             {
                 WorldQuad.submit(poseStack, collector, DuelHighlight.OUTLINE, camera,
                     transform.corners(CardMesh.placement(zone, slot.defence()),
-                        (CARD_LIFT + CardMesh.THICKNESS + 0.004F) * transform.scale()),
+                        (cardLift(transform) + CardMesh.THICKNESS + 0.004F) * transform.scale()),
                     DuelHighlight.tint(DuelHighlight.pulse(ticks())));
             }
         }

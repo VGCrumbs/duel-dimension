@@ -48,6 +48,10 @@ public final class DuelHud
 
     private static final int BAR_H = 14;
     private static final int TOP = 4;
+    /** Clear of the window's own edge, as the screen's bars are. */
+    private static final int EDGE = 6;
+    /** Between a bar and the turn counter. */
+    private static final int GAP = 4;
     private static final int PHASE_GAP = 3;
 
     /**
@@ -84,9 +88,13 @@ public final class DuelHud
             return;
         }
         int screenW = extractor.guiWidth();
-        // A third of the width each, so two bars and the phase case between
-        // them fit at any size rather than at one authored one.
-        int barW = Math.max(90, Math.min(230, screenW / 3 - 12));
+        // Laid out as the duel screen lays it out: two bars running from the
+        // edges to a small turn counter in the middle, and the phase case
+        // centred under them. The screen has a sidebar to leave room for and
+        // this does not, so the bars take the width the sidebar was using
+        // rather than a third of the screen apiece.
+        int turnW = Math.max(22, screenW / 22);
+        int barW = (screenW - turnW - EDGE * 2 - GAP * 2) / 2;
 
         // Through the animation, not straight from the board. A life total
         // that jumps says a number changed; one that runs down says how much
@@ -94,14 +102,21 @@ public final class DuelHud
         // animates it. The state is already being ticked -- tickPlayback does
         // it on the client tick -- so this is a read, not a second animator.
         long now = System.currentTimeMillis();
-        drawLifeBar(extractor, font, 6, TOP, barW, seat < 0 ? "Seat 1" : "You",
+        drawLifeBar(extractor, font, EDGE, TOP, barW, seat < 0 ? "Seat 1" : "You",
             DuelClientState.animations.lifePointState(0, board.self().lifePoints(), now),
             0xFF3FA34D);
-        drawLifeBar(extractor, font, screenW - barW - 6, TOP, barW,
+        drawLifeBar(extractor, font, screenW - EDGE - barW, TOP, barW,
             seat < 0 ? "Seat 2" : "Opponent",
             DuelClientState.animations.lifePointState(1,
                 board.opponent() == null ? 0 : board.opponent().lifePoints(), now),
             0xFFB03636);
+
+        // The turn number between them, in its own frame: the same three
+        // elements in the same order as the screen's top bar.
+        int turnX = EDGE + barW + GAP;
+        DdBlitUtil.fullBlit(extractor, DuelTextures.LP_FRAME, turnX, TOP, turnW, BAR_H);
+        String turn = Integer.toString(board.turn());
+        extractor.centeredText(font, turn, turnX + turnW / 2, TOP + 3, 0xFFFFFFFF);
 
         drawPhaseBar(extractor, board, screenW);
         drawClock(extractor, font, screenW);
@@ -202,7 +217,7 @@ public final class DuelHud
 
     private static int cellWidth(int screenW)
     {
-        return Math.max(18, Math.min(CELL_W_BASE, screenW / 14));
+        return Math.max(20, Math.min(CELL_W_BASE, Math.round(screenW * 0.075F)));
     }
 
     private static int cellHeight(int screenW)
