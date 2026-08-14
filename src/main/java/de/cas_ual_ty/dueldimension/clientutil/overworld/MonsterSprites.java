@@ -151,6 +151,18 @@ public final class MonsterSprites
         // everything after the animation.
         posed(81383947L, "white_magician_pikeru", 4, 2, 6, Loop.LOOP);
         posed(46128076L, "ebon_magician_curran", 4, 2, 5, Loop.LOOP);
+        // One row of four, back and forth, with no separate pose for lying
+        // down -- so the same four frames play in either battle position.
+        monster(8124921L, "right_leg_of_the_forbidden_one", 4, Loop.PING_PONG);
+        monster(70903634L, "right_arm_of_the_forbidden_one", 4, Loop.PING_PONG);
+        monster(44519536L, "left_leg_of_the_forbidden_one", 4, Loop.PING_PONG);
+        monster(7902349L, "left_arm_of_the_forbidden_one", 4, Loop.PING_PONG);
+        monster(13893596L, "exodius_the_ultimate_forbidden_lord", 4, Loop.PING_PONG);
+        monster(12600382L, "exodia_necross", 4, Loop.PING_PONG);
+        monster(92377303L, "dark_sage", 4, Loop.PING_PONG);
+        monster(98502113L, "dark_paladin", 4, Loop.PING_PONG);
+        monster(30208479L, "magician_of_black_chaos", 4, Loop.PING_PONG);
+        monster(80304126L, "magicians_valkyria", 4, Loop.PING_PONG);
     }
     // =========================================================================
 
