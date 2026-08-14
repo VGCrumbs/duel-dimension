@@ -29,8 +29,8 @@ import net.minecraft.resources.Identifier;
  * @param first   which cell this run starts at
  * @param frames  how many it runs for
  * @param ticks   how long each frame is held
- * @param trimX   pixels taken off the left AND right of every cell
- * @param trimY   pixels taken off the top AND bottom of every cell
+ * @param trimX   pixels taken off the region's OUTER left and right edges
+ * @param trimY   pixels taken off the region's OUTER top and bottom edges
  */
 public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns, int rows,
     int first, int frames, int ticks, MonsterSprites.Loop loop, int trimX, int trimY)
@@ -96,19 +96,16 @@ public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns,
         float regionH = h > 0 ? h : fileH - y;
 
         int at = cell(frame);
-        int column = at % columns;
-        int row = at / columns;
-        float cellW = regionW / columns;
-        float cellH = regionH / rows;
+        int column = at % Math.max(1, columns);
+        int row = at / Math.max(1, columns);
+        float cellW = regionW / Math.max(1, columns);
+        float cellH = regionH / Math.max(1, rows);
 
-        // The trim comes off both sides of the cell equally, which is what
-        // makes it a crop rather than a nudge: the sampled box stays centred on
-        // the cell, so tightening it never moves the sprite, it only stops
-        // taking in what was never part of it.
-        float left = (x + column * cellW + trimX) / fileW;
-        float right = (x + (column + 1) * cellW - trimX) / fileW;
-        float top = (y + row * cellH + trimY) / fileH;
-        float bottom = (y + (row + 1) * cellH - trimY) / fileH;
+        float[] window = windowAt(at);
+        float left = (x + (column + window[0]) * cellW) / fileW;
+        float top = (y + (row + window[1]) * cellH) / fileH;
+        float right = (x + (column + window[2]) * cellW) / fileW;
+        float bottom = (y + (row + window[3]) * cellH) / fileH;
         float insetU = 1F / fileW;
         float insetV = 1F / fileH;
         return new float[] {left + insetU, top + insetV, right - insetU, bottom - insetV};
@@ -157,30 +154,59 @@ public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns,
     }
 
     /**
-     * How much of the cell's width the trim leaves, as a fraction.
+     * Which part of a cell is sampled, as fractions of it: {left, top, right,
+     * bottom}, where 0 and 1 are the cell's own edges.
      * <p>
-     * Never zero and never negative. The editor's trim runs to 128 pixels and
-     * some cells are narrower than 256 -- Blue-Eyes' wings are about 85 across
-     * -- so a slider can ask for more than there is. A negative span would not
-     * fail, which is the problem: it would turn the box inside out and draw the
-     * sprite mirrored, and mirrored is a thing this code does on purpose
-     * elsewhere. Clamping keeps an over-trim looking like an over-trim.
+     * <b>The trim comes off the OUTER edges only -- the ones on the boundary of
+     * the region -- and never off the divisions between one cell and the next.</b>
+     * That is where the problem it was built for lives. A sample reaching past
+     * the region's edge does not find empty space, it WRAPS, and comes back
+     * with the far side of the sheet: a wing at the left edge grew a copy of
+     * the tip belonging to the wing at the right edge. Nothing of the kind
+     * happens at an internal division, where the worst a stray sample can do is
+     * pick up a neighbouring frame's margin -- which the texel inset in
+     * {@link #uv} already handles.
+     * <p>
+     * So cutting every cell on all four sides was paying for one problem four
+     * times over. A four-frame sheet has two outer vertical edges and three
+     * internal ones; trimming all of them threw away art from the middle of the
+     * run to fix a fault only its ends could have.
+     * <p>
+     * A cell that is both first and last on its axis -- a single column, or a
+     * single row, which is what most of these sheets are -- has both of its
+     * edges on the boundary and so gets trimmed at both. That is not a special
+     * case, it is the same rule.
      */
-    public float spanX()
+    public float[] windowAt(int cell)
     {
+        int across = Math.max(1, columns);
+        int down = Math.max(1, rows);
+        int column = cell % across;
+        int row = cell / across;
         float cellW = cellW();
-        return cellW <= 0F ? 1F : Math.clamp((cellW - trimX * 2F) / cellW, MIN_SPAN, 1F);
+        float cellH = cellH();
+        // Never past halfway, because the editor's trim reaches 128 pixels and
+        // some cells are narrower than that -- Blue-Eyes' wings are about 85
+        // across. An inverted box would not fail, which is the problem: it
+        // would draw the sprite mirrored, and mirrored is a thing this code
+        // does on purpose elsewhere.
+        float insetX = cellW <= 0F ? 0F : Math.clamp(trimX / cellW, 0F, LIMIT);
+        float insetY = cellH <= 0F ? 0F : Math.clamp(trimY / cellH, 0F, LIMIT);
+        return new float[] {
+            column == 0 ? insetX : 0F,
+            row == 0 ? insetY : 0F,
+            column == across - 1 ? 1F - insetX : 1F,
+            row == down - 1 ? 1F - insetY : 1F};
     }
 
-    /** How much of the cell's height the trim leaves, as a fraction. */
-    public float spanY()
+    /** The same, for a frame of this run rather than a cell of the region. */
+    public float[] window(int frame)
     {
-        float cellH = cellH();
-        return cellH <= 0F ? 1F : Math.clamp((cellH - trimY * 2F) / cellH, MIN_SPAN, 1F);
+        return windowAt(cell(frame));
     }
 
     /** A sliver, rather than nothing at all, when the trim is asked to eat a whole cell. */
-    private static final float MIN_SPAN = 0.02F;
+    private static final float LIMIT = 0.49F;
 
     /**
      * The same layer at a different pace, for the editor's speed control.

@@ -23,8 +23,10 @@ import net.minecraft.world.phys.Vec3;
  * <p>
  * <b>A trim never moves anything.</b> Every sprite occupies a box decided by
  * the WHOLE cell -- {@code height} tall and {@code height * aspect()} wide --
- * and the trim only shrinks the part of that box which gets drawn, symmetrically
- * about its own middle. So the pixels that survive a crop land exactly where
+ * and the trim only shrinks the part of that box which gets drawn. The drawn
+ * box then goes where the texels it reads go, rather than back onto the feet:
+ * cut the bottom and it rises by exactly what was cut, cut one side and it
+ * slides by half of it. So the pixels that survive a crop land exactly where
  * they landed before it, at exactly the size they were. That is the whole point
  * of a crop: it decides what is read, not where the monster stands.
  */
@@ -142,12 +144,20 @@ public final class MonsterBillboard
             // wings; trim decides what is drawn in them. Two controls, two jobs.
             float out = height * wings.spacing() + wingHalf;
 
-            float drawnHeight = wingHeight * layer.spanY();
-            float drawnHalf = wingHalf * layer.spanX();
-            double lift = -drawnHeight / 2D;
+            float[] window = layer.window(wingFrame);
+            float drawnHalf = wingHalf * (window[2] - window[0]);
+            float drawnHeight = wingHeight * (window[3] - window[1]);
+            // Folded into the distance out rather than added afterwards, so
+            // that mirroring reflects it too. A crop off one side of the wing
+            // cell has to land on the OUTER side of both wings, and the pair
+            // are one picture and its reflection -- shifting them both the same
+            // way in world space would put it on the outside of one and the
+            // inside of the other.
+            double along = out + wingHalf * (window[0] + window[2] - 1F);
+            double lift = -wingHeight / 2D + wingHeight * (1F - window[3]);
 
-            Vec3 leftAt = middle.add(-rightX * out, lift, -rightZ * out);
-            Vec3 rightAt = middle.add(rightX * out, lift, rightZ * out);
+            Vec3 leftAt = middle.add(-rightX * along, lift, -rightZ * along);
+            Vec3 rightAt = middle.add(rightX * along, lift, rightZ * along);
             float[] uv = layer.uv(wingFrame);
 
             // Mirrored in UV SPACE, never by negating the right vector. The
@@ -177,15 +187,18 @@ public final class MonsterBillboard
         }
 
         float[] uv = body.uv(frame);
+        float[] window = body.window(frame);
         float half = height * body.aspect() / 2F;
-        float drawnHeight = height * body.spanY();
-        float drawnHalf = half * body.spanX();
-        // A symmetric trim keeps the sampled box centred on the cell, so the
-        // drawn box shares the whole box's middle and its bottom rises by
-        // exactly what was cut from underneath. Standing it back on the feet
-        // instead is what used to drag a monster downwards and stretch it as
-        // the vertical crop tightened.
-        Vec3 stand = feet.add(0D, (height - drawnHeight) / 2D, 0D);
+        float drawnHalf = half * (window[2] - window[0]);
+        float drawnHeight = height * (window[3] - window[1]);
+        // The drawn box sits where the texels it reads sit, which is what stops
+        // a crop from moving anything: cut the bottom and the quad rises by
+        // exactly what was cut, cut one side and it slides by half of it.
+        // Standing it back on the feet regardless is what used to drag a
+        // monster downwards and stretch it as the vertical crop tightened.
+        double shift = half * (window[0] + window[2] - 1F);
+        double lift = height * (1F - window[3]);
+        Vec3 stand = feet.add(rightX * shift, lift, rightZ * shift);
         quad(poseStack, collector, body, camera, stand, rightX, rightZ, drawnHalf, drawnHeight,
             uv, false, tint);
 

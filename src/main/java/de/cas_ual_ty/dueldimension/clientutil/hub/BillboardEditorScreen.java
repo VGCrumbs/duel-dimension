@@ -494,11 +494,15 @@ public class BillboardEditorScreen extends Screen
             int rowOf = cell / layer.columns();
             // The box actually SAMPLED, trim included, because a box drawn
             // where the cell is rather than where the crop is would show a
-            // trim as having done nothing.
-            int x0 = x + Math.round((layer.x() + column * cellW + layer.trimX()) * scaleX);
-            int x1 = x + Math.round((layer.x() + (column + 1) * cellW - layer.trimX()) * scaleX);
-            int y0 = y + Math.round((layer.y() + rowOf * cellH + layer.trimY()) * scaleY);
-            int y1 = y + Math.round((layer.y() + (rowOf + 1) * cellH - layer.trimY()) * scaleY);
+            // trim as having done nothing. Asked of the layer rather than
+            // worked out again here, so that the grid on the sheet and the box
+            // round the hologram cannot come to disagree about where the crop
+            // is -- including that it only bites at the region's outer edge.
+            float[] window = layer.windowAt(cell);
+            int x0 = x + Math.round((layer.x() + (column + window[0]) * cellW) * scaleX);
+            int x1 = x + Math.round((layer.x() + (column + window[2]) * cellW) * scaleX);
+            int y0 = y + Math.round((layer.y() + (rowOf + window[1]) * cellH) * scaleY);
+            int y1 = y + Math.round((layer.y() + (rowOf + window[3]) * cellH) * scaleY);
 
             boolean inRun = cell >= layer.first() && cell < layer.first() + layer.frames();
             if(inRun)
