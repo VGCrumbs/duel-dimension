@@ -525,13 +525,41 @@ public final class OverworldBoardRenderer
                 slot.defence(), cardLift(transform), CardFaces.face(slot, false, controller),
                 CardFaces.underside(slot, controller));
 
+            de.cas_ual_ty.dueldimension.clientutil.BoardTarget target =
+                new de.cas_ual_ty.dueldimension.clientutil.BoardTarget(slot.code(), asked,
+                    location, sequence, -1, "", 1, slot.art());
+
+            // drawing.cpp bobs tAttack over any card that may attack, and the
+            // 2D board does the same. Without it the battle phase is a board of
+            // identical monsters with no sign of which have not swung yet --
+            // which is the one thing a player needs to see in it.
+            if(offers(target, de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.COMMAND_ATTACK))
+            {
+                WorldQuad.submit(poseStack, collector, DuelTextures.ATTACK, camera,
+                    transform.corners(CardMesh.placement(zone, slot.defence()),
+                        (cardLift(transform) + CardMesh.THICKNESS + 0.045F) * transform.scale()),
+                    0xFFFFFFFF);
+            }
+
+            // Already picked for a selection that wants several. Green rather
+            // than the offering blue, because "you may choose this" and "you
+            // have chosen this" are different things, and a duellist part way
+            // through three tributes has to tell them apart at a glance.
+            if(de.cas_ual_ty.dueldimension.clientutil.DuelSelection.holds(
+                DuelClientState.prompt, target))
+            {
+                WorldQuad.submit(poseStack, collector, DuelHighlight.OUTLINE, camera,
+                    transform.corners(CardMesh.placement(zone, slot.defence()),
+                        (cardLift(transform) + CardMesh.THICKNESS + 0.035F) * transform.scale()),
+                    DuelHighlight.tinted(DuelHighlight.CHOSEN_GREEN, 0.95F));
+            }
+
             // A card the engine is offering glows, so a duellist can see what
             // they may do without sweeping the cursor over the whole board.
             // Asked through the same filter that decides the click, so the glow
             // and the click can never disagree.
             if(de.cas_ual_ty.dueldimension.clientutil.PromptOptions.actionable(
-                DuelClientState.prompt, false, new de.cas_ual_ty.dueldimension.clientutil
-                    .BoardTarget(slot.code(), asked, location, sequence, -1, "", 1, slot.art())))
+                DuelClientState.prompt, false, target))
             {
                 // Well clear of the card's own top face. At four thousandths
                 // of a unit the glow and the face were close enough for a
@@ -543,6 +571,33 @@ public final class OverworldBoardRenderer
                     DuelHighlight.tint(DuelHighlight.pulse(ticks())));
             }
         }
+    }
+
+    /**
+     * Does the engine offer this exact command for this card?
+     * <p>
+     * Asked of the prompt rather than of a status bit, because the prompt is
+     * where the answer actually is: ocgcore reports which cards may attack as a
+     * list in MSG_SELECT_BATTLECMD, and {@code CardCommands} folds that list
+     * into the bitmask this reads. No second opinion, and nothing to drift.
+     */
+    private static boolean offers(de.cas_ual_ty.dueldimension.clientutil.BoardTarget target,
+        int command)
+    {
+        de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt = DuelClientState.prompt;
+        if(prompt == null)
+        {
+            return false;
+        }
+        for(int index : de.cas_ual_ty.dueldimension.clientutil.PromptOptions.optionsFor(
+            prompt, false, target))
+        {
+            if(prompt.options().get(index).command() == command)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -54,10 +54,24 @@ public final class CrosshairAction
         List<Integer> options = PromptOptions.optionsFor(DuelClientState.prompt, false, target);
         if(options.isEmpty())
         {
+            // Your own deck first, and before anything about the prompt. It is
+            // where the duel's own controls live, and a crosshair that found
+            // nothing to do with it used to fall through to the loose options
+            // and hand back the phase bar's own commands instead -- three rows
+            // that already have somewhere to be.
+            if(BoardPointerScreen.isOwnDeck(target))
+            {
+                client.gui.setScreen(new BoardPointerScreen(target,
+                    BoardPointerScreen.deckMenu()));
+                return true;
+            }
+
             // Nothing under the crosshair, so the click means the things that
-            // are not on the board: ending a phase, passing a chain. One of
-            // those and it is unambiguous; more and the player picks.
-            List<Integer> loose = PromptOptions.looseOptions(DuelClientState.prompt, false);
+            // are not on the board -- but NOT the phase transitions, which are
+            // bays on the phase bar and do not want a second home in a menu.
+            // What is left is a question with nowhere to point: Yes or No, or
+            // which half of an effect to use.
+            List<Integer> loose = PromptOptions.unanchoredOptions(DuelClientState.prompt, false);
             if(loose.size() == 1)
             {
                 DuelActionController.answer(new int[] {loose.get(0)}, 0);
@@ -76,6 +90,17 @@ public final class CrosshairAction
             }
             return false;
         }
+        // A prompt that wants several things toggles instead of answering,
+        // exactly as it does with the cursor: the camera being the player's
+        // does not change what a click MEANS.
+        if(de.cas_ual_ty.dueldimension.clientutil.DuelSelection.wantsSeveral(
+            DuelClientState.prompt))
+        {
+            de.cas_ual_ty.dueldimension.clientutil.DuelSelection.toggle(
+                DuelClientState.prompt, options.get(0));
+            return true;
+        }
+
         // Some clicks are already the whole answer -- an empty square asked
         // "where", a tribute asked "which" -- and those never cost the player
         // their camera.

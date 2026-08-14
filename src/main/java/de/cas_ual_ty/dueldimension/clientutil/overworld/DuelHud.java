@@ -37,9 +37,17 @@ public final class DuelHud
         OcgConstants.PHASE_MAIN1, OcgConstants.PHASE_BATTLE, OcgConstants.PHASE_MAIN2,
         OcgConstants.PHASE_END};
 
-    /** Rows of the phase atlas: lit, idle, greyed. */
-    private static final int PHASE_LIT = 0;
-    private static final int PHASE_IDLE = 1;
+    /**
+     * Rows of the phase atlas: idle, lit, greyed -- in the atlas's own order.
+     * <p>
+     * Which was upside down. The first two were named the other way round here
+     * than on the duel screen, so every bay wore the wrong face: the phase you
+     * are IN was drawn in the flat idle plate and the ones merely available lit
+     * up. Same picture, same numbers, opposite meanings -- and the only way to
+     * see it was to have both boards open at once.
+     */
+    private static final int PHASE_IDLE = 0;
+    private static final int PHASE_LIT = 1;
     private static final int PHASE_DISABLED = 2;
 
     /** The atlas is six cells across and three rows down. */
@@ -213,6 +221,56 @@ public final class DuelHud
         int cancelW = Math.round(CANCEL_W * scale);
         int cancelH = Math.round(CANCEL_H * scale);
         return new int[] {EDGE, screenH - EDGE - cancelH, cancelW, cancelH};
+    }
+
+    /**
+     * Where "that is all of them" sits, or null when nothing is being counted.
+     * <p>
+     * Beside the way out rather than across the screen from it, because the two
+     * are the same decision asked twice -- yes I am done, no I am not -- and a
+     * player looking for one has found the other.
+     */
+    public static int[] confirmBounds(int screenW, int screenH)
+    {
+        if(DuelClientState.over
+            || !de.cas_ual_ty.dueldimension.clientutil.DuelSelection.wantsSeveral(
+                DuelClientState.prompt))
+        {
+            return null;
+        }
+        float scale = chromeScale(screenW, screenH);
+        int confirmW = Math.round(CANCEL_W * scale);
+        int confirmH = Math.round(CANCEL_H * scale);
+        return new int[] {EDGE + confirmW + 4, screenH - EDGE - confirmH, confirmW, confirmH};
+    }
+
+    /**
+     * The button that ends a selection, and the count that says whether it can.
+     * <p>
+     * Greyed until the engine's own minimum is met, and carrying the running
+     * total on its face: "which three monsters" is a question a player answers
+     * over several clicks, and without a number on screen the only way to know
+     * how far along they are is to count the cards they have lit up.
+     */
+    public static void drawConfirm(GuiGraphicsExtractor extractor, Font font, int mouseX,
+        int mouseY)
+    {
+        int[] at = confirmBounds(extractor.guiWidth(), extractor.guiHeight());
+        if(at == null)
+        {
+            return;
+        }
+        boolean ready = de.cas_ual_ty.dueldimension.clientutil.DuelSelection.ready(
+            DuelClientState.prompt);
+        boolean over = mouseX >= at[0] && mouseX < at[0] + at[2]
+            && mouseY >= at[1] && mouseY < at[1] + at[3];
+        de.cas_ual_ty.dueldimension.clientutil.hub.NineSlice.draw(extractor,
+            de.cas_ual_ty.dueldimension.clientutil.hub.HubTextures.BUTTON,
+            at[0], at[1], at[2], at[3], !ready ? 2 : over ? 1 : 0, 3);
+        String label = "Confirm " + de.cas_ual_ty.dueldimension.clientutil.DuelSelection.count()
+            + "/" + DuelClientState.prompt.maxSelect();
+        extractor.text(font, label, at[0] + (at[2] - font.width(label)) / 2,
+            at[1] + (at[3] - font.lineHeight) / 2 + 1, ready ? 0xFFE6EAF2 : 0xFF6A7080, true);
     }
 
     /**

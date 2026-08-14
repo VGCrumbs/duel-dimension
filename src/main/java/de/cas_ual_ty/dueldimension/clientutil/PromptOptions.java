@@ -78,18 +78,24 @@ public final class PromptOptions
     /**
      * Is this click already the whole answer, or does it still have to ask?
      * <p>
-     * One thing asks: a card in HAND with exactly one option. That is where a
-     * misclick costs something irreversible -- a trap can only be Set, so a
-     * cursor a few pixels off used to put it face-down on the field with
+     * One thing asks: a card in HAND whose single option is an ACTION. That is
+     * where a misclick costs something irreversible -- a trap can only be Set,
+     * so a cursor a few pixels off used to put it face-down on the field with
      * nothing offered in between, and a card played from hand does not come
      * back. The menu costs one click and buys the chance to change your mind.
      * <p>
-     * Everything else answers on the click, because everything else has already
-     * been asked. An empty square is the answer to "where", a tribute is the
-     * answer to "which", and an attack target is the answer to "what are you
-     * hitting" -- a one-row menu there says the thing just clicked back to the
-     * player and asks them to click it twice. More than one option is a real
-     * choice wherever it is, and always asks.
+     * An action is exactly what the engine puts in an option's command: Summon,
+     * Set, Activate. A SELECTION carries no command at all, and being asked
+     * which card to discard is not the same question as being asked what to do
+     * with one -- the card IS the answer, so a one-row menu repeats the card
+     * just clicked back at the player and asks them to click it twice. The same
+     * is true of a tribute, of chain material, and of a hand card offered as a
+     * cost, all of which arrive through MSG_SELECT_CARD carrying no command.
+     * <p>
+     * Everything off the hand answers on the click for the same reason. An
+     * empty square is the answer to "where", an attack target the answer to
+     * "what are you hitting". More than one option is a real choice wherever it
+     * is, and always asks.
      */
     public static boolean answersOutright(EnginePrompt prompt, BoardTarget target,
         List<Integer> options)
@@ -98,7 +104,40 @@ public final class PromptOptions
         {
             return false;
         }
-        return target.location() != de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_HAND;
+        // A stack never answers on the click. Its cards are face down, so one
+        // option means one card the player has not seen -- and committing it
+        // sight unseen is exactly what the verb list and the picker exist to
+        // prevent. The cursor already routed piles that way; the crosshair did
+        // not, and would summon a monster out of a graveyard on a single click.
+        if(target.isPile())
+        {
+            return false;
+        }
+        // A chain window is activations wearing a selection's clothes.
+        // MSG_SELECT_CHAIN names cards rather than commands, so every one of
+        // its options carries command 0 -- but clicking one SETS OFF a trap,
+        // which is the single most irreversible click in a duel and the very
+        // thing the menu was asked for. EDOPro puts a confirmation in front of
+        // it too.
+        if(prompt.chainWindow())
+        {
+            return false;
+        }
+        return prompt.options().get(options.get(0)).command() == 0;
+    }
+
+    /**
+     * Can a duellist standing at a world board answer a prompt that wants
+     * SEVERAL things?
+     * <p>
+     * Tributes, mostly. Three monsters are three cards on the board, every one
+     * of them somewhere a duellist can point -- so the only reason this went to
+     * the duel screen was that the board could not remember between clicks, and
+     * that is now {@link DuelSelection}'s job rather than a reason to leave.
+     */
+    private static boolean severalPointable(EnginePrompt prompt)
+    {
+        return prompt.kind() == EnginePrompt.Kind.MULTI;
     }
 
     /**
@@ -127,14 +166,76 @@ public final class PromptOptions
         // is four postures of one card, which is a list to pick one from and
         // nothing to do with the board; a summon asks it, so refusing it here
         // meant every summon pulled the screen over the board.
-        if(!prompt.isSingleChoice()
+        if(!prompt.isSingleChoice() && !severalPointable(prompt)
             && !((prompt.kind() == EnginePrompt.Kind.PLACES
                 || prompt.kind() == EnginePrompt.Kind.POSITION) && prompt.maxSelect() <= 1))
         {
             return false;
         }
-        return pointable(prompt) && aboutTheBoard(prompt);
+        return pointable(prompt) && (aboutTheBoard(prompt) || needsList(prompt));
     }
+
+    /**
+     * Is this a question the board can only ask as a LIST?
+     * <p>
+     * "Change this card's Type to the destroyed monster's original Type?" has
+     * two answers and no subject: neither Yes nor No is a card, a zone or a
+     * phase, so there is nothing on the board a duellist could point at to give
+     * either one. A position prompt is the same shape -- one card in four
+     * postures, and the card is very often not on the field yet to be clicked.
+     * <p>
+     * These used to be handed to the duel screen, which meant an ordinary flip
+     * effect yanked a player out of the world board and put them back a second
+     * later. The screen was never needed: the cursor is already there and a
+     * list of two rows is not a thing only a screen can draw. So the board
+     * keeps them and opens the list itself.
+     * <p>
+     * NOT for anything with a subject. A prompt with even one option on the
+     * board is answered by pointing at it, which is the whole reason for
+     * standing at one.
+     */
+    public static boolean needsList(EnginePrompt prompt)
+    {
+        if(prompt == null)
+        {
+            return false;
+        }
+        // POSITION belongs here too, which is what this javadoc has always
+        // said. It is not isSingleChoice by kind, and leaving it out meant a
+        // Synchro or a revival asked for a posture while the card was still in
+        // the Extra Deck or the graveyard -- nothing on the board carried its
+        // code, the prompt refuses an empty answer, and every click did
+        // nothing. A duel parked on "attack or defence" with no way to say
+        // either.
+        if(!prompt.isSingleChoice() && prompt.kind() != EnginePrompt.Kind.POSITION)
+        {
+            return false;
+        }
+        for(EnginePrompt.Option option : prompt.options())
+        {
+            if(option.hasSlot())
+            {
+                return false;
+            }
+        }
+        List<Integer> rows = unanchoredOptions(prompt, false);
+        // And only if it fits on the screen. "Declare a Type" offers
+        // twenty-five, which is taller than the window: the rows below the
+        // bottom edge cannot be clicked, the prompt refuses an empty answer,
+        // and the list reopens itself every tick. The duel screen wraps its
+        // buttons and has always handled these, so anything this long keeps it.
+        return !rows.isEmpty() && rows.size() <= MAX_LIST_ROWS;
+    }
+
+    /**
+     * The tallest list the board will take on.
+     * <p>
+     * Eight covers everything a duel actually asks a duellist to read at the
+     * board: Yes and No, an effect's two or three halves, the seven Attributes,
+     * a posture, rock-paper-scissors. What it excludes is the declaration
+     * prompts, which are card indexes rather than questions and want a screen.
+     */
+    private static final int MAX_LIST_ROWS = 8;
 
     /**
      * Does this prompt ask about anything that is ON the board?
@@ -210,7 +311,7 @@ public final class PromptOptions
                 continue;
             }
             anySlot = true;
-            if(!pickable(option.location()))
+            if(!pickable(option))
             {
                 return false;
             }
@@ -249,11 +350,20 @@ public final class PromptOptions
      * a prompt the board cannot answer, and the two answers drifting apart is a
      * duel parked on a question with nothing on screen to click.
      */
-    private static boolean pickable(int location)
+    private static boolean pickable(EnginePrompt.Option option)
     {
+        int location = option.location();
+        if(location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_HAND)
+        {
+            // YOUR hand only. The board draws the opponent's as backs standing
+            // in front of them -- deliberately, because their faces are theirs
+            // -- so "look at your opponent's hand and take one" has as many
+            // things to click as it has cards you can identify, which is none.
+            // The picker on the duel screen is where that question is answered.
+            return option.controller() == 0;
+        }
         return location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_MZONE
             || location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_SZONE
-            || location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_HAND
             || location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_DECK
             || location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_EXTRA
             || location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_GRAVE
@@ -280,6 +390,32 @@ public final class PromptOptions
     public static boolean canDecline(EnginePrompt prompt)
     {
         return prompt != null && prompt.cancelable();
+    }
+
+    /**
+     * The loose options that genuinely need a list, which is not the same set.
+     * <p>
+     * A phase transition is loose -- "End Turn" is not about a card -- but it
+     * is not homeless: the phase bar is drawn across the top of the screen and
+     * every one of those options is a bay on it. Offering them again in a menu
+     * puts the same three commands in two places, and the menu is the worse of
+     * the two because it has to be summoned and the bar is simply there.
+     * <p>
+     * What is left is a question with nowhere to be pointed at: Yes and No, or
+     * which of an effect's two halves to apply. Those have no home at all, and
+     * a list is the only thing that can ask them.
+     */
+    public static List<Integer> unanchoredOptions(EnginePrompt prompt, boolean answered)
+    {
+        List<Integer> found = new ArrayList<>();
+        for(int index : looseOptions(prompt, answered))
+        {
+            if(!CardCommands.isPhaseAction(prompt.options().get(index).command()))
+            {
+                found.add(index);
+            }
+        }
+        return found;
     }
 
     public static List<Integer> looseOptions(EnginePrompt prompt, boolean answered)

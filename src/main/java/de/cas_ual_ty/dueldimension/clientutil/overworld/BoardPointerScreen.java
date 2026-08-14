@@ -3,6 +3,7 @@ package de.cas_ual_ty.dueldimension.clientutil.overworld;
 import de.cas_ual_ty.dueldimension.clientutil.BoardTarget;
 import de.cas_ual_ty.dueldimension.clientutil.DuelActionController;
 import de.cas_ual_ty.dueldimension.clientutil.DuelClientState;
+import de.cas_ual_ty.dueldimension.clientutil.DuelSelection;
 import de.cas_ual_ty.dueldimension.clientutil.PromptOptions;
 import de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds;
 import de.cas_ual_ty.dueldimension.ocg.OcgConstants;
@@ -90,6 +91,16 @@ public class BoardPointerScreen extends Screen
     private BoardTarget chosenAnchor;
 
     /**
+     * True when the open list IS the prompt -- a Yes/No, or a posture -- rather
+     * than a menu about something on the board.
+     * <p>
+     * Drawn differently because it is a different thing: centred, with the
+     * question written above it, because there is no card for it to hang off
+     * and nothing else on screen says what is being asked.
+     */
+    private boolean asking;
+
+    /**
      * When the open menu is a pile's, the options each of its rows stands for.
      * <p>
      * A pile's rows are verbs rather than cards, so a row does not answer the
@@ -143,6 +154,97 @@ public class BoardPointerScreen extends Screen
     }
 
     /**
+     * A question with nowhere to point at opens itself.
+     * <p>
+     * Nothing on the board could ever open it -- that is what makes it this
+     * kind of question -- so waiting for a click would be waiting forever, and
+     * waiting forever is exactly what used to send these to the duel screen.
+     * Reopened if dismissed while it still stands, because a duel does not go
+     * on until it is answered and a list nobody can get back is a duel nobody
+     * can finish.
+     */
+    @Override
+    public void tick()
+    {
+        DuelSelection.sync(DuelClientState.prompt);
+        if(choices.isEmpty() && PromptOptions.needsList(DuelClientState.prompt))
+        {
+            openQuestion(PromptOptions.unanchoredOptions(DuelClientState.prompt, false));
+        }
+    }
+
+    /**
+     * The prompt's own list: centred, and clear of both the instruments above
+     * and the hand below, since it belongs to neither.
+     */
+    private void openQuestion(List<Integer> rows)
+    {
+        hovered = null;
+        openChoices(rows, width / 2D, height / 2D);
+        chosenAnchor = null;
+        asking = true;
+        choicesX = (width - choicesW) / 2;
+
+        // Wrapped, not cut. The caption exists to say what is being agreed to,
+        // and lopping the tail off a sentence leaves two rows reading Yes and
+        // No under half a question -- with nothing to show that anything went
+        // missing. Measured first, because the lines it takes are room the list
+        // below has to make for it.
+        questionLines = wrap(DuelClientState.prompt == null ? ""
+            : DuelClientState.prompt.title(), width - 16);
+        int caption = questionLines.size() * LINE_H + QUESTION_GAP;
+        int tall = rows.size() * ROW_H;
+        // Clear of the instruments above AND the hand below. HandLayout knows
+        // where the cards start for exactly this reason.
+        int floor = HandLayout.topEdge(height) - 4;
+        choicesY = Math.max(DuelHud.below(width, height) + caption,
+            Math.min((height - tall) / 2, floor - tall));
+    }
+
+    /** Room above the list for the question itself. */
+    private static final int QUESTION_GAP = 6;
+    private static final int LINE_H = 10;
+
+    /** The question, already broken into lines that fit. */
+    private List<String> questionLines = List.of();
+
+    /**
+     * Breaks a sentence at its spaces into lines no wider than the room given.
+     * <p>
+     * A word longer than the whole line is left to overhang rather than being
+     * broken mid-word: a card name split across two rows is harder to read than
+     * one that runs a little wide, and card names are most of what these
+     * questions are made of.
+     */
+    private List<String> wrap(String text, int room)
+    {
+        List<String> lines = new java.util.ArrayList<>();
+        if(text == null || text.isEmpty())
+        {
+            return lines;
+        }
+        StringBuilder line = new StringBuilder();
+        for(String word : text.split(" "))
+        {
+            String candidate = line.isEmpty() ? word : line + " " + word;
+            if(!line.isEmpty() && font.width(candidate) > room)
+            {
+                lines.add(line.toString());
+                line = new StringBuilder(word);
+            }
+            else
+            {
+                line = new StringBuilder(candidate);
+            }
+        }
+        if(!line.isEmpty())
+        {
+            lines.add(line.toString());
+        }
+        return lines;
+    }
+
+    /**
      * What happens once a question has been answered.
      * <p>
      * A borrowed pointer hands the camera back, because that is the whole of
@@ -154,6 +256,7 @@ public class BoardPointerScreen extends Screen
     {
         choices = List.of();
         pileGroups = null;
+        asking = false;
         chosenAnchor = null;
         surrenderArmed = false;
         if(pinned)
@@ -309,6 +412,19 @@ public class BoardPointerScreen extends Screen
         // when no menu happened to be sitting over it is a way out a player
         // cannot trust -- and the menu is part of the action being backed out
         // of, not something in the way of it.
+        int[] confirm = DuelHud.confirmBounds(width, height);
+        if(confirm != null && event.x() >= confirm[0] && event.x() < confirm[0] + confirm[2]
+            && event.y() >= confirm[1] && event.y() < confirm[1] + confirm[3])
+        {
+            if(DuelSelection.ready(DuelClientState.prompt))
+            {
+                DuelActionController.answer(DuelSelection.answer(), 0);
+                DuelSelection.clear();
+                dismiss();
+            }
+            return true;
+        }
+
         int[] cancel = DuelHud.cancelBounds(width, height, !choices.isEmpty());
         if(cancel != null && event.x() >= cancel[0] && event.x() < cancel[0] + cancel[2]
             && event.y() >= cancel[1] && event.y() < cancel[1] + cancel[3])
@@ -330,8 +446,16 @@ public class BoardPointerScreen extends Screen
         // and starts again from whatever is under the cursor.
         if(!choices.isEmpty())
         {
-            int row = (int)((event.y() - choicesY) / ROW_H);
-            if(event.x() >= choicesX && event.x() < choicesX + choicesW
+            // Left button, and inside the list. Both mattered the moment the
+            // list started opening BY ITSELF: it appears under wherever the
+            // cursor was resting, so a reflexive right-click -- the gesture
+            // that passes a chain window, used dozens of times a duel -- would
+            // have activated the effect it meant to decline. And the cast
+            // truncated towards zero, so the fifteen pixels ABOVE the list read
+            // as row zero and picked "Yes" from empty board.
+            int row = Math.floorDiv((int)event.y() - choicesY, ROW_H);
+            if(event.button() == 0 && event.y() >= choicesY
+                && event.x() >= choicesX && event.x() < choicesX + choicesW
                 && row >= 0 && row < choices.size())
             {
                 if(pileGroups != null && row < pileGroups.size())
@@ -381,10 +505,9 @@ public class BoardPointerScreen extends Screen
         // those are answered by clicking the very same stack. Taking this
         // branch first put View Deck and Surrender in front of the question and
         // left no way at all to answer it.
-        if(options.isEmpty() && hovered != null && hovered.isPile() && hovered.controller() == 0
-            && hovered.location() == OcgConstants.LOCATION_DECK)
+        if(options.isEmpty() && isOwnDeck(hovered))
         {
-            openChoices(List.of(VIEW_DECK, SURRENDER), event.x(), event.y());
+            openChoices(deckMenu(), event.x(), event.y());
             return true;
         }
 
@@ -392,6 +515,28 @@ public class BoardPointerScreen extends Screen
         {
             return super.mouseClicked(event, doubled);
         }
+        // A prompt that wants SEVERAL things is answered by picking them and
+        // saying so, not by picking one and being taken at your word. Every
+        // click toggles, and the Confirm button in the corner is what ends it.
+        if(DuelSelection.wantsSeveral(DuelClientState.prompt))
+        {
+            DuelSelection.toggle(DuelClientState.prompt, options.get(0));
+            return true;
+        }
+
+        // Some clicks are already the whole answer: an empty square asked
+        // "where", a tribute asked "which", an attack asked "what are you
+        // hitting". Those go straight through. Anything a card can DO asks
+        // first, even with one row, so a trap is not Set on the field and a
+        // monster's battle position is not silently flipped by a cursor a few
+        // pixels off. The duel screen's own test, so the two boards cannot come
+        // to different conclusions about the same click.
+        if(PromptOptions.answersOutright(DuelClientState.prompt, hovered, options))
+        {
+            answer(options.get(0));
+            return true;
+        }
+
         // A pile is a stack of face-down cards, so what it can offer are
         // VERBS and not cards: three summonable monsters gave three rows all
         // reading "Special Summon" with nothing to tell them apart. Picking the
@@ -402,17 +547,6 @@ public class BoardPointerScreen extends Screen
         if(hovered.isPile())
         {
             openPile(options, event.x(), event.y());
-            return true;
-        }
-
-        // Some clicks are already the whole answer: an empty square asked
-        // "where", a tribute asked "which", an attack asked "what are you
-        // hitting". Those go straight through. A card in HAND asks first, even
-        // with one row, so a trap is not Set on the field by a cursor a few
-        // pixels off.
-        if(PromptOptions.answersOutright(DuelClientState.prompt, hovered, options))
-        {
-            answer(options.get(0));
             return true;
         }
         openChoices(options, event.x(), event.y());
@@ -444,11 +578,35 @@ public class BoardPointerScreen extends Screen
 
 
     /** Not an option index: the answer that is no options at all. */
+    /**
+     * The duel's own controls, which belong to no prompt: they are asked of
+     * your own deck, the way the duel screen asks them, rather than sitting in
+     * a strip of buttons under the board.
+     */
+    public static java.util.List<Integer> deckMenu()
+    {
+        // Exactly the duel screen's rows, in its order and for its reasons.
+        // View Deck first because it is the harmless one, and a menu whose
+        // first row concedes the duel is a menu people learn not to open.
+        return DuelClientState.over ? java.util.List.of(CLOSE)
+            : java.util.List.of(VIEW_DECK, SURRENDER);
+    }
+
+    /** Is this target the deck those controls belong to -- yours? */
+    public static boolean isOwnDeck(BoardTarget target)
+    {
+        return target != null && target.isPile() && target.controller() == 0
+            && target.location() == OcgConstants.LOCATION_DECK;
+    }
+
     private static final int DECLINE = -1;
     /** Nor this one: conceding the duel outright. */
     private static final int SURRENDER = -2;
     /** Nor this: looking through your own deck, which the server shuffles first. */
     private static final int VIEW_DECK = -3;
+
+    /** Finished with a decided duel, which is what the deck offers once it is over. */
+    private static final int CLOSE = -4;
 
     /**
      * Surrender is armed by one click and taken by the next.
@@ -461,6 +619,24 @@ public class BoardPointerScreen extends Screen
 
     private void answer(int index)
     {
+        if(index == CLOSE)
+        {
+            // The duel screen's own ending, reached the same way: the reward
+            // screen when there is one to collect, and the world back when
+            // there is not.
+            if(DuelClientState.hasReward())
+            {
+                de.cas_ual_ty.dueldimension.shop.DuelRewardMessages.Result reward =
+                    DuelClientState.takeReward();
+                DuelClientState.reset();
+                minecraft.gui.setScreen(new de.cas_ual_ty.dueldimension.clientutil.hub
+                    .DuelResultScreen(reward));
+                return;
+            }
+            DuelClientState.reset();
+            onClose();
+            return;
+        }
         if(index == VIEW_DECK)
         {
             net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
@@ -567,6 +743,7 @@ public class BoardPointerScreen extends Screen
             // is no cursor to click it with is a promise the screen cannot
             // keep.
             DuelHud.drawCancel(extractor, font, mouseX, mouseY, !choices.isEmpty());
+            DuelHud.drawConfirm(extractor, font, mouseX, mouseY);
         }
 
         // Last, and never INSTEAD of the rest. Opening a menu used to return
@@ -623,6 +800,7 @@ public class BoardPointerScreen extends Screen
         // here rather than at each call site, so a menu can never be read
         // against the groups of the one before it.
         pileGroups = null;
+        asking = false;
         choices = rows;
         chosenAnchor = hovered;
         choicesW = ROW_W_MIN;
@@ -647,7 +825,12 @@ public class BoardPointerScreen extends Screen
         // same reason: a menu clipped by the top edge is a menu with rows that
         // cannot be clicked.
         choicesY = above >= DuelHud.below(width, height) ? above : cardBottom + 4;
-        choicesY = Math.max(4, Math.min(choicesY, height - tall - 4));
+        // The hand is the floor, not the window. A menu that stopped at the
+        // bottom edge was still written across the player's own cards -- and
+        // because an open list is hit-tested before the hand, the cards
+        // underneath stopped answering too.
+        choicesY = Math.max(4, Math.min(choicesY,
+            Math.max(4, HandLayout.topEdge(height) - 4 - tall)));
     }
 
     /**
@@ -746,6 +929,10 @@ public class BoardPointerScreen extends Screen
     private void drawChoices(GuiGraphicsExtractor extractor, int mouseX, int mouseY)
     {
         int rowH = ROW_H - ROW_INSET;
+        if(asking)
+        {
+            drawQuestion(extractor);
+        }
         for(int row = 0; row < choices.size(); row++)
         {
             int index = choices.get(row);
@@ -767,6 +954,38 @@ public class BoardPointerScreen extends Screen
             }
             extractor.text(font, label(index), textX, y + (rowH - 8) / 2,
                 over ? 0xFFFFFFCC : 0xFFE8E8E8, false);
+        }
+    }
+
+    /**
+     * The question itself, in the panel art its answers are drawn in.
+     * <p>
+     * A card's menu needs no caption -- the card is right there under it, and
+     * the rows say what can be done to it. A question has nothing under it at
+     * all, so without this a duellist gets two unlabelled rows reading Yes and
+     * No and no way to know what they are agreeing to.
+     */
+    private void drawQuestion(GuiGraphicsExtractor extractor)
+    {
+        if(questionLines.isEmpty())
+        {
+            return;
+        }
+        int widest = 0;
+        for(String line : questionLines)
+        {
+            widest = Math.max(widest, font.width(line));
+        }
+        int top = choicesY - QUESTION_GAP - questionLines.size() * LINE_H;
+        int left = (width - widest) / 2;
+        extractor.fill(left - 5, top - 4, left + widest + 5,
+            top + questionLines.size() * LINE_H + 1, 0xE01A1A1E);
+        extractor.fill(left - 5, top - 4, left + widest + 5, top - 3, 0x60FFD700);
+        for(int line = 0; line < questionLines.size(); line++)
+        {
+            String text = questionLines.get(line);
+            extractor.text(font, text, (width - font.width(text)) / 2, top + line * LINE_H,
+                0xFFFFE8A8, false);
         }
     }
 
@@ -858,9 +1077,13 @@ public class BoardPointerScreen extends Screen
 
     private String label(int index)
     {
+        if(index == CLOSE)
+        {
+            return "Close";
+        }
         if(index == VIEW_DECK)
         {
-            return "View deck";
+            return "View Deck";
         }
         if(index == SURRENDER)
         {

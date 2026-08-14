@@ -56,7 +56,13 @@ public final class HubKeybinds
         boolean camera = com.mojang.blaze3d.platform.InputConstants.isKeyDown(
             minecraft.getWindow(),
             ((de.cas_ual_ty.dueldimension.mixin.client.KeyMappingAccessor)(Object)TOGGLE_DISK)
-                .dueldimension$key().getValue());
+                .dueldimension$key().getValue())
+            // Unless the duel is waiting on a question only the cursor can
+            // answer. Holding the camera key through a Yes/No would leave a
+            // duellist looking at a board that had simply stopped, with the one
+            // thing that could restart it refusing to appear.
+            && !de.cas_ual_ty.dueldimension.clientutil.PromptOptions.needsList(
+                de.cas_ual_ty.dueldimension.clientutil.DuelClientState.prompt);
 
         if(minecraft.gui.screen()
             instanceof de.cas_ual_ty.dueldimension.clientutil.overworld.BoardPointerScreen open)

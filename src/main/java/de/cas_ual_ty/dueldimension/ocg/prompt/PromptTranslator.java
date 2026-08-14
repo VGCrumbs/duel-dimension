@@ -172,9 +172,14 @@ public class PromptTranslator
             EnginePrompt window = new EnginePrompt(EnginePrompt.Kind.CHOOSE,
                 chain.forced() ? "You must respond" : "Respond to the chain?",
                 options, chain.forced() ? 1 : 0, 1, !chain.forced(), field);
-            // A forced response is not a window anyone may skip: the core will
-            // refuse an empty answer, so it is deliberately not marked.
-            return chain.forced() ? window : window.asChainWindow();
+            // Both are marked now. The flag says "these options activate
+            // something", which is what decides whether a click needs a
+            // confirmation -- and a forced chain activates just as hard as an
+            // optional one. Skippability is asked separately and everywhere it
+            // matters: both existing readers test cancelable() alongside this,
+            // and a forced chain is not cancelable, so nothing that used this
+            // to mean "may be passed" changes its answer.
+            return window.asChainWindow();
         }
 
         if(message instanceof DuelMessage.SelectPosition position)

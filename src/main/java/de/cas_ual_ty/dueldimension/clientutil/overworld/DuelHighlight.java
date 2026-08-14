@@ -57,7 +57,15 @@ public final class DuelHighlight
 
     public static int tint(float alpha)
     {
-        return Math.round(Mth.clamp(alpha, 0F, 1F) * 255F) << 24 | ACTIVE_BLUE;
+        return tinted(ACTIVE_BLUE, alpha);
+    }
+
+    /** The green a card wears once it has been picked for a selection. */
+    public static final int CHOSEN_GREEN = 0x7CE38B;
+
+    public static int tinted(int rgb, float alpha)
+    {
+        return Math.round(Mth.clamp(alpha, 0F, 1F) * 255F) << 24 | rgb;
     }
 
     /** Draws the glow around a rectangle on the screen. */
