@@ -133,4 +133,19 @@ public class CardDisplayRenderer
     {
         return 96;
     }
+
+    /**
+     * Drawn even when its own block has left the view.
+     * <p>
+     * A block entity is normally culled with the block it belongs to, which is
+     * right for a chest and wrong for this: the sprite stands a good two blocks
+     * above the pedestal, so looking slightly down -- or standing close enough
+     * that the block falls below the screen -- took the monster with it. What
+     * is on screen is the monster; the block is only where it is standing.
+     */
+    @Override
+    public boolean shouldRenderOffScreen()
+    {
+        return true;
+    }
 }

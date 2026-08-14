@@ -146,6 +146,11 @@ public final class MonsterSprites
         posed(20394040L, "lava_battleguard", 4, 2, 7, Loop.LOOP);
         posed(40453765L, "swamp_battleguard", 4, 2, 7, Loop.LOOP);
         posed(34627841L, "kaibaman", 4, 2, 7, Loop.LOOP);
+        // Six and five frames respectively, with a gap before the pose in the
+        // last cell -- which is why posed() takes the LAST cell rather than
+        // everything after the animation.
+        posed(81383947L, "white_magician_pikeru", 4, 2, 6, Loop.LOOP);
+        posed(46128076L, "ebon_magician_curran", 4, 2, 5, Loop.LOOP);
     }
     // =========================================================================
 
@@ -165,14 +170,19 @@ public final class MonsterSprites
      * A monster whose sheet ends with a defence pose.
      * <p>
      * The animation runs from the first cell for as many frames as it has, and
-     * whatever cells are left over are the pose it holds lying down -- which is
-     * one cell in every case so far, and does not have to be.
+     * the LAST cell of the grid is the pose it holds lying down.
+     * <p>
+     * The last cell rather than "whatever is left over", because a sheet with
+     * five frames of animation in an eight-cell grid has two blank cells
+     * between the two -- an artist fills the row they are working on and puts
+     * the pose in the corner. Taking everything after the animation would have
+     * cycled the pose through those blanks and made a defending monster blink
+     * out of existence two thirds of the time.
      */
     public static void posed(long code, String name, int columns, int rows, int frames, Loop loop)
     {
-        int cells = columns * rows;
         monster(code, grid(name, columns, rows, 0, frames, loop),
-            grid(name, columns, rows, frames, Math.max(1, cells - frames), Loop.LOOP));
+            grid(name, columns, rows, columns * rows - 1, 1, Loop.LOOP));
     }
 
     /**
