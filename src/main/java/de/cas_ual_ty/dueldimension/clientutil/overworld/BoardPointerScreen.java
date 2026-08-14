@@ -39,6 +39,17 @@ import java.util.List;
  */
 public class BoardPointerScreen extends Screen
 {
+    /**
+     * True when this was opened by HOLDING the free-mouse key rather than by
+     * asking a card a question.
+     * <p>
+     * A held pointer closes the moment the key is let go; one opened to answer
+     * something stays until it has been answered. Without the distinction, a
+     * card with three options would offer them and take them away again on the
+     * very next tick.
+     */
+    private boolean heldOpen;
+
     /** What the cursor is over, recomputed as it moves. */
     private BoardTarget hovered;
     /** Which card of the hand the cursor is over, or -1. */
@@ -67,7 +78,29 @@ public class BoardPointerScreen extends Screen
 
     public BoardPointerScreen()
     {
+        this(false);
+    }
+
+    public BoardPointerScreen(boolean heldOpen)
+    {
         super(Component.literal("Duel"));
+        this.heldOpen = heldOpen;
+    }
+
+    /** Is this pointer only up for as long as a key is held? */
+    public boolean isHeldOpen()
+    {
+        return heldOpen;
+    }
+
+    /**
+     * A pointer opened by holding the key stops being one the moment it is used
+     * for something: letting go after clicking a card should not snatch the
+     * card's own menu away before it can be read.
+     */
+    public void keepOpen()
+    {
+        heldOpen = false;
     }
 
     /** How far down the board the cursor can reach, in blocks. */
@@ -255,6 +288,7 @@ public class BoardPointerScreen extends Screen
         if(hovered != null && hovered.isPile() && hovered.controller() == 0
             && hovered.location() == OcgConstants.LOCATION_DECK)
         {
+            keepOpen();
             openChoices(List.of(VIEW_DECK, SURRENDER), event.x(), event.y());
             return true;
         }
@@ -271,6 +305,7 @@ public class BoardPointerScreen extends Screen
             answer(options.get(0));
             return true;
         }
+        keepOpen();
         openChoices(options, event.x(), event.y());
         return true;
     }

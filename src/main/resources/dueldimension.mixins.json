@@ -14,7 +14,9 @@
     "client.InventoryScreenMixin",
     "client.ItemInHandRendererMixin",
     "client.SlotWrapperAccessor",
-    "client.MinecraftDuelClickMixin"
+    "client.MinecraftDuelClickMixin",
+    "client.XaeroHudMixin",
+    "client.KeyMappingAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

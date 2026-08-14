@@ -1,7 +1,5 @@
 package de.cas_ual_ty.dueldimension.fabric;
 
-import de.cas_ual_ty.dueldimension.clientutil.DuelClientState;
-import de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import snownee.jade.api.Accessor;
 import snownee.jade.api.IWailaClientRegistration;
@@ -50,9 +48,7 @@ public class JadeIntegration implements IWailaPlugin
             // Either presentation of a duel counts. The board hides it because
             // the board is what the player is looking at; the screen hides it
             // because Jade would otherwise draw over a screen the duel owns.
-            return ClientDuelField.locked() || DuelClientState.prompt != null
-                || DuelClientState.board != de.cas_ual_ty.dueldimension.ocg.prompt
-                    .BoardSnapshot.EMPTY;
+            return de.cas_ual_ty.dueldimension.clientutil.DuelSuppression.hudHidden();
         }
     }
 }

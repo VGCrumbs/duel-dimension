@@ -32,6 +32,41 @@ public final class HubKeybinds
      * passed as a string -- so two mods cannot accidentally share one by
      * spelling it the same way, and the id is what gets translated.
      */
+    /**
+     * Holds the mouse free for as long as the key is down.
+     * <p>
+     * A press-to-toggle makes swapping between looking and pointing a decision;
+     * holding makes it a reflex -- look, hold, click, let go, still looking.
+     * That is the whole reason it is a hold.
+     * <p>
+     * The key's raw state is read from the window rather than through the key
+     * mapping, because a mapping is not polled at all while a screen is open --
+     * and the pointer IS a screen, so a mapping could see the press that opens
+     * it and never the release that should close it again.
+     */
+    public static void freeMouseHeld(net.minecraft.client.Minecraft minecraft)
+    {
+        boolean held = de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()
+            && com.mojang.blaze3d.platform.InputConstants.isKeyDown(minecraft.getWindow(),
+                ((de.cas_ual_ty.dueldimension.mixin.client.KeyMappingAccessor)(Object)TOGGLE_DISK)
+                    .dueldimension$key().getValue());
+
+        if(minecraft.gui.screen()
+            instanceof de.cas_ual_ty.dueldimension.clientutil.overworld.BoardPointerScreen open)
+        {
+            if(!held && open.isHeldOpen())
+            {
+                open.onClose();
+            }
+            return;
+        }
+        if(held && minecraft.gui.screen() == null)
+        {
+            minecraft.setScreenAndShow(
+                new de.cas_ual_ty.dueldimension.clientutil.overworld.BoardPointerScreen(true));
+        }
+    }
+
     private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
         net.minecraft.resources.Identifier.fromNamespaceAndPath(
             de.cas_ual_ty.dueldimension.DuelDimension.MOD_ID, "duel_dimension"));
@@ -127,11 +162,15 @@ public final class HubKeybinds
         {
             disk = true;
         }
-        if(disk)
+        // Not during a duel. The disk cannot come off mid-duel anyway, so the
+        // key is free -- and during a duel it does something a duellist wants
+        // constantly instead: see freeMouseHeld.
+        if(disk && !de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked())
         {
             net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
                 new de.cas_ual_ty.dueldimension.duel.dueldisk.DiskMessages.ToggleDisk());
         }
+        freeMouseHeld(minecraft);
 
         boolean foil = false;
         while(FOIL_TEST.consumeClick())

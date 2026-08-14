@@ -52,6 +52,10 @@ public final class DuelHud
      */
     private static final int BAR_W_BASE = 256;
     private static final int BAR_H_BASE = 32;
+    /** The turn badge's edge, in the duel screen's own two colours. */
+    private static final int TURN_YOURS = 0x4CD964;
+    private static final int TURN_THEIRS = 0xFF453A;
+
     /** How much of the window one life bar takes, at any window size. */
     private static final float BAR_W_SHARE = 0.30F;
     private static final int TOP = 4;
@@ -152,10 +156,18 @@ public final class DuelHud
 
         // The turn number between them, in its own frame: the same three
         // elements in the same order as the screen's top bar.
+        // A badge, not a squashed life frame. The frame is a 256 by 32 picture
+        // of a long bar; forcing it into a small square stretched its end caps
+        // across the whole thing, which is what made the counter look wonky.
+        // The duel screen draws this as a plain badge edged in the colour of
+        // whoever holds the turn, and so does this.
         int turnX = (screenW - turnW) / 2;
-        DdBlitUtil.fullBlit(extractor, DuelTextures.LP_FRAME, turnX, TOP, turnW, barH);
-        String turn = Integer.toString(board.turn());
-        extractor.centeredText(font, turn, turnX + turnW / 2, TOP + (barH - 8) / 2, 0xFFFFFFFF);
+        int turnColour = board.turnPlayer() == 0 ? TURN_YOURS : TURN_THEIRS;
+        extractor.fill(turnX, TOP, turnX + turnW, TOP + barH, 0xC0101014);
+        extractor.fill(turnX, TOP, turnX + turnW, TOP + 1, 0xC0000000 | turnColour);
+        extractor.fill(turnX, TOP + barH - 1, turnX + turnW, TOP + barH, 0xC0000000 | turnColour);
+        extractor.centeredText(font, Integer.toString(board.turn()), turnX + turnW / 2,
+            TOP + (barH - font.lineHeight) / 2 + 1, 0xFFFFFFFF);
 
         drawPhaseBar(extractor, board, screenW, barH);
         drawClock(extractor, font, screenW, barH);
