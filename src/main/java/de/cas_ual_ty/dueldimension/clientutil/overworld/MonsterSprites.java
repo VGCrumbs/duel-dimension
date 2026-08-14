@@ -129,6 +129,7 @@ public final class MonsterSprites
         // The whole grid is the flap; nothing left over, so nothing to hold
         // while lying down -- it uses the same animation either way.
         monster(28279543L, "curse_of_dragon", 4, 2, Loop.LOOP);
+        posed(102380L, "lava_golem", 4, 2, 7, Loop.LOOP);
     }
     // =========================================================================
 
