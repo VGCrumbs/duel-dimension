@@ -105,7 +105,12 @@ public final class DuelHud
     /** The first line of text that is clear of the instruments above it. */
     public static int below(int screenW, int screenH)
     {
-        return barTop(barHeight(screenW, screenH)) + cellHeight(screenW, screenH) + padY(screenW, screenH) + 12;
+        // The lowest of the two things the top band holds. The life frames run
+        // along the edges and the case-and-badge stack down the middle, and
+        // either can be the taller depending on the window's shape -- so
+        // anything placed under the instruments has to clear both.
+        return Math.max(TOP + barHeight(screenW, screenH),
+            turnTop(screenW, screenH) + caseHeight(screenW, screenH)) + 8;
     }
 
     /** The life frame's drawn height at this width, for anything measuring off it. */
@@ -125,7 +130,12 @@ public final class DuelHud
      */
     private static int barWidth(int screenW, int screenH)
     {
-        int room = (screenW - EDGE * 2 - GAP * 2) / 2 - 12;
+        // Whatever is left after the middle has taken what it needs. The top
+        // row is now the case with the clock beside it, and a life frame that
+        // grew until it met either would be a life frame drawn over the timer.
+        int centre = PHASE_NAMES.length * cellWidth(screenW, screenH)
+            + padX(screenW, screenH) * 2 + clockRoom(screenW, screenH);
+        int room = (screenW - EDGE * 2 - centre) / 2 - GAP * 2;
         // Three limits, and the smallest wins: a share of the reference width,
         // a share of the HEIGHT, and whatever room there actually is.
         //
@@ -166,6 +176,21 @@ public final class DuelHud
     {
         return Math.clamp(reference(screenW, screenH) / 420F, 1F, 1.6F);
     }
+
+    /**
+     * How much of the top row the countdown wants, at this window's size.
+     * <p>
+     * Measured from the longest reading it can ever show rather than from
+     * whatever it says this frame, or the life frames beside it would grow and
+     * shrink every time the clock ticked past a digit.
+     */
+    private static int clockRoom(int screenW, int screenH)
+    {
+        return Math.round(CLOCK_BASE_W * clockScale(screenW, screenH)) + GAP;
+    }
+
+    /** The width of "10:00" in the default font, which is the longest it gets. */
+    private static final int CLOCK_BASE_W = 24;
 
     /** Under this much left, the clock is a warning rather than a fact. */
     private static final long CLOCK_WARN_MS = 60_000L;
@@ -339,17 +364,6 @@ public final class DuelHud
         // from the width through the art's ratio, and the width is capped.
         int barW = barWidth(screenW, screenH);
         int barH = barHeight(screenW, screenH);
-        // The badge stands exactly as tall as the bars either side of it, so
-        // the three read as one band, and exactly twice as wide as it is tall,
-        // which is the shape the duel screen draws it at. Both were being taken
-        // separately before -- a height from the bars and a width from a bare
-        // multiplier -- so every window size gave it a different shape.
-        int turnH = barH;
-        int turnW = Math.round(barH * (TURN_W_BASE / (float)TURN_H_BASE));
-        // And the number grows with the badge instead of sitting in the middle
-        // of it at whatever size the font happens to be. A badge three times
-        // the size with the same small digit in it is what looked stretched.
-        float turnScale = Math.max(0.75F, barH / (float)TURN_H_BASE);
 
         // Through the animation, not straight from the board. A life total
         // that jumps says a number changed; one that runs down says how much
@@ -367,33 +381,9 @@ public final class DuelHud
                 board.opponent() == null ? 0 : board.opponent().lifePoints(), now),
             0xFFB03636);
 
-        // The turn number between them, in its own frame: the same three
-        // elements in the same order as the screen's top bar.
-        // A badge, not a squashed life frame. The frame is a 256 by 32 picture
-        // of a long bar; forcing it into a small square stretched its end caps
-        // across the whole thing, which is what made the counter look wonky.
-        // The duel screen draws this as a plain badge edged in the colour of
-        // whoever holds the turn, and so does this.
-        int turnX = (screenW - turnW) / 2;
-        int turnColour = board.turnPlayer() == 0 ? TURN_YOURS : TURN_THEIRS;
-        int edge = Math.max(1, Math.round(turnScale));
-        extractor.fill(turnX, TOP, turnX + turnW, TOP + turnH, 0xC0101014);
-        extractor.fill(turnX, TOP, turnX + turnW, TOP + edge, 0xC0000000 | turnColour);
-        extractor.fill(turnX, TOP + turnH - edge, turnX + turnW, TOP + turnH,
-            0xC0000000 | turnColour);
-        // Turn 0 is the engine mid-setup; the screen shows 1 there and so does
-        // this. Coloured rather than white, the same as the screen's badge:
-        // whose turn it is is said with colour and not with words.
-        extractor.pose().pushMatrix();
-        extractor.pose().scale(turnScale, turnScale);
-        extractor.centeredText(font, Integer.toString(Math.max(1, board.turn())),
-            Math.round((turnX + turnW / 2F) / turnScale),
-            Math.round((TOP + (turnH - font.lineHeight * turnScale) / 2F + 1) / turnScale),
-            0xFF000000 | turnColour);
-        extractor.pose().popMatrix();
-
-        drawPhaseBar(extractor, board, screenW, screenH, barH);
-        drawClock(extractor, font, screenW, screenH, barH);
+        drawPhaseBar(extractor, board, screenW, screenH);
+        drawTurn(extractor, font, board, screenW, screenH);
+        drawClock(extractor, font, screenW, screenH);
         // Held upright over the cards they belong to, rather than lying on
         // them: see StatOverlay. Drawn from here so the cursor and the bare
         // camera both get them, and drawn BEFORE the outcome so a duel that has
@@ -518,6 +508,48 @@ public final class DuelHud
     }
 
     /**
+     * The turn number, in its own badge under the case.
+     * <p>
+     * It used to sit between the two life frames and take its height from
+     * them, which was the right thing when it was one of three pieces in one
+     * band. It is under the phase case now, so it takes its height from THAT
+     * -- the case and the badge are the stack a duellist reads down, and a
+     * badge sized against something it no longer touches is a shape nothing
+     * explains.
+     * <p>
+     * A badge and not a squashed life frame: that frame is a 256 by 32 picture
+     * of a long bar, and forcing it into a small square stretches its end caps
+     * across the whole thing. The duel screen draws a plain badge edged in the
+     * colour of whoever holds the turn, and so does this.
+     */
+    private static void drawTurn(GuiGraphicsExtractor extractor, Font font, BoardSnapshot board,
+        int screenW, int screenH)
+    {
+        int turnH = caseHeight(screenW, screenH);
+        int turnW = Math.round(turnH * (TURN_W_BASE / (float)TURN_H_BASE));
+        float turnScale = Math.max(0.75F, turnH / (float)TURN_H_BASE);
+        int turnX = (screenW - turnW) / 2;
+        int turnY = turnTop(screenW, screenH);
+        int turnColour = board.turnPlayer() == 0 ? TURN_YOURS : TURN_THEIRS;
+        int edge = Math.max(1, Math.round(turnScale));
+
+        extractor.fill(turnX, turnY, turnX + turnW, turnY + turnH, 0xC0101014);
+        extractor.fill(turnX, turnY, turnX + turnW, turnY + edge, 0xC0000000 | turnColour);
+        extractor.fill(turnX, turnY + turnH - edge, turnX + turnW, turnY + turnH,
+            0xC0000000 | turnColour);
+        // Turn 0 is the engine mid-setup; the screen shows 1 there and so does
+        // this. Coloured rather than white, the same as the screen's badge:
+        // whose turn it is is said with colour and not with words.
+        extractor.pose().pushMatrix();
+        extractor.pose().scale(turnScale, turnScale);
+        extractor.centeredText(font, Integer.toString(Math.max(1, board.turn())),
+            Math.round((turnX + turnW / 2F) / turnScale),
+            Math.round((turnY + (turnH - font.lineHeight * turnScale) / 2F + 1) / turnScale),
+            0xFF000000 | turnColour);
+        extractor.pose().popMatrix();
+    }
+
+    /**
      * The chrome case with its six bays, blue while the turn is yours and red
      * while it is not.
      * <p>
@@ -526,14 +558,14 @@ public final class DuelHud
      * against a seat index belongs here.
      */
     private static void drawPhaseBar(GuiGraphicsExtractor extractor, BoardSnapshot board,
-        int screenW, int screenH, int barH)
+        int screenW, int screenH)
     {
         boolean yourTurn = board.turnPlayer() == 0;
         int cellW = cellWidth(screenW, screenH);
         int cellH = cellHeight(screenW, screenH);
         int width = PHASE_NAMES.length * cellW;
         int x = barLeft(screenW, screenH);
-        int y = barTop(barH);
+        int y = phaseTop(screenW, screenH);
 
         DdBlitUtil.fullBlit(extractor, DuelTextures.PHASE_CASE, x - padX(screenW, screenH),
             y - padY(screenW, screenH), width + padX(screenW, screenH) * 2, cellH + padY(screenW, screenH) * 2);
@@ -591,9 +623,25 @@ public final class DuelHud
         return (screenW - PHASE_NAMES.length * cellWidth(screenW, screenH)) / 2;
     }
 
-    private static int barTop(int barH)
+    /** The case's own drawn height, its housing included. */
+    private static int caseHeight(int screenW, int screenH)
     {
-        return TOP + barH + PHASE_GAP;
+        return cellHeight(screenW, screenH) + padY(screenW, screenH) * 2;
+    }
+
+    /**
+     * The bays' top edge. The housing stands padY proud of them, so the case
+     * itself begins exactly at TOP -- the phase bar is the top row now.
+     */
+    private static int phaseTop(int screenW, int screenH)
+    {
+        return TOP + padY(screenW, screenH);
+    }
+
+    /** The turn badge, directly under the case. */
+    private static int turnTop(int screenW, int screenH)
+    {
+        return TOP + caseHeight(screenW, screenH) + PHASE_GAP;
     }
 
     /**
@@ -606,7 +654,7 @@ public final class DuelHud
     public static int phaseAt(int screenW, int screenH, double mouseX, double mouseY)
     {
         int cellW = cellWidth(screenW, screenH);
-        int y = barTop(barHeight(screenW, screenH));
+        int y = phaseTop(screenW, screenH);
         if(mouseY < y || mouseY >= y + cellHeight(screenW, screenH))
         {
             return -1;
@@ -701,7 +749,7 @@ public final class DuelHud
      * it is not a budget for the whole turn.
      */
     private static void drawClock(GuiGraphicsExtractor extractor, Font font, int screenW,
-        int screenH, int barH)
+        int screenH)
     {
         if(DuelClientState.prompt == null || DuelClientState.promptShownAt == 0
             || DuelClientState.over)
@@ -712,16 +760,18 @@ public final class DuelHud
         long left = limit - (System.currentTimeMillis() - DuelClientState.promptShownAt);
         long seconds = Math.max(0, (left + 999) / 1000);
         String clock = seconds / 60 + ":" + (seconds % 60 < 10 ? "0" : "") + seconds % 60;
-        // Below the case rather than tucked under it, and drawn larger: it is
-        // a countdown to losing the turn, which is worth reading at a glance.
+        // Beside the case rather than under it, and drawn larger: it is a
+        // countdown to losing the turn, which is worth reading at a glance, and
+        // the space to the left of the case is the one part of the top row
+        // nothing else wants.
         int colour = left <= CLOCK_WARN_MS ? 0xFFFF6B6B : 0xFFC2C9D6;
-        extractor.pose().pushMatrix();
         float scale = clockScale(screenW, screenH);
+        int textW = Math.round(font.width(clock) * scale);
+        int x = barLeft(screenW, screenH) - padX(screenW, screenH) - GAP - textW;
+        int y = TOP + Math.round((caseHeight(screenW, screenH) - font.lineHeight * scale) / 2F);
+        extractor.pose().pushMatrix();
         extractor.pose().scale(scale, scale);
-        extractor.centeredText(font, clock,
-            Math.round(screenW / 2F / scale),
-            Math.round((barTop(barH) + cellHeight(screenW, screenH) + padY(screenW, screenH) + 4) / scale),
-            colour);
+        extractor.text(font, clock, Math.round(x / scale), Math.round(y / scale), colour, true);
         extractor.pose().popMatrix();
     }
 }
