@@ -16,16 +16,19 @@ package de.cas_ual_ty.dueldimension.clientutil.overworld;
  *
  * @param layer   the wing's own frames, which may live in the same sheet as the
  *                body at a different cell size
- * @param anchor  how far up the body the wings are centred, from the feet, as a
- *                fraction of its height
- * @param spacing how far out from the middle each wing sits, as a fraction of
- *                the body's height
+ * @param anchor  the height of the wings' MIDDLE above the feet, as a fraction
+ *                of the body's height -- a wing is lined up with a shoulder,
+ *                and a shoulder is in the middle of a wing rather than under it
+ * @param spacing the gap between the body's centre line and each wing's INNER
+ *                edge, as a fraction of the body's height, so zero means the
+ *                pair meets in the middle
  * @param scale   the wing's height, again as a fraction of the body's
  */
 public record Wings(SpriteLayer layer, float anchor, float spacing, float scale)
 {
     public static final float DEFAULT_ANCHOR = 0.62F;
-    public static final float DEFAULT_SPACING = 0.22F;
+    /** Touching the body, which is where a wing starts before anybody moves it. */
+    public static final float DEFAULT_SPACING = 0F;
     public static final float DEFAULT_SCALE = 0.55F;
 
     public static Wings of(SpriteLayer layer)

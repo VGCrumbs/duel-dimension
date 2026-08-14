@@ -88,14 +88,27 @@ public final class MonsterBillboard
         if(wings != null && wings.layer() != null)
         {
             double back = BEHIND;
-            Vec3 middle = feet.add(faceX * -back, height * wings.anchor(), faceZ * -back);
             float wingHeight = height * wings.scale();
-            float out = height * wings.spacing();
+            float wingHalf = wingHeight * wings.layer().aspect() / 2F;
+
+            // The anchor is the wing's MIDDLE, not the bottom of it. A wing is
+            // a thing you line up with a shoulder, and a shoulder is in the
+            // middle of the wing rather than under it -- anchoring by the
+            // bottom edge meant every change of wing height also moved the
+            // wing, and no two settings could be tuned independently.
+            Vec3 middle = feet.add(faceX * -back,
+                height * wings.anchor() - wingHeight / 2F, faceZ * -back);
+
+            // Spacing is the gap between the body's centre line and the wing's
+            // INNER edge, so zero means the pair meets in the middle and every
+            // step outwards is a step you can see. Measured from the centre of
+            // the quad, the sprite's own transparent margin counted as spacing
+            // too, which is why they sat so far out with nothing to trim.
+            float out = height * wings.spacing() + wingHalf;
 
             Vec3 leftAt = middle.add(-rightX * out, 0D, -rightZ * out);
             Vec3 rightAt = middle.add(rightX * out, 0D, rightZ * out);
             float[] uv = wings.layer().uv(wingFrame);
-            float wingHalf = wingHeight * wings.layer().aspect() / 2F;
 
             // Mirrored in UV SPACE, never by negating the right vector. The
             // corners are wound so the quad's normal points at the viewer;
