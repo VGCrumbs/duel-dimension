@@ -135,15 +135,23 @@ public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns,
         return cellW <= 0F || cellH <= 0F ? 0.5F : cellW / cellH;
     }
 
-    /** The same layer at a different pace, for the editor's speed control. */
+    /**
+     * The same layer at a different pace, for the editor's speed control.
+     * <p>
+     * Carrying the trim through, like every other component. A "with" that
+     * quietly drops one field is worse than no "with" at all: changing the
+     * speed would throw away a crop somebody had just spent a minute lining up,
+     * and nothing on screen would say where it went.
+     */
     public SpriteLayer withTicks(int value)
     {
         return new SpriteLayer(sheet, x, y, w, h, columns, rows, first, frames,
-            Math.max(1, value), loop);
+            Math.max(1, value), loop, trimX, trimY);
     }
 
     public SpriteLayer withLoop(MonsterSprites.Loop value)
     {
-        return new SpriteLayer(sheet, x, y, w, h, columns, rows, first, frames, ticks, value);
+        return new SpriteLayer(sheet, x, y, w, h, columns, rows, first, frames, ticks, value,
+            trimX, trimY);
     }
 }
