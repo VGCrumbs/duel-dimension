@@ -49,8 +49,7 @@ public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns,
 
     public Identifier texture()
     {
-        return Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID,
-            "textures/duel/monsters/" + sheet + ".png");
+        return MonsterSheets.resolve(sheet);
     }
 
     /** Which cell of the region a given frame of this run is. */

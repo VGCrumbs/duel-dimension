@@ -113,6 +113,11 @@ public class DuelDimensionFabricClient implements ClientModInitializer
             .register(de.cas_ual_ty.dueldimension.clientutil.overworld
                 .PlacementGuideRenderer::render);
 
+        // Sheets dropped into the config folder, read before the list that
+        // names them -- a definition pointing at an imported sheet has to find
+        // it already registered.
+        de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSheets.load();
+
         // The monster sprites: the shipped list, then whatever the player has
         // edited on top of it. Read here rather than from a static block --
         // that one first ran in the middle of drawing a frame, which is fine

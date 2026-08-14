@@ -276,6 +276,21 @@ public class BillboardEditorScreen extends Screen
         }
         contentBottom = rowY();
 
+        int sheets = height - 46;
+        int third = (full() - GAP * 2) / 3;
+        addRenderableWidget(Button.builder(Component.literal("Folder"), pressed ->
+                de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSheets.open())
+            .bounds(left(), sheets, third, 18).build());
+        addRenderableWidget(Button.builder(Component.literal("Reload"), pressed ->
+            {
+                de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSheets.reload();
+                rebuildWidgets();
+            }).bounds(left() + third + GAP, sheets, third, 18).build());
+        addRenderableWidget(Button.builder(Component.literal("Sheets " + de.cas_ual_ty
+                .dueldimension.clientutil.overworld.MonsterSheets.names().size()), pressed ->
+            {
+            }).bounds(left() + (third + GAP) * 2, sheets, third, 18).build());
+
         int footer = height - 24;
         int half = (full() - GAP) / 2;
         addRenderableWidget(Button.builder(Component.literal("Remove"), pressed ->
@@ -407,7 +422,7 @@ public class BillboardEditorScreen extends Screen
             return;
         }
 
-        int room = height - 30 - contentBottom - 6;
+        int room = height - 52 - contentBottom - 6;
         if(room < 24)
         {
             return;

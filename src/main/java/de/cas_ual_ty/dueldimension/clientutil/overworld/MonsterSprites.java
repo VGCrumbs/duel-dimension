@@ -195,6 +195,15 @@ public final class MonsterSprites
         {
             return known;
         }
+        // An imported sheet knows its own size from the moment it was read.
+        // Asking the resource manager for one would find nothing and report a
+        // sheet that plainly exists as missing.
+        int[] carried = MonsterSheets.size(texture);
+        if(carried != null)
+        {
+            SIZES.put(texture, carried);
+            return carried;
+        }
         int[] size = {512, 256};
         Optional<Resource> resource = Minecraft.getInstance().getResourceManager()
             .getResource(texture);
