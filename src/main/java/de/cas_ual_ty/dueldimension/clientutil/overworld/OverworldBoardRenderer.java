@@ -92,10 +92,11 @@ public final class OverworldBoardRenderer
         PoseStack poseStack = context.poseStack();
         SubmitNodeCollector collector = context.submitNodeCollector();
 
+        int matTint = fade(0xFFFFFFFF);
         for(BoardMesh.Piece piece : BoardMesh.pieces(matsByController()))
         {
-            WorldQuad.submit(poseStack, collector, WorldQuad.Kind.SOLID, piece.texture(), camera,
-                transform.corners(piece.rect(), SURFACE_LIFT + piece.lift()), fade(0xFFFFFFFF));
+            WorldQuad.submit(poseStack, collector, kindFor(matTint), piece.texture(), camera,
+                transform.corners(piece.rect(), SURFACE_LIFT + piece.lift()), matTint);
         }
 
         // The zone being looked at, lit with the same square the 2D board
@@ -206,8 +207,9 @@ public final class OverworldBoardRenderer
     {
         float[][] uv = CardRenderer.turned(false, shatter.u0(), shatter.v0(), shatter.u1(),
             shatter.v1(), CardRenderer.turnsFor(controller, false));
-        WorldQuad.submit(poseStack, collector, WorldQuad.Kind.SOLID, shatter.texture(), camera,
-            transform.corners(card, lift), fade(0xFFFFFFFF), uv[0], uv[1]);
+        int faceTint = fade(0xFFFFFFFF);
+        WorldQuad.submit(poseStack, collector, kindFor(faceTint), shatter.texture(), camera,
+            transform.corners(card, lift), faceTint, uv[0], uv[1]);
         // The white goes OVER the card rather than into its tint, because a
         // tint can only take colour away and this has to add light.
         WorldQuad.submit(poseStack, collector, DuelTextures.WHITE, camera,
@@ -780,10 +782,11 @@ public final class OverworldBoardRenderer
             Vec3 topLeft = transform.at(left, edge, cardLift(transform) + HELD_HEIGHT);
             Vec3 topRight = transform.at(right, edge, cardLift(transform) + HELD_HEIGHT);
 
-            WorldQuad.submit(poseStack, collector, WorldQuad.Kind.SOLID, back, camera,
-                new Vec3[] {bottomLeft, topLeft, topRight, bottomRight}, fade(0xFFFFFFFF));
-            WorldQuad.submit(poseStack, collector, WorldQuad.Kind.SOLID, back, camera,
-                new Vec3[] {bottomRight, topRight, topLeft, bottomLeft}, fade(0xFFFFFFFF));
+            int heldTint = fade(0xFFFFFFFF);
+            WorldQuad.submit(poseStack, collector, kindFor(heldTint), back, camera,
+                new Vec3[] {bottomLeft, topLeft, topRight, bottomRight}, heldTint);
+            WorldQuad.submit(poseStack, collector, kindFor(heldTint), back, camera,
+                new Vec3[] {bottomRight, topRight, topLeft, bottomLeft}, heldTint);
         }
     }
 
@@ -951,6 +954,27 @@ public final class OverworldBoardRenderer
         }
         int was = tint >>> 24;
         return Math.round(was * alpha) << 24 | (tint & 0xFFFFFF);
+    }
+
+    /**
+     * Which render type a tint can actually be drawn through -- and the reason
+     * a five second fade used to look like a board vanishing in one frame.
+     * <p>
+     * SOLID is an alpha-TESTED cutout. The test keeps a texel or throws it
+     * away; it does not mix. So the mat and the card backs, which were always
+     * SOLID, took the faded tint and drew themselves at full strength anyway,
+     * frame after frame, until the alpha crossed the threshold -- at which
+     * point the entire board went out at once. The fade was running correctly
+     * the whole time and the render type was discarding the answer.
+     * <p>
+     * Anything short of opaque therefore goes through the blended type. It
+     * writes no depth, which for a stack of flat parallel planes drawn from the
+     * mat upwards is no loss: they are already submitted in the order they sit
+     * in.
+     */
+    private static WorldQuad.Kind kindFor(int tint)
+    {
+        return (tint >>> 24) >= 0xFF ? WorldQuad.Kind.SOLID : WorldQuad.Kind.GLOW;
     }
 
     /**

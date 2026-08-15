@@ -119,8 +119,15 @@ public final class ClientDuelField
 
     /** How long the outcome is held at full strength before it starts to go. */
     private static final long HOLD_MS = 1400L;
-    /** And how long it takes to go. */
-    private static final long FADE_MS = 1600L;
+    /**
+     * And how long it takes to go.
+     * <p>
+     * Long, and meant to be. A board is a table with a duel laid out on it, and
+     * the end of a duel is the one moment worth looking at the whole thing --
+     * so it dissipates at about the pace somebody would take to sit back from
+     * it, rather than at the pace of a screen being closed.
+     */
+    private static final long FADE_MS = 5000L;
 
     /**
      * How solid the board is drawn, from one down to nothing.

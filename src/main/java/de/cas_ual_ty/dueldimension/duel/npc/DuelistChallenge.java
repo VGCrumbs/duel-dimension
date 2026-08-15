@@ -5,6 +5,7 @@ import de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 
@@ -37,11 +38,77 @@ public final class DuelistChallenge
      */
     private static final double REPLY_SLACK = 4D;
 
-    /** Asks the player how they would like to play this duelist. */
+    /**
+     * Asks the player how they would like to play this duelist -- unless they
+     * have already said.
+     * <p>
+     * Two duellists standing on the two player points of a built arena is not a
+     * coincidence and it is not ambiguous. Somebody laid those markers out,
+     * walked to one and brought an opponent to the other; asking which kind of
+     * duel they meant is asking a question they answered by walking. The menu
+     * exists for the case where the world says nothing about it.
+     * <p>
+     * The screen duel is still one step away -- step off the mark and the
+     * question comes back -- which is what keeps this a shortcut rather than a
+     * setting.
+     */
     public static void offer(ServerPlayer player, DuelistEntity duelist)
     {
+        if(onTheMarks(player, duelist))
+        {
+            de.cas_ual_ty.dueldimension.DuelDimension.log("both duellists are on the marks of a"
+                + " built arena, so the board is taken as chosen");
+            begin(player, duelist.getId(), true);
+            return;
+        }
         ServerPlayNetworking.send(player, new DuelistChallengeMessages.OfferDuel(
             duelist.getId(), duelist.displayName()));
+    }
+
+    /**
+     * Whether these two are standing on the two player points of one arena.
+     * <p>
+     * Both of them, and not the same one twice. Two duellists sharing a mark is
+     * two duellists who have not set up a duel, and starting a board for them
+     * would put them in the same seat.
+     * <p>
+     * Searched from the point between them, exactly as the code that goes on to
+     * build the field does, so that a pair standing at the edge of one arena's
+     * reach cannot have this say yes and the builder then say no.
+     */
+    private static boolean onTheMarks(ServerPlayer player, DuelistEntity duelist)
+    {
+        if(!(player.level() instanceof net.minecraft.server.level.ServerLevel level))
+        {
+            return false;
+        }
+        BlockPos here = player.blockPosition();
+        BlockPos there = duelist.blockPosition();
+        BlockPos between = new BlockPos(Math.floorDiv(here.getX() + there.getX(), 2),
+            Math.floorDiv(here.getY() + there.getY(), 2),
+            Math.floorDiv(here.getZ() + there.getZ(), 2));
+        de.cas_ual_ty.dueldimension.duel.overworld.arena.Arena.Built arena =
+            de.cas_ual_ty.dueldimension.duel.overworld.arena.ArenaScan.find(level, between);
+        if(arena == null)
+        {
+            return false;
+        }
+        return (onMark(here, arena.first()) && onMark(there, arena.second()))
+            || (onMark(here, arena.second()) && onMark(there, arena.first()));
+    }
+
+    /**
+     * Standing on a mark, allowing a block either way vertically.
+     * <p>
+     * A marker has no collision, so a duellist stands INSIDE it rather than on
+     * top -- but which block a foot is counted in depends on where the ground
+     * under the marker is, so the column is what matters and the height is
+     * given a little room.
+     */
+    private static boolean onMark(BlockPos where, BlockPos mark)
+    {
+        return where.getX() == mark.getX() && where.getZ() == mark.getZ()
+            && Math.abs(where.getY() - mark.getY()) <= 1;
     }
 
     /**
