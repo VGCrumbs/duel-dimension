@@ -439,6 +439,12 @@ public class ClientProxy implements ISidedProxy
     public void showDuelField(
         de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.ShowField field)
     {
+        // A board arriving IS the duel starting, so a coin toss still up has
+        // said everything it has to say -- and the seat that lost the toss has
+        // no button to press and nothing else that would ever take it away.
+        // This is also the packet that asks both players to walk to their
+        // marks, which is not a thing anybody can do from behind a screen.
+        de.cas_ual_ty.dueldimension.clientutil.hub.CoinTossScreen.dismiss();
         de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.apply(field);
     }
 
@@ -542,6 +548,11 @@ public class ClientProxy implements ISidedProxy
     public void updateEngineDuel(
         de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate update)
     {
+        // The same for a duel played on the screen, where this is the first
+        // thing to arrive instead. Before the suppression check below, because
+        // that check is exactly what stops the duel screen replacing a coin
+        // toss on a board.
+        de.cas_ual_ty.dueldimension.clientutil.hub.CoinTossScreen.dismiss();
         update.log().forEach(DuelClientState::addLog);
         DuelClientState.warmUpArt(update.warmUp());
         synchronized(DuelClientState.class)

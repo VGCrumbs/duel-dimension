@@ -73,10 +73,33 @@ public class CoinTossScreen extends Screen
         }
         answered = true;
         ClientPlayNetworking.send(new LobbyMessages.TurnChoice(goFirst));
-        // The screen stays up rather than closing: the duel screen opens itself
-        // when the first board arrives, and closing to the world in between
-        // would put the player back in the field for a moment for no reason.
-        rebuildWidgets();
+        // And gives the world back, exactly as the duel-type menu does. It used
+        // to stay up on the reasoning that the duel screen would open itself
+        // when the first board arrived -- which is true of a duel played on the
+        // screen and false of one played on a board, where that opener is
+        // deliberately suppressed. On a board there was nothing to replace it,
+        // and it is modal: the very next thing an overworld duel asks is that
+        // both players WALK to their marks, which nobody can do from behind a
+        // screen that will not close. The duel then timed out waiting for a
+        // walk that this screen was preventing.
+        minecraft.gui.setScreen(null);
+    }
+
+    /**
+     * Closes a coin toss that is still up when the duel it announced arrives.
+     * <p>
+     * For the seat that did not win there is nothing to press and nothing to
+     * wait for once the duel has started, and no other screen will replace this
+     * one on a board. Called from the client's handlers for the first thing a
+     * starting duel sends, whichever that is.
+     */
+    public static void dismiss()
+    {
+        net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+        if(client.gui.screen() instanceof CoinTossScreen)
+        {
+            client.gui.setScreen(null);
+        }
     }
 
     @Override
@@ -104,6 +127,14 @@ public class CoinTossScreen extends Screen
                 : "Waiting for " + toss.winnerName() + " to choose";
         extractor.text(font, line, x + (panelW() - font.width(line)) / 2, y + 46,
             0xFFC2C9D6, true);
+
+        // LAST, and it was missing entirely. Retained mode draws what it is
+        // described, in the order it is described: without this the two buttons
+        // exist, take clicks and are never painted, so the winner sees a
+        // question with no answers and the duel appears to have hung. Every
+        // other screen in this mod ends this way; this was the one that did
+        // not, and the shop had the same fault before it.
+        super.extractRenderState(extractor, mouseX, mouseY, partialTick);
     }
 
     /**
