@@ -713,7 +713,7 @@ public final class OverworldDuels
         PUBLIC_VIEW.remove(board.seat0());
         if(watching != null)
         {
-            watching.forEach(id -> hideIfOnline(server, id));
+            watching.forEach(id -> stopWatching(server, id));
         }
     }
 
@@ -823,6 +823,26 @@ public final class OverworldDuels
         }
     }
 
+    /**
+     * Takes a watched board away from somebody who has stopped watching it --
+     * unless they have stopped by starting a duel of their own.
+     * <p>
+     * This is the difference between leaving and being promoted, and getting it
+     * wrong put a duellist on the 2D screen the moment their own duel began.
+     * The scan above skips engaged players deliberately, so a spectator who
+     * sits down to play drops out of it and reads exactly like one who walked
+     * away -- and hiding "the board" for them hides the board they are now
+     * standing at. They are dropped from the audience in silence instead: their
+     * own field is not this one's to take.
+     */
+    private static void stopWatching(MinecraftServer server, UUID id)
+    {
+        if(!isEngaged(id))
+        {
+            hideIfOnline(server, id);
+        }
+    }
+
     private static java.util.Set<UUID> watchersOf(Board board)
     {
         return WATCHERS.computeIfAbsent(board.seat0(),
@@ -885,7 +905,7 @@ public final class OverworldDuels
             {
                 return false;
             }
-            hideIfOnline(server, id);
+            stopWatching(server, id);
             return true;
         });
     }
