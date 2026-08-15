@@ -193,6 +193,25 @@ public class BoardPointerScreen extends Screen
      * The prompt's own list: centred, and clear of both the instruments above
      * and the hand below, since it belongs to neither.
      */
+    /**
+     * The prompt's own words, and how to say no to them.
+     * <p>
+     * Only for a chain window that may be declined, and in the same words the
+     * duel screen uses. Right-click has always passed one here, but a gesture
+     * nobody is told about is a gesture nobody uses -- and a long chain asks
+     * this after every link, which is precisely when it is worth knowing that
+     * one held button answers all of them.
+     */
+    private static String caption(EnginePrompt prompt)
+    {
+        if(prompt == null)
+        {
+            return "";
+        }
+        return prompt.chainWindow() && prompt.cancelable()
+            ? prompt.title() + "   [hold right-click to pass]" : prompt.title();
+    }
+
     private void openQuestion(List<Integer> rows)
     {
         hovered = null;
@@ -206,8 +225,7 @@ public class BoardPointerScreen extends Screen
         // No under half a question -- with nothing to show that anything went
         // missing. Measured first, because the lines it takes are room the list
         // below has to make for it.
-        questionLines = wrap(DuelClientState.prompt == null ? ""
-            : DuelClientState.prompt.title(), width - 16);
+        questionLines = wrap(caption(DuelClientState.prompt), width - 16);
         int caption = questionLines.size() * LINE_H + QUESTION_GAP;
         int tall = rows.size() * ROW_H;
         // Clear of the instruments above AND the hand below. HandLayout knows

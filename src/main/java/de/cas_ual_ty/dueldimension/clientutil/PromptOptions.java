@@ -178,6 +178,21 @@ public final class PromptOptions
         {
             return false;
         }
+        // A prompt the PICKER answers needs nothing pointed at. It is a panel
+        // of named cards, which is exactly how the board asks about a
+        // graveyard -- and asking pointable() of it anyway vetoed the very
+        // prompts needsPicker was added to keep.
+        //
+        // A chain window offering a graveyard effect is the case that matters:
+        // every option is in a pile, none of them is on the field, so nothing
+        // was pickable and the flat board came up over the duel to ask a
+        // question the board already had a way to ask. Answering a chain is
+        // the most frequent thing a duel asks after a phase, and it was the
+        // one thing that could not be done where the duel was happening.
+        if(needsPicker(prompt))
+        {
+            return true;
+        }
         return pointable(prompt) && (aboutTheBoard(prompt) || needsList(prompt));
     }
 
