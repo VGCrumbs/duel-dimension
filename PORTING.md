@@ -5,6 +5,12 @@ Fabric stack. The Forge project stays in its own folder next door at
 `../CrumbyDueling` and remains the canonical, playable mod until this fork
 reaches parity. Nothing here writes to it; the porting tools read from it.
 
+A duel is played in two places, on a flat screen or on a board in the world,
+and the two are meant to be one duel presented twice. Where they are not,
+**`DUEL_PARITY.md`** is the list -- what each shows, what each can answer, and
+the handful of places the same click means different things. Read it before
+changing either presentation; add to it when the two drift.
+
 ## Toolchain
 
 | | |
