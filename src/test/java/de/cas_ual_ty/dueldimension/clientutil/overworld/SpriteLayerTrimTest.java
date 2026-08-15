@@ -205,29 +205,41 @@ class SpriteLayerTrimTest
 
     // ------------------------------------------------------- the bobbing --
 
-    /** One picture, and a frame count that means how long the bob takes. */
-    private static SpriteLayer bobber(int frames, int ticks)
+    /** A run of pictures that ALSO drifts up and down while it plays. */
+    private static SpriteLayer bobber(int frames, int period, int ticks)
     {
-        return new SpriteLayer("test/sheet", 0, 0, 512, 256, 1, 1, 0, frames, ticks,
-            MonsterSprites.Loop.BOB, 0, 0);
+        return new SpriteLayer("test/sheet", 0, 0, 512, 256, COLUMNS, 1, 0, frames, ticks,
+            MonsterSprites.Loop.LOOP, 0, 0, period);
     }
 
     @Test
-    void aBobbingLayerAlwaysShowsItsFirstCell()
+    void aBobDoesNotStopTheAnimation()
     {
-        SpriteLayer layer = bobber(8, 3);
-        for(long tick = 0L; tick < 64L; tick++)
+        // The whole point of the bob being its own number. While it was a third
+        // kind of loop, asking for one meant giving up the frames: every
+        // bobbing monster had to be a still one, and a drawn animation could
+        // never leave the ground.
+        SpriteLayer layer = bobber(4, 8, 1);
+        for(int frame = 0; frame < 4; frame++)
         {
-            assertEquals(0, MonsterSprites.frameAt(layer, tick),
-                "a bobbing layer changed picture at tick " + tick);
+            assertEquals(frame, MonsterSprites.frameAt(layer, frame),
+                "the bob stopped the animation at frame " + frame);
         }
+        boolean moved = false;
+        for(long tick = 0L; tick < 8L; tick++)
+        {
+            moved |= MonsterSprites.bobAt(layer, tick) != 0F;
+        }
+        assertTrue(moved, "an animated layer with a bob never left the ground");
     }
 
     @Test
-    void theBobComesRoundOverTheFrameCount()
+    void theBobComesRoundOverItsOwnCount()
     {
-        SpriteLayer layer = bobber(8, 3);
-        long period = 8L * 3L;
+        // Its own count, not the frame count: the two are free to disagree, so
+        // four frames of animation can drift on a sixteen-step swell.
+        SpriteLayer layer = bobber(4, 16, 3);
+        long period = 16L * 3L;
         for(long tick = 0L; tick < 40L; tick++)
         {
             assertEquals(MonsterSprites.bobAt(layer, tick),
@@ -239,19 +251,18 @@ class SpriteLayerTrimTest
     @Test
     void theBobRisesAndFalls()
     {
-        SpriteLayer layer = bobber(4, 1);
+        SpriteLayer layer = bobber(1, 4, 1);
         assertEquals(0F, MonsterSprites.bobAt(layer, 0L), 1e-5F);
         assertEquals(MonsterSprites.BOB_RISE, MonsterSprites.bobAt(layer, 1L), 1e-5F);
         assertEquals(0F, MonsterSprites.bobAt(layer, 2L), 1e-5F);
         assertEquals(-MonsterSprites.BOB_RISE, MonsterSprites.bobAt(layer, 3L), 1e-5F);
-        // And a longer count is a slower, finer bob rather than a taller one.
-        SpriteLayer longer = bobber(16, 1);
-        assertNotEquals(0F, MonsterSprites.bobAt(longer, 1L));
-        assertTrue(Math.abs(MonsterSprites.bobAt(longer, 1L)) < MonsterSprites.BOB_RISE);
+        // A longer count is a slower, finer bob rather than a taller one.
+        assertTrue(Math.abs(MonsterSprites.bobAt(bobber(1, 16, 1), 1L)) < MonsterSprites.BOB_RISE);
+        assertNotEquals(0F, MonsterSprites.bobAt(bobber(1, 16, 1), 1L));
     }
 
     @Test
-    void nothingElseBobs()
+    void nothingBobsUnlessAskedTo()
     {
         for(long tick = 0L; tick < 20L; tick++)
         {
@@ -259,6 +270,7 @@ class SpriteLayerTrimTest
         }
         // A period of one has nowhere to go, and must sit still rather than
         // divide by a step count it does not have.
-        assertEquals(0F, MonsterSprites.bobAt(bobber(1, 5), 7L), 1e-6F);
+        assertEquals(0F, MonsterSprites.bobAt(bobber(1, 1, 5), 7L), 1e-6F);
+        assertEquals(0F, MonsterSprites.bobAt(bobber(4, 0, 5), 7L), 1e-6F);
     }
 }

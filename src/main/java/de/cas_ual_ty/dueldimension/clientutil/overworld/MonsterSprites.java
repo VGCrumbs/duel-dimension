@@ -70,17 +70,12 @@ public final class MonsterSprites
         LOOP,
         PING_PONG,
         /**
-         * One picture, moved rather than redrawn.
-         * <p>
-         * Plenty of monsters are worth putting on a board and are not worth
-         * drawing four times, and a sprite that holds perfectly still beside
-         * ones that do not reads as broken rather than as still. A slow rise
-         * and fall costs a single cell of art and buys what the frames were
-         * really for, which is looking alive.
-         * <p>
-         * The frame count stops meaning a number of pictures and starts meaning
-         * the length of the bob -- how many steps it takes to come round again.
+         * Kept only so that a file written before the bob became its own
+         * setting still reads. {@link #readLayer} turns it into a plain LOOP
+         * with a bob as long as the frame count, which is what it used to mean,
+         * and nothing writes it any more.
          */
+        @Deprecated
         BOB
     }
 
@@ -164,9 +159,7 @@ public final class MonsterSprites
      */
     public static int frameAt(SpriteLayer layer, long gameTime)
     {
-        // A bobbing layer's frame count is a period, not a run of pictures, so
-        // it holds the first cell however high that count goes.
-        if(layer == null || layer.frames() <= 1 || layer.loop() == Loop.BOB)
+        if(layer == null || layer.frames() <= 1)
         {
             return 0;
         }
@@ -199,16 +192,22 @@ public final class MonsterSprites
      * A sine sampled at whole steps rather than a continuous one, so the
      * movement lands on the same beat as the animated sprites beside it -- and
      * because these are pixel drawings, where stepping between positions looks
-     * more right than gliding between them. Zero for every other kind of layer,
-     * so a caller may add it without asking first.
+     * more right than gliding between them. Zero when the bob is off, so a
+     * caller may add it without asking first.
+     * <p>
+     * Its own number rather than a kind of loop, because a monster can be drawn
+     * frame by frame AND drift up and down while it happens -- those are two
+     * things a sprite does, not two things it chooses between. Making the bob a
+     * third value of the loop setting meant every bobbing monster had to be a
+     * still one.
      */
     public static float bobAt(SpriteLayer layer, long gameTime)
     {
-        if(layer == null || layer.loop() != Loop.BOB || layer.frames() < 2)
+        if(layer == null || layer.bob() < 2)
         {
             return 0F;
         }
-        int steps = layer.frames();
+        int steps = layer.bob();
         long step = Math.floorDiv(gameTime, Math.max(1, layer.ticks()));
         return BOB_RISE * (float)Math.sin(2D * Math.PI * Math.floorMod(step, steps) / steps);
     }
@@ -515,7 +514,7 @@ public final class MonsterSprites
 
     private static SpriteLayer readLayer(JsonObject object)
     {
-        return new SpriteLayer(object.get("sheet").getAsString(),
+        SpriteLayer read = new SpriteLayer(object.get("sheet").getAsString(),
             optional(object, "x", 0), optional(object, "y", 0),
             optional(object, "w", 0), optional(object, "h", 0),
             Math.max(1, optional(object, "columns", 1)),
@@ -525,7 +524,20 @@ public final class MonsterSprites
             Math.max(1, optional(object, "ticks", DEFAULT_TICKS)),
             object.has("loop") ? Loop.valueOf(object.get("loop").getAsString()) : Loop.LOOP,
             Math.max(0, optional(object, "trimX", 0)),
-            Math.max(0, optional(object, "trimY", 0)));
+            Math.max(0, optional(object, "trimY", 0)),
+            Math.max(0, optional(object, "bob", 0)));
+        // A file written while the bob was a kind of loop said so there, and
+        // meant "hold the first cell and rise and fall over the frame count".
+        // Said in the new terms that is a plain loop of one frame with a bob of
+        // the old length -- so old files keep working and nothing writes BOB
+        // again.
+        if(read.loop() == Loop.BOB)
+        {
+            return new SpriteLayer(read.sheet(), read.x(), read.y(), read.w(), read.h(),
+                read.columns(), read.rows(), read.first(), 1, read.ticks(), Loop.LOOP,
+                read.trimX(), read.trimY(), read.frames());
+        }
+        return read;
     }
 
     private static int optional(JsonObject object, String key, int fallback)
@@ -571,6 +583,7 @@ public final class MonsterSprites
         object.addProperty("loop", layer.loop().name());
         object.addProperty("trimX", layer.trimX());
         object.addProperty("trimY", layer.trimY());
+        object.addProperty("bob", layer.bob());
         return object;
     }
 

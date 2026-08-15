@@ -91,6 +91,7 @@ public class BillboardEditorScreen extends Screen
     private int bframes = 4;
     private int bticks = MonsterSprites.DEFAULT_TICKS;
     private MonsterSprites.Loop bloop = MonsterSprites.Loop.PING_PONG;
+    private int bbob;
     private int btrimX;
     private int btrimY;
     private float scale = 1F;
@@ -153,6 +154,7 @@ public class BillboardEditorScreen extends Screen
         bframes = body.frames();
         bticks = body.ticks();
         bloop = body.loop();
+        bbob = body.bob();
         btrimX = body.trimX();
         btrimY = body.trimY();
         scale = definition.scale();
@@ -193,10 +195,10 @@ public class BillboardEditorScreen extends Screen
             return;
         }
         SpriteLayer body = new SpriteLayer(sheet, bx, by, bw, bh, bcolumns, brows, bfirst,
-            bframes, bticks, bloop, btrimX, btrimY);
+            bframes, bticks, bloop, btrimX, btrimY, bbob);
         SpriteLayer defence = pose
             ? new SpriteLayer(sheet, bx, by, bw, bh, bcolumns, brows, dfirst, 1, bticks,
-                MonsterSprites.Loop.LOOP, btrimX, btrimY)
+                MonsterSprites.Loop.LOOP, btrimX, btrimY, bbob)
             : null;
         Wings wings = winged
             ? new Wings(new SpriteLayer(sheet, wx, wy, ww, wh, wcolumns, wrows, wfirst, wframes,
@@ -376,7 +378,11 @@ public class BillboardEditorScreen extends Screen
         pair(count("Speed", 1, 20, MonsterSprites.DEFAULT_TICKS, () -> bticks,
                 value -> bticks = value),
             loop(() -> bloop, value -> bloop = value, MonsterSprites.Loop.PING_PONG));
-        wide(amount("Size", 0.1F, 4F, 1F, () -> scale, value -> scale = value));
+        // Beside the size rather than on a row of its own, because the sheet
+        // preview underneath is worth more than the tidiness of one control per
+        // line -- and because both of these are "how big and how alive".
+        pair(amount("Size", 0.1F, 4F, 1F, () -> scale, value -> scale = value),
+            count("Bob", 0, 32, 0, () -> bbob, value -> bbob = value));
         pair(count("Crop x", 0, 1024, 0, () -> bx, value -> bx = value),
             count("Crop y", 0, 1024, 0, () -> by, value -> by = value));
         pair(count("Crop w", 0, 1024, 0, () -> bw, value -> bw = value),
@@ -657,28 +663,26 @@ public class BillboardEditorScreen extends Screen
     }
 
     /**
-     * The next setting round. Three of them now, so a button that flipped
-     * between two has to become one that cycles.
+     * The other setting. Two again: the bob left this button and became a
+     * number of its own, because a monster can be drawn frame by frame AND
+     * drift up and down while it happens. Those are two things a sprite does,
+     * not two things it chooses between, and while the bob lived here every
+     * bobbing monster had to be a still one.
      */
     private static MonsterSprites.Loop after(MonsterSprites.Loop loop)
     {
-        return switch(loop)
-        {
-            case LOOP -> MonsterSprites.Loop.PING_PONG;
-            case PING_PONG -> MonsterSprites.Loop.BOB;
-            case BOB -> MonsterSprites.Loop.LOOP;
-        };
+        return loop == MonsterSprites.Loop.LOOP
+            ? MonsterSprites.Loop.PING_PONG : MonsterSprites.Loop.LOOP;
     }
 
     private static String loopName(MonsterSprites.Loop loop)
     {
         return switch(loop)
         {
-            case LOOP -> "loop";
             case PING_PONG -> "back/forth";
-            // Named for what the frame count means here, because that is the
-            // one thing about this setting that is not obvious from watching it.
-            case BOB -> "bob";
+            // BOB is only still here so an old file reads; it is turned into a
+            // loop with a bob the moment it is loaded and never written again.
+            default -> "loop";
         };
     }
 
@@ -699,6 +703,26 @@ public class BillboardEditorScreen extends Screen
             this.max = max;
             this.set = set;
             updateMessage();
+        }
+
+        /**
+         * One step per notch of the wheel.
+         * <p>
+         * A slider a couple of hundred pixels wide covering a thousand values
+         * cannot be dragged to a particular one -- a single pixel is several
+         * numbers, and the one you want is between them. The wheel gives the
+         * exact number without giving up the drag for getting near it.
+         */
+        @Override
+        public boolean mouseScrolled(double mouseX, double mouseY, double scrollX,
+            double scrollY)
+        {
+            if(scrollY == 0D)
+            {
+                return false;
+            }
+            setValue(value + Math.signum(scrollY) / Math.max(1, max - min));
+            return true;
         }
 
         private int value()
@@ -740,6 +764,19 @@ public class BillboardEditorScreen extends Screen
             this.max = max;
             this.set = set;
             updateMessage();
+        }
+
+        /** One step per notch, and a step is the last digit this prints. */
+        @Override
+        public boolean mouseScrolled(double mouseX, double mouseY, double scrollX,
+            double scrollY)
+        {
+            if(scrollY == 0D)
+            {
+                return false;
+            }
+            setValue(value + Math.signum(scrollY) * 0.01D / (max - min));
+            return true;
         }
 
         private float value()

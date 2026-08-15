@@ -31,10 +31,19 @@ import net.minecraft.resources.Identifier;
  * @param ticks   how long each frame is held
  * @param trimX   pixels taken off the region's OUTER left and right edges
  * @param trimY   pixels taken off the region's OUTER top and bottom edges
+ * @param bob     how many steps a rise and fall takes, or 0 for a sprite that
+ *                stays where it is put
  */
 public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns, int rows,
-    int first, int frames, int ticks, MonsterSprites.Loop loop, int trimX, int trimY)
+    int first, int frames, int ticks, MonsterSprites.Loop loop, int trimX, int trimY, int bob)
 {
+    /** Everything but the bob, which most sprites do not do. */
+    public SpriteLayer(String sheet, int x, int y, int w, int h, int columns, int rows,
+        int first, int frames, int ticks, MonsterSprites.Loop loop, int trimX, int trimY)
+    {
+        this(sheet, x, y, w, h, columns, rows, first, frames, ticks, loop, trimX, trimY, 0);
+    }
+
     /** A layer that takes the whole of each cell, which is most of them. */
     public SpriteLayer(String sheet, int x, int y, int w, int h, int columns, int rows,
         int first, int frames, int ticks, MonsterSprites.Loop loop)
@@ -227,19 +236,19 @@ public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns,
     public SpriteLayer withTicks(int value)
     {
         return new SpriteLayer(sheet, x, y, w, h, columns, rows, first, frames,
-            Math.max(1, value), loop, trimX, trimY);
+            Math.max(1, value), loop, trimX, trimY, bob);
     }
 
     /** The same layer reading a differently named file, for the export to source. */
     public SpriteLayer withSheet(String value)
     {
         return new SpriteLayer(value, x, y, w, h, columns, rows, first, frames, ticks, loop,
-            trimX, trimY);
+            trimX, trimY, bob);
     }
 
     public SpriteLayer withLoop(MonsterSprites.Loop value)
     {
         return new SpriteLayer(sheet, x, y, w, h, columns, rows, first, frames, ticks, value,
-            trimX, trimY);
+            trimX, trimY, bob);
     }
 }
