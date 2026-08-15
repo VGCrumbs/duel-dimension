@@ -97,7 +97,8 @@ public final class CrosshairAction
             DuelClientState.prompt))
         {
             de.cas_ual_ty.dueldimension.clientutil.DuelSelection.toggle(
-                DuelClientState.prompt, options.get(0));
+                DuelClientState.prompt,
+                de.cas_ual_ty.dueldimension.clientutil.DuelSelection.pick(options));
             return true;
         }
 

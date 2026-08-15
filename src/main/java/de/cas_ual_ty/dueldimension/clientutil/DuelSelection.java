@@ -76,6 +76,33 @@ public final class DuelSelection
         }
     }
 
+    /**
+     * Which of several options a click on one card should toggle.
+     * <p>
+     * A target does not always name ONE option. The matcher pairs a slotless
+     * option with a target by CARD CODE, so two copies of the same card in hand
+     * resolve to the same list -- and taking the first of it every time meant
+     * the second copy toggled the first copy back off. Two clicks on two cards
+     * left one selected, and the duel discarded something the player had never
+     * pointed at.
+     * <p>
+     * So: the first option not already taken, which lets each copy claim its
+     * own. Nothing left to claim means every one of them is chosen and this is
+     * a click that should give one back, so the last is returned to be toggled
+     * off -- clicking a card twice still deselects it.
+     */
+    public static int pick(java.util.List<Integer> options)
+    {
+        for(int option : options)
+        {
+            if(!chosen.contains(option))
+            {
+                return option;
+            }
+        }
+        return options.get(options.size() - 1);
+    }
+
     public static boolean has(int option)
     {
         return chosen.contains(option);

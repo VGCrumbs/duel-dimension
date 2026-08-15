@@ -583,7 +583,7 @@ public class BoardPointerScreen extends Screen
         // click toggles, and the Confirm button in the corner is what ends it.
         if(DuelSelection.wantsSeveral(DuelClientState.prompt))
         {
-            DuelSelection.toggle(DuelClientState.prompt, options.get(0));
+            DuelSelection.toggle(DuelClientState.prompt, DuelSelection.pick(options));
             return true;
         }
 
