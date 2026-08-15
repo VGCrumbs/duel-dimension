@@ -95,7 +95,13 @@ public final class ClientDuelTargeting
         FieldTransform transform = new FieldTransform(siting);
         Vec3 eye = player.getEyePosition(1F);
         float[] field = BoardPicker.aim(transform, eye, player.getLookAngle(), REACH);
-        looking = BoardPicker.at(DuelClientState.board, Math.max(0, ClientDuelField.seat()), field);
+        // The board that is DRAWN, so the crosshair cannot point at a square
+        // the eye is not being shown -- a spectator is sent a stripped copy and
+        // was being aimed with the duellist's.
+        looking = BoardPicker.at(ClientDuelField.boardToDraw(),
+            Math.max(0, ClientDuelField.seat()), field,
+            target -> de.cas_ual_ty.dueldimension.clientutil.PromptOptions.optionsFor(
+                DuelClientState.prompt, false, target).isEmpty() ? 0 : 4);
         // The engine decides what is legal, here as everywhere: this only asks
         // which of the options it already sent are about the card being looked
         // at. Nothing here knows a rule.

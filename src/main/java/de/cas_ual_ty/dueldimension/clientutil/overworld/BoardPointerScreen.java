@@ -1115,8 +1115,16 @@ public class BoardPointerScreen extends Screen
         }
         if(byCommand.size() == 1)
         {
-            List<Integer> group = byCommand.values().iterator().next();
-            openPileList(label(group.get(0)), group);
+            java.util.Map.Entry<Integer, List<Integer>> only =
+                byCommand.entrySet().iterator().next();
+            List<Integer> group = only.getValue();
+            // A selection carries no verb, so its rows are cards and the list
+            // is all of them -- heading it with whichever card happened to be
+            // first told the player they were acting on that one. The stack's
+            // own name is the truthful heading, which is what the flat board
+            // settled on for the same reason.
+            openPileList(only.getKey() == 0 && hovered != null ? hovered.label()
+                : label(group.get(0)), group);
             return;
         }
         List<Integer> rows = new java.util.ArrayList<>();

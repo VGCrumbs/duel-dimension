@@ -82,28 +82,67 @@ public final class BoardPicker
      */
     public static BoardTarget at(BoardSnapshot board, int viewerSeat, float[] field)
     {
+        return at(board, viewerSeat, field, null);
+    }
+
+    /**
+     * The same, told which of two overlapping zones the duel is asking about.
+     * <p>
+     * The extra monster zone is one square shared by two logical zones, one per
+     * controller, so a click there has two right answers and only one of them
+     * is the one being offered. Occupancy alone cannot choose between them: the
+     * square can be empty in both readings, and taking the lower controller
+     * then means seat 1 points at a square and summons into seat 0's half of
+     * the engine's numbering.
+     * <p>
+     * So the caller supplies what it knows -- whether the prompt has anything
+     * to say about a candidate -- and that outranks everything. It is the rule
+     * the flat board already applies, where the same lambda is handed to
+     * {@code hitAt}, and it is the only way the two can agree about a square
+     * they both draw.
+     *
+     * @param priority extra weight for a candidate, or null to judge on
+     *                 occupancy alone
+     */
+    public static BoardTarget at(BoardSnapshot board, int viewerSeat, float[] field,
+        java.util.function.ToIntFunction<BoardTarget> priority)
+    {
         if(board == null || field == null)
         {
             return null;
         }
-        // Occupied zones first, across both controllers, so a card is never
-        // hidden behind an empty zone that happens to overlap it.
-        for(boolean occupiedOnly : new boolean[] {true, false})
+        BoardTarget best = null;
+        int bestScore = Integer.MIN_VALUE;
+        for(int controller = 0; controller <= 1; controller++)
         {
-            for(int controller = 0; controller <= 1; controller++)
+            BoardSnapshot.Side side = sideFor(board, viewerSeat, controller);
+            if(side == null)
             {
-                BoardSnapshot.Side side = sideFor(board, viewerSeat, controller);
-                if(side == null)
+                continue;
+            }
+            for(int[] zone : ZONES)
+            {
+                BoardTarget hit = zoneAt(side, controller, relative(viewerSeat, controller),
+                    field, zone);
+                if(hit == null)
                 {
                     continue;
                 }
-                BoardTarget hit = inZones(side, controller, relative(viewerSeat, controller),
-                    field, occupiedOnly);
-                if(hit != null)
+                // Occupied beats empty, and offered beats both. Without the
+                // first, a card hides behind the empty zone overlapping it;
+                // without the second, the wrong half of a shared square wins.
+                int score = (hit.code() != 0 ? 2 : 0)
+                    + (priority == null ? 0 : priority.applyAsInt(hit));
+                if(score > bestScore)
                 {
-                    return hit;
+                    bestScore = score;
+                    best = hit;
                 }
             }
+        }
+        if(best != null)
+        {
+            return best;
         }
         for(int controller = 0; controller <= 1; controller++)
         {
@@ -135,33 +174,26 @@ public final class BoardPicker
         return controller == viewerSeat ? 0 : 1;
     }
 
-    private static BoardTarget inZones(BoardSnapshot.Side side, int controller, int relative,
-        float[] field, boolean occupiedOnly)
+    /** One zone's target, or null when the point is not inside it. */
+    private static BoardTarget zoneAt(BoardSnapshot.Side side, int controller, int relative,
+        float[] field, int[] zone)
     {
-        for(int[] zone : ZONES)
+        FieldLayout.Rect rect = FieldLayout.zone(controller, zone[0], zone[1]);
+        if(rect == null || !within(rect, field))
         {
-            FieldLayout.Rect rect = FieldLayout.zone(controller, zone[0], zone[1]);
-            if(rect == null || !within(rect, field))
-            {
-                continue;
-            }
-            BoardSnapshot.Slot slot = slotAt(side, zone[0], zone[1]);
-            boolean occupied = slot != null && slot.present();
-            if(occupiedOnly != occupied)
-            {
-                continue;
-            }
-            // The engine's own reference for this square, packed the same
-            // way BoardRenderer packs it. Without it a PLACES prompt -- "where
-            // do you want to put this" -- has nothing to match against, so a
-            // summon could be started on the board and never finished.
-            int zoneRef = de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt.zoneRef(
-                relative == 1, zone[0] == OcgConstants.LOCATION_MZONE, zone[1]);
-            return new BoardTarget(occupied ? slot.code() : 0, relative, zone[0], zone[1],
-                zoneRef, label(zone[0], zone[1]), occupied ? 1 : 0,
-                occupied ? slot.art() : 0);
+            return null;
         }
-        return null;
+        BoardSnapshot.Slot slot = slotAt(side, zone[0], zone[1]);
+        boolean occupied = slot != null && slot.present();
+        // The engine's own reference for this square, packed the same way
+        // BoardRenderer packs it. Without it a PLACES prompt -- "where do you
+        // want to put this" -- has nothing to match against, so a summon could
+        // be started on the board and never finished.
+        int zoneRef = de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt.zoneRef(
+            relative == 1, zone[0] == OcgConstants.LOCATION_MZONE, zone[1]);
+        return new BoardTarget(occupied ? slot.code() : 0, relative, zone[0], zone[1],
+            zoneRef, label(zone[0], zone[1]), occupied ? 1 : 0,
+            occupied ? slot.art() : 0);
     }
 
     private static BoardTarget inPiles(BoardSnapshot.Side side, int controller, int relative,

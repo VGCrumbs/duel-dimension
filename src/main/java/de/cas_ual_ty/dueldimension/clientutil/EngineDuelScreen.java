@@ -1710,7 +1710,7 @@ public class EngineDuelScreen extends Screen
                     }
                 }
                 else if(actions.size() == 1 && !isCardCommand(actions.get(0))
-                    && !hit.isPile())
+                    && !hit.isPile() && !inChainWindow())
                 {
                     // Selecting a card for a prompt ("pick a target") stays one
                     // click: there is nothing to choose between.
@@ -1748,6 +1748,21 @@ public class EngineDuelScreen extends Screen
      * activate, reposition, attack...) rather than a prompt selection. Card
      * commands always deserve a button to press; selections do not.
      */
+    /**
+     * Is the duel asking whether to respond right now?
+     * <p>
+     * A chain window names cards rather than commands, so every one of its
+     * options carries command 0 and reads to the test below as an innocent
+     * selection -- and one click then SETS OFF A TRAP, which is the most
+     * irreversible thing a duel can be made to do by accident. PromptOptions
+     * has refused this since the board learned to answer prompts, with EDOPro's
+     * own confirmation as the reason; this screen had no equivalent and fired.
+     */
+    private boolean inChainWindow()
+    {
+        return shownPrompt != null && shownPrompt.chainWindow();
+    }
+
     private boolean isCardCommand(int index)
     {
         EnginePrompt prompt = shownPrompt;
