@@ -580,11 +580,24 @@ public class ClientProxy implements ISidedProxy
         // They have to be considered together. Branching one and not the others
         // is how a board ends up covered by a screen at the one moment its
         // owner was looking at it.
-        if(!update.over() && !update.events().isEmpty()
+        //
+        // And a duel that is FINISHED has no opponent's turn left to watch, so
+        // nothing arriving afterwards may open a screen to watch it in. The
+        // board suppression alone does not cover this: the board is cleared the
+        // moment it has finished fading, so from then on locked() is false and
+        // this reads exactly like a duel being played on the screen. Two things
+        // say otherwise, and both are needed because they cover different
+        // moments -- DuelClientState.over while the board is still saying
+        // goodbye, and the result screen once it has gone and the player is
+        // reading what happened. Without the second, a straggling update lands
+        // on top of the result and replaces it with an empty duel.
+        if(!update.over() && !DuelClientState.over && !update.events().isEmpty()
             && !(de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()
                 && !de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField
                     .screenPreferred())
-            && !(getMinecraft().gui.screen() instanceof EngineDuelScreen))
+            && !(getMinecraft().gui.screen() instanceof EngineDuelScreen)
+            && !(getMinecraft().gui.screen()
+                instanceof de.cas_ual_ty.dueldimension.clientutil.hub.DuelResultScreen))
         {
             // gui.setScreen, not setScreenAndShow: the latter forces a frame,
             // and this runs while the update batch is still being applied.
