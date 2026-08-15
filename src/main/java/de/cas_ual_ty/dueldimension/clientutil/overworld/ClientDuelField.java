@@ -183,7 +183,12 @@ public final class ClientDuelField
         // The result screen, with the reward that follows it. Exactly what a
         // duel on the screen does at this point -- only now it happens after
         // the board has had its say instead of instead of it.
-        de.cas_ual_ty.dueldimension.clientutil.DuelClientState.openScreen();
+        //
+        // Straight there, rather than by opening the duel screen and letting it
+        // forward: its deadlines run from when the engine decided the duel, and
+        // the board's goodbye has already outlasted them, so it would replace
+        // itself on its first tick and show one frame of a 2D duel on the way.
+        de.cas_ual_ty.dueldimension.clientutil.DuelClientState.finish();
     }
 
     /**

@@ -215,6 +215,40 @@ public final class DuelClientState
         openScreen();
     }
 
+    /**
+     * Where a duel goes once the board has finished ending.
+     * <p>
+     * Straight to the result, rather than through the duel screen that would
+     * only forward to it. That screen used to be opened here and replaced
+     * itself on its very next tick, which is one frame of a 2D duel nobody was
+     * playing -- the board flashing back into a screen at the exact moment it
+     * had finished fading away.
+     * <p>
+     * It replaced itself immediately because its own deadlines are measured
+     * from the moment the ENGINE decided the duel, not from when the screen
+     * opened, and the board's goodbye -- a second and a half holding the
+     * outcome, then a second and a half fading -- has already spent every
+     * millisecond of the stinger it was waiting on. The screen had nothing left
+     * to wait for and did the only thing it had left to do.
+     * <p>
+     * A reward that has not landed yet is the exception, and it keeps the old
+     * route: the duel screen doubles as the waiting room, holds a couple of
+     * seconds more, and forwards the moment one arrives. Rare, because the
+     * server sends the reward in the same tick it sends the last update.
+     */
+    public static void finish()
+    {
+        if(!hasReward())
+        {
+            openScreen();
+            return;
+        }
+        de.cas_ual_ty.dueldimension.shop.DuelRewardMessages.Result earned = takeReward();
+        reset();
+        net.minecraft.client.Minecraft.getInstance().gui.setScreen(
+            new de.cas_ual_ty.dueldimension.clientutil.hub.DuelResultScreen(earned));
+    }
+
     /** Brings the duel screen up if the player closed it. */
     public static void openScreen()
     {
