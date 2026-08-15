@@ -46,6 +46,25 @@ import java.util.Set;
 public class EngineDuelScreen extends Screen
 {
     private static final int SIDEBAR_W = 132;
+
+    /**
+     * Dims the board and leaves the card panel alone.
+     * <p>
+     * Everything that dims this screen dims it because something MODAL has
+     * opened over the duel -- and the reason a card is being chosen is almost
+     * always written in the panel on the left. Greying out the description at
+     * the moment it is being read is greying out the answer to the question
+     * being asked: the picker in the middle names seven cards, and which of
+     * them is the right one is decided by text that had just been dimmed to
+     * make the picker stand out.
+     * <p>
+     * The panel is a full-height column at the left edge, so this is one
+     * rectangle rather than four: start where it ends.
+     */
+    private void dimBoard(net.minecraft.client.gui.GuiGraphicsExtractor poseStack, int colour)
+    {
+        poseStack.fill(SIDEBAR_W, 0, width, height, colour);
+    }
     private static final int SIDEBAR_PAD = 6;
 
     /** Width the mute button takes out of the chain button's row. */
@@ -689,7 +708,7 @@ public class EngineDuelScreen extends Screen
 
         // Dim the board rather than hide it: the question is about the duel,
         // and the player should still be able to see its state.
-        poseStack.fill(0, 0, width, height, 0xA0000000);
+        dimBoard(poseStack, 0xA0000000);
         de.cas_ual_ty.dueldimension.clientutil.hub.NineSlice.draw(poseStack, de.cas_ual_ty.dueldimension.clientutil.hub.HubTextures.PANEL, at.x(), at.y(), at.width(), at.height());
 
         String title = pileChoicesLabel != null ? pileChoicesLabel
@@ -2326,7 +2345,7 @@ public class EngineDuelScreen extends Screen
         {
             return;
         }
-        poseStack.fill(0, 0, width, height, 0xC0000000);
+        dimBoard(poseStack, 0xC0000000);
 
         String outcome = DuelClientState.result == null ? "" : DuelClientState.result.trim();
         boolean won = outcome.equalsIgnoreCase("Victory");
