@@ -209,8 +209,12 @@ public record BoardState(int viewer, boolean omniscient, PlayerBoard self, Playe
         // guarantee: completing this call into the 16-argument form and passing
         // card.art() would leak per-copy identity, and overload resolution would
         // have made that edit look like a tidy-up.
+        // Race goes with the code, and for the same reason the artwork does.
+        // EDOPro counts QUERY_RACE among its private queries: a set monster
+        // arrives from the core with its race intact, and "this face-down card
+        // is an Insect" is a statement about a card nobody may identify.
         return new CardView(0, card.position(), 0, 0, -1, -1, -1, -1, -1, -1, false, true, null,
-            0, 0, 0);
+            0, 0, 0, 0L);
     }
 
     /**
@@ -235,7 +239,7 @@ public record BoardState(int viewer, boolean omniscient, PlayerBoard self, Playe
                 new CardView.Equip(controller, equip.location(), equip.sequence()),
                 // Carried through: this rewrites WHERE an equip points, not
                 // what the card is.
-                card.status(), card.overlays(), card.art());
+                card.status(), card.overlays(), card.art(), card.race());
     }
 
     /** Life points and pile sizes, from OCG_DuelQueryField. Layout: ocgapi.cpp. */

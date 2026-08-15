@@ -43,6 +43,18 @@ public final class CardBubble
     public static void draw(GuiGraphicsExtractor extractor, Font font, int code, int mouseX,
         int mouseY, int screenW, int screenH)
     {
+        draw(extractor, font, code, mouseX, mouseY, screenW, screenH, 0L);
+    }
+
+    /**
+     * The same bubble, told what the duel currently says this card IS.
+     *
+     * @param liveRace the engine's race for this copy, or 0 where there is none
+     *                 to be had -- a list of passcodes has no board behind it
+     */
+    public static void draw(GuiGraphicsExtractor extractor, Font font, int code, int mouseX,
+        int mouseY, int screenW, int screenH, long liveRace)
+    {
         if(code == 0)
         {
             return;
@@ -58,8 +70,8 @@ public final class CardBubble
         // The card's own facts line -- type, attribute, level, statistics --
         // built by the card rather than assembled here, so it says exactly what
         // it says everywhere else in the mod.
-        List<Component> facts = new ArrayList<>();
-        card.addFacts(facts);
+        List<Component> facts = de.cas_ual_ty.dueldimension.clientutil.CardFacts.of(card,
+            liveRace);
         List<FormattedCharSequence> factLines = new ArrayList<>();
         for(Component fact : facts)
         {
@@ -93,6 +105,9 @@ public final class CardBubble
         }
         for(FormattedCharSequence line : factLines)
         {
+            // The default colour, which a styled run overrides on its own: a
+            // race the duel has changed carries its own blue and must not be
+            // repainted the colour of everything around it.
             extractor.text(font, line, x + PAD, at, 0xFF9FB4CC, true);
             at += LINE;
         }

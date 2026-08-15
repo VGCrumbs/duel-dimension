@@ -25,8 +25,21 @@ package de.cas_ual_ty.dueldimension.ocg.query;
  */
 public record CardView(int code, int position, int type, int level, int attack, int defense,
     int baseAttack, int baseDefense, int leftScale, int rightScale,
-    boolean isPublic, boolean hidden, Equip equip, int status, int overlays, int art)
+    boolean isPublic, boolean hidden, Equip equip, int status, int overlays, int art, long race)
 {
+    /**
+     * The shape before the card's LIVE race, for views built without an engine
+     * behind them. Zero is the core's own answer for a card that has no race,
+     * so it is the honest default rather than a sentinel.
+     */
+    public CardView(int code, int position, int type, int level, int attack, int defense,
+        int baseAttack, int baseDefense, int leftScale, int rightScale,
+        boolean isPublic, boolean hidden, Equip equip, int status, int overlays, int art)
+    {
+        this(code, position, type, level, attack, defense, baseAttack, baseDefense,
+            leftScale, rightScale, isPublic, hidden, equip, status, overlays, art, 0L);
+    }
+
     /**
      * The old shape, for the places that build a view without an artwork
      * choice. Those are the concealed and synthetic views, and an undressed

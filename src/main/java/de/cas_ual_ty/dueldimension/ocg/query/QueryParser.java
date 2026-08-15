@@ -23,7 +23,8 @@ public final class QueryParser
 {
     /** Flags worth asking for when building a board snapshot. */
     public static final int BOARD_FLAGS = OcgConstants.QUERY_CODE | OcgConstants.QUERY_POSITION
-        | OcgConstants.QUERY_TYPE | OcgConstants.QUERY_LEVEL | OcgConstants.QUERY_ATTACK
+        | OcgConstants.QUERY_TYPE | OcgConstants.QUERY_LEVEL | OcgConstants.QUERY_RACE
+        | OcgConstants.QUERY_ATTACK
         | OcgConstants.QUERY_DEFENSE | OcgConstants.QUERY_BASE_ATTACK
         | OcgConstants.QUERY_BASE_DEFENSE | OcgConstants.QUERY_IS_PUBLIC
         | OcgConstants.QUERY_EQUIP_CARD
@@ -121,6 +122,7 @@ public final class QueryParser
         // card::cover, which this mod uses as "which artwork this copy wears".
         // Zero unless the host dressed the card before the duel started.
         int art = 0;
+        long race = 0L;
         boolean isPublic = false;
         CardView.Equip equip = null;
 
@@ -179,11 +181,22 @@ public final class QueryParser
                         equip = new CardView.Equip(controller, location, sequence);
                     }
                 }
+                case OcgConstants.QUERY_RACE ->
+                {
+                    // EIGHT bytes. The core emits race as a uint64
+                    // (CHECK_AND_INSERT_T(QUERY_RACE, get_race(), uint64_t)),
+                    // unlike attribute and the statistics beside it, which are
+                    // uint32. Reading an int here would not desync the stream --
+                    // the loop seeks to the entry's end regardless -- it would
+                    // just silently truncate, and the races that live above bit
+                    // 31 are the ones nobody would think to test.
+                    race = buffer.getLong();
+                }
                 case OcgConstants.QUERY_END ->
                 {
                     return new CardView(code, position, type, level, attack, defense,
                         baseAttack, baseDefense, leftScale, rightScale, isPublic, false, equip,
-                        status, overlays, art);
+                        status, overlays, art, race);
                 }
                 default ->
                 {

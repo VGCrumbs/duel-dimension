@@ -844,7 +844,9 @@ public class BoardPointerScreen extends Screen
         // the board draws it.
         if(hovered != null && shiftHeld())
         {
-            CardBubble.draw(extractor, font, hovered.code(), mouseX, mouseY, width, height);
+            CardBubble.draw(extractor, font, hovered.code(), mouseX, mouseY, width, height,
+                de.cas_ual_ty.dueldimension.clientutil.CardFacts.liveRace(hovered.controller(),
+                    hovered.location(), hovered.sequence()));
         }
 
         // No label and no strip. What a zone is called is written on the board

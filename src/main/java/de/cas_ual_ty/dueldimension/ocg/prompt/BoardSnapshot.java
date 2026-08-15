@@ -36,8 +36,25 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
      */
     public record Slot(boolean present, int code, boolean faceDown, boolean defence, int attack, int defense,
         int baseAttack, int baseDefense, int leftScale, int rightScale, int overlays,
-        CardView.Equip equip, boolean negated, int art)
+        CardView.Equip equip, boolean negated, int art, long race)
     {
+        /**
+         * The shape before the card's LIVE race, for slots built without an
+         * engine behind them.
+         * <p>
+         * Zero is what the core itself answers for a card with no race, so it
+         * doubles as "not stated" without needing a sentinel of its own -- and
+         * a concealed card is given zero deliberately, since naming the race of
+         * a set monster names most of the monster.
+         */
+        public Slot(boolean present, int code, boolean faceDown, boolean defence, int attack,
+            int defense, int baseAttack, int baseDefense, int leftScale, int rightScale,
+            int overlays, CardView.Equip equip, boolean negated, int art)
+        {
+            this(present, code, faceDown, defence, attack, defense, baseAttack, baseDefense,
+                leftScale, rightScale, overlays, equip, negated, art, 0L);
+        }
+
         /**
          * The shape before per-copy artwork, for the places that build a slot
          * without one — a copy nobody dressed wears its printed artwork.
@@ -67,6 +84,27 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
 
         public static final Slot EMPTY =
             new Slot(false, 0, false, false, 0, 0, 0, 0, -1, -1, 0, null);
+
+        /**
+         * Has an effect made this card a different KIND of monster?
+         * <p>
+         * Compared against the printed race from the local database, because
+         * the engine cannot be asked: there is a QUERY_RACE and no
+         * QUERY_BASE_RACE, and base values exist in that API only for attack
+         * and defence. So unlike a boosted statistic, which carries its own
+         * "before" across the wire, this one is answered by looking the card
+         * up -- which is sound, since the printed race is a fact about the
+         * card and not about the duel.
+         * <p>
+         * False for anything concealed or unidentified: race is zero there,
+         * deliberately, and "changed to nothing" is not a change worth
+         * colouring.
+         */
+        public boolean raceChanged(long printed)
+        {
+            return present && !faceDown && code != 0 && race != 0L && printed != 0L
+                && race != printed;
+        }
 
         /** Whether this slot holds a card the engine gave a pendulum scale. */
         public boolean hasScale()
@@ -110,7 +148,7 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
             return new Slot(true, card.code(), !card.isFaceUp(), !card.isAttackPosition(),
                 card.attack(), card.defense(), card.baseAttack(), card.baseDefense(),
                 card.leftScale(), card.rightScale(), card.overlays(), card.equip(),
-                card.negated(), card.art());
+                card.negated(), card.art(), card.race());
         }
 
         public void write(FriendlyByteBuf buffer)
@@ -139,6 +177,12 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
                 if(code != 0)
                 {
                     buffer.writeVarInt(art);
+                    // Beside the artwork and behind the same gate, because it
+                    // is the same kind of secret: a race narrows a face-down
+                    // card as surely as an art index does. A long, because the
+                    // core's race is a 64-bit mask and the highest bits are
+                    // real races.
+                    buffer.writeVarLong(race);
                 }
                 // An equip and the monster under it are both face up, so this
                 // relation is public knowledge and needs no concealment.
@@ -170,11 +214,13 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
             int overlays = buffer.readVarInt();
             boolean negated = buffer.readBoolean();
             int art = code != 0 ? buffer.readVarInt() : 0;
+            long race = code != 0 ? buffer.readVarLong() : 0L;
             CardView.Equip equip = buffer.readBoolean()
                 ? new CardView.Equip(buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt())
                 : null;
             return new Slot(true, code, faceDown, defence, attack, defense,
-                baseAttack, baseDefense, leftScale, rightScale, overlays, equip, negated, art);
+                baseAttack, baseDefense, leftScale, rightScale, overlays, equip, negated, art,
+                race);
         }
     }
 

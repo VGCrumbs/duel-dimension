@@ -98,6 +98,15 @@ public class EngineDuelScreen extends Screen
     private EnginePrompt shownPrompt;
 
     /**
+     * The race the duel currently gives the previewed card, or 0.
+     * <p>
+     * Kept beside {@link #previewCode} rather than derived from it, because a
+     * passcode names a CARD and this is a fact about one copy of it standing in
+     * one square.
+     */
+    private long previewRace;
+
+    /**
      * Option indices the card picker is showing, or null when it is closed.
      * <p>
      * Some choices are between cards the player cannot see. Monster Reborn asks
@@ -724,6 +733,9 @@ public class EngineDuelScreen extends Screen
             if(hovered && !pickerCardIsBack(prompt, option, card))
             {
                 previewCode = option.cardCode();
+                // A prompt names cards, not squares, so there is no copy to ask
+                // about and the printed type is the only honest answer.
+                previewRace = 0L;
                 previewArt = (byte)artForOption(option);
             }
             drawPickerCard(poseStack, prompt, option, card, cardX, cardY, at);
@@ -1849,6 +1861,8 @@ public class EngineDuelScreen extends Screen
         if(hovered != null && hovered.code() != 0 && !pickerOpen() && pileView == null)
         {
             previewCode = hovered.code();
+            previewRace = de.cas_ual_ty.dueldimension.clientutil.CardFacts.liveRace(
+                hovered.controller(), hovered.location(), hovered.sequence());
             previewArt = (byte)hovered.art();
         }
         // EDOPro opens the command menu on click, not on hover; hovering only
@@ -2677,7 +2691,7 @@ public class EngineDuelScreen extends Screen
 
         int descriptionBottom = logTop() - 4;
 
-        List<Component> header = sidebarHeader(card);
+        List<Component> header = sidebarHeader(card, previewRace);
         poseStack.pose().pushMatrix();
         poseStack.pose().scale(0.75F, 0.75F);
         int scaledX = Math.round(SIDEBAR_PAD / 0.75F);
@@ -2805,9 +2819,13 @@ public class EngineDuelScreen extends Screen
      */
     static List<Component> sidebarHeader(Properties card)
     {
-        List<Component> header = new ArrayList<>();
-        card.addFacts(header);
-        return header;
+        return sidebarHeader(card, 0L);
+    }
+
+    /** The same, with the duel's own answer for what this card currently is. */
+    static List<Component> sidebarHeader(Properties card, long liveRace)
+    {
+        return de.cas_ual_ty.dueldimension.clientutil.CardFacts.of(card, liveRace);
     }
 
     /**
@@ -2913,6 +2931,10 @@ public class EngineDuelScreen extends Screen
                 && mouseY >= y && mouseY < y + cardH + 4)
             {
                 previewCode = slot.code();
+                // Straight off the slot here: a pile view carries its own
+                // cards, so the copy being pointed at is right there rather
+                // than somewhere on the board to be looked up.
+                previewRace = slot.race();
                 previewArt = (byte)slot.art();
                 DdBlitUtil.fullBlit(poseStack, DuelTextures.SLOT_ACTIVE,
                     x - 1, y - 1, cardW + 2, cardH + 2);
