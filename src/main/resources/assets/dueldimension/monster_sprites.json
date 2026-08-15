@@ -1231,5 +1231,113 @@
       "scale": 0.55
     },
     "scale": 1.4
+  },
+  {
+    "card": 34124316,
+    "body": {
+      "sheet": "rock/cyber_jar",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "columns": 4,
+      "rows": 2,
+      "first": 0,
+      "frames": 7,
+      "ticks": 5,
+      "loop": "LOOP",
+      "trimX": 0,
+      "trimY": 0,
+      "bob": 0
+    },
+    "defence": {
+      "sheet": "rock/cyber_jar",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "columns": 4,
+      "rows": 2,
+      "first": 7,
+      "frames": 1,
+      "ticks": 5,
+      "loop": "LOOP",
+      "trimX": 0,
+      "trimY": 0,
+      "bob": 0
+    },
+    "scale": 1.0
+  },
+  {
+    "card": 33508719,
+    "body": {
+      "sheet": "rock/morphing_jar",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "columns": 4,
+      "rows": 2,
+      "first": 0,
+      "frames": 6,
+      "ticks": 5,
+      "loop": "LOOP",
+      "trimX": 0,
+      "trimY": 0,
+      "bob": 0
+    },
+    "defence": {
+      "sheet": "rock/morphing_jar",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "columns": 4,
+      "rows": 2,
+      "first": 7,
+      "frames": 1,
+      "ticks": 5,
+      "loop": "LOOP",
+      "trimX": 0,
+      "trimY": 0,
+      "bob": 0
+    },
+    "scale": 1.0
+  },
+  {
+    "card": 79106360,
+    "body": {
+      "sheet": "rock/morphing_jar_2",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "columns": 4,
+      "rows": 2,
+      "first": 0,
+      "frames": 7,
+      "ticks": 5,
+      "loop": "LOOP",
+      "trimX": 0,
+      "trimY": 0,
+      "bob": 0
+    },
+    "defence": {
+      "sheet": "rock/morphing_jar_2",
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "columns": 4,
+      "rows": 2,
+      "first": 7,
+      "frames": 1,
+      "ticks": 5,
+      "loop": "LOOP",
+      "trimX": 0,
+      "trimY": 0,
+      "bob": 0
+    },
+    "scale": 1.0
   }
 ]
