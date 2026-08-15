@@ -19,7 +19,6 @@ import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -110,7 +109,17 @@ public class EngineDuelScreen extends Screen
     /** Shared with the duel, not owned by the screen: see DuelClientState. */
     private final DuelAnimations animations = DuelClientState.animations;
 
-    private final Set<Integer> selected = new LinkedHashSet<>();
+    /**
+     * The running answer lives in {@link DuelSelection}, not here.
+     * <p>
+     * It is one duel however it is being looked at, so a player part way
+     * through choosing three tributes who switches to the board -- or is put
+     * there by the camera key -- should find the same two already picked. Two
+     * sets meant the second view started over, and the difference was invisible
+     * to whoever it happened to.
+     * <p>
+     * Sort order stays local: only this screen can sort.
+     */
     private final List<Integer> sortOrder = new ArrayList<>();
     private int[] counterAmounts = new int[0];
 
@@ -346,7 +355,9 @@ public class EngineDuelScreen extends Screen
         searchButtons.clear();
         if(DuelClientState.prompt != shownPrompt)
         {
-            selected.clear();
+            // sync rather than clear: the board may have started this same
+            // answer, and identity is what decides whether it is still ours.
+            DuelSelection.sync(DuelClientState.prompt);
             sortOrder.clear();
             menuAnchor = null;
             answered = false;
@@ -730,7 +741,7 @@ public class EngineDuelScreen extends Screen
             int cardY = at.gridY() + row * (at.cardH() + NAME_LINE + at.gap());
             boolean hovered = mouseX >= cardX && mouseX < cardX + at.cardW()
                 && mouseY >= cardY && mouseY < cardY + at.cardH();
-            boolean picked = selected.contains(picker.get(index));
+            boolean picked = DuelSelection.has(picker.get(index));
 
             if(picked || hovered)
             {
@@ -795,7 +806,7 @@ public class EngineDuelScreen extends Screen
             default -> prompt.isSingleChoice() ? "Click a card"
                 : "Choose " + prompt.minSelect()
                     + (prompt.maxSelect() > prompt.minSelect() ? " to " + prompt.maxSelect() : "")
-                    + "   (" + selected.size() + " picked)";
+                    + "   (" + DuelSelection.count() + " picked)";
         };
         if(!need.isBlank())
         {
@@ -1026,7 +1037,7 @@ public class EngineDuelScreen extends Screen
             {
                 case SORT -> sortOrder.size() == prompt.options().size();
                 case COUNTERS -> countersChosen() == prompt.minSelect();
-                default -> selected.size() >= prompt.minSelect();
+                default -> DuelSelection.count() >= prompt.minSelect();
             };
             buttons.add(new FooterButton("Confirm", x, y, ready, this::confirm));
         }
@@ -1369,11 +1380,9 @@ public class EngineDuelScreen extends Screen
                     answer(new int[] {index}, 0);
                     return;
                 }
-                if(!selected.remove(index) && selected.size() < prompt.maxSelect())
-                {
-                    selected.add(index);
-                }
-                if(prompt.kind() == EnginePrompt.Kind.PLACES && selected.size() == prompt.minSelect())
+                DuelSelection.toggle(prompt, index);
+                if(prompt.kind() == EnginePrompt.Kind.PLACES
+                    && DuelSelection.count() == prompt.minSelect())
                 {
                     confirm();
                 }
@@ -1402,9 +1411,9 @@ public class EngineDuelScreen extends Screen
         {
             case MULTI, PLACES ->
             {
-                if(selected.size() >= prompt.minSelect())
+                if(DuelSelection.count() >= prompt.minSelect())
                 {
-                    answer(selected.stream().mapToInt(Integer::intValue).toArray(), 0);
+                    answer(DuelSelection.answer(), 0);
                 }
             }
             case SORT ->
@@ -1496,9 +1505,9 @@ public class EngineDuelScreen extends Screen
                 answer(new int[0], 0);
                 return true;
             }
-            if(!selected.isEmpty() || !sortOrder.isEmpty())
+            if(DuelSelection.count() > 0 || !sortOrder.isEmpty())
             {
-                selected.clear();
+                DuelSelection.clear();
                 sortOrder.clear();
                 return true;
             }
@@ -1666,9 +1675,9 @@ public class EngineDuelScreen extends Screen
                 answer(new int[0], 0);
                 return true;
             }
-            if(!selected.isEmpty() || !sortOrder.isEmpty())
+            if(DuelSelection.count() > 0 || !sortOrder.isEmpty())
             {
-                selected.clear();
+                DuelSelection.clear();
                 sortOrder.clear();
                 return true;
             }
@@ -2292,7 +2301,7 @@ public class EngineDuelScreen extends Screen
         String text = prompt.title();
         if(prompt.maxSelect() > 1)
         {
-            text = text + "  (" + selected.size() + "/" + prompt.maxSelect() + ")";
+            text = text + "  (" + DuelSelection.count() + "/" + prompt.maxSelect() + ")";
         }
         if(prompt.chainWindow() && prompt.cancelable())
         {
@@ -2931,7 +2940,7 @@ public class EngineDuelScreen extends Screen
         {
             for(int index : optionsFor(hit))
             {
-                String mark = selected.contains(index) ? "✔"
+                String mark = DuelSelection.has(index) ? "✔"
                     : sortOrder.contains(index) ? Integer.toString(sortOrder.indexOf(index) + 1) : null;
                 if(mark != null)
                 {

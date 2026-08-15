@@ -578,6 +578,35 @@ public class BoardPointerScreen extends Screen
         {
             return super.mouseClicked(event, doubled);
         }
+        // A pile is a stack of face-down cards, so what it can offer are VERBS
+        // and not cards: three summonable monsters gave three rows all reading
+        // "Special Summon" with nothing to tell them apart. Picking the verb
+        // opens the list of cards it could mean -- always, even when there is
+        // only one, because a player told "Special Summon" and then asked for
+        // tributes has been made to pay for something they were never shown.
+        // Exactly what the duel screen does, and for the same reason.
+        //
+        // Every click on a pile goes that way, INCLUDING a click that is one
+        // pick of several.
+        //
+        // Toggling a pile by engine order was blind in both directions: nothing
+        // was drawn to say which card had been taken, and DuelSelection.pick
+        // hands back the first option not already chosen, so with three
+        // candidates and a maximum of two there was no way to reach {2,3} from
+        // {1,2}. A third click was a silent no-op and the card already taken
+        // could not be given back by clicking the same stack. The only way out
+        // was to cancel the whole prompt.
+        //
+        // The list has none of that trouble: each card is its own row, its own
+        // tick, and its own option index, so clicking one toggles exactly the
+        // card that was clicked. It is what the flat board has always done with
+        // a pile, and it works here now that both share one running selection.
+        if(hovered.isPile())
+        {
+            openPile(options, event.x(), event.y());
+            return true;
+        }
+
         // A prompt that wants SEVERAL things is answered by picking them and
         // saying so, not by picking one and being taken at your word. Every
         // click toggles, and the Confirm button in the corner is what ends it.
@@ -600,18 +629,6 @@ public class BoardPointerScreen extends Screen
             return true;
         }
 
-        // A pile is a stack of face-down cards, so what it can offer are
-        // VERBS and not cards: three summonable monsters gave three rows all
-        // reading "Special Summon" with nothing to tell them apart. Picking the
-        // verb opens the list of cards it could mean -- always, even when there
-        // is only one, because a player told "Special Summon" and then asked
-        // for tributes has been made to pay for something they were never
-        // shown. Exactly what the duel screen does, and for the same reason.
-        if(hovered.isPile())
-        {
-            openPile(options, event.x(), event.y());
-            return true;
-        }
         openChoices(options, event.x(), event.y());
         return true;
     }
