@@ -348,12 +348,61 @@ public final class OverworldDuels
         {
             return null;
         }
+        // Both marks have to be free of anybody who is not about to duel on
+        // them. A point is where a duellist is PUT, not where they walk to, so
+        // a bystander standing on one is not moved aside -- the duellist is
+        // teleported into them, and two bodies in one block is the sort of
+        // thing that ends with somebody suffocated in a wall or shoved through
+        // the arena.
+        //
+        // Refused rather than worked around: this arena is unusable while
+        // somebody is standing in it, and returning null puts the duel back on
+        // the ordinary siting search, which finds open ground. A duel that
+        // moves is better than a duel that lands on a person.
+        if(taken(level, arena.first(), floorA, floorB)
+            || taken(level, arena.second(), floorA, floorB))
+        {
+            de.cas_ual_ty.dueldimension.DuelDimension.log(
+                "a marked arena was skipped: somebody is standing on a player point");
+            return null;
+        }
         FieldSiting siting = arena.siting(FieldSpec.current(), arena.nearest(seatZeroNear));
         de.cas_ual_ty.dueldimension.DuelDimension.log("using a marked arena: "
             + siting.spec().areaWidth() + "x" + siting.spec().areaDepth()
             + " anchored at " + siting.anchor() + " facing " + siting.facing()
             + ", seats at " + siting.stand(0) + " and " + siting.stand(1));
         return siting;
+    }
+
+    /**
+     * Is somebody standing on this player point who is not one of the two about
+     * to duel here?
+     * <p>
+     * The duellists themselves do not count, and cannot: standing on your mark
+     * before the duel starts is the ordinary way to ask for one, and the whole
+     * point of a marked arena is that walking to it is the setup. They are
+     * recognised by the floor they are standing on, which is the same thing the
+     * caller matched the arena against.
+     * <p>
+     * A whole block either way, because a mark is a block and anything inside
+     * it is in the way of what is about to be put there.
+     */
+    private static boolean taken(ServerLevel level, BlockPos point, BlockPos floorA,
+        BlockPos floorB)
+    {
+        net.minecraft.world.phys.AABB box = new net.minecraft.world.phys.AABB(point);
+        for(net.minecraft.world.entity.LivingEntity body : level.getEntitiesOfClass(
+            net.minecraft.world.entity.LivingEntity.class, box))
+        {
+            BlockPos where = body.blockPosition();
+            if(where.equals(floorA) || where.equals(floorB)
+                || where.equals(floorA.above()) || where.equals(floorB.above()))
+            {
+                continue;
+            }
+            return true;
+        }
+        return false;
     }
 
     /** Stands the opponent on its mark, facing across the board. */
