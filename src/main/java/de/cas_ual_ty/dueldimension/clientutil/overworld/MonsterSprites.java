@@ -13,6 +13,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -27,12 +28,22 @@ import java.util.Optional;
 /**
  * Which monsters have a sprite, and what it looks like.
  * <p>
- * Thirty definitions ship with the mod, one line each in the block below. Over
- * them sits a file the player can edit --
+ * The mod ships a list at {@code assets/dueldimension/monster_sprites.json}.
+ * Over it sits a file the player can edit --
  * {@code config/dueldimension/monster_sprites.json} -- which adds new monsters
  * and replaces shipped ones by passcode. That layering is the whole point: an
  * edit survives an update, a shipped definition nobody touched improves with
  * one, and deleting the file puts everything back exactly as it came.
+ * <p>
+ * <b>Both layers are the same shape, and both are data.</b> The shipped list
+ * used to be Java, which meant the editor could author a monster it had no way
+ * to hand back: everything anybody built lived in one config folder on one
+ * machine, and shipping it meant retyping it as source. One format and one
+ * reader means the editor can write either.
+ * <p>
+ * The shipped list is read from the CLASSPATH rather than through the resource
+ * manager, because it is wanted at client-init time, before packs have loaded --
+ * and because it is mod data rather than an asset a pack should be reskinning.
  * <p>
  * A definition has a body, an optional pose for lying down, optional wings, and
  * a size. Each layer names its own region of a sheet, so one file can carry a
@@ -287,6 +298,90 @@ public final class MonsterSprites
             .resolve("dueldimension").resolve("monster_sprites.json");
     }
 
+    /** Where the mod's own list sits inside the jar. */
+    private static final String SHIPPED_FILE = "/assets/dueldimension/monster_sprites.json";
+
+    /**
+     * The mod's own list, kept apart from the live one.
+     * <p>
+     * Kept rather than rebuilt on demand, because {@link #save} needs to know
+     * what shipped in order to write only what differs -- and it used to find
+     * out by clearing the live map, refilling it, and putting it back. That is
+     * four lines during which a render thread asking which sprite a card has
+     * gets a map that does not have it, and the editor calls save on every
+     * movement of every slider.
+     */
+    private static final Map<Long, Definition> SHIPPED = new LinkedHashMap<>();
+
+    /**
+     * Reads the list the mod ships with.
+     * <p>
+     * Package-visible so a test can rebuild it without a game around it.
+     */
+    static void loadShipped()
+    {
+        SHIPPED.clear();
+        try(InputStream stream = MonsterSprites.class.getResourceAsStream(SHIPPED_FILE))
+        {
+            if(stream == null)
+            {
+                DuelDimension.warn("no shipped monster sprite list at " + SHIPPED_FILE
+                    + " -- no card will have a sprite of its own");
+                return;
+            }
+            JsonElement root = JsonParser.parseReader(
+                new InputStreamReader(stream, StandardCharsets.UTF_8));
+            if(!root.isJsonArray())
+            {
+                DuelDimension.warn(SHIPPED_FILE + " is not a list of sprites; ignoring it");
+                return;
+            }
+            for(JsonElement element : root.getAsJsonArray())
+            {
+                Definition definition = readDefinition(element);
+                if(definition != null)
+                {
+                    SHIPPED.put(definition.code(), definition);
+                }
+            }
+        }
+        catch(Exception unreadable)
+        {
+            DuelDimension.warn("could not read " + SHIPPED_FILE + ": " + unreadable);
+        }
+    }
+
+    /** The shipped list as it would be written to the jar. */
+    public static String shippedJson()
+    {
+        JsonArray root = new JsonArray();
+        for(Definition definition : SHIPPED.values())
+        {
+            root.add(writeDefinition(definition));
+        }
+        return new GsonBuilder().setPrettyPrinting().create().toJson(root);
+    }
+
+    /**
+     * Puts a definition into the SHIPPED list, for an export that has just
+     * written it into the mod's own file. Without this the export would keep
+     * being written to the player's config too, as a difference from a list it
+     * is now part of.
+     */
+    public static void ship(Definition definition)
+    {
+        if(definition != null)
+        {
+            SHIPPED.put(definition.code(), definition);
+        }
+    }
+
+    /** How many monsters the mod itself knows about. */
+    public static int shippedCount()
+    {
+        return SHIPPED.size();
+    }
+
     /**
      * Builds the shipped list, then lays the player's file over it.
      * <p>
@@ -297,8 +392,9 @@ public final class MonsterSprites
      */
     public static void load()
     {
+        loadShipped();
         BY_CODE.clear();
-        defaults();
+        BY_CODE.putAll(SHIPPED);
         Path path = file();
         if(!Files.isRegularFile(path))
         {
@@ -315,6 +411,20 @@ public final class MonsterSprites
             int read = 0;
             for(JsonElement element : root.getAsJsonArray())
             {
+                // A deletion has to be written down, because the shipped list
+                // is rebuilt from scratch every launch and would otherwise put
+                // back every monster anybody had ever removed.
+                if(element.isJsonObject() && element.getAsJsonObject().has("removed")
+                    && element.getAsJsonObject().get("removed").getAsBoolean())
+                {
+                    JsonObject gone = element.getAsJsonObject();
+                    if(gone.has("card"))
+                    {
+                        BY_CODE.remove(gone.get("card").getAsLong());
+                        read++;
+                    }
+                    continue;
+                }
                 // One bad entry costs one sprite rather than the whole file. A
                 // hand-edited list is a hand-edited list.
                 Definition definition = readDefinition(element);
@@ -342,19 +452,25 @@ public final class MonsterSprites
      */
     public static void save()
     {
-        Map<Long, Definition> current = new LinkedHashMap<>(BY_CODE);
-        BY_CODE.clear();
-        defaults();
-        Map<Long, Definition> shipped = new LinkedHashMap<>(BY_CODE);
-        BY_CODE.clear();
-        BY_CODE.putAll(current);
-
         JsonArray root = new JsonArray();
         for(Definition definition : BY_CODE.values())
         {
-            if(!definition.equals(shipped.get(definition.code())))
+            if(!definition.equals(SHIPPED.get(definition.code())))
             {
                 root.add(writeDefinition(definition));
+            }
+        }
+        // A shipped monster somebody deleted has to be recorded as deleted.
+        // Writing only what is present says nothing about what is absent, and
+        // the next launch rebuilds the shipped list and hands it straight back.
+        for(Long code : SHIPPED.keySet())
+        {
+            if(!BY_CODE.containsKey(code))
+            {
+                JsonObject gone = new JsonObject();
+                gone.addProperty("card", code);
+                gone.addProperty("removed", true);
+                root.add(gone);
             }
         }
         try
@@ -458,86 +574,8 @@ public final class MonsterSprites
         return object;
     }
 
-    // ================================================================= the list
-    //
-    // One line per monster. Everything below this comment is data.
-    //
-    // The passcodes are LOOKED UP, not remembered. A wrong one fails in the
-    // quietest possible way -- no error, no warning, just a card that never
-    // grows a monster -- so every number here was read out of the shipped card
-    // database by name rather than typed from memory.
-    private static void defaults()
-    {
-        row(46986414L, "spellcaster/dark_magician", 4, Loop.PING_PONG);
-        row(38033121L, "spellcaster/dark_magician_girl", 4, Loop.PING_PONG);
-        row(70781052L, "fiend/summoned_skull", 4, Loop.PING_PONG);
-        posed(26202165L, "fiend/sangan", 4, 2, 7, Loop.LOOP);
-        posed(36262024L, "dragon/red_eyes_b_chick", 4, 2, 7, Loop.PING_PONG, 0.5F);
-        whole(28279543L, "dragon/curse_of_dragon", 4, 2, Loop.LOOP);
-        posed(102380L, "fiend/lava_golem", 4, 2, 7, Loop.LOOP);
-        posed(32274490L, "zombie/skull_servant", 4, 2, 7, Loop.LOOP);
-        posed(25833572L, "warrior/gate_guardian", 4, 2, 7, Loop.LOOP);
-        posed(6368038L, "warrior/gaia_the_fierce_knight", 4, 2, 7, Loop.LOOP);
-        posed(30243636L, "warrior/hungry_burger", 4, 2, 7, Loop.LOOP);
-        posed(60482781L, "warrior/mystic_swordsman_lv6", 4, 2, 7, Loop.LOOP);
-        posed(74591968L, "warrior/mystic_swordsman_lv4", 4, 2, 7, Loop.LOOP);
-        posed(47507260L, "warrior/mystic_swordsman_lv2", 4, 2, 7, Loop.LOOP);
-        posed(50005633L, "warrior/swordstalker", 4, 2, 7, Loop.LOOP);
-        posed(20394040L, "warrior/lava_battleguard", 4, 2, 7, Loop.LOOP);
-        posed(40453765L, "warrior/swamp_battleguard", 4, 2, 7, Loop.LOOP);
-        posed(34627841L, "warrior/kaibaman", 4, 2, 7, Loop.LOOP);
-        posed(81383947L, "spellcaster/white_magician_pikeru", 4, 2, 6, Loop.LOOP);
-        posed(46128076L, "spellcaster/ebon_magician_curran", 4, 2, 5, Loop.LOOP);
-        row(8124921L, "spellcaster/right_leg_of_the_forbidden_one", 4, Loop.PING_PONG);
-        row(70903634L, "spellcaster/right_arm_of_the_forbidden_one", 4, Loop.PING_PONG);
-        row(44519536L, "spellcaster/left_leg_of_the_forbidden_one", 4, Loop.PING_PONG);
-        row(7902349L, "spellcaster/left_arm_of_the_forbidden_one", 4, Loop.PING_PONG);
-        row(13893596L, "spellcaster/exodius_the_ultimate_forbidden_lord", 4, Loop.PING_PONG);
-        row(12600382L, "spellcaster/exodia_necross", 4, Loop.PING_PONG);
-        row(92377303L, "spellcaster/dark_sage", 4, Loop.PING_PONG);
-        row(98502113L, "spellcaster/dark_paladin", 4, Loop.PING_PONG);
-        row(30208479L, "spellcaster/magician_of_black_chaos", 4, Loop.PING_PONG);
-        row(80304126L, "spellcaster/magicians_valkyria", 4, Loop.PING_PONG);
-
-        // The first winged one, and the reason a layer owns a region rather
-        // than a whole file: this sheet holds SIX wing frames across the top
-        // and FIVE body frames below them, at different cell widths. One grid
-        // over the file cannot describe that; two regions can.
-        put(new Definition(89631139L,
-            new SpriteLayer("dragon/blue_eyes_white_dragon", 0, 104, 0, 152, 5, 1, 0, 5,
-                DEFAULT_TICKS, Loop.PING_PONG),
-            null,
-            Wings.of(new SpriteLayer("dragon/blue_eyes_white_dragon", 0, 0, 0, 104, 6, 1, 0, 6,
-                DEFAULT_TICKS, Loop.PING_PONG)),
-            1.4F));
-    }
-    // =========================================================================
-
-    /** One row of frames, used in either battle position. */
-    private static void row(long code, String sheet, int frames, Loop loop)
-    {
-        put(new Definition(code, SpriteLayer.row(sheet, frames, loop), null, null, 1F));
-    }
-
-    /** A whole grid of frames, used in either battle position. */
-    private static void whole(long code, String sheet, int columns, int rows, Loop loop)
-    {
-        put(new Definition(code,
-            SpriteLayer.grid(sheet, columns, rows, 0, columns * rows, loop), null, null, 1F));
-    }
-
-    /** A grid whose LAST cell is the pose held lying down. */
-    private static void posed(long code, String sheet, int columns, int rows, int frames,
-        Loop loop)
-    {
-        posed(code, sheet, columns, rows, frames, loop, 1F);
-    }
-
-    private static void posed(long code, String sheet, int columns, int rows, int frames,
-        Loop loop, float scale)
-    {
-        put(new Definition(code, SpriteLayer.grid(sheet, columns, rows, 0, frames, loop),
-            SpriteLayer.grid(sheet, columns, rows, columns * rows - 1, 1, Loop.LOOP), null,
-            scale));
-    }
+    // The list itself is data now, in assets/dueldimension/monster_sprites.json
+    // and read by loadShipped() above. It used to be eighty lines of Java right
+    // here, which is what made a monster built in the editor unshippable until
+    // somebody retyped it as source.
 }

@@ -230,6 +230,13 @@ public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns,
             Math.max(1, value), loop, trimX, trimY);
     }
 
+    /** The same layer reading a differently named file, for the export to source. */
+    public SpriteLayer withSheet(String value)
+    {
+        return new SpriteLayer(value, x, y, w, h, columns, rows, first, frames, ticks, loop,
+            trimX, trimY);
+    }
+
     public SpriteLayer withLoop(MonsterSprites.Loop value)
     {
         return new SpriteLayer(sheet, x, y, w, h, columns, rows, first, frames, ticks, value,

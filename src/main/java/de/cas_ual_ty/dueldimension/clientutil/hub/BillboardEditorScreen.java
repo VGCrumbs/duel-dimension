@@ -6,6 +6,7 @@ import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
 import de.cas_ual_ty.dueldimension.clientutil.overworld.BillboardOutline;
 import de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSheets;
 import de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSprites;
+import de.cas_ual_ty.dueldimension.clientutil.overworld.SpriteSource;
 import de.cas_ual_ty.dueldimension.clientutil.overworld.SpriteLayer;
 import de.cas_ual_ty.dueldimension.clientutil.overworld.Wings;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -113,6 +114,9 @@ public class BillboardEditorScreen extends Screen
     private int wtrimX;
     private int wtrimY;
     private float wscale = Wings.DEFAULT_SCALE;
+
+    /** What the last export said, shown in place of the subtitle. */
+    private String notice;
 
     private int row;
     /** Where the controls stopped, which is where the preview begins. */
@@ -291,6 +295,7 @@ public class BillboardEditorScreen extends Screen
 
         int sheets = height - 46;
         int third = (full() - GAP * 2) / 3;
+        int quarter = (full() - GAP * 3) / 4;
         // Pick a file and it becomes the sheet being edited, because the next
         // thing anybody does after importing one is type its name in by hand.
         addRenderableWidget(Button.builder(Component.literal("Import"), pressed ->
@@ -302,15 +307,25 @@ public class BillboardEditorScreen extends Screen
                 apply();
             }
             rebuildWidgets();
-        }).bounds(left(), sheets, third, 18).build());
+        }).bounds(left(), sheets, quarter, 18).build());
         addRenderableWidget(Button.builder(Component.literal("Folder"), pressed ->
                 MonsterSheets.open())
-            .bounds(left() + third + GAP, sheets, third, 18).build());
+            .bounds(left() + quarter + GAP, sheets, quarter, 18).build());
         addRenderableWidget(Button.builder(Component.literal("Reload"), pressed ->
             {
                 MonsterSheets.reload();
                 rebuildWidgets();
-            }).bounds(left() + (third + GAP) * 2, sheets, third, 18).build());
+            }).bounds(left() + (quarter + GAP) * 2, sheets, quarter, 18).build());
+        // The one button that puts this work somewhere other people can get it.
+        // Disabled rather than hidden when there is no source tree, so that its
+        // absence is a fact about the install rather than a missing feature.
+        Button toMod = Button.builder(Component.literal("To mod"), pressed ->
+        {
+            notice = SpriteSource.promote(code);
+            rebuildWidgets();
+        }).bounds(left() + (quarter + GAP) * 3, sheets, quarter, 18).build();
+        toMod.active = SpriteSource.available() && MonsterSprites.has(code);
+        addRenderableWidget(toMod);
 
         int footer = height - 24;
         // One switch for both boxes -- the cuts over the sheet and the box round
@@ -413,8 +428,9 @@ public class BillboardEditorScreen extends Screen
         Properties card = DdDatabase.PROPERTIES_LIST.get(code);
         String name = card == null ? Long.toString(code) : card.getName();
         extractor.text(font, font.plainSubstrByWidth(name, full()), left(), 7, 0xFFF4D089, true);
-        extractor.text(font, MonsterSprites.has(code) ? "editing" : "no billboard yet",
-            left(), 17, 0xFF9A9A9A, true);
+        extractor.text(font, notice != null ? notice
+                : MonsterSprites.has(code) ? "editing" : "no billboard yet",
+            left(), 17, notice != null ? 0xFF7CE38B : 0xFF9A9A9A, true);
 
         drawSlices(extractor);
 
