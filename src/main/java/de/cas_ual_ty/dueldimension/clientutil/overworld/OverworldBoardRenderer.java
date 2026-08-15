@@ -809,6 +809,61 @@ public final class OverworldBoardRenderer
         }
     }
 
+    /**
+     * A number laid flat on the board, spelled out of the digit atlas.
+     * <p>
+     * The atlas rather than the font, and not for want of a font: everything a
+     * duellist reads off this board is a PNG, and a number drawn in world space
+     * out of glyphs would be the one thing on the mat that had to be turned to
+     * face somebody. Ten cells sliced across one strip, one quad per character.
+     * <p>
+     * Sized from the rectangle it sits on rather than fixed, so the opponent's
+     * counts shrink with their half of the table exactly as their cards do --
+     * the flat board learned that the hard way and the note is still on it.
+     *
+     * @param over the rectangle to centre the number on, in field units
+     * @param lift how far above the mat, already multiplied by the transform
+     */
+    private static void drawNumber(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera, FieldLayout.Rect over, double lift, int value,
+        float height, float bias, int tint)
+    {
+        String text = Integer.toString(value);
+        float digitH = height;
+        float digitW = digitH * DIGIT_ASPECT;
+        float left = over.x() + over.w() / 2F - text.length() * digitW / 2F + bias;
+        float top = over.y() + over.h() / 2F - digitH / 2F;
+        for(int at = 0; at < text.length(); at++)
+        {
+            int digit = text.charAt(at) - '0';
+            if(digit < 0 || digit > 9)
+            {
+                continue;
+            }
+            WorldQuad.submit(poseStack, collector, DuelTextures.DIGITS, camera,
+                transform.corners(new FieldLayout.Rect(left + at * digitW, top, digitW, digitH),
+                    lift),
+                tint, digit / 10F, 0F, (digit + 1) / 10F, 1F);
+        }
+    }
+
+    /** The atlas cell's width over its height, so a digit keeps its shape. */
+    private static final float DIGIT_ASPECT = 48F / 80F;
+    /** A count's height as a fraction of the card it sits on, as on the flat board. */
+    private static final float COUNT_SCALE = 0.46F;
+    /** A scale is smaller: it shares its zone with the card's own art. */
+    private static final float SCALE_SCALE = 0.30F;
+    /**
+     * Rungs above a card for the two new marks.
+     * <p>
+     * Above the glow at 0.03 and the chosen outline at 0.035, because these say
+     * what a card IS rather than what may be done to it -- a count buried under
+     * a highlight is a count nobody reads. Both are blended and write no depth,
+     * so the ladder is the only thing keeping them apart.
+     */
+    private static final double MARK_RUNG = 0.05D;
+    private static final double COUNT_RUNG = 0.055D;
+
     private static void drawPile(PoseStack poseStack, SubmitNodeCollector collector,
         FieldTransform transform, Vec3 camera, int controller, int asked, int location, int count,
         Identifier top, Identifier back)
@@ -842,6 +897,15 @@ public final class OverworldBoardRenderer
                     (cardLift(transform) + PileMesh.height(count) + 0.03F) * transform.scale()),
                 DuelHighlight.tint(DuelHighlight.pulse(ticks())));
         }
+
+        // How many are in it, on top of the stack. Thickness alone cannot say:
+        // PileMesh stops adding height at forty-five cards, so a full deck and
+        // a graveyard holding sixty stand exactly as tall as each other, and
+        // the number of cards left in a deck is a thing duels are lost over.
+        FieldLayout.Rect face = CardMesh.placement(zone, false);
+        drawNumber(poseStack, collector, transform, camera, face,
+            (cardLift(transform) + PileMesh.height(count) + 0.04F) * transform.scale(),
+            count, face.h() * COUNT_SCALE, 0F, fade(0xFFFFFFFF));
     }
 
     private static int size(List<BoardSnapshot.Slot> slots)
@@ -906,6 +970,56 @@ public final class OverworldBoardRenderer
                 CardFaces.underside(slot, asked), fade(0xFFFFFFFF));
 
             drawHologram(poseStack, collector, transform, camera, zone, slot, location, asked);
+
+            // Switched off. drawing.cpp composites tNegated over any face-up
+            // card the core has disabled or forbidden, and the flat board has
+            // done the same since the status was first asked for. A negated
+            // monster still stands there looking exactly like one that works,
+            // which is the single most expensive thing a board can lie about.
+            //
+            // Over the ZONE and not the card, untinted and unturned, because
+            // that is what the flat board does: the mark is meant to be bigger
+            // than the thing it cancels.
+            if(slot.negated())
+            {
+                WorldQuad.submit(poseStack, collector, DuelTextures.NEGATED, camera,
+                    transform.corners(zone,
+                        (cardLift(transform) + CardMesh.THICKNESS + MARK_RUNG)
+                            * transform.scale()),
+                    fade(0xFFFFFFFF));
+            }
+
+            // How many materials are under an Xyz monster. Its whole cost is
+            // paid in these, so a board that does not count them is a board you
+            // cannot plan a turn on.
+            if(slot.overlays() > 0)
+            {
+                FieldLayout.Rect face = CardMesh.placement(zone, slot.defence());
+                drawNumber(poseStack, collector, transform, camera, face,
+                    (cardLift(transform) + CardMesh.THICKNESS + COUNT_RUNG) * transform.scale(),
+                    slot.overlays(), face.h() * COUNT_SCALE, 0F, fade(0xFFFFFFFF));
+            }
+
+            // The pendulum scale, in the zone's own colour -- blue on the left
+            // and red on the right, where a card prints them. The zone's OWN
+            // scale, which is the same number on both sides of every printed
+            // card and differs only when an effect has moved one; that is
+            // exactly when showing the right one matters.
+            //
+            // Nudged toward the outer edge rather than centred, so it does not
+            // sit on top of the card's own art the way a material count does.
+            if(slot.hasScale() && location == OcgConstants.LOCATION_SZONE
+                && (sequence == 0 || sequence == 4))
+            {
+                boolean leftZone = sequence == 0;
+                FieldLayout.Rect face = CardMesh.placement(zone, slot.defence());
+                drawNumber(poseStack, collector, transform, camera, face,
+                    (cardLift(transform) + CardMesh.THICKNESS + COUNT_RUNG) * transform.scale(),
+                    leftZone ? slot.leftScale() : slot.rightScale(),
+                    face.h() * SCALE_SCALE,
+                    (leftZone ? -1F : 1F) * face.w() * 0.28F,
+                    fade(leftZone ? 0xFF5698E0 : 0xFFD65852));
+            }
 
             de.cas_ual_ty.dueldimension.clientutil.BoardTarget target =
                 new de.cas_ual_ty.dueldimension.clientutil.BoardTarget(slot.code(), asked,

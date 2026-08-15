@@ -85,10 +85,17 @@ refuses, matching EDOPro. Fixing that means changing the screen, not the board.
 
 ### Facts a duellist needs
 
-- **Negated / disabled marker.** Composited over any face-up card on the screen (`BoardRenderer:1286`); nothing draws it on the board.
-- **Xyz material counts.** `slot.overlays()` has no reader anywhere under `clientutil/overworld`. Screen: `BoardRenderer:1299`.
-- **Pendulum scales.** `hasScale()`, `leftScale()` and `rightScale()` have no caller on the board. Screen: `BoardRenderer:220`.
-- **Deck / graveyard / banished counts as numbers.** The board has stack thickness only, and thickness saturates at 45 cards (`PileMesh:41`) — so 45 and 60 look identical. Screen paints digits: `BoardRenderer:918`.
+**Done** — all four now draw on the board (`OverworldBoardRenderer.drawRow`,
+`drawPile`, `drawNumber`). Kept here because the reasoning is worth having.
+
+- **Negated / disabled marker.** ~~Nothing draws it on the board.~~ Now over the zone, untinted and unturned, as on the screen (`BoardRenderer:1286`). A negated monster looks exactly like a working one, which is the most expensive thing a board can be wrong about.
+- **Xyz material counts.** ~~`slot.overlays()` had no reader.~~ Now a number on the card, from the digit atlas.
+- **Pendulum scales.** ~~`hasScale()` had no caller.~~ Now in the zone, blue on the left and red on the right, showing that zone's own scale — the two differ only when an effect has moved one, which is exactly when it matters.
+- **Deck / graveyard / banished counts.** ~~Stack thickness only, and thickness saturates at 45 cards (`PileMesh:41`), so 45 and 60 looked identical.~~ Now a number on top of the stack.
+
+The board spells numbers out of `DuelTextures.DIGITS` rather than the font: everything a
+duellist reads off this board is a PNG, and world-space glyphs would be the one
+thing on the mat that had to turn to face somebody.
 
 ### Things that happen without being shown
 
