@@ -483,6 +483,34 @@ public class ClientProxy implements ISidedProxy
     @Override
     public void openCoinToss(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CoinToss toss)
     {
+        // ONLY the seat that has to choose gets a screen.
+        //
+        // The other one had a modal screen with no buttons on it, saying it was
+        // waiting -- and waiting was the one thing it made impossible. An
+        // overworld duel does not begin when the toss is answered; it begins
+        // when both duellists have WALKED to their marks, and nobody walks
+        // anywhere from behind a screen. So the seat that could not choose sat
+        // in front of a window telling it to wait for a duel that was waiting
+        // for it, and no message could break that: the update that would have
+        // closed the screen is sent by the duel that the screen was preventing.
+        //
+        // Three fixes went into closing that window on cue before it was clear
+        // that the window should not have been there. A line of chat says the
+        // same thing and takes nothing away.
+        if(!toss.won())
+        {
+            net.minecraft.client.player.LocalPlayer player = getMinecraft().player;
+            if(player != null)
+            {
+                player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                        toss.winnerName() + " won the toss and is choosing who goes first")
+                    .withStyle(net.minecraft.ChatFormatting.GOLD));
+            }
+            // And anything still up from the last one goes, since this client
+            // is now between duels either way.
+            de.cas_ual_ty.dueldimension.clientutil.hub.CoinTossScreen.dismiss();
+            return;
+        }
         getMinecraft().gui.setScreen(
             new de.cas_ual_ty.dueldimension.clientutil.hub.CoinTossScreen(toss));
     }

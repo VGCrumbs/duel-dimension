@@ -52,9 +52,9 @@ public class CoinTossScreen extends Screen
     @Override
     protected void init()
     {
-        if(!toss.won() || answered)
+        if(answered)
         {
-            return; // nothing to press: this seat is waiting, not choosing
+            return; // already sent; nothing left to press
         }
         int w = (panelW() - 36) / 2;
         int x = panelX() + 12;
@@ -118,13 +118,14 @@ public class CoinTossScreen extends Screen
         extractor.text(font, title, x + (panelW() - font.width(title)) / 2, y + 10,
             0xFFF4D089, true);
 
-        String result = toss.won() ? "You won the toss" : toss.winnerName() + " won the toss";
+        String result = "You won the toss";
         extractor.text(font, result, x + (panelW() - font.width(result)) / 2, y + 30,
-            toss.won() ? 0xFF7CE38B : 0xFFC2C9D6, true);
+            0xFF7CE38B, true);
 
-        String line = answered ? "Starting the duel..."
-            : toss.won() ? "Who takes the first turn?"
-                : "Waiting for " + toss.winnerName() + " to choose";
+        // No "waiting" state any more: this screen only ever belongs to the
+        // seat with a choice to make, and that seat is never waiting on
+        // anybody. The other one is told in chat and left free to walk.
+        String line = answered ? "Starting the duel..." : "Who takes the first turn?";
         extractor.text(font, line, x + (panelW() - font.width(line)) / 2, y + 46,
             0xFFC2C9D6, true);
 
