@@ -4,6 +4,8 @@ import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
@@ -13,6 +15,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.EntityCollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
@@ -85,7 +88,17 @@ public class ArenaMarkerBlock extends Block
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos,
         CollisionContext context)
     {
-        return context.isHoldingItem(asItem()) ? Shapes.block() : Shapes.empty();
+        // Asked of the ENTITY, never of asItem(). Vanilla's light block writes
+        // this as isHoldingItem(Items.LIGHT), which is fine for a block whose
+        // item is a constant and disastrous for one asking about itself:
+        // Block.asItem() CACHES what it finds, shapes are queried while the
+        // block's states are being built, and at that moment the item does not
+        // exist yet. The block would remember Items.AIR for the rest of the
+        // run -- which turns its creative-menu stack into an empty one and
+        // crashes the tab that tries to show it.
+        return context instanceof EntityCollisionContext carried
+            && carried.getEntity() instanceof Player player && holding(player)
+            ? Shapes.block() : Shapes.empty();
     }
 
     /**
@@ -107,8 +120,20 @@ public class ArenaMarkerBlock extends Block
     /** Whether this player has one of THESE in either hand. */
     public boolean holding(Player player)
     {
-        return player != null && (player.getMainHandItem().is(asItem())
-            || player.getOffhandItem().is(asItem()));
+        return player != null
+            && (places(player.getMainHandItem()) || places(player.getOffhandItem()));
+    }
+
+    /**
+     * Whether this stack is the one that puts THIS block down.
+     * <p>
+     * Read off the stack rather than compared against {@code asItem()}, for the
+     * same reason as above: asking a block for its item caches the answer, and
+     * this question gets asked from places that run before there is one.
+     */
+    private boolean places(ItemStack stack)
+    {
+        return stack.getItem() instanceof BlockItem placer && placer.getBlock() == this;
     }
 
     /**

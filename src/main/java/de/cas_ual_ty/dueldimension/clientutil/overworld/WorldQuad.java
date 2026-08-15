@@ -80,6 +80,26 @@ public final class WorldQuad
      * @param corners four world positions, wound anticlockwise seen from above,
      *                so the quad's face points up
      */
+    /**
+     * The only render type a tint can honestly be drawn through.
+     * <p>
+     * SOLID is an alpha-TESTED cutout: the test keeps a texel or throws it
+     * away, and never mixes. Hand it a half-faded tint and it draws the thing
+     * at full strength anyway, then drops the lot in one frame when the alpha
+     * crosses the threshold. That is why a five second fade of the duel board
+     * looked like the board blinking out of existence -- the arithmetic was
+     * right and the render type was discarding the answer.
+     * <p>
+     * Here rather than in each renderer, because three of them had to learn it
+     * separately and the third one only after the first two had already been
+     * fixed. Anything short of opaque blends; blending writes no depth, which
+     * for flat pieces submitted in the order they are stacked is no loss.
+     */
+    public static Kind kindFor(int tint)
+    {
+        return (tint >>> 24) >= 0xFF ? Kind.SOLID : Kind.GLOW;
+    }
+
     public static void submit(PoseStack poseStack, SubmitNodeCollector collector,
         Identifier texture, Vec3 camera, Vec3[] corners, int tint)
     {

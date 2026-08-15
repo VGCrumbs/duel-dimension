@@ -956,25 +956,10 @@ public final class OverworldBoardRenderer
         return Math.round(was * alpha) << 24 | (tint & 0xFFFFFF);
     }
 
-    /**
-     * Which render type a tint can actually be drawn through -- and the reason
-     * a five second fade used to look like a board vanishing in one frame.
-     * <p>
-     * SOLID is an alpha-TESTED cutout. The test keeps a texel or throws it
-     * away; it does not mix. So the mat and the card backs, which were always
-     * SOLID, took the faded tint and drew themselves at full strength anyway,
-     * frame after frame, until the alpha crossed the threshold -- at which
-     * point the entire board went out at once. The fade was running correctly
-     * the whole time and the render type was discarding the answer.
-     * <p>
-     * Anything short of opaque therefore goes through the blended type. It
-     * writes no depth, which for a stack of flat parallel planes drawn from the
-     * mat upwards is no loss: they are already submitted in the order they sit
-     * in.
-     */
+    /** The board's own name for {@link WorldQuad#kindFor}, which owns the rule. */
     private static WorldQuad.Kind kindFor(int tint)
     {
-        return (tint >>> 24) >= 0xFF ? WorldQuad.Kind.SOLID : WorldQuad.Kind.GLOW;
+        return WorldQuad.kindFor(tint);
     }
 
     /**

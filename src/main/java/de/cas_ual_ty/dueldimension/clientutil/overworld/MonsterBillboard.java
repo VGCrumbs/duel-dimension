@@ -242,9 +242,9 @@ public final class MonsterBillboard
         // cutout: it writes depth, which is what a solid sprite wants, but a
         // tint of half alpha through it is not half a sprite -- the test either
         // keeps a texel or throws it away, so the sprite would come out whole.
-        WorldQuad.Kind kind = (tint >>> 24) >= 0xFF ? WorldQuad.Kind.SOLID : WorldQuad.Kind.GLOW;
-        WorldQuad.submit(poseStack, collector, kind, layer.texture(), camera, corners, tint, us,
-            vs);
+        // This rule now lives on WorldQuad, because three renderers needed it.
+        WorldQuad.submit(poseStack, collector, WorldQuad.kindFor(tint), layer.texture(), camera,
+            corners, tint, us, vs);
     }
 
     /**
