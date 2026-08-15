@@ -3,6 +3,8 @@ package de.cas_ual_ty.dueldimension.clientutil.overworld;
 import de.cas_ual_ty.dueldimension.DuelDimension;
 import net.minecraft.resources.Identifier;
 
+import java.util.List;
+
 /**
  * One run of animation frames, taken from a rectangle of a sprite sheet.
  * <p>
@@ -33,15 +35,56 @@ import net.minecraft.resources.Identifier;
  * @param trimY   pixels taken off the region's OUTER top and bottom edges
  * @param bob     how many steps a rise and fall takes, or 0 for a sprite that
  *                stays where it is put
+ * @param offsets a nudge for individual cells, in pixels, indexed by cell; a
+ *                short list or a missing entry means no nudge
  */
 public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns, int rows,
-    int first, int frames, int ticks, MonsterSprites.Loop loop, int trimX, int trimY, int bob)
+    int first, int frames, int ticks, MonsterSprites.Loop loop, int trimX, int trimY, int bob,
+    List<Offset> offsets)
 {
+    /**
+     * How far one cell's art is out of step with the rest, in pixels.
+     * <p>
+     * A record rather than a pair of arrays, and a List rather than an int[],
+     * because a definition is compared against the shipped one to decide what
+     * to save. An array compares by identity, so a layer carrying one would
+     * never equal anything -- every monster would be written to the player's
+     * file as a difference from itself.
+     */
+    public record Offset(int x, int y)
+    {
+    }
+
+    /** No nudge, which is what almost every cell wants. */
+    public static final Offset SQUARE = new Offset(0, 0);
+
+    public SpriteLayer
+    {
+        // Copied, so a caller keeping the list it passed cannot change a
+        // definition afterwards -- and so equality stays a question about
+        // contents.
+        offsets = offsets == null ? List.of() : List.copyOf(offsets);
+    }
+
+    /** A layer whose cells are all in step, which is most of them. */
+    public SpriteLayer(String sheet, int x, int y, int w, int h, int columns, int rows,
+        int first, int frames, int ticks, MonsterSprites.Loop loop, int trimX, int trimY, int bob)
+    {
+        this(sheet, x, y, w, h, columns, rows, first, frames, ticks, loop, trimX, trimY, bob,
+            List.of());
+    }
+
     /** Everything but the bob, which most sprites do not do. */
     public SpriteLayer(String sheet, int x, int y, int w, int h, int columns, int rows,
         int first, int frames, int ticks, MonsterSprites.Loop loop, int trimX, int trimY)
     {
         this(sheet, x, y, w, h, columns, rows, first, frames, ticks, loop, trimX, trimY, 0);
+    }
+
+    /** The nudge for one cell of the region. */
+    public Offset offsetAt(int cell)
+    {
+        return cell >= 0 && cell < offsets.size() ? offsets.get(cell) : SQUARE;
     }
 
     /** A layer that takes the whole of each cell, which is most of them. */
@@ -209,11 +252,22 @@ public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns,
             : Math.clamp(trimX / cellW, 0F, Math.max(0F, LIMIT - bleedX));
         float insetY = cellH <= 0F ? 0F
             : Math.clamp(trimY / cellH, 0F, Math.max(0F, LIMIT - bleedY));
+
+        // The nudge moves the WINDOW the other way, because what the number
+        // means is "move the art". A frame drawn two pixels left of where its
+        // neighbours put the character is fixed by reading two pixels further
+        // left, not by drawing the box somewhere else -- that would leave the
+        // box and the art disagreeing, and the box is what everything else is
+        // measured from.
+        Offset offset = offsetAt(cell);
+        float slideX = cellW <= 0F ? 0F : -offset.x() / cellW;
+        float slideY = cellH <= 0F ? 0F : -offset.y() / cellH;
+
         return new float[] {
-            (column == 0 ? insetX : 0F) + bleedX,
-            (row == 0 ? insetY : 0F) + bleedY,
-            (column == across - 1 ? 1F - insetX : 1F) - bleedX,
-            (row == down - 1 ? 1F - insetY : 1F) - bleedY};
+            (column == 0 ? insetX : 0F) + bleedX + slideX,
+            (row == 0 ? insetY : 0F) + bleedY + slideY,
+            (column == across - 1 ? 1F - insetX : 1F) - bleedX + slideX,
+            (row == down - 1 ? 1F - insetY : 1F) - bleedY + slideY};
     }
 
     /** The same, for a frame of this run rather than a cell of the region. */
@@ -236,19 +290,19 @@ public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns,
     public SpriteLayer withTicks(int value)
     {
         return new SpriteLayer(sheet, x, y, w, h, columns, rows, first, frames,
-            Math.max(1, value), loop, trimX, trimY, bob);
+            Math.max(1, value), loop, trimX, trimY, bob, offsets);
     }
 
     /** The same layer reading a differently named file, for the export to source. */
     public SpriteLayer withSheet(String value)
     {
         return new SpriteLayer(value, x, y, w, h, columns, rows, first, frames, ticks, loop,
-            trimX, trimY, bob);
+            trimX, trimY, bob, offsets);
     }
 
     public SpriteLayer withLoop(MonsterSprites.Loop value)
     {
         return new SpriteLayer(sheet, x, y, w, h, columns, rows, first, frames, ticks, value,
-            trimX, trimY, bob);
+            trimX, trimY, bob, offsets);
     }
 }

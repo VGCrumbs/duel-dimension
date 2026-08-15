@@ -60,7 +60,7 @@ public class BillboardEditorScreen extends Screen
     private enum Tab
     {
         BODY("Body"),
-        POSE("Pose"),
+        POSE("Frames"),
         WINGS("Wings");
 
         private final String label;
@@ -98,6 +98,16 @@ public class BillboardEditorScreen extends Screen
 
     private boolean pose;
     private int dfirst;
+
+    /**
+     * One nudge per cell, and which cell the two nudge controls are pointed at.
+     * <p>
+     * A picker rather than a control per cell, because a sheet can hold sixteen
+     * of them and a panel cannot. Kept as a list the whole time and handed to
+     * the definition on every change, exactly like every other field here.
+     */
+    private final java.util.List<SpriteLayer.Offset> boffsets = new java.util.ArrayList<>();
+    private int cellPick;
 
     private boolean winged;
     private int wx;
@@ -159,6 +169,9 @@ public class BillboardEditorScreen extends Screen
         btrimY = body.trimY();
         scale = definition.scale();
 
+        boffsets.clear();
+        boffsets.addAll(body.offsets());
+
         pose = definition.defence() != null;
         dfirst = pose ? definition.defence().first() : bcolumns * brows - 1;
 
@@ -195,10 +208,12 @@ public class BillboardEditorScreen extends Screen
             return;
         }
         SpriteLayer body = new SpriteLayer(sheet, bx, by, bw, bh, bcolumns, brows, bfirst,
-            bframes, bticks, bloop, btrimX, btrimY, bbob);
+            bframes, bticks, bloop, btrimX, btrimY, bbob, boffsets);
+        // The pose shares the nudges, because it shares the cells: a defence
+        // cell is one of the same grid, and its entry in the list is its own.
         SpriteLayer defence = pose
             ? new SpriteLayer(sheet, bx, by, bw, bh, bcolumns, brows, dfirst, 1, bticks,
-                MonsterSprites.Loop.LOOP, btrimX, btrimY, bbob)
+                MonsterSprites.Loop.LOOP, btrimX, btrimY, bbob, boffsets)
             : null;
         Wings wings = winged
             ? new Wings(new SpriteLayer(sheet, wx, wy, ww, wh, wcolumns, wrows, wfirst, wframes,
@@ -396,6 +411,46 @@ public class BillboardEditorScreen extends Screen
         wide(toggle("Defence pose", () -> pose, value -> pose = value, false));
         wide(count("Pose cell", 0, 63, bcolumns * brows - 1, () -> dfirst,
             value -> dfirst = value));
+        wide(picker());
+        pair(count("Off x", -64, 64, 0, () -> offsetOf(cellPick).x(),
+                value -> nudge(cellPick, value, offsetOf(cellPick).y())),
+            count("Off y", -64, 64, 0, () -> offsetOf(cellPick).y(),
+                value -> nudge(cellPick, offsetOf(cellPick).x(), value)));
+    }
+
+    /**
+     * Which cell the nudges point at, as a button rather than a slider.
+     * <p>
+     * Changing it has to rebuild the two nudge controls, since a slider knows
+     * its own position and will not learn a new one from outside -- and a
+     * slider that rebuilt the panel underneath the mouse mid-drag would tear
+     * itself out from under the drag. A button is pressed once and released.
+     */
+    private Field picker()
+    {
+        int cells = Math.max(1, bcolumns * brows);
+        Button button = Button.builder(
+            Component.literal("Cell " + (cellPick + 1) + " of " + cells), pressed ->
+            {
+                cellPick = (cellPick + 1) % cells;
+                rebuildWidgets();
+            }).bounds(0, 0, 10, ROW_H).build();
+        return new Field(button, () -> cellPick = 0);
+    }
+
+    private SpriteLayer.Offset offsetOf(int cell)
+    {
+        return cell >= 0 && cell < boffsets.size() ? boffsets.get(cell) : SpriteLayer.SQUARE;
+    }
+
+    /** Grows the list to reach the cell, so a nudge to cell 7 does not need 0..6 set. */
+    private void nudge(int cell, int dx, int dy)
+    {
+        while(boffsets.size() <= cell)
+        {
+            boffsets.add(SpriteLayer.SQUARE);
+        }
+        boffsets.set(cell, new SpriteLayer.Offset(dx, dy));
     }
 
     private void wings()
@@ -449,6 +504,7 @@ public class BillboardEditorScreen extends Screen
     private static final int WING_LINE = 0xFF63C8FF;
     private static final int WING_FILL = 0x3363C8FF;
     private static final int POSE_LINE = 0xFF7CE38B;
+    private static final int PICK_LINE = 0xFFFFFFFF;
 
     /**
      * The sheet, with the cuts drawn on it.
@@ -502,18 +558,18 @@ public class BillboardEditorScreen extends Screen
             return;
         }
         grid(extractor, body, size, x, y, drawW, drawH, BODY_LINE, BODY_FILL,
-            pose ? dfirst : -1);
+            pose ? dfirst : -1, tab == Tab.POSE ? cellPick : -1);
         if(winged)
         {
             grid(extractor, new SpriteLayer(sheet, wx, wy, ww, wh, wcolumns, wrows, wfirst,
                 wframes, wticks, wloop, wtrimX, wtrimY), size, x, y, drawW, drawH, WING_LINE,
-                WING_FILL, -1);
+                WING_FILL, -1, -1);
         }
     }
 
     /** One layer's region and cells, drawn over the sheet. */
     private void grid(GuiGraphicsExtractor extractor, SpriteLayer layer, int[] size, int x, int y,
-        int drawW, int drawH, int line, int fill, int poseCell)
+        int drawW, int drawH, int line, int fill, int poseCell, int picked)
     {
         float scaleX = drawW / (float)size[0];
         float scaleY = drawH / (float)size[1];
@@ -543,8 +599,10 @@ public class BillboardEditorScreen extends Screen
             {
                 extractor.fill(x0, y0, x1, y1, fill);
             }
-            int edge = cell == poseCell ? POSE_LINE : line;
-            if(inRun || cell == poseCell)
+            // The cell being nudged wins the colour, because while that tab is
+            // open it is the one thing you are looking for.
+            int edge = cell == picked ? PICK_LINE : cell == poseCell ? POSE_LINE : line;
+            if(inRun || cell == poseCell || cell == picked)
             {
                 extractor.fill(x0, y0, x1, y0 + 1, edge);
                 extractor.fill(x0, y1 - 1, x1, y1, edge);

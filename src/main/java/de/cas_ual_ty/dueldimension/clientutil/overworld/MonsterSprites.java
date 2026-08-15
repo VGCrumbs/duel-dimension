@@ -525,7 +525,8 @@ public final class MonsterSprites
             object.has("loop") ? Loop.valueOf(object.get("loop").getAsString()) : Loop.LOOP,
             Math.max(0, optional(object, "trimX", 0)),
             Math.max(0, optional(object, "trimY", 0)),
-            Math.max(0, optional(object, "bob", 0)));
+            Math.max(0, optional(object, "bob", 0)),
+            readOffsets(object));
         // A file written while the bob was a kind of loop said so there, and
         // meant "hold the first cell and rise and fall over the frame count".
         // Said in the new terms that is a plain loop of one frame with a bob of
@@ -535,9 +536,25 @@ public final class MonsterSprites
         {
             return new SpriteLayer(read.sheet(), read.x(), read.y(), read.w(), read.h(),
                 read.columns(), read.rows(), read.first(), 1, read.ticks(), Loop.LOOP,
-                read.trimX(), read.trimY(), read.frames());
+                read.trimX(), read.trimY(), read.frames(), read.offsets());
         }
         return read;
+    }
+
+    /** Per-cell nudges, as pairs, or nothing when the layer says nothing. */
+    private static List<SpriteLayer.Offset> readOffsets(JsonObject object)
+    {
+        if(!object.has("offsets"))
+        {
+            return List.of();
+        }
+        List<SpriteLayer.Offset> offsets = new java.util.ArrayList<>();
+        for(JsonElement element : object.getAsJsonArray("offsets"))
+        {
+            JsonArray pair = element.getAsJsonArray();
+            offsets.add(new SpriteLayer.Offset(pair.get(0).getAsInt(), pair.get(1).getAsInt()));
+        }
+        return offsets;
     }
 
     private static int optional(JsonObject object, String key, int fallback)
@@ -584,6 +601,20 @@ public final class MonsterSprites
         object.addProperty("trimX", layer.trimX());
         object.addProperty("trimY", layer.trimY());
         object.addProperty("bob", layer.bob());
+        // Only when something is actually nudged. A list of zeroes on every
+        // layer would be noise in a file people read.
+        if(layer.offsets().stream().anyMatch(offset -> offset.x() != 0 || offset.y() != 0))
+        {
+            JsonArray offsets = new JsonArray();
+            for(SpriteLayer.Offset offset : layer.offsets())
+            {
+                JsonArray pair = new JsonArray();
+                pair.add(offset.x());
+                pair.add(offset.y());
+                offsets.add(pair);
+            }
+            object.add("offsets", offsets);
+        }
         return object;
     }
 
