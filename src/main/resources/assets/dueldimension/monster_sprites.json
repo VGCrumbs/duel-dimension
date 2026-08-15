@@ -1153,5 +1153,83 @@
       "trimY": 0
     },
     "scale": 1.0
+  },
+  {
+    "card": 74677422,
+    "body": {
+      "sheet": "dragon/red_eyes_black_dragon",
+      "x": 0,
+      "y": 104,
+      "w": 0,
+      "h": 152,
+      "columns": 5,
+      "rows": 1,
+      "first": 0,
+      "frames": 5,
+      "ticks": 5,
+      "loop": "PING_PONG",
+      "trimX": 0,
+      "trimY": 0
+    },
+    "wings": {
+      "layer": {
+        "sheet": "dragon/red_eyes_black_dragon",
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 104,
+        "columns": 6,
+        "rows": 1,
+        "first": 0,
+        "frames": 6,
+        "ticks": 5,
+        "loop": "PING_PONG",
+        "trimX": 0,
+        "trimY": 0
+      },
+      "anchor": 0.62,
+      "spacing": 0.0,
+      "scale": 0.55
+    },
+    "scale": 1.4
+  },
+  {
+    "card": 74677427,
+    "body": {
+      "sheet": "dragon/red_eyes_black_dragon",
+      "x": 0,
+      "y": 104,
+      "w": 0,
+      "h": 152,
+      "columns": 5,
+      "rows": 1,
+      "first": 0,
+      "frames": 5,
+      "ticks": 5,
+      "loop": "PING_PONG",
+      "trimX": 0,
+      "trimY": 0
+    },
+    "wings": {
+      "layer": {
+        "sheet": "dragon/red_eyes_black_dragon",
+        "x": 0,
+        "y": 0,
+        "w": 0,
+        "h": 104,
+        "columns": 6,
+        "rows": 1,
+        "first": 0,
+        "frames": 6,
+        "ticks": 5,
+        "loop": "PING_PONG",
+        "trimX": 0,
+        "trimY": 0
+      },
+      "anchor": 0.62,
+      "spacing": 0.0,
+      "scale": 0.55
+    },
+    "scale": 1.4
   }
 ]
