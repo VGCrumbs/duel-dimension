@@ -126,6 +126,25 @@ public final class OverworldDuels
     private static final Map<UUID, Waiting> WAITING = new ConcurrentHashMap<>();
     private static final Map<UUID, Board> BOARDS = new ConcurrentHashMap<>();
 
+    /**
+     * The last public view of each board, and who is currently watching it.
+     * <p>
+     * Both keyed by seat zero, which names a board without being a board: a
+     * Board is a record, so two duels laid out identically would be one key.
+     * <p>
+     * These exist because a spectator used to be told about a duel ONLY at the
+     * moment the board changed -- the field and the view went out together, in
+     * the same broadcast, to whoever happened to be standing there at the time.
+     * Walk up during a long think, a chain window or anybody's prompt and there
+     * was nothing to see and nothing coming: the next board change might be
+     * half a minute away, and until then a duel in front of you was bare
+     * ground. Keeping the last view means somebody arriving can be shown the
+     * duel as it stands rather than as it will next be.
+     */
+    private static final Map<UUID, de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot>
+        PUBLIC_VIEW = new ConcurrentHashMap<>();
+    private static final Map<UUID, java.util.Set<UUID>> WATCHERS = new ConcurrentHashMap<>();
+
     /** The board this player is duelling on, or null. */
     public static Board boardOf(UUID player)
     {
@@ -509,6 +528,8 @@ public final class OverworldDuels
                 continue;
             }
 
+            tickWatchers(server, level, board);
+
             // A player who has died is not standing anywhere, and holding a
             // corpse on its mark would be both grim and useless. The duel
             // carries on, on the screen, exactly as it does for every other
@@ -684,6 +705,16 @@ public final class OverworldDuels
         BOARDS.remove(board.seat1());
         hideIfOnline(server, board.seat0());
         hideIfOnline(server, board.seat1());
+        // The audience too. They were never in BOARDS -- watching is not
+        // playing -- so nothing else here would ever have told them, and a
+        // board whose duel has ended would have stayed drawn in front of them
+        // until they walked out of range of a duel that no longer exists.
+        java.util.Set<UUID> watching = WATCHERS.remove(board.seat0());
+        PUBLIC_VIEW.remove(board.seat0());
+        if(watching != null)
+        {
+            watching.forEach(id -> hideIfOnline(server, id));
+        }
     }
 
     /**
@@ -767,8 +798,13 @@ public final class OverworldDuels
         {
             return;
         }
-        OverworldPayloads.SpectatorBoard update = new OverworldPayloads.SpectatorBoard(
-            de.cas_ual_ty.dueldimension.ocg.prompt.StrangerView.of(seatSnapshot));
+        de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot view =
+            de.cas_ual_ty.dueldimension.ocg.prompt.StrangerView.of(seatSnapshot);
+        // Kept, so somebody who walks up between changes can be shown this
+        // rather than waiting for the next one.
+        PUBLIC_VIEW.put(board.seat0(), view);
+
+        OverworldPayloads.SpectatorBoard update = new OverworldPayloads.SpectatorBoard(view);
         OverworldPayloads.ShowField field = new OverworldPayloads.ShowField(board.siting(),
             board.level(), OverworldPayloads.SPECTATOR, true);
 
@@ -776,13 +812,82 @@ public final class OverworldDuels
             .around(level, net.minecraft.world.phys.Vec3.atCenterOf(board.siting().anchor()),
                 SPECTATOR_RANGE))
         {
-            if(viewer.getUUID().equals(board.seat0()) || viewer.getUUID().equals(board.seat1()))
+            if(viewer.getUUID().equals(board.seat0()) || viewer.getUUID().equals(board.seat1())
+                || isEngaged(viewer.getUUID()))
             {
                 continue;
             }
             ServerPlayNetworking.send(viewer, field);
             ServerPlayNetworking.send(viewer, update);
+            watchersOf(board).add(viewer.getUUID());
         }
+    }
+
+    private static java.util.Set<UUID> watchersOf(Board board)
+    {
+        return WATCHERS.computeIfAbsent(board.seat0(),
+            key -> java.util.concurrent.ConcurrentHashMap.newKeySet());
+    }
+
+    /**
+     * Starts and stops people watching as they walk up to a duel and away again.
+     * <p>
+     * Range is the whole of it. There is no asking to spectate and nothing to
+     * join: a duel on the ground is a thing happening in the world, and being
+     * near enough to see it is the only qualification. Run every tick against
+     * who is actually there, so arriving shows the duel as it stands and
+     * leaving takes it away rather than leaving a board painted over the
+     * countryside behind you.
+     * <p>
+     * Only ever the stripped view, and only to people who are not playing --
+     * the same two exclusions the broadcast makes, made again here rather than
+     * assumed, because this is the path that hands a board to somebody the duel
+     * knows nothing about.
+     */
+    private static void tickWatchers(MinecraftServer server, ServerLevel level, Board board)
+    {
+        java.util.Set<UUID> watching = watchersOf(board);
+        java.util.Set<UUID> near = new java.util.HashSet<>();
+        for(ServerPlayer viewer : net.fabricmc.fabric.api.networking.v1.PlayerLookup
+            .around(level, net.minecraft.world.phys.Vec3.atCenterOf(board.siting().anchor()),
+                SPECTATOR_RANGE))
+        {
+            UUID id = viewer.getUUID();
+            // Not the duellists, and not anybody engaged in a duel of their
+            // own. A player has ONE field on their client, so handing this one
+            // to somebody already playing at another board -- or walking to
+            // their mark for one -- would paint this duel over theirs, and take
+            // theirs away again when they wandered out of range of a duel they
+            // were never in.
+            if(id.equals(board.seat0()) || id.equals(board.seat1()) || isEngaged(id))
+            {
+                continue;
+            }
+            near.add(id);
+            if(watching.add(id))
+            {
+                ServerPlayNetworking.send(viewer, new OverworldPayloads.ShowField(board.siting(),
+                    board.level(), OverworldPayloads.SPECTATOR, true));
+                de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot view =
+                    PUBLIC_VIEW.get(board.seat0());
+                if(view != null)
+                {
+                    ServerPlayNetworking.send(viewer,
+                        new OverworldPayloads.SpectatorBoard(view));
+                }
+            }
+        }
+        // And anybody who has walked off, or logged off, is told the board is
+        // gone -- otherwise it stays drawn wherever they go next.
+        watching.removeIf(id ->
+        {
+            if(near.contains(id))
+            {
+                return false;
+            }
+            hideIfOnline(server, id);
+            return true;
+        });
     }
 
     /**
