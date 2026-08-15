@@ -563,7 +563,12 @@ public class EngineDuelScreen extends Screen
                 return null;
             }
         }
-        return found.size() > 1 ? found : null;
+        // Any at all, not two or more. The picker is how a hidden card is
+        // SHOWN, so refusing to open it for a single candidate is refusing to
+        // show the one card the question is about -- and the answer then had to
+        // be given by clicking a stack that names nothing. The board's own
+        // chooser opens for one just as readily.
+        return found.isEmpty() ? null : found;
     }
 
     // ---- the card picker ----
@@ -1128,7 +1133,14 @@ public class EngineDuelScreen extends Screen
             for(java.util.Map.Entry<Integer, List<Integer>> group : byCommand.entrySet())
             {
                 List<Integer> indices = group.getValue();
-                String label = prompt.options().get(indices.get(0)).label();
+                // A selection carries command 0 and no verb of its own, so
+                // every card in the stack lands in one group -- and labelling
+                // that group with the FIRST card's name told the player they
+                // were about to act on one particular monster when the row
+                // opens a list of all of them. The stack's own name is the
+                // truthful heading, and it is the heading the list keeps.
+                String label = group.getKey() == 0 ? hit.label()
+                    : prompt.options().get(indices.get(0)).label();
                 entries.add(new MenuEntry(label, group.getKey(),
                     () -> openPileChoices(label, indices)));
             }
@@ -1678,10 +1690,21 @@ public class EngineDuelScreen extends Screen
                         return true;
                     }
                 }
-                else if(actions.size() == 1 && !isCardCommand(actions.get(0)))
+                else if(actions.size() == 1 && !isCardCommand(actions.get(0))
+                    && !hit.isPile())
                 {
                     // Selecting a card for a prompt ("pick a target") stays one
                     // click: there is nothing to choose between.
+                    //
+                    // NOT for a stack. "There is nothing to choose between" is
+                    // true of a card lying on the field, which the player can
+                    // see; it is false of one inside a graveyard, which they
+                    // cannot. A single-target Monster Reborn committed the
+                    // revival the instant the pile was clicked, without ever
+                    // naming the monster it brought back. PromptOptions says
+                    // this outright -- "a stack never answers on the click" --
+                    // and the world board has always obeyed it; this screen
+                    // had its own weaker test and did not.
                     choose(actions.get(0));
                     return true;
                 }
