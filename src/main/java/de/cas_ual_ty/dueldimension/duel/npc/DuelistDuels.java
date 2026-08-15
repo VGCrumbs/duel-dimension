@@ -818,11 +818,26 @@ public final class DuelistDuels
             // new one forever.
             ACTIVE.remove(other);
             SEATS.remove(other.playerId());
+            // Their board too, not just the leaver's. Releasing one seat took
+            // the duel away from the player who had gone and left the one who
+            // had not standing on a field they could not leave, locked to a
+            // duel with nobody in it.
+            de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels
+                .release(player.level().getServer(), other.playerId());
             ServerPlayer opponent = player.level().getServer().getPlayerList().getPlayer(other.playerId());
             if(opponent != null)
             {
                 opponent.sendSystemMessage(Component.literal("Your opponent disconnected; the duel is over.")
                     .withStyle(ChatFormatting.GOLD));
+                // And told the duel is OVER, in the words the client already
+                // knows. Taking the board away says the board has gone; this
+                // says the duel has, which is what unwinds the prompt they may
+                // be sitting on, closes whatever screen is up and hands them
+                // back an ordinary game. Without it the far seat kept a duel
+                // screen waiting on a reply for a duel that no longer existed.
+                net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(opponent,
+                    new de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate(
+                        null, java.util.List.of(), true, "Opponent disconnected", new int[0]));
             }
         }
     }

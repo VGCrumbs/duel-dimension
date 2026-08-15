@@ -687,7 +687,13 @@ public final class OverworldBoardRenderer
             // around the same one. This is where that is translated, and the
             // only place it is.
             int controller = FieldTransform.controllerFor(seat, own);
-            Identifier back = CardFaces.back(controller);
+            // SEAT-RELATIVE, not the board half. CardFaces speaks the engine's
+            // language, where 0 is always whoever is being served -- and this
+            // controller is the absolute end of the table, which only agrees
+            // with that for the duellist sitting at seat 0. Asked the wrong
+            // way round, a player at the far seat got their own sleeve drawn
+            // on their opponent's cards and their opponent's on theirs.
+            Identifier back = CardFaces.back(own ? 0 : 1);
 
             // The engine numbers controllers from the seat it is asking; the
             // board's halves are absolute. Both are needed here -- one to draw
@@ -709,10 +715,10 @@ public final class OverworldBoardRenderer
                 OcgConstants.LOCATION_EXTRA, size(side.extra()), back, back);
             drawPile(poseStack, collector, transform, camera, controller, asked,
                 OcgConstants.LOCATION_GRAVE, size(side.grave()),
-                topFace(side.grave(), controller, back), back);
+                topFace(side.grave(), asked, back), back);
             drawPile(poseStack, collector, transform, camera, controller, asked,
                 OcgConstants.LOCATION_REMOVED, size(side.banished()),
-                topFace(side.banished(), controller, back), back);
+                topFace(side.banished(), asked, back), back);
 
             // The other duellist's hand stands up in front of them, backs out,
             // the way a hand of cards is held. NOT this client's own -- that
@@ -783,10 +789,23 @@ public final class OverworldBoardRenderer
             Vec3 topRight = transform.at(right, edge, cardLift(transform) + HELD_HEIGHT);
 
             int heldTint = fade(0xFFFFFFFF);
+            // Through the CARD window unless the texture is already card
+            // shaped. A sleeve is a square canvas with the card letterboxed
+            // inside it, so drawing the whole file across a card-shaped quad
+            // squeezes the art inwards -- which is exactly how the opponent's
+            // sleeves came out skinny, since the backs in a hand are the only
+            // place this was drawn full-range.
+            boolean whole = CardFaces.isCardShaped(back);
+            float u0 = whole ? 0F : DuelTextures.CARD_U0;
+            float v0 = whole ? 0F : DuelTextures.CARD_V0;
+            float u1 = whole ? 1F : DuelTextures.CARD_U1;
+            float v1 = whole ? 1F : DuelTextures.CARD_V1;
             WorldQuad.submit(poseStack, collector, kindFor(heldTint), back, camera,
-                new Vec3[] {bottomLeft, topLeft, topRight, bottomRight}, heldTint);
+                new Vec3[] {bottomLeft, topLeft, topRight, bottomRight}, heldTint,
+                u0, v0, u1, v1);
             WorldQuad.submit(poseStack, collector, kindFor(heldTint), back, camera,
-                new Vec3[] {bottomRight, topRight, topLeft, bottomLeft}, heldTint);
+                new Vec3[] {bottomRight, topRight, topLeft, bottomLeft}, heldTint,
+                u0, v0, u1, v1);
         }
     }
 
@@ -836,7 +855,7 @@ public final class OverworldBoardRenderer
      * other face, so a face-down banished card is still face down on top of its
      * pile.
      */
-    private static Identifier topFace(List<BoardSnapshot.Slot> slots, int controller,
+    private static Identifier topFace(List<BoardSnapshot.Slot> slots, int asked,
         Identifier back)
     {
         if(slots == null || slots.isEmpty())
@@ -844,7 +863,7 @@ public final class OverworldBoardRenderer
             return back;
         }
         BoardSnapshot.Slot top = slots.get(slots.size() - 1);
-        return top == null ? back : CardFaces.face(top, false, controller);
+        return top == null ? back : CardFaces.face(top, false, asked);
     }
 
     private static void drawRow(PoseStack poseStack, SubmitNodeCollector collector,
@@ -883,8 +902,8 @@ public final class OverworldBoardRenderer
             // under it is looking at the face. An opponent's set card arrives
             // with no code, so theirs stays a back.
             CardRenderer.submit(poseStack, collector, transform, camera, zone, controller,
-                slot.defence(), cardLift(transform), CardFaces.face(slot, false, controller),
-                CardFaces.underside(slot, controller), fade(0xFFFFFFFF));
+                slot.defence(), cardLift(transform), CardFaces.face(slot, false, asked),
+                CardFaces.underside(slot, asked), fade(0xFFFFFFFF));
 
             drawHologram(poseStack, collector, transform, camera, zone, slot, location, asked);
 

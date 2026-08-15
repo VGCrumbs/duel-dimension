@@ -138,15 +138,49 @@ public class CoinTossScreen extends Screen
     }
 
     /**
-     * The duel is mid-start and both seats are committed to it, so there is
-     * nothing for closing this to mean. The winner's timeout on the server is
-     * what stops it waiting forever.
+     * Escapable, and that is a correction.
+     * <p>
+     * It used to refuse, reasoning that both seats are committed and closing
+     * would mean nothing. But a screen that cannot be closed is a screen that
+     * can hold a player forever, and this one did: it is modal, it sat over an
+     * overworld duel that was waiting for both players to WALK to their marks,
+     * and there was no route out of it at all. "Nothing to mean" is not worth
+     * one softlock, let alone the several this had.
+     * <p>
+     * Closing it early costs nothing that matters. The server keeps its own
+     * thirty second deadline on the choice and starts the duel without one, so
+     * leaving early is answering late -- and the duel arriving takes this away
+     * regardless.
      */
     @Override
     public boolean shouldCloseOnEsc()
     {
-        return false;
+        return true;
     }
+
+    /**
+     * And it lets go by itself, whatever else happens.
+     * <p>
+     * Belt and braces over the three places that already close it -- answering,
+     * the board arriving, the first duel update. Each of those is a message
+     * that has to arrive, and this screen's entire history is of messages that
+     * did not. A deadline needs nothing to arrive: past the point where the
+     * server has certainly decided without us, there is no reading of this
+     * screen under which it should still be up.
+     */
+    @Override
+    public void tick()
+    {
+        if(answered || ++ticks > STANDS_FOR_TICKS)
+        {
+            minecraft.gui.setScreen(null);
+        }
+    }
+
+    /** Longer than the server's own thirty seconds, so it is never the first to give up. */
+    private static final int STANDS_FOR_TICKS = 35 * 20;
+
+    private int ticks;
 
     @Override
     public boolean isPauseScreen()
