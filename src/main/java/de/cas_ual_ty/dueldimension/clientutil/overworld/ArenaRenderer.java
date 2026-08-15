@@ -10,6 +10,7 @@ import de.cas_ual_ty.dueldimension.duel.overworld.FieldTransform;
 import de.cas_ual_ty.dueldimension.duel.overworld.FieldSpec;
 import de.cas_ual_ty.dueldimension.duel.overworld.arena.Arena;
 import de.cas_ual_ty.dueldimension.duel.overworld.arena.ArenaScan;
+import de.cas_ual_ty.dueldimension.DdBlocks;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -77,16 +78,39 @@ public final class ArenaRenderer
     public static void render(LevelRenderContext context)
     {
         Minecraft client = Minecraft.getInstance();
-        // The whole feature, gated in one place. Not creative, nothing drawn --
-        // and since nothing else can draw these blocks, nothing is drawn at all.
-        if(client.player == null || client.level == null || !client.player.isCreative())
+        if(client.player == null || client.level == null)
+        {
+            corners = List.of();
+            points = List.of();
+            return;
+        }
+        // The whole feature, gated in one place. Creative sees the arena it is
+        // building; anyone else sees the kind of marker they are holding and
+        // nothing else. Since nothing else can draw these blocks, a player who
+        // qualifies for neither sees nothing at all.
+        boolean creative = client.player.isCreative();
+        boolean showCorners = creative || DdBlocks.ARENA_CORNER.holding(client.player);
+        boolean showPoints = creative || DdBlocks.ARENA_POINT.holding(client.player);
+        if(!showCorners && !showPoints)
         {
             corners = List.of();
             points = List.of();
             return;
         }
         sweep(client, context.levelState().gameTime);
-        if(corners.isEmpty() && points.isEmpty())
+        // Filtered where they are DRAWN rather than where they are found, so
+        // that swapping what is in hand does not have to wait for the next
+        // sweep -- and so the sweep's cache stays a picture of the world rather
+        // than of the world plus whoever was holding what.
+        //
+        // Only the drawing is filtered. Whether a point sits inside the arena
+        // is a fact about the arena, so it is still asked of every corner that
+        // is there: a builder holding player points would otherwise be told all
+        // of them are invalid, because the corners proving them valid happened
+        // not to be in their hand.
+        List<BlockPos> drawnCorners = showCorners ? corners : List.<BlockPos>of();
+        List<BlockPos> drawnPoints = showPoints ? points : List.<BlockPos>of();
+        if(drawnCorners.isEmpty() && drawnPoints.isEmpty())
         {
             return;
         }
@@ -104,13 +128,13 @@ public final class ArenaRenderer
         // A corner sits at the height of the board's SURFACE, so its mark is
         // drawn on the top face of the block beneath it -- which is where the
         // mat will be, and therefore what the builder is really placing.
-        for(BlockPos corner : corners)
+        for(BlockPos corner : drawnCorners)
         {
             drawQuad(poseStack, collector, CORNER_MARK, camera, corner,
                 tint(rect != null ? CORNER_GOOD : CORNER_BAD, rect != null ? 0.7F : pulse));
         }
 
-        for(BlockPos point : points)
+        for(BlockPos point : drawnPoints)
         {
             boolean fits = Arena.pointValid(rect, point);
             // Red and flashing while the board is up, which is when somebody is
