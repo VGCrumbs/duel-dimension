@@ -95,8 +95,20 @@ public final class OverworldBoardRenderer
         int matTint = fade(0xFFFFFFFF);
         for(BoardMesh.Piece piece : BoardMesh.pieces(matsByController()))
         {
+            Vec3[] corners = transform.corners(piece.rect(), SURFACE_LIFT + piece.lift());
+            if(piece.turns() == 0)
+            {
+                WorldQuad.submit(poseStack, collector, kindFor(matTint), piece.texture(), camera,
+                    corners, matTint);
+                continue;
+            }
+            // A mark that belongs to one duellist, stood the right way up for
+            // them. Turned through the same table the cards are turned by, so
+            // a gem and the card that covers it cannot disagree about which
+            // way the board is facing.
+            float[][] uv = CardRenderer.turned(false, 0F, 0F, 1F, 1F, piece.turns());
             WorldQuad.submit(poseStack, collector, kindFor(matTint), piece.texture(), camera,
-                transform.corners(piece.rect(), SURFACE_LIFT + piece.lift()), matTint);
+                corners, matTint, uv[0], uv[1]);
         }
 
         // The zone being looked at, lit with the same square the 2D board

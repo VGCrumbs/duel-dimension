@@ -1,5 +1,6 @@
 package de.cas_ual_ty.dueldimension.clientutil.overworld;
 
+import de.cas_ual_ty.dueldimension.clientutil.DuelTextures;
 import de.cas_ual_ty.dueldimension.clientutil.FieldLayout;
 import de.cas_ual_ty.dueldimension.clientutil.PlayMats;
 import de.cas_ual_ty.dueldimension.duel.overworld.FieldSiting;
@@ -37,9 +38,10 @@ public class BoardMeshTest
     {
         List<BoardMesh.Piece> pieces = BoardMesh.pieces(MATS);
 
-        // Two mats, then seven loose zones each: the extra monster zones, the
-        // field spell, and the four piles.
-        assertEquals(2 + 2 * 7, pieces.size());
+        // Two mats, then seven loose zones each -- the extra monster zones,
+        // the field spell, and the four piles -- and then the two pendulum
+        // marks each, which sit ON the playmat band rather than outside it.
+        assertEquals(2 + 2 * 7 + 2 * 2, pieces.size());
         assertEquals(PlayMats.CLASSIC.worldTexture(), pieces.get(0).texture());
         assertEquals(PlayMats.CLASSIC.worldTexture(), pieces.get(1).texture());
     }
@@ -151,5 +153,112 @@ public class BoardMeshTest
 
         assertEquals(PlayMats.CLASSIC.worldTexture(), pieces.get(0).texture());
         assertEquals(PlayMats.CLASSIC.worldTexture(), pieces.get(1).texture());
+    }
+
+    /**
+     * The two backrow squares that are also Pendulum Zones say so.
+     * <p>
+     * Under MR5 ocgcore puts a scale in backrow 0 or 4 rather than in a zone of
+     * its own, and a playmat is not printed with anything that says which two
+     * those are. The flat board has marked them since it was written; this is
+     * the same mark on the same squares.
+     */
+    @Test
+    public void bothPendulumZonesAreMarkedOnEachHalf()
+    {
+        List<BoardMesh.Piece> pieces = BoardMesh.pieces(MATS);
+
+        int blue = 0;
+        int red = 0;
+        for(BoardMesh.Piece piece : pieces)
+        {
+            if(piece.texture().equals(DuelTextures.PENDULUM_ZONE_LEFT))
+            {
+                blue++;
+            }
+            else if(piece.texture().equals(DuelTextures.PENDULUM_ZONE_RIGHT))
+            {
+                red++;
+            }
+        }
+        assertEquals(2, blue, "one blue gem per duellist");
+        assertEquals(2, red, "one red gem per duellist");
+    }
+
+    /**
+     * Each mark sits inside the zone it labels, square, and smaller than it.
+     * <p>
+     * A mark that overhung its square would be a mark on the neighbouring zone
+     * as well, and one that filled it would be a zone that looked occupied.
+     */
+    @Test
+    public void aPendulumMarkIsASquareInsideItsOwnZone()
+    {
+        for(int controller = 0; controller <= 1; controller++)
+        {
+            for(int sequence : new int[] {0, 4})
+            {
+                FieldLayout.Rect zone = FieldLayout.zone(controller,
+                    de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_SZONE, sequence);
+                BoardMesh.Piece mark = markIn(zone);
+                assertTrue(mark != null,
+                    "controller " + controller + " backrow " + sequence + " is unmarked");
+                assertEquals(mark.rect().w(), mark.rect().h(), 1e-4F, "the gem should be square");
+                assertTrue(mark.rect().w() < zone.w() && mark.rect().h() < zone.h(),
+                    "the mark should not fill its zone");
+                // Centred, so it reads as a label for the square rather than
+                // as something sitting in a corner of it.
+                assertEquals(zone.x() + zone.w() / 2F,
+                    mark.rect().x() + mark.rect().w() / 2F, 1e-4F);
+                assertEquals(zone.y() + zone.h() / 2F,
+                    mark.rect().y() + mark.rect().h() / 2F, 1e-4F);
+            }
+        }
+    }
+
+    /**
+     * A duellist's own left zone takes the blue gem, whichever half they are on.
+     * <p>
+     * Sequence rather than screen side: the opponent's half is the point
+     * reflection of yours, so their sequence 0 is physically opposite yours.
+     * Both of them are still that duellist's left, which is what a Pendulum
+     * card prints blue.
+     */
+    @Test
+    public void theBlueGemIsAlwaysItsOwnersLeftHandZone()
+    {
+        for(int controller = 0; controller <= 1; controller++)
+        {
+            BoardMesh.Piece left = markIn(FieldLayout.zone(controller,
+                de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_SZONE, 0));
+            BoardMesh.Piece right = markIn(FieldLayout.zone(controller,
+                de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_SZONE, 4));
+            assertEquals(DuelTextures.PENDULUM_ZONE_LEFT, left.texture());
+            assertEquals(DuelTextures.PENDULUM_ZONE_RIGHT, right.texture());
+            // And turned to stand up for its owner, the way their cards are.
+            assertEquals(FieldLayout.turnsFor(controller, false), left.turns());
+            assertEquals(FieldLayout.turnsFor(controller, false), right.turns());
+        }
+    }
+
+    /** The mark drawn inside this zone, or null. */
+    private static BoardMesh.Piece markIn(FieldLayout.Rect zone)
+    {
+        for(BoardMesh.Piece piece : BoardMesh.pieces(MATS))
+        {
+            if(!piece.texture().equals(DuelTextures.PENDULUM_ZONE_LEFT)
+                && !piece.texture().equals(DuelTextures.PENDULUM_ZONE_RIGHT))
+            {
+                continue;
+            }
+            FieldLayout.Rect rect = piece.rect();
+            if(rect.x() >= zone.x() - 1e-4F && rect.y() >= zone.y() - 1e-4F
+                && rect.x() + rect.w() <= zone.x() + zone.w() + 1e-4F
+                && rect.y() + rect.h() <= zone.y() + zone.h() + 1e-4F)
+            {
+                return piece;
+            }
+        }
+        return null;
     }
 }

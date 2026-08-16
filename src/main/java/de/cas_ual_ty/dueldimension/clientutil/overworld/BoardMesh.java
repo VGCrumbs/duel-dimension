@@ -39,9 +39,17 @@ public final class BoardMesh
      * @param texture what to draw on it
      * @param lift    blocks above the board surface, so pieces that overlap
      *                have a settled order instead of fighting for depth
+     * @param turns   quarter turns of the texture, for a mark that belongs to
+     *                one duellist and should stand the right way up for them.
+     *                Zero for everything symmetrical, which is most of a board
      */
-    public record Piece(FieldLayout.Rect rect, Identifier texture, double lift)
+    public record Piece(FieldLayout.Rect rect, Identifier texture, double lift, int turns)
     {
+        /** A piece with nothing to orient, which is the ordinary case. */
+        public Piece(FieldLayout.Rect rect, Identifier texture, double lift)
+        {
+            this(rect, texture, lift, 0);
+        }
     }
 
     /**
@@ -116,8 +124,58 @@ public final class BoardMesh
                 pieces.add(new Piece(rect, texture, LAYER));
             }
         }
+
+        // The two backrow squares that are also Pendulum Zones, said on the mat
+        // itself. Under MR5 a scale occupies backrow 0 or 4 rather than a zone
+        // of its own, and nothing a playmat is printed with says which two
+        // those are -- so the zones say it, exactly as the flat board has since
+        // it was written.
+        //
+        // On the mat and low, because it is a label for an EMPTY zone: a card
+        // set there covers it, which is the whole point. It is not decoration
+        // over a card.
+        for(int controller = 0; controller <= 1; controller++)
+        {
+            for(int sequence = 0; sequence < BACKROW_ZONES; sequence++)
+            {
+                if(!FieldLayout.isPendulumZone(OcgConstants.LOCATION_SZONE, sequence))
+                {
+                    continue;
+                }
+                FieldLayout.Rect rect = FieldLayout.zone(controller,
+                    OcgConstants.LOCATION_SZONE, sequence);
+                if(rect == null)
+                {
+                    continue;
+                }
+                // Square, off the zone's SHORTER side, so the gem is a gem
+                // rather than an oval -- a zone is 1.1 by 1.2.
+                float side = Math.min(rect.w(), rect.h()) * PENDULUM_MARK_SCALE;
+                // Sequence 0 is that duellist's LEFT zone and takes the blue
+                // gem; 4 is their right and takes the red. The opponent's half
+                // is turned with the mat, so their left is the far side of the
+                // table -- which is what a playmat across a table looks like.
+                pieces.add(new Piece(
+                    new FieldLayout.Rect(rect.x() + (rect.w() - side) / 2F,
+                        rect.y() + (rect.h() - side) / 2F, side, side),
+                    sequence == 0 ? DuelTextures.PENDULUM_ZONE_LEFT
+                        : DuelTextures.PENDULUM_ZONE_RIGHT,
+                    LAYER, FieldLayout.turnsFor(controller, false)));
+            }
+        }
         return pieces;
     }
+
+    /** How many Spell/Trap squares a duellist has in the row itself. */
+    private static final int BACKROW_ZONES = 5;
+
+    /**
+     * How much of its zone the pendulum mark fills.
+     * <p>
+     * The flat board's 0.72, so the gem is the same size relative to its square
+     * in both presentations of the same mat.
+     */
+    private static final float PENDULUM_MARK_SCALE = 0.72F;
 
     /**
      * The zone squares that light up: the ones the engine is currently offering
