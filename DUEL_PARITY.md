@@ -21,104 +21,92 @@ The file:line references drift. Treat them as where to start looking.
 
 ---
 
-## Blocks play
+## What has been closed
 
-Two, and both can strand a player who has done nothing wrong.
+Everything the first pass of this document listed as a gap has been worked
+through. The reasoning is kept — a gap that was closed once is a gap that can
+reopen, and the argument for why each mattered is the thing worth having.
 
-### Multi-select on a pile is blind, and can wedge
+### The two blockers
 
-A prompt that wants several cards reaches the board whenever **one** candidate
-is outside a pile — the escape hatch is `allHidden`, which needs *every* option
-to be in one. On the board, clicking a graveyard toggles an option chosen by
-engine order with nothing drawn to say which card it was.
+**Multi-select on a pile** was blind and could wedge. A prompt wanting several
+cards reaches the board whenever one candidate is outside a stack, and a click
+on a graveyard toggled an option chosen by engine order with nothing drawn to
+say which card it was. `DuelSelection.pick` returns the first *unchosen* option
+and `toggle` refuses additions at the maximum, so with three candidates and a
+maximum of two there was no way to reach `{2,3}` from `{1,2}` — a third click
+did nothing and the taken card could not be given back by clicking the stack.
+Cancelling was the only way out, and the pile-browse escape was gated on the
+prompt having *no* options, so the one stack you could not read was the one
+being asked about. Piles now go through the card list on every click, not only
+the ones that are the whole answer. `answersOutright` already refused every
+pile, so single-select is unchanged.
 
-It can also strand you. `DuelSelection.pick` returns the first *unchosen*
-option and `toggle` refuses additions once the maximum is reached, so with
-three candidates and a maximum of two, a third click is a silent no-op and an
-already-chosen pile card cannot be deselected by clicking that pile. There is
-no way to reach `{2,3}` from `{1,2}` except by cancelling — and the pile-browse
-escape at `BoardPointerScreen:566` is gated on the prompt having *no* options,
-so the one pile you may not read is the one being asked about.
+**The shared Extra Monster Zone** resolved to a different zone in each view. One
+physical square carries both controllers' zone, crossed over by the mirror:
+controller 0's sequence 5 is controller 1's sequence 6. Occupancy cannot break
+that tie — the square is empty in both readings until somebody summons into it
+— and falling back to absolute controller order meant a duellist could point at
+a square and have the summon land in the other half of the engine's numbering.
+`BoardPicker.at` now takes the same weighting the screen hands `hitAt`: offered
+outranks occupied outranks bare. Tested in `BoardPickerZoneTest`, which is
+possible because `BoardPicker` takes a landing point rather than a camera.
 
-- screen: `EngineDuelScreen:1137`, `:1249`, `:1365` — every pile click goes through the picker
-- board: `BoardPointerScreen:584`, `CrosshairAction:96`, `DuelSelection:94`
+### The disagreements
 
-### The shared Extra Monster Zone resolves to a different zone in each view
-
-The two logical EMZ entries overlap on one square. The screen breaks the tie by
-asking the prompt — `priority = optionsFor(candidate).isEmpty() ? 0 : 4`, so
-the hit the engine is actually offering wins at either seat. `BoardPicker.at`
-breaks it by occupancy and then by **absolute controller order**, never
-consulting the prompt. Same square, same click, different zone.
-
-- screen: `EngineDuelScreen:1682`
-- board: `BoardPicker:91`, `FieldLayout:126`
-
----
-
-## Where the two disagree
-
-Not missing features — the same input understood differently. This is the
-class that produces "it worked in 2D".
-
-| | screen | board |
+| | what it was | what it is |
 |---|---|---|
-| **A running multi-selection** | its own `selected` set (`EngineDuelScreen:1365`) | the static `DuelSelection` (`BoardPointerScreen:584`) |
-| **Which snapshot answers a click** | one source for drawing and contents (`EngineDuelScreen:1797`) | hit-tests `boardToDraw()` (`:428`), reads contents from `DuelClientState.board` (`:1157`) |
-| **A chain window on one click** | fires immediately (`EngineDuelScreen:1712`) | refuses, and asks (`PromptOptions:122`) |
-| **A pile picker's heading** | the stack's name (`EngineDuelScreen:1161`) | the first card's name (`BoardPointerScreen:1119`, `:517`) |
-| **A PLACES prompt** | lights every legal zone (`BoardRenderer:1252`) | lights at most the one under the crosshair (`OverworldBoardRenderer:106`) |
+| **A running multi-selection** | the screen's own `selected` set | one `DuelSelection`, read by both |
+| **Which snapshot answers a click** | hit-tested `boardToDraw()`, read `DuelClientState.board` | one board, the one being drawn |
+| **A chain window on one click** | the screen fired immediately | both refuse and ask, matching EDOPro |
+| **A pile picker's heading** | the first card's name | the stack's name |
+| **A PLACES prompt** | the board lit at most the square under the crosshair | every offered zone, green over blue for one already named |
 
-Two notes on that table.
-
-**Switching views mid-prompt loses your selection**, because the two keep
-separate running answers and neither reads the other.
-
-**The chain window is the one row where the screen is the wrong one.** Chain
-options carry no command, so the screen's `actions.size() == 1` shortcut fires
-on the first click — which sets off a trap with no confirmation. The board
-refuses, matching EDOPro. Fixing that means changing the screen, not the board.
-
----
-
-## Missing on the board
+The chain window was the one row where the *screen* was wrong, so the screen
+changed: chain options carry no command, and its `actions.size() == 1` shortcut
+set off a trap on the first click with no confirmation.
 
 ### Facts a duellist needs
 
-**Done** — all four now draw on the board (`OverworldBoardRenderer.drawRow`,
-`drawPile`, `drawNumber`). Kept here because the reasoning is worth having.
-
-- **Negated / disabled marker.** ~~Nothing draws it on the board.~~ Now over the zone, untinted and unturned, as on the screen (`BoardRenderer:1286`). A negated monster looks exactly like a working one, which is the most expensive thing a board can be wrong about.
-- **Xyz material counts.** ~~`slot.overlays()` had no reader.~~ Now a number on the card, from the digit atlas.
-- **Pendulum scales.** ~~`hasScale()` had no caller.~~ Now in the zone, blue on the left and red on the right, showing that zone's own scale — the two differ only when an effect has moved one, which is exactly when it matters.
-- **Deck / graveyard / banished counts.** ~~Stack thickness only, and thickness saturates at 45 cards (`PileMesh:41`), so 45 and 60 looked identical.~~ Now a number on top of the stack.
-
-The board spells numbers out of `DuelTextures.DIGITS` rather than the font: everything a
+All four draw on the board (`OverworldBoardRenderer.drawRow`, `drawPile`,
+`drawNumber`), out of `DuelTextures.DIGITS` rather than the font — everything a
 duellist reads off this board is a PNG, and world-space glyphs would be the one
 thing on the mat that had to turn to face somebody.
 
-### Things that happen without being shown
+- **Negated / disabled marker**, over the zone, untinted and unturned. A negated monster looking exactly like a working one is the most expensive thing a board can be wrong about.
+- **Xyz material counts**, from the digit atlas.
+- **Pendulum scales**, blue on the left and red on the right, each zone's own — the two differ only when an effect has moved one, which is exactly when it matters.
+- **Deck / graveyard / banished counts.** Thickness saturates at 45 cards (`PileMesh:41`), so 45 and 60 stood equally tall.
 
-The animation queue is shared; the board simply does not consume most of it.
-`DuelAnimations` exposes only `shattersInFlight` and `attacksInFlight`, so
-everything else is queued, waited on, and never drawn.
+### Things that happened without being shown
 
-- **Cards never move between zones.** `renderMoves` (`DuelAnimations:1036`) has one caller, the screen. On the board a card is in its old zone and then in its new one.
-- **Face-down cards do not turn over.** `renderFlips` (`:858`) likewise. The board holds the old face for the event's duration and then swaps the texture instantly.
-- **Reveal.** `renderReveals` (`:211`) — a revealed hand is shown to the screen and to nobody at a board.
-- **Coin flips and dice rolls.** `renderTosses` (`:907`). The board plays the *sound* (`:440`) and never shows the result, which is game information rather than decoration.
-- **Chain and become-target markers.** `renderOverlays` (`:1009`); `DuelTextures.CHAIN` and `TARGET` are unreferenced under `overworld/`.
-- **Empty legal placement zones are not lit.** `drawRow` skips empty squares before any highlight is considered (`OverworldBoardRenderer:880`).
+The animation queue is shared and paced by one loop; the board simply consumed
+two of its kinds. `DuelAnimations` now exposes the rest in the shape
+`ShatterView` and `AttackView` established — a view record and an `inFlight`
+list, because the board's geometry has nothing in common with that class's
+projected quads and only the timing is shared.
+
+- **Cards move between zones**, arcing as a carried thing does, and coming in over their owner's edge when they start off the mat.
+- **Face-down cards turn over**, narrowing to nothing and opening again with the face swapped at the midpoint. `CardRenderer.submitAt` is the split that lets the quad narrow about its own centre while a settled card is drawn by exactly the same code.
+- **Chain and become-target markers** stand over the cards they concern, the way `drawing.cpp` lays `tChain` and `tChainTarget`. Both textures had been sitting unreferenced under `overworld/`.
+- **Coin flips and dice rolls** are announced in the HUD — the coin out of the two-frame coin sheet, a die as its number out of the digit sheet. The board used to play the *sound* and show nothing, and an effect that turns on a flip cannot be followed by somebody who never saw how it landed.
+- **Reveals** likewise, as a row under the instruments.
+- **Empty legal placement zones are lit**, which is the same fix as the PLACES row above: `drawRow` skips empty squares before any highlight is considered, so the lighting had to happen outside it.
+
+Tosses and reveals are drawn by `DuelHud` rather than on the mat because they
+are announcements rather than objects, and drawing them there means they appear
+whether the cursor is up or the camera is the player's — the same reason the
+outcome banner is drawn from there.
 
 ### Actions
 
-- **"View Deck" is a dead row.** The board sends the packet and closes itself (`BoardPointerScreen:703`) on the reasoning that the list is "a screen of its own" — but only `EngineDuelScreen:285` reads `deckView`, so nothing opens.
-- **Hold-to-pass does not work.** The screen polls the held button each tick (`:235`) and waves a whole chain through. The board passes one window per press — *and its caption says `[hold right-click to pass]` anyway*, which is a promise it does not keep.
-- **The pile viewer cannot scroll**, and the card grid has no row cap: `CardChooser.layout:123` derives rows from the count with no ceiling and nothing under `overworld/` defines `mouseScrolled`. A 40-card graveyard runs off the bottom of the screen, unreachable.
-- **Multi-zone placement** is refused (`PromptOptions:169` accepts PLACES only at `maxSelect <= 1`) and pulls the screen over the board.
-- **Chain preference** and **music volume / mute** have no control on the board; both live in the screen's sidebar (`EngineDuelScreen:379`, `:391`).
-- **The opponent's Extra Deck** opens on the screen and not the board (`CardChooser:51` allows EXTRA for controller 0 only).
-- **Cancel and Confirm are drawn under the chooser's dim** — `CardChooser.draw` fills the window at `:230` after `DuelHud` has drawn them.
+- **"View Deck"** sent its packet and closed the pointer, and the only reader of the server's answer was the duel screen's tick. The row cost a duellist their cursor and showed them nothing. It waits now, and opens the list in the pile viewer a graveyard opens in.
+- **Hold-to-pass** works, which the caption had been promising. Only windows the core will accept an empty answer to, on the screen's rule.
+- **The pile viewer scrolls.** `CardChooser.layout` derived rows from the count with no ceiling, so a forty-card graveyard laid five rows out in the room for two. Rows are capped, the wheel moves the band, and the header says which part of the pile is on screen.
+- **Multi-zone placement** is answered at the board. Every option is a square on the mat, which is the one thing a world board is better at; `PLACES` passes `boardCanAnswer` at any size and `wantsSeveral` counts it alongside `MULTI`, as the screen has always done.
+- **Chain preference, mute and volume** are rows on the deck's menu, next to Surrender, which is where EDOPro keeps the chain toggles. The preference also stopped being an instance field of the screen — it reset to `DEFAULT` on every rebuild while the server went on holding what had last been sent.
+- **The opponent's Extra Deck** opens. Not because it is public: `BoardState.playerBoard` already conceals it, sending backs for everything except the cards the core marks public — the face-up Pendulum monsters, which are exactly the ones an opponent has to play around.
+- **Cancel and Confirm** are drawn after the panels. The grid dims the window on its way in, and the HUD used to draw them first, so the only way out of a picker sat behind the dim that opening it had put there.
 
 ---
 
@@ -151,17 +139,15 @@ otherwise. They are listed so the argument is not had twice.
 - **No phase transition while the camera is held** — documented, and about the camera rather than the presentation.
 - **Sort, counter amounts and declare-a-card have no board UI** and delegate to the screen deliberately, with a working path.
 - **The duel log is off in both** by an explicit early return.
-- **`DuelAnimations.clear()` does not empty `reveals`** — real, but it can only affect the screen, since the board never draws them.
+- **`DuelAnimations.clear()` does not empty `reveals`** — real, and now reachable from the board as well, so `revealsInFlight` prunes the queue itself rather than relying on the one presentation that used to read it.
 
 ---
 
-## If these are worked through
+## What is left
 
-The two blockers first: they can strand a player mid-duel, which is worse than
-anything missing. Then the disagreements, because that is the class that
-produces a bug report which says only "it worked in 2D" — the reporter cannot
-see the divergence, only its result. The missing facts (negated, overlays,
-scales, pile counts) are next: they are small, and each is a thing a player is
-expected to play around and cannot currently see. The animation gaps are the
-largest body of work and the least urgent, since nothing is hidden by them,
-only unexplained.
+Two things, both listed above as missing in **both** presentations rather than
+in one: counters on cards, which needs `QUERY_COUNTERS` requested and a field on
+`BoardSnapshot.Slot` before either view can draw anything, and the duel log,
+which is switched off in the screen by an explicit early return.
+
+Neither is a parity gap. They are the same in both places, which is the point.
