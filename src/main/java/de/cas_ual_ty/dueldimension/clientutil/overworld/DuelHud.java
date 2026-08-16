@@ -492,8 +492,27 @@ public final class DuelHud
     }
 
     /** The revealed row's card width, and the gap between two of them. */
-    private static final int REVEAL_CARD_W = 44;
+    /**
+     * The revealed row's card width, and the gap between two of them.
+     * <p>
+     * The duel screen's own 68, which is both the size a card wants to be read
+     * at and one less thing that differs between the two presentations of the
+     * same event.
+     */
+    private static final int REVEAL_CARD_W = 68;
     private static final int REVEAL_GAP = 4;
+
+    /**
+     * How small a revealed card may be squeezed before the row is allowed to
+     * be wider than the window.
+     * <p>
+     * A reveal has no fixed size -- an effect can show a whole hand -- and a
+     * row laid out at full size runs off both edges once there are eight of
+     * them at a gui scale of three. Shrinking is the lesser loss: a small card
+     * can still be recognised, and one drawn past the edge cannot be seen at
+     * all.
+     */
+    private static final int REVEAL_CARD_MIN_W = 26;
 
     /**
      * The cards somebody has just been made to show.
@@ -502,9 +521,11 @@ public final class DuelHud
      * duel screen only -- so the same event that everybody was entitled to see
      * was seen by whoever happened not to be standing at a board.
      * <p>
-     * Under the instruments rather than over the middle of the window: at a
-     * board the middle of the window is the board, and a banner across it hides
-     * the thing the reveal is usually about.
+     * In the middle of the window, at the size the duel screen shows one. A
+     * reveal is a thing a duellist has to READ -- it is usually the reason the
+     * next decision is what it is -- and it lasts a couple of seconds, so it
+     * gets the middle of the window for as long as it is up. The board it
+     * briefly covers is still there afterwards; the card is not.
      */
     private static void drawReveals(GuiGraphicsExtractor extractor, Font font, int screenW,
         int screenH)
@@ -515,25 +536,48 @@ public final class DuelHud
         {
             return;
         }
-        int cardH = Math.round(REVEAL_CARD_W / DuelTextures.CARD_ASPECT);
-        int pitch = REVEAL_CARD_W + REVEAL_GAP;
+        // Full size unless the row would not fit, and then as close to it as
+        // the window allows. Measured off the count rather than assumed: an
+        // effect that reveals a hand decides how many of these there are.
+        int room = screenW - REVEAL_MARGIN * 2;
+        int cardW = REVEAL_CARD_W;
+        if(shown.size() * (cardW + REVEAL_GAP) - REVEAL_GAP > room)
+        {
+            cardW = Math.max(REVEAL_CARD_MIN_W,
+                (room - (shown.size() - 1) * REVEAL_GAP) / shown.size());
+        }
+        int cardH = Math.round(cardW / DuelTextures.CARD_ASPECT);
+        int pitch = cardW + REVEAL_GAP;
         int width = shown.size() * pitch - REVEAL_GAP;
         int left = (screenW - width) / 2;
-        int top = below(screenW, screenH) + 14;
+
+        // The PANEL is what gets centred, not the cards: the caption is part of
+        // the thing being placed, and centring the row alone would leave the
+        // block sitting low by the height of its own heading.
+        int panelH = cardH + REVEAL_CAPTION_H + REVEAL_PAD;
+        int panelTop = (screenH - panelH) / 2;
+        int top = panelTop + REVEAL_CAPTION_H;
 
         String caption = shown.size() == 1 ? "Revealed"
             : "Revealed " + shown.size() + " cards";
-        NineSlice.draw(extractor, HubTextures.PANEL, left - 6, top - 15, width + 12, cardH + 21);
-        extractor.text(font, caption, (screenW - font.width(caption)) / 2, top - 11,
+        NineSlice.draw(extractor, HubTextures.PANEL, left - 6, panelTop, width + 12, panelH);
+        extractor.text(font, caption, (screenW - font.width(caption)) / 2, panelTop + 4,
             0xFFF4D089, true);
 
         for(int i = 0; i < shown.size(); i++)
         {
             de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.RevealView card = shown.get(i);
-            DdBlitUtil.blit(extractor, card.texture(), left + i * pitch, top, REVEAL_CARD_W,
+            DdBlitUtil.blit(extractor, card.texture(), left + i * pitch, top, cardW,
                 cardH, card.u0(), card.v0(), card.u1(), card.v1(), DdBlitUtil.NO_TINT);
         }
     }
+
+    /** Clear of both window edges, so a wide row is shrunk rather than clipped. */
+    private static final int REVEAL_MARGIN = 12;
+    /** The heading strip above the cards. */
+    private static final int REVEAL_CAPTION_H = 15;
+    /** And the panel's own breathing room under them. */
+    private static final int REVEAL_PAD = 6;
 
     /**
      * Who won, over the board that decided it.

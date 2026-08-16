@@ -1343,6 +1343,21 @@ public final class OverworldBoardRenderer
         {
             return;
         }
+        // Out of the way entirely while you are looking across the table.
+        //
+        // Yours are the NEAR ones. A board is stood at rather than looked down
+        // on, so your own monsters are the things between your eye and the far
+        // half -- and the far half is where the opponent's zones are, which are
+        // the ones you have to read and click on. Thinning them was not enough:
+        // half of a Blue-Eyes is still a Blue-Eyes in front of the card you are
+        // trying to point at.
+        //
+        // Only yours, because the asymmetry is real rather than a preference.
+        // Their monsters stand on the far side and block nothing of yours.
+        if(asked == 0 && lookingAcross())
+        {
+            return;
+        }
         SpriteLayer body = MonsterSprites.layerFor(slot.code(), slot.defence());
         if(body == null)
         {
@@ -1370,10 +1385,12 @@ public final class OverworldBoardRenderer
      * How solid a monster is drawn, which is not the same on both sides of the
      * board.
      * <p>
-     * YOUR OWN are always half there. They stand between you and your own back
-     * row, and you already know what you played -- a duellist needs to SEE their
-     * spell and trap line far more than they need to be reminded of the monster
-     * they summoned a moment ago.
+     * YOUR OWN are half there whenever they are drawn at all. They stand
+     * between you and your own back row, and you already know what you played
+     * -- a duellist needs to SEE their spell and trap line far more than they
+     * need to be reminded of the monster they summoned a moment ago. They are
+     * not drawn at all while you are looking at the opponent's half; see
+     * {@link #drawHologram}, which never reaches this.
      * <p>
      * THEIRS are solid, because those are the ones worth looking at. But they
      * stand between you and the opponent's back row as well, and that row is
@@ -1393,6 +1410,30 @@ public final class OverworldBoardRenderer
         boolean atTheirBackRow = looking != null && looking.controller() == 1
             && looking.location() == OcgConstants.LOCATION_SZONE;
         return atTheirBackRow || ClientDuelField.shiftHeld() ? HOLOGRAM_FAINT : 0xFFFFFFFF;
+    }
+
+    /**
+     * Is the duellist looking at the opponent's half of the board?
+     * <p>
+     * Any square of it, not only the back row: a graveyard, a deck and a
+     * monster zone are all things over there that a near monster can stand in
+     * front of, and a rule that only cleared the view for one of them would
+     * leave the others obstructed for no reason a player could work out.
+     * <p>
+     * Read once into a local. The target is recomputed on the client tick and
+     * this runs on the render thread, so asking twice is asking two questions.
+     * <p>
+     * Answers to the cursor as well as to the crosshair, because
+     * {@link ClientDuelTargeting} is set by both -- {@code tick} follows the
+     * eye while no screen is open and {@code point} follows the freed pointer
+     * while one is. A duellist who has the cursor up is pointing at the
+     * opponent's board just as deliberately as one who is aiming at it.
+     */
+    private static boolean lookingAcross()
+    {
+        de.cas_ual_ty.dueldimension.clientutil.BoardTarget looking =
+            ClientDuelTargeting.looking();
+        return looking != null && looking.controller() == 1;
     }
 
     /** Half there: enough to read the monster, enough to read through it. */
