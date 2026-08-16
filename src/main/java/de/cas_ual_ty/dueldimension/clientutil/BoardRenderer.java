@@ -44,14 +44,9 @@ public class BoardRenderer
     /** Cards are small, so a light subdivision removes the affine smear. */
     private static final int CARD_STEPS = 4;
 
-    /**
-     * A card's own size on the table, from materials.cpp:28
-     * {@code SetS3DVertex(vCardFront, -0.35f, -0.5f, 0.35f, 0.5f, ...)} - so
-     * 0.7 x 1.0 field units, drawn centred in its 1.1 x 1.2 zone. Filling the
-     * whole zone instead is what made every card look stretched wide.
-     */
-    private static final float CARD_W = 0.7F;
-    private static final float CARD_H = 1.0F;
+    /** Both from {@link FieldLayout}, which is where the one copy lives. */
+    private static final float CARD_W = FieldLayout.CARD_W;
+    private static final float CARD_H = FieldLayout.CARD_H;
 
     /**
      * Per-card lift of a pile's top face, in field units. client_field.cpp
@@ -206,7 +201,7 @@ public class BoardRenderer
      */
     private static boolean isPendulumZone(int location, int sequence)
     {
-        return location == OcgConstants.LOCATION_SZONE && (sequence == 0 || sequence == 4);
+        return FieldLayout.isPendulumZone(location, sequence);
     }
 
     /**
@@ -235,7 +230,8 @@ public class BoardRenderer
         // Along the bottom of the zone, on the side the gem sits.
         float y = corners.maxY() - 9;
         float x = leftZone ? corners.minX() + 2 : corners.maxX() - 2 - font.width(scale);
-        submitText(poseStack, collector, x, y, scale, leftZone ? 0xFF5698E0 : 0xFFD65852);
+        submitText(poseStack, collector, x, y, scale,
+            leftZone ? DuelTextures.PENDULUM_BLUE : DuelTextures.PENDULUM_RED);
     }
 
     /** A drawn slot; piles use sequence -1. */
@@ -399,7 +395,7 @@ public class BoardRenderer
      */
     private static int turnsFor(int controller, boolean lying)
     {
-        return (controller == 1 ? 2 : 0) + (lying ? 1 : 0);
+        return FieldLayout.turnsFor(controller, lying);
     }
 
     public List<Hit> hits()
@@ -772,13 +768,11 @@ public class BoardRenderer
         int cardTurns = 0;
         if(slot.present())
         {
-            // Draw the card at its own proportions, centred in the zone, rather
-            // than stretched to fill it.
+            // Its own proportions, centred in the zone, rather than stretched
+            // to fill it -- FieldLayout's rule, which the world board draws
+            // from too.
             boolean lying = slot.defence();
-            float drawW = lying ? CARD_H : CARD_W;
-            float drawH = lying ? CARD_W : CARD_H;
-            cardRect = new FieldLayout.Rect(
-                rect.x() + (rect.w() - drawW) / 2F, rect.y() + (rect.h() - drawH) / 2F, drawW, drawH);
+            cardRect = FieldLayout.cardIn(rect, lying);
             cardTurns = turnsFor(controller, lying);
         }
         fieldPlans.add(new ZonePlan(rect, hit, slot, cardRect, cardTurns));
@@ -882,8 +876,7 @@ public class BoardRenderer
     private void drawCardAtCorners(PoseStack poseStack, SubmitNodeCollector collector,
         Identifier texture, FieldQuad.Corners corners, int turns)
     {
-        boolean edoproArt = texture.equals(DuelTextures.COVER)
-            || texture.equals(DuelTextures.COVER_OPPONENT) || texture.equals(DuelTextures.UNKNOWN);
+        boolean edoproArt = CardFaces.isCardShaped(texture);
         float u0 = edoproArt ? 0F : DuelTextures.CARD_U0;
         float v0 = edoproArt ? 0F : DuelTextures.CARD_V0;
         float u1 = edoproArt ? 1F : DuelTextures.CARD_U1;
@@ -1207,8 +1200,7 @@ public class BoardRenderer
         BoardSnapshot.Slot slot, FieldQuad.Corners corners, int controller)
     {
         Identifier texture = textureFor(slot, true, controller);
-        boolean edoproArt = texture.equals(DuelTextures.COVER)
-            || texture.equals(DuelTextures.COVER_OPPONENT) || texture.equals(DuelTextures.UNKNOWN);
+        boolean edoproArt = CardFaces.isCardShaped(texture);
         float u0 = edoproArt ? 0F : DuelTextures.CARD_U0;
         float v0 = edoproArt ? 0F : DuelTextures.CARD_V0;
         float u1 = edoproArt ? 1F : DuelTextures.CARD_U1;
@@ -1323,8 +1315,7 @@ public class BoardRenderer
     private void drawCardArt(PoseStack poseStack, SubmitNodeCollector collector,
         Identifier texture, FieldLayout.Rect rect, int turns)
     {
-        boolean edoproArt = texture.equals(DuelTextures.COVER) || texture.equals(DuelTextures.COVER_OPPONENT)
-            || texture.equals(DuelTextures.UNKNOWN);
+        boolean edoproArt = CardFaces.isCardShaped(texture);
         if(edoproArt)
         {
             FieldQuad.drawProjected(poseStack, collector, texture, projection, rect, CARD_STEPS, turns,

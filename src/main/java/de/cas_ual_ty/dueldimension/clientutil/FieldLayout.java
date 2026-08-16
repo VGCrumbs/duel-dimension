@@ -82,7 +82,79 @@ public final class FieldLayout
     private static final float FRAME_MIN_Y = FIELD_MIN_Y - 1.0F;
     private static final float FRAME_MAX_Y = FIELD_MAX_Y + 1.0F;
 
-    public static final float CARD_ASPECT = CELL_W / CELL_H;
+    /**
+     * A ZONE's proportions, which are not a card's.
+     * <p>
+     * Renamed off CARD_ASPECT the moment the card's own size moved in beside
+     * it: CARD_W / CARD_H is 0.7, this is 0.917, and a trio where the first two
+     * do not produce the third is a trap for whoever reads it next.
+     */
+    public static final float ZONE_ASPECT = CELL_W / CELL_H;
+
+    /**
+     * A card's own size on the table, from materials.cpp:28
+     * {@code SetS3DVertex(vCardFront, -0.35f, -0.5f, 0.35f, 0.5f, ...)} -- so
+     * 0.7 x 1.0 field units, drawn centred in its 1.1 x 1.2 zone. Filling the
+     * whole zone instead is what made every card look stretched wide.
+     * <p>
+     * Here rather than in either presentation because both draw the same card
+     * on the same mat in the same units, and the two copies of this number were
+     * a card that could end up a different size depending on which duel you
+     * were looking at -- including for the picker and the crosshair, which
+     * hit-test against the rectangle it produces.
+     */
+    public static final float CARD_W = 0.7F;
+    public static final float CARD_H = 1.0F;
+
+    /**
+     * A card's rectangle inside a zone: its own proportions, centred, and
+     * turned a quarter when it is lying in defence.
+     * <p>
+     * The centring is the rule, not the decoration. Both files that used to
+     * carry a copy of it also carried a comment saying that filling the zone
+     * instead is a bug which already happened once.
+     */
+    public static Rect cardIn(Rect zone, boolean defence)
+    {
+        float drawW = defence ? CARD_H : CARD_W;
+        float drawH = defence ? CARD_W : CARD_H;
+        return new Rect(zone.x() + (zone.w() - drawW) / 2F,
+            zone.y() + (zone.h() - drawH) / 2F, drawW, drawH);
+    }
+
+    /**
+     * How many quarter turns a card of this controller's is drawn at.
+     * <p>
+     * client_field.cpp: {@code selfATK {0,0,0}} against {@code oppoATK
+     * {0,0,PI}} -- the opponent's cards face the opponent. A defending monster
+     * adds the quarter turn on top of that ({@code selfDEF -HALF_PI},
+     * {@code oppoDEF +HALF_PI}).
+     * <p>
+     * The controller here is the board's ABSOLUTE half, not a seat-relative
+     * one: the mirroring has already happened in {@link #zone}, and both
+     * presentations translate the seat before they get this far.
+     */
+    public static int turnsFor(int controller, boolean defence)
+    {
+        return (controller == 1 ? 2 : 0) + (defence ? 1 : 0);
+    }
+
+    /**
+     * Whether this Spell/Trap zone is also a Pendulum Zone.
+     * <p>
+     * Zones 0 and 4, the ends of the backrow. That is where ocgcore puts a
+     * scale whenever DUEL_PZONE is set without DUEL_SEPARATE_PZONE, which is
+     * every duel this mod runs (MR5). The separate zones {@link #selfZone}
+     * still describes at sequence 6 and 7 are the MR3 arrangement and stay
+     * empty here, which is why they are not drawn.
+     * <p>
+     * A rules fact rather than a layout preference, which is why it lives with
+     * the zone table and not in either thing that draws a gem.
+     */
+    public static boolean isPendulumZone(int location, int sequence)
+    {
+        return location == OcgConstants.LOCATION_SZONE && (sequence == 0 || sequence == 4);
+    }
 
     /**
      * One player's playmat: the five columns by two rows that hold the monster

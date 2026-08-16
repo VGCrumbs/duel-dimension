@@ -35,7 +35,7 @@ public final class CardRenderer
      */
     public static int turnsFor(int controller, boolean defence)
     {
-        return (controller == 1 ? 2 : 0) + (defence ? 1 : 0);
+        return FieldLayout.turnsFor(controller, defence);
     }
 
     /**

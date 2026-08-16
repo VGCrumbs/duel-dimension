@@ -892,8 +892,8 @@ public class DuelAnimations
     }
 
     /** The card quad and subdivision a flip uses, matching the board's. */
-    private static final float FLIP_CARD_W = 0.7F;
-    private static final float FLIP_CARD_H = 1.0F;
+    private static final float FLIP_CARD_W = FieldLayout.CARD_W;
+    private static final float FLIP_CARD_H = FieldLayout.CARD_H;
     private static final int FLIP_STEPS = 4;
 
     /**
@@ -1350,9 +1350,7 @@ public class DuelAnimations
      */
     private static boolean isEdoproArt(Identifier texture)
     {
-        return texture.equals(DuelTextures.COVER)
-            || texture.equals(DuelTextures.COVER_OPPONENT)
-            || texture.equals(DuelTextures.UNKNOWN);
+        return CardFaces.isCardShaped(texture);
     }
 
     private static Identifier artFor(int code)
@@ -1430,9 +1428,9 @@ public class DuelAnimations
             sequence);
     }
 
-    /** The card quad from materials.cpp, matching BoardRenderer's. */
-    private static final float CARD_W = 0.7F;
-    private static final float CARD_H = 1.0F;
+    /** The card quad from materials.cpp, which FieldLayout owns the one copy of. */
+    private static final float CARD_W = FieldLayout.CARD_W;
+    private static final float CARD_H = FieldLayout.CARD_H;
 
     /** Ease-out, so a card decelerates into its zone. */
     /**

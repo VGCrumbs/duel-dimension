@@ -49,15 +49,14 @@ public final class DdBlitUtil
     /**
      * The three images that are already card-shaped and must be drawn whole.
      * <p>
-     * Same test {@code DuelAnimations.isEdoproArt} makes for the duel field.
-     * Kept as a method rather than a Set so it stays three reference compares
-     * on a path that runs for every card drawn.
+     * The javadoc here used to say "same test DuelAnimations.isEdoproArt makes
+     * for the duel field", which was true and was the problem: three files
+     * agreed in prose about a list that only one of them could be changed in.
+     * {@link CardFaces#isCardShaped} is that list.
      */
     private static boolean isPlaceholder(Identifier texture)
     {
-        return texture.equals(DuelTextures.COVER)
-            || texture.equals(DuelTextures.COVER_OPPONENT)
-            || texture.equals(DuelTextures.UNKNOWN);
+        return CardFaces.isCardShaped(texture);
     }
 
     /**

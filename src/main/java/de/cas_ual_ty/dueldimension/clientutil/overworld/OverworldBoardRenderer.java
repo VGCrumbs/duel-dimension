@@ -1211,8 +1211,7 @@ public final class OverworldBoardRenderer
             //
             // Nudged toward the outer edge rather than centred, so it does not
             // sit on top of the card's own art the way a material count does.
-            if(slot.hasScale() && location == OcgConstants.LOCATION_SZONE
-                && (sequence == 0 || sequence == 4))
+            if(slot.hasScale() && FieldLayout.isPendulumZone(location, sequence))
             {
                 boolean leftZone = sequence == 0;
                 FieldLayout.Rect face = CardMesh.placement(zone, slot.defence());
@@ -1221,7 +1220,7 @@ public final class OverworldBoardRenderer
                     leftZone ? slot.leftScale() : slot.rightScale(),
                     face.h() * SCALE_SCALE,
                     (leftZone ? -1F : 1F) * face.w() * 0.28F,
-                    fade(leftZone ? 0xFF5698E0 : 0xFFD65852));
+                    fade(leftZone ? DuelTextures.PENDULUM_BLUE : DuelTextures.PENDULUM_RED));
             }
 
             de.cas_ual_ty.dueldimension.clientutil.BoardTarget target =

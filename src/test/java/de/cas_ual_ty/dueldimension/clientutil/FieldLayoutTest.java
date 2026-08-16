@@ -123,4 +123,80 @@ class FieldLayoutTest
             }
         }
     }
+
+    // ---- the rules both presentations now share ----
+    //
+    // These moved into FieldLayout because each was written down twice, once
+    // per duel, and two copies of a rule is a rule that can disagree with
+    // itself. Pinned here because this is the file that can be tested with no
+    // client behind it, which is the whole reason they came here rather than
+    // to either thing that draws.
+
+    @Test
+    void aCardIsItsOwnSizeAndCentredInItsZone()
+    {
+        FieldLayout.Rect zone = FieldLayout.zone(0, OcgConstants.LOCATION_MZONE, 2);
+        FieldLayout.Rect card = FieldLayout.cardIn(zone, false);
+        assertEquals(FieldLayout.CARD_W, card.w(), EPS);
+        assertEquals(FieldLayout.CARD_H, card.h(), EPS);
+        // Centred: the margin is equal on both sides, which is the rule two
+        // separate comments recorded as "filling the zone is what made every
+        // card look stretched wide".
+        assertEquals(zone.x() + zone.w() / 2F, card.x() + card.w() / 2F, EPS);
+        assertEquals(zone.y() + zone.h() / 2F, card.y() + card.h() / 2F, EPS);
+        assertTrue(card.w() < zone.w(), "a card should not fill its zone");
+    }
+
+    @Test
+    void aDefendingMonsterLiesOnItsSideAndStaysCentred()
+    {
+        FieldLayout.Rect zone = FieldLayout.zone(0, OcgConstants.LOCATION_MZONE, 2);
+        FieldLayout.Rect lying = FieldLayout.cardIn(zone, true);
+        assertEquals(FieldLayout.CARD_H, lying.w(), EPS);
+        assertEquals(FieldLayout.CARD_W, lying.h(), EPS);
+        assertEquals(zone.x() + zone.w() / 2F, lying.x() + lying.w() / 2F, EPS);
+        assertEquals(zone.y() + zone.h() / 2F, lying.y() + lying.h() / 2F, EPS);
+    }
+
+    @Test
+    void theZoneAspectIsNotTheCardAspect()
+    {
+        // The reason ZONE_ASPECT was renamed: a reader who wired CARD_W and
+        // CARD_H to a constant called CARD_ASPECT would have got neither.
+        assertTrue(Math.abs(FieldLayout.ZONE_ASPECT - FieldLayout.CARD_W / FieldLayout.CARD_H) > 0.1F,
+            "the two aspects are close enough to be confused again");
+    }
+
+    @Test
+    void theOpponentsCardsFaceTheOpponent()
+    {
+        // client_field.cpp: selfATK {0,0,0} against oppoATK {0,0,PI}, and a
+        // defending monster adds a quarter on top of that.
+        assertEquals(0, FieldLayout.turnsFor(0, false));
+        assertEquals(1, FieldLayout.turnsFor(0, true));
+        assertEquals(2, FieldLayout.turnsFor(1, false));
+        assertEquals(3, FieldLayout.turnsFor(1, true));
+    }
+
+    @Test
+    void onlyTheEndsOfTheBackrowArePendulumZones()
+    {
+        // MR5: ocgcore sets DUEL_PZONE without DUEL_SEPARATE_PZONE, so a scale
+        // occupies backrow 0 or 4 rather than a zone of its own.
+        assertTrue(FieldLayout.isPendulumZone(OcgConstants.LOCATION_SZONE, 0));
+        assertTrue(FieldLayout.isPendulumZone(OcgConstants.LOCATION_SZONE, 4));
+        for(int sequence : new int[] {1, 2, 3})
+        {
+            assertTrue(!FieldLayout.isPendulumZone(OcgConstants.LOCATION_SZONE, sequence),
+                "backrow " + sequence + " is not a pendulum zone");
+        }
+        // The MR3 separate zones are still described by the layout and stay
+        // empty in every duel this mod runs, so they are not pendulum zones
+        // for this purpose either.
+        assertTrue(!FieldLayout.isPendulumZone(OcgConstants.LOCATION_SZONE, 6));
+        assertTrue(!FieldLayout.isPendulumZone(OcgConstants.LOCATION_SZONE, 7));
+        // And a monster zone never is, whatever its sequence.
+        assertTrue(!FieldLayout.isPendulumZone(OcgConstants.LOCATION_MZONE, 0));
+        assertTrue(!FieldLayout.isPendulumZone(OcgConstants.LOCATION_MZONE, 4));
+    }
 }

@@ -146,6 +146,29 @@ public final class CardFaces
      * sleeve is none of these and falls to the letterboxed branch, which is
      * right -- sleeve art is a square canvas with the card inside the window.
      */
+    /**
+     * The window to sample a card texture through.
+     * <p>
+     * The predicate was shared and its four-line consequence was not, so every
+     * caller wrote out the same conditional pair of UVs -- and three places on
+     * the flat board wrote out the PREDICATE again as well. One texture that
+     * stopped being letterboxed would have had to be remembered in all of them.
+     */
+    public record Window(float u0, float v0, float u1, float v1)
+    {
+    }
+
+    /** Card-shaped art fills its file; a downloaded card sits in a window of one. */
+    private static final Window WHOLE = new Window(0F, 0F, 1F, 1F);
+    private static final Window LETTERBOXED = new Window(DuelTextures.CARD_U0,
+        DuelTextures.CARD_V0, DuelTextures.CARD_U1, DuelTextures.CARD_V1);
+
+    /** Which of the two this texture wants. */
+    public static Window window(Identifier texture)
+    {
+        return isCardShaped(texture) ? WHOLE : LETTERBOXED;
+    }
+
     public static boolean isCardShaped(Identifier texture)
     {
         return texture.equals(DuelTextures.COVER) || texture.equals(DuelTextures.COVER_OPPONENT)

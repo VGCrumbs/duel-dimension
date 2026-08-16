@@ -100,7 +100,25 @@ public final class PromptOptions
     public static boolean answersOutright(EnginePrompt prompt, BoardTarget target,
         List<Integer> options)
     {
-        if(prompt == null || target == null || options.size() != 1)
+        return target != null && answersOutright(prompt, target.isPile(), options);
+    }
+
+    /**
+     * The same question, for a caller whose idea of a square is its own.
+     * <p>
+     * The flat board's {@code Hit} and the world board's {@code BoardTarget}
+     * are two records for one thing, and the only fact this rule needs from
+     * either is whether it is a stack. Taking the boolean lets the screen ask
+     * the shared question instead of keeping the fourth copy of the answer --
+     * which it did, and which had already drifted: its copy was missing the
+     * pile clause, so a single-target Monster Reborn committed the revival the
+     * instant the graveyard was clicked, without ever naming the monster it
+     * brought back.
+     */
+    public static boolean answersOutright(EnginePrompt prompt, boolean pile,
+        List<Integer> options)
+    {
+        if(prompt == null || options.size() != 1)
         {
             return false;
         }
@@ -109,7 +127,7 @@ public final class PromptOptions
         // sight unseen is exactly what the verb list and the picker exist to
         // prevent. The cursor already routed piles that way; the crosshair did
         // not, and would summon a monster out of a graveyard on a single click.
-        if(target.isPile())
+        if(pile)
         {
             return false;
         }

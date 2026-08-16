@@ -137,6 +137,16 @@ public final class DuelTextures
      * One colour per zone, not both on both: blue is the left scale and red
      * the right, the way a Pendulum card prints them.
      */
+    /**
+     * The two colours a Pendulum card prints its scales in: blue on the left,
+     * red on the right.
+     * <p>
+     * Opaque, with the alpha left to the caller -- the world board fades its
+     * whole mat at the end of a duel and the flat screen does not.
+     */
+    public static final int PENDULUM_BLUE = 0xFF5698E0;
+    public static final int PENDULUM_RED = 0xFFD65852;
+
     public static final Identifier PENDULUM_ZONE_LEFT = Identifier.fromNamespaceAndPath(
         DuelDimension.MOD_ID, "textures/duel/pendulum_zone_left.png");
     public static final Identifier PENDULUM_ZONE_RIGHT = Identifier.fromNamespaceAndPath(

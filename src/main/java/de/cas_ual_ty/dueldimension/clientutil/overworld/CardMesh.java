@@ -41,8 +41,8 @@ public final class CardMesh
      * numbers the 2D board uses; filling the zone instead is what once made
      * every card look stretched.
      */
-    public static final float CARD_W = 0.7F;
-    public static final float CARD_H = 1.0F;
+    public static final float CARD_W = FieldLayout.CARD_W;
+    public static final float CARD_H = FieldLayout.CARD_H;
 
     /**
      * How thick a card is, in field units.
@@ -83,10 +83,7 @@ public final class CardMesh
      */
     public static FieldLayout.Rect placement(FieldLayout.Rect zone, boolean defence)
     {
-        float drawW = defence ? CARD_H : CARD_W;
-        float drawH = defence ? CARD_W : CARD_H;
-        return new FieldLayout.Rect(zone.x() + (zone.w() - drawW) / 2F,
-            zone.y() + (zone.h() - drawH) / 2F, drawW, drawH);
+        return FieldLayout.cardIn(zone, defence);
     }
 
     /**

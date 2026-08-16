@@ -1719,8 +1719,7 @@ public class EngineDuelScreen extends Screen
                         return true;
                     }
                 }
-                else if(actions.size() == 1 && !isCardCommand(actions.get(0))
-                    && !hit.isPile() && !inChainWindow())
+                else if(PromptOptions.answersOutright(shownPrompt, hit.isPile(), actions))
                 {
                     // Selecting a card for a prompt ("pick a target") stays one
                     // click: there is nothing to choose between.
@@ -1768,17 +1767,11 @@ public class EngineDuelScreen extends Screen
      * has refused this since the board learned to answer prompts, with EDOPro's
      * own confirmation as the reason; this screen had no equivalent and fired.
      */
-    private boolean inChainWindow()
-    {
-        return shownPrompt != null && shownPrompt.chainWindow();
-    }
-
-    private boolean isCardCommand(int index)
-    {
-        EnginePrompt prompt = shownPrompt;
-        return prompt != null && index >= 0 && index < prompt.options().size()
-            && prompt.options().get(index).command() != 0;
-    }
+    // inChainWindow and isCardCommand lived here, and between them restated
+    // three of the four clauses of PromptOptions.answersOutright. The fourth --
+    // "a stack never answers on the click" -- was the one this screen had never
+    // had, which is how a graveyard click could revive a monster nobody had
+    // named. The whole test is asked of the shared rule now.
 
     private void openPile(BoardRenderer.Hit hit)
     {
