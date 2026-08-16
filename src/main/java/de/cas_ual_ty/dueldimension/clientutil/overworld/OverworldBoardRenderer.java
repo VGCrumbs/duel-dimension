@@ -120,10 +120,66 @@ public final class OverworldBoardRenderer
             }
         }
 
+        drawPlacements(poseStack, collector, transform, camera);
         drawCards(poseStack, collector, transform, camera);
         drawEquipLinks(poseStack, collector, transform, camera);
         drawAttacks(poseStack, collector, transform, camera);
         drawShatters(poseStack, collector, transform, camera);
+    }
+
+    /**
+     * Every square a placement is being offered, and which of them are taken.
+     * <p>
+     * "Where do you want to put this" is a question about a whole row, and a
+     * board that lights only the square under the crosshair makes a duellist
+     * sweep the mat to find out which zones are even legal -- with the empty
+     * ones being exactly the ones a placement is about, and exactly the ones
+     * {@code drawRow} skips before any highlight is considered. The flat board
+     * has lit them all since it was written.
+     * <p>
+     * The zone reference is unpacked the way {@link
+     * de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt#zoneRef} packs it,
+     * and the seat-relative controller in it is turned back into a half of the
+     * mat -- the board's halves do not move when the seats change.
+     */
+    private static void drawPlacements(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera)
+    {
+        de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt = DuelClientState.prompt;
+        if(prompt == null
+            || prompt.kind() != de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt.Kind.PLACES)
+        {
+            return;
+        }
+        int seat = Math.max(0, ClientDuelField.seat());
+        for(int index = 0; index < prompt.options().size(); index++)
+        {
+            int reference = prompt.options().get(index).zone();
+            if(reference < 0)
+            {
+                continue;
+            }
+            int half = FieldTransform.controllerFor(seat, (reference & 16) == 0);
+            BoardMesh.Piece lit = BoardMesh.highlight(half,
+                (reference & 8) != 0 ? OcgConstants.LOCATION_MZONE : OcgConstants.LOCATION_SZONE,
+                reference & 7);
+            if(lit == null)
+            {
+                continue;
+            }
+            WorldQuad.submit(poseStack, collector, lit.texture(), camera,
+                transform.corners(lit.rect(), SURFACE_LIFT + lit.lift()), fade(0xFFFFFFFF));
+            // Green over blue for one already named, the same pair a card
+            // selection uses: "you may choose this" and "you have chosen this"
+            // are different things, and a placement wanting two zones is a
+            // player who has to tell them apart at a glance.
+            if(de.cas_ual_ty.dueldimension.clientutil.DuelSelection.has(index))
+            {
+                WorldQuad.submit(poseStack, collector, DuelHighlight.OUTLINE, camera,
+                    transform.corners(lit.rect(), SURFACE_LIFT + lit.lift() + 0.001D),
+                    fade(DuelHighlight.tinted(DuelHighlight.CHOSEN_GREEN, 0.95F)));
+            }
+        }
     }
 
     /**

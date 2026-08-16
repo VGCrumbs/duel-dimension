@@ -99,6 +99,16 @@ public final class CrosshairAction
             de.cas_ual_ty.dueldimension.clientutil.DuelSelection.toggle(
                 DuelClientState.prompt,
                 de.cas_ual_ty.dueldimension.clientutil.DuelSelection.pick(options));
+            // Same rule as the cursor: naming the last zone a placement asked
+            // for IS the answer, and holding the camera key does not change
+            // what a click means.
+            if(de.cas_ual_ty.dueldimension.clientutil.DuelSelection.placementComplete(
+                DuelClientState.prompt))
+            {
+                DuelActionController.answer(
+                    de.cas_ual_ty.dueldimension.clientutil.DuelSelection.answer(), 0);
+                de.cas_ual_ty.dueldimension.clientutil.DuelSelection.clear();
+            }
             return true;
         }
 

@@ -613,6 +613,14 @@ public class BoardPointerScreen extends Screen
         if(DuelSelection.wantsSeveral(DuelClientState.prompt))
         {
             DuelSelection.toggle(DuelClientState.prompt, DuelSelection.pick(options));
+            // A placement is its own confirmation: the engine asked for exactly
+            // this many zones and they have all been named.
+            if(DuelSelection.placementComplete(DuelClientState.prompt))
+            {
+                DuelActionController.answer(DuelSelection.answer(), 0);
+                DuelSelection.clear();
+                dismiss();
+            }
             return true;
         }
 

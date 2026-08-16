@@ -48,10 +48,35 @@ public final class DuelSelection
         }
     }
 
-    /** Does this prompt want more than one thing? */
+    /**
+     * Does this prompt want more than one thing?
+     * <p>
+     * PLACES as well as MULTI. A placement that wants two zones is the same
+     * shape of question as a selection that wants two cards -- click, click,
+     * confirm -- and the duel screen has always treated the two together
+     * (`case MULTI, PLACES`). Leaving PLACES out here was what made a
+     * multi-zone placement unanswerable at the board: no toggling, no Confirm
+     * button, and the flat screen dragged over the duel to ask it.
+     */
     public static boolean wantsSeveral(EnginePrompt prompt)
     {
-        return prompt != null && prompt.kind() == EnginePrompt.Kind.MULTI && prompt.maxSelect() > 1;
+        return prompt != null && prompt.maxSelect() > 1
+            && (prompt.kind() == EnginePrompt.Kind.MULTI
+                || prompt.kind() == EnginePrompt.Kind.PLACES);
+    }
+
+    /**
+     * Is a placement finished the moment this click landed?
+     * <p>
+     * A placement has an exact size -- the engine asks for as many zones as the
+     * summon needs, no more -- so the last one named is the answer and there is
+     * nothing left to confirm. The screen has done this since it was written;
+     * this is that rule, in one place, so the board cannot decide otherwise.
+     */
+    public static boolean placementComplete(EnginePrompt prompt)
+    {
+        return prompt != null && prompt.kind() == EnginePrompt.Kind.PLACES
+            && chosen.size() == prompt.minSelect();
     }
 
     /**

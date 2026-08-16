@@ -166,9 +166,14 @@ public final class PromptOptions
         // is four postures of one card, which is a list to pick one from and
         // nothing to do with the board; a summon asks it, so refusing it here
         // meant every summon pulled the screen over the board.
+        // PLACES at any size. Every option is a zone on the mat, which is the
+        // one thing a world board is better at than a screen -- and a placement
+        // wanting two of them is still nothing but zones. POSITION keeps its
+        // limit: it is four postures of one card rather than four things to
+        // point at, so more than one of it is a list and not a board.
         if(!prompt.isSingleChoice() && !severalPointable(prompt)
-            && !((prompt.kind() == EnginePrompt.Kind.PLACES
-                || prompt.kind() == EnginePrompt.Kind.POSITION) && prompt.maxSelect() <= 1))
+            && prompt.kind() != EnginePrompt.Kind.PLACES
+            && !(prompt.kind() == EnginePrompt.Kind.POSITION && prompt.maxSelect() <= 1))
         {
             return false;
         }

@@ -1381,8 +1381,7 @@ public class EngineDuelScreen extends Screen
                     return;
                 }
                 DuelSelection.toggle(prompt, index);
-                if(prompt.kind() == EnginePrompt.Kind.PLACES
-                    && DuelSelection.count() == prompt.minSelect())
+                if(DuelSelection.placementComplete(prompt))
                 {
                     confirm();
                 }
