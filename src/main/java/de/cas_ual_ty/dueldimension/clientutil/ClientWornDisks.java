@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * What every player is wearing on their disk arm, as this client knows it.
  * <p>
- * The mirror of {@code WornOutfits} for disks, and it exists for the same
+ * Who is wearing a disk, client-side. It exists for the same
  * reason: a {@code DuelProfile} is synced only to its owner, so without a
  * broadcast every other client would draw a duelist holding their shield.
  * <p>

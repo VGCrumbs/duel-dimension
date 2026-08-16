@@ -6,12 +6,14 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 /**
- * The duel hub: decks, profile, outfits, settings.
+ * The duel hub: profile, decks, shop, settings.
  * <p>
- * All four tabs are live. {@link EditorState} holds what the server sent, so
- * the collection, the deck list and the active deck are the player's own; the
- * wardrobe draws real figures wearing the outfits; and Settings carries the mat
- * colour and the duel music.
+ * Every tab is live. {@link EditorState} holds what the server sent, so the
+ * collection, the deck list and the active deck are the player's own, and
+ * Settings carries the mat colour, the card back and the duel music.
+ * <p>
+ * A fifth tab, the wardrobe, chose an outfit to be seen in. Outfits are shelved
+ * -- see backup/outfit-system -- and it went with them.
  * <p>
  * Deck management is the Forge screen's, whole: use, rename, duplicate,
  * publish-as-recipe and delete (behind its confirmation), plus the recipe
@@ -51,8 +53,6 @@ public class DuelHubScreen extends Screen
     private static final int TAB_GAP = 4;
 
     /** How wide one wardrobe tile is, and how tall the figure inside it stands. */
-    private static final int TILE_W = 78;
-    private static final int TILE_H = 118;
 
     /**
      * One card-back tile in the settings tab, and the art inside it.
@@ -88,7 +88,6 @@ public class DuelHubScreen extends Screen
     {
         PROFILE("Profile", ""),
         DECKS("Decks", ""),
-        OUTFIT("Outfit", ""),
         SHOP("Shop", ""),
         SETTINGS("Settings", "");
 
@@ -175,8 +174,6 @@ public class DuelHubScreen extends Screen
      */
     private de.cas_ual_ty.dueldimension.duel.profile.DeckList confirmDelete;
 
-    /** First tile shown, when there are more outfits than fit across. */
-    private int outfitScroll;
 
     /** First tile shown, when there are more card backs than fit across. */
     private int backScroll;
@@ -266,11 +263,6 @@ public class DuelHubScreen extends Screen
 
         addRenderableWidget(new HubWidgets.TextureButton(left + WIDTH - PAD - 80,
             top + HEIGHT - 32, 80, 20, Component.literal("Close"), pressed -> onClose()));
-
-        if(section == Section.OUTFIT && EditorState.isSynced())
-        {
-            buildOutfitRows(top + PAD + TAB_H + 8);
-        }
 
         if(section == Section.SHOP)
         {
@@ -394,9 +386,8 @@ public class DuelHubScreen extends Screen
     /**
      * The card-back chooser: each back drawn as itself, the one in use marked.
      * <p>
-     * The thing being chosen IS art, so the tile is the art -- the same
-     * reasoning the wardrobe uses for outfits, where a list of names would tell
-     * a player nothing about what they are picking.
+     * The thing being chosen IS art, so the tile is the art: a list of names
+     * would tell a player nothing about what they are picking.
      * <p>
      * Each tile draws its back from inside its own {@code extractContents}
      * rather than having {@link #settingsPanel} draw it. That is not a style
@@ -459,8 +450,8 @@ public class DuelHubScreen extends Screen
         protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
             float partialTick)
         {
-            // The chosen one wears the disabled surface, which is how the
-            // wardrobe marks the outfit being worn. It stays clickable rather
+            // The chosen one wears the disabled surface. It stays clickable
+            // rather
             // than being switched inactive, because active is fixed at build
             // time and this tile is never rebuilt; picking the back already in
             // use is a no-op in CardBacks.set anyway.
@@ -503,11 +494,6 @@ public class DuelHubScreen extends Screen
             case PROFILE -> profilePanel(graphics, bodyTop);
             case DECKS -> deckPanel(graphics, bodyTop);
             case SETTINGS -> settingsPanel(graphics, bodyTop);
-            // OUTFIT draws nothing here on purpose: its wardrobe goes down
-            // AFTER the widgets, below. Without this arm it fell to the default
-            // and painted "Not ported yet:" under the tiles, where the corner
-            // of it showed between them.
-            case OUTFIT -> { }
             // SHOP is three buttons and a line of explanation; the buttons are
             // widgets, added in init(), so there is nothing to paint under them.
             case SHOP -> shopPanel(graphics, bodyTop);
@@ -515,17 +501,6 @@ public class DuelHubScreen extends Screen
         }
 
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
-
-        // The wardrobe goes AFTER the widgets, and that is not a detail. Each
-        // outfit's tile IS a button covering the whole cell, so a figure drawn
-        // before it is painted over by it -- which is exactly what happened:
-        // the previews were being drawn and then hidden. Forge ordered it the
-        // same way for the same reason, calling renderOutfit after super.render
-        // while Profile and Decks went before.
-        if(section == Section.OUTFIT)
-        {
-            outfitPanel(graphics, bodyTop);
-        }
 
         extractTooltip(graphics, mouseX, mouseY);
     }
@@ -1253,182 +1228,6 @@ public class DuelHubScreen extends Screen
         NineSlice.draw(graphics, HubTextures.SCROLLBAR, x, thumbY, 4, thumbH, 1, 2);
     }
 
-    private int outfitStripX()
-    {
-        return left + PAD + 6;
-    }
-
-    private int outfitTiles()
-    {
-        return Math.max(1, (WIDTH - PAD * 2 - 12) / TILE_W);
-    }
-
-    private static java.util.List<de.cas_ual_ty.dueldimension.duel.outfit.Outfits.Outfit> outfits()
-    {
-        return de.cas_ual_ty.dueldimension.duel.outfit.Outfits.ALL;
-    }
-
-    /**
-     * The wardrobe: a row of figures wearing the clothes, the worn one marked.
-     * <p>
-     * A list of names tells a player nothing about what they are choosing.
-     * These are clothes, and "what does it look like" is the only question
-     * being asked, so each one is worn by a turning figure rather than written
-     * down.
-     * <p>
-     * What the player is wearing is the server's to say, so a tile asks for a
-     * change and the mark follows the profile that comes back.
-     */
-    private void buildOutfitRows(int bodyTop)
-    {
-        int across = outfitTiles();
-        outfitScroll = Math.max(0, Math.min(outfitScroll, Math.max(0, outfits().size() - across)));
-
-        String worn = EditorState.profile().outfit();
-        for(int slot = 0; slot < across && slot + outfitScroll < outfits().size(); slot++)
-        {
-            de.cas_ual_ty.dueldimension.duel.outfit.Outfits.Outfit outfit =
-                outfits().get(slot + outfitScroll);
-            boolean on = outfit.id().equals(worn);
-            int x = outfitStripX() + slot * TILE_W;
-            // The whole tile is the button, with the figure drawn over it: a
-            // player picking clothes aims at the clothes.
-            HubWidgets.TextureButton tile = new HubWidgets.TextureButton(x, bodyTop + 22,
-                TILE_W - 6, TILE_H, Component.literal(""), pressed ->
-            {
-                EditorState.wear(outfit.id());
-                rebuild();
-            });
-            tile.active = !on;
-            if(!outfit.credit().isEmpty())
-            {
-                // Attribution where somebody choosing it will actually see it.
-                tile.setTooltipLines(java.util.List.of(outfit.name(), outfit.credit()));
-            }
-            addRenderableWidget(tile);
-        }
-
-        // ---- the under-skin editor ----
-        // A label and two verbs. It was three lines of explanation and two
-        // sentences on a button, which is a lot of screen for "the skin under
-        // the clothes"; the tooltips still carry the why for anyone who asks.
-        int editorY = bodyTop + 22 + TILE_H + 10;
-        int labelW = font.width("Underskin") + 8;
-        boolean wearing = !worn.isEmpty();
-
-        HubWidgets.TextureButton load = new HubWidgets.TextureButton(
-            outfitStripX() + labelW, editorY, 54, 18,
-            Component.literal("Load"), pressed -> importUnderSkin());
-        load.active = wearing;
-        load.setTooltipLines(wearing
-            ? java.util.List.of("Import a 64x64 PNG",
-                "Your own skin with whatever pokes out from under this outfit removed")
-            : java.util.List.of("Only used under an outfit"));
-        addRenderableWidget(load);
-
-        HubWidgets.TextureButton reset = new HubWidgets.TextureButton(
-            outfitStripX() + labelW + 58, editorY, 54, 18,
-            Component.literal("Reset"), pressed ->
-        {
-            de.cas_ual_ty.dueldimension.clientutil.UnderSkin.clear();
-            notice = "";
-            rebuild();
-        });
-        reset.active = de.cas_ual_ty.dueldimension.clientutil.UnderSkin.present();
-        reset.setTooltipLines(java.util.List.of("Back to your real skin"));
-        addRenderableWidget(reset);
-    }
-
-    /**
-     * Asks the system for a PNG.
-     * <p>
-     * Through LWJGL's file dialog, which Minecraft already ships, so the player
-     * picks a file the way they would in any other program. If that is missing
-     * -- it is a native library, and a native library can be absent -- the
-     * known path is read instead and the player is told where it is.
-     */
-    private void importUnderSkin()
-    {
-        java.nio.file.Path chosen;
-        try
-        {
-            org.lwjgl.PointerBuffer filters = org.lwjgl.BufferUtils.createPointerBuffer(1);
-            filters.put(org.lwjgl.system.MemoryUtil.memUTF8("*.png"));
-            filters.flip();
-            String path = org.lwjgl.util.tinyfd.TinyFileDialogs.tinyfd_openFileDialog(
-                "Choose your under-skin (64x64 PNG)", "", filters, "PNG image", false);
-            if(path == null)
-            {
-                return; // cancelled, which is an answer
-            }
-            chosen = java.nio.file.Path.of(path);
-        }
-        catch(Throwable unavailable)
-        {
-            chosen = de.cas_ual_ty.dueldimension.clientutil.UnderSkin.file();
-            notice = "No file chooser here; reading " + chosen;
-        }
-        String refusal = de.cas_ual_ty.dueldimension.clientutil.UnderSkin.importFrom(chosen);
-        if(refusal != null)
-        {
-            notice = refusal;
-        }
-        rebuild();
-    }
-
-    private void outfitPanel(GuiGraphicsExtractor graphics, int bodyTop)
-    {
-        if(!EditorState.isSynced())
-        {
-            graphics.text(font, "Waiting for the server...", left + PAD + 10, bodyTop + 10,
-                0xFF7A8090, true);
-            return;
-        }
-
-        int across = outfitTiles();
-        String worn = EditorState.profile().outfit();
-        // One clock for the whole row, so the figures turn together rather than
-        // each starting from whenever its tile happened to be built.
-        long time = net.minecraft.util.Util.getMillis();
-
-        for(int slot = 0; slot < across && slot + outfitScroll < outfits().size(); slot++)
-        {
-            de.cas_ual_ty.dueldimension.duel.outfit.Outfits.Outfit outfit =
-                outfits().get(slot + outfitScroll);
-            int x = outfitStripX() + slot * TILE_W;
-            boolean on = outfit.id().equals(worn);
-
-            // Inside the tile with room left for the name under it, rather
-            // than filling the tile and standing on its own label. A GUI figure
-            // is placed by the rectangle it stands in now, not by a point and a
-            // scale, so the tile's own box is what it is given.
-            int figure = TILE_H - 28;
-            OutfitPreview.draw(graphics, x, bodyTop + 22 + 8,
-                x + TILE_W - 6, bodyTop + 22 + 8 + figure, figure, outfit, time);
-
-            String name = font.plainSubstrByWidth(outfit.name(), TILE_W - 12);
-            graphics.text(font, name, x + (TILE_W - 6 - font.width(name)) / 2,
-                bodyTop + 22 + TILE_H - 12, on ? 0xFFF4D089 : 0xFFC2C9D6, true);
-        }
-
-        if(outfits().size() > across)
-        {
-            graphics.text(font, (outfitScroll + 1) + "-"
-                    + Math.min(outfits().size(), outfitScroll + across)
-                    + " of " + outfits().size(),
-                outfitStripX(), bodyTop + 10, 0xFF7A8090, true);
-        }
-
-        int editorY = bodyTop + 22 + TILE_H + 10;
-        graphics.text(font, "Underskin", outfitStripX(), editorY + 5,
-            worn.isEmpty() ? 0xFF6E7686 : 0xFFF4D089, true);
-        if(!notice.isEmpty())
-        {
-            graphics.text(font, font.plainSubstrByWidth(notice, WIDTH - PAD * 2 - 12),
-                outfitStripX(), editorY + 22, 0xFFFF8A80, true);
-        }
-    }
-
     /**
      * A hovered button's own explanation.
      * <p>
@@ -1459,22 +1258,11 @@ public class DuelHubScreen extends Screen
      * <p>
      * One tile per notch rather than a pixel offset: the tiles are wide and
      * there is no partial one to reveal, so a notch either shows a different
-     * outfit or does nothing.
+     * card back or does nothing.
      */
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY)
     {
-        if(section == Section.OUTFIT)
-        {
-            int max = Math.max(0, outfits().size() - outfitTiles());
-            int moved = Math.max(0, Math.min(max, outfitScroll - (int)Math.signum(scrollY)));
-            if(moved != outfitScroll)
-            {
-                outfitScroll = moved;
-                rebuild();
-            }
-            return true;
-        }
         // The card-back strip is a row too, and scrolls the same way -- but only
         // once there are more backs than fit. Taking the notch unconditionally
         // would swallow scrolling on a settings tab that has nothing to scroll.

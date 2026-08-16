@@ -230,13 +230,12 @@ public class DuelDimensionFabricClient implements ClientModInitializer
                         .withStyle(net.minecraft.ChatFormatting.RED), false);
             });
 
-        // Leaving a server forgets what everyone was wearing. The map is keyed
-        // by UUID and nothing else clears it, so without this the next server
-        // starts with the last one's outfits on strangers who share a UUID.
+        // Leaving a server forgets what everyone was wearing. The maps are
+        // keyed by UUID and nothing else clears them, so without this the next
+        // server starts with the last one's disks on strangers who share a UUID.
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT
             .register((handler, client) ->
             {
-                de.cas_ual_ty.dueldimension.duel.outfit.WornOutfits.clear();
                 de.cas_ual_ty.dueldimension.clientutil.ClientWornDisks.clear();
                 de.cas_ual_ty.dueldimension.clientutil.OrichalcosRenderer.clear();
                 // Both halves of EDOPro's ClearTexture (image_manager.cpp:339-367):
@@ -274,21 +273,5 @@ public class DuelDimensionFabricClient implements ClientModInitializer
 
         // Told what everyone is wearing, and what the server holds for us.
         de.cas_ual_ty.dueldimension.net.DdNetwork.registerClientHandlers();
-
-        // The outfit pass, on every player renderer. Forge subscribed to an
-        // event that fired once per renderer type; this fires the same way, and
-        // the check is the same one -- players only, because an outfit is drawn
-        // on a player model and nothing else has one.
-        net.fabricmc.fabric.api.client.rendering.v1.LivingEntityRenderLayerRegistrationCallback
-            .EVENT.register((entityType, renderer, helper, context) ->
-        {
-            if(entityType == net.minecraft.world.entity.EntityTypes.PLAYER)
-            {
-                helper.register(new de.cas_ual_ty.dueldimension.clientutil.OutfitLayer(
-                    (net.minecraft.client.renderer.entity.RenderLayerParent<
-                        net.minecraft.client.renderer.entity.state.AvatarRenderState,
-                        net.minecraft.client.model.player.PlayerModel>)renderer));
-            }
-        });
     }
 }

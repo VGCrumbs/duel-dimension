@@ -179,7 +179,6 @@ class DuelProfileTest
         mine.publish(true);
         profile.addDeck(mine);
         profile.setActiveDeck("Custom");
-        profile.setOutfit("red");
         profile.toggleFavourite(46986414);
 
         DuelProfile saved = profile.snapshot();
@@ -189,17 +188,19 @@ class DuelProfileTest
         assertEquals(List.of(456), saved.savedNamed("Custom").side());
         assertTrue(saved.savedNamed("Custom").published());
         assertEquals("Custom", saved.activeDeck());
-        assertEquals("red", saved.outfit());
         assertTrue(saved.isFavourite(46986414));
 
         // Later edits to the live profile must not alter what was handed to
         // the persistent attachment.
         mine.main().clear();
         profile.trunk().add(46986414, 1);
-        profile.setOutfit("blue");
+        profile.setActiveDeck("Something else");
         assertEquals(MAIN, saved.savedNamed("Custom").main());
         assertEquals(2, saved.trunk().countOf(46986414));
-        assertEquals("red", saved.outfit());
+        // A scalar the snapshot was taken with stays what it was. This used to
+        // be checked through the outfit, which is gone; the active deck is the
+        // same shape of field and proves the same thing.
+        assertEquals("Custom", saved.activeDeck());
     }
 
     /**

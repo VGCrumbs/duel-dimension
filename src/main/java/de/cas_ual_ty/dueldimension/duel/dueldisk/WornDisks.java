@@ -90,7 +90,7 @@ public final class WornDisks
      * Tells everyone what this player has on, and tells this player what
      * everyone else has on.
      * <p>
-     * Both halves matter on a join, exactly as they do for outfits: the
+     * Both halves matter on a join: the
      * arriving client knows nothing, and the clients already there have never
      * heard of this player.
      */

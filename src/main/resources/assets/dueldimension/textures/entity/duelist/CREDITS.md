@@ -15,11 +15,19 @@ applies to a player's own imported skin.
 Added 2026-08-04; Yusei 2026-08-08. Authors are recorded from the original
 filenames as supplied.
 
-`yusei.png`'s author is no longer unknown: `../outfit/credits.nfo` records the
-same skin as **Daiosity** on PlanetMinecraft
-(<https://www.planetminecraft.com/skin/yusei-fudo-yu-gi-oh-skin-series-with-turtleover/>),
-and `kaiba.png`'s `xyamorph` is that file's **XyaMorph**
-(<https://www.planetminecraft.com/skin/seto-kaiba-yu-gi-oh/>).
+`yusei.png`'s author is no longer unknown, and `kaiba.png`'s is spelled
+properly here:
+
+| File | Author | Source |
+| --- | --- | --- |
+| `yusei.png` | **Daiosity** | <https://www.planetminecraft.com/skin/yusei-fudo-yu-gi-oh-skin-series-with-turtleover/> |
+| `kaiba.png` | **XyaMorph** | <https://www.planetminecraft.com/skin/seto-kaiba-yu-gi-oh/> |
+
+That attribution used to live in `../outfit/credits.nfo`, next to the outfit
+skins drawn by the same two authors. Outfits are shelved and that folder went
+with them, so the credit is written out here rather than left pointing at a file
+that is no longer in the tree. The original is kept at
+`backup/outfit-system/textures/credits.nfo`.
 
 ## Redistribution
 

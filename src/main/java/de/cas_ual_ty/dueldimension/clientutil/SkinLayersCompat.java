@@ -15,9 +15,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Optional bridge to 3D Skin Layers for player-shaped things which are not
- * players. The mod's own mixins deliberately start from AbstractClientPlayer;
- * an outfit is a second model and a DuelistEntity is a mob, so neither enters
- * that path even though both use a normal 64x64 player skin.
+ * players. The mod's own mixins deliberately start from AbstractClientPlayer,
+ * and a DuelistEntity is a mob, so it never enters that path even though it
+ * uses a normal 64x64 player skin.
  * <p>
  * Reflection keeps 3D Skin Layers optional. When it is installed, all mesh
  * construction and offsets still come from its public API, including its
@@ -156,7 +156,7 @@ public final class SkinLayersCompat
         {
             // This is our model, not the actual player's model. Stop the mod's
             // PlayerModel mixin from replacing these meshes with that player's
-            // own skin when the outfit layer copies their render state.
+            // own skin when a layer copies their render state.
             SET_IGNORED.invoke(model, true);
             Key key = new Key(texture, slim);
             if(FAILED.contains(key))
@@ -186,62 +186,6 @@ public final class SkinLayersCompat
         catch(ReflectiveOperationException compatibilityFailure)
         {
             DuelDimensionLog.warn("Could not apply 3D skin layers to " + texture,
-                compatibilityFailure);
-        }
-    }
-
-    /**
-     * Voxelizes an outfit's painted body as well as its conventional outer UVs.
-     * An outfit is itself a second model over the player's skin, so pixels in
-     * its base regions are clothing, not the body underneath.
-     */
-    public static void applyOutfit(PlayerModel model, Identifier texture, boolean slim)
-    {
-        if(!AVAILABLE || model == null || texture == null)
-        {
-            return;
-        }
-        try
-        {
-            SET_IGNORED.invoke(model, true);
-            Key key = new Key(texture, slim);
-            if(FAILED.contains(key))
-            {
-                return;
-            }
-            SkinMeshes skin;
-            try
-            {
-                skin = CACHE.computeIfAbsent(key, SkinLayersCompat::build);
-            }
-            catch(RuntimeException buildFailure)
-            {
-                FAILED.add(key);
-                DuelDimensionLog.warn("Could not build 3D outfit " + texture, buildFailure);
-                return;
-            }
-
-            Meshes base = skin.base();
-            set(model.head, base.head(), HEAD);
-            set(model.body, base.body(), BODY);
-            set(model.leftArm, base.leftArm(), slim ? LEFT_ARM_SLIM : LEFT_ARM);
-            set(model.rightArm, base.rightArm(), slim ? RIGHT_ARM_SLIM : RIGHT_ARM);
-            set(model.leftLeg, base.leftLeg(), LEFT_LEG);
-            set(model.rightLeg, base.rightLeg(), RIGHT_LEG);
-
-            Meshes outer = skin.outer();
-            set(model.hat, enabled("enableHat") ? outer.head() : null, HEAD);
-            set(model.jacket, enabled("enableJacket") ? outer.body() : null, BODY);
-            set(model.leftSleeve, enabled("enableLeftSleeve") ? outer.leftArm() : null,
-                slim ? LEFT_ARM_SLIM : LEFT_ARM);
-            set(model.rightSleeve, enabled("enableRightSleeve") ? outer.rightArm() : null,
-                slim ? RIGHT_ARM_SLIM : RIGHT_ARM);
-            set(model.leftPants, enabled("enableLeftPants") ? outer.leftLeg() : null, LEFT_LEG);
-            set(model.rightPants, enabled("enableRightPants") ? outer.rightLeg() : null, RIGHT_LEG);
-        }
-        catch(ReflectiveOperationException compatibilityFailure)
-        {
-            DuelDimensionLog.warn("Could not apply 3D outfit layers to " + texture,
                 compatibilityFailure);
         }
     }

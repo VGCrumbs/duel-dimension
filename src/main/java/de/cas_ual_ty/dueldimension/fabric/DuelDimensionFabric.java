@@ -67,13 +67,10 @@ public class DuelDimensionFabric implements ModInitializer
             net.minecraft.server.level.ServerPlayer player = handler.getPlayer();
             de.cas_ual_ty.dueldimension.net.ProfilePayloads.sync(player);
 
-            // The profile remembers the outfit, but the client render map is
-            // intentionally cleared on every disconnect. Re-announce the
-            // persisted choice on join so this client restores its own outfit
-            // and every connected client sees it too.
-            de.cas_ual_ty.dueldimension.duel.outfit.WornOutfits.announce(player);
-            // Same for the disk: an arriving client has to be told what
-            // everyone is wearing, and everyone told about them.
+            // An arriving client has to be told what everyone is wearing, and
+            // everyone told about them: the client render map is intentionally
+            // cleared on every disconnect, so the persisted choice is
+            // re-announced on join rather than assumed to have survived.
             de.cas_ual_ty.dueldimension.duel.dueldisk.WornDisks.announce(player);
 
             // Said once, on arrival, rather than only when a duel is refused.
@@ -131,16 +128,6 @@ public class DuelDimensionFabric implements ModInitializer
             // leaves with them. The save still matters: it is what flushes the
             // throttled write to disk before the player is gone.
             de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.save(player);
-
-            // Everyone else is told they are no longer wearing anything, so a
-            // player who leaves does not linger in an outfit on other clients.
-            for(net.minecraft.server.level.ServerPlayer everyone
-                : server.getPlayerList().getPlayers())
-            {
-                net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(everyone,
-                    new de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Worn(
-                        player.getUUID(), ""));
-            }
         });
 
         // ---- the bootstrap Forge ran before anything could use a card ----

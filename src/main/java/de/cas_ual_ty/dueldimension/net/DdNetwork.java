@@ -67,12 +67,10 @@ public final class DdNetwork
         // with nobody to receive it is the failure that looks like nothing.
         registerCardDisplay();
 
-        // Outfits: what a duellist is wearing. The wear request is a client's
-        // to make, the answer everybody's to see.
-        serverbound(de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Wear.TYPE,
-            de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Wear.CODEC);
-        clientbound(de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Worn.TYPE,
-            de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Worn.CODEC);
+        // The outfit pair -- a client asking to wear one, the server telling
+        // everybody what somebody is wearing -- was registered here. A
+        // payload's identity is its own type rather than its place in this
+        // list, so nothing else changed meaning by their going.
 
         // The engine's prompts and board updates. These were declared with the
         // engine phase but never registered -- nothing sent one until the
@@ -263,26 +261,6 @@ public final class DdNetwork
             (message, player) ->
                 de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.viewOwnDeck(player));
 
-        onServer(de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Wear.TYPE,
-            (message, player) ->
-        {
-            // Checked against the catalogue rather than stored as sent: an id
-            // the server does not know would be a texture path a client chose,
-            // which is not a client's to choose.
-            if(!de.cas_ual_ty.dueldimension.duel.outfit.Outfits.exists(message.outfit()))
-            {
-                player.sendSystemMessage(net.minecraft.network.chat.Component
-                    .literal("No such outfit.")
-                    .withStyle(net.minecraft.ChatFormatting.RED));
-                return;
-            }
-            de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.get(player)
-                .setOutfit(message.outfit());
-            de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.save(player);
-            ProfilePayloads.sync(player);
-            de.cas_ual_ty.dueldimension.duel.outfit.WornOutfits.broadcast(player);
-        });
-
         onServer(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.Configure.TYPE,
             (message, player) ->
                 de.cas_ual_ty.dueldimension.duel.match.DuelLobby.configure(player,
@@ -376,11 +354,6 @@ public final class DdNetwork
     public static void registerClientHandlers()
     {
         de.cas_ual_ty.dueldimension.duel.network.DuelPayloads.registerClientHandlers();
-
-        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
-            de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Worn.TYPE,
-            (payload, context) -> de.cas_ual_ty.dueldimension.duel.outfit.WornOutfits
-                .set(payload.player(), payload.outfit()));
 
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
             ProfilePayloads.EngineUnknown.TYPE,

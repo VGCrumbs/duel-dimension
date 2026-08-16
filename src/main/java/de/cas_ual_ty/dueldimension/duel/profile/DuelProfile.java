@@ -37,9 +37,9 @@ public final class DuelProfile
     /**
      * Sleeves this player has bought or been given.
      * <p>
-     * The first cosmetic in this mod that anyone has to <em>own</em>: outfits
-     * are gated only by existing and a play mat's colour is a file on the
-     * player's own disk, so neither needed an entitlement to check. A sleeve is
+     * The first cosmetic in this mod that anyone has to <em>own</em>: a play
+     * mat's colour is a file on the player's own disk, so it never needed an
+     * entitlement to check. A sleeve is
      * sold, which means the answer to "may I wear this" has to live on the side
      * that also holds the money — here, beside the {@link Trunk}, persisted and
      * synced by the same Codec.
@@ -68,8 +68,6 @@ public final class DuelProfile
      */
     private boolean diskWorn;
     private String activeDeck = "";
-    /** The outfit this duelist is seen in; empty means their own skin. */
-    private String outfit = "";
 
     public Trunk trunk()
     {
@@ -253,16 +251,6 @@ public final class DuelProfile
         return true;
     }
 
-    public String outfit()
-    {
-        return outfit;
-    }
-
-    public void setOutfit(String id)
-    {
-        outfit = id == null ? "" : id;
-    }
-
     public String activeDeck()
     {
         return activeDeck;
@@ -363,7 +351,6 @@ public final class DuelProfile
         copy.activeDisk = activeDisk;
         copy.diskWorn = diskWorn;
         copy.activeDeck = activeDeck;
-        copy.outfit = outfit;
         return copy;
     }
 
@@ -464,14 +451,17 @@ public final class DuelProfile
                 .forGetter(profile -> profile.activeDisk),
             Codec.BOOL.optionalFieldOf("DiskWorn", false)
                 .forGetter(profile -> profile.diskWorn),
-            Codec.STRING.optionalFieldOf("Active", "").forGetter(DuelProfile::activeDeck),
-            Codec.STRING.optionalFieldOf("Outfit", "").forGetter(DuelProfile::outfit)
+            // An "Outfit" string was written here too. It is no longer read,
+            // and a key a record codec does not name is ignored rather than
+            // refused -- so every profile saved with one still loads, and
+            // whatever each player last wore is still in their save file if
+            // outfits come back.
+            Codec.STRING.optionalFieldOf("Active", "").forGetter(DuelProfile::activeDeck)
         ).apply(instance, DuelProfile::of));
 
     private static DuelProfile of(Trunk trunk, List<DeckList> decks, List<String> structures,
         List<Integer> favourites, List<CardSleevesType> sleeves,
-        List<String> disks, String activeDisk, boolean diskWorn, String activeDeck,
-        String outfit)
+        List<String> disks, String activeDisk, boolean diskWorn, String activeDeck)
     {
         DuelProfile profile = new DuelProfile();
         // Copied rather than kept: the optionalFieldOf default above is a single
@@ -496,7 +486,6 @@ public final class DuelProfile
         profile.activeDisk = activeDisk;
         profile.diskWorn = diskWorn;
         profile.activeDeck = activeDeck;
-        profile.outfit = outfit;
         return profile;
     }
 

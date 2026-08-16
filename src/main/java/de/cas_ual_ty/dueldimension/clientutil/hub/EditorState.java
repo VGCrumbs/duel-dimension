@@ -1037,19 +1037,6 @@ public final class EditorState
         send(new ProfilePayloads.PublishRecipe(deck.name(), asRecipe));
     }
 
-    /**
-     * Asks to be seen in this outfit.
-     * <p>
-     * Applied here as well as asked for, so the hub's mark moves on the click
-     * rather than on the round trip; the sync that follows is what makes it
-     * true, and would correct this if the server said no.
-     */
-    public static void wear(String outfitId)
-    {
-        profile.setOutfit(outfitId);
-        send(new de.cas_ual_ty.dueldimension.duel.outfit.OutfitMessages.Wear(outfitId));
-    }
-
     /** Tells the server which deck this player duels with. */
     public static void setActiveDeck(String name)
     {

@@ -6,7 +6,6 @@
   "mixins": [],
   "client": [
     "client.AbstractClientPlayerMixin",
-    "client.AvatarRenderStateMixin",
     "client.AvatarRendererMixin",
     "client.MinecraftPackMixin",
     "client.GameRendererMixin",

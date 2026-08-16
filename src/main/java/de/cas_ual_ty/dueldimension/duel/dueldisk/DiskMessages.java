@@ -54,7 +54,7 @@ public final class DiskMessages
      * Server to everyone: this player is wearing this disk, or has taken it off.
      * <p>
      * Broadcast rather than left on the owner's profile, for the same reason
-     * outfits are: a profile is synced only to the player it belongs to, so
+     * it has to be: a profile is synced only to the player it belongs to, so
      * without this every other client draws them holding a shield. Carries the
      * disk id as well as the flag, because which disk is worn is exactly what
      * the other clients have to draw.

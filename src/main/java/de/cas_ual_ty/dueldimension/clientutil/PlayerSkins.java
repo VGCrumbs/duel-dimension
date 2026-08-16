@@ -118,6 +118,46 @@ public final class PlayerSkins
      * What to draw this player's body with, and on which shape — an override if
      * there is one, otherwise whatever the game already resolved.
      */
+    /**
+     * What to change about the skin the game resolved, or null to leave it be.
+     * <p>
+     * Takes the game's answer rather than asking for it: this runs from inside
+     * {@code getSkin}, and asking there would call itself.
+     * <p>
+     * A {@code Patch} rather than a rebuilt {@code PlayerSkin} because only the
+     * fields named are replaced, so a cape, an elytra texture and anything
+     * added later survive untouched.
+     * <p>
+     * The body matters as much as the texture. The game picks the player
+     * renderer -- and therefore the classic or slim arms -- from
+     * {@code getSkin().model()}, and the two layouts put the arm faces at
+     * different offsets: a skin on the wrong body samples a neighbouring face
+     * down the edge of the hand, a stray column that cannot be erased because
+     * it is not in the part of the texture anyone would think to erase.
+     * <p>
+     * This lived in {@code OutfitSkins} while outfits existed, because dressing
+     * a player and supplying them a skin were answered by one patch. Outfits
+     * are shelved; supplying a skin is not, and on a development client -- no
+     * session, so no profile properties, so nowhere for the game to fetch a
+     * skin from -- it is the only reason anyone is not Steve.
+     */
+    public static net.minecraft.world.entity.player.PlayerSkin.Patch patch(
+        AbstractClientPlayer player, net.minecraft.world.entity.player.PlayerSkin resolved)
+    {
+        Skin supplied = of(player);
+        if(supplied == null)
+        {
+            return null;
+        }
+        return new net.minecraft.world.entity.player.PlayerSkin.Patch(
+            java.util.Optional.of(asset(supplied.texture())),
+            java.util.Optional.empty(),
+            java.util.Optional.empty(),
+            java.util.Optional.of(supplied.slim()
+                ? net.minecraft.world.entity.player.PlayerModelType.SLIM
+                : net.minecraft.world.entity.player.PlayerModelType.WIDE));
+    }
+
     public static Skin resolve(AbstractClientPlayer player)
     {
         Skin override = of(player);
