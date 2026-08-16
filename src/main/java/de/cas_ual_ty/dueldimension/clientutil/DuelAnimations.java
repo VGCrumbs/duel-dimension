@@ -1142,6 +1142,148 @@ public class DuelAnimations
     {
     }
 
+    /**
+     * A card on its way from one zone to another, for a board that draws its
+     * own geometry.
+     * <p>
+     * The origin is a packed zone like the destination, except when there is
+     * none: a card coming out of a hand or a deck has nowhere on the mat to
+     * start from, so {@code fromZone} is negative and the owner is given
+     * instead, for a caller that wants to bring it in over that duellist's
+     * edge.
+     */
+    public record MoveView(int code, int fromZone, int toZone, int player, float progress,
+        Identifier texture, float u0, float v0, float u1, float v1)
+    {
+    }
+
+    /** Every card currently moving, with how far through it is. */
+    public java.util.List<MoveView> movesInFlight(long now)
+    {
+        java.util.List<MoveView> views = new ArrayList<>(playing.size());
+        for(Playing animation : playing)
+        {
+            DuelEvent event = animation.event();
+            Identifier texture = artFor(event.code(), event.toZone());
+            boolean edoproArt = isEdoproArt(texture);
+            views.add(new MoveView(event.code(), event.fromZone(), event.toZone(), event.player(),
+                animation.progress(now), texture,
+                edoproArt ? 0F : DuelTextures.CARD_U0, edoproArt ? 0F : DuelTextures.CARD_V0,
+                edoproArt ? 1F : DuelTextures.CARD_U1, edoproArt ? 1F : DuelTextures.CARD_V1));
+        }
+        return views;
+    }
+
+    /**
+     * A card turning over where it lies.
+     * <p>
+     * Which face is showing is decided here rather than by the caller, because
+     * it depends on the halfway point and on which way the card is being
+     * turned -- back then front for one being turned up, front then back for
+     * one being turned down. A caller that worked it out again would be a
+     * second copy of a rule with two places to get it backwards.
+     */
+    public record FlipView(int code, int zone, int player, boolean showingFace, float progress,
+        Identifier texture, float u0, float v0, float u1, float v1)
+    {
+    }
+
+    /** Every card currently turning over. */
+    public java.util.List<FlipView> flipsInFlight(long now)
+    {
+        java.util.List<FlipView> views = new ArrayList<>(flips.size());
+        for(Playing animation : flips)
+        {
+            DuelEvent event = animation.event();
+            float t = animation.progress(now);
+            boolean endsFaceUp = event.amount() != 0;
+            boolean showFace = (t < 0.5F) != endsFaceUp;
+            Identifier texture = showFace ? artFor(event.code(), event.toZone())
+                : (event.player() == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT);
+            boolean edoproArt = !showFace || event.code() == 0;
+            views.add(new FlipView(event.code(), event.toZone(), event.player(), showFace, t,
+                texture,
+                edoproArt ? 0F : DuelTextures.CARD_U0, edoproArt ? 0F : DuelTextures.CARD_V0,
+                edoproArt ? 1F : DuelTextures.CARD_U1, edoproArt ? 1F : DuelTextures.CARD_V1));
+        }
+        return views;
+    }
+
+    /**
+     * A chain or become-target marker, over the card it concerns.
+     * <p>
+     * drawing.cpp lays tChain over a chaining card and tChainTarget over a
+     * targeted one, which is what {@code chaining} chooses between.
+     */
+    public record OverlayView(int zone, boolean chaining, float progress)
+    {
+    }
+
+    /** Every marker currently standing. */
+    public java.util.List<OverlayView> overlaysInFlight(long now)
+    {
+        java.util.List<OverlayView> views = new ArrayList<>(overlays.size());
+        for(Playing animation : overlays)
+        {
+            views.add(new OverlayView(animation.event().toZone(),
+                animation.event().kind() == DuelEvent.Kind.CHAINING, animation.progress(now)));
+        }
+        return views;
+    }
+
+    /**
+     * A coin or dice result.
+     * <p>
+     * The values arrive packed the way the core packs them -- one bit each for
+     * coins, six bits each for dice -- and are unpacked by whoever draws them,
+     * since that is the same unpacking either presentation does.
+     */
+    public record TossView(boolean coin, int count, int values, float progress)
+    {
+    }
+
+    /** Every coin or dice result currently being announced. */
+    public java.util.List<TossView> tossesInFlight(long now)
+    {
+        java.util.List<TossView> views = new ArrayList<>(tosses.size());
+        for(Playing animation : tosses)
+        {
+            DuelEvent event = animation.event();
+            views.add(new TossView(event.kind() == DuelEvent.Kind.COIN,
+                Math.max(1, event.code()), event.amount(), animation.progress(now)));
+        }
+        return views;
+    }
+
+    /** One card being shown to everybody, with the art it wears. */
+    public record RevealView(int code, float progress, Identifier texture,
+        float u0, float v0, float u1, float v1)
+    {
+    }
+
+    /**
+     * Every card currently revealed.
+     * <p>
+     * Pruned here as well as in the render, because the reveal queue is the one
+     * that expires by being drawn rather than by being ticked -- and a queue
+     * only emptied by the presentation that reads it is a queue that grows
+     * forever in the presentation that does not.
+     */
+    public java.util.List<RevealView> revealsInFlight(long now)
+    {
+        reveals.removeIf(playing -> playing.done(now));
+        java.util.List<RevealView> views = new ArrayList<>(reveals.size());
+        for(Playing animation : reveals)
+        {
+            Identifier texture = artFor(animation.event().code());
+            boolean edoproArt = isEdoproArt(texture);
+            views.add(new RevealView(animation.event().code(), animation.progress(now), texture,
+                edoproArt ? 0F : DuelTextures.CARD_U0, edoproArt ? 0F : DuelTextures.CARD_V0,
+                edoproArt ? 1F : DuelTextures.CARD_U1, edoproArt ? 1F : DuelTextures.CARD_V1));
+        }
+        return views;
+    }
+
     /** Every card currently breaking, with how far through it is. */
     public java.util.List<ShatterView> shattersInFlight(long now)
     {
@@ -1293,7 +1435,14 @@ public class DuelAnimations
     private static final float CARD_H = 1.0F;
 
     /** Ease-out, so a card decelerates into its zone. */
-    private static float ease(float t)
+    /**
+     * How a card crosses the board: quickly at first and settling in.
+     * <p>
+     * Shared rather than restated, because the world board draws the same move
+     * from the same timing and a second easing would be the same card arriving
+     * at two different moments depending on where it was being watched from.
+     */
+    public static float ease(float t)
     {
         return 1F - (1F - t) * (1F - t);
     }

@@ -3,6 +3,8 @@ package de.cas_ual_ty.dueldimension.clientutil.overworld;
 import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
 import de.cas_ual_ty.dueldimension.clientutil.DuelClientState;
 import de.cas_ual_ty.dueldimension.clientutil.DuelTextures;
+import de.cas_ual_ty.dueldimension.clientutil.hub.HubTextures;
+import de.cas_ual_ty.dueldimension.clientutil.hub.NineSlice;
 import de.cas_ual_ty.dueldimension.ocg.OcgConstants;
 import de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot;
 import de.cas_ual_ty.dueldimension.ocg.prompt.HumanResponseSource;
@@ -401,7 +403,136 @@ public final class DuelHud
         // camera both get them, and drawn BEFORE the outcome so a duel that has
         // just been decided is not captioned over its own result.
         StatOverlay.draw(extractor, font, board, seat);
+        drawTosses(extractor, font, screenW, screenH, now);
+        drawReveals(extractor, font, screenW, screenH);
         drawOutcome(extractor, font, screenW, screenH);
+    }
+
+    /** How tall a coin or a die is drawn, and how far apart they sit. */
+    private static final int TOSS_SIZE = 26;
+    private static final int TOSS_GAP = 6;
+    /** How far the row rises into place as it arrives. */
+    private static final int TOSS_RISE = 14;
+
+    /**
+     * A coin or dice result, over the middle of the window.
+     * <p>
+     * The board played the SOUND of this and drew nothing, which made it the
+     * one thing a duel announced that a duellist standing at a board could not
+     * find out. It is not decoration: an effect that turns on a coin cannot be
+     * followed by somebody who never saw how it landed.
+     * <p>
+     * The coin is the same two-frame texture the duel screen's model wears --
+     * tails on the left of the file, heads on the right -- and a die is its
+     * number out of the digit sheet, which is how everything else on this board
+     * spells a number. Nothing here is a shape drawn in code.
+     */
+    private static void drawTosses(GuiGraphicsExtractor extractor, Font font, int screenW,
+        int screenH, long now)
+    {
+        java.util.List<de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.TossView> tosses =
+            DuelClientState.animations.tossesInFlight(now);
+        for(de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.TossView toss : tosses)
+        {
+            float t = toss.progress();
+            // Rises into place, holds, then fades out: the duel screen's own
+            // shape for the same announcement.
+            float rise = Math.min(1F, t * 4F);
+            float alpha = t < 0.75F ? 1F : 1F - (t - 0.75F) / 0.25F;
+            int a = Math.round(Math.max(0F, Math.min(1F, alpha)) * 255F);
+            if(a <= 0)
+            {
+                continue;
+            }
+            int tint = a << 24 | 0xFFFFFF;
+
+            int count = Math.max(1, toss.count());
+            int pitch = TOSS_SIZE + TOSS_GAP;
+            int left = (screenW - (count * pitch - TOSS_GAP)) / 2;
+            int top = below(screenW, screenH) + 10 - Math.round(TOSS_RISE * rise);
+
+            String caption = toss.coin() ? (count > 1 ? "Coin flips" : "Coin flip")
+                : (count > 1 ? "Dice rolls" : "Dice roll");
+            extractor.text(font, caption, (screenW - font.width(caption)) / 2, top - 11,
+                a << 24 | 0xF4D089, true);
+
+            for(int i = 0; i < count; i++)
+            {
+                int x = left + i * pitch;
+                if(toss.coin())
+                {
+                    // One bit each, and the sheet's right-hand frame is heads.
+                    boolean heads = ((toss.values() >> i) & 1) != 0;
+                    DdBlitUtil.blit(extractor, DuelTextures.COIN, x, top, TOSS_SIZE, TOSS_SIZE,
+                        heads ? 0.5F : 0F, 0F, heads ? 1F : 0.5F, 1F, tint);
+                    continue;
+                }
+                // Six bits each, and a die reads one to six.
+                int value = (toss.values() >> (i * 6)) & 0x3F;
+                NineSlice.draw(extractor, HubTextures.PANEL, x, top, TOSS_SIZE, TOSS_SIZE);
+                drawDigit(extractor, Math.max(1, Math.min(6, value)),
+                    x + (TOSS_SIZE - TOSS_SIZE / 2) / 2, top + 4, TOSS_SIZE / 2, tint);
+            }
+        }
+    }
+
+    /**
+     * One digit out of the sheet, which is how this board spells every number.
+     * <p>
+     * Ten cells sliced by u alone, each 48 by 80 -- the same cut
+     * {@code OverworldBoardRenderer.drawNumber} makes on the mat, so a number
+     * is the same number wherever it is read.
+     */
+    private static void drawDigit(GuiGraphicsExtractor extractor, int digit, int x, int y,
+        int height, int tint)
+    {
+        int width = Math.round(height * (48F / 80F));
+        DdBlitUtil.blit(extractor, DuelTextures.DIGITS, x, y, width, height,
+            digit / 10F, 0F, (digit + 1) / 10F, 1F, tint);
+    }
+
+    /** The revealed row's card width, and the gap between two of them. */
+    private static final int REVEAL_CARD_W = 44;
+    private static final int REVEAL_GAP = 4;
+
+    /**
+     * The cards somebody has just been made to show.
+     * <p>
+     * A reveal is the duel telling both players something, and it reached the
+     * duel screen only -- so the same event that everybody was entitled to see
+     * was seen by whoever happened not to be standing at a board.
+     * <p>
+     * Under the instruments rather than over the middle of the window: at a
+     * board the middle of the window is the board, and a banner across it hides
+     * the thing the reveal is usually about.
+     */
+    private static void drawReveals(GuiGraphicsExtractor extractor, Font font, int screenW,
+        int screenH)
+    {
+        java.util.List<de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.RevealView> shown =
+            DuelClientState.animations.revealsInFlight(System.currentTimeMillis());
+        if(shown.isEmpty())
+        {
+            return;
+        }
+        int cardH = Math.round(REVEAL_CARD_W / DuelTextures.CARD_ASPECT);
+        int pitch = REVEAL_CARD_W + REVEAL_GAP;
+        int width = shown.size() * pitch - REVEAL_GAP;
+        int left = (screenW - width) / 2;
+        int top = below(screenW, screenH) + 14;
+
+        String caption = shown.size() == 1 ? "Revealed"
+            : "Revealed " + shown.size() + " cards";
+        NineSlice.draw(extractor, HubTextures.PANEL, left - 6, top - 15, width + 12, cardH + 21);
+        extractor.text(font, caption, (screenW - font.width(caption)) / 2, top - 11,
+            0xFFF4D089, true);
+
+        for(int i = 0; i < shown.size(); i++)
+        {
+            de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.RevealView card = shown.get(i);
+            DdBlitUtil.blit(extractor, card.texture(), left + i * pitch, top, REVEAL_CARD_W,
+                cardH, card.u0(), card.v0(), card.u1(), card.v1(), DdBlitUtil.NO_TINT);
+        }
     }
 
     /**

@@ -126,7 +126,19 @@ public final class BoardMesh
      */
     public static Piece highlight(int controller, int location, int sequence)
     {
-        FieldLayout.Rect rect = FieldLayout.zone(controller, location, sequence);
+        return highlight(FieldLayout.zone(controller, location, sequence));
+    }
+
+    /**
+     * The same square, for a caller that already has the rectangle.
+     * <p>
+     * A placement prompt names its zones as packed references, which the board
+     * already knows how to turn into rectangles -- unpacking them a second time
+     * into a controller and a sequence just to look the rectangle up again is
+     * two decoders of one packing.
+     */
+    public static Piece highlight(FieldLayout.Rect rect)
+    {
         return rect == null ? null : new Piece(rect, DuelTextures.SLOT_ACTIVE, TOP_LAYER);
     }
 }

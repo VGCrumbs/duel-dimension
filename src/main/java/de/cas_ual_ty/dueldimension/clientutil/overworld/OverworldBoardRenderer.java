@@ -123,6 +123,9 @@ public final class OverworldBoardRenderer
         drawPlacements(poseStack, collector, transform, camera);
         drawCards(poseStack, collector, transform, camera);
         drawEquipLinks(poseStack, collector, transform, camera);
+        drawMarkers(poseStack, collector, transform, camera);
+        drawFlips(poseStack, collector, transform, camera);
+        drawMoves(poseStack, collector, transform, camera);
         drawAttacks(poseStack, collector, transform, camera);
         drawShatters(poseStack, collector, transform, camera);
     }
@@ -159,10 +162,7 @@ public final class OverworldBoardRenderer
             {
                 continue;
             }
-            int half = FieldTransform.controllerFor(seat, (reference & 16) == 0);
-            BoardMesh.Piece lit = BoardMesh.highlight(half,
-                (reference & 8) != 0 ? OcgConstants.LOCATION_MZONE : OcgConstants.LOCATION_SZONE,
-                reference & 7);
+            BoardMesh.Piece lit = BoardMesh.highlight(zoneOfRef(reference, seat));
             if(lit == null)
             {
                 continue;
@@ -181,6 +181,153 @@ public final class OverworldBoardRenderer
             }
         }
     }
+
+    /**
+     * Chain and become-target markers, over the cards they concern.
+     * <p>
+     * drawing.cpp lays tChain over a chaining card and tChainTarget over a
+     * targeted one, and the board has had both textures and neither reader. It
+     * is not decoration: which card is chaining, and which card that chain is
+     * pointing at, is the whole content of a chain a duellist has to respond
+     * to. A card activated from a hand or a pile has no square to mark, which
+     * is what a null zone means here.
+     */
+    private static void drawMarkers(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera)
+    {
+        List<de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.OverlayView> markers =
+            DuelClientState.animations.overlaysInFlight(System.currentTimeMillis());
+        if(markers.isEmpty())
+        {
+            return;
+        }
+        int seat = Math.max(0, ClientDuelField.seat());
+        for(de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.OverlayView marker : markers)
+        {
+            FieldLayout.Rect zone = zoneOfRef(marker.zone(), seat);
+            if(zone == null)
+            {
+                continue;
+            }
+            // On the card, not on the mat: the marker is about the card, and a
+            // square lit under a monster reads as the zone being offered.
+            WorldQuad.submit(poseStack, collector,
+                marker.chaining() ? DuelTextures.CHAIN : DuelTextures.TARGET, camera,
+                transform.corners(CardMesh.placement(zone, false),
+                    (cardLift(transform) + CardMesh.THICKNESS + MARKER_RUNG)
+                        * transform.scale()),
+                fade(0xFFFFFFFF));
+        }
+    }
+
+    /**
+     * A card turning over where it lies.
+     * <p>
+     * The quad narrows to nothing at the halfway point and opens again, which
+     * is what a card rotating about its long axis looks like -- and the face
+     * swaps at that midpoint, back then front for one being turned up. Which
+     * face is showing is the animation's own answer rather than one worked out
+     * again here: two copies of that rule is two places to get it backwards.
+     * <p>
+     * Drawn OVER the settled card rather than instead of it, exactly as the
+     * duel screen draws it. The board holds the old face for the event's
+     * duration -- the commit is queued behind the animation -- so the card
+     * underneath is the card this is turning.
+     */
+    private static void drawFlips(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera)
+    {
+        List<de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.FlipView> turning =
+            DuelClientState.animations.flipsInFlight(System.currentTimeMillis());
+        if(turning.isEmpty())
+        {
+            return;
+        }
+        int seat = Math.max(0, ClientDuelField.seat());
+        for(de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.FlipView flip : turning)
+        {
+            FieldLayout.Rect zone = zoneOfRef(flip.zone(), seat);
+            if(zone == null)
+            {
+                continue;
+            }
+            int controller = FieldTransform.controllerFor(seat, (flip.zone() & 16) == 0);
+            FieldLayout.Rect card = CardMesh.placement(zone, false);
+            // |cos| gives one full narrow-and-open across the animation, and
+            // never quite zero: a quad of no width is a quad with no normal.
+            float squash = Math.max(0.04F,
+                Math.abs((float)Math.cos(Math.PI * flip.progress())));
+            float width = card.w() * squash;
+            CardRenderer.submitAt(poseStack, collector, transform, camera,
+                new FieldLayout.Rect(card.x() + (card.w() - width) / 2F, card.y(), width,
+                    card.h()),
+                CardRenderer.turnsFor(controller, false),
+                cardLift(transform) + FLIP_RUNG, flip.texture(),
+                controller == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT,
+                fade(0xFFFFFFFF));
+        }
+    }
+
+    /**
+     * A card on its way from one zone to another.
+     * <p>
+     * A card that comes from nowhere on the mat -- out of a hand, off the top
+     * of a deck -- has no rectangle to start from, so it comes in over its
+     * owner's edge of the board. The screen's own rule; the only difference is
+     * that an edge here is a half of a table two people are standing at rather
+     * than the top or the bottom of a window.
+     * <p>
+     * The arc is what makes it read as a card being CARRIED rather than slid,
+     * which matters more on a board seen from a low angle than it does on a
+     * board seen from above.
+     */
+    private static void drawMoves(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera)
+    {
+        List<de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.MoveView> moves =
+            DuelClientState.animations.movesInFlight(System.currentTimeMillis());
+        if(moves.isEmpty())
+        {
+            return;
+        }
+        int seat = Math.max(0, ClientDuelField.seat());
+        for(de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.MoveView move : moves)
+        {
+            FieldLayout.Rect to = zoneOfRef(move.toZone(), seat);
+            if(to == null)
+            {
+                continue;
+            }
+            FieldLayout.Rect from = zoneOfRef(move.fromZone(), seat);
+            int controller = FieldTransform.controllerFor(seat, (move.toZone() & 16) == 0);
+            int owner = FieldTransform.controllerFor(seat, move.player() == 0);
+
+            float startX = from != null ? from.x() : to.x();
+            float startY = from != null ? from.y()
+                : owner == 0 ? FieldLayout.FIELD_MAX_Y : FieldLayout.FIELD_MIN_Y;
+
+            float t = de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.ease(
+                move.progress());
+            float x = startX + (to.x() - startX) * t;
+            float y = startY + (to.y() - startY) * t;
+            float arc = (float)Math.sin(Math.PI * t) * MOVE_ARC;
+
+            CardRenderer.submit(poseStack, collector, transform, camera,
+                new FieldLayout.Rect(x, y, to.w(), to.h()), controller, false,
+                cardLift(transform) + arc, move.texture(),
+                owner == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT,
+                fade(0xFFFFFFFF));
+        }
+    }
+
+    /** How high a carried card rises at the middle of its journey, in field units. */
+    private static final float MOVE_ARC = 0.35F;
+
+    /** Clear of the card being turned, which is still drawn underneath it. */
+    private static final float FLIP_RUNG = 0.01F;
+
+    /** And clear of the card the marker is about. */
+    private static final double MARKER_RUNG = 0.012D;
 
     /**
      * The attacks in flight, as a bolt across the board from attacker to

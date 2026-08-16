@@ -68,8 +68,28 @@ public final class CardRenderer
         CardSpace transform, Vec3 camera, FieldLayout.Rect zone, int controller,
         boolean defence, float lift, Identifier face, Identifier back, int tint)
     {
-        FieldLayout.Rect rect = CardMesh.placement(zone, defence);
-        int turns = turnsFor(controller, defence);
+        submitAt(poseStack, collector, transform, camera, CardMesh.placement(zone, defence),
+            turnsFor(controller, defence), lift, face, back, tint);
+    }
+
+    /**
+     * The same card, at a rectangle of the caller's own choosing.
+     * <p>
+     * {@link CardMesh#placement} sizes a card from the CARD and only centres it
+     * in the zone, which is right for every card that is simply lying
+     * somewhere and wrong for the one case where the shape itself is the
+     * animation: a card turning over narrows to nothing about its own middle
+     * and opens again, and it has to keep its height while it does.
+     * <p>
+     * Split out rather than duplicated, so a flipping card is drawn by exactly
+     * the code that draws a settled one -- same faces, same edge, same
+     * letterboxing question -- and cannot come out looking like a different
+     * object for the second it is moving.
+     */
+    public static void submitAt(PoseStack poseStack, SubmitNodeCollector collector,
+        CardSpace transform, Vec3 camera, FieldLayout.Rect rect, int turns, float lift,
+        Identifier face, Identifier back, int tint)
+    {
 
         for(CardMesh.Face part : CardMesh.faces(rect, lift))
         {
