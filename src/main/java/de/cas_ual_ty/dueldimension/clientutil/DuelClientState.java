@@ -59,6 +59,20 @@ public final class DuelClientState
      * shows it and nulls this, so a list can never be shown twice by accident.
      */
     public static volatile java.util.List<BoardSnapshot.Slot> deckView;
+
+    /**
+     * How often the duel should stop and ask about a chain.
+     * <p>
+     * Here rather than in the duel screen, which is where it used to live as an
+     * instance field -- so it went back to DEFAULT every time the screen was
+     * rebuilt while the server went on holding whatever had last been sent.
+     * The button said one thing and the duel did another.
+     * <p>
+     * And a duellist at a world board never saw it at all, which is the setting
+     * that decides how often they are interrupted. One value, read by both.
+     */
+    public static volatile de.cas_ual_ty.dueldimension.ocg.prompt.ChainPreference
+        chainPreference = de.cas_ual_ty.dueldimension.ocg.prompt.ChainPreference.DEFAULT;
     public static volatile String result = "";
     /** Server-calculated reward waiting behind the outcome stinger. */
     private static volatile de.cas_ual_ty.dueldimension.shop.DuelRewardMessages.Result reward;
@@ -515,6 +529,7 @@ public final class DuelClientState
         // For the same reason as the sleeve above: a deck list left here would
         // be the PREVIOUS duel's deck, opening itself over the next one.
         deckView = null;
+        chainPreference = de.cas_ual_ty.dueldimension.ocg.prompt.ChainPreference.DEFAULT;
         result = "";
         reward = null;
         log.clear();

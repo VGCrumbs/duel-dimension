@@ -755,8 +755,12 @@ public class BoardPointerScreen extends Screen
         // Exactly the duel screen's rows, in its order and for its reasons.
         // View Deck first because it is the harmless one, and a menu whose
         // first row concedes the duel is a menu people learn not to open.
+        // The chain setting and the music sit between them, which is where
+        // EDOPro keeps the chain toggles too -- next to Surrender, as duel-long
+        // preferences rather than plays. A board with no way to reach them left
+        // a duellist unable to change how often the duel stopped to ask.
         return DuelClientState.over ? java.util.List.of(CLOSE)
-            : java.util.List.of(VIEW_DECK, SURRENDER);
+            : java.util.List.of(VIEW_DECK, CHAIN_PREF, MUSIC, VOLUME, SURRENDER);
     }
 
     /** Is this target the deck those controls belong to -- yours? */
@@ -774,6 +778,16 @@ public class BoardPointerScreen extends Screen
 
     /** Finished with a decided duel, which is what the deck offers once it is over. */
     private static final int CLOSE = -4;
+
+    /** How often the duel should stop to ask about a chain. */
+    private static final int CHAIN_PREF = -5;
+    /** The duel music, on or off. */
+    private static final int MUSIC = -6;
+    /** And how loud, in steps, since a menu row cannot be a slider. */
+    private static final int VOLUME = -7;
+
+    /** One press of the volume row, as a fraction. */
+    private static final float VOLUME_STEP = 0.2F;
 
     /**
      * Surrender is armed by one click and taken by the next.
@@ -804,6 +818,7 @@ public class BoardPointerScreen extends Screen
             onClose();
             return;
         }
+        surrenderArmed = index == SURRENDER && surrenderArmed;
         if(index == VIEW_DECK)
         {
             net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
@@ -816,6 +831,38 @@ public class BoardPointerScreen extends Screen
             // nothing. The list opens here, in the same pile viewer a graveyard
             // opens in, as soon as the answer lands.
             choices = List.of();
+            return;
+        }
+        // The three preferences leave the menu open: they are cycled rather
+        // than chosen, and a menu that closed on each press would have to be
+        // reopened to see what the press did. Re-measured, because the labels
+        // they cycle through are not all the same width.
+        if(index == CHAIN_PREF)
+        {
+            DuelClientState.chainPreference = DuelClientState.chainPreference.next();
+            net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+                new de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.SetChainPreference(
+                    DuelClientState.chainPreference));
+            remeasure();
+            return;
+        }
+        if(index == MUSIC)
+        {
+            de.cas_ual_ty.dueldimension.clientutil.DuelMusic.toggleMuted();
+            remeasure();
+            return;
+        }
+        if(index == VOLUME)
+        {
+            // Round before stepping: the slider sets values a step never lands
+            // on, and adding a fifth to 0.37 forever would leave the row
+            // reading a number nobody chose.
+            float now = Math.round(
+                de.cas_ual_ty.dueldimension.clientutil.DuelMusic.volume() / VOLUME_STEP)
+                * VOLUME_STEP;
+            de.cas_ual_ty.dueldimension.clientutil.DuelMusic.setVolume(
+                now >= 1F - 1e-3F ? 0F : now + VOLUME_STEP);
+            remeasure();
             return;
         }
         if(index == SURRENDER)
@@ -1343,6 +1390,20 @@ public class BoardPointerScreen extends Screen
         {
             return "View Deck";
         }
+        if(index == CHAIN_PREF)
+        {
+            return DuelClientState.chainPreference.label();
+        }
+        if(index == MUSIC)
+        {
+            return de.cas_ual_ty.dueldimension.clientutil.DuelMusic.muted()
+                ? "Music: off" : "Music: on";
+        }
+        if(index == VOLUME)
+        {
+            return "Volume: " + Math.round(
+                de.cas_ual_ty.dueldimension.clientutil.DuelMusic.volume() * 100F) + "%";
+        }
         if(index == SURRENDER)
         {
             return surrenderArmed ? "Surrender -- click again" : "Surrender";
@@ -1354,6 +1415,22 @@ public class BoardPointerScreen extends Screen
         var prompt = DuelClientState.prompt;
         return prompt == null || index < 0 || index >= prompt.options().size() ? "?"
             : prompt.options().get(index).label();
+    }
+
+    /**
+     * The open menu's width, taken again from its rows.
+     * <p>
+     * A row whose label changes under it -- "Chain: ON" becoming "Chain:
+     * default" -- would otherwise write past the panel it is drawn in, since
+     * the width was measured once when the menu opened.
+     */
+    private void remeasure()
+    {
+        choicesW = ROW_W_MIN;
+        for(int index : choices)
+        {
+            choicesW = Math.max(choicesW, font.width(label(index)) + ROW_LABEL_PAD);
+        }
     }
 
     /**

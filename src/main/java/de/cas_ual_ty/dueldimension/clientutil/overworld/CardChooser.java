@@ -44,16 +44,24 @@ public final class CardChooser
      * Is this pile one a duellist may look through?
      * <p>
      * A graveyard and a banished pile are public knowledge -- both duellists
-     * may read either at any time, and the duel screen has always let them. An
-     * Extra Deck is its owner's alone, and a Deck is nobody's: the client is
-     * only ever told how many cards are in it, so there is nothing to show.
+     * may read either at any time, and the duel screen has always let them. A
+     * Deck is nobody's: the client is only ever told how many cards are in it,
+     * so there is nothing to show.
+     * <p>
+     * Either Extra Deck, though. Not because the opponent's is public -- it is
+     * not -- but because deciding that here would be deciding it in the wrong
+     * place. {@code BoardState.playerBoard} already conceals it, sending backs
+     * for everything except the cards the core marks public, which are the
+     * face-up Pendulum monsters. Those ARE public, they are the ones an
+     * opponent has to play around, and the duel screen has shown them since it
+     * was written. Refusing the whole pile here hid a public fact to protect a
+     * private one the server had already taken care of.
      */
     public static boolean viewable(int location, int controller)
     {
         return location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_GRAVE
             || location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_REMOVED
-            || (location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_EXTRA
-                && controller == 0);
+            || location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_EXTRA;
     }
 
     /** The most cards this will take on before the duel screen is the better tool. */

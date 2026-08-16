@@ -387,10 +387,12 @@ public class EngineDuelScreen extends Screen
         // Narrowed to leave the music button room on the same row: both are
         // duel-long preferences and there is no reason to spend two rows of a
         // sidebar the card preview wants on them.
-        addRenderableWidget(Button.builder(Component.literal(chainPreference.label()), pressed ->
+        addRenderableWidget(Button.builder(
+            Component.literal(DuelClientState.chainPreference.label()), pressed ->
         {
-            chainPreference = chainPreference.next();
-            ClientPlayNetworking.send(new PromptMessages.SetChainPreference(chainPreference));
+            DuelClientState.chainPreference = DuelClientState.chainPreference.next();
+            ClientPlayNetworking.send(
+                new PromptMessages.SetChainPreference(DuelClientState.chainPreference));
             rebuild();
         }).bounds(SIDEBAR_PAD, height - 44, SIDEBAR_W - SIDEBAR_PAD * 2 - MUSIC_BUTTON, 18)
             .build());
