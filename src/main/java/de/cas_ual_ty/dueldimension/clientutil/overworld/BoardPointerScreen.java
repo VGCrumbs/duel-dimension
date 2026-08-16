@@ -179,14 +179,68 @@ public class BoardPointerScreen extends Screen
     public void tick()
     {
         DuelSelection.sync(DuelClientState.prompt);
-        if(!CardChooser.open())
+        // The pile viewer draws through the same grid and shares its scroll
+        // position, so it counts as open for this: resetting under it would put
+        // a duellist reading the bottom of a graveyard back at the top on the
+        // next tick, every tick.
+        if(!CardChooser.open() && pileView.isEmpty())
         {
             CardChooser.reset();
         }
+
+        // Holding the right button waves chain windows through, which is what
+        // the caption under one has been promising. A long chain asks the same
+        // question after every link, and a player who has decided not to
+        // respond to any of it should be able to say so once by holding rather
+        // than clicking through each in turn. Only skippable windows go: a
+        // forced response is not a question, and the core would refuse an empty
+        // answer to it. The duel screen's rule exactly, and its reasons.
+        EnginePrompt open = DuelClientState.prompt;
+        if(open != null && open.chainWindow() && open.cancelable() && rightButtonHeld())
+        {
+            decline();
+            return;
+        }
+
+        // The answer to "View Deck", which arrives whenever the server gets
+        // round to it rather than on the click: unlike every other pile the
+        // deck's contents are not in the board packet, they are asked for and
+        // shuffled before they are sent. Taken rather than read, so one answer
+        // opens the panel exactly once -- and read HERE as well as in the duel
+        // screen, because the board is where it was asked for.
+        List<BoardSnapshot.Slot> deck = DuelClientState.deckView;
+        if(deck != null)
+        {
+            DuelClientState.deckView = null;
+            if(!deck.isEmpty())
+            {
+                pileView = List.copyOf(deck);
+                // The same wording the deck's own pile label carries, and the
+                // same number: the list IS the count, so the two cannot drift.
+                pileViewLabel = "Deck (" + deck.size() + ")";
+                CardChooser.reset();
+            }
+        }
+
         if(choices.isEmpty() && PromptOptions.needsList(DuelClientState.prompt))
         {
             openQuestion(PromptOptions.unanchoredOptions(DuelClientState.prompt, false));
         }
+    }
+
+    /**
+     * Whether the right mouse button is down right now.
+     * <p>
+     * Asked of the window rather than tracked from click events, exactly as the
+     * duel screen asks it: the button may already have been held when the
+     * prompt arrived, and a press that happened before this prompt existed
+     * produces no event for it to have seen.
+     */
+    private boolean rightButtonHeld()
+    {
+        return minecraft != null && org.lwjgl.glfw.GLFW.glfwGetMouseButton(
+            minecraft.getWindow().handle(),
+            org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
     }
 
     /**
@@ -642,6 +696,31 @@ public class BoardPointerScreen extends Screen
     }
 
     /**
+     * The wheel, which reaches the bottom of a pile too tall to draw at once.
+     * <p>
+     * The pile viewer first, for the same reason mouseClicked tests it first:
+     * it is drawn OVER the picker and the two are centred on the same point, so
+     * the wheel belongs to whichever is on top. Exactly the duel screen's
+     * order, which had this and the board did not -- a forty-card graveyard
+     * simply ran off the bottom edge.
+     */
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta)
+    {
+        if(!pileView.isEmpty()
+            && CardChooser.wheel(pileView.size(), width, height, delta))
+        {
+            return true;
+        }
+        if(CardChooser.open() && CardChooser.wheel(
+            CardChooser.optionsOf(DuelClientState.prompt).size(), width, height, delta))
+        {
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, delta);
+    }
+
+    /**
      * Declining, which is not one of the engine's options: it is an EMPTY
      * answer.
      * <p>
@@ -729,10 +808,14 @@ public class BoardPointerScreen extends Screen
         {
             net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
                 new de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.ViewOwnDeck());
-            // The deck list is a screen of its own, so this one steps aside
-            // whether it was borrowed or not.
+            // And WAIT for it, with the menu put away. This used to close the
+            // pointer instead, on the reasoning that the deck list is a screen
+            // of its own -- but the only thing that reads the server's answer
+            // is the duel screen's tick, and the duel screen is not the one
+            // that asked. The row cost a duellist their cursor and showed them
+            // nothing. The list opens here, in the same pile viewer a graveyard
+            // opens in, as soon as the answer lands.
             choices = List.of();
-            onClose();
             return;
         }
         if(index == SURRENDER)
@@ -833,12 +916,6 @@ public class BoardPointerScreen extends Screen
         {
             DuelHud.draw(extractor, font, board, ClientDuelField.seat());
             HandHud.drawHand(extractor, board, hoveredCard);
-            // Only here, and not from the HUD. The HUD is what a duel looks
-            // like while the camera key is held, and a button drawn where there
-            // is no cursor to click it with is a promise the screen cannot
-            // keep.
-            DuelHud.drawCancel(extractor, font, mouseX, mouseY, !choices.isEmpty());
-            DuelHud.drawConfirm(extractor, font, mouseX, mouseY);
         }
 
         // Last, and never INSTEAD of the rest. Opening a menu used to return
@@ -861,6 +938,20 @@ public class BoardPointerScreen extends Screen
         {
             CardChooser.draw(extractor, font, DuelClientState.prompt,
                 CardChooser.optionsOf(DuelClientState.prompt), mouseX, mouseY);
+        }
+
+        // After the panels, not before them. Both the picker and the pile
+        // viewer dim the whole window on their way in, and the HUD used to draw
+        // these two first -- so Cancel and Confirm, the only way out of a
+        // picker and the only way to finish a selection, sat behind the dim
+        // that opening the picker had put there. Still only from here and never
+        // from the HUD: the HUD is what a duel looks like while the camera key
+        // is held, and a button drawn where there is no cursor to click it with
+        // is a promise the screen cannot keep.
+        if(board != null && ClientDuelField.seat() >= 0)
+        {
+            DuelHud.drawCancel(extractor, font, mouseX, mouseY, !choices.isEmpty());
+            DuelHud.drawConfirm(extractor, font, mouseX, mouseY);
         }
 
         // Shift shows the card's own words, the same as the deck builder's

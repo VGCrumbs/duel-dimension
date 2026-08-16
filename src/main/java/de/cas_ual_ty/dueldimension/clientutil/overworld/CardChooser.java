@@ -90,6 +90,21 @@ public final class CardChooser
     private static int marqueeCell = -1;
     private static long marqueeSince;
 
+    /**
+     * The first row shown, when there are more than fit.
+     * <p>
+     * A graveyard is not a fixed size and neither is a deck, so a grid that
+     * lays out however many rows the count comes to will eventually lay them
+     * out past the bottom edge of the window -- where they cannot be clicked,
+     * cannot be read, and cannot be got at by any means at all. The duel screen
+     * has had exactly this since it was written.
+     * <p>
+     * Static because the panel is: one picker is open at a time, and the grid
+     * is a drawing of whatever is currently being asked rather than an object
+     * anybody holds.
+     */
+    private static int scroll;
+
     /** The picker's geometry, sized to the room this window actually has. */
     public record Layout(int x, int y, int width, int height, int cardW, int cardH, int columns,
         int rows, int gridX, int gridY)
@@ -129,11 +144,21 @@ public final class CardChooser
             cardW -= 4;
         }
 
+        // However many rows the room actually holds, once the cards are as
+        // small as they are allowed to get. Past that point shrinking further
+        // would make the art unreadable to fit a graveyard that has no upper
+        // size, so the rest is scrolled to rather than squeezed in.
+        int fits = Math.max(1, (roomH - PAD * 2 - HEADER + GAP) / (cardH + NAME_LINE + GAP));
+        rows = Math.min(rows, fits);
+
         int grid = columns * cardW + (columns - 1) * GAP;
         // Wide enough for its own header, not only for its cards. A panel sized
         // to the grid alone is a panel whose title hangs out of it, which is
-        // exactly what it did.
-        int width = Math.max(grid, titleWidth()) + PAD * 2;
+        // exactly what it did. A scrolled panel's header carries a range as
+        // well, and only then -- widening every picker for a count most of them
+        // never show would be the same bug wearing the other face.
+        boolean scrolled = (count + columns - 1) / columns > rows;
+        int width = Math.max(grid, titleWidth(scrolled)) + PAD * 2;
         int height = PAD * 2 + HEADER + rows * (cardH + NAME_LINE) + (rows - 1) * GAP;
         int x = (screenW - width) / 2;
         int y = Math.max(ceiling + 4, ceiling + (roomH - height) / 2);
@@ -155,6 +180,10 @@ public final class CardChooser
         Layout layout = layout(count, screenW, screenH);
         for(int cell = 0; cell < count; cell++)
         {
+            if(!shown(layout, cell))
+            {
+                continue;
+            }
             int cardX = cellX(layout, cell);
             int cardY = cellY(layout, cell);
             if(mouseX >= cardX && mouseX < cardX + layout.cardW()
@@ -166,9 +195,10 @@ public final class CardChooser
         return -1;
     }
 
-    private static int titleWidth()
+    private static int titleWidth(boolean withRange)
     {
-        return net.minecraft.client.Minecraft.getInstance().font.width(TITLE);
+        return net.minecraft.client.Minecraft.getInstance().font.width(
+            withRange ? TITLE + "   00 - 00 / 00" : TITLE);
     }
 
     private static int cellX(Layout layout, int cell)
@@ -178,8 +208,46 @@ public final class CardChooser
 
     private static int cellY(Layout layout, int cell)
     {
-        return layout.gridY() + (cell / layout.columns())
+        return layout.gridY() + (cell / layout.columns() - scroll)
             * (layout.cardH() + NAME_LINE + GAP);
+    }
+
+    /** Is this cell one of the rows currently on screen? */
+    private static boolean shown(Layout layout, int cell)
+    {
+        int row = cell / layout.columns();
+        return row >= scroll && row < scroll + layout.rows();
+    }
+
+    /**
+     * The furthest down the wheel may go: the last row, sitting at the bottom.
+     * <p>
+     * Not the last row sitting at the TOP, which would scroll a full grid of
+     * cards off into blank panel below them.
+     */
+    public static int maxScroll(int count, int screenW, int screenH)
+    {
+        Layout layout = layout(count, screenW, screenH);
+        int total = (count + layout.columns() - 1) / layout.columns();
+        return Math.max(0, total - layout.rows());
+    }
+
+    /**
+     * Turns the wheel, and says whether there was anywhere to turn it.
+     * <p>
+     * The caller needs the answer: a wheel that changed nothing should fall
+     * through to whatever else wants it rather than being swallowed by a panel
+     * that is already showing everything it has.
+     */
+    public static boolean wheel(int count, int screenW, int screenH, double delta)
+    {
+        int ceiling = maxScroll(count, screenW, screenH);
+        if(ceiling <= 0)
+        {
+            return false;
+        }
+        scroll = Math.clamp(scroll - (int)Math.signum(delta), 0, ceiling);
+        return true;
     }
 
     public static void draw(GuiGraphicsExtractor extractor, Font font, EnginePrompt prompt,
@@ -230,8 +298,25 @@ public final class CardChooser
         extractor.fill(0, 0, screenW, screenH, 0x90000000);
         NineSlice.draw(extractor, HubTextures.PANEL, layout.x(), layout.y(), layout.width(),
             layout.height());
-        extractor.text(font, title, layout.x() + (layout.width() - font.width(title)) / 2,
+        // A pile too tall to show at once says so, in the duel screen's own
+        // words. Without it a scrolled panel is indistinguishable from a pile
+        // that happens to hold what is on screen, and a duellist reading a
+        // graveyard for a combo has no way to know there is more of it.
+        String heading = title;
+        if(maxScroll(faces.size(), screenW, screenH) > 0)
+        {
+            heading = title + "   " + (scroll * layout.columns() + 1) + " - "
+                + Math.min(faces.size(), (scroll + layout.rows()) * layout.columns())
+                + " / " + faces.size();
+        }
+        extractor.text(font, heading, layout.x() + (layout.width() - font.width(heading)) / 2,
             layout.y() + 5, 0xFFF4D089, true);
+
+        // Clamped here rather than only where the wheel turns: the pile behind
+        // this panel can shrink under it -- a graveyard is banished, a card is
+        // drawn -- and a scroll position left pointing past the end would draw
+        // an empty panel over a duel with no way to get back to the cards.
+        scroll = Math.clamp(scroll, 0, maxScroll(faces.size(), screenW, screenH));
 
         int hovered = at(faces.size(), screenW, screenH, mouseX, mouseY);
         if(hovered != marqueeCell)
@@ -244,6 +329,10 @@ public final class CardChooser
 
         for(int cell = 0; cell < faces.size(); cell++)
         {
+            if(!shown(layout, cell))
+            {
+                continue;
+            }
             int cardX = cellX(layout, cell);
             int cardY = cellY(layout, cell);
             boolean over = cell == hovered;
@@ -348,11 +437,12 @@ public final class CardChooser
         return phase < travel + END_HOLD ? overflow : 0;
     }
 
-    /** Forgets which cell was hovered, so the next picker starts clean. */
+    /** Forgets which cell was hovered and how far down, so the next picker starts clean. */
     public static void reset()
     {
         marqueeCell = -1;
         marqueeSince = 0L;
+        scroll = 0;
     }
 
     /** Every option of the open prompt, in the order the engine gave them. */
