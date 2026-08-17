@@ -672,50 +672,107 @@ public class DdDatabase
         
         File[] cardsFiles = cardsFolder.listFiles(DdIOUtil.JSON_FILTER);
         DdDatabase.PROPERTIES_LIST.ensureExtraCapacity(cardsFiles.length);
-        
-        JsonObject j;
-        Properties p;
-        
-        for(File cardFile : cardsFiles)
+        long startedAt = System.currentTimeMillis();
+
+        // One card per core rather than one at a time.
+        //
+        // This ran as a plain loop on the RENDER thread inside onInitialize,
+        // and on a real launch it took 63 seconds for 13,863 files while every
+        // other mod was starting up around it -- long enough to be the second
+        // largest single cost of getting into the game. Reading and parsing the
+        // same files takes about two seconds; the rest is per-card work and
+        // contention for a machine the loop was using one core of.
+        //
+        // Safe to split because nothing in it is shared: buildProperties only
+        // constructs objects, addLocalArtwork only reads the filesystem, and
+        // addInformation builds a throwaway list to prove the card is
+        // describable. The list itself is filled afterwards, on this thread,
+        // because DNCList is not synchronised and does not need to be.
+        //
+        // Encounter order is kept even in parallel, so the list is built in the
+        // same order as before -- and then sorted by passcode regardless, which
+        // is what anything reading it actually depends on.
+        java.util.concurrent.atomic.AtomicReference<RuntimeException> fatal =
+            new java.util.concurrent.atomic.AtomicReference<>();
+
+        java.util.List<Properties> parsed = java.util.Arrays.stream(cardsFiles)
+            .parallel()
+            .map(cardFile -> DdDatabase.readCard(cardFile, fatal))
+            .filter(java.util.Objects::nonNull)
+            .collect(java.util.stream.Collectors.toList());
+
+        // A card that failed in a way the old loop rethrew still brings the
+        // load down, and with the same exception: a broken database is not
+        // something to start a game on. Raised here rather than inside a worker
+        // so it arrives unwrapped, the way the caller has always seen it.
+        RuntimeException raised = fatal.get();
+        if(raised != null)
         {
-            try
-            {
-                j = DdIOUtil.parseJsonFile(cardFile).getAsJsonObject();
-                p = DdUtil.buildProperties(j);
-                DdDatabase.addLocalArtwork(p);
-                p.addInformation(new LinkedList<>()); // this throws in case of wrong information
-                DdDatabase.PROPERTIES_LIST.add(p);
-            }
-            catch(NullPointerException | IllegalArgumentException | IllegalStateException e)
-            {
-                DuelDimension.log("Failed reading card: " + cardFile.getAbsolutePath());
-                e.printStackTrace();
-            }
-            catch(JsonSyntaxException e)
-            {
-                DuelDimension.log("Failed reading card: " + cardFile.getAbsolutePath());
-                e.printStackTrace();
-            }
-            catch(JsonIOException | FileNotFoundException e)
-            {
-                DuelDimension.log("Failed reading card: " + cardFile.getAbsolutePath());
-                e.printStackTrace();
-            }
-            catch(IOException e)
-            {
-                DuelDimension.log("Failed reading card: " + cardFile.getAbsolutePath());
-                e.printStackTrace();
-            }
-            catch(Exception e)
-            {
-                DuelDimension.log("Failed reading card: " + cardFile.getAbsolutePath());
-                throw e;
-            }
+            throw raised;
         }
-        
+
+        DdDatabase.PROPERTIES_LIST.addAll(parsed);
         DdDatabase.PROPERTIES_LIST.sort();
-        
-        DuelDimension.log("Done reading card files!");
+
+        DuelDimension.log("Done reading card files! (" + parsed.size() + " cards in "
+            + (System.currentTimeMillis() - startedAt) + " ms)");
+    }
+
+    /**
+     * One card, or null if it could not be read.
+     * <p>
+     * The exact catches the serial loop used, in the same order and with the
+     * same verdicts: the four recoverable groups log the file and skip it,
+     * anything else is fatal. The only difference is that a fatal one is handed
+     * back rather than thrown, because an exception thrown inside a parallel
+     * stream arrives at the caller wrapped in something else and the caller has
+     * always been shown the original.
+     *
+     * @param fatal where to leave an exception that should stop the load; the
+     *              first one wins, since the rest are the same news arriving
+     *              later from other threads
+     */
+    private static Properties readCard(File cardFile,
+        java.util.concurrent.atomic.AtomicReference<RuntimeException> fatal)
+    {
+        try
+        {
+            JsonObject j = DdIOUtil.parseJsonFile(cardFile).getAsJsonObject();
+            Properties p = DdUtil.buildProperties(j);
+            DdDatabase.addLocalArtwork(p);
+            p.addInformation(new LinkedList<>()); // this throws in case of wrong information
+            return p;
+        }
+        catch(NullPointerException | IllegalArgumentException | IllegalStateException e)
+        {
+            DuelDimension.log("Failed reading card: " + cardFile.getAbsolutePath());
+            e.printStackTrace();
+            return null;
+        }
+        catch(JsonSyntaxException e)
+        {
+            DuelDimension.log("Failed reading card: " + cardFile.getAbsolutePath());
+            e.printStackTrace();
+            return null;
+        }
+        catch(JsonIOException | FileNotFoundException e)
+        {
+            DuelDimension.log("Failed reading card: " + cardFile.getAbsolutePath());
+            e.printStackTrace();
+            return null;
+        }
+        catch(IOException e)
+        {
+            DuelDimension.log("Failed reading card: " + cardFile.getAbsolutePath());
+            e.printStackTrace();
+            return null;
+        }
+        catch(RuntimeException e)
+        {
+            DuelDimension.log("Failed reading card: " + cardFile.getAbsolutePath());
+            fatal.compareAndSet(null, e);
+            return null;
+        }
     }
     
     private static void readDistributions(File distributionsFolder)
