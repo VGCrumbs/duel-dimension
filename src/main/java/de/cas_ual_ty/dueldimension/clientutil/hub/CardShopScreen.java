@@ -981,6 +981,8 @@ public class CardShopScreen extends Screen
         search = new EditBox(font, searchX() + 4, searchY + 3,
             Math.max(1, searchWidth() - 8), font.lineHeight + 3,
             Component.literal("Search"));
+        search.setBordered(false);
+        search.setY(search.getY() + (search.getHeight() - 8) / 2);
         search.setValue(searchText);
         search.setResponder(value ->
         {

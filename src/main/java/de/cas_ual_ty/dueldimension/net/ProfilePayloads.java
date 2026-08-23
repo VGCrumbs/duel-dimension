@@ -41,6 +41,7 @@ public final class ProfilePayloads
 
     /** How long a sleeve id may be. The longest this build has is 23 characters. */
     private static final int SLEEVE_LIMIT = 64;
+    private static final int DECK_BOX_LIMIT = 32;
 
     // ---- server to client ----
 
@@ -339,6 +340,43 @@ public final class ProfilePayloads
         }
     }
 
+    /** Chooses one of the built-in basic-colour cases for a deck. */
+    public record SetDeckBox(String name, String deckBox) implements CustomPacketPayload
+    {
+        public static final CustomPacketPayload.Type<SetDeckBox> TYPE =
+            DdNetwork.type("deck_box");
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, SetDeckBox> CODEC =
+            StreamCodec.composite(
+                ByteBufCodecs.stringUtf8(NAME_LIMIT), SetDeckBox::name,
+                ByteBufCodecs.stringUtf8(DECK_BOX_LIMIT), SetDeckBox::deckBox,
+                SetDeckBox::new);
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
+        {
+            return TYPE;
+        }
+    }
+
+    public record MoveDeck(String name, String targetName) implements CustomPacketPayload
+    {
+        public static final CustomPacketPayload.Type<MoveDeck> TYPE =
+            DdNetwork.type("deck_move");
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, MoveDeck> CODEC =
+            StreamCodec.composite(
+                ByteBufCodecs.stringUtf8(NAME_LIMIT), MoveDeck::name,
+                ByteBufCodecs.stringUtf8(NAME_LIMIT), MoveDeck::targetName,
+                MoveDeck::new);
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
+        {
+            return TYPE;
+        }
+    }
+
     public record ToggleFavourite(int passcode) implements CustomPacketPayload
     {
         public static final CustomPacketPayload.Type<ToggleFavourite> TYPE =
@@ -366,11 +404,13 @@ public final class ProfilePayloads
         DdNetwork.serverbound(SaveDeck.TYPE, SaveDeck.CODEC);
         DdNetwork.serverbound(CreateDeck.TYPE, CreateDeck.CODEC);
         DdNetwork.serverbound(RenameDeck.TYPE, RenameDeck.CODEC);
+        DdNetwork.serverbound(MoveDeck.TYPE, MoveDeck.CODEC);
         DdNetwork.serverbound(DeleteDeck.TYPE, DeleteDeck.CODEC);
         DdNetwork.serverbound(CopyRecipe.TYPE, CopyRecipe.CODEC);
         DdNetwork.serverbound(SetActiveDeck.TYPE, SetActiveDeck.CODEC);
         DdNetwork.serverbound(PublishRecipe.TYPE, PublishRecipe.CODEC);
         DdNetwork.serverbound(SetDeckSleeve.TYPE, SetDeckSleeve.CODEC);
+        DdNetwork.serverbound(SetDeckBox.TYPE, SetDeckBox.CODEC);
         DdNetwork.serverbound(ToggleFavourite.TYPE, ToggleFavourite.CODEC);
     }
 
@@ -383,6 +423,8 @@ public final class ProfilePayloads
             answer(player, DeckEdits.createDeck(player, message.name())));
         DdNetwork.onServer(RenameDeck.TYPE, (message, player) ->
             answer(player, DeckEdits.renameDeck(player, message.from(), message.to())));
+        DdNetwork.onServer(MoveDeck.TYPE, (message, player) ->
+            answer(player, DeckEdits.moveDeck(player, message.name(), message.targetName())));
         DdNetwork.onServer(DeleteDeck.TYPE, (message, player) ->
             answer(player, DeckEdits.deleteDeck(player, message.name())));
         DdNetwork.onServer(CopyRecipe.TYPE, (message, player) ->
@@ -393,6 +435,8 @@ public final class ProfilePayloads
             answer(player, DeckEdits.publishRecipe(player, message.name(), message.asRecipe())));
         DdNetwork.onServer(SetDeckSleeve.TYPE, (message, player) ->
             answer(player, DeckEdits.setDeckSleeve(player, message.name(), message.sleeve())));
+        DdNetwork.onServer(SetDeckBox.TYPE, (message, player) ->
+            answer(player, DeckEdits.setDeckBox(player, message.name(), message.deckBox())));
         DdNetwork.onServer(ToggleFavourite.TYPE, (message, player) ->
             answer(player, DeckEdits.toggleFavourite(player, message.passcode())));
     }

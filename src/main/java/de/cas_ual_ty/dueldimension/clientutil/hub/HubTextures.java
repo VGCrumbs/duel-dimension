@@ -27,6 +27,51 @@ public final class HubTextures
      */
     public static final Identifier CHECK = gui("common/check.png");
 
+    /** Fixed-ratio Master Duel deck tile, without its interaction outline. */
+    public static final Identifier DECK_TILE = gui("hub/deck_tile_surface.png");
+    /** The active deck's rank plate, already clipped to the tile silhouette. */
+    public static final Identifier DECK_TILE_SELECTED = gui("hub/deck_tile_selected.png");
+    /** Three full-size rows: idle, hovered and active deck outlines. */
+    public static final Identifier DECK_TILE_FRAME = gui("hub/deck_tile_frame.png");
+    /** Temporary deck case used until deck-specific cases are part of profile data. */
+    public static final Identifier DECK_PLACEHOLDER = gui("hub/deck_placeholder.png");
+    public static final Identifier DECK_BOX_RED = gui("hub/deck_box_red.png");
+    public static final Identifier DECK_BOX_PURPLE = gui("hub/deck_box_purple.png");
+    public static final Identifier DECK_BOX_VORTEX_OF_MAGIC =
+        gui("hub/deck_box_vortex_of_magic.png");
+    public static final Identifier DECK_BOX_BLUE_EYES_MAX =
+        gui("hub/deck_box_blue_eyes_max.png");
+    public static final Identifier DECK_BOX_DARK_MAGICAL_BLAST =
+        gui("hub/deck_box_dark_magical_blast.png");
+    public static final Identifier DECK_BOX_RAGE_OF_DEEP_BLUE =
+        gui("hub/deck_box_rage_of_deep_blue.png");
+    public static final Identifier DECK_BOX_CYBER_KAISER =
+        gui("hub/deck_box_cyber_kaiser.png");
+    public static final Identifier DECK_BOX_MILLENNIUM_PUZZLE =
+        gui("hub/deck_box_millennium_puzzle.png");
+    /** Master Duel's add-deck glyph. */
+    public static final Identifier ADD_DECK = gui("hub/add_deck.png");
+    /** Regulation ring; the word inside remains normal rendered text. */
+    public static final Identifier STANDARD_BADGE = gui("hub/standard_badge.png");
+
+    public static Identifier deckBox(
+        de.cas_ual_ty.dueldimension.duel.profile.DeckBoxStyle style)
+    {
+        return switch(style == null
+            ? de.cas_ual_ty.dueldimension.duel.profile.DeckBoxStyle.BLUE : style)
+        {
+            case RED -> DECK_BOX_RED;
+            case PURPLE -> DECK_BOX_PURPLE;
+            case VORTEX_OF_MAGIC -> DECK_BOX_VORTEX_OF_MAGIC;
+            case BLUE_EYES_MAX -> DECK_BOX_BLUE_EYES_MAX;
+            case DARK_MAGICAL_BLAST -> DECK_BOX_DARK_MAGICAL_BLAST;
+            case RAGE_OF_DEEP_BLUE -> DECK_BOX_RAGE_OF_DEEP_BLUE;
+            case CYBER_KAISER -> DECK_BOX_CYBER_KAISER;
+            case THE_MILLENNIUM_PUZZLE -> DECK_BOX_MILLENNIUM_PUZZLE;
+            case BLUE -> DECK_PLACEHOLDER;
+        };
+    }
+
     /** Section header for the editor's grids. */
     public static final Identifier HEADER = gui("deckeditor/header.png");
     /** The dark band the open deck's name sits in, above the grids. */

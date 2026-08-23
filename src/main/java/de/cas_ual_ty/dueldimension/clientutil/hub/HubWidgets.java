@@ -58,6 +58,12 @@ public final class HubWidgets
             labelColour = colour;
         }
 
+        /** Lets specialised buttons retain a state colour set by their screen. */
+        protected int labelColourOr(int fallback)
+        {
+            return labelColour == null ? fallback : labelColour;
+        }
+
         public void setActiveSupplier(java.util.function.BooleanSupplier supplier)
         {
             activeSupplier = supplier;
@@ -165,6 +171,96 @@ public final class HubWidgets
             NineSlice.draw(graphics, HubTextures.TAB, getX(), getY(), getWidth(), getHeight(),
                 row, 3);
             drawLabel(graphics, on ? 0xFFF4D089 : 0xFFC2C9D6);
+        }
+    }
+
+    /**
+     * One fixed-ratio tile from Master Duel's six-column deck selector.
+     * <p>
+     * The surface, clipped corners, regulation ring and icons are all PNGs;
+     * only the live deck name and the regulation word use the font.  The deck
+     * case is intentionally one placeholder for now because a profile does not
+     * yet carry Master Duel case IDs.
+     */
+    public static class DeckTileButton extends TextureButton
+    {
+        private static final float BADGE_TEXT_SCALE = 0.35F;
+        private final net.minecraft.resources.Identifier deckBoxTexture;
+        private final boolean selected;
+        private final boolean addTile;
+
+        public DeckTileButton(int x, int y, int width, int height, Component narration,
+            net.minecraft.resources.Identifier deckBoxTexture, boolean selected,
+            boolean addTile, OnPress onPress)
+        {
+            super(x, y, width, height, narration, onPress);
+            this.deckBoxTexture = deckBoxTexture;
+            this.selected = selected;
+            this.addTile = addTile;
+        }
+
+        @Override
+        protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
+            float partialTick)
+        {
+            de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.fullBlit(graphics,
+                selected ? HubTextures.DECK_TILE_SELECTED : HubTextures.DECK_TILE,
+                getX(), getY(), getWidth(), getHeight());
+
+            if(addTile)
+            {
+                int size = Math.round(Math.min(getWidth(), getHeight()) * 0.50F);
+                de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.fullBlit(graphics,
+                    HubTextures.ADD_DECK, getX() + (getWidth() - size) / 2,
+                    getY() + (getHeight() - size) / 2, size, size,
+                    isHoveredOrFocused() ? 0xFFBAFF00
+                        : de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.NO_TINT);
+            }
+            else
+            {
+                int caseW = Math.max(18, Math.round(getWidth() * 0.32F));
+                int caseH = Math.max(24, Math.round(getHeight() * 0.49F));
+                de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.fullBlit(graphics,
+                    deckBoxTexture, getX() + (getWidth() - caseW) / 2,
+                    getY() + Math.round(getHeight() * 0.18F), caseW, caseH);
+
+                int badgeW = Math.max(19, Math.round(getWidth() * 0.29F));
+                int badgeH = Math.max(9, Math.round(badgeW * 0.50F));
+                int badgeX = getX() + getWidth() - badgeW - 2;
+                int badgeY = getY() + 2;
+                de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.fullBlit(graphics,
+                    HubTextures.STANDARD_BADGE, badgeX, badgeY, badgeW, badgeH);
+                tinyCentredText(graphics, "STANDARD", badgeX, badgeY, badgeW, badgeH,
+                    0xFF369BFF);
+
+                net.minecraft.client.gui.Font font = net.minecraft.client.Minecraft
+                    .getInstance().font;
+                String name = font.plainSubstrByWidth(getMessage().getString(), getWidth() - 8);
+                graphics.text(font, name, getX() + (getWidth() - font.width(name)) / 2,
+                    getY() + getHeight() - 13,
+                    labelColourOr(selected ? 0xFFF4D089 : 0xFFE8E8E8), true);
+            }
+
+            int frameRow = selected ? 2 : isHoveredOrFocused() ? 1 : 0;
+            de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.blit(graphics,
+                HubTextures.DECK_TILE_FRAME, getX(), getY(), getWidth(), getHeight(),
+                0F, frameRow / 3F, 1F, (frameRow + 1) / 3F,
+                de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.NO_TINT);
+        }
+
+        private static void tinyCentredText(GuiGraphicsExtractor graphics, String text,
+            int x, int y, int width, int height, int colour)
+        {
+            net.minecraft.client.gui.Font font = net.minecraft.client.Minecraft
+                .getInstance().font;
+            float centreX = x + width / 2F;
+            float textX = centreX / BADGE_TEXT_SCALE - font.width(text) / 2F;
+            float textY = (y + (height - font.lineHeight * BADGE_TEXT_SCALE) / 2F)
+                / BADGE_TEXT_SCALE;
+            graphics.pose().pushMatrix();
+            graphics.pose().scale(BADGE_TEXT_SCALE, BADGE_TEXT_SCALE);
+            graphics.text(font, text, Math.round(textX), Math.round(textY), colour, true);
+            graphics.pose().popMatrix();
         }
     }
 }

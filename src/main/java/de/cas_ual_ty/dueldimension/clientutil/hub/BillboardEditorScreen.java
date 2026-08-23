@@ -481,6 +481,8 @@ public class BillboardEditorScreen extends Screen
             typingTarget = typed;
             EditBox box = new EditBox(font, x, rowY(), control, ROW_H,
                 Component.literal(typed.label()));
+            box.setBordered(false);
+            box.setY(box.getY() + (box.getHeight() - 8) / 2);
             box.setMaxLength(12);
             box.setValue(typed.text());
             typingBox = box;
@@ -691,6 +693,8 @@ public class BillboardEditorScreen extends Screen
     {
         EditBox box = new EditBox(font, left(), rowY(), full() - RESET_W - GAP, ROW_H,
             Component.literal("Sheet"));
+        box.setBordered(false);
+        box.setY(box.getY() + (box.getHeight() - 8) / 2);
         box.setMaxLength(128);
         box.setValue(sheet);
         box.setResponder(text ->
@@ -762,6 +766,8 @@ public class BillboardEditorScreen extends Screen
     {
         EditBox box = new EditBox(font, left(), rowY(), full() - RESET_W - GAP, ROW_H,
             Component.literal("Model"));
+        box.setBordered(false);
+        box.setY(box.getY() + (box.getHeight() - 8) / 2);
         box.setMaxLength(128);
         box.setValue(model);
         box.setResponder(text ->

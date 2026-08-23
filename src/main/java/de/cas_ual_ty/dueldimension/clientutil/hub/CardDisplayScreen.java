@@ -117,6 +117,8 @@ public class CardDisplayScreen extends Screen
         String kept = search == null ? "" : search.getValue();
         search = new EditBox(font, panelX + PAD, panelY + 18, panelW - PAD * 2, 14,
             Component.literal("Search"));
+        search.setBordered(false);
+        search.setY(search.getY() + (search.getHeight() - 8) / 2);
         search.setValue(kept);
         search.setResponder(text -> refresh());
         addRenderableWidget(search);

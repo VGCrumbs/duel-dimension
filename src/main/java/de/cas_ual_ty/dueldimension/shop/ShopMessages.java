@@ -520,4 +520,103 @@ public final class ShopMessages
                 new SyncPoints(DuelPoints.get(player)));
         }
     }
+
+    /** Server to client: premium deck-case stock and the current DP balance. */
+    public record OpenDeckBoxShop(int points, List<ShopStock.DeckBoxOffer> deckBoxes)
+        implements CustomPacketPayload
+    {
+        public static final CustomPacketPayload.Type<OpenDeckBoxShop> TYPE =
+            DdNetwork.type("shop_open_deck_boxes");
+        public static final StreamCodec<RegistryFriendlyByteBuf, OpenDeckBoxShop> CODEC =
+            CustomPacketPayload.codec(OpenDeckBoxShop::encode, OpenDeckBoxShop::decode);
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
+        {
+            return TYPE;
+        }
+
+        private static void encode(OpenDeckBoxShop message, FriendlyByteBuf buffer)
+        {
+            buffer.writeVarInt(message.points());
+            buffer.writeVarInt(message.deckBoxes().size());
+            message.deckBoxes().forEach(offer -> offer.write(buffer));
+        }
+
+        private static OpenDeckBoxShop decode(FriendlyByteBuf buffer)
+        {
+            int points = buffer.readVarInt();
+            int count = buffer.readVarInt();
+            List<ShopStock.DeckBoxOffer> offers = new ArrayList<>(count);
+            for(int i = 0; i < count; i++)
+            {
+                offers.add(ShopStock.DeckBoxOffer.read(buffer));
+            }
+            return new OpenDeckBoxShop(points, offers);
+        }
+    }
+
+    /** Client to server: requests one premium case by its stable enum name. */
+    public record BuyDeckBox(String deckBox) implements CustomPacketPayload
+    {
+        public static final CustomPacketPayload.Type<BuyDeckBox> TYPE =
+            DdNetwork.type("shop_buy_deck_box");
+        public static final StreamCodec<RegistryFriendlyByteBuf, BuyDeckBox> CODEC =
+            CustomPacketPayload.codec(BuyDeckBox::encode, BuyDeckBox::decode);
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
+        {
+            return TYPE;
+        }
+
+        private static void encode(BuyDeckBox message, FriendlyByteBuf buffer)
+        {
+            buffer.writeUtf(message.deckBox(), 64);
+        }
+
+        private static BuyDeckBox decode(FriendlyByteBuf buffer)
+        {
+            return new BuyDeckBox(buffer.readUtf(64));
+        }
+
+        public static void sell(ServerPlayer player, String name)
+        {
+            de.cas_ual_ty.dueldimension.duel.profile.DeckBoxStyle style =
+                de.cas_ual_ty.dueldimension.duel.profile.DeckBoxStyle.known(name);
+            if(style == null || !style.isPurchasable())
+            {
+                player.sendSystemMessage(Component.literal("That deck box is not for sale.")
+                    .withStyle(ChatFormatting.RED));
+                return;
+            }
+            de.cas_ual_ty.dueldimension.duel.profile.DuelProfile profile =
+                DuelProfiles.get(player);
+            if(profile.ownsDeckBox(style))
+            {
+                player.sendSystemMessage(Component.literal("You already own that deck box.")
+                    .withStyle(ChatFormatting.RED));
+                return;
+            }
+            boolean free = player.isCreative();
+            int price = free ? 0 : ShopStock.priceOfDeckBox(style);
+            if(!free && !DuelPoints.spend(player, price))
+            {
+                player.sendSystemMessage(Component.literal("Not enough DP.")
+                    .withStyle(ChatFormatting.RED));
+                return;
+            }
+            if(!profile.grantDeckBox(style))
+            {
+                if(!free)
+                {
+                    DuelPoints.award(player, price);
+                }
+                return;
+            }
+            DuelProfiles.saveAndSync(player);
+            net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
+                new SyncPoints(DuelPoints.get(player)));
+        }
+    }
 }

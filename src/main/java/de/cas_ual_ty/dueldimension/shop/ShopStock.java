@@ -44,6 +44,8 @@ public final class ShopStock
      * sleeve. A sleeve is one thing and costs one number.
      */
     public static final int SLEEVE_PRICE = 500;
+    /** Premium deck cases are a larger cosmetic purchase than sleeves. */
+    public static final int DECK_BOX_PRICE = 1000;
 
     /**
      * The catalogue, built on first use. Volatile because the server thread
@@ -136,6 +138,23 @@ public final class ShopStock
      * {@link #catalogue} is.
      */
     private static volatile List<SleeveOffer> sleeveCatalogue;
+
+    /** A premium deck case on sale. */
+    public record DeckBoxOffer(String deckBox, int price)
+    {
+        public void write(FriendlyByteBuf buffer)
+        {
+            buffer.writeUtf(deckBox, 64);
+            buffer.writeVarInt(price);
+        }
+
+        public static DeckBoxOffer read(FriendlyByteBuf buffer)
+        {
+            return new DeckBoxOffer(buffer.readUtf(64), buffer.readVarInt());
+        }
+    }
+
+    private static volatile List<DeckBoxOffer> deckBoxCatalogue;
 
     /** A disk on sale: the id it is registered under, and what it costs. */
     public record DiskOffer(String disk, int price)
@@ -260,6 +279,33 @@ public final class ShopStock
     {
         return de.cas_ual_ty.dueldimension.duel.profile.Sleeves.isPurchasable(sleeve)
             ? SLEEVE_PRICE : 0;
+    }
+
+    public static int priceOfDeckBox(
+        de.cas_ual_ty.dueldimension.duel.profile.DeckBoxStyle style)
+    {
+        return style != null && style.isPurchasable() ? DECK_BOX_PRICE : 0;
+    }
+
+    public static List<DeckBoxOffer> deckBoxes()
+    {
+        List<DeckBoxOffer> known = deckBoxCatalogue;
+        if(known != null)
+        {
+            return known;
+        }
+        List<DeckBoxOffer> offers = new ArrayList<>();
+        for(de.cas_ual_ty.dueldimension.duel.profile.DeckBoxStyle style
+            : de.cas_ual_ty.dueldimension.duel.profile.DeckBoxStyle.values())
+        {
+            if(style.isPurchasable())
+            {
+                offers.add(new DeckBoxOffer(style.name(), priceOfDeckBox(style)));
+            }
+        }
+        known = List.copyOf(offers);
+        deckBoxCatalogue = known;
+        return known;
     }
 
     /** Every pack on sale, newest first, since that is what a shop leads with. */

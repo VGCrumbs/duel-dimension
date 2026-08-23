@@ -49,6 +49,8 @@ public final class DuelProfile
      * never be lost from it.
      */
     private final Set<CardSleevesType> sleeves = new LinkedHashSet<>();
+    /** Paid deck cases; the three basic colours are owned by rule. */
+    private final Set<DeckBoxStyle> deckBoxes = EnumSet.noneOf(DeckBoxStyle.class);
     /**
      * Disks this player has bought. Same contract as {@link #sleeves} above:
      * only GRANTS live here, never the free plain disk, which is owned by the
@@ -192,6 +194,29 @@ public final class DuelProfile
         return sleeves.add(sleeve);
     }
 
+    public Set<DeckBoxStyle> ownedDeckBoxes()
+    {
+        EnumSet<DeckBoxStyle> all = EnumSet.noneOf(DeckBoxStyle.class);
+        for(DeckBoxStyle style : DeckBoxStyle.values())
+        {
+            if(style.isFree() || deckBoxes.contains(style))
+            {
+                all.add(style);
+            }
+        }
+        return Collections.unmodifiableSet(all);
+    }
+
+    public boolean ownsDeckBox(DeckBoxStyle style)
+    {
+        return style != null && (style.isFree() || deckBoxes.contains(style));
+    }
+
+    public boolean grantDeckBox(DeckBoxStyle style)
+    {
+        return style != null && style.isPurchasable() && deckBoxes.add(style);
+    }
+
     /** Same contract as {@link #grantSleeve}, for disks. */
     public boolean grantDisk(String disk)
     {
@@ -312,6 +337,44 @@ public final class DuelProfile
     }
 
     /**
+     * Moves one player-built deck to another player's deck position.
+     * Granted decks share the persisted list but are not manually arranged.
+     */
+    public boolean moveSavedDeck(String name, String targetName)
+    {
+        List<DeckList> saved = new ArrayList<>(savedDecks());
+        int from = -1;
+        int to = -1;
+        for(int i = 0; i < saved.size(); i++)
+        {
+            if(saved.get(i).name().equals(name))
+            {
+                from = i;
+            }
+            if(saved.get(i).name().equals(targetName))
+            {
+                to = i;
+            }
+        }
+        if(from < 0 || to < 0 || from == to)
+        {
+            return false;
+        }
+
+        DeckList moved = saved.remove(from);
+        saved.add(to, moved);
+        int savedIndex = 0;
+        for(int i = 0; i < decks.size(); i++)
+        {
+            if(decks.get(i).origin() == DeckList.Origin.SAVED)
+            {
+                decks.set(i, saved.get(savedIndex++));
+            }
+        }
+        return true;
+    }
+
+    /**
      * A detached value for the player attachment.
      * <p>
      * Profiles are edited through mutable deck and collection lists. Storing
@@ -345,6 +408,7 @@ public final class DuelProfile
         copy.unlockedStructures.addAll(unlockedStructures);
         copy.favourites.addAll(favourites);
         copy.sleeves.addAll(sleeves);
+        copy.deckBoxes.addAll(deckBoxes);
         // Copied for the same reason as the sleeves beside them: a field left
         // out of here is lost on EVERY save, not only on a duplication.
         copy.disks.addAll(disks);
@@ -468,6 +532,8 @@ public final class DuelProfile
                 .forGetter(profile -> List.copyOf(profile.favourites)),
             Sleeves.CODEC.listOf().optionalFieldOf("Sleeves", List.of())
                 .forGetter(profile -> List.copyOf(profile.sleeves)),
+            DeckBoxStyle.CODEC.listOf().optionalFieldOf("DeckBoxes", List.of())
+                .forGetter(profile -> List.copyOf(profile.deckBoxes)),
             // Optional and empty by default, so every profile saved before disks
             // were sold loads with just the free one.
             DuelDisks.CODEC.listOf().optionalFieldOf("Disks", List.of())
@@ -485,7 +551,7 @@ public final class DuelProfile
         ).apply(instance, DuelProfile::of));
 
     private static DuelProfile of(Trunk trunk, List<DeckList> decks, List<String> structures,
-        List<Integer> favourites, List<CardSleevesType> sleeves,
+        List<Integer> favourites, List<CardSleevesType> sleeves, List<DeckBoxStyle> deckBoxes,
         List<String> disks, String activeDisk, boolean diskWorn, String activeDeck)
     {
         DuelProfile profile = new DuelProfile();
@@ -505,6 +571,7 @@ public final class DuelProfile
         // this build no longer has reads as the plain back and lands in the
         // same bin. A profile therefore cleans itself up the next time it saves.
         sleeves.forEach(profile::grantSleeve);
+        deckBoxes.forEach(profile::grantDeckBox);
         // Through grantDisk for the same reason: a free disk saved by an older
         // rule is dropped rather than kept as a stale grant.
         disks.forEach(profile::grantDisk);

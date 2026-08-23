@@ -84,6 +84,9 @@ public final class DeckList
      */
     private CardSleevesType sleeve = Sleeves.DEFAULT;
 
+    /** The basic coloured case shown for this deck in selectors and the editor. */
+    private DeckBoxStyle deckBox = DeckBoxStyle.BLUE;
+
     /**
      * Which artwork each copy wears, one entry per position in the list beside
      * it. 0 is the printed art, which is what an absent or short list means.
@@ -222,6 +225,16 @@ public final class DeckList
         sleeve = newSleeve == null ? Sleeves.DEFAULT : newSleeve;
     }
 
+    public DeckBoxStyle deckBox()
+    {
+        return deckBox;
+    }
+
+    public void setDeckBox(DeckBoxStyle newDeckBox)
+    {
+        deckBox = newDeckBox == null ? DeckBoxStyle.BLUE : newDeckBox;
+    }
+
     public List<Integer> main()
     {
         return main;
@@ -323,6 +336,7 @@ public final class DeckList
     {
         DeckList copy = new DeckList(newName, newOrigin, main, extra, side);
         copy.sleeve = sleeve;
+        copy.deckBox = deckBox;
         // The artworks come too, and this line is load-bearing far beyond
         // duplicating a deck: DuelProfile.snapshot() copies every deck through
         // here, and the SNAPSHOT is what gets persisted. Leaving arts out did
@@ -360,6 +374,8 @@ public final class DeckList
             Codec.INT.listOf().optionalFieldOf("Extra", List.of()).forGetter(DeckList::extra),
             Codec.INT.listOf().optionalFieldOf("Side", List.of()).forGetter(DeckList::side),
             Sleeves.CODEC.optionalFieldOf("Sleeve", Sleeves.DEFAULT).forGetter(DeckList::sleeve),
+            DeckBoxStyle.CODEC.optionalFieldOf("DeckBox", DeckBoxStyle.BLUE)
+                .forGetter(DeckList::deckBox),
             // Optional and empty-by-default, so every deck saved before this
             // existed loads with every copy on its printed art.
             Codec.INT.listOf().optionalFieldOf("MainArts", List.of()).forGetter(DeckList::mainArts),
@@ -369,11 +385,13 @@ public final class DeckList
 
     private static DeckList of(String name, Origin origin, boolean published,
         List<Integer> main, List<Integer> extra, List<Integer> side, CardSleevesType sleeve,
+        DeckBoxStyle deckBox,
         List<Integer> mainArts, List<Integer> extraArts, List<Integer> sideArts)
     {
         DeckList deck = new DeckList(name, origin, main, extra, side);
         deck.published = published;
         deck.sleeve = sleeve;
+        deck.deckBox = deckBox;
         deck.setArts(mainArts, extraArts, sideArts);
         return deck;
     }

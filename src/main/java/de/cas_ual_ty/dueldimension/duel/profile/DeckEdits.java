@@ -79,6 +79,7 @@ public final class DeckEdits
             // over here or it is wiped on every autosave. The line above is that
             // same dance for `published`; this is it for the sleeve.
             candidate.setSleeve(existing.sleeve());
+            candidate.setDeckBox(existing.deckBox());
         }
         for(int code : candidate.counts().keySet())
         {
@@ -270,6 +271,25 @@ public final class DeckEdits
         return null;
     }
 
+    /** Reorders two positions in the player's saved-deck list. */
+    public static String moveDeck(ServerPlayer player, String name, String targetName)
+    {
+        DuelProfile profile = DuelProfiles.get(player);
+        if(profile.savedNamed(name) == null)
+        {
+            return "You have no deck called \"" + name + "\".";
+        }
+        if(profile.savedNamed(targetName) == null)
+        {
+            return "You have no deck called \"" + targetName + "\".";
+        }
+        if(name.equals(targetName))
+        {
+            return null;
+        }
+        return profile.moveSavedDeck(name, targetName) ? null : "That deck could not be moved.";
+    }
+
     public static String deleteDeck(ServerPlayer player, String name)
     {
         DuelProfile profile = DuelProfiles.get(player);
@@ -387,6 +407,36 @@ public final class DeckEdits
         return null;
     }
 
+    /** Chooses an owned deck case for a deck. */
+    public static String setDeckBox(ServerPlayer player, String name, String boxName)
+    {
+        DeckBoxStyle box = DeckBoxStyle.known(boxName);
+        if(box == null)
+        {
+            return "There is no such deck box.";
+        }
+        return setDeckBox(DuelProfiles.get(player), name, box);
+    }
+
+    static String setDeckBox(DuelProfile profile, String name, DeckBoxStyle box)
+    {
+        DeckList deck = profile.deckNamed(name);
+        if(deck == null)
+        {
+            return "You have no deck called \"" + name + "\".";
+        }
+        if(box == null)
+        {
+            return "There is no such deck box.";
+        }
+        if(!profile.ownsDeckBox(box))
+        {
+            return "You do not own that deck box.";
+        }
+        deck.setDeckBox(box);
+        return null;
+    }
+
     public static String setActive(ServerPlayer player, String name)
     {
         DuelProfile profile = DuelProfiles.get(player);
@@ -395,15 +445,10 @@ public final class DeckEdits
         {
             return "You have no deck called \"" + name + "\".";
         }
-        if(deck != null)
-        {
-            List<String> problems = DeckLimits.validate(deck, profile.trunk(), banlist(),
-                FreeMode.isEnabled(player));
-            if(!problems.isEmpty())
-            {
-                return "That deck cannot be used: " + problems.get(0);
-            }
-        }
+        // Choosing a favourite deck is a preference, not starting a duel.
+        // Duel entry performs the legality/ownership check against its actual
+        // rules and banlist; blocking the preference here left every in-progress
+        // build permanently greyed in the selector.
         profile.setActiveDeck(name);
         return null;
     }

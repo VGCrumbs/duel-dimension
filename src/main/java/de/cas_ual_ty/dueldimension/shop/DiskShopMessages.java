@@ -44,6 +44,7 @@ public final class DiskShopMessages
     {
         public static final String CARDS = "cards";
         public static final String SLEEVES = "sleeves";
+        public static final String DECK_BOXES = "deck_boxes";
         public static final String DISKS = "disks";
 
         /** Names this message on the wire. */
@@ -84,6 +85,9 @@ public final class DiskShopMessages
                 case SLEEVES -> net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(
                     player, new ShopMessages.OpenSleeveShop(DuelPoints.get(player),
                         ShopStock.sleeves()));
+                case DECK_BOXES -> net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(
+                    player, new ShopMessages.OpenDeckBoxShop(DuelPoints.get(player),
+                        ShopStock.deckBoxes()));
                 case DISKS -> send(player);
                 default ->
                 {

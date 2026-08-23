@@ -173,6 +173,10 @@ public final class DdNetwork
             de.cas_ual_ty.dueldimension.shop.ShopMessages.OpenSleeveShop.CODEC);
         serverbound(de.cas_ual_ty.dueldimension.shop.ShopMessages.BuySleeve.TYPE,
             de.cas_ual_ty.dueldimension.shop.ShopMessages.BuySleeve.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.shop.ShopMessages.OpenDeckBoxShop.TYPE,
+            de.cas_ual_ty.dueldimension.shop.ShopMessages.OpenDeckBoxShop.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.shop.ShopMessages.BuyDeckBox.TYPE,
+            de.cas_ual_ty.dueldimension.shop.ShopMessages.BuyDeckBox.CODEC);
 
         // What a menu's constructor needs, sent one packet ahead of the menu.
         clientbound(MenuData.TYPE, MenuData.CODEC);
@@ -238,6 +242,9 @@ public final class DdNetwork
         onServer(de.cas_ual_ty.dueldimension.shop.ShopMessages.BuySleeve.TYPE,
             (message, player) -> de.cas_ual_ty.dueldimension.shop.ShopMessages.BuySleeve
                 .sell(player, message.sleeve()));
+        onServer(de.cas_ual_ty.dueldimension.shop.ShopMessages.BuyDeckBox.TYPE,
+            (message, player) -> de.cas_ual_ty.dueldimension.shop.ShopMessages.BuyDeckBox
+                .sell(player, message.deckBox()));
 
         onServer(de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.AnswerPrompt.TYPE,
             (message, player) ->
@@ -469,6 +476,10 @@ public final class DdNetwork
             de.cas_ual_ty.dueldimension.shop.ShopMessages.OpenSleeveShop.TYPE,
             (payload, context) -> de.cas_ual_ty.dueldimension.clientutil.hub.SleeveShopScreen
                 .open(payload.points(), payload.sleeves()));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.shop.ShopMessages.OpenDeckBoxShop.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.clientutil.hub.DeckBoxShopScreen
+                .open(payload.points(), payload.deckBoxes()));
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
             de.cas_ual_ty.dueldimension.shop.DuelRewardMessages.Result.TYPE,
             (payload, context) -> de.cas_ual_ty.dueldimension.clientutil.DuelClientState

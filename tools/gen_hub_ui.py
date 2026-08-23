@@ -81,7 +81,7 @@ def button_state(state):
     if state == 'idle':
         return panel((62, 67, 80), (38, 42, 52), EDGE_LIGHT)
     if state == 'hover':
-        return panel((86, 92, 108), (52, 57, 70), (200, 210, 226), accent=GOLD)
+        return panel((86, 92, 108), (52, 57, 70), (200, 210, 226))
     return panel((34, 36, 42), (26, 28, 34), (70, 74, 84))
 
 
@@ -412,14 +412,11 @@ def deck_tile_frames(width=260, height=232):
     points = [(20, 1), (width - 3, 1), (width - 2, 2),
               (width - 2, height - 21), (width - 21, height - 2),
               (2, height - 2), (1, height - 3), (1, 20)]
-    colours = [(164, 168, 170, 255), (197, 220, 225, 255), (137, 177, 218, 255)]
+    colours = [(164, 168, 170, 255), (197, 220, 225, 255), (244, 208, 137, 255)]
     for row, colour in enumerate(colours):
         frame = Image.new('RGBA', (width, height), (0, 0, 0, 0))
         d = ImageDraw.Draw(frame)
         d.line(points + [points[0]], fill=colour, width=2, joint='curve')
-        if row == 1:
-            # The lime corner is the same interaction accent as the add icon.
-            d.line((20, 2, 61, 2), fill=(186, 255, 0, 255), width=3)
         atlas.alpha_composite(frame, (0, row * height))
     return atlas
 

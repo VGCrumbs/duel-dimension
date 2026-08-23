@@ -162,7 +162,7 @@ public class DuelHubScreen extends Screen
     }
 
     /** Static for the same reason the view above it is: reopening remembers. */
-    private static DeckLayout deckLayout = DeckLayout.LIST;
+    private static DeckLayout deckLayout = DeckLayout.GRID;
 
     /** First deck row shown, when there are more decks than fit. */
     private int deckScroll;
@@ -173,10 +173,10 @@ public class DuelHubScreen extends Screen
     /** Height of one deck row. */
     private static final int ROW_H = 20;
 
-    /** A grid tile: a name to click and a Use strip under it. */
-    private static final int TILE_H = 38;
+    /** Master Duel's 260x232 tile, scaled to six columns inside this panel. */
+    private static final int TILE_H = 58;
     private static final int TILE_GAP = 4;
-    private static final int GRID_COLUMNS = 3;
+    private static final int GRID_COLUMNS = 6;
 
     /** Gap between the three recipe columns, and the scrollbar's lane. */
     private static final int COLUMN_GAP = 6;
@@ -194,6 +194,30 @@ public class DuelHubScreen extends Screen
      * undone, and it sits between Duplicate and the edge of the panel.
      */
     private de.cas_ual_ty.dueldimension.duel.profile.DeckList confirmDelete;
+
+    /** Right-click target and the tile bounds laid out by the current rebuild. */
+    private de.cas_ual_ty.dueldimension.duel.profile.DeckList contextDeck;
+    private int contextX;
+    private int contextY;
+    private record DeckHit(int x, int y, int width, int height,
+        de.cas_ual_ty.dueldimension.duel.profile.DeckList deck)
+    {
+        boolean contains(double mouseX, double mouseY)
+        {
+            return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
+        }
+    }
+    private final java.util.List<DeckHit> deckHits = new java.util.ArrayList<>();
+    /** A left press becomes a drag only after moving beyond a small threshold. */
+    private de.cas_ual_ty.dueldimension.duel.profile.DeckList dragCandidate;
+    private de.cas_ual_ty.dueldimension.duel.profile.DeckList draggingDeck;
+    private de.cas_ual_ty.dueldimension.duel.profile.DeckList dragTarget;
+    private double dragStartX;
+    private double dragStartY;
+    private static final int CONTEXT_W = 104;
+    private static final int CONTEXT_ITEM_H = 18;
+    private static final String[] CONTEXT_ACTIONS =
+        { "Use", "Rename", "Duplicate", "Delete", "Save Recipe As" };
 
 
     /** First tile shown, when there are more card backs than fit across. */
@@ -224,6 +248,8 @@ public class DuelHubScreen extends Screen
 
     private void rebuild()
     {
+        contextDeck = null;
+        deckHits.clear();
         clearWidgets();
         int tabW = tabW();
         int tabX = left + PAD;
@@ -246,7 +272,7 @@ public class DuelHubScreen extends Screen
             for(DeckView candidate : DeckView.values())
             {
                 DeckView targetView = candidate;
-                addRenderableWidget(new HubWidgets.TabButton(viewX, bodyTop + 3, 68, 16,
+                addRenderableWidget(new HubWidgets.TabButton(viewX, top + HEIGHT - 32, 68, 20,
                     Component.literal(candidate.label), () -> deckView == targetView, pressed ->
                 {
                     deckView = targetView;
@@ -256,25 +282,6 @@ public class DuelHubScreen extends Screen
                     rebuild();
                 }));
                 viewX += 70;
-            }
-            // Only over the deck list. The recipe columns have a shape of their
-            // own and nothing to condense.
-            if(deckView == DeckView.DECKS)
-            {
-                int toggleW = 52;
-                addRenderableWidget(new HubWidgets.TabButton(
-                    left + WIDTH - PAD - 4 - toggleW, bodyTop + 3, toggleW, 16,
-                    Component.literal("Grid"), () -> deckLayout == DeckLayout.GRID, pressed ->
-                {
-                    deckLayout = deckLayout == DeckLayout.GRID
-                        ? DeckLayout.LIST : DeckLayout.GRID;
-                    cancelRename();
-                    // The two layouts count decks per screen differently, so a
-                    // position taken in one means something else in the other.
-                    deckScroll = 0;
-                    notice = "";
-                    rebuild();
-                }));
             }
             if(confirmDelete != null)
             {
@@ -287,24 +294,16 @@ public class DuelHubScreen extends Screen
             {
                 if(deckLayout == DeckLayout.GRID)
                 {
-                    buildDeckGrid(bodyTop + 22);
+                    buildDeckGrid(bodyTop);
                 }
                 else
                 {
-                    buildDeckRows(bodyTop + 22);
+                    buildDeckRows(bodyTop);
                 }
-                addRenderableWidget(new HubWidgets.TextureButton(left + PAD + 6, top + HEIGHT - 32,
-                    96, 20, Component.literal("New Deck"), pressed ->
-                {
-                    EditorState.newDeck();
-                    cancelRename();
-                    notice = "";
-                    rebuild();
-                }));
             }
             else
             {
-                buildRecipeRows(bodyTop + 22);
+                buildRecipeRows(bodyTop);
             }
         }
 
@@ -315,16 +314,16 @@ public class DuelHubScreen extends Screen
         {
             int shopX = left + PAD + 8;
             int shopY = bodyTop + 44;
-            // Two buttons, not three: the duel disks are reached by clicking
-            // the disk slot in the inventory, and a second door to the same
-            // room is a second thing to keep in step.
-            int shopW = (WIDTH - PAD * 2 - 16 - 8) / 2;
+            int shopW = (WIDTH - PAD * 2 - 16 - 16) / 3;
             addRenderableWidget(new HubWidgets.TextureButton(shopX, shopY, shopW, 20,
                 Component.literal("Cards"), pressed -> openShop(
                     de.cas_ual_ty.dueldimension.shop.DiskShopMessages.RequestShop.CARDS)));
             addRenderableWidget(new HubWidgets.TextureButton(shopX + shopW + 8, shopY, shopW, 20,
                 Component.literal("Sleeves"), pressed -> openShop(
                     de.cas_ual_ty.dueldimension.shop.DiskShopMessages.RequestShop.SLEEVES)));
+            addRenderableWidget(new HubWidgets.TextureButton(shopX + (shopW + 8) * 2, shopY,
+                shopW, 20, Component.literal("Deck Boxes"), pressed -> openShop(
+                    de.cas_ual_ty.dueldimension.shop.DiskShopMessages.RequestShop.DECK_BOXES)));
         }
 
         // The mat picker is rebuilt with the tab rather than kept, so it always
@@ -549,6 +548,9 @@ public class DuelHubScreen extends Screen
 
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
+        renderDeckContextMenu(graphics, mouseX, mouseY);
+        renderDeckDrag(graphics, mouseX, mouseY);
+
         extractTooltip(graphics, mouseX, mouseY);
     }
 
@@ -622,6 +624,52 @@ public class DuelHubScreen extends Screen
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
         boolean doubled)
     {
+        if(contextDeck != null)
+        {
+            if(event.button() == 0)
+            {
+                int action = contextActionAt(event.x(), event.y());
+                de.cas_ual_ty.dueldimension.duel.profile.DeckList target = contextDeck;
+                contextDeck = null;
+                if(action >= 0)
+                {
+                    runContextAction(action, target);
+                }
+                return true;
+            }
+            if(event.button() == 1)
+            {
+                openDeckContext(deckHitAt(event.x(), event.y()), event.x(), event.y());
+                return true;
+            }
+        }
+        if(event.button() == 1 && section == Section.DECKS
+            && deckView == DeckView.DECKS && EditorState.isSynced())
+        {
+            de.cas_ual_ty.dueldimension.duel.profile.DeckList target =
+                deckHitAt(event.x(), event.y());
+            if(target != null)
+            {
+                openDeckContext(target, event.x(), event.y());
+                return true;
+            }
+        }
+        if(event.button() == 0 && renameField == null && section == Section.DECKS
+            && deckView == DeckView.DECKS && deckLayout == DeckLayout.GRID
+            && EditorState.isSynced())
+        {
+            de.cas_ual_ty.dueldimension.duel.profile.DeckList target =
+                deckHitAt(event.x(), event.y());
+            if(target != null)
+            {
+                dragCandidate = target;
+                draggingDeck = null;
+                dragTarget = target;
+                dragStartX = event.x();
+                dragStartY = event.y();
+                return true;
+            }
+        }
         if(matPicker != null && matPicker.mouseClicked(event.x(), event.y()))
         {
             return true;
@@ -637,6 +685,19 @@ public class DuelHubScreen extends Screen
     public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event,
         double dragX, double dragY)
     {
+        if(event.button() == 0 && dragCandidate != null)
+        {
+            double dx = event.x() - dragStartX;
+            double dy = event.y() - dragStartY;
+            if(draggingDeck != null || dx * dx + dy * dy >= 16.0)
+            {
+                draggingDeck = dragCandidate;
+                de.cas_ual_ty.dueldimension.duel.profile.DeckList over =
+                    deckHitAt(event.x(), event.y());
+                dragTarget = over == draggingDeck ? null : over;
+            }
+            return true;
+        }
         if(matPicker != null && matPicker.mouseDragged(event.x(), event.y()))
         {
             return true;
@@ -647,6 +708,32 @@ public class DuelHubScreen extends Screen
     @Override
     public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event)
     {
+        if(event.button() == 0 && dragCandidate != null)
+        {
+            de.cas_ual_ty.dueldimension.duel.profile.DeckList source = dragCandidate;
+            de.cas_ual_ty.dueldimension.duel.profile.DeckList target = dragTarget;
+            boolean wasDrag = draggingDeck != null;
+            dragCandidate = null;
+            draggingDeck = null;
+            dragTarget = null;
+            if(wasDrag)
+            {
+                if(target != null && EditorState.moveDeck(source, target))
+                {
+                    notice = "Moved " + source.name();
+                    rebuild();
+                }
+            }
+            else
+            {
+                EditorState.select(EditorState.indexOf(source));
+                if(minecraft != null)
+                {
+                    minecraft.gui.setScreen(new DeckEditorScreen(this));
+                }
+            }
+            return true;
+        }
         if(matPicker != null)
         {
             matPicker.mouseReleased();
@@ -657,6 +744,11 @@ public class DuelHubScreen extends Screen
     @Override
     public boolean keyPressed(net.minecraft.client.input.KeyEvent event)
     {
+        if(contextDeck != null && event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE)
+        {
+            contextDeck = null;
+            return true;
+        }
         if(confirmDelete != null && event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE)
         {
             // Escape answers the question rather than leaving the hub, which is
@@ -774,7 +866,7 @@ public class DuelHubScreen extends Screen
         }
         if(deckView == DeckView.RECIPES)
         {
-            renderRecipeHeadings(graphics, bodyTop + 22);
+            renderRecipeHeadings(graphics, bodyTop);
             return;
         }
         int count = EditorState.ownDecks().size();
@@ -783,21 +875,31 @@ public class DuelHubScreen extends Screen
         {
             graphics.text(font, (deckScroll + 1) + "-"
                 + Math.min(count, deckScroll + visible) + " of " + count,
-                left + PAD + 4, top + HEIGHT - 28, 0xFF7A8090, true);
+                left + PAD + 150, top + HEIGHT - 26, 0xFF7A8090, true);
         }
         if(!notice.isEmpty())
         {
-            graphics.text(font, notice, left + PAD + 110, top + HEIGHT - 26, 0xFFFF8A80, true);
+            graphics.text(font, notice, left + PAD + 214, top + HEIGHT - 26, 0xFFFF8A80, true);
         }
     }
 
     private int deckBodyHeight()
     {
-        return HEIGHT - (PAD + TAB_H + 8) - 40 - 26;
+        return HEIGHT - (PAD + TAB_H + 8) - 32 - 4;
     }
 
     private int deckRowsVisible()
     {
+        if(deckLayout == DeckLayout.GRID)
+        {
+            // From the first tile's +4 inset to the Close row. Adding the gap
+            // before division counts a final row that does not need a trailing
+            // gap; at the authored 280-high panel this is exactly three rows.
+            int gridTop = PAD + TAB_H + 8 + 4;
+            int gridBottom = HEIGHT - 32;
+            return Math.max(1,
+                (Math.max(0, gridBottom - gridTop) + TILE_GAP) / (TILE_H + TILE_GAP));
+        }
         int step = deckLayout == DeckLayout.GRID ? TILE_H + TILE_GAP : ROW_H;
         return Math.max(1, deckBodyHeight() / step);
     }
@@ -810,7 +912,10 @@ public class DuelHubScreen extends Screen
     /** How many decks are on screen at once, which is what scrolling steps over. */
     private int deckPageSize()
     {
-        return deckRowsVisible() * deckColumns();
+        int slots = deckRowsVisible() * deckColumns();
+        // The first Master Duel cell is always Add Deck, so it does not consume
+        // a user-deck position when the visible range is reported or clamped.
+        return deckLayout == DeckLayout.GRID ? Math.max(0, slots - 1) : slots;
     }
 
     private int recipeRowsVisible()
@@ -907,7 +1012,7 @@ public class DuelHubScreen extends Screen
             if(deck == renaming && renameField != null)
             {
                 renameField.setX(x + 2);
-                renameField.setY(y + 3);
+                renameField.setY(y + 3 + (renameField.getHeight() - 8) / 2);
                 renameField.setWidth(nameW - 6);
                 // Renderable, not just a listener: an EditBox is a widget and
                 // extracts itself, where Forge drew it by hand in renderDecks.
@@ -952,18 +1057,14 @@ public class DuelHubScreen extends Screen
             // Saving an unfinished deck is fine -- building one is a process --
             // but it cannot be USED until it is legal, so this reports that by
             // being disabled rather than by failing at the duel.
-            boolean legal = de.cas_ual_ty.dueldimension.duel.profile.DeckLimits
-                .validate(deck, EditorState.trunk(), EditorState.banlist(),
-                    EditorState.freeMode()).isEmpty();
             boolean isActive = deck.name().equals(EditorState.profile().activeDeck());
-            use.active = legal && !isActive;
+            use.active = !isActive;
             // Says why on hover, and says a DIFFERENT why for each reason it is
             // not offered. A greyed square with one caption would otherwise be
             // the same non-answer whether the deck is already active or short
             // of cards -- which is the failure an icon invites and the tooltip
             // is here to prevent.
             use.setTooltipLines(isActive ? java.util.List.of("Already your active deck")
-                : !legal ? java.util.List.of("Make Active", "Not legal yet, so it cannot be used")
                 : java.util.List.of("Make Active"));
             addRenderableWidget(use);
             x += useW + gap;
@@ -1019,21 +1120,7 @@ public class DuelHubScreen extends Screen
         }
     }
 
-    /**
-     * The deck list as tiles.
-     * <p>
-     * Three across and roughly twice as tall as a row, which fits about three
-     * times as many decks on screen. What it drops is the management strip:
-     * a tile opens the deck and offers Use, and renaming, copying, publishing
-     * and deleting stay in the list, where you go when that is what you came
-     * for. Browsing and managing want different shapes, which is the whole
-     * reason for having two.
-     * <p>
-     * Use is kept because it is the one action you take FROM a browse -- you
-     * looked for a deck in order to play with it -- and because a layout that
-     * silently took an action away would be a worse list rather than a
-     * different one.
-     */
+    /** Master Duel's six-column grid, populated by the synced user deck list. */
     private void buildDeckGrid(int bodyTop)
     {
         java.util.List<de.cas_ual_ty.dueldimension.duel.profile.DeckList> decks =
@@ -1045,58 +1132,209 @@ public class DuelHubScreen extends Screen
         int rowW = WIDTH - PAD * 2 - 8;
         int tileW = (rowW - TILE_GAP * (columns - 1)) / columns;
 
-        for(int row = 0; row < rows; row++)
+        int slots = rows * columns;
+        for(int slot = 0; slot < slots; slot++)
         {
-            for(int column = 0; column < columns; column++)
+            int row = slot / columns;
+            int column = slot % columns;
+            int x = left + PAD + 4 + column * (tileW + TILE_GAP);
+            int y = bodyTop + 4 + row * (TILE_H + TILE_GAP);
+
+            if(slot == 0)
             {
-                int index = deckScroll + row * columns + column;
-                if(index >= decks.size())
+                HubWidgets.DeckTileButton add = new HubWidgets.DeckTileButton(
+                    x, y, tileW, TILE_H, Component.literal("Create a new deck"),
+                    HubTextures.DECK_PLACEHOLDER, false, true, pressed ->
                 {
-                    return;
-                }
-                de.cas_ual_ty.dueldimension.duel.profile.DeckList deck = decks.get(index);
-                int x = left + PAD + 4 + column * (tileW + TILE_GAP);
-                int y = bodyTop + 4 + row * (TILE_H + TILE_GAP);
-                boolean active = deck.name().equals(EditorState.profile().activeDeck());
-
-                int target = index;
-                // The size moved up here off the button below it, which is a
-                // tick now and has no room for a number.
-                HubWidgets.TextureButton name = new HubWidgets.TextureButton(x, y, tileW,
-                    TILE_H - 16, Component.literal(font.plainSubstrByWidth((active ? "▸ " : "")
-                        + deck.name() + "  (" + deck.main().size() + ")", tileW - 8)),
-                    pressed ->
-                {
-                    EditorState.select(EditorState.indexOf(decks.get(target)));
-                    if(minecraft != null)
-                    {
-                        minecraft.gui.setScreen(new DeckEditorScreen(this));
-                    }
-                });
-                // The same warning the rows carry: these are the decks that end
-                // up short or full of cards the player no longer owns.
-                markUnusable(name, deck);
-                addRenderableWidget(name);
-
-                int useIndex = index;
-                HubWidgets.IconButton use = new HubWidgets.IconButton(x, y + TILE_H - 15,
-                    tileW, 14, HubTextures.CHECK, Component.literal("Make Active"), pressed ->
-                {
-                    EditorState.setActiveDeck(decks.get(useIndex).name());
+                    EditorState.newDeck();
+                    cancelRename();
                     notice = "";
                     rebuild();
                 });
-                // Disabled rather than failing at the duel, exactly as the row's
-                // does: an unfinished deck can be saved but not played.
-                boolean legal = de.cas_ual_ty.dueldimension.duel.profile.DeckLimits
-                    .validate(deck, EditorState.trunk(), EditorState.banlist(),
-                        EditorState.freeMode()).isEmpty();
-                use.active = legal && !active;
-                use.setTooltipLines(active ? java.util.List.of("Already your active deck")
-                    : !legal
-                        ? java.util.List.of("Make Active", "Not legal yet, so it cannot be used")
-                        : java.util.List.of("Make Active"));
-                addRenderableWidget(use);
+                add.setTooltipLines(java.util.List.of("Create a new deck"));
+                addRenderableWidget(add);
+                continue;
+            }
+
+            int index = deckScroll + slot - 1;
+            if(index >= decks.size())
+            {
+                return;
+            }
+            de.cas_ual_ty.dueldimension.duel.profile.DeckList deck = decks.get(index);
+            boolean active = deck.name().equals(EditorState.profile().activeDeck());
+            int target = index;
+            HubWidgets.DeckTileButton tile = new HubWidgets.DeckTileButton(
+                x, y, tileW, TILE_H, Component.literal(deck.name()),
+                HubTextures.deckBox(deck.deckBox()), active, false, pressed ->
+            {
+                EditorState.select(EditorState.indexOf(decks.get(target)));
+                if(minecraft != null)
+                {
+                    minecraft.gui.setScreen(new DeckEditorScreen(this));
+                }
+            });
+            tile.setTooltipLines(java.util.List.of(deck.name(), deck.main().size() + " cards"));
+            markUnusable(tile, deck);
+            addRenderableWidget(tile);
+            deckHits.add(new DeckHit(x, y, tileW, TILE_H, deck));
+            if(deck == renaming && renameField != null)
+            {
+                renameField.setX(x + 4);
+                renameField.setY(y + TILE_H - 18 + (renameField.getHeight() - 8) / 2);
+                renameField.setWidth(tileW - 8);
+                addRenderableWidget(renameField);
+                setFocused(renameField);
+                renameField.setFocused(true);
+            }
+        }
+    }
+
+    /** Gold drop target plus a compact label that follows the dragged deck. */
+    private void renderDeckDrag(GuiGraphicsExtractor graphics, int mouseX, int mouseY)
+    {
+        if(draggingDeck == null)
+        {
+            return;
+        }
+        for(DeckHit hit : deckHits)
+        {
+            if(hit.deck() == dragTarget)
+            {
+                de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.blit(graphics,
+                    HubTextures.DECK_TILE_FRAME, hit.x(), hit.y(), hit.width(), hit.height(),
+                    0F, 2F / 3F, 1F, 1F,
+                    de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.NO_TINT);
+                break;
+            }
+        }
+        String label = font.plainSubstrByWidth(draggingDeck.name(), 92);
+        int w = Math.max(48, font.width(label) + 12);
+        int x = Math.clamp(mouseX + 7, left + PAD, left + WIDTH - PAD - w);
+        int y = Math.clamp(mouseY + 7, top + PAD, top + HEIGHT - PAD - 16);
+        NineSlice.draw(graphics, HubTextures.BUTTON, x, y, w, 16, NineSlice.HOVER, 3);
+        graphics.text(font, label, x + (w - font.width(label)) / 2, y + 4,
+            0xFFF4D089, true);
+    }
+
+    private de.cas_ual_ty.dueldimension.duel.profile.DeckList deckHitAt(
+        double mouseX, double mouseY)
+    {
+        for(DeckHit hit : deckHits)
+        {
+            if(hit.contains(mouseX, mouseY))
+            {
+                return hit.deck();
+            }
+        }
+        return null;
+    }
+
+    private void openDeckContext(
+        de.cas_ual_ty.dueldimension.duel.profile.DeckList deck, double mouseX, double mouseY)
+    {
+        contextDeck = deck;
+        if(deck == null)
+        {
+            return;
+        }
+        int height = CONTEXT_ACTIONS.length * CONTEXT_ITEM_H + 4;
+        contextX = Math.clamp((int)mouseX, left + PAD, left + WIDTH - PAD - CONTEXT_W);
+        contextY = Math.clamp((int)mouseY, top + PAD, top + HEIGHT - PAD - height);
+    }
+
+    private int contextActionAt(double mouseX, double mouseY)
+    {
+        if(mouseX < contextX + 2 || mouseX >= contextX + CONTEXT_W - 2
+            || mouseY < contextY + 2
+            || mouseY >= contextY + 2 + CONTEXT_ACTIONS.length * CONTEXT_ITEM_H)
+        {
+            return -1;
+        }
+        return (int)(mouseY - contextY - 2) / CONTEXT_ITEM_H;
+    }
+
+    private boolean contextActionEnabled(int action)
+    {
+        if(contextDeck == null)
+        {
+            return false;
+        }
+        if(action == 0)
+        {
+            return !contextDeck.name().equals(EditorState.profile().activeDeck());
+        }
+        return action != 4 || !contextDeck.published();
+    }
+
+    private void renderDeckContextMenu(GuiGraphicsExtractor graphics, int mouseX, int mouseY)
+    {
+        if(contextDeck == null)
+        {
+            return;
+        }
+        int height = CONTEXT_ACTIONS.length * CONTEXT_ITEM_H + 4;
+        NineSlice.draw(graphics, HubTextures.PANEL, contextX, contextY, CONTEXT_W, height);
+        for(int action = 0; action < CONTEXT_ACTIONS.length; action++)
+        {
+            int y = contextY + 2 + action * CONTEXT_ITEM_H;
+            boolean over = contextActionAt(mouseX, mouseY) == action;
+            int row = !contextActionEnabled(action) ? NineSlice.DISABLED
+                : over ? NineSlice.HOVER : NineSlice.IDLE;
+            NineSlice.draw(graphics, HubTextures.BUTTON, contextX + 2, y,
+                CONTEXT_W - 4, CONTEXT_ITEM_H, row, 3);
+            String label = CONTEXT_ACTIONS[action];
+            int colour = contextActionEnabled(action)
+                ? over ? 0xFFF4D089 : 0xFFE6EAF2 : 0xFF6A7080;
+            graphics.text(font, label, contextX + (CONTEXT_W - font.width(label)) / 2,
+                y + (CONTEXT_ITEM_H - 8) / 2, colour, true);
+        }
+    }
+
+    private void runContextAction(int action,
+        de.cas_ual_ty.dueldimension.duel.profile.DeckList deck)
+    {
+        // Re-check against the target rather than trusting the menu's last
+        // rendered state; a profile sync can arrive between drawing and click.
+        switch(action)
+        {
+            case 0 ->
+            {
+                if(!deck.name().equals(EditorState.profile().activeDeck()))
+                {
+                    EditorState.setActiveDeck(deck.name());
+                    notice = "Using " + deck.name();
+                }
+                rebuild();
+            }
+            case 1 ->
+            {
+                startRename(deck);
+            }
+            case 2 ->
+            {
+                de.cas_ual_ty.dueldimension.duel.profile.DeckList copy =
+                    EditorState.duplicate(EditorState.indexOf(deck));
+                notice = "Duplicated as " + copy.name();
+                rebuild();
+            }
+            case 3 ->
+            {
+                confirmDelete = deck;
+                notice = "";
+                rebuild();
+            }
+            case 4 ->
+            {
+                if(!deck.published())
+                {
+                    EditorState.publish(deck, true);
+                    notice = "Saved to Recipes";
+                }
+                rebuild();
+            }
+            default ->
+            {
             }
         }
     }
@@ -1213,7 +1451,7 @@ public class DuelHubScreen extends Screen
         return why;
     }
 
-    /** Reddens a deck row and says why, or leaves it alone. */
+    /** Tints an unusable deck soft red and says why, or leaves it alone. */
     private static void markUnusable(HubWidgets.TextureButton row,
         de.cas_ual_ty.dueldimension.duel.profile.DeckList deck)
     {
@@ -1252,6 +1490,7 @@ public class DuelHubScreen extends Screen
         renaming = deck;
         renameField = new net.minecraft.client.gui.components.EditBox(font, 0, 0, 100, 14,
             Component.literal("Deck name"));
+        renameField.setBordered(false);
         renameField.setMaxLength(40);
         renameField.setValue(deck.name());
         // The boolean is "select to the cursor", grown since 1.19.2; false is
@@ -1262,7 +1501,8 @@ public class DuelHubScreen extends Screen
         int row = EditorState.ownDecks().indexOf(deck);
         if(row >= 0)
         {
-            int visible = deckRowsVisible();
+            int visible = deckLayout == DeckLayout.GRID
+                ? deckPageSize() : deckRowsVisible();
             if(row < deckScroll || row >= deckScroll + visible)
             {
                 deckScroll = Math.max(0, row - visible / 2);
@@ -1410,6 +1650,10 @@ public class DuelHubScreen extends Screen
      */
     private void extractTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY)
     {
+        if(contextDeck != null)
+        {
+            return;
+        }
         for(net.minecraft.client.gui.components.events.GuiEventListener child : children())
         {
             if(!(child instanceof HubWidgets.TextureButton button)

@@ -667,6 +667,7 @@ public final class EditorState
             // what the server checks before accepting.
             send(new ProfilePayloads.SetDeckSleeve(name,
                 de.cas_ual_ty.dueldimension.duel.profile.Sleeves.nameOf(copy.sleeve())));
+            send(new ProfilePayloads.SetDeckBox(name, copy.deckBox().name()));
         }
         return copy;
     }
@@ -720,6 +721,25 @@ public final class EditorState
         String was = target.name();
         target.rename(trimmed);
         send(new ProfilePayloads.RenameDeck(was, trimmed));
+        return true;
+    }
+
+    /** Moves a saved deck to another tile and persists that list order. */
+    public static boolean moveDeck(DeckList source, DeckList target)
+    {
+        if(source == null || target == null || source == target)
+        {
+            return false;
+        }
+        DeckList selected = deck();
+        String sourceName = source.name();
+        String targetName = target.name();
+        if(!profile.moveSavedDeck(sourceName, targetName))
+        {
+            return false;
+        }
+        current = profile.decks().indexOf(selected);
+        send(new ProfilePayloads.MoveDeck(sourceName, targetName));
         return true;
     }
 

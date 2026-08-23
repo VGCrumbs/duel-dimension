@@ -225,6 +225,8 @@ public class DeckEditorScreen extends Screen
 
         search = new EditBox(font, rightX + pad + 2, panelTop + pad + 2,
             searchWidth(), 14, Component.literal("Search"));
+        search.setBordered(false);
+        search.setY(search.getY() + (search.getHeight() - 8) / 2);
         search.setResponder(value ->
         {
             EditorState.query().setText(value);
@@ -430,6 +432,11 @@ public class DeckEditorScreen extends Screen
             deckRowTop + deckRow.line()[3] * (BUTTON_ROW_H + 2), deckRow.width()[3],
             BUTTON_ROW_H, Component.empty()));
 
+        // The case is the deck-level cosmetic immediately beside its sleeves.
+        addRenderableWidget(new DeckBoxButton(rowLeft + deckRow.x()[4],
+            deckRowTop + deckRow.line()[4] * (BUTTON_ROW_H + 2), deckRow.width()[4],
+            BUTTON_ROW_H, Component.empty()));
+
         // Named for what it does rather than for being finished with: the deck
         // is written to the server on the way out, and a player leaving an
         // editor should not have to guess whether that happened.
@@ -510,7 +517,7 @@ public class DeckEditorScreen extends Screen
         if(rename != null)
         {
             rename.setX(leftX + pad);
-            rename.setY(y + 2);
+            rename.setY(y + 2 + (rename.getHeight() - 8) / 2);
             rename.setWidth(Math.max(60, right - buttonW * 3 - 4 - 40 - (leftX + pad)));
             addWidget(rename);
             setFocused(rename);
@@ -522,6 +529,7 @@ public class DeckEditorScreen extends Screen
     {
         int y = panelTop + pad;
         rename = new EditBox(font, leftX + pad, y, 120, 14, Component.literal("Deck name"));
+        rename.setBordered(false);
         rename.setValue(EditorState.deck().name());
         rename.setMaxLength(40);
         rebuildControls();
@@ -999,6 +1007,8 @@ public class DeckEditorScreen extends Screen
     private EditBox band(int x, int y, int width, int value, int unset)
     {
         EditBox box = new EditBox(font, x + 2, y + 2, width - 4, 12, Component.literal(""));
+        box.setBordered(false);
+        box.setY(box.getY() + (box.getHeight() - 8) / 2);
         box.setValue(value == unset ? "" : String.valueOf(value));
         // Digits only, and short: the field is a number, so a letter typed
         // into it is refused rather than parsed and quietly ignored.
@@ -1510,13 +1520,13 @@ public class DeckEditorScreen extends Screen
     private int[] deckRowWidths()
     {
         return new int[] {buttonWidth(SORT_DECK_LABEL), buttonWidth(IMPORT_LABEL),
-            buttonWidth(EXPORT_LABEL), SWATCH_ROOM + 8};
+            buttonWidth(EXPORT_LABEL), SWATCH_ROOM + 8, SWATCH_ROOM + 8};
     }
 
     private int[] deckRowFloors()
     {
         return new int[] {font.width(SORT_DECK_LABEL) + 8, font.width(IMPORT_LABEL) + 8,
-            font.width(EXPORT_LABEL) + 8, SWATCH_ROOM + 8};
+            font.width(EXPORT_LABEL) + 8, SWATCH_ROOM + 8, SWATCH_ROOM + 8};
     }
 
     /** Monster, Spell, Trap, then the star -- which is square-ish, not a label. */
@@ -4264,6 +4274,42 @@ public class DeckEditorScreen extends Screen
             SleevePickerScreen.drawSleeve(poseStack, EditorState.deck().sleeve(),
                 getX() + (getWidth() - swatchW) / 2, getY() + 3, swatchW, swatchH,
                 DdBlitUtil.NO_TINT);
+        }
+    }
+
+    /** The deck-box swatch immediately to the right of the sleeve swatch. */
+    private class DeckBoxButton extends HubWidgets.TextureButton
+    {
+        DeckBoxButton(int x, int y, int width, int height, Component label)
+        {
+            super(x, y, width, height, label, pressed ->
+            {
+            });
+            setTooltipLines(java.util.List.of("Choose deck box"));
+        }
+
+        @Override
+        public void onPress(net.minecraft.client.input.InputWithModifiers input)
+        {
+            EditorState.flush();
+            if(minecraft != null)
+            {
+                minecraft.setScreenAndShow(new DeckBoxPickerScreen(DeckEditorScreen.this));
+            }
+        }
+
+        @Override
+        protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
+            float partialTick)
+        {
+            int row = !active ? NineSlice.DISABLED
+                : isHoveredOrFocused() ? NineSlice.HOVER : NineSlice.IDLE;
+            NineSlice.draw(graphics, HubTextures.BUTTON, getX(), getY(), getWidth(),
+                getHeight(), row, 3);
+            int boxH = getHeight() - 4;
+            int boxW = Math.max(5, Math.round(boxH * 0.75F));
+            DeckBoxPickerScreen.drawBox(graphics, EditorState.deck().deckBox(),
+                getX() + (getWidth() - boxW) / 2, getY() + 2, boxW, boxH);
         }
     }
 
