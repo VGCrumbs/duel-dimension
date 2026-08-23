@@ -624,6 +624,31 @@ public final class OverworldBoardRenderer
             // field's y axis -- the same correction the ribbon needed.
             float rightX = dy / length;
             float rightY = -dx / length;
+            // The cross axis, pinned to the VIEWER.
+            //
+            // It is forward turned a quarter, so it reversed whenever the attack
+            // did -- and with both axes reversed the quad's corners swap in
+            // pairs, which turns the texture through half a turn. The blade
+            // still points at its target, so the flight looked right; what
+            // swapped was everything across the blade, and a sword is not
+            // symmetric across its own length.
+            //
+            // Pinning it to the field's own +X fixed that for one duellist and
+            // left it upside down for the one sitting opposite: same flat icon,
+            // other end of the table. So the pin has to name a side of the
+            // BOARD, and the board is drawn per client -- which is what seat is
+            // for. The line drawn from this vector is symmetric about its centre
+            // and does not care which way it points.
+            boolean turned = rightX < 0F || (rightX == 0F && rightY < 0F);
+            if(seat == 1)
+            {
+                turned = !turned;
+            }
+            if(turned)
+            {
+                rightX = -rightX;
+                rightY = -rightY;
+            }
             float forwardX = dx / length;
             float forwardY = dy / length;
             double lift = (cardLift(transform) + CardMesh.THICKNESS + 0.03F) * transform.scale();
@@ -1145,6 +1170,28 @@ public final class OverworldBoardRenderer
         return top == null ? back : CardFaces.face(top, false, asked);
     }
 
+    /**
+     * The same four corners, read starting from a different one.
+     *
+     * <p>Which turns the texture over them by a quarter each time, without
+     * moving the quad itself: the rectangle is still exactly where it was, so
+     * only the picture on it turns.
+     */
+    private static Vec3[] turned(Vec3[] corners, int turns)
+    {
+        int by = Math.floorMod(turns, 4);
+        if(by == 0)
+        {
+            return corners;
+        }
+        Vec3[] out = new Vec3[4];
+        for(int i = 0; i < 4; i++)
+        {
+            out[i] = corners[(i + by) % 4];
+        }
+        return out;
+    }
+
     private static void drawRow(PoseStack poseStack, SubmitNodeCollector collector,
         FieldTransform transform, Vec3 camera, List<BoardSnapshot.Slot> slots, int controller,
         int asked, int location, Identifier back)
@@ -1184,7 +1231,8 @@ public final class OverworldBoardRenderer
                 slot.defence(), cardLift(transform), CardFaces.face(slot, false, asked),
                 CardFaces.underside(slot, asked), fade(0xFFFFFFFF));
 
-            drawHologram(poseStack, collector, transform, camera, zone, slot, location, asked);
+            drawHologram(poseStack, collector, transform, camera, zone, slot, location,
+                asked, controller, sequence);
 
             // Switched off. drawing.cpp composites tNegated over any face-up
             // card the core has disabled or forbidden, and the flat board has
@@ -1245,9 +1293,21 @@ public final class OverworldBoardRenderer
             // which is the one thing a player needs to see in it.
             if(offers(target, de.cas_ual_ty.dueldimension.ocg.prompt.CardCommands.COMMAND_ATTACK))
             {
+                // Turned to point AWAY from the monster standing under it.
+                //
+                // corners() numbers a rectangle the same way whoever asks, so an
+                // untuned quad points one fixed way down the field: away from
+                // seat 0 and therefore back at seat 1. The mark sat the right
+                // way round for one duellist and pointed at its own controller
+                // for the other -- a sword aimed at the monster carrying it.
+                //
+                // turnsFor is what the card's own art uses to decide which way
+                // up it is printed for its side, which is the same question
+                // asked of the same fact.
                 WorldQuad.submit(poseStack, collector, DuelTextures.ATTACK, camera,
-                    transform.corners(CardMesh.placement(zone, slot.defence()),
+                    turned(transform.corners(CardMesh.placement(zone, slot.defence()),
                         (cardLift(transform) + CardMesh.THICKNESS + 0.045F) * transform.scale()),
+                        FieldLayout.turnsFor(controller, false)),
                     fade(0xFFFFFFFF));
             }
 
@@ -1317,6 +1377,74 @@ public final class OverworldBoardRenderer
      * event was built with, and rebuilding it here from the same three facts
      * means the two cannot disagree about which square is breaking.
      */
+    /**
+     * Notices a battle so its clips can outlast it.
+     * <p>
+     * The animator only reports an attack while its own 667ms window is open,
+     * and a Duelists of the Roses swing runs a median of 8.7 seconds — so the
+     * view has to be caught while it exists and remembered afterwards. Latching
+     * is idempotent on the attack's own start instant, so doing it once per
+     * drawn monster per frame costs nothing and cannot make a clip restart.
+     */
+    /**
+     * How long a clip runs, in seconds, or 0 where the model has no such slot.
+     * <p>
+     * Read off the file rather than assumed: these run anywhere from 1.7 to 33.7
+     * seconds depending on the monster, so "when does it stop" is a property of
+     * the creature and not a constant.
+     */
+    private static float clipLength(de.cas_ual_ty.dueldimension.clientutil.model.ModelMesh mesh,
+        String animation)
+    {
+        int index = mesh.animationIndex(animation);
+        return index < 0 || mesh.skeleton() == null ? 0F
+            : mesh.skeleton().animations().get(index).duration();
+    }
+
+    private static void latchBattle(long now)
+    {
+        for(de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.AttackView attack
+            : DuelClientState.animations.attacksInFlight(now))
+        {
+            de.cas_ual_ty.dueldimension.clientutil.model.BattleAnimations.latch(
+                attack.fromZone(), attack.start(), codeIn(attack.fromZone()));
+        }
+        // And the flinch from its own, later, event.
+        for(de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.BattleView blow
+            : DuelClientState.animations.battlesInFlight(now))
+        {
+            de.cas_ual_ty.dueldimension.clientutil.model.BattleAnimations.latchHurt(
+                blow.zone(), blow.start(), codeIn(blow.zone()));
+        }
+    }
+
+    /**
+     * The card standing in a packed zone, so a swing cannot be inherited by
+     * whatever occupies that square once its owner has left it.
+     */
+    private static long codeIn(int ref)
+    {
+        if(ref < 0)
+        {
+            return 0L;
+        }
+        BoardSnapshot board = DuelClientState.board;
+        if(board == null)
+        {
+            return 0L;
+        }
+        // Unpacked the way EnginePrompt.zoneRef packed it: bit 16 the far seat,
+        // bit 8 a monster zone, the low three bits the sequence.
+        List<BoardSnapshot.Slot> zones = ((ref & 16) != 0 ? board.opponent() : board.self())
+            .monsters();
+        int sequence = ref & 7;
+        if((ref & 8) == 0 || sequence >= zones.size())
+        {
+            return 0L;
+        }
+        return zones.get(sequence).code();
+    }
+
     private static boolean shattering(int asked, int location, int sequence)
     {
         List<de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.ShatterView> breaks =
@@ -1348,9 +1476,12 @@ public final class OverworldBoardRenderer
      */
     private static void drawHologram(PoseStack poseStack, SubmitNodeCollector collector,
         FieldTransform transform, Vec3 camera, FieldLayout.Rect zone, BoardSnapshot.Slot slot,
-        int location, int asked)
+        int location, int asked, int controller, int sequence)
     {
-        if(!de.cas_ual_ty.dueldimension.clientutil.HologramSettings.enabled()
+        // Asked per side, because the setting has a middle position that keeps
+        // the opponent's monsters and drops your own -- yours being the ones
+        // standing between your eye and the half of the board you have to read.
+        if(!de.cas_ual_ty.dueldimension.clientutil.HologramSettings.showsFor(asked == 0)
             || location != OcgConstants.LOCATION_MZONE || slot.faceDown() || slot.code() == 0)
         {
             return;
@@ -1366,12 +1497,33 @@ public final class OverworldBoardRenderer
         //
         // Only yours, because the asymmetry is real rather than a preference.
         // Their monsters stand on the far side and block nothing of yours.
-        if(asked == 0 && lookingAcross())
+        // Faded rather than switched. Both of the conditions that hide a
+        // monster -- looking across the table, and reading the far back row --
+        // change the instant a head turns, so applying them directly made the
+        // board flash as you glanced along a row. They become a target here and
+        // the fade carries the monster to it.
+        long fadeNow = System.currentTimeMillis();
+        int fadeRef = de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt.zoneRef(asked == 1,
+            true, sequence);
+        float want = asked == 0 && lookingAcross() ? 0F : targetSolidity(asked);
+        float solid = HologramFade.toward(fadeRef, want, fadeNow);
+        if(solid <= 0.02F)
         {
+            // Gone, and cheap to say so: nothing below this point runs for a
+            // monster nobody can see.
             return;
         }
+        MonsterSprites.Definition definition = MonsterSprites.of(slot.code());
         SpriteLayer body = MonsterSprites.layerFor(slot.code(), slot.defence());
-        if(body == null)
+        // A model may stand in for the sprite, but the sprite is still required:
+        // it is what the monster looks like if the .glb is missing, unreadable,
+        // or uses a corner of glTF the loader will not guess at.
+        de.cas_ual_ty.dueldimension.clientutil.model.ModelMesh mesh =
+            definition != null && definition.hasModel()
+                ? de.cas_ual_ty.dueldimension.clientutil.model.MonsterModels
+                    .get(definition.model())
+                : null;
+        if(body == null && mesh == null)
         {
             return;
         }
@@ -1384,13 +1536,53 @@ public final class OverworldBoardRenderer
         // shrank to two thirds would read as a weaker one.
         float height = CardMesh.CARD_H * transform.scale()
             * MonsterSprites.heightFor(slot.code());
+
+        if(mesh != null)
+        {
+            // Facing the CONTROLLER's way, not the viewer's. A sprite has to
+            // turn to whoever is looking or it is seen edge-on and disappears;
+            // a model has a front, and the front of a monster belongs to the
+            // duellist it is being played against. Both duellists watch the
+            // same board from opposite ends, so this cannot come from the
+            // camera without the two of them disagreeing about which way a
+            // dragon is looking.
+            // Swinging, flinching, or standing about. The clip and how far into
+            // it are asked separately because a monster whose file has no attack
+            // keeps its idle, and one whose attack has finished stands up again
+            // while the latch is still holding the zone.
+            long now = System.currentTimeMillis();
+            latchBattle(now);
+            int ref = de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt.zoneRef(asked == 1,
+                location == OcgConstants.LOCATION_MZONE, sequence);
+            String clip = de.cas_ual_ty.dueldimension.clientutil.model.BattleAnimations
+                .clipFor(ref);
+            String animation = definition.animation();
+            float phase = Float.NaN;
+            if(clip != null)
+            {
+                float length = clipLength(mesh, clip);
+                float at = de.cas_ual_ty.dueldimension.clientutil.model.BattleAnimations
+                    .phaseOf(ref, slot.code(), clip, length, now);
+                if(at >= 0F)
+                {
+                    animation = clip;
+                    phase = at;
+                }
+            }
+            de.cas_ual_ty.dueldimension.clientutil.model.ModelHologram.submit(poseStack,
+                collector, camera, feet, height, mesh,
+                transform.siting().look(controller), fade(solidity(solid)),
+                animation, definition.elevation(), definition.turn(),
+                definition.offsetX(), definition.offsetZ(), phase);
+            return;
+        }
         // Straight up in world space, which is the axis the sprite stands on
         // however the field beneath it is turned.
         feet = feet.add(0D, MonsterSprites.bobAt(body, (long)ticks()) * height, 0D);
         MonsterBillboard.submit(poseStack, collector, camera, camera, feet, height, body,
             MonsterSprites.frameAt(body, (long)ticks()), wings,
             wings == null ? 0 : MonsterSprites.frameAt(wings.layer(), (long)ticks()),
-            fade(hologramTint(asked)), slot.code());
+            fade(solidity(solid)), slot.code());
     }
 
     /**
@@ -1411,6 +1603,24 @@ public final class OverworldBoardRenderer
      * text and the stats already answer to: one hold, everything gets out of
      * the way.
      */
+    /** White at the given solidity, which is what both paths now draw with. */
+    private static int solidity(float solid)
+    {
+        int alpha = Math.clamp(Math.round(solid * 255F), 0, 255);
+        return (alpha << 24) | 0x00FFFFFF;
+    }
+
+    /**
+     * How solid a monster should SETTLE at, before the fade carries it there.
+     * <p>
+     * The same judgement {@link #hologramTint} made, as a number rather than as
+     * one of two colours, so that the value between them means something.
+     */
+    private static float targetSolidity(int asked)
+    {
+        return (hologramTint(asked) >>> 24) / 255F;
+    }
+
     private static int hologramTint(int asked)
     {
         if(asked == 0)

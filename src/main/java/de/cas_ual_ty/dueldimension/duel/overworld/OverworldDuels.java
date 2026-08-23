@@ -799,6 +799,21 @@ public final class OverworldDuels
         Board board = BOARDS.remove(player);
         if(board == null)
         {
+            // Already lingering, which is this duel's OTHER seat having got
+            // here first.
+            //
+            // One board serves both seats and one call takes both of them out
+            // of BOARDS, so the second call finds nothing to remove -- and
+            // releasing on that reading sent an immediate hide to the very seat
+            // the linger had just been granted to. Half of every finished duel
+            // lost its board in the tick the engine decided, before the client
+            // had played the winning blow, said who won, or faded: exactly the
+            // ending this method exists to preserve. The seat it hit was
+            // whichever sat second in the array, so it looked intermittent.
+            if(LINGERING.containsKey(player))
+            {
+                return;
+            }
             release(server, player);
             return;
         }

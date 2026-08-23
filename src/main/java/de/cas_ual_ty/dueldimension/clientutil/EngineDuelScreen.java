@@ -67,7 +67,7 @@ public class EngineDuelScreen extends Screen
     private static final int SIDEBAR_PAD = 6;
 
     /** Width the mute button takes out of the chain button's row. */
-    private static final int MUSIC_BUTTON = 22;
+    private static final int MUSIC_BUTTON = 11;
     /** Log lines kept in the sidebar's log band. */
     private static final int LOG_LINES = 4;
     /** One line for the card name, under the preview. */
@@ -394,7 +394,12 @@ public class EngineDuelScreen extends Screen
             ClientPlayNetworking.send(
                 new PromptMessages.SetChainPreference(DuelClientState.chainPreference));
             rebuild();
-        }).bounds(SIDEBAR_PAD, height - 44, SIDEBAR_W - SIDEBAR_PAD * 2 - MUSIC_BUTTON, 18)
+            // Half height, and half the block. These three are duel-long
+            // preferences set once and then left alone, so they were spending
+            // more of the sidebar than they earn -- and the sidebar's other job
+            // is showing the card under the cursor, which wants every pixel it
+            // can get.
+        }).bounds(SIDEBAR_PAD, height - 27, SIDEBAR_W - SIDEBAR_PAD * 2 - MUSIC_BUTTON, 9)
             .build());
 
         // Mute. The icon says which state pressing it leaves you in the way
@@ -403,21 +408,24 @@ public class EngineDuelScreen extends Screen
         // have to say so again next time.
         de.cas_ual_ty.dueldimension.clientutil.widget.TextureButton music =
             new de.cas_ual_ty.dueldimension.clientutil.widget.TextureButton(
-                SIDEBAR_W - SIDEBAR_PAD - MUSIC_BUTTON + 2, height - 44,
-                MUSIC_BUTTON - 2, 18, Component.empty(), pressed ->
+                SIDEBAR_W - SIDEBAR_PAD - MUSIC_BUTTON + 2, height - 27,
+                MUSIC_BUTTON - 2, 9, Component.empty(), pressed ->
         {
             DuelMusic.toggleMuted();
             rebuild();
         });
         // Cell 1 of the sheet is the crossed-out speaker, cell 0 the plain one.
+        // The icon blits to the button's own size, so halving the button halved
+        // the speaker with it and MUSIC_BUTTON came down to match -- a 16-wide
+        // icon in a 9-tall button would have been a stretched speaker.
         music.setTexture(DuelTextures.MUSIC_ICONS, DuelMusic.muted() ? 16 : 0, 0, 16, 16);
         addRenderableWidget(music);
 
         // Below the chain row, under the mute it belongs with. A slider needs
         // the full width, and it is the one control here adjusted by feel
         // rather than pressed once.
-        addRenderableWidget(new MusicVolumeSlider(SIDEBAR_PAD, height - 24,
-            SIDEBAR_W - SIDEBAR_PAD * 2, 16));
+        addRenderableWidget(new MusicVolumeSlider(SIDEBAR_PAD, height - 16,
+            SIDEBAR_W - SIDEBAR_PAD * 2, 8));
         // The mat used to be cycled from here. It is chosen in the Duel Hub
         // (Y) now: a setting reachable from two places has no single source of
         // truth, and mid-duel is the worse of the two moments to offer it.
@@ -2555,10 +2563,11 @@ public class EngineDuelScreen extends Screen
 
         long now = System.currentTimeMillis();
         boolean yourTurn = board.turnPlayer() == 0;
-        drawLifeBar(poseStack, left, 6, barW, DuelClientState.selfName, board.self().lifePoints(), 0xFF3FA34D,
+        drawLifeBar(poseStack, left, 6, barW, DuelClientState.selfName,
+            board.self().startingLifePoints(), 0xFF3FA34D, LifeBar.OVERFLOW_SELF, false,
             animations.lifePointState(0, board.self().lifePoints(), now), yourTurn, now);
         drawLifeBar(poseStack, right - barW, 6, barW, DuelClientState.opponentName,
-            board.opponent().lifePoints(), 0xFFC1362F,
+            board.opponent().startingLifePoints(), 0xFFC1362F, LifeBar.OVERFLOW_OPPONENT, true,
             animations.lifePointState(1, board.opponent().lifePoints(), now), !yourTurn, now);
 
         // Whose turn it is, said with colour instead of words: the badge and
@@ -2599,8 +2608,22 @@ public class EngineDuelScreen extends Screen
         return (alpha << 24) | (red << 16) | (green << 8) | blue;
     }
 
-    private void drawLifeBar(GuiGraphicsExtractor poseStack, int x, int y, int barW, String name, int lifePoints,
-        int colour, DuelAnimations.LifePointState change, boolean active, long now)
+    /**
+     * @param startingLifePoints what this duel began at, which the fill is a
+     *                           fraction of. Took the place of a {@code
+     *                           lifePoints} parameter that every line of this
+     *                           method ignored in favour of
+     *                           {@code change.displayedLifePoints()}.
+     * @param overflowColour     the fill drawn OVER the main one once life is
+     *                           above the starting amount, or 0 for none
+     * @param overflowFromRight  whether that fill grows from the right-hand end.
+     *                           The opponent's bar sits at the right of the
+     *                           screen, so its overflow growing inward reads as
+     *                           theirs; both main fills still grow from the left.
+     */
+    private void drawLifeBar(GuiGraphicsExtractor poseStack, int x, int y, int barW, String name,
+        int startingLifePoints, int colour, int overflowColour, boolean overflowFromRight,
+        DuelAnimations.LifePointState change, boolean active, long now)
     {
         int barH = 13;
         if(active)
@@ -2622,8 +2645,8 @@ public class EngineDuelScreen extends Screen
             }
         }
         int shownLifePoints = change.displayedLifePoints();
-        int filled = lifeBarFill(barW, shownLifePoints);
-        int targetFilled = lifeBarFill(barW, change.targetLifePoints());
+        int filled = LifeBar.fill(barW, shownLifePoints, startingLifePoints);
+        int targetFilled = LifeBar.fill(barW, change.targetLifePoints(), startingLifePoints);
         poseStack.fill(x + 2, y + 2, x + barW - 2, y + barH - 2, 0xFF101010);
         // Lit from above: the fill is brighter than its base colour at the top
         // and darker at the bottom, so the bar reads as a rounded surface
@@ -2639,6 +2662,24 @@ public class EngineDuelScreen extends Screen
             int whiteRight = Math.max(filled, targetFilled);
             poseStack.fill(x + 2 + whiteLeft, y + 2, x + 2 + whiteRight, y + barH - 2,
                 alpha | 0xFFFFFF);
+        }
+
+        // Life above the starting amount, drawn OVER the full bar beneath it.
+        //
+        // A second fill rather than a longer one: there is nowhere for a bar to
+        // overflow to, so gaining life fills the same frame a second time in a
+        // colour that cannot be mistaken for the first. Full at twice the
+        // starting amount, which is the point where it covers the bar entirely.
+        //
+        // Between the flash and the frame on purpose. Immediate mode means
+        // submission order is z-order: before the flash and the change would
+        // paint over it, after the frame and it would spill onto the metal.
+        int over = LifeBar.overflow(barW, shownLifePoints, startingLifePoints);
+        if(over > 0 && overflowColour != 0)
+        {
+            int leftEdge = overflowFromRight ? x + barW - 2 - over : x + 2;
+            poseStack.fillGradient(leftEdge, y + 2, leftEdge + over, y + barH - 2,
+                shade(overflowColour, LIFE_BAR_TOP), shade(overflowColour, LIFE_BAR_BOTTOM));
         }
 
         // Straight, not through CardRenderUtil. The life-point frame is not card
@@ -2657,10 +2698,9 @@ public class EngineDuelScreen extends Screen
         poseStack.text(font, value, x + barW - font.width(value) - 5, y + 3, 0xFFFFFFFF, false);
     }
 
-    private static int lifeBarFill(int barW, int lifePoints)
-    {
-        return Math.max(0, Math.min(barW - 4, Math.round((barW - 4) * lifePoints / 8000F)));
-    }
+    // The fill rule lives in LifeBar, which the world board shares. It used to
+    // exist here as a line copied into DuelHud as well, and that duplication is
+    // why both measured against a hardcoded 8000 for as long as they did.
 
 
     /**

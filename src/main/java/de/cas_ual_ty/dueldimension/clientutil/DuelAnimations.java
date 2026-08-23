@@ -145,6 +145,8 @@ public class DuelAnimations
     private final List<Playing> flashes = new ArrayList<>();
     /** Attack arrows, which are drawn as arrows rather than moving cards. */
     private final List<Playing> attacks = new ArrayList<>();
+    /** Blows landing, which is a later beat than the attacks above. */
+    private final List<Playing> battles = new ArrayList<>();
     /**
      * Chain and target markers. EDOPro ships tChain and tChainTarget and lays
      * them over the card that is activating and the cards it picked; we shipped
@@ -320,6 +322,102 @@ public class DuelAnimations
     /** Drawn after the board's geometry rather than under it. */
     private static final int TEXT_ORDER = 1_000_000;
 
+    /**
+     * How long to hold the board still for an attack.
+     * <p>
+     * <b>As long as the attacker's swing, because that is what the game does.</b>
+     * Duelists of the Roses drives its battle from a state machine that sets an
+     * animation and then polls {@code SzModel_GetAnim} until it reports finished
+     * before advancing — four such polls sit between the calls that set the
+     * attacker's slot 2 and the defender's slot 5. The battle is BLOCKED on the
+     * animation; the destruction that follows is not concurrent with the swing,
+     * it comes after it.
+     * <p>
+     * {@link #ATTACK_MS} is EDOPro's beat — {@code WaitFrameSignal(40)}, two
+     * thirds of a second — and it is the right answer for a monster drawn as a
+     * sprite, which has no swing to wait for. It is the wrong answer for a
+     * model: these clips run a median of 8.7 seconds, so holding only the
+     * shorter of the two would break the card while the attacker was still
+     * winding up. The longer of the two is the one that keeps both honest.
+     * <p>
+     * Asked of the model only if it is ALREADY baked. This runs on the client
+     * tick and baking belongs to the render thread, so an unseen monster simply
+     * keeps the sprite timing.
+     */
+    private long attackMs(DuelEvent event)
+    {
+        // Nothing to watch, so nothing to wait for: with the extra animations
+        // off, a battle is back to EDOPro's own two thirds of a second.
+        if(!de.cas_ual_ty.dueldimension.clientutil.model.AnimationSettings.extras())
+        {
+            return ATTACK_MS;
+        }
+        return clipMs(event.fromZone(),
+            de.cas_ual_ty.dueldimension.clientutil.model.ModelSkeleton.ATTACK);
+    }
+
+    /**
+     * How long the monster in a zone takes to play one of its clips.
+     * <p>
+     * {@link #ATTACK_MS} is the floor, and the answer outright for a sprite:
+     * EDOPro's own beat, two thirds of a second, which is right when there is
+     * no swing to wait for. Asked of the model only if it is ALREADY baked,
+     * because this runs on the client tick and baking belongs to the render
+     * thread.
+     */
+    private long clipMs(int zone, String animation)
+    {
+        long code = codeInZone(zone);
+        if(code == 0L)
+        {
+            return ATTACK_MS;
+        }
+        de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSprites.Definition definition
+            = de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSprites.of(code);
+        if(definition == null || !definition.hasModel())
+        {
+            return ATTACK_MS;
+        }
+        var mesh = de.cas_ual_ty.dueldimension.clientutil.model.MonsterModels
+            .peek(definition.model());
+        if(mesh == null || mesh.skeleton() == null)
+        {
+            return ATTACK_MS;
+        }
+        int index = mesh.animationIndex(animation);
+        if(index < 0)
+        {
+            // The monster's file has no bit for that slot, so there is nothing
+            // to wait for.
+            return ATTACK_MS;
+        }
+        // Divided by the same factor the clip is played at, so the board is
+        // held for exactly as long as there is something to watch.
+        float seconds = mesh.skeleton().animations().get(index).duration()
+            / Math.max(0.25F, de.cas_ual_ty.dueldimension.clientutil.model.AnimationSettings
+                .speed());
+        return Math.max(ATTACK_MS, Math.round(seconds * 1000D));
+    }
+
+    /**
+     * The card standing in a packed zone, read off the board as it is NOW.
+     * <p>
+     * Which is the board before this batch's commit, since that is queued behind
+     * the events — so the attacker is still where the attack says it is.
+     */
+    private static long codeInZone(int ref)
+    {
+        de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot board = DuelClientState.board;
+        if(ref < 0 || board == null || (ref & 8) == 0)
+        {
+            return 0L;
+        }
+        List<de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot.Slot> zones =
+            ((ref & 16) != 0 ? board.opponent() : board.self()).monsters();
+        int sequence = ref & 7;
+        return sequence < zones.size() ? zones.get(sequence).code() : 0L;
+    }
+
     private long duration(DuelEvent event)
     {
         long base = switch(event.kind())
@@ -333,7 +431,10 @@ public class DuelAnimations
             case DRAW -> DRAW_MS;
             case ACTIVATE, CHAINING -> CHAIN_MS;
             case BECOME_TARGET -> TARGET_MS;
-            case ATTACK -> ATTACK_MS;
+            case ATTACK -> attackMs(event);
+            // The flinch, sized from the defender's own clip.
+            case BATTLE -> clipMs(event.toZone(),
+                de.cas_ual_ty.dueldimension.clientutil.model.ModelSkeleton.HURT);
             case DAMAGE -> DAMAGE_MS;
             case RECOVER -> RECOVER_MS;
             case PHASE -> PHASE_MS;
@@ -410,6 +511,7 @@ public class DuelAnimations
             }
             case DAMAGE, RECOVER -> flashes.add(new Playing(event, now, duration));
             case ATTACK -> attacks.add(new Playing(event, now, duration));
+            case BATTLE -> battles.add(new Playing(event, now, duration));
             case CHAINING, BECOME_TARGET -> overlays.add(new Playing(event, now, duration));
             case REVEAL -> reveals.add(new Playing(event, now, duration));
             case COIN, DICE -> tosses.add(new Playing(event, now, duration));
@@ -484,6 +586,7 @@ public class DuelAnimations
         playing.removeIf(animation -> animation.done(now));
         flashes.removeIf(animation -> animation.done(now));
         attacks.removeIf(animation -> animation.done(now));
+        battles.removeIf(animation -> animation.done(now));
         overlays.removeIf(animation -> animation.done(now));
         shatters.removeIf(animation -> animation.done(now));
         tosses.removeIf(animation -> animation.done(now));
@@ -1123,7 +1226,15 @@ public class DuelAnimations
      * render method, because the world board's geometry has nothing in common
      * with this class's projected quads and only the TIMING is shared.
      */
-    public record AttackView(int fromZone, int toZone, float progress)
+    /**
+     * @param progress how far through the attack's own window, 0 to 1
+     * @param start    when the attack began, in wall-clock millis. A renderer
+     *                 whose animation is LONGER than the window needs the
+     *                 instant rather than the fraction — a 3D model's swing runs
+     *                 several seconds where the window is two thirds of one, so
+     *                 it has to keep playing after this view has gone.
+     */
+    public record AttackView(int fromZone, int toZone, float progress, long start)
     {
     }
 
@@ -1302,13 +1413,69 @@ public class DuelAnimations
     }
 
     /** Every attack currently in flight, with how far through it is. */
+    /** A blow landing: the defender's zone, and when it landed. */
+    public record BattleView(int zone, long start)
+    {
+    }
+
+    /**
+     * The blows in flight, for a renderer that wants to show a monster taking
+     * one.
+     * <p>
+     * Separate from {@link #attacksInFlight} because they are separate moments.
+     * The attack is the declaration and the battle is the damage step, and
+     * between them sit every negation and every trap that stops the second from
+     * ever happening.
+     */
+    public java.util.List<BattleView> battlesInFlight(long now)
+    {
+        java.util.List<BattleView> views = new ArrayList<>(battles.size());
+        for(Playing animation : battles)
+        {
+            views.add(new BattleView(animation.event().toZone(), animation.start()));
+        }
+        return views;
+    }
+
+    /**
+     * Cuts a battle short, the way the game's own skip does.
+     * <p>
+     * Worth having because the attack now holds the board for as long as the
+     * swing takes, and these swings were authored as cutscenes. Even at four
+     * times speed there are monsters whose attack runs eight seconds, and a
+     * duellist who has seen it once should not have to watch it again.
+     * <p>
+     * <b>It shortens the step rather than jumping the queue.</b> Pulling
+     * {@code nextStart} back to now lets the very next tick release whatever was
+     * waiting — the destruction, the damage, the prompt — in the order it was
+     * already in. Applying those directly instead would step outside the single
+     * ordered stream, which is the mistake that once made cards appear
+     * instantly.
+     *
+     * @return whether there was anything to skip
+     */
+    public boolean skipBattle(long now)
+    {
+        if(attacks.isEmpty() && battles.isEmpty())
+        {
+            return false;
+        }
+        attacks.clear();
+        battles.clear();
+        nextStart = Math.min(nextStart, now);
+        // The renderer poses from its own latch, so the clip has to be let go of
+        // there too or the monster would go on swinging at nothing.
+        de.cas_ual_ty.dueldimension.clientutil.model.BattleAnimations.clear();
+        return true;
+    }
+
     public java.util.List<AttackView> attacksInFlight(long now)
     {
         java.util.List<AttackView> views = new ArrayList<>(attacks.size());
         for(Playing animation : attacks)
         {
             views.add(new AttackView(animation.event().fromZone(), animation.event().toZone(),
-                animation.progress(now)));
+                animation.progress(now), animation.start()));
         }
         return views;
     }
@@ -1321,6 +1488,7 @@ public class DuelAnimations
         flips.clear();
         flashes.clear();
         attacks.clear();
+        battles.clear();
         overlays.clear();
         shatters.clear();
         nextStart = 0;

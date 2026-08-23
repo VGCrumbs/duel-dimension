@@ -388,12 +388,15 @@ public final class DuelHud
         drawLifeBar(extractor, font, EDGE, TOP, barW, barH,
             seat < 0 ? "Seat 1" : DuelClientState.selfName,
             DuelClientState.animations.lifePointState(0, board.self().lifePoints(), now),
-            0xFF3FA34D);
+            0xFF3FA34D, board.self().startingLifePoints(),
+            de.cas_ual_ty.dueldimension.clientutil.LifeBar.OVERFLOW_SELF, false);
         drawLifeBar(extractor, font, screenW - EDGE - barW, TOP, barW, barH,
             seat < 0 ? "Seat 2" : DuelClientState.opponentName,
             DuelClientState.animations.lifePointState(1,
                 board.opponent() == null ? 0 : board.opponent().lifePoints(), now),
-            0xFFB03636);
+            0xFFB03636,
+            board.opponent() == null ? 0 : board.opponent().startingLifePoints(),
+            de.cas_ual_ty.dueldimension.clientutil.LifeBar.OVERFLOW_OPPONENT, true);
 
         drawPhaseBar(extractor, board, screenW, screenH);
         drawTurn(extractor, font, board, screenW, screenH);
@@ -644,13 +647,25 @@ public final class DuelHud
      * runtime and no PNG can carry it -- and the frame over it is the same
      * single shipped texture the duel screen uses.
      */
+    /**
+     * @param startingLifePoints what this duel began at; the fill is a fraction
+     *                           of it, not of a fixed 8000
+     * @param overflowColour     the fill drawn OVER the main one above the
+     *                           starting amount, or 0 for none
+     * @param overflowFromRight  whether it grows inward from the right, which
+     *                           is how the opponent's reads on their end of
+     *                           the screen
+     */
     private static void drawLifeBar(GuiGraphicsExtractor extractor, Font font, int x, int y,
         int barW, int barH, String name,
-        de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.LifePointState change, int colour)
+        de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.LifePointState change, int colour,
+        int startingLifePoints, int overflowColour, boolean overflowFromRight)
     {
         int lifePoints = change.displayedLifePoints();
-        int filled = fill(barW, lifePoints);
-        int target = fill(barW, change.targetLifePoints());
+        int filled = de.cas_ual_ty.dueldimension.clientutil.LifeBar.fill(
+            barW, lifePoints, startingLifePoints);
+        int target = de.cas_ual_ty.dueldimension.clientutil.LifeBar.fill(
+            barW, change.targetLifePoints(), startingLifePoints);
         extractor.fillGradient(x + 2, y + 2, x + 2 + filled, y + barH - 2,
             shade(colour, 1.25F), shade(colour, 0.75F));
         // The stretch between where the bar was and where it is going, flashed
@@ -660,6 +675,19 @@ public final class DuelHud
             int alpha = Math.round(change.whiteAlpha() * 255F) << 24;
             extractor.fill(x + 2 + Math.min(filled, target), y + 2,
                 x + 2 + Math.max(filled, target), y + barH - 2, alpha | 0xFFFFFF);
+        }
+
+        // Life above the starting amount, over the full bar rather than past
+        // the end of it. Overlaid rather than stacked: this frame is as little
+        // as nine pixels tall on a small window, so a second row inside the
+        // well would leave both too thin to read.
+        int over = de.cas_ual_ty.dueldimension.clientutil.LifeBar.overflow(
+            barW, lifePoints, startingLifePoints);
+        if(over > 0 && overflowColour != 0)
+        {
+            int leftEdge = overflowFromRight ? x + barW - 2 - over : x + 2;
+            extractor.fillGradient(leftEdge, y + 2, leftEdge + over, y + barH - 2,
+                shade(overflowColour, 1.25F), shade(overflowColour, 0.75F));
         }
         DdBlitUtil.fullBlit(extractor, DuelTextures.LP_FRAME, x, y, barW, barH);
 
@@ -680,10 +708,9 @@ public final class DuelHud
         extractor.text(font, value, x + barW - INSET - valueW, textY, 0xFFFFFFFF, false);
     }
 
-    private static int fill(int barW, int lifePoints)
-    {
-        return Math.max(0, Math.min(barW - 4, Math.round((barW - 4) * lifePoints / 8000F)));
-    }
+    // The fill rule lives in LifeBar, shared with the duel screen. It used to be
+    // this same line copied into both, which is why both measured against a
+    // hardcoded 8000 and why fixing one would have left the other wrong.
 
     /** Lit from above, so the bar reads as a rounded surface and not a block. */
     private static int shade(int colour, float factor)

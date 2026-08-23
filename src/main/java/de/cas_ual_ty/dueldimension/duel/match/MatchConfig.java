@@ -73,8 +73,20 @@ public record MatchConfig(String banlistId, int lifePoints, Format format, int t
     /** The threshold at which the HUD timer turns bold red. */
     public static final int TIMER_WARNING_SECONDS = 30;
 
+    /**
+     * What a lobby opens on.
+     * <p>
+     * <b>The board, not the screen.</b> A duel played on the ground between two
+     * people standing at it is what this mod is for, and a default is what most
+     * duels are played under -- nobody changes a setting they were not looking
+     * for. It cost nothing to make it the default, either: siting the board is
+     * allowed to fail, and {@link
+     * de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels.Outcome#refused}
+     * starts the duel on the screen when it does. So this reads "on the ground
+     * where there is room for it", not "on the ground or not at all".
+     */
     public static final MatchConfig DEFAULT =
-        new MatchConfig(Banlist.NO_BANLIST_ID, 8000, Format.SINGLE, 180, Presentation.SCREEN);
+        new MatchConfig(Banlist.NO_BANLIST_ID, 8000, Format.SINGLE, 180, Presentation.OVERWORLD);
 
     /**
      * Clamps a client-proposed configuration to something legal. A packet is
@@ -87,7 +99,11 @@ public record MatchConfig(String banlistId, int lifePoints, Format format, int t
         int timer = closest(turnSeconds, TIMER_CHOICES);
         return new MatchConfig(banlistId == null ? Banlist.NO_BANLIST_ID : banlistId,
             lp, format == null ? Format.SINGLE : format, timer,
-            presentation == null ? Presentation.SCREEN : presentation);
+            // Absent means unset, and unset means the default -- which is the
+            // board. A packet that omits this must land where a lobby nobody
+            // touched would have landed, or the default is only a default for
+            // clients that bother to state it.
+            presentation == null ? DEFAULT.presentation() : presentation);
     }
 
     // One wither per field, so a caller changing one setting cannot silently

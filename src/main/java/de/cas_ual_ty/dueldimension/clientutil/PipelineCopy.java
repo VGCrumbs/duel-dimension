@@ -3,6 +3,7 @@ package de.cas_ual_ty.dueldimension.clientutil;
 import com.mojang.blaze3d.pipeline.BindGroupLayout;
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import de.cas_ual_ty.dueldimension.DuelDimension;
 import net.minecraft.resources.Identifier;
@@ -47,6 +48,20 @@ final class PipelineCopy
     static RenderPipeline of(RenderPipeline base, String name,
         @Nullable Identifier fragmentShader, @Nullable BlendFunction blend)
     {
+        return of(base, name, fragmentShader, blend, null);
+    }
+
+    /**
+     * @param topology replaces the base's primitive topology, or null to keep
+     *                 it. Every stock entity pipeline is QUADS, because they
+     *                 all descend from one snippet that pins it — so a mesh
+     *                 that is genuinely made of triangles has no vanilla
+     *                 pipeline to borrow and needs this one word changed.
+     */
+    static RenderPipeline of(RenderPipeline base, String name,
+        @Nullable Identifier fragmentShader, @Nullable BlendFunction blend,
+        @Nullable PrimitiveTopology topology)
+    {
         RenderPipeline.Builder builder = RenderPipeline.builder()
             .withLocation(Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID,
                 "pipeline/" + name))
@@ -54,7 +69,7 @@ final class PipelineCopy
             .withFragmentShader(fragmentShader == null ? base.getFragmentShader() : fragmentShader)
             .withCull(base.isCull())
             .withPolygonMode(base.getPolygonMode())
-            .withPrimitiveTopology(base.getPrimitiveTopology())
+            .withPrimitiveTopology(topology == null ? base.getPrimitiveTopology() : topology)
             .withDepthStencilState(Optional.ofNullable(base.getDepthStencilState()));
 
         // Both bases have exactly one colour target, but the array is walked

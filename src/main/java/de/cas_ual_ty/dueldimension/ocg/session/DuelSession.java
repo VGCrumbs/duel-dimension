@@ -127,14 +127,43 @@ public class DuelSession
         HeadlessDuelRunner.Deck deck0, HeadlessDuelRunner.Deck deck1,
         ResponseSource player0, ResponseSource player1)
     {
+        return create(id, api, flags, seed, cards, scripts, deck0, deck1, player0, player1,
+            OcgDuel.PlayerConfig.DEFAULT.startingLP());
+    }
+
+    /**
+     * As above, for a duel that does not start at the engine's default life.
+     * <p>
+     * <b>An overload rather than an extra parameter</b> so that the callers who
+     * have no opinion — the console duel, and every test — keep saying so by
+     * saying nothing.
+     * <p>
+     * The starting life is passed rather than looked up because the object that
+     * knows it, {@code RunningDuel.config}, is attached AFTER the session is
+     * created; reading it here would find the previous game's, or nothing at
+     * all. It is also handed to the snapshots below, so the client can draw a
+     * life bar as a fraction of what this duel actually began with.
+     */
+    public static DuelSession create(String id, OcgApi api, long flags, long[] seed,
+        OcgDuel.CardProvider cards, OcgDuel.ScriptProvider scripts,
+        HeadlessDuelRunner.Deck deck0, HeadlessDuelRunner.Deck deck1,
+        ResponseSource player0, ResponseSource player1, int startingLifePoints)
+    {
         DuelSession[] holder = new DuelSession[1];
         SeatView seat1 = new SeatView(player1);
+        OcgDuel.PlayerConfig life = new OcgDuel.PlayerConfig(startingLifePoints,
+            OcgDuel.PlayerConfig.DEFAULT.startingDrawCount(),
+            OcgDuel.PlayerConfig.DEFAULT.drawCountPerTurn());
 
         HeadlessDuelRunner runner = HeadlessDuelRunner.builder(api)
             .seed(seed)
             .flags(flags)
             .cards(cards)
             .scripts(scripts)
+            // The line whose absence made every duel start at 8000 whatever the
+            // lobby said: the builder had always offered players(), and nothing
+            // had ever called it.
+            .players(life, life)
             .deck(0, deck0)
             .deck(1, deck1)
             // Seat 1 is wrapped only to capture its observer: the message tap
@@ -143,7 +172,7 @@ public class DuelSession
             .responder(1, seat1)
             .responder(0, new Relay(player0, seat1,
                 message -> holder[0].events.add(new Event.Message(message)),
-                board -> holder[0].events.add(board)))
+                board -> holder[0].events.add(board), startingLifePoints))
             .build();
 
         holder[0] = new DuelSession(id, runner);
@@ -333,13 +362,16 @@ public class DuelSession
         private int turnPlayer;
         private int seat;
 
+        private final int startingLifePoints;
+
         private Relay(ResponseSource inner, SeatView other, Consumer<RawMessage> tap,
-            Consumer<Event.Board> boardTap)
+            Consumer<Event.Board> boardTap, int startingLifePoints)
         {
             this.inner = inner;
             this.other = other;
             this.tap = tap;
             this.boardTap = boardTap;
+            this.startingLifePoints = startingLifePoints;
         }
 
         @Override
@@ -406,14 +438,15 @@ public class DuelSession
             }
             de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot mine =
                 de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot.of(
-                    board.observe(), turn, phase, turnPlayer == seat ? 0 : 1);
+                    board.observe(), turn, phase, turnPlayer == seat ? 0 : 1, startingLifePoints);
             // Seat 1's view is built from ITS observer, never derived from
             // seat 0's: deriving it would mean reading, and then hiding,
             // information that must not cross in the first place.
             de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot theirs =
                 other != null && other.board != null
                     ? de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot.of(
-                        other.board.observe(), turn, phase, turnPlayer == 1 ? 0 : 1)
+                        other.board.observe(), turn, phase, turnPlayer == 1 ? 0 : 1,
+                        startingLifePoints)
                     : mine;
             // Each seat's own deck, from that seat's own observer and on the
             // duel thread -- the only thread allowed near the core. The lists

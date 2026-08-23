@@ -81,15 +81,84 @@ public final class MonsterSprites
 
     /**
      * Everything about one card's monster.
+     * <p>
+     * A body, an optional pose for lying down, optional wings and a size — and
+     * then, for a monster drawn as a model instead, which model and how it
+     * stands. The sprite half is never cleared when the model half is filled in:
+     * a model can fail to load, and what it falls back to is the sprite.
      *
-     * @param defence the pose held lying down, or null to use the body's own
-     *                animation in either position
-     * @param wings   a second layer drawn behind and mirrored, or null
-     * @param scale   a multiple of the standard height, so a hatchling is 0.5
+     * @param defence   the pose held lying down, or null to use the body's own
+     *                  animation in either position
+     * @param wings     a second layer drawn behind and mirrored, or null
+     * @param scale     a multiple of the standard height, so a hatchling is 0.5
+     * @param model     a {@code .glb} under {@code config/dueldimension/models},
+     *                  named without the extension, or null for a sprite
+     * @param animation which of the model's animations it stands playing, by
+     *                  name, or null for its rest pose. Stored by NAME rather
+     *                  than by index, so that re-exporting a model with one more
+     *                  animation in it does not silently give every monster a
+     *                  different one.
+     * @param elevation how far above the card the model floats, in blocks. Zero
+     *                  stands it on the card, which is right for anything with
+     *                  feet and wrong for the many monsters that do not have any
+     * @param turn      degrees added to whichever way the model already faces.
+     *                  An OFFSET rather than a heading, because the two places a
+     *                  model is drawn disagree about forward — on the board it
+     *                  faces the opposing duellist, on a pedestal it faces one
+     *                  fixed way — while what this corrects is the model's own
+     *                  idea of which way it was built facing, which is the same
+     *                  correction in both. Zero is right for anything following
+     *                  glTF's +Z-forward convention, which is most things.
+     * @param offsetX   sideways, and {@code offsetZ} forward, in blocks, in the
+     *                  model's OWN frame rather than the world's. The two
+     *                  duellists' monsters face opposite ways, so a nudge in
+     *                  world space would push one towards its owner and the
+     *                  other away from theirs; measured against the creature
+     *                  instead, "half a block forward" means the same thing on
+     *                  both sides of the table. Together with {@code elevation}
+     *                  these are the three axes a model can be moved along.
      */
     public record Definition(long code, SpriteLayer body, SpriteLayer defence, Wings wings,
-        float scale)
+        float scale, String model, String animation, float elevation, float turn,
+        float offsetX, float offsetZ)
     {
+        /** The sprite-only form, which is what every existing caller writes. */
+        public Definition(long code, SpriteLayer body, SpriteLayer defence, Wings wings,
+            float scale)
+        {
+            this(code, body, defence, wings, scale, null, null);
+        }
+
+        /** A model with no animation chosen, which is how one first arrives. */
+        public Definition(long code, SpriteLayer body, SpriteLayer defence, Wings wings,
+            float scale, String model)
+        {
+            this(code, body, defence, wings, scale, model, null);
+        }
+
+        /** A model placed where it was authored, which is where one starts. */
+        public Definition(long code, SpriteLayer body, SpriteLayer defence, Wings wings,
+            float scale, String model, String animation)
+        {
+            this(code, body, defence, wings, scale, model, animation, 0F, 0F, 0F, 0F);
+        }
+
+        /** Lifted and turned, but standing over the middle of its card. */
+        public Definition(long code, SpriteLayer body, SpriteLayer defence, Wings wings,
+            float scale, String model, String animation, float elevation, float turn)
+        {
+            this(code, body, defence, wings, scale, model, animation, elevation, turn, 0F, 0F);
+        }
+
+        public boolean hasModel()
+        {
+            return model != null && !model.isBlank();
+        }
+
+        public boolean hasAnimation()
+        {
+            return animation != null && !animation.isBlank();
+        }
     }
 
     /** How tall a monster stands by default, in card lengths. */
@@ -485,13 +554,19 @@ public final class MonsterSprites
         }
     }
 
-    private static Definition readDefinition(JsonElement element)
+    /** Package-visible so a test can round-trip one without a game around it. */
+    static Definition readDefinition(JsonElement element)
     {
         try
         {
             JsonObject object = element.getAsJsonObject();
             long code = object.get("card").getAsLong();
-            SpriteLayer body = readLayer(object.getAsJsonObject("body"));
+            // Absent for a monster described only by a model. Asked for rather
+            // than assumed: readLayer would throw on the null, this whole entry
+            // would be caught as malformed below, and the monster would vanish
+            // with one warning line to say so.
+            SpriteLayer body = object.has("body")
+                ? readLayer(object.getAsJsonObject("body")) : null;
             SpriteLayer defence = object.has("defence")
                 ? readLayer(object.getAsJsonObject("defence")) : null;
             Wings wings = null;
@@ -503,7 +578,18 @@ public final class MonsterSprites
                     carried.get("scale").getAsFloat());
             }
             float scale = object.has("scale") ? object.get("scale").getAsFloat() : 1F;
-            return new Definition(code, body, defence, wings, Math.max(0.05F, scale));
+            String model = object.has("model") ? object.get("model").getAsString() : null;
+            String animation = object.has("animation")
+                ? object.get("animation").getAsString() : null;
+            // Absent means "where it was authored", which is what a model that
+            // has never been placed by hand should do.
+            float elevation = object.has("elevation")
+                ? object.get("elevation").getAsFloat() : 0F;
+            float turn = object.has("turn") ? object.get("turn").getAsFloat() : 0F;
+            float offsetX = object.has("offsetX") ? object.get("offsetX").getAsFloat() : 0F;
+            float offsetZ = object.has("offsetZ") ? object.get("offsetZ").getAsFloat() : 0F;
+            return new Definition(code, body, defence, wings, Math.max(0.05F, scale),
+                model, animation, elevation, turn, offsetX, offsetZ);
         }
         catch(Exception malformed)
         {
@@ -562,11 +648,17 @@ public final class MonsterSprites
         return object.has(key) ? object.get(key).getAsInt() : fallback;
     }
 
-    private static JsonObject writeDefinition(Definition definition)
+    /** Package-visible so a test can round-trip one without a game around it. */
+    static JsonObject writeDefinition(Definition definition)
     {
         JsonObject object = new JsonObject();
         object.addProperty("card", definition.code());
-        object.add("body", writeLayer(definition.body()));
+        // Omitted, not null, when the monster is a model and nothing else --
+        // which is what readDefinition looks for on the way back in.
+        if(definition.body() != null)
+        {
+            object.add("body", writeLayer(definition.body()));
+        }
         if(definition.defence() != null)
         {
             object.add("defence", writeLayer(definition.defence()));
@@ -581,6 +673,35 @@ public final class MonsterSprites
             object.add("wings", wings);
         }
         object.addProperty("scale", definition.scale());
+        // Written only when set, so a file of sprites stays a file of sprites
+        // rather than growing a null on every entry.
+        if(definition.hasModel())
+        {
+            object.addProperty("model", definition.model());
+            if(definition.hasAnimation())
+            {
+                object.addProperty("animation", definition.animation());
+            }
+            // Placement, written only when it is not the default. These mean
+            // nothing without a model, and a zero written on every entry is a
+            // zero somebody later has to work out the meaning of.
+            if(definition.elevation() != 0F)
+            {
+                object.addProperty("elevation", definition.elevation());
+            }
+            if(definition.turn() != 0F)
+            {
+                object.addProperty("turn", definition.turn());
+            }
+            if(definition.offsetX() != 0F)
+            {
+                object.addProperty("offsetX", definition.offsetX());
+            }
+            if(definition.offsetZ() != 0F)
+            {
+                object.addProperty("offsetZ", definition.offsetZ());
+            }
+        }
         return object;
     }
 

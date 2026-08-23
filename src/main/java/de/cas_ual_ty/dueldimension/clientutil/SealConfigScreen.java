@@ -26,28 +26,66 @@ public class SealConfigScreen extends Screen
         this.parent = parent;
     }
 
+    private static final int ROW_H = 20;
+    private static final int GAP = 4;
+    private static final int WIDE = 310;
+
+    /** Where the next row goes, counted rather than written down. */
+    private int row;
+    private int top;
+
     @Override
     protected void init()
     {
-        int centreX = width / 2;
+        // Laid out from a count, not from a column of hand-written offsets.
+        // Those offsets had grown to disagree with each other: the caption sat
+        // at height/2 + 68 while Done spanned +60 to +80, so the line was drawn
+        // straight through the button. Every row below is derived, so adding one
+        // moves everything that follows instead of landing on top of it.
+        int rows = 6;
+        int block = rows * (ROW_H + GAP) + GAP + ROW_H;
+        top = height / 2 - block / 2;
+        row = 0;
 
         addRenderableWidget(Button.builder(toggleLabel(), button ->
         {
             SealSettings.setEnabled(!SealSettings.enabled());
             button.setMessage(toggleLabel());
-        }).bounds(centreX - 155, height / 2 - 44, 310, 20).build());
+        }).bounds(width / 2 - WIDE / 2, rowY(), WIDE, ROW_H).build());
 
         addRenderableWidget(Button.builder(hoverLabel(), button ->
         {
             HoverPreviewSettings.setNeedsShift(!HoverPreviewSettings.needsShift());
             button.setMessage(hoverLabel());
-        }).bounds(centreX - 155, height / 2 - 20, 310, 20).build());
+        }).bounds(width / 2 - WIDE / 2, rowY(), WIDE, ROW_H).build());
 
+        // Cycles rather than toggles: three positions, and the useful one is the
+        // middle. See HologramSettings for why the board is not symmetrical.
         addRenderableWidget(Button.builder(hologramLabel(), button ->
         {
-            HologramSettings.setEnabled(!HologramSettings.enabled());
+            HologramSettings.setMode(HologramSettings.mode().next());
             button.setMessage(hologramLabel());
-        }).bounds(centreX - 155, height / 2 + 4, 310, 20).build());
+        }).bounds(width / 2 - WIDE / 2, rowY(), WIDE, ROW_H).build());
+
+        // Off leaves the idle, which is the animation every monster has.
+        addRenderableWidget(Button.builder(animationLabel(), button ->
+        {
+            de.cas_ual_ty.dueldimension.clientutil.model.AnimationSettings.setExtras(
+                !de.cas_ual_ty.dueldimension.clientutil.model.AnimationSettings.extras());
+            button.setMessage(animationLabel());
+            // The speed row below is only meaningful while these are on.
+            rebuildWidgets();
+        }).bounds(width / 2 - WIDE / 2, rowY(), WIDE, ROW_H).build());
+
+        // Only worth reaching for when the animations are on, and disabled
+        // rather than hidden so its absence is a fact about the row above it.
+        Button speed = Button.builder(speedLabel(), button ->
+        {
+            de.cas_ual_ty.dueldimension.clientutil.model.AnimationSettings.cycleSpeed();
+            button.setMessage(speedLabel());
+        }).bounds(width / 2 - WIDE / 2, rowY(), WIDE, ROW_H).build();
+        speed.active = de.cas_ual_ty.dueldimension.clientutil.model.AnimationSettings.extras();
+        addRenderableWidget(speed);
 
         // The overworld field's dimensions get their own screen: there are four
         // of them and they are sliders, which do not belong in a list of
@@ -57,16 +95,40 @@ public class SealConfigScreen extends Screen
             button -> minecraft.setScreenAndShow(
                 new de.cas_ual_ty.dueldimension.clientutil.overworld
                     .OverworldFieldScreen(this)))
-            .bounds(centreX - 155, height / 2 + 28, 310, 20).build());
+            .bounds(width / 2 - WIDE / 2, rowY(), WIDE, ROW_H).build());
 
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE,
-            button -> onClose()).bounds(centreX - 100, height / 2 + 60, 200, 20).build());
+            button -> onClose()).bounds(width / 2 - 100, doneY(), 200, ROW_H).build());
+    }
+
+    private int rowY()
+    {
+        return top + row++ * (ROW_H + GAP);
+    }
+
+    /** A gap wider than the one between rows, so Done reads as separate. */
+    private int doneY()
+    {
+        return top + row * (ROW_H + GAP) + GAP;
+    }
+
+    private static Component speedLabel()
+    {
+        return Component.literal("Attack animation speed: "
+            + de.cas_ual_ty.dueldimension.clientutil.model.AnimationSettings.speedLabel());
+    }
+
+    private static Component animationLabel()
+    {
+        return Component.literal("Monster attack and hit animations: "
+            + (de.cas_ual_ty.dueldimension.clientutil.model.AnimationSettings.extras()
+                ? "ON" : "IDLE ONLY"));
     }
 
     private static Component hologramLabel()
     {
         return Component.literal("Monster holograms in duels: "
-            + (HologramSettings.enabled() ? "ON" : "OFF"));
+            + HologramSettings.mode().label());
     }
 
     private static Component hoverLabel()
@@ -96,9 +158,11 @@ public class SealConfigScreen extends Screen
     {
         poseStack.fillGradient(0, 0, width, height, 0xC0101010, 0xD0101010);
         super.extractRenderState(poseStack, mouseX, mouseY, partialTick);
-        poseStack.centeredText(font, title.getString(), width / 2, height / 2 - 60, 0xFFFFD700);
+        // Measured off the same layout the buttons use, so neither can drift
+        // into the other. The font is 9 tall, hence the 14 and the 10.
+        poseStack.centeredText(font, title.getString(), width / 2, top - 14, 0xFFFFD700);
         poseStack.centeredText(font, "Lose a duel with the field spell up and the seal takes you.",
-            width / 2, height / 2 + 68, 0xFFA0A0A0);
+            width / 2, doneY() + ROW_H + 10, 0xFFA0A0A0);
     }
 
     @Override

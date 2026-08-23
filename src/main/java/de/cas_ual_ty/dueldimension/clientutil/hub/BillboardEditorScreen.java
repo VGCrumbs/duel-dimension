@@ -34,7 +34,11 @@ import java.util.function.Supplier;
  * save as they are made, and there is nothing to confirm because a change you
  * can see is one you have already approved or already undone.
  * <p>
- * <b>Three tabs, and everything on a tab fits without scrolling.</b> Numbers
+ * <b>Everything on a tab fits without scrolling.</b> There is no scrolling here
+ * and nothing clips, so a control that does not fit is not a control that is
+ * hard to reach — it is one that is not on the screen at all. The tab strip and
+ * both button strips therefore divide the panel by how many buttons they hold
+ * rather than by a number written down when they were built. Numbers
  * that belong together share a row -- columns beside rows, x beside y, width
  * beside height -- because they are read as pairs and adjusted as pairs, and a
  * pair split across two rows is two things to find instead of one.
@@ -57,11 +61,35 @@ public class BillboardEditorScreen extends Screen
     private static final int PAD = 7;
     private static final int HEADER = 46;
 
-    private enum Tab
+    /**
+     * How wide each of {@code count} buttons is when they share one strip across
+     * the panel, with a gap between neighbours.
+     * <p>
+     * One formula, because the panel has three of these strips — the tabs, the
+     * file buttons and the footer — and each used to carry its own copy with the
+     * count written into it as a literal. Adding a fourth tab to an enum then
+     * left the tab strip still dividing by three, which does not fail to
+     * compile, does not throw, and does not even look wrong on the two tabs you
+     * can see: it lays the last one out past the edge of the screen. Derived
+     * from the count rather than agreeing with it.
+     */
+    static int share(int full, int gap, int count)
+    {
+        return count <= 0 ? full : (full - gap * (count - 1)) / count;
+    }
+
+    /** The width available inside the panel's padding. */
+    static int content()
+    {
+        return PANEL_W - PAD * 2;
+    }
+
+    enum Tab
     {
         BODY("Body"),
         POSE("Frames"),
-        WINGS("Wings");
+        WINGS("Wings"),
+        MODEL("Model");
 
         private final String label;
 
@@ -77,6 +105,32 @@ public class BillboardEditorScreen extends Screen
     private record Field(AbstractWidget widget, Runnable restore)
     {
     }
+
+    /**
+     * A slider whose value can also be typed.
+     * <p>
+     * Dragging is for finding a number by eye, which is what most of these are
+     * for. It is hopeless for setting a number you already know: a slider two
+     * hundred pixels wide covering a thousand values has several of them under
+     * every pixel, and the wheel takes a notch per step. Right-click puts the
+     * number in directly — which is also the only way to leave the range the
+     * slider offers, and models turn out to need that.
+     */
+    private interface Typed
+    {
+        /** Doubles as the identity, since a rebuild replaces the widget. */
+        String label();
+
+        String text();
+
+        void accept(String typed);
+    }
+
+    /** Which control is being typed into, by label, or null for none. */
+    private String typing;
+    /** The live control behind {@link #typingBox}, refreshed on every rebuild. */
+    private Typed typingTarget;
+    private EditBox typingBox;
 
     // The definition in pieces, because a record cannot be edited a field at a
     // time and this screen edits nothing else.
@@ -98,6 +152,41 @@ public class BillboardEditorScreen extends Screen
 
     private boolean pose;
     private int dfirst;
+
+    /**
+     * The 3D alternative to the sheet above.
+     * <p>
+     * The sprite fields are deliberately NOT cleared when a model is named. A
+     * model can fail to load — a missing file, an export using a corner of glTF
+     * the reader will not guess at — and the sprite is what the monster looks
+     * like when it does. Naming a model is choosing a preference, not throwing
+     * the other one away.
+     */
+    private String model = "";
+    /** Which of the model's animations to play, by name; blank for none. */
+    private String modelAnimation = "";
+    /**
+     * How far off the card the model floats, and which way it faces.
+     * <p>
+     * Both are about a model rather than about a sprite, so they live here
+     * rather than beside the sheet's own numbers. Elevation exists because
+     * standing a monster on the card is right for the ones with feet; a great
+     * many of them hover. Turn exists because a model has an authored forward
+     * and nothing guarantees it is the one this mod assumes.
+     */
+    private float elevation;
+    private float turn;
+    /**
+     * Sideways and forward, in the model's own frame.
+     * <p>
+     * The third and fourth ways a model can be moved, after how tall it stands
+     * and which way it looks. A monster whose origin is not over its own feet —
+     * and plenty are not, these being rips rather than assets authored for a
+     * card — otherwise stands beside its card rather than on it, with nothing
+     * to be done about it.
+     */
+    private float offsetX;
+    private float offsetZ;
 
     /**
      * One nudge per cell, and which cell the two nudge controls are pointed at.
@@ -128,6 +217,14 @@ public class BillboardEditorScreen extends Screen
 
     /** What the last export said, shown in place of the subtitle. */
     private String notice;
+    /**
+     * Whether {@link #notice} is good news.
+     * <p>
+     * It was drawn green whatever it said, so "could not copy that file" and
+     * "4 parts, 5 anims" arrived in the same colour — and green is the colour
+     * this panel uses for a thing that worked.
+     */
+    private boolean noticeGood;
 
     private int row;
     /** Where the controls stopped, which is where the preview begins. */
@@ -152,7 +249,24 @@ public class BillboardEditorScreen extends Screen
         {
             return;
         }
+        // The scale, the model and the animation belong to the definition rather
+        // than to the sheet, so they are read whether or not there is one.
+        scale = definition.scale();
+        model = definition.model() == null ? "" : definition.model();
+        modelAnimation = definition.animation() == null ? "" : definition.animation();
+        elevation = definition.elevation();
+        turn = definition.turn();
+        offsetX = definition.offsetX();
+        offsetZ = definition.offsetZ();
+
         SpriteLayer body = definition.body();
+        if(body == null)
+        {
+            // A monster that is a model and no sprite. The sprite fields keep
+            // the starting values the constructor gave them, which is what the
+            // Body tab needs to show if a duellist decides to add one.
+            return;
+        }
         sheet = body.sheet();
         bx = body.x();
         by = body.y();
@@ -167,7 +281,6 @@ public class BillboardEditorScreen extends Screen
         bbob = body.bob();
         btrimX = body.trimX();
         btrimY = body.trimY();
-        scale = definition.scale();
 
         boffsets.clear();
         boffsets.addAll(body.offsets());
@@ -199,27 +312,124 @@ public class BillboardEditorScreen extends Screen
     }
 
     /** Writes the definition back and saves it, on every change. */
+    /** Opens a control for typing, in place of dragging it. */
+    private void type(Typed control)
+    {
+        typing = control.label();
+        rebuildWidgets();
+    }
+
+    /** Takes what was typed, or leaves the value alone if it was not a number. */
+    private void commitTyped()
+    {
+        if(typingTarget != null && typingBox != null)
+        {
+            typingTarget.accept(typingBox.getValue().trim());
+            apply();
+        }
+        typing = null;
+        typingTarget = null;
+        typingBox = null;
+        rebuildWidgets();
+    }
+
+    @Override
+    public boolean keyPressed(net.minecraft.client.input.KeyEvent event)
+    {
+        if(typing != null)
+        {
+            int key = event.key();
+            if(key == org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER
+                || key == org.lwjgl.glfw.GLFW.GLFW_KEY_KP_ENTER)
+            {
+                commitTyped();
+                return true;
+            }
+            if(key == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE)
+            {
+                // Answers the box rather than leaving the editor, which is the
+                // safe reading of escape while a question is up -- and the same
+                // one the deck editor takes.
+                typing = null;
+                typingTarget = null;
+                typingBox = null;
+                rebuildWidgets();
+                return true;
+            }
+        }
+        return super.keyPressed(event);
+    }
+
+    @Override
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
+        boolean doubled)
+    {
+        // Clicking away takes the number rather than discarding it: the value is
+        // visible in the box while it is being typed, so leaving it is a much
+        // more natural way to say "yes, that one" than reaching for enter.
+        if(typing != null && typingBox != null && !typingBox.isMouseOver(event.x(), event.y()))
+        {
+            commitTyped();
+            return true;
+        }
+        return super.mouseClicked(event, doubled);
+    }
+
+    /**
+     * Says something in the subtitle, in place of "editing", until something
+     * changes what it was about.
+     * <p>
+     * Kept until then rather than timed out: the messages here are the answer to
+     * a button that was just pressed, and an answer that fades is one you can
+     * miss by looking at the model instead of at the panel.
+     */
+    private void say(String what, boolean good)
+    {
+        notice = what;
+        noticeGood = good;
+    }
+
+    /** Takes the subtitle back to saying what this screen is doing. */
+    private void hush()
+    {
+        notice = null;
+        noticeGood = false;
+    }
+
     private void apply()
     {
-        if(sheet.isBlank())
+        // A monster is described by a sprite, or by a model, or by both. Nothing
+        // named at all is the only thing that means "no billboard".
+        //
+        // This used to ask only about the sheet, which was the whole truth when
+        // a sheet was the only thing a definition could hold. It stopped being
+        // true when models arrived, and the way it failed was quiet: importing a
+        // model for a card that never had a sprite named the model, saved, and
+        // deleted the entry on the way out -- indistinguishable from an import
+        // that had not worked.
+        if(sheet.isBlank() && model.isBlank())
         {
             MonsterSprites.remove(code);
             MonsterSprites.save();
             return;
         }
-        SpriteLayer body = new SpriteLayer(sheet, bx, by, bw, bh, bcolumns, brows, bfirst,
-            bframes, bticks, bloop, btrimX, btrimY, bbob, boffsets);
+        SpriteLayer body = sheet.isBlank() ? null
+            : new SpriteLayer(sheet, bx, by, bw, bh, bcolumns, brows, bfirst,
+                bframes, bticks, bloop, btrimX, btrimY, bbob, boffsets);
         // The pose shares the nudges, because it shares the cells: a defence
         // cell is one of the same grid, and its entry in the list is its own.
-        SpriteLayer defence = pose
+        SpriteLayer defence = pose && !sheet.isBlank()
             ? new SpriteLayer(sheet, bx, by, bw, bh, bcolumns, brows, dfirst, 1, bticks,
                 MonsterSprites.Loop.LOOP, btrimX, btrimY, bbob, boffsets)
             : null;
-        Wings wings = winged
+        Wings wings = winged && !sheet.isBlank()
             ? new Wings(new SpriteLayer(sheet, wx, wy, ww, wh, wcolumns, wrows, wfirst, wframes,
                 wticks, wloop, wtrimX, wtrimY), anchor, spacing, wscale)
             : null;
-        MonsterSprites.put(new MonsterSprites.Definition(code, body, defence, wings, scale));
+        MonsterSprites.put(new MonsterSprites.Definition(code, body, defence, wings, scale,
+            model.isBlank() ? null : model,
+            modelAnimation.isBlank() ? null : modelAnimation, elevation, turn,
+            offsetX, offsetZ));
         MonsterSprites.save();
     }
 
@@ -237,7 +447,7 @@ public class BillboardEditorScreen extends Screen
 
     private int full()
     {
-        return PANEL_W - PAD * 2;
+        return content();
     }
 
     private int rowY()
@@ -264,10 +474,26 @@ public class BillboardEditorScreen extends Screen
     private void place(Field field, int x, int w)
     {
         int control = w - RESET_W - GAP;
-        field.widget().setX(x);
-        field.widget().setY(rowY());
-        field.widget().setWidth(control);
-        addRenderableWidget(field.widget());
+        if(field.widget() instanceof Typed typed && typed.label().equals(typing))
+        {
+            // In the slider's own place, at its own size, so the panel does not
+            // reflow under the mouse that opened it.
+            typingTarget = typed;
+            EditBox box = new EditBox(font, x, rowY(), control, ROW_H,
+                Component.literal(typed.label()));
+            box.setMaxLength(12);
+            box.setValue(typed.text());
+            typingBox = box;
+            addRenderableWidget(box);
+            setInitialFocus(box);
+        }
+        else
+        {
+            field.widget().setX(x);
+            field.widget().setY(rowY());
+            field.widget().setWidth(control);
+            addRenderableWidget(field.widget());
+        }
 
         // The arrow puts THIS number back and touches nothing else. Rebuilding
         // afterwards is what makes the control redraw at its restored value --
@@ -286,7 +512,12 @@ public class BillboardEditorScreen extends Screen
     {
         row = 0;
 
-        int tabW = (full() - GAP * 2) / 3;
+        // Divided by however many tabs there ARE. This said 3 while the enum had
+        // grown to four, so Model was laid out past the panel's own edge and off
+        // the side of the screen: it could be reached only by the sliver of its
+        // left edge, and once reached nothing said it was the live tab, because
+        // the brackets that say so were drawn off-screen too.
+        int tabW = share(full(), GAP, Tab.values().length);
         int at = 0;
         for(Tab which : Tab.values())
         {
@@ -296,6 +527,8 @@ public class BillboardEditorScreen extends Screen
                 pressed ->
                 {
                     tab = chosen;
+                    // The last message was about the tab being left.
+                    hush();
                     rebuildWidgets();
                 })
                 .bounds(left() + at * (tabW + GAP), HEADER - 22, tabW, 16).build());
@@ -307,30 +540,55 @@ public class BillboardEditorScreen extends Screen
             case BODY -> body();
             case POSE -> poseTab();
             case WINGS -> wings();
+            case MODEL -> modelTab();
         }
         contentBottom = rowY();
 
         int sheets = height - 46;
-        int third = (full() - GAP * 2) / 3;
-        int quarter = (full() - GAP * 3) / 4;
-        // Pick a file and it becomes the sheet being edited, because the next
-        // thing anybody does after importing one is type its name in by hand.
+        int third = share(full(), GAP, 3);
+        int quarter = share(full(), GAP, 4);
+        // The same three gestures whichever tab is in front -- bring a file in,
+        // show me where they live, read them again -- pointed at the kind of
+        // file that tab is about. They used to be pointed at sheets always, so
+        // on the Model tab "Import" asked for a PNG and "Folder" opened a folder
+        // with no models in it: the right question, answered about the wrong
+        // thing, which reads as the feature being missing.
+        boolean models = tab == Tab.MODEL;
         addRenderableWidget(Button.builder(Component.literal("Import"), pressed ->
         {
-            String taken = MonsterSheets.take(MonsterSheets.choose());
-            if(taken != null)
+            if(models)
             {
-                sheet = taken;
-                apply();
+                importModel();
+            }
+            else
+            {
+                importSheet();
             }
             rebuildWidgets();
         }).bounds(left(), sheets, quarter, 18).build());
         addRenderableWidget(Button.builder(Component.literal("Folder"), pressed ->
-                MonsterSheets.open())
-            .bounds(left() + quarter + GAP, sheets, quarter, 18).build());
+        {
+            if(models)
+            {
+                de.cas_ual_ty.dueldimension.clientutil.model.MonsterModels.open();
+            }
+            else
+            {
+                MonsterSheets.open();
+            }
+        }).bounds(left() + quarter + GAP, sheets, quarter, 18).build());
         addRenderableWidget(Button.builder(Component.literal("Reload"), pressed ->
             {
-                MonsterSheets.reload();
+                if(models)
+                {
+                    // No scan to redo: models are read on demand, so forgetting
+                    // what was read IS the reload.
+                    de.cas_ual_ty.dueldimension.clientutil.model.MonsterModels.clear();
+                }
+                else
+                {
+                    MonsterSheets.reload();
+                }
                 rebuildWidgets();
             }).bounds(left() + (quarter + GAP) * 2, sheets, quarter, 18).build());
         // The one button that puts this work somewhere other people can get it.
@@ -338,7 +596,8 @@ public class BillboardEditorScreen extends Screen
         // absence is a fact about the install rather than a missing feature.
         Button toMod = Button.builder(Component.literal("To mod"), pressed ->
         {
-            notice = SpriteSource.promote(code);
+            SpriteSource.Outcome outcome = SpriteSource.promote(code);
+            say(outcome.message(), outcome.ok());
             rebuildWidgets();
         }).bounds(left() + (quarter + GAP) * 3, sheets, quarter, 18).build();
         toMod.active = SpriteSource.available() && MonsterSprites.has(code);
@@ -358,11 +617,74 @@ public class BillboardEditorScreen extends Screen
         {
             MonsterSprites.remove(code);
             MonsterSprites.save();
+            // Everything that names a billboard, not just the sheet. Clearing
+            // the sheet alone was enough while apply() removed on a blank sheet;
+            // now that a model keeps a definition alive, a leftover model name
+            // means the very next slider nudge writes the entry straight back
+            // and Remove looks like it did not take.
             sheet = "";
+            model = "";
+            modelAnimation = "";
+            elevation = 0F;
+            turn = 0F;
+            offsetX = 0F;
+            offsetZ = 0F;
+            // The last message described a billboard that is now gone.
+            hush();
             rebuildWidgets();
         }).bounds(left() + third + GAP, footer, third, 18).build());
         addRenderableWidget(Button.builder(Component.literal("Done"), pressed -> onClose())
             .bounds(left() + (third + GAP) * 2, footer, third, 18).build());
+    }
+
+    /** A sheet chosen from disk becomes the sheet being edited. */
+    private void importSheet()
+    {
+        String taken = MonsterSheets.take(MonsterSheets.choose());
+        if(taken != null)
+        {
+            sheet = taken;
+            apply();
+        }
+    }
+
+    /**
+     * The same for a model, but it says what happened.
+     * <p>
+     * A sheet either appears in the preview underneath or it does not, so an
+     * import that went wrong is visible immediately. A model has nowhere to show
+     * itself on this screen — it stands in the world behind the panel — and it
+     * can fail for reasons that are about the FILE rather than about the import:
+     * a .glb using a corner of glTF the reader will not guess at looks exactly
+     * like a monster that was never given a model. So it is loaded here, while
+     * the duellist is still looking at the button they pressed, and the answer
+     * goes in the subtitle.
+     */
+    private void importModel()
+    {
+        java.nio.file.Path chosen =
+            de.cas_ual_ty.dueldimension.clientutil.model.MonsterModels.choose();
+        if(chosen == null)
+        {
+            // Cancelled, or there is no native dialog on this machine. The two
+            // are indistinguishable from here, so this says the thing that is
+            // useful in the second case and harmless in the first.
+            say("cancelled - or drop .glb files in the models folder", false);
+            return;
+        }
+        String taken = de.cas_ual_ty.dueldimension.clientutil.model.MonsterModels.take(chosen);
+        if(taken == null)
+        {
+            say("could not copy that file - see the log", false);
+            return;
+        }
+        setModel(taken);
+        apply();
+
+        var mesh = de.cas_ual_ty.dueldimension.clientutil.model.MonsterModels.get(taken);
+        say(mesh == null ? taken + " will not load - see the log"
+            : taken + ": " + mesh.parts().size() + " parts, "
+                + mesh.animationNames().size() + " anims", mesh != null);
     }
 
     private void body()
@@ -404,6 +726,227 @@ public class BillboardEditorScreen extends Screen
             count("Crop h", 0, 1024, 0, () -> bh, value -> bh = value));
         pair(count("Trim x", 0, 128, 0, () -> btrimX, value -> btrimX = value),
             count("Trim y", 0, 128, 0, () -> btrimY, value -> btrimY = value));
+    }
+
+    /**
+     * The 3D alternative to a sprite sheet.
+     * <p>
+     * A separate tab rather than more rows on Body, because almost none of Body
+     * applies: a model has no grid, no cells and no frame count, and putting
+     * "Cols" beside "Model" would invite the reading that one sets up the other.
+     * <p>
+     * The sprite settings on the other tabs stay live and are still saved. A
+     * model that will not load falls back to them, so they are the monster's
+     * other half rather than the half it replaced.
+     */
+    /**
+     * Names the model, dropping the animation when it is a different one.
+     * <p>
+     * An animation is chosen by NAME out of one particular file's list, so it
+     * means nothing once the file changes — and it fails worse than meaning
+     * nothing: a name that happens to exist in both files plays something nobody
+     * picked, which looks like the picker choosing at random. Four things set
+     * the model — the box, its reset, the file picker and an import — and they
+     * all come through here so that none of them can be the one that forgets.
+     */
+    private void setModel(String named)
+    {
+        if(!named.equals(model))
+        {
+            modelAnimation = "";
+        }
+        model = named;
+    }
+
+    private void modelTab()
+    {
+        EditBox box = new EditBox(font, left(), rowY(), full() - RESET_W - GAP, ROW_H,
+            Component.literal("Model"));
+        box.setMaxLength(128);
+        box.setValue(model);
+        box.setResponder(text ->
+        {
+            // Named rather than loaded. This used to forget every baked model on
+            // every keystroke so that an edited file would be re-read -- but
+            // "every keystroke" is the problem: the board behind this panel is
+            // still drawing, and it asks for its models by name each frame, so
+            // typing six characters re-read and re-baked every model in sight
+            // six times over, and printed a warning for each half-typed name on
+            // the way. Re-reading a changed file is what the Reload button is
+            // for, and pressing it is a deliberate act rather than a side effect
+            // of naming something.
+            setModel(text.trim());
+            apply();
+        });
+        addRenderableWidget(box);
+        setInitialFocus(box);
+        addRenderableWidget(Button.builder(Component.literal("↺"), pressed ->
+        {
+            setModel("");
+            apply();
+            rebuildWidgets();
+        }).bounds(left() + full() - RESET_W, rowY(), RESET_W, ROW_H).build());
+        row++;
+
+        wide(filePicker());
+
+        // The two adjustable factors a model has. Height is shared with the
+        // sprite deliberately: it means the same thing for both -- how tall the
+        // monster stands -- and a monster that changed size when it changed
+        // representation would be a worse answer than one number.
+        pair(amount("Size", 0.1F, 4F, 1F, () -> scale, value -> scale = value),
+            animationPicker());
+        // How high and which way, beside each other because they are the two
+        // halves of "where does this thing stand" and are tuned together while
+        // walking round it.
+        pair(amount("Lift", -1F, 4F, 0F, () -> elevation, value -> elevation = value),
+            amount("Turn", 0F, 360F, 0F, () -> turn, value -> turn = value));
+        // The other two axes. Paired with each other rather than with Lift,
+        // because these two are read together -- they are one position, nudged
+        // by looking at it from above -- while height is judged from the side.
+        pair(amount("Off x", -2F, 2F, 0F, () -> offsetX, value -> offsetX = value),
+            amount("Off z", -2F, 2F, 0F, () -> offsetZ, value -> offsetZ = value));
+
+        wide(modelSummary());
+    }
+
+    /**
+     * Cycles the {@code .glb} files that are actually in the folder.
+     * <p>
+     * The box above takes a name, and a name typed from memory is a name that
+     * can be typed wrongly — after which the monster stays a sprite and nothing
+     * on screen distinguishes "spelled it wrong" from "that file is broken".
+     * This offers only files that exist, so the box is for when you know what
+     * you want and this is for when you want to see what there is.
+     * <p>
+     * A cycling button rather than a list, which is what every other choice on
+     * this screen is, and what the panel has room for.
+     */
+    private Field filePicker()
+    {
+        java.util.List<String> names =
+            de.cas_ual_ty.dueldimension.clientutil.model.MonsterModels.names();
+        String label;
+        if(names.isEmpty())
+        {
+            label = "no .glb found - Import";
+        }
+        else
+        {
+            int at = names.indexOf(model);
+            label = at < 0 ? "Pick 1 of " + names.size()
+                : "File " + (at + 1) + " of " + names.size();
+        }
+        Button button = Button.builder(Component.literal(label), pressed ->
+        {
+            java.util.List<String> options =
+                de.cas_ual_ty.dueldimension.clientutil.model.MonsterModels.names();
+            if(options.isEmpty())
+            {
+                return;
+            }
+            // -1 lands on 0, so a box holding a name that is not a file steps to
+            // the first one that is.
+            setModel(options.get((options.indexOf(model) + 1) % options.size()));
+            apply();
+            // The box above has to be rebuilt to show the new name; an EditBox
+            // does not learn its value from outside.
+            rebuildWidgets();
+        }).bounds(0, 0, 10, ROW_H).build();
+        button.active = !names.isEmpty();
+        return new Field(button, () -> model = "");
+    }
+
+    /**
+     * Cycles the animations the loaded file actually declares.
+     * <p>
+     * Read off the model rather than typed, because their names carry no
+     * meaning: this dragon's are slot_0, slot_2, slot_4, slot_5 and slot_6 --
+     * the slot indices of the game it came from. Nothing in the file says which
+     * is idle and which is an attack, so the only way to assign them is to look
+     * at each one.
+     */
+    /**
+     * A slot, and what the game uses it for where that is known.
+     * <p>
+     * The bare name otherwise. An unlabelled slot is not a slot with no purpose
+     * — it is one whose purpose nobody has read out of the executable yet — so
+     * it is shown as it is rather than dressed up.
+     */
+    private static String label(String slot)
+    {
+        String meaning = de.cas_ual_ty.dueldimension.clientutil.model.ModelSkeleton
+            .meaning(slot);
+        return meaning == null ? slot : slot + " (" + meaning + ")";
+    }
+
+    private Field animationPicker()
+    {
+        java.util.List<String> names = animationNames();
+        // "idle", not "none": leaving this unset no longer means the bind pose,
+        // it means slot_0, and a control that says none while the monster is
+        // visibly moving is a control nobody will trust again.
+        //
+        // A named slot says what it is. Only three of the eight are named, and
+        // that is the point of showing them: the rest are animations a duellist
+        // has to identify by watching, so the ones that need no watching should
+        // not look the same.
+        String shown = names.isEmpty() ? "no anims"
+            : (modelAnimation.isBlank() ? "idle" : label(modelAnimation));
+        Button button = Button.builder(Component.literal("Anim " + shown), pressed ->
+        {
+            java.util.List<String> options = animationNames();
+            if(options.isEmpty())
+            {
+                return;
+            }
+            int at = options.indexOf(modelAnimation);
+            // -1 lands on 0, so "none" steps to the first one.
+            modelAnimation = options.get((at + 1) % options.size());
+            pressed.setMessage(Component.literal("Anim " + label(modelAnimation)));
+            apply();
+        }).bounds(0, 0, 10, ROW_H).build();
+        // Back to the idle, which is what an unset animation now means. The
+        // reset arrow applies and rebuilds around this, so it only has to say
+        // what the value becomes.
+        return new Field(button, () -> modelAnimation = "");
+    }
+
+    /** What the loaded model actually is, so a typo reads as a typo. */
+    private Field modelSummary()
+    {
+        String text;
+        if(model.isBlank())
+        {
+            text = "sprite (no model)";
+        }
+        else
+        {
+            var mesh = de.cas_ual_ty.dueldimension.clientutil.model.MonsterModels.get(model);
+            text = mesh == null ? "not loaded - see the log"
+                : mesh.parts().size() + " parts, "
+                    + mesh.parts().stream().mapToInt(
+                        de.cas_ual_ty.dueldimension.clientutil.model.ModelMesh.Part::vertexCount)
+                        .sum() + " verts, "
+                    + mesh.animationNames().size() + " anims";
+        }
+        Button button = Button.builder(Component.literal(text), pressed ->
+        {
+            de.cas_ual_ty.dueldimension.clientutil.model.MonsterModels.clear();
+            rebuildWidgets();
+        }).bounds(0, 0, 10, ROW_H).build();
+        button.active = !model.isBlank();
+        return new Field(button, () -> { });
+    }
+
+    private java.util.List<String> animationNames()
+    {
+        if(model.isBlank())
+        {
+            return java.util.List.of();
+        }
+        var mesh = de.cas_ual_ty.dueldimension.clientutil.model.MonsterModels.get(model);
+        return mesh == null ? java.util.List.of() : mesh.animationNames();
     }
 
     private void poseTab()
@@ -491,7 +1034,8 @@ public class BillboardEditorScreen extends Screen
         extractor.text(font, font.plainSubstrByWidth(name, full()), left(), 7, 0xFFF4D089, true);
         extractor.text(font, notice != null ? notice
                 : MonsterSprites.has(code) ? "editing" : "no billboard yet",
-            left(), 17, notice != null ? 0xFF7CE38B : 0xFF9A9A9A, true);
+            left(), 17,
+            notice == null ? 0xFF9A9A9A : noticeGood ? 0xFF7CE38B : 0xFFE0704C, true);
 
         drawSlices(extractor);
 
@@ -745,7 +1289,7 @@ public class BillboardEditorScreen extends Screen
     }
 
     /** A whole number, printing its own value so the label is the truth. */
-    private class Count extends AbstractSliderButton
+    private class Count extends AbstractSliderButton implements Typed
     {
         private final String label;
         private final int min;
@@ -801,13 +1345,54 @@ public class BillboardEditorScreen extends Screen
         }
 
         @Override
+        public String label()
+        {
+            return label;
+        }
+
+        @Override
+        public String text()
+        {
+            return Integer.toString(value());
+        }
+
+        @Override
+        public void accept(String typed)
+        {
+            try
+            {
+                // Clamped rather than refused: a number outside the range is a
+                // legible intention -- "as far as this goes" -- and refusing it
+                // silently would look like the box had not worked.
+                set.accept(Math.clamp(Integer.parseInt(typed), min, max));
+            }
+            catch(NumberFormatException notANumber)
+            {
+                // The value stays as it was, and the rebuild puts it back on
+                // screen. Nothing to report: the box showed what was typed.
+            }
+        }
+
+        @Override
+        public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
+            boolean doubled)
+        {
+            if(event.button() == 1 && isMouseOver(event.x(), event.y()))
+            {
+                type(this);
+                return true;
+            }
+            return super.mouseClicked(event, doubled);
+        }
+
+        @Override
         public void playDownSound(net.minecraft.client.sounds.SoundManager sounds)
         {
         }
     }
 
     /** A fraction, to two places. */
-    private class Amount extends AbstractSliderButton
+    private class Amount extends AbstractSliderButton implements Typed
     {
         private final String label;
         private final float min;
@@ -852,6 +1437,42 @@ public class BillboardEditorScreen extends Screen
         protected void applyValue()
         {
             set.accept(value());
+        }
+
+        @Override
+        public String label()
+        {
+            return label;
+        }
+
+        @Override
+        public String text()
+        {
+            return String.format("%.2f", value());
+        }
+
+        @Override
+        public void accept(String typed)
+        {
+            try
+            {
+                set.accept(Math.clamp(Float.parseFloat(typed), min, max));
+            }
+            catch(NumberFormatException notANumber)
+            {
+            }
+        }
+
+        @Override
+        public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
+            boolean doubled)
+        {
+            if(event.button() == 1 && isMouseOver(event.x(), event.y()))
+            {
+                type(this);
+                return true;
+            }
+            return super.mouseClicked(event, doubled);
         }
 
         @Override

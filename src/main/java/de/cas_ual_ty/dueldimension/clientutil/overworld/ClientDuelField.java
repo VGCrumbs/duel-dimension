@@ -195,7 +195,9 @@ public final class ClientDuelField
         // forward: its deadlines run from when the engine decided the duel, and
         // the board's goodbye has already outlasted them, so it would replace
         // itself on its first tick and show one frame of a 2D duel on the way.
-        de.cas_ual_ty.dueldimension.clientutil.DuelClientState.finish();
+        // true: the board held the outcome for HOLD_MS and spent FADE_MS going
+        // away, so this player has already been told who won.
+        de.cas_ual_ty.dueldimension.clientutil.DuelClientState.finish(true);
     }
 
     /**
@@ -283,6 +285,17 @@ public final class ClientDuelField
 
     public static void apply(OverworldPayloads.ShowField field)
     {
+        // A board arriving IS a duel beginning, so nothing of the last one's
+        // ending may survive into it.
+        //
+        // Both halves matter and they fail differently. A stale `over` makes
+        // ending() true the instant present() is, so advanceEnding fades out a
+        // duel that has just started and reports the one before it. A stale
+        // endingBegan is worse and quieter: endingAlpha measures from it, and a
+        // timestamp from the previous duel is already past HOLD_MS + FADE_MS, so
+        // the fade is skipped entirely and the new board is cleared in a tick.
+        endingBegan = 0L;
+        de.cas_ual_ty.dueldimension.clientutil.DuelClientState.discardEnding();
         siting = field.siting();
         level = field.level();
         seat = field.seat();
@@ -299,6 +312,10 @@ public final class ClientDuelField
         level = null;
         seat = -1;
         locked = false;
+        // With the board gone nothing calls endingAlpha, which is the only
+        // other thing that zeroes this -- so a field cleared mid-fade would
+        // leave a timestamp behind for the next duel to measure against.
+        endingBegan = 0L;
         heldSlot = -1;
         preferScreen = false;
         spectatorBoard = null;

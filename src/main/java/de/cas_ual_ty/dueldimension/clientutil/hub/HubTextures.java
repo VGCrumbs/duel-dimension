@@ -21,6 +21,11 @@ public final class HubTextures
     public static final Identifier TAB = gui("common/tab.png");
     /** A single card slot for the deck editor grids. */
     public static final Identifier SLOT = gui("common/slot.png");
+    /**
+     * A tick, white so it can be tinted to whatever the label beside it would
+     * have been. Drawn by {@link HubWidgets.IconButton}.
+     */
+    public static final Identifier CHECK = gui("common/check.png");
 
     /** Section header for the editor's grids. */
     public static final Identifier HEADER = gui("deckeditor/header.png");

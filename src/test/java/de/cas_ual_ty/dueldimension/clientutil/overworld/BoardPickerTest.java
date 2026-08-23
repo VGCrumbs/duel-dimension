@@ -62,7 +62,7 @@ public class BoardPickerTest
         {
             spells.add(empty());
         }
-        return new BoardSnapshot.Side(8000, monsters, spells, List.of(), List.of(), List.of(),
+        return new BoardSnapshot.Side(8000, 8000, monsters, spells, List.of(), List.of(), List.of(),
             List.of(), 40);
     }
 

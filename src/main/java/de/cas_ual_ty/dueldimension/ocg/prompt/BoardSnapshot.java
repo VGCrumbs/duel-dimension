@@ -224,17 +224,32 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
         }
     }
 
-    public record Side(int lifePoints, List<Slot> monsters, List<Slot> spells, List<Slot> hand,
-        List<Slot> grave, List<Slot> banished, List<Slot> extra, int deckCount)
+    /**
+     * @param startingLifePoints what this duel began at, so the life bar can be
+     *                           drawn as a fraction of it rather than of a
+     *                           hardcoded 8000. It rides on the snapshot rather
+     *                           than being announced once because a spectator
+     *                           who walks up mid-duel is only ever sent a cached
+     *                           snapshot — a one-shot packet would leave every
+     *                           spectator's bar measuring against the wrong
+     *                           total. Zero means "not stated", which the bar
+     *                           reads as the engine's own default.
+     *                           <p>
+     *                           On the side rather than on the snapshot because
+     *                           the engine takes one {@code PlayerConfig} per
+     *                           TEAM, so the two seats could legitimately differ.
+     */
+    public record Side(int lifePoints, int startingLifePoints, List<Slot> monsters, List<Slot> spells,
+        List<Slot> hand, List<Slot> grave, List<Slot> banished, List<Slot> extra, int deckCount)
     {
         public static Side empty()
         {
-            return new Side(0, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), 0);
+            return new Side(0, 0, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), 0);
         }
 
-        public static Side of(BoardState.PlayerBoard board)
+        public static Side of(BoardState.PlayerBoard board, int startingLifePoints)
         {
-            return new Side(board.lifePoints(),
+            return new Side(board.lifePoints(), startingLifePoints,
                 board.monsters().stream().map(Slot::of).toList(),
                 board.spells().stream().map(Slot::of).toList(),
                 board.hand().stream().map(Slot::of).toList(),
@@ -247,6 +262,10 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
         public void write(FriendlyByteBuf buffer)
         {
             buffer.writeVarInt(lifePoints);
+            // Immediately after lifePoints in BOTH directions. A field written
+            // here and read elsewhere does not fail loudly -- it silently
+            // shifts every list that follows.
+            buffer.writeVarInt(startingLifePoints);
             writeSlots(buffer, monsters);
             writeSlots(buffer, spells);
             writeSlots(buffer, hand);
@@ -258,23 +277,32 @@ public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int t
 
         public static Side read(FriendlyByteBuf buffer)
         {
-            return new Side(buffer.readVarInt(), readSlots(buffer), readSlots(buffer), readSlots(buffer),
+            return new Side(buffer.readVarInt(), buffer.readVarInt(),
+                readSlots(buffer), readSlots(buffer), readSlots(buffer),
                 readSlots(buffer), readSlots(buffer), readSlots(buffer), buffer.readVarInt());
         }
     }
 
     public static BoardSnapshot of(BoardState state)
     {
-        return of(state, 0, 0, 0);
+        return of(state, 0, 0, 0, 0);
     }
 
-    public static BoardSnapshot of(BoardState state, int turn, int phase, int turnPlayer)
+    /**
+     * @param startingLifePoints what the duel began at, carried onto both sides
+     *                           so the life bars can measure against it. Zero
+     *                           reads as "not stated" rather than as an empty
+     *                           bar; see {@link Side#startingLifePoints()}.
+     */
+    public static BoardSnapshot of(BoardState state, int turn, int phase, int turnPlayer,
+        int startingLifePoints)
     {
         if(state == null)
         {
             return EMPTY;
         }
-        return new BoardSnapshot(Side.of(state.self()), Side.of(state.opponent()), turn, phase, turnPlayer);
+        return new BoardSnapshot(Side.of(state.self(), startingLifePoints),
+            Side.of(state.opponent(), startingLifePoints), turn, phase, turnPlayer);
     }
 
     public void write(FriendlyByteBuf buffer)

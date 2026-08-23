@@ -57,6 +57,11 @@ public final class StrangerView
             return null;
         }
         return new BoardSnapshot.Side(side.lifePoints(),
+            // Public: it is the scale the life bars are drawn against, and a
+            // spectator sees the same bars. Concealing it would leave their
+            // copy measuring against the engine default while the duellists'
+            // measured against the truth.
+            side.startingLifePoints(),
             // Face-up cards on the field are public; face-down ones are not,
             // whoever set them.
             conceal(side.monsters(), true),

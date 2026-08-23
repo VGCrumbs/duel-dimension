@@ -295,8 +295,7 @@ public final class ShopStock
             // Decks are sold too, they simply are not boosters: fixed contents,
             // and opening one grants the deck and its recipe as well as the
             // cards. The flag lets the shop say which it is.
-            boolean deck = set.type != null
-                && (set.type.contains("Structure Deck") || set.type.contains("Starter Deck"));
+            boolean deck = isDeckProduct(set);
             packs.add(new Pack(set.code, set.name, set.type == null ? "" : set.type,
                 priceOf(set), cardsPerPack(set), distinctCards(set), describe(set), deck,
                 set.date == null ? 0L : set.date.getTime()));
@@ -305,6 +304,26 @@ public final class ShopStock
         // Shared and long-lived, so it is handed out read-only rather than
         // trusting every caller not to sort it.
         return List.copyOf(packs);
+    }
+
+    /**
+     * Whether this product is a deck rather than a booster.
+     * <p>
+     * Asked in one place because two places were asking it: the shop, to label
+     * the product, and nothing at all on the selling side -- which is how a
+     * bought deck came out as a pile of its own cards and no deck. A test that
+     * decides what something IS should not be written twice.
+     */
+    public static boolean isDeckProduct(CardSet set)
+    {
+        return set != null && set.type != null
+            && (set.type.contains("Structure Deck") || set.type.contains("Starter Deck"));
+    }
+
+    /** Which group a granted deck belongs to; starter decks have their own. */
+    public static boolean isStarterProduct(CardSet set)
+    {
+        return set != null && set.type != null && set.type.contains("Starter Deck");
     }
 
     public static CardSet setOf(String code)

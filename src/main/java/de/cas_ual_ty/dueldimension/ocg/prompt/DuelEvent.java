@@ -56,7 +56,21 @@ public record DuelEvent(Kind kind, int code, int fromZone, int toZone, int amoun
         REVEAL,
         PHASE,
         NEW_TURN,
-        WIN
+        WIN,
+        /**
+         * The blow landing, as distinct from {@link #ATTACK} declaring it.
+         * <p>
+         * MSG_BATTLE, which the engine sends once the damage step resolves and
+         * which carries both cards. A defender flinches on THIS rather than on
+         * the declaration: an attack that is negated never reaches it, and one
+         * that is answered by a trap reaches it late, so firing the reaction on
+         * the declaration made monsters recoil from blows that never landed.
+         * <p>
+         * Appended rather than slotted in beside ATTACK. The kind is serialised
+         * by ordinal, so inserting one would renumber every kind after it and a
+         * client a version behind would read summons as sets.
+         */
+        BATTLE
     }
 
     public void write(FriendlyByteBuf buffer)

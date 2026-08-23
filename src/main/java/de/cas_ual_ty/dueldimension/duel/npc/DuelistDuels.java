@@ -271,6 +271,14 @@ public final class DuelistDuels
         });
         SEATS.put(serverPlayer.getUUID(), human);
 
+        // A challenge has no lobby and therefore no MatchConfig, so this duel
+        // runs at the engine's own default. Said out loud rather than left at
+        // zero: the prompts this source sends carry their own snapshots, and a
+        // zero there would have the bar fall back by accident instead of by
+        // agreement.
+        human.setStartingLifePoints(
+            de.cas_ual_ty.dueldimension.ocg.OcgDuel.PlayerConfig.DEFAULT.startingLP());
+
         DuelSession session = DuelSession.create(
             "npc-" + serverPlayer.getGameProfile().name(),
             engine.api(), engine.defaultFlags(), seeds,
@@ -396,10 +404,18 @@ public final class DuelistDuels
         SEATS.put(first.getUUID(), seat0);
         SEATS.put(second.getUUID(), seat1);
 
+        // The one place the lobby's life-point choice reaches the engine.
+        //
+        // Until this argument existed, config was read for the banlist and
+        // nothing else, so a room set to 2000 or 16000 started at 8000 like
+        // every other duel and only the lobby label disagreed.
+        seat0.setStartingLifePoints(config.lifePoints());
+        seat1.setStartingLifePoints(config.lifePoints());
         DuelSession session = DuelSession.create(
             "pvp-" + first.getGameProfile().name() + "-" + second.getGameProfile().name(),
             engine.api(), engine.defaultFlags(), seeds,
-            engine.cards(), engine.scripts(), deck0, deck1, seat0, seat1);
+            engine.cards(), engine.scripts(), deck0, deck1, seat0, seat1,
+            config.lifePoints());
         sessionHolder[0] = session;
 
         // Both watchers point at the SAME RunningDuel: the session exists once
@@ -706,7 +722,22 @@ public final class DuelistDuels
             {
                 continue;
             }
+            // Whether a NEWER duel already owns this seat, which is game two of
+            // a match: concludeGame starts it, and only then does the game that
+            // ended get released.
+            //
+            // ACTIVE.remove was already value-checked for exactly that reason,
+            // and the two lines under it were not -- so releasing game one took
+            // game two's response source out of SEATS and handed game two's
+            // board to the linger, which expired ten seconds into a duel being
+            // played on it. Every game after the first of an overworld match
+            // lost its board mid-play.
+            RunningDuel owner = ACTIVE.get(watcher);
             ACTIVE.remove(watcher, duel);
+            if(owner != null && owner != duel)
+            {
+                continue;
+            }
             SEATS.remove(watcher.playerId());
             // A board in the world stands for a duel, but a duel that has
             // just ENDED still has an ending to play -- the last attack, the
@@ -1296,6 +1327,16 @@ public final class DuelistDuels
                 new de.cas_ual_ty.dueldimension.shop.DuelRewardMessages.Result(
                     duel.rewardId, outcome, reward.lines(), reward.total(), before, after,
                     duel.gameNumber, duel.wins[seat], duel.wins[1 - seat], !duel.isTwoPlayer()));
+            // Said out loud, because until this line a duel ending left no trace
+            // at all: three duels in a session log showed three starts and not
+            // one word about how any of them finished. A result that never
+            // reaches the player is then indistinguishable from one that was
+            // never sent, which is most of what made the conclusion screen
+            // arriving a duel late so hard to place.
+            de.cas_ual_ty.dueldimension.DuelDimension.log(String.format(
+                "duel %s concluded: %s %s game %d (%d-%d), %d points sent",
+                duel.rewardId, player.getGameProfile().name(), outcome,
+                duel.gameNumber, duel.wins[seat], duel.wins[1 - seat], reward.total()));
         }
     }
 
@@ -1686,6 +1727,20 @@ public final class DuelistDuels
                     attack.target().location(), attack.target().sequence(), 0);
             return new DuelEvent(DuelEvent.Kind.ATTACK, 0, from, to, 0,
                 side(attack.attacker().controller(), viewer));
+        }
+        if(message instanceof DuelMessage.Battle battle)
+        {
+            // The moment the blow lands, which MSG_BATTLE reports once the
+            // damage step resolves. Both zones travel with it as the
+            // declaration's do, but it is the TARGET that matters here: this is
+            // what the defender reacts to, and reacting to the declaration
+            // instead meant flinching from blows that were later negated.
+            int from = DuelEvent.zoneOf(side(battle.attacker().controller(), viewer),
+                battle.attacker().location(), battle.attacker().sequence(), 0);
+            int to = DuelEvent.zoneOf(side(battle.target().controller(), viewer),
+                battle.target().location(), battle.target().sequence(), 0);
+            return new DuelEvent(DuelEvent.Kind.BATTLE, 0, from, to, 0,
+                side(battle.attacker().controller(), viewer));
         }
         if(message instanceof DuelMessage.Damage damage)
         {

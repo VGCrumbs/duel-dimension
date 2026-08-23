@@ -69,11 +69,30 @@ public class HumanResponseSource implements ResponseSource
     private int turnPlayer;
     private int seat;
 
+    /**
+     * What this duel started at, for the life bars the prompts carry a snapshot
+     * to. Settable rather than final because the duel that decides it is created
+     * after this source, which is handed to the runner as it is built.
+     */
+    private int startingLifePoints;
+
     public HumanResponseSource(PromptTranslator translator,
         BiConsumer<EnginePrompt, HumanResponseSource> sendPrompt)
     {
         this.translator = translator;
         this.sendPrompt = sendPrompt;
+    }
+
+    /**
+     * Tells this source what the duel began at, so the snapshots it attaches to
+     * prompts can be drawn as a fraction of it rather than of a fixed 8000.
+     * <p>
+     * Left at zero when nobody says, which the bar reads as the engine's own
+     * default — the same thing it did before this existed.
+     */
+    public void setStartingLifePoints(int value)
+    {
+        startingLifePoints = value;
     }
 
     @Override
@@ -133,7 +152,7 @@ public class HumanResponseSource implements ResponseSource
             return automatic;
         }
         BoardSnapshot field = board == null ? BoardSnapshot.EMPTY
-            : BoardSnapshot.of(board.observe(), turn, phase, turnPlayer);
+            : BoardSnapshot.of(board.observe(), turn, phase, turnPlayer, startingLifePoints);
         // The lookup and the seat are handed over per call, not held: one
         // translator serves both seats. It is safe to query from here because
         // respond() IS the duel thread -- the core is blocked inside its own

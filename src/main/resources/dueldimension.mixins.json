@@ -7,17 +7,19 @@
   "client": [
     "client.AbstractClientPlayerMixin",
     "client.AvatarRendererMixin",
-    "client.MinecraftPackMixin",
+    "client.BlockOutlineMixin",
+    "client.DuelHudMixin",
+    "client.DuelMovementMixin",
     "client.GameRendererMixin",
     "client.GuiGraphicsExtractorAccessor",
     "client.InventoryScreenMixin",
     "client.ItemInHandRendererMixin",
-    "client.SlotWrapperAccessor",
+    "client.KeyMappingAccessor",
     "client.MinecraftDuelClickMixin",
-    "client.DuelMovementMixin",
-    "client.BlockOutlineMixin",
-    "client.XaeroHudMixin",
-    "client.KeyMappingAccessor"
+    "client.MinecraftPackMixin",
+    "client.NameTagMixin",
+    "client.SlotWrapperAccessor",
+    "client.XaeroHudMixin"
   ],
   "injectors": {
     "defaultRequire": 1

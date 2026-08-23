@@ -467,8 +467,53 @@ public class ClientProxy implements ISidedProxy
     @Override
     public void hideDuelField()
     {
+        // Read BEFORE the clear, and read `over` rather than asking the board.
+        //
+        // ClientDuelField.ending() is gated on present(), and clear() is
+        // precisely what makes present() false -- so asking afterwards always
+        // says no. Asking the board at all would also strand a duellist who
+        // walked through a portal mid-fade, whose field is already gone while
+        // the duel they just finished is still owed its result.
+        boolean owedAnEnding = DuelClientState.over;
+
         de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.clear();
         de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelTargeting.clear();
+
+        if(owedAnEnding)
+        {
+            // The board's goodbye was cut short, and the hand-off it owed has
+            // to happen here or nowhere.
+            //
+            // The server lingers a finished board for a fixed ten seconds and
+            // then takes it away, calling itself "the backstop for the client
+            // that never says". The client's ending, though, cannot even START
+            // until the queued animations have played -- the winning blow rides
+            // the same ordered stream as the result -- and then costs HOLD_MS
+            // plus FADE_MS on top. When a duel ends on somebody else's long
+            // turn, which is the usual shape of LOSING one, the backstop wins a
+            // race it was written to lose.
+            //
+            // What that used to leave behind: ClientDuelField.clear() nulls
+            // siting, so present() and with it ending() are false forever, and
+            // advanceEnding() -- the only caller of finish() -- returns at its
+            // first line. The result and the reward, which the server sent in
+            // the same tick it said the duel was over, simply sat in
+            // DuelClientState until the NEXT duel put a board back and the
+            // stale ending finally ran. That is the conclusion screen arriving
+            // one duel late.
+            //
+            // Logged because this branch IS the race being lost. It should be
+            // rare -- the server calls its linger a backstop -- so if it turns
+            // up in every duel, the budget is wrong rather than the hand-off.
+            de.cas_ual_ty.dueldimension.DuelDimension.log(
+                "the board was taken away before its ending finished; "
+                + "handing the result over here instead");
+            // false: the board went before it finished -- or before it started
+            // -- saying who won, so the result still has to be shown somewhere.
+            DuelClientState.finish(false);
+            return;
+        }
+
         // The board can go while a question is outstanding -- somebody built in
         // the field, a duellist died, the world changed under it. The duel is
         // still running and still waiting for an answer, so the screen that can
@@ -593,8 +638,14 @@ public class ClientProxy implements ISidedProxy
             if(update.over())
             {
                 // The result rides the stream too, after the win animation.
+                // The word the server actually sends, which is the same one the
+                // banner and the board's outcome line compare against.
+                // "Winner: you" was a phrase from an older result string that
+                // named who had won; that was dropped as saying the same thing
+                // twice, and this was left reading for it -- so a victory has
+                // been arriving here as a loss ever since.
                 boolean won = update.result() != null
-                    && update.result().toLowerCase(java.util.Locale.ROOT).contains("winner: you");
+                    && "Victory".equalsIgnoreCase(update.result().trim());
                 DuelClientState.pending.add(
                     DuelClientState.PendingUpdate.ofOver(won, update.result()));
             }

@@ -385,12 +385,37 @@ public final class DuelProfile
         return unlockDeck(id, displayName, DeckList.Origin.STARTER, main, extra, side);
     }
 
+    /**
+     * Records a deck the player already holds the cards for.
+     * <p>
+     * The card shop's own purchase path pulls the product and puts every card
+     * into the trunk WITH the rarity and artwork that printing specifies, which
+     * {@link #unlockDeck} cannot do -- it takes bare passcodes. Letting it add
+     * them again would hand out two of everything in the product.
+     *
+     * @return true if this was the first copy, so the deck itself was granted
+     */
+    public boolean unlockBoughtDeck(String id, String displayName, DeckList.Origin origin,
+        List<Integer> main, List<Integer> extra, List<Integer> side)
+    {
+        return unlockDeck(id, displayName, origin, main, extra, side, false);
+    }
+
     private boolean unlockDeck(String id, String displayName, DeckList.Origin origin,
         List<Integer> main, List<Integer> extra, List<Integer> side)
     {
-        for(List<Integer> part : List.of(main, extra, side))
+        return unlockDeck(id, displayName, origin, main, extra, side, true);
+    }
+
+    private boolean unlockDeck(String id, String displayName, DeckList.Origin origin,
+        List<Integer> main, List<Integer> extra, List<Integer> side, boolean addCards)
+    {
+        if(addCards)
         {
-            trunk.addAll(part);
+            for(List<Integer> part : List.of(main, extra, side))
+            {
+                trunk.addAll(part);
+            }
         }
         if(!unlockedStructures.add(id))
         {

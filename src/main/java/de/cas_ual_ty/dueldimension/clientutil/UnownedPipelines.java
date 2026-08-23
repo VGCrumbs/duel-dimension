@@ -77,6 +77,45 @@ public final class UnownedPipelines
         null);
 
     /**
+     * {@code ENTITY_CUTOUT} in TRIANGLES, for real 3D monster models.
+     * <p>
+     * A copy for the usual reason, and only one word differs. {@code
+     * ENTITY_CUTOUT} already describes what a glTF model's materials are —
+     * double sided, alpha tested, depth writing, lit — so the shader, the vertex
+     * format, the bind groups and the defines are all inherited and only the
+     * primitive changes.
+     * <p>
+     * It has to change, though: every stock entity pipeline descends from one
+     * snippet that pins QUADS, and a mesh made of triangles submitted through a
+     * quad pipeline is not merely mis-drawn, it is read four corners at a time
+     * out of a list that comes in threes.
+     * <p>
+     * Nothing about it is desaturation, so it is deliberately NOT gated behind
+     * {@link #available()}: a model either draws or the pipeline failed, and
+     * there is no dimmer fallback to fall back to.
+     */
+    public static final RenderPipeline MODEL = PipelineCopy.of(RenderPipelines.ENTITY_CUTOUT,
+        "model_triangles", null, null, com.mojang.blaze3d.PrimitiveTopology.TRIANGLES);
+
+    /**
+     * The same, but blended, for a monster part way through a fade.
+     * <p>
+     * {@code ENTITY_CUTOUT} is alpha TESTED: above its 0.1 threshold a fragment
+     * is fully opaque and below it there is nothing, so lowering alpha on that
+     * pipeline does not fade anything — it holds until it vanishes. A monster
+     * fading in or out therefore has to be drawn by a pipeline that can express
+     * a half-there fragment at all.
+     * <p>
+     * Only while fading. Translucent geometry is not depth-sorted against
+     * itself, so a solid creature drawn this way can show its own far side
+     * through its near side; that is acceptable for a fifth of a second in the
+     * middle of a movement and would not be acceptable as the resting state.
+     */
+    public static final RenderPipeline MODEL_BLEND = PipelineCopy.of(
+        RenderPipelines.ENTITY_TRANSLUCENT, "model_triangles_blend", null, null,
+        com.mojang.blaze3d.PrimitiveTopology.TRIANGLES);
+
+    /**
      * The fallback tint, and it is a DIM rather than a desaturation.
      * <p>
      * If the shader will not compile — bad GLSL, a hostile driver, a resource
@@ -124,6 +163,17 @@ public final class UnownedPipelines
             // Before the window exists there is nothing to ask. Left unset
             // rather than answered, so the next caller asks again.
             return;
+        }
+        // Asked for here too, though it is not one of the two gated below. A
+        // mod pipeline is not in the device's static set, so a fault in it is
+        // not reported at reload -- it surfaces as a throw at the first draw,
+        // which is mid-duel with a monster on the board. Compiling it now turns
+        // that into a line in the log at startup.
+        boolean model = device.precompilePipeline(MODEL).isValid();
+        if(!model)
+        {
+            DuelDimension.warn("The 3D model pipeline did not compile;"
+                + " monsters with a model hologram will not draw.");
         }
         boolean gui = device.precompilePipeline(GUI).isValid();
         boolean mesh = device.precompilePipeline(MESH).isValid();

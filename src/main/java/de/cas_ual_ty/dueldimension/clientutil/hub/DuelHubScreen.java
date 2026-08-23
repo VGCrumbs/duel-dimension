@@ -148,6 +148,22 @@ public class DuelHubScreen extends Screen
     /** Static like the section used to be on Forge: reopening remembers. */
     private static DeckView deckView = DeckView.DECKS;
 
+    /**
+     * How the deck list is laid out.
+     * <p>
+     * A row carries the deck AND everything you can do to it, which is right
+     * when you are managing decks and mostly wasted space when you are looking
+     * for one. The grid drops the management and shows three times as many.
+     */
+    private enum DeckLayout
+    {
+        LIST,
+        GRID
+    }
+
+    /** Static for the same reason the view above it is: reopening remembers. */
+    private static DeckLayout deckLayout = DeckLayout.LIST;
+
     /** First deck row shown, when there are more decks than fit. */
     private int deckScroll;
 
@@ -156,6 +172,11 @@ public class DuelHubScreen extends Screen
 
     /** Height of one deck row. */
     private static final int ROW_H = 20;
+
+    /** A grid tile: a name to click and a Use strip under it. */
+    private static final int TILE_H = 38;
+    private static final int TILE_GAP = 4;
+    private static final int GRID_COLUMNS = 3;
 
     /** Gap between the three recipe columns, and the scrollbar's lane. */
     private static final int COLUMN_GAP = 6;
@@ -236,6 +257,25 @@ public class DuelHubScreen extends Screen
                 }));
                 viewX += 70;
             }
+            // Only over the deck list. The recipe columns have a shape of their
+            // own and nothing to condense.
+            if(deckView == DeckView.DECKS)
+            {
+                int toggleW = 52;
+                addRenderableWidget(new HubWidgets.TabButton(
+                    left + WIDTH - PAD - 4 - toggleW, bodyTop + 3, toggleW, 16,
+                    Component.literal("Grid"), () -> deckLayout == DeckLayout.GRID, pressed ->
+                {
+                    deckLayout = deckLayout == DeckLayout.GRID
+                        ? DeckLayout.LIST : DeckLayout.GRID;
+                    cancelRename();
+                    // The two layouts count decks per screen differently, so a
+                    // position taken in one means something else in the other.
+                    deckScroll = 0;
+                    notice = "";
+                    rebuild();
+                }));
+            }
             if(confirmDelete != null)
             {
                 // Its two answers are the only widgets, so a click cannot reach
@@ -245,7 +285,14 @@ public class DuelHubScreen extends Screen
             }
             if(deckView == DeckView.DECKS)
             {
-                buildDeckRows(bodyTop + 22);
+                if(deckLayout == DeckLayout.GRID)
+                {
+                    buildDeckGrid(bodyTop + 22);
+                }
+                else
+                {
+                    buildDeckRows(bodyTop + 22);
+                }
                 addRenderableWidget(new HubWidgets.TextureButton(left + PAD + 6, top + HEIGHT - 32,
                     96, 20, Component.literal("New Deck"), pressed ->
                 {
@@ -731,7 +778,7 @@ public class DuelHubScreen extends Screen
             return;
         }
         int count = EditorState.ownDecks().size();
-        int visible = deckRowsVisible();
+        int visible = deckPageSize();
         if(count > visible)
         {
             graphics.text(font, (deckScroll + 1) + "-"
@@ -744,17 +791,38 @@ public class DuelHubScreen extends Screen
         }
     }
 
+    private int deckBodyHeight()
+    {
+        return HEIGHT - (PAD + TAB_H + 8) - 40 - 26;
+    }
+
     private int deckRowsVisible()
     {
-        int bodyHeight = HEIGHT - (PAD + TAB_H + 8) - 40;
-        return Math.max(1, (bodyHeight - 26) / ROW_H);
+        int step = deckLayout == DeckLayout.GRID ? TILE_H + TILE_GAP : ROW_H;
+        return Math.max(1, deckBodyHeight() / step);
+    }
+
+    private int deckColumns()
+    {
+        return deckLayout == DeckLayout.GRID ? GRID_COLUMNS : 1;
+    }
+
+    /** How many decks are on screen at once, which is what scrolling steps over. */
+    private int deckPageSize()
+    {
+        return deckRowsVisible() * deckColumns();
     }
 
     private int recipeRowsVisible()
     {
-        // One row shorter than the deck list's: the heading takes the top of
+        // One row shorter than a LIST deck list: the heading takes the top of
         // each column rather than a row of the single flattened list.
-        return Math.max(1, deckRowsVisible() - 1);
+        //
+        // Measured from the row height directly rather than from
+        // deckRowsVisible(), which now answers for whichever layout the deck
+        // tab is in -- and the recipe columns are not in that layout. Asking it
+        // would resize them when somebody switched a different tab to a grid.
+        return Math.max(1, deckBodyHeight() / ROW_H - 1);
     }
 
     private int recipeColumnW()
@@ -800,16 +868,28 @@ public class DuelHubScreen extends Screen
         java.util.List<de.cas_ual_ty.dueldimension.duel.profile.DeckList> decks =
             EditorState.ownDecks();
         int visible = deckRowsVisible();
-        deckScroll = Math.max(0, Math.min(deckScroll, Math.max(0, decks.size() - visible)));
+        deckScroll = Math.max(0, Math.min(deckScroll, Math.max(0, decks.size() - deckPageSize())));
 
         int rowX = left + PAD + 4;
         int rowW = WIDTH - PAD * 2 - 8;
-        int useW = 32;
-        int renameW = 52;
-        int duplicateW = 76;
-        int recipeW = 50;
-        int deleteW = 46;
-        int gap = 3;
+        // Condensed twice over. The strip once took 271 of the row's width and
+        // left the deck's own name whatever was over; the five actions are
+        // still the same five -- nothing has moved behind a menu -- they are
+        // simply no wider than they need to be.
+        //
+        // Use is now the tick, square and iconic, because it is the one action
+        // here that is a STATE rather than a verb: this deck or another. What
+        // it costs is the word, and what pays for that is the tooltip, which
+        // says "Make Active" on hover and could not have fitted on the button
+        // at any width. The other four keep their words -- an icon each would
+        // be four things to learn, and they are not pressed often enough to be
+        // worth learning.
+        int useW = ROW_H - 2;
+        int renameW = 40;
+        int duplicateW = 36;
+        int recipeW = 40;
+        int deleteW = 36;
+        int gap = 2;
         int actionsW = useW + renameW + duplicateW + recipeW + deleteW + gap * 5;
         int nameW = Math.max(60, rowW - actionsW);
 
@@ -860,8 +940,8 @@ public class DuelHubScreen extends Screen
             x += nameW + gap;
 
             int useIndex = index;
-            HubWidgets.TextureButton use = new HubWidgets.TextureButton(x, y, useW, ROW_H - 2,
-                Component.literal("Use"), pressed ->
+            HubWidgets.IconButton use = new HubWidgets.IconButton(x, y, useW, ROW_H - 2,
+                HubTextures.CHECK, Component.literal("Make Active"), pressed ->
             {
                 // Told to the server, which is what actually decides the deck
                 // a duel is played with.
@@ -870,12 +950,21 @@ public class DuelHubScreen extends Screen
                 rebuild();
             });
             // Saving an unfinished deck is fine -- building one is a process --
-            // but it cannot be USED until it is legal, so Use reports that by
+            // but it cannot be USED until it is legal, so this reports that by
             // being disabled rather than by failing at the duel.
             boolean legal = de.cas_ual_ty.dueldimension.duel.profile.DeckLimits
                 .validate(deck, EditorState.trunk(), EditorState.banlist(),
                     EditorState.freeMode()).isEmpty();
-            use.active = legal && !deck.name().equals(EditorState.profile().activeDeck());
+            boolean isActive = deck.name().equals(EditorState.profile().activeDeck());
+            use.active = legal && !isActive;
+            // Says why on hover, and says a DIFFERENT why for each reason it is
+            // not offered. A greyed square with one caption would otherwise be
+            // the same non-answer whether the deck is already active or short
+            // of cards -- which is the failure an icon invites and the tooltip
+            // is here to prevent.
+            use.setTooltipLines(isActive ? java.util.List.of("Already your active deck")
+                : !legal ? java.util.List.of("Make Active", "Not legal yet, so it cannot be used")
+                : java.util.List.of("Make Active"));
             addRenderableWidget(use);
             x += useW + gap;
 
@@ -887,7 +976,7 @@ public class DuelHubScreen extends Screen
 
             int duplicateIndex = index;
             addRenderableWidget(new HubWidgets.TextureButton(x, y, duplicateW, ROW_H - 2,
-                Component.literal("Duplicate As"), pressed ->
+                Component.literal("Copy"), pressed ->
             {
                 // Duplicating drops straight into renaming the copy: the point
                 // of "as" is that the copy gets its own name.
@@ -927,6 +1016,88 @@ public class DuelHubScreen extends Screen
             delete.active = deck.origin()
                 != de.cas_ual_ty.dueldimension.duel.profile.DeckList.Origin.STRUCTURE;
             addRenderableWidget(delete);
+        }
+    }
+
+    /**
+     * The deck list as tiles.
+     * <p>
+     * Three across and roughly twice as tall as a row, which fits about three
+     * times as many decks on screen. What it drops is the management strip:
+     * a tile opens the deck and offers Use, and renaming, copying, publishing
+     * and deleting stay in the list, where you go when that is what you came
+     * for. Browsing and managing want different shapes, which is the whole
+     * reason for having two.
+     * <p>
+     * Use is kept because it is the one action you take FROM a browse -- you
+     * looked for a deck in order to play with it -- and because a layout that
+     * silently took an action away would be a worse list rather than a
+     * different one.
+     */
+    private void buildDeckGrid(int bodyTop)
+    {
+        java.util.List<de.cas_ual_ty.dueldimension.duel.profile.DeckList> decks =
+            EditorState.ownDecks();
+        int columns = deckColumns();
+        int rows = deckRowsVisible();
+        deckScroll = Math.max(0, Math.min(deckScroll, Math.max(0, decks.size() - deckPageSize())));
+
+        int rowW = WIDTH - PAD * 2 - 8;
+        int tileW = (rowW - TILE_GAP * (columns - 1)) / columns;
+
+        for(int row = 0; row < rows; row++)
+        {
+            for(int column = 0; column < columns; column++)
+            {
+                int index = deckScroll + row * columns + column;
+                if(index >= decks.size())
+                {
+                    return;
+                }
+                de.cas_ual_ty.dueldimension.duel.profile.DeckList deck = decks.get(index);
+                int x = left + PAD + 4 + column * (tileW + TILE_GAP);
+                int y = bodyTop + 4 + row * (TILE_H + TILE_GAP);
+                boolean active = deck.name().equals(EditorState.profile().activeDeck());
+
+                int target = index;
+                // The size moved up here off the button below it, which is a
+                // tick now and has no room for a number.
+                HubWidgets.TextureButton name = new HubWidgets.TextureButton(x, y, tileW,
+                    TILE_H - 16, Component.literal(font.plainSubstrByWidth((active ? "▸ " : "")
+                        + deck.name() + "  (" + deck.main().size() + ")", tileW - 8)),
+                    pressed ->
+                {
+                    EditorState.select(EditorState.indexOf(decks.get(target)));
+                    if(minecraft != null)
+                    {
+                        minecraft.gui.setScreen(new DeckEditorScreen(this));
+                    }
+                });
+                // The same warning the rows carry: these are the decks that end
+                // up short or full of cards the player no longer owns.
+                markUnusable(name, deck);
+                addRenderableWidget(name);
+
+                int useIndex = index;
+                HubWidgets.IconButton use = new HubWidgets.IconButton(x, y + TILE_H - 15,
+                    tileW, 14, HubTextures.CHECK, Component.literal("Make Active"), pressed ->
+                {
+                    EditorState.setActiveDeck(decks.get(useIndex).name());
+                    notice = "";
+                    rebuild();
+                });
+                // Disabled rather than failing at the duel, exactly as the row's
+                // does: an unfinished deck can be saved but not played.
+                boolean legal = de.cas_ual_ty.dueldimension.duel.profile.DeckLimits
+                    .validate(deck, EditorState.trunk(), EditorState.banlist(),
+                        EditorState.freeMode()).isEmpty();
+                use.active = legal && !active;
+                use.setTooltipLines(active ? java.util.List.of("Already your active deck")
+                    : !legal
+                        ? java.util.List.of("Make Active", "Not legal yet, so it cannot be used")
+                        : java.util.List.of("Make Active"));
+                addRenderableWidget(use);
+            }
         }
     }
 
@@ -1297,8 +1468,13 @@ public class DuelHubScreen extends Screen
         }
         if(section == Section.DECKS)
         {
-            int max = Math.max(0, EditorState.ownDecks().size() - deckRowsVisible());
-            deckScroll = Math.max(0, Math.min(max, deckScroll - (int)Math.signum(scrollY)));
+            // A notch moves one ROW, which in a grid is a whole row of tiles:
+            // stepping one deck at a time would reflow every tile after it and
+            // read as the grid shuffling rather than scrolling.
+            int step = deckColumns();
+            int max = Math.max(0, EditorState.ownDecks().size() - deckPageSize());
+            deckScroll = Math.max(0,
+                Math.min(max, deckScroll - (int)Math.signum(scrollY) * step));
             rebuild();
             return true;
         }

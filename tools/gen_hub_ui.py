@@ -246,6 +246,41 @@ def star(size=32):
     return big.resize((size, size), Image.LANCZOS)
 
 
+def check(size=32):
+    """The tick on the button that makes a deck the active one.
+
+    WHITE, and deliberately nothing else. It is drawn with `DdBlitUtil`'s tint
+    set to the colour the button's label would have taken, so one file covers
+    idle, hovered and disabled -- a coloured tick would fight all three, and
+    three files would be three things to keep in step.
+
+    No outline either, for the reason the star HAS one: the star is drawn over
+    card art of any colour and has to survive it, while this only ever sits on
+    the button's own dark surface, where an outline is a smudge.
+
+    Two strokes with round ends, built at eight times and reduced, so the
+    diagonals come out smooth rather than stepped at the ten-odd pixels a deck
+    row actually gives it.
+    """
+    scale = 8
+    big = Image.new('RGBA', (size * scale, size * scale), (0, 0, 0, 0))
+    d = ImageDraw.Draw(big)
+    unit = size * scale
+    # Measured off the canvas rather than written as pixels, so the shape is
+    # the same whatever size this is regenerated at.
+    points = [(unit * 0.22, unit * 0.52), (unit * 0.42, unit * 0.72),
+              (unit * 0.79, unit * 0.28)]
+    width = int(unit * 0.13)
+    d.line(points, fill=(255, 255, 255, 255), width=width, joint='curve')
+    for point in points:
+        # Round caps as well as the round join. `joint='curve'` rounds the
+        # corner but leaves both ENDS cut square, which reads as a broken tick.
+        d.ellipse([point[0] - width / 2, point[1] - width / 2,
+                   point[0] + width / 2, point[1] + width / 2],
+                  fill=(255, 255, 255, 255))
+    return big.resize((size, size), Image.LANCZOS)
+
+
 def alt_art(size=32):
     """The mark on a card that has more than one artwork: a gold [A] badge.
 
@@ -342,6 +377,66 @@ def scrollbar():
     return im
 
 
+def deck_tile_surface(selected=False, width=260, height=232):
+    """Master Duel's clipped deck-cell surface at its recovered source size.
+
+    The web reconstruction established the authored 260x232 proportions.  The
+    game scales this texture down as a whole, so the clipped corners stay in
+    the same relationship to the deck case at every GUI scale.
+    """
+    polygon = [(20, 0), (width - 2, 0), (width - 1, 2),
+               (width - 1, height - 20), (width - 20, height - 1),
+               (2, height - 1), (0, height - 3), (0, 20)]
+    mask = Image.new('L', (width, height), 0)
+    ImageDraw.Draw(mask).polygon(polygon, fill=255)
+
+    surface = Image.new('RGBA', (width, height), (1, 1, 1, 255))
+    if selected:
+        rank = Image.open(os.path.join(OUT, 'hub', 'deck_rank_background.png')).convert('RGBA')
+        rank = rank.resize((width, 164), Image.LANCZOS)
+        surface.alpha_composite(rank, (0, 13))
+        # The original fades the rank plate back into the black name band.
+        fade = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+        fd = ImageDraw.Draw(fade)
+        for y in range(154, 199):
+            alpha = round(255 * (y - 154) / 45)
+            fd.line((0, y, width, y), fill=(0, 0, 0, alpha))
+        surface.alpha_composite(fade)
+    surface.putalpha(mask)
+    return surface
+
+
+def deck_tile_frames(width=260, height=232):
+    """Idle, hovered and active outlines for the fixed-ratio deck tile."""
+    atlas = Image.new('RGBA', (width, height * 3), (0, 0, 0, 0))
+    points = [(20, 1), (width - 3, 1), (width - 2, 2),
+              (width - 2, height - 21), (width - 21, height - 2),
+              (2, height - 2), (1, height - 3), (1, 20)]
+    colours = [(164, 168, 170, 255), (197, 220, 225, 255), (137, 177, 218, 255)]
+    for row, colour in enumerate(colours):
+        frame = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+        d = ImageDraw.Draw(frame)
+        d.line(points + [points[0]], fill=colour, width=2, joint='curve')
+        if row == 1:
+            # The lime corner is the same interaction accent as the add icon.
+            d.line((20, 2, 61, 2), fill=(186, 255, 0, 255), width=3)
+        atlas.alpha_composite(frame, (0, row * height))
+    return atlas
+
+
+def standard_badge(width=76, height=38):
+    """The regulation ring; STANDARD remains real text in the client."""
+    scale = 4
+    big = Image.new('RGBA', (width * scale, height * scale), (0, 0, 0, 0))
+    d = ImageDraw.Draw(big)
+    diameter = 33 * scale
+    cx = width * scale // 2
+    d.ellipse((cx - diameter // 2, 2 * scale,
+               cx + diameter // 2, 2 * scale + diameter),
+              outline=(20, 123, 210, 190), width=2 * scale)
+    return big.resize((width, height), Image.LANCZOS)
+
+
 if __name__ == '__main__':
     print('common/')
     write(panel((44, 48, 58), (28, 31, 39), EDGE_LIGHT), 'common', 'panel.png')
@@ -349,6 +444,7 @@ if __name__ == '__main__':
     write(states(button_state), 'common', 'button.png')
     write(states(tab_state), 'common', 'tab.png')
     write(slot(), 'common', 'slot.png')
+    write(check(), 'common', 'check.png')
 
     print('settings/')
     write(colour_wheel(), 'settings', 'colour_wheel.png')
@@ -363,6 +459,12 @@ if __name__ == '__main__':
     write(search_field(), 'deckeditor', 'search_field.png')
     write(states(chip_state), 'deckeditor', 'chip.png')
     write(scrollbar(), 'deckeditor', 'scrollbar.png')
+
+    print('hub/')
+    write(deck_tile_surface(False), 'hub', 'deck_tile_surface.png')
+    write(deck_tile_surface(True), 'hub', 'deck_tile_selected.png')
+    write(deck_tile_frames(), 'hub', 'deck_tile_frame.png')
+    write(standard_badge(), 'hub', 'standard_badge.png')
 
     print('mats/')
     greyscale_mat('src/main/resources/assets/dueldimension/textures/duel/mats/classic.png',

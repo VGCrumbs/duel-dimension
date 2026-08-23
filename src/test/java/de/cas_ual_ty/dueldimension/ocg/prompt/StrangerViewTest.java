@@ -34,7 +34,10 @@ public class StrangerViewTest
 
     private static BoardSnapshot.Side richSide()
     {
-        return new BoardSnapshot.Side(7200,
+        // Deliberately not 8000: a starting total that differs from both the
+        // engine default and the current life is what would catch the two being
+        // confused for one another.
+        return new BoardSnapshot.Side(7200, 12000,
             List.of(faceUp(BLUE_EYES), faceDown(DARK_MAGICIAN)),
             List.of(faceDown(BLUE_EYES)),
             List.of(faceUp(DARK_MAGICIAN), faceUp(BLUE_EYES)),

@@ -92,21 +92,37 @@ public final class SpriteSource
     }
 
     /**
+     * What a promotion did, and whether it worked.
+     * <p>
+     * Two fields rather than one string, because the caller shows this in a
+     * colour and had no other way to tell "saved to mod" from "could not write
+     * the list" than by reading the English and guessing.
+     */
+    public record Outcome(boolean ok, String message)
+    {
+        static Outcome bad(String message)
+        {
+            return new Outcome(false, message);
+        }
+    }
+
+    /**
      * Writes a card's definition and its sheets into the mod's own source.
      *
-     * @return a line to show the person who pressed the button, always
+     * @return a line to show the person who pressed the button, always, and
+     *         whether it is good news
      */
-    public static String promote(long code)
+    public static Outcome promote(long code)
     {
         Path assets = resources();
         if(assets == null)
         {
-            return "no source tree here";
+            return Outcome.bad("no source tree here");
         }
         MonsterSprites.Definition definition = MonsterSprites.of(code);
         if(definition == null)
         {
-            return "nothing to save yet";
+            return Outcome.bad("nothing to save yet");
         }
 
         String folder = folderFor(code);
@@ -116,7 +132,12 @@ public final class SpriteSource
         // Distinct, because a body and its wings usually share one file and
         // copying it twice is a way of copying it wrong once.
         Set<String> sheets = new LinkedHashSet<>();
-        sheets.add(definition.body().sheet());
+        // Absent for a monster that is a model and no sprite, which is a
+        // definition with nothing here to copy rather than a broken one.
+        if(definition.body() != null)
+        {
+            sheets.add(definition.body().sheet());
+        }
         if(definition.defence() != null)
         {
             sheets.add(definition.defence().sheet());
@@ -138,7 +159,7 @@ public final class SpriteSource
             Path from = MonsterSheets.folder().resolve(sheet + ".png");
             if(!Files.isRegularFile(from))
             {
-                return "cannot find " + sheet + ".png to copy";
+                return Outcome.bad("cannot find " + sheet + ".png to copy");
             }
             try
             {
@@ -150,7 +171,7 @@ public final class SpriteSource
             catch(Exception unwritable)
             {
                 DuelDimension.warn("could not copy " + from + ": " + unwritable);
-                return "could not copy " + sheet + ".png";
+                return Outcome.bad("could not copy " + sheet + ".png");
             }
         }
 
@@ -166,14 +187,14 @@ public final class SpriteSource
         catch(Exception unwritable)
         {
             DuelDimension.warn("could not write the shipped sprite list: " + unwritable);
-            return "could not write the list";
+            return Outcome.bad("could not write the list");
         }
 
         // Now that it is part of the shipped list it is no longer a difference
         // from it, so this rewrites the player's file without it.
         MonsterSprites.save();
-        return "saved to mod: " + folder + " (" + copied + " sheet" + (copied == 1 ? "" : "s")
-            + ") -- rebuild to see it";
+        return new Outcome(true, "saved to mod: " + folder + " (" + copied + " sheet"
+            + (copied == 1 ? "" : "s") + ") -- rebuild to see it");
     }
 
     /** The same definition with every imported sheet name moved into a folder. */
@@ -186,7 +207,18 @@ public final class SpriteSource
             definition.wings() == null ? null : new Wings(refile(definition.wings().layer(),
                 folder), definition.wings().anchor(), definition.wings().spacing(),
                 definition.wings().scale()),
-            definition.scale());
+            definition.scale(),
+            // Carried through: this moves SHEETS into a folder, and a model is
+            // not a sheet. Dropping it here would quietly un-model a monster on
+            // the way to the mod's own list, and the sprite it fell back to
+            // would look like the model had simply failed to load. The same goes
+            // for where the model stands -- rebuilding a definition field by
+            // field means every field added later has to be added here too, and
+            // the ones that are forgotten are the ones that default to a number
+            // that looks deliberate.
+            definition.model(), definition.animation(),
+            definition.elevation(), definition.turn(),
+            definition.offsetX(), definition.offsetZ());
     }
 
     private static SpriteLayer refile(SpriteLayer layer, String folder)

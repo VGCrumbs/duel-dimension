@@ -25,7 +25,9 @@ import net.minecraft.world.phys.Vec3;
  * needs to know nothing else -- which is how the card is drawn. The billboard
  * is the exception: which way it turns depends on where the viewer is standing,
  * which is the one fact block-local coordinates cannot express, so it works in
- * world space and is given both.
+ * world space and is given both. A MODEL does not turn to the viewer -- it is
+ * placed, not aimed -- but it shares that path, since it stands in the same
+ * spot the billboard would.
  */
 public class CardDisplayRenderer
     implements BlockEntityRenderer<CardDisplayTileEntity, CardDisplayRenderer.State>
@@ -94,8 +96,14 @@ public class CardDisplayRenderer
         {
             return;
         }
+        MonsterSprites.Definition definition = MonsterSprites.of(state.code);
         SpriteLayer body = MonsterSprites.layerFor(state.code, state.defence);
-        if(body == null)
+        de.cas_ual_ty.dueldimension.clientutil.model.ModelMesh mesh =
+            definition != null && definition.hasModel()
+                ? de.cas_ual_ty.dueldimension.clientutil.model.MonsterModels
+                    .get(definition.model())
+                : null;
+        if(body == null && mesh == null)
         {
             return;
         }
@@ -111,6 +119,24 @@ public class CardDisplayRenderer
         // rather than on the body alone.
         Vec3 feet = block.add(0.5D, DisplayCard.surface() + 0.002D
             + MonsterSprites.bobAt(body, state.gameTime) * height, 0.5D);
+        if(mesh != null)
+        {
+            // A fixed heading, not one taken off the camera. This followed the
+            // viewer, the way the sprites do -- but a sprite has to turn,
+            // because a flat picture seen edge-on is nothing, while a model has
+            // a back and a front and a shape that reads differently from every
+            // side. A dragon that pivots to keep facing you as you walk round it
+            // is a dragon that never seems to be standing anywhere.
+            //
+            // The block carries no facing of its own, so "fixed" means fixed at
+            // the definition's own Turn -- which is a number somebody sets once
+            // while looking at it, rather than one this has to guess.
+            de.cas_ual_ty.dueldimension.clientutil.model.ModelHologram.submit(poseStack,
+                collector, block, feet, height, mesh, 0F, 0xFFFFFFFF,
+                definition.animation(), definition.elevation(), definition.turn(),
+                definition.offsetX(), definition.offsetZ());
+            return;
+        }
         MonsterBillboard.submit(poseStack, collector, block, camera.pos, feet,
             height, body,
             MonsterSprites.frameAt(body, state.gameTime), wings,

@@ -103,6 +103,44 @@ public final class HubWidgets
     }
 
     /**
+     * A button whose label is a picture.
+     * <p>
+     * The same surface, the same three states and the same tooltip as its
+     * parent -- only the middle is a texture instead of a word. That is what
+     * lets an action shrink to a square without becoming a mystery: the icon
+     * says what it is at a glance and the tooltip says it in words on hover,
+     * where a truncated label would say neither.
+     * <p>
+     * The icon is tinted with the colour the LABEL would have taken, which is
+     * why the files are white. So idle, hovered and disabled read exactly as
+     * they do across the rest of the hub, from one texture.
+     */
+    public static class IconButton extends TextureButton
+    {
+        private final net.minecraft.resources.Identifier icon;
+        /** How much of the button's shorter side the icon covers. */
+        private static final float FILL = 0.62F;
+
+        public IconButton(int x, int y, int width, int height,
+            net.minecraft.resources.Identifier icon, Component narration, OnPress onPress)
+        {
+            // The narration is still a word: a screen reader cannot read a
+            // texture, and DEFAULT_NARRATION reads getMessage().
+            super(x, y, width, height, narration, onPress);
+            this.icon = icon;
+        }
+
+        @Override
+        void drawLabel(GuiGraphicsExtractor graphics, int colour)
+        {
+            int size = Math.round(Math.min(getWidth(), getHeight()) * FILL);
+            de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.blit(graphics, icon,
+                getX() + (getWidth() - size) / 2, getY() + (getHeight() - size) / 2,
+                size, size, 0F, 0F, 1F, 1F, 0xFF000000 | (colour & 0xFFFFFF));
+        }
+    }
+
+    /**
      * A tab. Selection is a state of the texture rather than a different
      * colour, so the whole strip can be reskinned from one file.
      */

@@ -111,6 +111,16 @@ public class BoardPointerScreen extends Screen
      */
     private List<BoardSnapshot.Slot> pileView = List.of();
     private String pileViewLabel = "";
+    /**
+     * The question last seen, by identity.
+     * <p>
+     * Kept so that a NEW question can be told from the same one still standing.
+     * A duel spends most of a player's turn with a prompt up, so "is there a
+     * question" is not the test -- it would slam a graveyard shut the instant it
+     * was opened. Each question arrives as its own object, so a changed
+     * reference is a changed question.
+     */
+    private EnginePrompt lastPrompt;
 
     /**
      * When the open menu is a pile's, the options each of its rows stands for.
@@ -196,6 +206,26 @@ public class BoardPointerScreen extends Screen
         // forced response is not a question, and the core would refuse an empty
         // answer to it. The duel screen's rule exactly, and its reasons.
         EnginePrompt open = DuelClientState.prompt;
+        // A new question displaces whatever was being read.
+        //
+        // The pile viewer draws over the menu and the chooser draws over both,
+        // so an effect asking something while a graveyard was open left the
+        // duellist looking at the graveyard with an unanswered question
+        // underneath it -- and the duel waiting on them. What the engine has
+        // just asked is the more urgent of the two, so the browsing gives way.
+        if(open != lastPrompt)
+        {
+            lastPrompt = open;
+            if(open != null && !pileView.isEmpty())
+            {
+                pileView = List.of();
+                pileViewLabel = "";
+                // Safe to reset here and nowhere else in this method: the pile
+                // that shared the scroll position has just been closed, so
+                // there is nothing left to scroll out from under.
+                CardChooser.reset();
+            }
+        }
         if(open != null && open.chainWindow() && open.cancelable() && rightButtonHeld())
         {
             decline();
@@ -937,6 +967,30 @@ public class BoardPointerScreen extends Screen
             ClientDuelField.toggleScreen(minecraft);
             return true;
         }
+        // Chat, for the same reason and by the same trick.
+        //
+        // This cursor is open for the whole duel, and a screen holds the
+        // keyboard -- so the game never reaches the point where it would notice
+        // the chat key and open chat itself. A duel between two people is
+        // exactly when they most want to say something, and it was the one
+        // stretch of play where they could not.
+        //
+        // The cursor is the resting state and the tick handler puts it back, so
+        // there is nothing to restore afterwards: closing chat returns to the
+        // board on its own.
+        if(minecraft.options.keyChat.matches(event))
+        {
+            minecraft.setScreenAndShow(
+                new net.minecraft.client.gui.screens.ChatScreen("", false));
+            return true;
+        }
+        if(minecraft.options.keyCommand.matches(event))
+        {
+            // Opened already carrying the slash, which is what the key means.
+            minecraft.setScreenAndShow(
+                new net.minecraft.client.gui.screens.ChatScreen("/", false));
+            return true;
+        }
         return super.keyPressed(event);
     }
 
@@ -1367,8 +1421,20 @@ public class BoardPointerScreen extends Screen
         List<Integer> codes = new java.util.ArrayList<>(pileView.size());
         for(BoardSnapshot.Slot slot : pileView)
         {
-            boolean back = de.cas_ual_ty.dueldimension.clientutil.CardFaces.showsBack(slot, false);
-            faces.add(de.cas_ual_ty.dueldimension.clientutil.CardFaces.face(slot, false, 0));
+            // Known, not upturned.
+            //
+            // A pile shows what this client was TOLD, which is a different
+            // question from which way the card is lying. The engine keeps extra
+            // deck cards face down as a matter of storage, so asking after the
+            // position turned your own Extra Deck into nine card backs -- a
+            // player being kept from information they are holding.
+            //
+            // Reading the code alone leaks nothing, and that is a property of
+            // the data rather than of this call: the server only ever sends the
+            // code of a face-down card to someone entitled to it, so the
+            // opponent's Extra Deck arrives with no code and still draws backs.
+            boolean back = de.cas_ual_ty.dueldimension.clientutil.CardFaces.showsBack(slot, true);
+            faces.add(de.cas_ual_ty.dueldimension.clientutil.CardFaces.face(slot, true, 0));
             de.cas_ual_ty.dueldimension.card.properties.Properties card = back ? null
                 : de.cas_ual_ty.dueldimension.DdDatabase.PROPERTIES_LIST.get((long)slot.code());
             names.add(card == null ? "" : card.getName());

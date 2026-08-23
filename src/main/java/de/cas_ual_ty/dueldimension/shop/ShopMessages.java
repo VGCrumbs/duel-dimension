@@ -195,6 +195,41 @@ public final class ShopMessages
          * }
          */
 
+        /**
+         * Registers a bought deck so it appears as a recipe.
+         * <p>
+         * The contents come from what was actually pulled, so the deck is the
+         * product as sold rather than a second idea of what ought to be in it.
+         * Split by the card's own home -- the same question the deck editor
+         * asks -- because a deck's Extra monsters cannot sit in its Main.
+         * <p>
+         * Only the first copy grants a deck: a second is a second set of cards,
+         * which the trunk already has, and not a second identically named deck
+         * nobody could tell apart. The profile decides that, keyed on the set's
+         * own code.
+         */
+        private static void grantDeck(ServerPlayer player, CardSet set, List<Integer> codes)
+        {
+            List<Integer> main = new ArrayList<>();
+            List<Integer> extra = new ArrayList<>();
+            for(int passcode : codes)
+            {
+                de.cas_ual_ty.dueldimension.card.properties.Properties card =
+                    de.cas_ual_ty.dueldimension.DdDatabase.PROPERTIES_LIST.get((long)passcode);
+                // A card the database cannot resolve goes in the Main deck: an
+                // unknown passcode is a database problem, and putting it in the
+                // Extra would be a deck-building one on top.
+                (card != null && card.getIsInExtraDeck() ? extra : main).add(passcode);
+            }
+
+            de.cas_ual_ty.dueldimension.duel.profile.DeckList.Origin origin =
+                ShopStock.isStarterProduct(set)
+                    ? de.cas_ual_ty.dueldimension.duel.profile.DeckList.Origin.STARTER
+                    : de.cas_ual_ty.dueldimension.duel.profile.DeckList.Origin.STRUCTURE;
+            DuelProfiles.get(player).unlockBoughtDeck(set.code, set.name, origin,
+                main, extra, List.of());
+        }
+
         // Public for the receiver in DdNetwork; the checks inside are what
         // keep it safe, not the visibility.
         public static void sell(ServerPlayer player, String code, int requested)
@@ -290,6 +325,18 @@ public final class ShopMessages
             {
                 trunk.add(codes.get(i), rarities.get(i), arts.get(i), 1);
             }
+            // A deck product is a DECK, not just its cards.
+            //
+            // This path treated every product alike -- roll it, put the cards in
+            // the trunk -- so buying a starter deck gave you its forty cards and
+            // no deck, and nothing in the recipe list. The shop already knew the
+            // difference, since it labels the product "1 DECK"; the selling side
+            // simply never asked.
+            if(ShopStock.isDeckProduct(set))
+            {
+                grantDeck(player, set, codes);
+            }
+
             DuelProfiles.saveAndSync(player);
 
             net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, new SyncPoints(DuelPoints.get(player)));

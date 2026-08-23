@@ -138,6 +138,32 @@ public final class DuelClientState
      * Advances playback. Called every client tick, not from render, so a duel
      * keeps playing at the right pace whether or not its screen is open.
      */
+    /**
+     * Space or attack cuts a battle animation short.
+     * <p>
+     * Read with {@code isDown} rather than by consuming the click, because these
+     * are the keys that also jump and swing: consuming them would make a duellist
+     * unable to move while a monster was attacking. Skipping is idempotent — the
+     * battle is already gone by the second call — so a held key costs nothing.
+     * <p>
+     * Only while a battle is actually playing, so neither key is touched at any
+     * other moment.
+     */
+    public static void tickSkip()
+    {
+        net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
+        if(client.player == null)
+        {
+            return;
+        }
+        // No check for an open screen: Minecraft releases every key mapping when
+        // one opens, so these read as up while a menu has the keyboard.
+        if(client.options.keyJump.isDown() || client.options.keyAttack.isDown())
+        {
+            animations.skipBattle(System.currentTimeMillis());
+        }
+    }
+
     public static void tickPlayback()
     {
         long now = System.currentTimeMillis();
@@ -250,10 +276,43 @@ public final class DuelClientState
      * seconds more, and forwards the moment one arrives. Rare, because the
      * server sends the reward in the same tick it sends the last update.
      */
-    public static void finish()
+    public static void finish(boolean outcomeAlreadyShown)
     {
         if(!hasReward())
         {
+            // The board said it already, and there is no reward to report.
+            //
+            // Opening the duel screen here put up a window whose deadlines run
+            // from the moment the ENGINE decided -- and the board's goodbye
+            // (HOLD_MS then FADE_MS, 6.4 seconds) has by then outlasted
+            // RESULT_HOLD_MS, so it closed itself on its first tick. What that
+            // looked like was one frame of a 2D duel nobody was playing, and
+            // then nothing: a duel that ended with no result screen at all.
+            // The surrendering seat hits this every time, because conceding is
+            // what disqualifies a reward.
+            if(outcomeAlreadyShown)
+            {
+                reset();
+                // And close the 2D view if it is up. A duellist may watch a
+                // board duel from the screen -- that is what the view key is
+                // for -- and the screen's own way out is a deadline it has just
+                // been reset out of, so resetting under it and walking away
+                // would leave an empty duel on display with nothing left to
+                // dismiss it.
+                net.minecraft.client.Minecraft minecraft =
+                    net.minecraft.client.Minecraft.getInstance();
+                if(minecraft.gui.screen() instanceof EngineDuelScreen open)
+                {
+                    open.onClose();
+                }
+                return;
+            }
+            // Cut short instead: the board went before it could say who won, so
+            // this is the player's only telling of it. Restamped, because the
+            // banner's hold has to run from when it is put in FRONT of somebody
+            // rather than from when the engine decided -- the same stale
+            // deadline as above, and here it would eat the one showing left.
+            overSince = System.currentTimeMillis();
             openScreen();
             return;
         }
@@ -261,6 +320,38 @@ public final class DuelClientState
         reset();
         net.minecraft.client.Minecraft.getInstance().gui.setScreen(
             new de.cas_ual_ty.dueldimension.clientutil.hub.DuelResultScreen(earned));
+    }
+
+    /**
+     * Throws away an ending that never got to play, because a new duel is
+     * starting and it is too late for the old one's.
+     * <p>
+     * <b>This is the backstop that makes a stranded result harmless.</b> Every
+     * route out of a finished duel clears this state, so reaching here means one
+     * of them was missed -- and a missed one used to be silent until the NEXT
+     * duel, where {@code over} was still true: the board's ending fired over a
+     * live duel, announced the PREVIOUS duel's outcome, and took the field down
+     * with it. That last part is what left the duel view stuck, since
+     * {@code toggleScreen} does nothing without a field to toggle.
+     * <p>
+     * The reward goes with it. It is a REPORT of a payout the server already
+     * made -- it carries the balance before and after -- so dropping it costs
+     * the player nothing they had earned, and keeping it would only put the last
+     * duel's winnings on screen in the middle of this one.
+     */
+    public static synchronized void discardEnding()
+    {
+        if(!over)
+        {
+            return;
+        }
+        de.cas_ual_ty.dueldimension.DuelDimension.log(
+            "a duel began while the previous one's result was still owed; dropping it");
+        over = false;
+        overSince = 0;
+        won = false;
+        result = "";
+        reward = null;
     }
 
     /** Brings the duel screen up if the player closed it. */
@@ -535,6 +626,11 @@ public final class DuelClientState
         log.clear();
         pending.clear();
         animations.clear();
+        // A latched swing outlives the attack that started it, so it has to be
+        // let go of here too -- otherwise the next duel opens with whatever the
+        // last one was in the middle of.
+        de.cas_ual_ty.dueldimension.clientutil.model.BattleAnimations.clear();
+        de.cas_ual_ty.dueldimension.clientutil.overworld.HologramFade.clear();
         // Whatever is left of a duel is being thrown away, including its music.
         DuelMusic.stop();
     }

@@ -57,11 +57,15 @@ public class DuelTypeScreen extends Screen
         int w = panelW() - 24;
         int y = panelY() + 40;
 
-        addRenderableWidget(new HubWidgets.TextureButton(x, y, w, 20,
-            Component.literal("Duel screen"), pressed -> choose(false)));
-        y += 26;
+        // The board leads, because it is what this mod is for and what a lobby
+        // now defaults to. Nothing is preselected -- this is still a question --
+        // but the order is the answer most duellists want, and it was the other
+        // way round.
         addRenderableWidget(new HubWidgets.TextureButton(x, y, w, 20,
             Component.literal("Overworld board"), pressed -> choose(true)));
+        y += 26;
+        addRenderableWidget(new HubWidgets.TextureButton(x, y, w, 20,
+            Component.literal("Duel screen"), pressed -> choose(false)));
         y += 30;
         addRenderableWidget(new HubWidgets.TextureButton(x, y, w, 20,
             Component.literal("Cancel"), pressed -> onClose()));
