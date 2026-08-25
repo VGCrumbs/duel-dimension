@@ -598,6 +598,23 @@ public final class DuelistDuels
         return new PromptMessages.OwnDeckList(codes, arts);
     }
 
+    /**
+     * Whether a card in this location and posture is drawn lying down.
+     * <p>
+     * Only a monster ever is. A Spell or Trap has no battle position at all,
+     * and the core says so in a way that is easy to read backwards: POS_FACEDOWN
+     * is FACEDOWN_ATTACK or FACEDOWN_DEFENSE, 0xA, so a set Spell tests true for
+     * POS_DEFENSE simply by being face down. Testing the bit alone turned every
+     * set backrow card sideways as it was played.
+     * <p>
+     * The zone is what settles it, which is also how the board itself decides.
+     */
+    private static boolean lyingDown(int location, int position)
+    {
+        return location == de.cas_ual_ty.dueldimension.ocg.OcgConstants.LOCATION_MZONE
+            && (position & de.cas_ual_ty.dueldimension.ocg.OcgConstants.POS_DEFENSE) != 0;
+    }
+
     /** Concedes the player's running duel. */
     public static void surrender(ServerPlayer player)
     {
@@ -1597,9 +1614,17 @@ public final class DuelistDuels
         }
         if(message instanceof DuelMessage.FlipSummoning flip)
         {
-            // A flip summon always ends face up.
-            return List.of(new DuelEvent(DuelEvent.Kind.FLIP, flip.code(),
-                -1, zoneOf(flip.card(), viewer), 1, side(flip.card().controller(), viewer)));
+            // A flip summon is a set monster standing up: face-down DEFENCE to
+            // face-up ATTACK, always, by the rules of the summon itself.
+            //
+            // It used to say only "ends face up", which left the client reading
+            // the posture bits as zero -- so it knew the card was turning over
+            // and had no idea it was also standing up, and the animation flipped
+            // it without the quarter turn.
+            return List.of(new DuelEvent(DuelEvent.Kind.FLIP, flip.code(), -1,
+                zoneOf(flip.card(), viewer),
+                DuelEvent.posture(true, false, false, true),
+                side(flip.card().controller(), viewer)));
         }
         // The announce messages carry the pause a summon has in the reference:
         // duelclient.cpp:3281 holds a card splash for 30 then 11 frames before
@@ -1621,12 +1646,29 @@ public final class DuelistDuels
             boolean nowHidden = (position.position()
                 & de.cas_ual_ty.dueldimension.ocg.OcgConstants.POS_FACEDOWN) != 0;
             int shown = nowHidden && position.controller() != viewer ? 0 : position.code();
-            // `amount` carries which way the card is turning, so the animation
-            // knows whether it ends on the face or the back.
+            // `amount` carries the whole posture the card ends in, not just
+            // which side is up: bit 0 face-up, bit 1 defence.
+            //
+            // It used to be the facing alone, so every position change animated
+            // as a card turning over -- including "switch to defence", which
+            // turns nothing over and lies down instead. The animation had no
+            // way to tell those apart because the event did not carry it.
+            //
+            // Bit 0 keeps its old meaning so the reading is the same shape it
+            // always was; the readers now mask rather than compare to zero.
+            boolean nowDefence = lyingDown(position.location(), position.position());
+            // Where it came FROM as well, which the core hands over and nothing
+            // was reading. Without it the client cannot tell "switch to
+            // defence" from "flip face-up in defence": both end face-up and
+            // lying down, and only one of them turns the card over.
+            boolean wasHidden = (position.previousPosition()
+                & de.cas_ual_ty.dueldimension.ocg.OcgConstants.POS_FACEDOWN) != 0;
+            boolean wasDefence = lyingDown(position.location(), position.previousPosition());
             return List.of(new DuelEvent(DuelEvent.Kind.POSITION, shown, -1,
                 DuelEvent.zoneOf(side(position.controller(), viewer), position.location(),
                     position.sequence(), 0),
-                nowHidden ? 0 : 1, side(position.controller(), viewer)));
+                DuelEvent.posture(!nowHidden, nowDefence, !wasHidden, wasDefence),
+                side(position.controller(), viewer)));
         }
         if(message instanceof DuelMessage.PayLpCost cost)
         {
@@ -1714,7 +1756,24 @@ public final class DuelistDuels
             {
                 shownCode = 0;
             }
-            return new DuelEvent(kind, shownCode, from, to, 0, side(move.to().controller(), viewer));
+            // The posture it ARRIVES in, so the slide already looks like the
+            // card it is about to be: a set monster lying face down, a special
+            // summon in defence lying face up.
+            //
+            // Carried on the event rather than read off the board, because the
+            // board is not applied until the events it came with have played --
+            // so a client asking the destination zone what is arriving there
+            // gets the answer "nothing", which is how a set card slid in wearing
+            // its own face and standing upright.
+            //
+            // Both ends are set to the destination: a move is not a turn, and
+            // leaving the "was" bits clear would read as one.
+            boolean faceUp = (move.to().position()
+                & de.cas_ual_ty.dueldimension.ocg.OcgConstants.POS_FACEDOWN) == 0;
+            boolean defence = lyingDown(move.to().location(), move.to().position());
+            return new DuelEvent(kind, shownCode, from, to,
+                DuelEvent.posture(faceUp, defence, faceUp, defence),
+                side(move.to().controller(), viewer));
         }
         if(message instanceof DuelMessage.Attack attack)
         {

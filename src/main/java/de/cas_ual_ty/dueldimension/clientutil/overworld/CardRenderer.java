@@ -7,6 +7,7 @@ import de.cas_ual_ty.dueldimension.clientutil.FieldLayout;
 import de.cas_ual_ty.dueldimension.duel.overworld.CardSpace;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -93,46 +94,58 @@ public final class CardRenderer
 
         for(CardMesh.Face part : CardMesh.faces(rect, lift))
         {
-            Identifier texture = switch(part.kind())
-            {
-                case FRONT -> face;
-                // The underside of a card is its back. For a face-up card
-                // because that is what the underside of a card is; for a
-                // face-down one because the client was never told what it is.
-                case BACK -> back;
-                // The card's edge: the white-over-grey strip the 2D board tiles
-                // down the side of a pile so a stack reads as many thin cards.
-                case EDGE -> DuelTextures.STACK_SIDE;
-            };
-
-            Vec3[] corners = worldCorners(transform, part);
-
-            if(part.kind() == CardMesh.Kind.EDGE)
-            {
-                // Per corner, for the same reason the pile's sides need it: the
-                // default mapping runs v along the quad's FIRST edge, which on
-                // an edge face is the card's width rather than its thickness --
-                // so the white-over-grey strip came out turned a quarter and
-                // read as two blocks of colour instead of a card's edge.
-                WorldQuad.submit(poseStack, collector, WorldQuad.kindFor(tint), texture, camera,
-                    corners, tint, new float[] {0F, 1F, 1F, 0F},
-                    new float[] {0F, 0F, 1F, 1F});
-                continue;
-            }
-
-            // Card art is letterboxed inside a square canvas; a card back and
-            // the unknown-card art are already card-shaped and take the whole
-            // texture. The same distinction the 2D board makes, asked through
-            // the same predicate so the two cannot drift apart.
-            boolean whole = CardFaces.isCardShaped(texture);
-            float u0 = whole ? 0F : DuelTextures.CARD_U0;
-            float v0 = whole ? 0F : DuelTextures.CARD_V0;
-            float u1 = whole ? 1F : DuelTextures.CARD_U1;
-            float v1 = whole ? 1F : DuelTextures.CARD_V1;
-            float[][] uv = turned(part.kind() == CardMesh.Kind.BACK, u0, v0, u1, v1, turns);
-            WorldQuad.submit(poseStack, collector, WorldQuad.kindFor(tint), texture, camera, corners,
-                tint, uv[0], uv[1]);
+            submitFace(poseStack, collector, camera, part, worldCorners(transform, part),
+                turns, face, back, tint);
         }
+    }
+
+    /**
+     * One face of a card, wherever its corners have ended up.
+     * <p>
+     * Split out so the flat card and the turning one cannot disagree about
+     * which texture goes on which face or how it is wound -- they are the same
+     * card and the difference between them is four points in space.
+     */
+    private static void submitFace(PoseStack poseStack, SubmitNodeCollector collector,
+        Vec3 camera, CardMesh.Face part, Vec3[] corners, int turns,
+        Identifier face, Identifier back, int tint)
+    {
+        Identifier texture = switch(part.kind())
+        {
+            case FRONT -> face;
+            // The underside of a card is its back. For a face-up card because
+            // that is what the underside of a card is; for a face-down one
+            // because the client was never told what it is.
+            case BACK -> back;
+            // The card's edge: the white-over-grey strip the 2D board tiles
+            // down the side of a pile so a stack reads as many thin cards.
+            case EDGE -> DuelTextures.STACK_SIDE;
+        };
+
+        if(part.kind() == CardMesh.Kind.EDGE)
+        {
+            // Per corner, for the same reason the pile's sides need it: the
+            // default mapping runs v along the quad's FIRST edge, which on an
+            // edge face is the card's width rather than its thickness -- so the
+            // white-over-grey strip came out turned a quarter and read as two
+            // blocks of colour instead of a card's edge.
+            WorldQuad.submit(poseStack, collector, WorldQuad.kindFor(tint), texture, camera,
+                corners, tint, new float[] {0F, 1F, 1F, 0F}, new float[] {0F, 0F, 1F, 1F});
+            return;
+        }
+
+        // Card art is letterboxed inside a square canvas; a card back and the
+        // unknown-card art are already card-shaped and take the whole texture.
+        // The same distinction the 2D board makes, asked through the same
+        // predicate so the two cannot drift apart.
+        boolean whole = CardFaces.isCardShaped(texture);
+        float u0 = whole ? 0F : DuelTextures.CARD_U0;
+        float v0 = whole ? 0F : DuelTextures.CARD_V0;
+        float u1 = whole ? 1F : DuelTextures.CARD_U1;
+        float v1 = whole ? 1F : DuelTextures.CARD_V1;
+        float[][] uv = turned(part.kind() == CardMesh.Kind.BACK, u0, v0, u1, v1, turns);
+        WorldQuad.submit(poseStack, collector, WorldQuad.kindFor(tint), texture, camera, corners,
+            tint, uv[0], uv[1]);
     }
 
     /**
@@ -231,6 +244,63 @@ public final class CardRenderer
         float height = part.height()[from]
             + (part.height()[to] - part.height()[from]) * fraction;
         return transform.at(x, y, height * transform.scale());
+    }
+
+    /**
+     * A card mid-turn: tilted out of the board, spun about the vertical, and
+     * lifted off the mat.
+     * <p>
+     * The same solid {@link #submitAt} draws — front, back and four edges — with
+     * every corner rotated about the card's own middle before it is put into
+     * the world. That is what makes this a card TURNING rather than a picture
+     * changing: the edges catch the light as it goes over, the back comes into
+     * view by itself at ninety degrees, and there is no moment where the thing
+     * on the mat is neither one face nor the other.
+     * <p>
+     * Because the solid carries both faces, nothing here has to decide which
+     * one is showing. A face-down card is simply one that has been turned over
+     * — {@code tilt} of {@link Math#PI} — so flipping it up is an interpolation
+     * and not a swap at the halfway point.
+     *
+     * @param tilt about the card's own width axis: 0 face-up, PI face-down
+     * @param yaw  about the vertical: 0 upright, a quarter turn lying down
+     * @param hop  how far off the mat, in field units, at this instant
+     */
+    public static void submitTurning(PoseStack poseStack, SubmitNodeCollector collector,
+        CardSpace transform, Vec3 camera, FieldLayout.Rect rect, int turns, float lift,
+        float tilt, float yaw, float hop, Identifier face, Identifier back, int tint)
+    {
+        float cx = rect.x() + rect.w() / 2F;
+        float cy = rect.y() + rect.h() / 2F;
+        // The middle of the card's thickness, so it turns about itself rather
+        // than about its underside and sinking through the mat on the way.
+        float pivot = lift + CardMesh.THICKNESS / 2F;
+        float tiltCos = Mth.cos(tilt);
+        float tiltSin = Mth.sin(tilt);
+        float yawCos = Mth.cos(yaw);
+        float yawSin = Mth.sin(yaw);
+
+        for(CardMesh.Face part : CardMesh.faces(rect, lift))
+        {
+            Vec3[] corners = new Vec3[4];
+            for(int corner = 0; corner < 4; corner++)
+            {
+                float across = part.x()[corner] - cx;
+                float along = part.y()[corner] - cy;
+                float up = part.height()[corner] - pivot;
+                // Tilt first, about the card's own width: this is the turning
+                // over. Then yaw, which carries the already-tilted card round
+                // -- the order a real card moves in, and the reason a flip
+                // summon into attack reads as one motion instead of two.
+                float alongTilted = along * tiltCos - up * tiltSin;
+                float upTilted = along * tiltSin + up * tiltCos;
+                corners[corner] = transform.at(
+                    cx + across * yawCos - alongTilted * yawSin,
+                    cy + across * yawSin + alongTilted * yawCos,
+                    (pivot + upTilted + hop) * transform.scale());
+            }
+            submitFace(poseStack, collector, camera, part, corners, turns, face, back, tint);
+        }
     }
 
     private static Vec3[] worldCorners(CardSpace transform, CardMesh.Face part)

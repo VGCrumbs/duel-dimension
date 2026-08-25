@@ -38,6 +38,20 @@ public final class OverworldBoardRenderer
     {
     }
 
+    /** A quarter turn, which is what lying down is. */
+    private static final float QUARTER = (float)(Math.PI / 2D);
+
+    /**
+     * How far off the mat a card rises at the top of its flip.
+     * <p>
+     * In FIELD units, where a card is {@link FieldLayout#CARD_H} tall -- one.
+     * This was six, which is six card-heights: the card left the table
+     * altogether and came back, which is why the lift did not read as a lift.
+     * Three quarters of its own height is about what Master Duel gives it:
+     * clearly off the mat, still plainly in its own zone.
+     */
+    private static final float FLIP_HOP = FieldLayout.CARD_H * 0.75F;
+
     /** The game's tick count, which the glow's pulse breathes on. */
     private static float ticks()
     {
@@ -264,19 +278,36 @@ public final class OverworldBoardRenderer
                 continue;
             }
             int controller = FieldTransform.controllerFor(seat, (flip.zone() & 16) == 0);
+            float t = Math.clamp(flip.progress(), 0F, 1F);
+            // Eased, so the card leaves and lands gently and does its turning
+            // in the middle, which is how a thing that has been picked up moves.
+            float e = t * t * (3F - 2F * t);
+
+            // A card is ALWAYS drawn in its attack rectangle here; the yaw is
+            // what makes it lie down. That is the whole difference from before,
+            // when a position change morphed the footprint and the artwork
+            // jumped a quarter turn at the midpoint to match. A card does not
+            // change shape when it is set to defence -- it turns.
             FieldLayout.Rect card = CardMesh.placement(zone, false);
-            // |cos| gives one full narrow-and-open across the animation, and
-            // never quite zero: a quad of no width is a quad with no normal.
-            float squash = Math.max(0.04F,
-                Math.abs((float)Math.cos(Math.PI * flip.progress())));
-            float width = card.w() * squash;
-            CardRenderer.submitAt(poseStack, collector, transform, camera,
-                new FieldLayout.Rect(card.x() + (card.w() - width) / 2F, card.y(), width,
-                    card.h()),
+            float yaw = lerp(flip.fromDefence() ? QUARTER : 0F,
+                flip.toDefence() ? QUARTER : 0F, e);
+            // Face-down is simply a card that has been turned over, so the two
+            // ends are 0 and PI and the flip is the interpolation between them.
+            // Nothing has to decide which face is showing: the solid carries
+            // both, and the back comes into view on its own at ninety degrees.
+            float tilt = lerp(flip.fromFaceUp() ? 0F : (float)Math.PI,
+                flip.toFaceUp() ? 0F : (float)Math.PI, e);
+            // Off the mat and back down again, and only for a card that is
+            // turning over -- one merely lying down never leaves the table.
+            float hop = flip.turnsOver()
+                ? FLIP_HOP * (float)Math.sin(Math.PI * t) : 0F;
+
+            CardRenderer.submitTurning(poseStack, collector, transform, camera, card,
+                // The seat's own half turn, and no defence quarter: the yaw
+                // above is carrying that now.
                 CardRenderer.turnsFor(controller, false),
-                cardLift(transform) + FLIP_RUNG, flip.texture(),
-                controller == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT,
-                fade(0xFFFFFFFF));
+                cardLift(transform) + FLIP_RUNG, tilt, yaw, hop,
+                flip.faceTexture(), CardFaces.back(controller), fade(0xFFFFFFFF));
         }
     }
 
@@ -324,11 +355,23 @@ public final class OverworldBoardRenderer
             float y = startY + (to.y() - startY) * t;
             float arc = (float)Math.sin(Math.PI * t) * MOVE_ARC;
 
-            CardRenderer.submit(poseStack, collector, transform, camera,
-                new FieldLayout.Rect(x, y, to.w(), to.h()), controller, false,
-                cardLift(transform) + arc, move.texture(),
-                owner == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT,
-                fade(0xFFFFFFFF));
+            // The card travels in the posture it is ARRIVING in, for the whole
+            // journey. A monster being set is face down and lying flat from the
+            // moment it leaves the hand; one special summoned in defence is
+            // face up and flat. Neither turns on the way -- a card put down in
+            // defence was already turned before it was put down.
+            //
+            // Face-down is a card that has been turned over, which is what the
+            // half turn is: the solid then shows its back on top and its face
+            // underneath, so a duellist may still read their own set card from
+            // below exactly as they can once it has landed.
+            float yaw = move.toDefence() ? QUARTER : 0F;
+            float tilt = move.toFaceUp() ? 0F : (float)Math.PI;
+            CardRenderer.submitTurning(poseStack, collector, transform, camera,
+                CardMesh.placement(new FieldLayout.Rect(x, y, to.w(), to.h()), false),
+                CardRenderer.turnsFor(controller, false),
+                cardLift(transform) + arc, tilt, yaw, 0F, move.faceTexture(),
+                CardFaces.back(owner), fade(0xFFFFFFFF));
         }
     }
 
@@ -1125,9 +1168,11 @@ public final class OverworldBoardRenderer
         //
         // Asked through the same filter that decides the click, so a pile that
         // glows is a pile that will offer something when clicked.
+        de.cas_ual_ty.dueldimension.clientutil.BoardTarget pile =
+            new de.cas_ual_ty.dueldimension.clientutil.BoardTarget(0, asked, location, -1, -1,
+                "", count, 0);
         if(de.cas_ual_ty.dueldimension.clientutil.PromptOptions.actionable(
-            DuelClientState.prompt, false, new de.cas_ual_ty.dueldimension.clientutil
-                .BoardTarget(0, asked, location, -1, -1, "", count, 0)))
+            DuelClientState.prompt, false, pile))
         {
             // On top of the whole stack, not of one card: a full deck stands
             // forty cards proud of the mat, and a glow left at card height
@@ -1135,7 +1180,7 @@ public final class OverworldBoardRenderer
             WorldQuad.submit(poseStack, collector, DuelHighlight.OUTLINE, camera,
                 transform.corners(CardMesh.placement(zone, false),
                     (cardLift(transform) + PileMesh.height(count) + 0.03F) * transform.scale()),
-                DuelHighlight.tint(DuelHighlight.pulse(ticks())));
+                DuelHighlight.tintFor(pile, ticks()));
         }
 
         // How many are in it, on top of the stack. Thickness alone cannot say:
@@ -1177,6 +1222,7 @@ public final class OverworldBoardRenderer
      * moving the quad itself: the rectangle is still exactly where it was, so
      * only the picture on it turns.
      */
+
     private static Vec3[] turned(Vec3[] corners, int turns)
     {
         int by = Math.floorMod(turns, 4);
@@ -1218,6 +1264,16 @@ public final class OverworldBoardRenderer
             // destroyed monster reads as two of itself -- one whole and one in
             // pieces -- for as long as the animation lasts.
             if(shattering(asked, location, sequence))
+            {
+                continue;
+            }
+            // And a card that is turning is drawn by the turn, for exactly the
+            // same reason. The flip animation draws the whole card now -- solid,
+            // tilted, lifted off the mat -- so the settled one underneath it is
+            // a second copy lying flat in the zone the first one is rising out
+            // of. It went unnoticed while the animation was a squashed quad
+            // that spent most of its life narrow enough to hide behind.
+            if(turning(asked, location, sequence))
             {
                 continue;
             }
@@ -1338,7 +1394,7 @@ public final class OverworldBoardRenderer
                 WorldQuad.submit(poseStack, collector, DuelHighlight.OUTLINE, camera,
                     transform.corners(CardMesh.placement(zone, slot.defence()),
                         (cardLift(transform) + CardMesh.THICKNESS + 0.03F) * transform.scale()),
-                    DuelHighlight.tint(DuelHighlight.pulse(ticks())));
+                    DuelHighlight.tintFor(target, ticks()));
             }
         }
     }
@@ -1443,6 +1499,33 @@ public final class OverworldBoardRenderer
             return 0L;
         }
         return zones.get(sequence).code();
+    }
+
+    /**
+     * Is this zone's card mid-turn, and therefore the flip's to draw?
+     * <p>
+     * The same shape as {@link #shattering}, against the same zone reference.
+     * Both answer one question: has something else taken responsibility for
+     * drawing this card this frame.
+     */
+    private static boolean turning(int asked, int location, int sequence)
+    {
+        List<de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.FlipView> turns =
+            DuelClientState.animations.flipsInFlight(System.currentTimeMillis());
+        if(turns.isEmpty())
+        {
+            return false;
+        }
+        int ref = de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt.zoneRef(asked == 1,
+            location == OcgConstants.LOCATION_MZONE, sequence);
+        for(de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.FlipView flip : turns)
+        {
+            if(flip.zone() == ref)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean shattering(int asked, int location, int sequence)

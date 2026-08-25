@@ -23,6 +23,58 @@ import java.util.List;
  */
 public record DuelEvent(Kind kind, int code, int fromZone, int toZone, int amount, int player)
 {
+    /**
+     * {@link Kind#POSITION}'s {@code amount}: the posture the card ends in.
+     * <p>
+     * Two bits, because a position change is two independent questions and the
+     * animation is different for each. Turning face-up is a card being turned
+     * OVER; switching to defence is a card lying DOWN; a flip summon into
+     * defence is both at once, and reading only the facing made all three look
+     * like the first.
+     * <p>
+     * Face-up is bit 0 so that the old {@code amount != 0} reading still means
+     * face-up for every event that predates the second bit.
+     */
+    public static final int POSITION_FACE_UP = 1;
+    public static final int POSITION_DEFENCE = 2;
+    /** And where it came from, so the client knows which half actually moved. */
+    public static final int POSITION_WAS_FACE_UP = 4;
+    public static final int POSITION_WAS_DEFENCE = 8;
+
+    /** Packs both ends of a position change into {@code amount}. */
+    public static int posture(boolean faceUp, boolean defence,
+        boolean wasFaceUp, boolean wasDefence)
+    {
+        return (faceUp ? POSITION_FACE_UP : 0)
+            | (defence ? POSITION_DEFENCE : 0)
+            | (wasFaceUp ? POSITION_WAS_FACE_UP : 0)
+            | (wasDefence ? POSITION_WAS_DEFENCE : 0);
+    }
+
+    /** Did the card turn over, or only lie down? */
+    public static boolean turnsOver(DuelEvent event)
+    {
+        return endsFaceUp(event) != ((event.amount() & POSITION_WAS_FACE_UP) != 0);
+    }
+
+    /** Did it change posture, or only turn over? */
+    public static boolean liesDown(DuelEvent event)
+    {
+        return endsInDefence(event) != ((event.amount() & POSITION_WAS_DEFENCE) != 0);
+    }
+
+    /** Whether a {@link Kind#POSITION} or {@link Kind#FLIP} ends face-up. */
+    public static boolean endsFaceUp(DuelEvent event)
+    {
+        return (event.amount() & POSITION_FACE_UP) != 0;
+    }
+
+    /** And whether it ends lying down. */
+    public static boolean endsInDefence(DuelEvent event)
+    {
+        return (event.amount() & POSITION_DEFENCE) != 0;
+    }
+
     public enum Kind
     {
         MOVE,

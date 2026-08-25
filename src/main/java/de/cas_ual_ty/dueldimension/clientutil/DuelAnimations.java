@@ -72,8 +72,7 @@ public class DuelAnimations
     private static final long DAMAGE_MS = 500;
     /** NUM_GREEN is a 784 ms LP-counting clip, rounded to the nearest ms. */
     private static final long RECOVER_MS = 784;
-    /** First 120 ms: hold the old LP and turn only the changing segment white. */
-    private static final long LP_FLASH_MS = 120;
+
     private static final long ATTACK_MS = frames(40);
     private static final long PHASE_MS = frames(40);
     private static final long TURN_MS = frames(40);
@@ -365,6 +364,46 @@ public class DuelAnimations
      * because this runs on the client tick and baking belongs to the render
      * thread.
      */
+    /**
+     * How long to hold the board for the defender's flinch.
+     * <p>
+     * Zero when there is nothing to flinch: unlike the lunge, which the BOARD
+     * draws as a bolt across the table, the flinch is only ever a model
+     * animation -- {@code latchHurt} and nothing else. A sprite has none, and
+     * neither does a model whose file has no take-hit slot.
+     * <p>
+     * It used to fall back to {@link #ATTACK_MS} like the lunge does, so a
+     * defender with no clip held the duel for two thirds of a second showing
+     * nothing, between the sword landing and the life points moving. That is
+     * the pause; there was never anything in it.
+     */
+    private long flinchMs(int zone)
+    {
+        long clip = clipMs(zone, de.cas_ual_ty.dueldimension.clientutil.model
+            .ModelSkeleton.HURT);
+        return clip == ATTACK_MS && !hasClip(zone,
+            de.cas_ual_ty.dueldimension.clientutil.model.ModelSkeleton.HURT) ? 0L : clip;
+    }
+
+    /** Whether the monster in this zone actually has this animation baked. */
+    private boolean hasClip(int zone, String animation)
+    {
+        long code = codeInZone(zone);
+        if(code == 0L)
+        {
+            return false;
+        }
+        de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSprites.Definition definition
+            = de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSprites.of(code);
+        if(definition == null || !definition.hasModel())
+        {
+            return false;
+        }
+        var mesh = de.cas_ual_ty.dueldimension.clientutil.model.MonsterModels
+            .peek(definition.model());
+        return mesh != null && mesh.skeleton() != null && mesh.animationIndex(animation) >= 0;
+    }
+
     private long clipMs(int zone, String animation)
     {
         long code = codeInZone(zone);
@@ -432,9 +471,9 @@ public class DuelAnimations
             case ACTIVATE, CHAINING -> CHAIN_MS;
             case BECOME_TARGET -> TARGET_MS;
             case ATTACK -> attackMs(event);
-            // The flinch, sized from the defender's own clip.
-            case BATTLE -> clipMs(event.toZone(),
-                de.cas_ual_ty.dueldimension.clientutil.model.ModelSkeleton.HURT);
+            // The flinch, sized from the defender's own clip -- and nothing at
+            // all when there is no clip.
+            case BATTLE -> flinchMs(event.toZone());
             case DAMAGE -> DAMAGE_MS;
             case RECOVER -> RECOVER_MS;
             case PHASE -> PHASE_MS;
@@ -601,7 +640,15 @@ public class DuelAnimations
             if(step.event() != null)
             {
                 start(step.event(), now);
-                break;
+                // An event with no duration has nothing to watch, so it does
+                // not get a frame to itself: without this a flinch that holds
+                // for nothing still costs the tick it was released on, and the
+                // damage lands 50ms after the blow instead of with it.
+                if(nextStart > now)
+                {
+                    break;
+                }
+                continue;
             }
             step.commit().run();
         }
@@ -974,21 +1021,41 @@ public class DuelAnimations
                 continue;
             }
             float t = animation.progress(now);
-            boolean endsFaceUp = event.amount() != 0;
-            boolean showFace = (t < 0.5F) != endsFaceUp;
+            boolean endsFaceUp = DuelEvent.endsFaceUp(event);
+            boolean turnsOver = DuelEvent.turnsOver(event);
+            // Same three cases the world board draws, and for the same reasons:
+            // a card that only changes posture shows one face throughout, and
+            // one that only turns over keeps its footprint.
+            boolean showFace = turnsOver ? (t < 0.5F) != endsFaceUp : endsFaceUp;
+            boolean toDefence = DuelEvent.endsInDefence(event);
+            boolean fromDefence = DuelEvent.liesDown(event) != toDefence;
+            boolean defenceNow = t < 0.5F ? fromDefence : toDefence;
             Identifier texture = showFace ? artFor(event.code(), event.toZone())
                 : (event.player() == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT);
 
-            // |cos| gives one full narrow-and-open across the animation.
-            float squash = Math.abs((float)Math.cos(Math.PI * t));
-            float width = FLIP_CARD_W * Math.max(0.04F, squash);
+            // |cos| gives one full narrow-and-open across the animation, and
+            // only for a card that is turning over.
+            float squash = turnsOver
+                ? Math.max(0.04F, Math.abs((float)Math.cos(Math.PI * t))) : 1F;
+            // Eased between the two footprints, which is the lying down.
+            float ease = Math.clamp(t, 0F, 1F);
+            ease = ease * ease * (3F - 2F * ease);
+            float fromW = fromDefence ? FLIP_CARD_H : FLIP_CARD_W;
+            float fromH = fromDefence ? FLIP_CARD_W : FLIP_CARD_H;
+            float toW = toDefence ? FLIP_CARD_H : FLIP_CARD_W;
+            float toH = toDefence ? FLIP_CARD_W : FLIP_CARD_H;
+            float cardW = (fromW + (toW - fromW) * ease) * squash;
+            float cardH = fromH + (toH - fromH) * ease;
             FieldLayout.Rect card = new FieldLayout.Rect(
-                zone.x() + (zone.w() - width) / 2F,
-                zone.y() + (zone.h() - FLIP_CARD_H) / 2F, width, FLIP_CARD_H);
+                zone.x() + (zone.w() - cardW) / 2F,
+                zone.y() + (zone.h() - cardH) / 2F, cardW, cardH);
 
             boolean edopro = !showFace || event.code() == 0;
+            // A quarter turn on top of the seat's own, so the artwork lies down
+            // with the card rather than staying upright inside it.
+            int turns = (event.player() == 1 ? 2 : 0) + (defenceNow ? 1 : 0);
             FieldQuad.drawProjected(poseStack, collector, texture, projection, card, FLIP_STEPS,
-                event.player() == 1 ? 2 : 0,
+                turns % 4,
                 edopro ? 0F : DuelTextures.CARD_U0, edopro ? 0F : DuelTextures.CARD_V0,
                 edopro ? 1F : DuelTextures.CARD_U1, edopro ? 1F : DuelTextures.CARD_V1);
         }
@@ -1164,10 +1231,26 @@ public class DuelAnimations
             // A slight lift at the midpoint reads as the card being carried.
             float lift = (float)Math.sin(Math.PI * t) * 0.12F;
 
-            Identifier texture = artFor(event.code(), event.toZone());
+            // The card travels as what it is ARRIVING as. A card being set is
+            // face down before it leaves the hand, so it slides as a back --
+            // it used to slide wearing its own face and turn over on landing,
+            // which shows a set card to the table.
+            //
+            // This board cannot tilt a card, so face-down is the back texture
+            // rather than a half turn; the world board does the same thing with
+            // geometry. Both read the same bit off the same event.
+            boolean faceUp = DuelEvent.endsFaceUp(event);
+            Identifier texture = faceUp ? artFor(event.code(), event.toZone())
+                : (event.player() == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT);
             boolean edoproArt = isEdoproArt(texture);
-            FieldQuad.drawProjected(poseStack, collector, texture, projection,
-                new FieldLayout.Rect(x, y - lift, to.w(), to.h()), 4, false,
+            // And a monster arriving in defence lies down for the whole slide,
+            // rather than flying in upright and turning a quarter on landing.
+            boolean defence = DuelEvent.endsInDefence(event);
+            FieldLayout.Rect travelling = defence
+                ? new FieldLayout.Rect(x, y - lift, to.h(), to.w())
+                : new FieldLayout.Rect(x, y - lift, to.w(), to.h());
+            FieldQuad.drawProjected(poseStack, collector, texture, projection, travelling, 4,
+                defence,
                 edoproArt ? 0F : DuelTextures.CARD_U0, edoproArt ? 0F : DuelTextures.CARD_V0,
                 edoproArt ? 1F : DuelTextures.CARD_U1, edoproArt ? 1F : DuelTextures.CARD_V1);
         }
@@ -1201,15 +1284,19 @@ public class DuelAnimations
             int target = event.kind() == DuelEvent.Kind.DAMAGE
                 ? Math.max(0, currentLifePoints - amount)
                 : (int)Math.min(Integer.MAX_VALUE, (long)currentLifePoints + amount);
-            float progress = animation.progress(now);
-            float flashFraction = Math.min(1F, LP_FLASH_MS / (float)animation.duration());
-            if(progress < flashFraction)
-            {
-                float flashIn = ease(progress / flashFraction);
-                return new LifePointState(currentLifePoints, target, flashIn);
-            }
-
-            float change = ease((progress - flashFraction) / (1F - flashFraction));
+            // Counting from the FIRST frame, with no hold in front of it.
+            //
+            // The reference spends its first 120 ms holding the old total and
+            // flashing the segment about to be lost, and after an attack that
+            // reads as the bar hesitating: the blow has landed, the board is
+            // waiting, and the number has not moved yet. The flash still
+            // happens -- the lost interval is white and shrinks with the moving
+            // edge -- it simply no longer happens BEFORE the count.
+            //
+            // The pace is the reference's own: NUM_RED counts for 496 ms and
+            // the animation owns a rounded 500, so the number and the sound
+            // finish together.
+            float change = ease(animation.progress(now));
             int displayed = (int)Math.round(currentLifePoints + (target - (double)currentLifePoints) * change);
             return new LifePointState(displayed, target, 1F);
         }
@@ -1264,7 +1351,8 @@ public class DuelAnimations
      * edge.
      */
     public record MoveView(int code, int fromZone, int toZone, int player, float progress,
-        Identifier texture, float u0, float v0, float u1, float v1)
+        Identifier texture, float u0, float v0, float u1, float v1, boolean toDefence,
+        boolean toFaceUp, Identifier faceTexture)
     {
     }
 
@@ -1280,7 +1368,8 @@ public class DuelAnimations
             views.add(new MoveView(event.code(), event.fromZone(), event.toZone(), event.player(),
                 animation.progress(now), texture,
                 edoproArt ? 0F : DuelTextures.CARD_U0, edoproArt ? 0F : DuelTextures.CARD_V0,
-                edoproArt ? 1F : DuelTextures.CARD_U1, edoproArt ? 1F : DuelTextures.CARD_V1));
+                edoproArt ? 1F : DuelTextures.CARD_U1, edoproArt ? 1F : DuelTextures.CARD_V1,
+                DuelEvent.endsInDefence(event), DuelEvent.endsFaceUp(event), texture));
         }
         return views;
     }
@@ -1295,8 +1384,26 @@ public class DuelAnimations
      * second copy of a rule with two places to get it backwards.
      */
     public record FlipView(int code, int zone, int player, boolean showingFace, float progress,
-        Identifier texture, float u0, float v0, float u1, float v1)
+        Identifier texture, float u0, float v0, float u1, float v1,
+        boolean turnsOver, boolean fromDefence, boolean toDefence, boolean toFaceUp,
+        Identifier faceTexture)
     {
+        /** Which way up it started, which is the other end of the turn. */
+        public boolean fromFaceUp()
+        {
+            return turnsOver != toFaceUp;
+        }
+        /** The posture to draw at this instant, swapping at the halfway point. */
+        public boolean defenceNow()
+        {
+            return progress < 0.5F ? fromDefence : toDefence;
+        }
+
+        /** Is this a card lying down or standing up, rather than turning over? */
+        public boolean changesPosture()
+        {
+            return fromDefence != toDefence;
+        }
     }
 
     /** Every card currently turning over. */
@@ -1307,15 +1414,27 @@ public class DuelAnimations
         {
             DuelEvent event = animation.event();
             float t = animation.progress(now);
-            boolean endsFaceUp = event.amount() != 0;
-            boolean showFace = (t < 0.5F) != endsFaceUp;
+            boolean endsFaceUp = DuelEvent.endsFaceUp(event);
+            boolean turnsOver = DuelEvent.turnsOver(event);
+            // A card that is not turning over shows the same face throughout --
+            // switching to defence does not reveal anything. Swapping at the
+            // midpoint regardless is what made a repositioning card blink.
+            boolean showFace = turnsOver ? (t < 0.5F) != endsFaceUp : endsFaceUp;
             Identifier texture = showFace ? artFor(event.code(), event.toZone())
                 : (event.player() == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT);
             boolean edoproArt = !showFace || event.code() == 0;
+            boolean toDefence = DuelEvent.endsInDefence(event);
+            boolean fromDefence = DuelEvent.liesDown(event) != toDefence;
             views.add(new FlipView(event.code(), event.toZone(), event.player(), showFace, t,
                 texture,
                 edoproArt ? 0F : DuelTextures.CARD_U0, edoproArt ? 0F : DuelTextures.CARD_V0,
-                edoproArt ? 1F : DuelTextures.CARD_U1, edoproArt ? 1F : DuelTextures.CARD_V1));
+                edoproArt ? 1F : DuelTextures.CARD_U1, edoproArt ? 1F : DuelTextures.CARD_V1,
+                turnsOver, fromDefence, toDefence, endsFaceUp,
+                // The card's OWN art, whichever way it is facing right now. A
+                // solid card carries both sides at once, so the 3D board needs
+                // the face and the back rather than whichever one the midpoint
+                // says is showing.
+                artFor(event.code(), event.toZone())));
         }
         return views;
     }
@@ -1558,6 +1677,7 @@ public class DuelAnimations
      * confidently, which for a card whose whole point is which picture it
      * wears would be worse than the printed one.
      */
+
     private static int artAtZone(int code, int zoneRef)
     {
         if(zoneRef < 0)

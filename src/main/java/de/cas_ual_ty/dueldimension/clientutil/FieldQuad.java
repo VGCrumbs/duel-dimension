@@ -179,6 +179,33 @@ public final class FieldQuad
             .setNormal(0F, 0F, 1F);
     }
 
+    /** Draws a textured quad at four genuine model-space points. */
+    public static void draw3D(PoseStack poseStack, SubmitNodeCollector collector,
+        Identifier texture, Corners3D corners,
+        float u0, float v0, float u1, float v1, int tint)
+    {
+        collector.order(layer++).submitCustomGeometry(poseStack,
+            net.minecraft.client.renderer.rendertype.RenderTypes.breezeWind(texture, 0F, 0F),
+            (pose, buffer) ->
+            {
+                vertex3D(buffer, pose, corners.x0(), corners.y0(), corners.z0(), u0, v0, tint);
+                vertex3D(buffer, pose, corners.x3(), corners.y3(), corners.z3(), u0, v1, tint);
+                vertex3D(buffer, pose, corners.x2(), corners.y2(), corners.z2(), u1, v1, tint);
+                vertex3D(buffer, pose, corners.x1(), corners.y1(), corners.z1(), u1, v0, tint);
+            });
+    }
+
+    private static void vertex3D(VertexConsumer buffer, PoseStack.Pose pose,
+        float x, float y, float z, float u, float v, int tint)
+    {
+        buffer.addVertex(pose, x, y, z)
+            .setColor(tint)
+            .setUv(u, v)
+            .setOverlay(net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY)
+            .setLight(FULL_BRIGHT)
+            .setNormal(0F, 1F, 0F);
+    }
+
     /**
      * A quad at explicit corners, with a UV window and a shade.
      * <p>
@@ -469,5 +496,12 @@ public final class FieldQuad
             // Cross product sign against each edge, walking the quad one way.
             return (bx - ax) * (py - ay) - (by - ay) * (px - ax) >= 0;
         }
+    }
+
+    /** Top-left, top-right, bottom-right, bottom-left in three dimensions. */
+    public record Corners3D(float x0, float y0, float z0,
+        float x1, float y1, float z1, float x2, float y2, float z2,
+        float x3, float y3, float z3)
+    {
     }
 }
