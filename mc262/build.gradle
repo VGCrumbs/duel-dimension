@@ -349,6 +349,12 @@ tasks.register('engineBundleStamp') {
 // library. remapJar takes jar's output, so this lands in the published artifact
 // too.
 tasks.named('jar', Jar) {
+    // dependsOn the CONFIGURATION, not just its files. `from { ... zipTree }`
+    // is a closure, so Gradle cannot see through it to infer that common's jar
+    // has to exist first -- and across a composite that means the jar task can
+    // start while the other build is still writing it. It failed exactly that
+    // way once: "Cannot expand ZIP common-0.1.0-fabric.jar".
+    dependsOn configurations.bundledCore
     from({ configurations.bundledCore.collect { zipTree(it) } }) {
         // The library jar's manifest and any signature files must not overwrite
         // the mod's.
