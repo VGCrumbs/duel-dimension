@@ -65,9 +65,27 @@ public final class DeckBoxShopScreen extends Screen
             artW, artH, nameY, nameY + lineHeight + LINE_GAP);
     }
 
+    /** How many rows the grid settled on, and how tall each is. */
+    record GridFit(int rows, int tileH)
+    {
+    }
+
+    /**
+     * Rows first, tile size second.
+     *
+     * @param gridH        the height the grid has to spend
+     * @param wantRows     how many there are to show, capped by the screen
+     * @param squeezedTile the shortest tile still worth drawing
+     */
+    static GridFit gridFit(int gridH, int wantRows, int squeezedTile)
+    {
+        int rows = Math.max(1, Math.min(wantRows, (gridH + GAP) / (squeezedTile + GAP)));
+        return new GridFit(rows,
+            Math.clamp((gridH - (rows - 1) * GAP) / rows, 1, TILE_H));
+    }
+
     private static final int PREFERRED_TILE_W = 118;
     private static final int TILE_H = 112;
-    private static final int MIN_TILE_PIXELS = 276;
     private static final int MAX_COLUMNS = 3;
     private static final int MAX_VISIBLE_ROWS = 2;
     private static final int HEADER_H = 32;
@@ -87,6 +105,13 @@ public final class DeckBoxShopScreen extends Screen
      * exists to show; the tile's own minimum is derived from it.
      */
     private static final int MIN_ART_H = 44;
+    /**
+     * And the smallest it may be squeezed to when the alternative is showing
+     * one row instead of two. Half the comfortable minimum: a case is still a
+     * recognisable silhouette and a colour at this size, which is enough to
+     * pick one out and click it.
+     */
+    private static final int SQUEEZED_ART_H = 22;
 
     private final List<Entry> offers = new ArrayList<>();
     private int selected;
@@ -97,6 +122,8 @@ public final class DeckBoxShopScreen extends Screen
     private int columns;
     private int tileW;
     private int tileH;
+    /** Rows the last init laid out; 0 before one has run. */
+    private int rowsShown;
     private int scrollRow;
     private int scrollGrab = -1;
     private HubWidgets.TextureButton buyButton;
@@ -144,31 +171,29 @@ public final class DeckBoxShopScreen extends Screen
         left = (width - panelW) / 2;
         top = (height - panelH) / 2;
 
-        // GUI scale rounding can leave the viewport only a handful of pixels
-        // short of the requested rows. Treating the cases as rigidly 112 high
-        // then discarded an entire row and left half the panel empty. Compress
-        // both rows slightly when they remain comfortably legible; genuinely
-        // short windows still fall back to one scrollable row.
-        int guiScale = Math.max(1, minecraft.getWindow().getGuiScale());
-        // Legibility is a physical-pixel constraint. At automatic GUI scale 3
-        // this remains the old 92-unit minimum; at scale 5 the same physical
-        // size needs only 56 layout units, preventing high-resolution displays
-        // from paradoxically fitting fewer rows than low-resolution ones.
+        // ROWS FIRST, tile size second.
         //
-        // Floored at what a tile's own CONTENTS need rather than at a flat 56.
-        // A tile is art over two lines of text, and 56 was below the sum of
-        // those -- so at scale 5, where the physical constraint relaxes to 56,
-        // two rows were squeezed into a height neither could hold. What that
-        // produced was this screen's actual bug: the art kept a fixed floor
-        // while the tile shrank under it, so a case overlapped its own name at
-        // every window that landed in the band. Derived, so the two cannot
-        // disagree again.
-        int minimumTileH = Math.max(minimumTileH(),
-            (MIN_TILE_PIXELS + guiScale - 1) / guiScale);
-        int rowsThatFit = Math.min(shownRows,
-            Math.max(1, (gridHeight() + GAP) / (minimumTileH + GAP)));
-        tileH = Math.min(TILE_H,
-            Math.max(1, (gridHeight() - (rowsThatFit - 1) * GAP) / rowsThatFit));
+        // This shop is six cases in two rows of three, and seeing that shape is
+        // most of what it is for -- a single row over an empty half-panel, with
+        // a scrollbar to reach the other three, is a worse view of the same six
+        // whatever size the tiles are. So the row count is chosen against the
+        // smallest tile that can still be READ, and the tiles then take
+        // whatever height is going, rather than a preferred tile height
+        // deciding how many rows there is room for.
+        //
+        // The physical-pixel minimum that used to gate this is gone. Its
+        // reasoning was sound -- legibility is a physical constraint, so a
+        // larger GUI scale should need fewer layout units -- but with two rows
+        // as the cap it could only ever take a row AWAY, which is exactly what
+        // it did: at GUI scale 3 it demanded 92 units a tile where the contents
+        // need 73, so a window with room for two 76-unit rows was given one row
+        // of 112 and 48 units of nothing underneath it.
+        GridFit fit = gridFit(gridHeight(), shownRows, squeezedTileH());
+        tileH = fit.tileH();
+        // Kept rather than recomputed from tileH: integer division on the way
+        // down and again on the way back can disagree, and everything that
+        // scrolls or hit-tests has to mean the same rows that were drawn.
+        rowsShown = fit.rows();
         clampScroll();
         scrollGrab = -1;
 
@@ -198,6 +223,24 @@ public final class DeckBoxShopScreen extends Screen
         return MIN_ART_H + textBlockH() + TILE_PAD * 3;
     }
 
+    /**
+     * The same, with the art squeezed to what it MAY be rather than what it
+     * should be: the height below which a row is finally worth losing.
+     * <p>
+     * Only the row COUNT is decided against this. The tiles themselves still
+     * divide the whole grid between them, so a small floor here does not make
+     * small tiles -- it only stops a short window from dropping to one row when
+     * both would have fitted, cramped. That trade is the point of the screen:
+     * six cases in two rows of three is the thing being looked at.
+     * <p>
+     * Two of these fit inside the panel's own 180-unit minimum, so "both rows"
+     * holds for every window the panel itself fits in.
+     */
+    private int squeezedTileH()
+    {
+        return SQUEEZED_ART_H + textBlockH() + TILE_PAD * 3;
+    }
+
     private int gridLeft()
     {
         return left + 12;
@@ -218,9 +261,19 @@ public final class DeckBoxShopScreen extends Screen
         return Math.max(1, panelH - HEADER_H - FOOTER_H);
     }
 
+    /**
+     * The rows init actually laid out, not a second guess at them.
+     * <p>
+     * Deriving this back from tileH meant two integer divisions -- one down to
+     * a tile height, one back up to a count -- had to agree, and a remainder in
+     * the first is enough to make the second answer one more row than was
+     * drawn. Everything that scrolls, hit-tests or sizes the scrollbar reads
+     * this, so all of them mean the same rows the player is looking at.
+     */
     private int visibleRows()
     {
-        return Math.max(1, (gridHeight() + GAP) / (tileH + GAP));
+        return rowsShown > 0 ? rowsShown
+            : Math.max(1, (gridHeight() + GAP) / (tileH + GAP));
     }
 
     private int totalRows()

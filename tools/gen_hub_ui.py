@@ -86,13 +86,24 @@ def button_state(state):
 
 
 def tab_state(state):
+    """A tab, told apart by its surface rather than by a line drawn over it.
+
+    The accent was a one-pixel gold rule across the top of the hovered and
+    selected rows, and it read as a stray line lying on the button rather than
+    as part of it -- most obviously on the sub-tabs, where three of them in a
+    row put three unexplained dashes across the panel.
+
+    Nothing is lost by dropping it. A selected tab is already the bright one --
+    (74, 80, 96) against the idle (40, 44, 54), with a near-white rim and gold
+    lettering -- so it is the most distinguished thing on the strip without it.
+    """
     if state == 'idle':
         return panel((40, 44, 54), (28, 31, 39), (90, 98, 112))
     if state == 'hover':
-        return panel((58, 63, 76), (38, 42, 52), (150, 160, 176), accent=GOLD_DIM)
+        return panel((58, 63, 76), (38, 42, 52), (150, 160, 176))
     # The selected tab is the bright one; it shares the disabled slot because a
     # tab is never disabled, and a third row keeps every atlas the same shape.
-    return panel((74, 80, 96), (46, 50, 62), (214, 224, 240), accent=GOLD)
+    return panel((74, 80, 96), (46, 50, 62), (214, 224, 240))
 
 
 def slot():
@@ -281,6 +292,39 @@ def check(size=32):
     return big.resize((size, size), Image.LANCZOS)
 
 
+def sort_arrow(up=True, size=32):
+    """The collection's sort direction, as an arrow instead of a word.
+
+    ASC and DESC were four and five characters in a thirty-unit button on a row
+    that had none to spare. An arrow says the same thing in a square, and the
+    square is the row's own height.
+
+    WHITE, like the tick: `HubWidgets.IconButton` tints it to whatever colour
+    the label would have taken, so one file covers idle, hovered and disabled.
+
+    A head AND a stem, not a bare triangle -- a triangle alone reads as a
+    dropdown caret, which is a different promise. Built at eight times and
+    reduced so the diagonals do not step.
+    """
+    scale = 8
+    unit = size * scale
+    big = Image.new('RGBA', (unit, unit), (0, 0, 0, 0))
+    d = ImageDraw.Draw(big)
+    white = (255, 255, 255, 255)
+    # Measured off the canvas so the shape survives being regenerated at any
+    # size. The head is the top 45% and the stem hangs from its middle.
+    head_h = unit * 0.45
+    top = unit * 0.18
+    stem_w = unit * 0.18
+    d.polygon([(unit / 2, top), (unit * 0.86, top + head_h), (unit * 0.14, top + head_h)],
+              fill=white)
+    d.rectangle([unit / 2 - stem_w / 2, top + head_h * 0.86,
+                 unit / 2 + stem_w / 2, unit * 0.82], fill=white)
+    small = big.resize((size, size), Image.LANCZOS)
+    # One drawing, flipped, so the two can never disagree about weight or size.
+    return small if up else small.transpose(Image.FLIP_TOP_BOTTOM)
+
+
 def alt_art(size=32):
     """The mark on a card that has more than one artwork: a gold [A] badge.
 
@@ -442,6 +486,9 @@ if __name__ == '__main__':
     write(states(tab_state), 'common', 'tab.png')
     write(slot(), 'common', 'slot.png')
     write(check(), 'common', 'check.png')
+    write(sort_arrow(True), 'common', 'sort_up.png')
+    write(sort_arrow(False), 'common', 'sort_down.png')
+
 
     print('settings/')
     write(colour_wheel(), 'settings', 'colour_wheel.png')

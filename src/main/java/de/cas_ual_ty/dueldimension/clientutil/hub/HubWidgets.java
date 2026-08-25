@@ -182,9 +182,80 @@ public final class HubWidgets
      * case is intentionally one placeholder for now because a profile does not
      * yet carry Master Duel case IDs.
      */
+    /**
+     * The deck case art's width over its height.
+     * <p>
+     * Measured from the files rather than chosen: every {@code deck_box_*.png}
+     * is 422x512. A case drawn to any other ratio is a stretched case, and it
+     * shows -- these are photographs of a box, so the eye knows the shape.
+     */
+    public static final float DECK_BOX_ASPECT = 422F / 512F;
+
+    /** Where a deck case sits inside its tile, relative to the tile. */
+    public record CaseFit(int x, int y, int w, int h)
+    {
+    }
+
+    /**
+     * Fits a deck case into a tile: as large as the room allows, still itself.
+     * <p>
+     * A static function of the tile so it can be TESTED, and one calculation
+     * rather than two. It used to be {@code 0.32 * width} by
+     * {@code 0.49 * height} -- two unrelated fractions of two different
+     * dimensions, so the case's shape was whatever the tile's shape made it.
+     * On the hub's own tile that came out square, stretching a 0.824 case about
+     * a fifth too wide, and small with it: floors of 18 and 24 meant a short
+     * tile got a case that had stopped shrinking while the tile had not.
+     *
+     * @param nameBandH what the name is reserving along the bottom
+     * @param pad       the margin around the case, top and sides
+     */
+    public static CaseFit fitDeckCase(int tileW, int tileH, int nameBandH, int pad)
+    {
+        // The name's band comes off the bottom first and the case takes the
+        // rest, which is the same order the deck box shop's tiles use.
+        int space = Math.max(1, tileH - nameBandH - pad * 2);
+        int h = space;
+        int w = Math.round(h * DECK_BOX_ASPECT);
+        // Sized by height, so a wide-and-short tile is the one that pushes it
+        // out sideways; the clamp keeps the ratio rather than trimming it.
+        int maxW = Math.max(1, tileW - pad * 2);
+        if(w > maxW)
+        {
+            w = maxW;
+            h = Math.max(1, Math.round(w / DECK_BOX_ASPECT));
+        }
+        return new CaseFit((tileW - w) / 2, pad + Math.max(0, (space - h) / 2), w, h);
+    }
+
     public static class DeckTileButton extends TextureButton
     {
         private static final float BADGE_TEXT_SCALE = 0.35F;
+        /**
+         * Clearance under the name, between its descenders and the tile's
+         * rounded corner. Two, which is what the frame's curve actually needs.
+         */
+        private static final int NAME_CLEARANCE = 2;
+
+        /**
+         * How big the deck's name is drawn, against the font's own size.
+         * <p>
+         * Half. A deck tile is a picture of a case with a caption under it, and
+         * the caption was competing with the case for the tile -- at full size
+         * "White Lightning Attack" got eleven characters and a band a fifth of
+         * the tile deep. Half the height is half the band, which the case takes
+         * back, and twice the name.
+         */
+        private static final float NAME_SCALE = 0.5F;
+        /**
+         * The case's margin from the tile's top and sides.
+         * <p>
+         * Two rather than three. A deck tile is 68 by 58 and the case is a
+         * portrait 0.824, so its height is the only thing that limits it -- the
+         * side margin never binds at all, and every unit taken off the top is a
+         * unit the case grows by.
+         */
+        private static final int CASE_PAD = 2;
         private final net.minecraft.resources.Identifier deckBoxTexture;
         private final boolean selected;
         private final boolean addTile;
@@ -218,27 +289,46 @@ public final class HubWidgets
             }
             else
             {
-                int caseW = Math.max(18, Math.round(getWidth() * 0.32F));
-                int caseH = Math.max(24, Math.round(getHeight() * 0.49F));
+                // The name's band comes off the bottom and the case sits above
+                // it, clear of the text rather than behind it.
+                //
+                // The case briefly took the whole tile with the name shadowed
+                // over its foot, which is how Master Duel does it and which is
+                // bigger -- but the bottom of a case is artwork, and a name
+                // laid across it reads as something covering the picture rather
+                // than as a label under it.
+                CaseFit fit = fitDeckCase(getWidth(), getHeight(), nameBandH(), CASE_PAD);
                 de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.fullBlit(graphics,
-                    deckBoxTexture, getX() + (getWidth() - caseW) / 2,
-                    getY() + Math.round(getHeight() * 0.18F), caseW, caseH);
+                    deckBoxTexture, getX() + fit.x(), getY() + fit.y(), fit.w(), fit.h());
 
-                int badgeW = Math.max(19, Math.round(getWidth() * 0.29F));
-                int badgeH = Math.max(9, Math.round(badgeW * 0.50F));
-                int badgeX = getX() + getWidth() - badgeW - 2;
-                int badgeY = getY() + 2;
-                de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.fullBlit(graphics,
-                    HubTextures.STANDARD_BADGE, badgeX, badgeY, badgeW, badgeH);
-                tinyCentredText(graphics, "STANDARD", badgeX, badgeY, badgeW, badgeH,
-                    0xFF369BFF);
+                // The regulation badge, off until it means something.
+                //
+                // It says STANDARD on every tile because nothing chooses it: a
+                // deck carries no format, so this is a label that cannot yet be
+                // wrong and cannot yet be right. Kept rather than deleted --
+                // when a deck knows its format this is where the badge goes,
+                // and tinyCentredText below is what draws its word.
+                //
+                // int badgeW = Math.max(19, Math.round(getWidth() * 0.29F));
+                // int badgeH = Math.max(9, Math.round(badgeW * 0.50F));
+                // int badgeX = getX() + getWidth() - badgeW - 2;
+                // int badgeY = getY() + 2;
+                // de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.fullBlit(graphics,
+                //     HubTextures.STANDARD_BADGE, badgeX, badgeY, badgeW, badgeH);
+                // tinyCentredText(graphics, "STANDARD", badgeX, badgeY, badgeW, badgeH,
+                //     0xFF369BFF);
 
                 net.minecraft.client.gui.Font font = net.minecraft.client.Minecraft
                     .getInstance().font;
-                String name = font.plainSubstrByWidth(getMessage().getString(), getWidth() - 8);
-                graphics.text(font, name, getX() + (getWidth() - font.width(name)) / 2,
-                    getY() + getHeight() - 13,
-                    labelColourOr(selected ? 0xFFF4D089 : 0xFFE8E8E8), true);
+                // Half size, which also doubles how much of a name fits: the
+                // budget handed to plainSubstrByWidth is in TEXT pixels, so it
+                // has to be divided by the scale or a name would still be cut
+                // at the width it used to be and then drawn half as wide.
+                String name = font.plainSubstrByWidth(getMessage().getString(),
+                    Math.round((getWidth() - 8) / NAME_SCALE));
+                tinyText(graphics, name, getX() + getWidth() / 2F,
+                    getY() + getHeight() - nameBandH(), NAME_SCALE,
+                    labelColourOr(selected ? 0xFFF4D089 : 0xFFE8E8E8));
             }
 
             int frameRow = selected ? 2 : isHoveredOrFocused() ? 1 : 0;
@@ -246,6 +336,43 @@ public final class HubWidgets
                 HubTextures.DECK_TILE_FRAME, getX(), getY(), getWidth(), getHeight(),
                 0F, frameRow / 3F, 1F, (frameRow + 1) / 3F,
                 de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.NO_TINT);
+        }
+
+        /**
+         * What the deck's name reserves along the bottom of the tile.
+         * <p>
+         * The line itself plus the clearance under it, asked of the FONT rather
+         * than written down as 13. Thirteen was the line plus four, so a tile
+         * only 58 tall was holding two units of nothing under the name and
+         * charging the case for them -- and a resource pack with a taller font
+         * would have had the name run off the bottom instead.
+         */
+        private static int nameBandH()
+        {
+            return Math.round(net.minecraft.client.Minecraft.getInstance().font.lineHeight
+                * NAME_SCALE) + NAME_CLEARANCE;
+        }
+
+        /**
+         * Text drawn at a fraction of its size, centred on an x.
+         * <p>
+         * The scale goes on the POSE, so the coordinates handed to the font are
+         * divided by it -- a glyph drawn at half size at screen x lands at 2x in
+         * the font's own space. Getting that backwards puts the text off the
+         * tile rather than merely in the wrong place, which is how it announces
+         * itself.
+         */
+        private static void tinyText(GuiGraphicsExtractor graphics, String text, float centreX,
+            float y, float scale, int colour)
+        {
+            net.minecraft.client.gui.Font font = net.minecraft.client.Minecraft
+                .getInstance().font;
+            graphics.pose().pushMatrix();
+            graphics.pose().scale(scale, scale);
+            graphics.text(font, text,
+                Math.round(centreX / scale - font.width(text) / 2F),
+                Math.round(y / scale), colour, true);
+            graphics.pose().popMatrix();
         }
 
         private static void tinyCentredText(GuiGraphicsExtractor graphics, String text,

@@ -26,6 +26,12 @@ public final class HubTextures
      * have been. Drawn by {@link HubWidgets.IconButton}.
      */
     public static final Identifier CHECK = gui("common/check.png");
+    /**
+     * Sort direction, replacing the words ASC and DESC. White for the same
+     * reason the tick is: {@link HubWidgets.IconButton} tints them.
+     */
+    public static final Identifier SORT_UP = gui("common/sort_up.png");
+    public static final Identifier SORT_DOWN = gui("common/sort_down.png");
 
     /** Fixed-ratio Master Duel deck tile, without its interaction outline. */
     public static final Identifier DECK_TILE = gui("hub/deck_tile_surface.png");

@@ -2,6 +2,7 @@ package de.cas_ual_ty.dueldimension.clientutil.hub;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -112,5 +113,54 @@ class DeckBoxTileLayoutTest
                     "case was stretched to " + ratio + " at " + tileW + "x" + tileH);
             }
         }
+    }
+
+    /**
+     * Both rows, at every grid the panel can hand over.
+     * <p>
+     * The requirement this pins is "at least two rows visible at any
+     * resolution", and it is pinned against the SQUEEZED floor rather than the
+     * comfortable one -- that is the whole trade: a short window shows two
+     * cramped rows rather than one roomy row and a scrollbar over the other
+     * three cases.
+     * <p>
+     * 110 is two squeezed tiles plus the gap, and it is below the grid a panel
+     * at its own 180-unit minimum provides, so in practice the floor is never
+     * reached.
+     */
+    @Test
+    void twoRowsSurviveEveryGridThePanelCanGive()
+    {
+        int squeezed = 22 + LINE_HEIGHT * 2 + 2 + 3 * 3;
+        for(int gridH = squeezed * 2 + 8; gridH <= 400; gridH++)
+        {
+            DeckBoxShopScreen.GridFit fit = DeckBoxShopScreen.gridFit(gridH, 2, squeezed);
+            assertEquals(2, fit.rows(), "dropped to one row with " + gridH + " units of grid");
+        }
+    }
+
+    /** The rows fill the grid rather than leaving the second one's worth empty. */
+    @Test
+    void theRowsUseTheGridTheyWereGiven()
+    {
+        int squeezed = 22 + LINE_HEIGHT * 2 + 2 + 3 * 3;
+        for(int gridH = squeezed * 2 + 8; gridH <= 400; gridH++)
+        {
+            DeckBoxShopScreen.GridFit fit = DeckBoxShopScreen.gridFit(gridH, 2, squeezed);
+            int used = fit.rows() * fit.tileH() + (fit.rows() - 1) * 8;
+            assertTrue(used <= gridH, "rows overflowed the grid at " + gridH);
+            // Either the tiles reached their authored height or they spent
+            // what there was; anything else is the empty half-panel again.
+            assertTrue(fit.tileH() == 112 || gridH - used < fit.rows(),
+                "left " + (gridH - used) + " units unused at " + gridH);
+        }
+    }
+
+    /** A tile is never taller than authored, however much room there is. */
+    @Test
+    void tilesDoNotStretchPastTheirArt()
+    {
+        DeckBoxShopScreen.GridFit fit = DeckBoxShopScreen.gridFit(2000, 2, 51);
+        assertEquals(112, fit.tileH());
     }
 }

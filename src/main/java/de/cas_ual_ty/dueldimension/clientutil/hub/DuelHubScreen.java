@@ -349,7 +349,7 @@ public class DuelHubScreen extends Screen
         }
         if(section == Section.SETTINGS && settingsView == SettingsView.MAT)
         {
-            matPicker = new MatColourPicker(left + PAD + 6, bodyTop + 48, 120, 14,
+            matPicker = new MatColourPicker(matLeft(), matTop(), matWheelSize(), MAT_SLIDER_W,
                 de.cas_ual_ty.dueldimension.clientutil.DuelClientState.matColour());
             // Apply and Reset belong to the mat alone -- a colour is dragged and
             // needs settling on. They used to be built for the whole tab, so the
@@ -554,6 +554,114 @@ public class DuelHubScreen extends Screen
         extractTooltip(graphics, mouseX, mouseY);
     }
 
+    /** {@code custom.png} is 1024x448; the preview keeps that or the mat skews. */
+    private static final float MAT_ASPECT = 1024F / 448F;
+
+    /** The value slider beside the wheel, which is a fixed width at any size. */
+    private static final int MAT_SLIDER_W = 14;
+
+    /** The inset body's top, which is where every panel starts drawing. */
+    private int bodyTopY()
+    {
+        return top + PAD + TAB_H + 8;
+    }
+
+    /**
+     * And the line it must not draw past, which is what the mat view used to.
+     * <p>
+     * The same expression the inset is drawn with -- see the NineSlice in
+     * {@code extractRenderState} -- rather than a second copy of it, so the
+     * region and the picture of the region cannot drift apart.
+     */
+    private int bodyBottomY()
+    {
+        return bodyTopY() + HEIGHT - (PAD + TAB_H + 8) - 40;
+    }
+
+    /** The mat controls start below the sub-tab row and its heading. */
+    private int matTop()
+    {
+        return top + matLayout().previewY();
+    }
+
+    /**
+     * The mat view's geometry, relative to the panel's own top left.
+     *
+     * @param wheel      the colour wheel, square
+     * @param previewX   left of the mat preview, right of the wheel and slider
+     * @param previewY   its top, level with the wheel
+     * @param previewW   and its size, at {@link #MAT_ASPECT}
+     * @param hexY       where the hex code goes, under the preview
+     * @param bodyBottom the line none of the above may cross
+     */
+    record MatLayout(int wheel, int previewX, int previewY, int previewW, int previewH,
+        int hexY, int bodyBottom)
+    {
+    }
+
+    /**
+     * Sizes the mat view to the panel it is in.
+     *
+     * <b>This is the scaling that was missing.</b> The wheel was a flat 120 and
+     * every offset was written for the authored 280-high panel. At a smaller
+     * GUI scale the panel is 230, the body loses fifty units, and a 120 wheel
+     * ran out through the bottom of its own inset and under the Apply row --
+     * taking the hex code with it. Nothing moved because nothing was measured:
+     * these were offsets from a panel size that had stopped being the size.
+     * <p>
+     * A static function of the panel so it can be TESTED, and it reproduces the
+     * authored numbers exactly at 460x280 -- wheel 120, preview 210x92 at
+     * x=178. This generalises that layout rather than replacing it.
+     *
+     * @param lineHeight the font's, so the hex line reserves what it needs
+     */
+    static MatLayout matLayout(int panelW, int panelH, int lineHeight)
+    {
+        int bodyTop = PAD + TAB_H + 8;
+        int bodyBottom = bodyTop + panelH - (PAD + TAB_H + 8) - 40;
+        int matTop = bodyTop + 48;
+        // Square, so the room below it binds -- and it takes the room rather
+        // than insisting on a minimum.
+        //
+        // A floor of 40 was the obvious thing to write and it is wrong: below
+        // about a 168-high panel the body cannot hold 40, so the floor put the
+        // wheel back through the bottom it was there to keep it inside. A
+        // clipped wheel lying over the Apply row is worse than a small one, and
+        // no floor can conjure space that is not there. The sweep in
+        // MatLayoutTest is what found this; the authored size passed either way.
+        int room = Math.max(1, bodyBottom - 6 - matTop);
+        int wheel = Math.min(120, room);
+        // wheel + 10 + slider is MatColourPicker's own geometry, then a gap.
+        int x = PAD + 6 + wheel + 10 + MAT_SLIDER_W + 18;
+        int h = Math.min(92, Math.max(1, room - lineHeight - 4));
+        int w = Math.round(h * MAT_ASPECT);
+        // Never wider than what is left of the body either, keeping the ratio:
+        // a narrow panel would otherwise push the preview out through the side.
+        int maxW = Math.max(1, panelW - PAD - 6 - x);
+        if(w > maxW)
+        {
+            w = maxW;
+            h = Math.max(1, Math.round(w / MAT_ASPECT));
+        }
+        return new MatLayout(wheel, x, matTop, w, h, matTop + h + 4, bodyBottom);
+    }
+
+    private MatLayout matLayout()
+    {
+        return matLayout(WIDTH, HEIGHT, font.lineHeight);
+    }
+
+    private int matWheelSize()
+    {
+        return matLayout().wheel();
+    }
+
+    /** Left edge of the wheel, and of the mat controls generally. */
+    private int matLeft()
+    {
+        return left + PAD + 6;
+    }
+
     private void settingsPanel(GuiGraphicsExtractor graphics, int bodyTop)
     {
         // Everything below the sub-tab row, which occupies bodyTop + 3 to + 19.
@@ -563,12 +671,18 @@ public class DuelHubScreen extends Screen
             graphics.text(font, "Duel Mat", left + PAD + 6, headingY, 0xFFF4D089, true);
             matPicker.render(graphics);
             // The preview is the real mat texture under the chosen tint, so
-            // what is shown here is exactly what reaches the table. Back to
-            // 210x92 now that the card backs are not sharing this body --
-            // custom.png is 1024x448 and 2.28 keeps its 2.29.
-            matPicker.renderPreview(graphics, left + PAD + 168, bodyTop + 48, 210, 92);
+            // what is shown here is exactly what reaches the table. Measured
+            // rather than authored now -- at the panel's full height these come
+            // out at the 210x92 they used to be written as.
+            MatLayout mat = matLayout();
+            matPicker.renderPreview(graphics, left + mat.previewX(), top + mat.previewY(),
+                mat.previewW(), mat.previewH());
             String hex = String.format("#%06X", matPicker.colour());
-            graphics.text(font, hex, left + PAD + 168, bodyTop + 146, 0xFFC2C9D6, true);
+            // Under the preview, not at a fixed offset from the top: the offset
+            // was measured against a panel of one size and put the hex under
+            // the Apply row at every other.
+            graphics.text(font, hex, left + mat.previewX(), top + mat.hexY(),
+                0xFFC2C9D6, true);
             return;
         }
         if(settingsView == SettingsView.AUDIO)

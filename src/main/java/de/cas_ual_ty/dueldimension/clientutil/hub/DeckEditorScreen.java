@@ -318,8 +318,14 @@ public class DeckEditorScreen extends Screen
             EditorState.invalidate();
             rebuildControls();
         }));
-        addRenderableWidget(new HubWidgets.TextureButton(rightX + rightW - pad - dirW, panelTop + pad,
-            dirW, 16, Component.literal(EditorState.query().descending() ? "DESC" : "ASC"), pressed ->
+        // An arrow, not the word. ASC and DESC were four and five characters in
+        // a thirty-unit button on the one row with nothing to spare; the arrow
+        // says it in a square of the row's own height. The narration is still
+        // the word, because a screen reader cannot read a triangle.
+        boolean descending = EditorState.query().descending();
+        addRenderableWidget(new HubWidgets.IconButton(rightX + rightW - pad - dirW, panelTop + pad,
+            dirW, 16, descending ? HubTextures.SORT_DOWN : HubTextures.SORT_UP,
+            Component.literal(descending ? "Descending" : "Ascending"), pressed ->
         {
             EditorState.query().setDescending(!EditorState.query().descending());
             EditorState.invalidate();
@@ -332,7 +338,7 @@ public class DeckEditorScreen extends Screen
         // entirely off screen and the very button that opens the drawer was
         // half off it.
         int buttonsY = chipY + chips.lines() * chipH + (chips.lines() - 1) * 2 + 3;
-        Packed buttons = pack(barButtonFloors(), barButtonWidths(), trunkRoom, 3);
+        Packed buttons = pack(barButtonFloors(), barButtonWidths(), trunkRoom, 2);
 
         // Greyed out when there is nothing to clear, so the button itself
         // reports whether anything is narrowing -- read every frame rather than
@@ -1175,8 +1181,17 @@ public class DeckEditorScreen extends Screen
         return Math.max(min, Math.min(max, value));
     }
 
-    /** One row of buttons, and the collection's card-size slider above it. */
-    private static final int BUTTON_ROW_H = 20;
+    /**
+     * One row of buttons, and the collection's card-size slider above it.
+     * <p>
+     * Sixteen rather than twenty. Both panels here are grids of cards and the
+     * buttons are the frame around them, so every unit this row does not take
+     * is a unit of deck or collection -- and at twenty, with a nine-unit font,
+     * over half the button was padding. Save and Exit and the card-size slider
+     * share it, which is the point: they are one row of controls at one height,
+     * not three that happen to agree.
+     */
+    private static final int BUTTON_ROW_H = 16;
     private static final int SLIDER_GAP = 6;
     private static final int SLIDER_H = 16;
 
@@ -1260,7 +1275,15 @@ public class DeckEditorScreen extends Screen
     private static final int DRAWER_INSET = 5;
     private static final int DRAWER_COLUMN_GAP = 6;
     /** One row of the drawer, and the air under it. */
-    private static final int DRAWER_ROW_H = 16;
+    /**
+     * Clear Filters, Filters and Unowned, and every row inside the drawer.
+     * <p>
+     * Fourteen, matching {@code trunk.chipHeight} above it -- these sit
+     * directly under the chips and reading as one block of controls is the
+     * point. Two units a row, over however many rows the drawer is showing, is
+     * the collection getting them back.
+     */
+    private static final int DRAWER_ROW_H = 14;
     private static final int DRAWER_ROW_GAP = 4;
 
     /**
@@ -1349,8 +1372,15 @@ public class DeckEditorScreen extends Screen
         // percentage is clamped against that rather than trusted.
         int sideMin = Math.min(split / 2, pad * 2 + BAR_LANE + cardMinW);
         int leftX = pad;
+        // Down the middle. The deck was the smaller half at 44 per cent, which
+        // is the wrong way round for the panel you are building IN -- and the
+        // width it was short of is what the card size is limited by, so every
+        // unit of it came off the cards.
+        //
+        // The fallback is 50 as well. It read 58 while the layout file said 44,
+        // so the number in the code was not the number anything ran with.
         int leftW = clamp(sideMin, split - sideMin,
-            split * clamp(20, 80, layout.i("panel.leftPercent", 58)) / 100);
+            split * clamp(20, 80, layout.i("panel.leftPercent", 50)) / 100);
         int rightX = leftX + leftW + panelGap;
         int rightW = Math.max(1, width - rightX - pad);
 
@@ -1365,8 +1395,23 @@ public class DeckEditorScreen extends Screen
         int deckControlLines = deckRow.lines();
         int deckReserve = pad + deckControlLines * BUTTON_ROW_H
             + (deckControlLines - 1) * 2 + 2;
-        int deckViewTop = panelTop + pad + titleH;
-        int deckViewHeight = Math.max(1, panelH - pad * 2 - titleH - deckReserve);
+        // Against the panel's rim, not a pad below it.
+        //
+        // The pad was there to clear the name ribbon, and the ribbon is gone --
+        // so the Main Deck was starting eight units down for something that is
+        // no longer drawn. Two is the nine-slice's own border, which is all the
+        // clearance a section heading needs; the six units it releases go to
+        // the view, and from there into the card size.
+        int deckTopInset = 2;
+        int deckViewTop = panelTop + deckTopInset + titleH;
+        // Measured to where the button row actually starts, rather than by
+        // subtracting a reserve that already contains a pad from a figure that
+        // had subtracted two. The pad was counted THREE times for a panel with
+        // two of them, so ten units between the Side Deck and the Sort row
+        // belonged to the deck and were never given to it.
+        int deckViewHeight = Math.max(1,
+            (panelH - pad - deckControlLines * BUTTON_ROW_H
+                - (deckControlLines - 1) * 2 - 2) - (deckTopInset + titleH));
 
         // ---- the deck grid: count first, size second ---------------------
         // The ten columns are a CEILING. Dividing by ten and then clamping the
@@ -1374,11 +1419,75 @@ public class DeckEditorScreen extends Screen
         // to keep -- at 320 units the honest fit is nine and the floor forced
         // ten, so the row needed 118 units of the 114 it had and the last
         // column was drawn under the scrollbar.
+        // The scrollbar's lane is only owed to a deck that scrolls, so the
+        // full width is tried first and kept when everything fits. Six units,
+        // which at this panel is the difference between twelve columns and
+        // thirteen -- and a thirteenth column is a row off the Main Deck.
         int deckUsableW = Math.max(1, leftW - pad * 2 - BAR_LANE);
-        int deckColumns = clamp(1, mainColumns, (deckUsableW + gap) / (cardMinW + gap));
+        int deckRoomy = Math.max(1, leftW - pad * 2);
+        // ---- card size and column count, chosen TOGETHER -----------------
+        // The column count used to be fixed at deck.mainColumns and only the
+        // card size moved. That is what made the cards small: once the card was
+        // limited by the panel's HEIGHT, ten columns of it covered barely half
+        // the width and the remaining hundred-odd units were margin -- the
+        // panel was full and empty at the same time.
+        //
+        // Columns and size are one decision. Adding a column spends that margin
+        // on FEWER ROWS, and fewer rows is exactly what buys a taller card. So
+        // this asks for the largest card the three parts can be drawn at, and
+        // takes whatever column count that implies, rather than fixing the
+        // columns and accepting whatever card is left over.
+        //
+        // Downward from the largest, so the first fit IS the largest fit. Sixty
+        // iterations of integer arithmetic, once per layout.
+        int sectionChrome = (layout.i("deck.headerHeight", 12)
+            + layout.i("deck.sectionGap", 6)) * 3;
+        // The fallback is the old cram: as many columns as the width holds at
+        // the smallest card. Reached only when even that does not fit -- a full
+        // Main Deck on a very short window -- and then the panel scrolls, as it
+        // always did.
+        int deckColumns = Math.max(1, (deckUsableW + gap) / (cardMinW + gap));
         int deckCardW = clamp(cardMinW, cardMaxW,
             (deckUsableW - (deckColumns - 1) * gap) / deckColumns);
+        // Over COLUMN COUNTS, taking whichever of the two bounds is binding.
+        //
+        // Stepping the width down and stopping at the first fit only ever asked
+        // the width; the height was a pass/fail at the end, so whatever it had
+        // left over stayed left over -- which is the band between the Side Deck
+        // and the Sort row. Asking both per column count spends it: at a count
+        // where the height is the looser bound the card grows into the width,
+        // and where the width is looser it grows into the height.
+        // Every column count, and for each the widest card that actually fits.
+        //
+        // "Actually" is the whole of it. Inverting the height budget into a
+        // width -- room / rows, times the aspect -- looks equivalent and is
+        // not: the card's height comes back through Math.round, so a width the
+        // inverse said would fit can round up a unit and overflow. Rounding the
+        // other way instead gives up a unit that was there. Neither is the
+        // answer; asking deckContentHeight's own sum is.
+        //
+        // A couple of thousand integer operations once per layout, for a number
+        // that is right rather than nearly right.
+        int[] partHeld = {EditorState.deck().partFor(DeckList.Part.MAIN).size(),
+            EditorState.deck().partFor(DeckList.Part.EXTRA).size(),
+            EditorState.deck().partFor(DeckList.Part.SIDE).size()};
+        int[] partCap = {DeckList.Part.MAIN.capacity(), DeckList.Part.EXTRA.capacity(),
+            DeckList.Part.SIDE.capacity()};
+        // Roomy first. A deck that fits has no scrollbar, so there is no lane
+        // to leave for one and the grid may have it; a deck that does not fit
+        // is owed the lane, and the narrower fit is the honest one.
+        DeckFit fit = deckFit(deckRoomy, deckViewHeight, sectionChrome, aspect, gap,
+            cardMinW, cardMaxW, partHeld, partCap);
+        if(!fit.fits())
+        {
+            fit = deckFit(deckUsableW, deckViewHeight, sectionChrome, aspect, gap,
+                cardMinW, cardMaxW, partHeld, partCap);
+        }
+        deckColumns = fit.columns();
+        deckCardW = fit.cardW();
+
         int deckCardH = Math.max(8, Math.round(deckCardW / aspect));
+
         int deckRows = rowsFor(DeckList.Part.MAIN, deckColumns);
 
         // ---- the collection panel's control band, line by line -----------
@@ -1390,7 +1499,7 @@ public class DeckEditorScreen extends Screen
         // and the chips-are-filters / buttons-are-actions grouping does too.
         Packed chips = pack(chipFloors(chipH), chipWidths(chipH), trunkRoom, 2);
         y += chips.lines() * chipH + (chips.lines() - 1) * 2 + 3;
-        Packed buttons = pack(barButtonFloors(), barButtonWidths(), trunkRoom, 3);
+        Packed buttons = pack(barButtonFloors(), barButtonWidths(), trunkRoom, 2);
         y += buttons.lines() * DRAWER_ROW_H + (buttons.lines() - 1) * 2;
         int trunkHeaderBottom = y;
         int trunkGridTop = trunkHeaderBottom + 6;
@@ -1424,8 +1533,19 @@ public class DeckEditorScreen extends Screen
         // setting still leaves one whole column.
         cell = clamp(cardMinW, Math.max(cardMinW, poolW), Math.round(cell * trunkScale));
         int trunkCardH = Math.max(8, Math.round(cell / aspect));
-        // Re-fit: a cell that grew must never overrun what it was counted into.
-        int trunkColumns = clamp(1, maxColumns, (poolW + gap) / (cell + gap));
+        // Re-fit against the cell the player actually got, with no ceiling.
+        //
+        // maxColumns is how many fit at trunk.cellMin, which is the right
+        // ceiling only while the size is being chosen automatically -- and the
+        // Card Size slider goes BELOW cellMin. Capping there meant shrinking
+        // the cards kept ten columns and simply made them smaller, so the grid
+        // tucked itself into the left of its panel and left the rest bare
+        // instead of wrapping more cards onto each row.
+        //
+        // Dropping the cap only affects that direction: a cell that GREW
+        // divides into fewer columns anyway, so the ceiling was never what
+        // stopped it overrunning -- the division is.
+        int trunkColumns = Math.max(1, (poolW + gap) / (cell + gap));
 
         // ---- the filter drawer -------------------------------------------
         // The authored 80 was a FLOOR on a value that is already the fair share
@@ -1513,32 +1633,41 @@ public class DeckEditorScreen extends Screen
     }
 
     /** The four labels on the deck panel's bottom row, in the order drawn. */
-    private static final Component SORT_DECK_LABEL = Component.literal("Sort Deck");
+    // "Sort", not "Sort Deck". It sits on the deck panel's own row, under the
+    // deck, beside Import and Export -- which do not say what they import or
+    // export either, because the panel they are on has already said it. The
+    // row's widths are measured from these labels, so the button narrows to
+    // suit rather than keeping the old one's room.
+    private static final Component SORT_DECK_LABEL = Component.literal("Sort");
     private static final Component IMPORT_LABEL = Component.literal("Import");
     private static final Component EXPORT_LABEL = Component.literal("Export");
 
     private int[] deckRowWidths()
     {
         return new int[] {buttonWidth(SORT_DECK_LABEL), buttonWidth(IMPORT_LABEL),
-            buttonWidth(EXPORT_LABEL), SWATCH_ROOM + 8, SWATCH_ROOM + 8};
+            buttonWidth(EXPORT_LABEL), swatchWidth(), swatchWidth()};
     }
 
     private int[] deckRowFloors()
     {
-        return new int[] {font.width(SORT_DECK_LABEL) + 8, font.width(IMPORT_LABEL) + 8,
-            font.width(EXPORT_LABEL) + 8, SWATCH_ROOM + 8, SWATCH_ROOM + 8};
+        // The same as the wants, for the reason barButtonFloors gives: a button
+        // that is its text plus two has nothing left to give.
+        return deckRowWidths();
     }
 
     /** Monster, Spell, Trap, then the star -- which is square-ish, not a label. */
     private int[] chipWidths(int chipH)
     {
-        Layout layout = Layout.of(LAYOUT);
-        int authored = layout.i("trunk.chipWidth", 42);
+        // Each chip its own label plus two, rather than one authored width for
+        // all of them: Spell and Trap are half of Monster and were padded out
+        // to match it. Same value as chipFloors below, deliberately -- a floor
+        // WIDER than its want silently breaks pack, and one expression for both
+        // is how they are kept from drifting into that.
         CardQuery.Kind[] kinds = CardQuery.Kind.values();
         int[] widths = new int[kinds.length + 1];
         for(int i = 0; i < kinds.length; i++)
         {
-            widths[i] = authored;
+            widths[i] = font.width(label(kinds[i])) + TEXT_PAD * 2;
         }
         widths[kinds.length] = chipH + 6;
         return widths;
@@ -1550,7 +1679,7 @@ public class DeckEditorScreen extends Screen
         int[] floors = new int[kinds.length + 1];
         for(int i = 0; i < kinds.length; i++)
         {
-            floors[i] = font.width(label(kinds[i])) + 4;
+            floors[i] = font.width(label(kinds[i])) + TEXT_PAD * 2;
         }
         floors[kinds.length] = chipH + 6;
         return floors;
@@ -1564,15 +1693,26 @@ public class DeckEditorScreen extends Screen
             ? "Filters -" : "Filters +");
     }
 
+    /**
+     * Measured from the labels rather than written down.
+     * <p>
+     * These were {@code {92, 72, 78}} against words needing 64, 43 and 42 --
+     * so Filters and Unowned carried about thirty units of nothing each, and
+     * the row asked for more than the panel had and wrapped Unowned onto a
+     * line of its own. Ten of padding, the same as the deck panel's row uses,
+     * so the two rows of this screen are padded alike.
+     */
     private int[] barButtonWidths()
     {
-        return new int[] {92, 72, 78};
+        return new int[] {buttonWidth(Component.literal("Clear Filters")),
+            buttonWidth(filtersLabel()), buttonWidth(Component.literal("Unowned"))};
     }
 
     private int[] barButtonFloors()
     {
-        return new int[] {font.width("Clear Filters") + 8, font.width(filtersLabel()) + 8,
-            font.width("Unowned") + 8};
+        // The same as the wants: there is nothing left to squeeze once a button
+        // is its text plus two, so the floor IS the width.
+        return barButtonWidths();
     }
 
     /** The sort button, wide enough for whichever order is showing. */
@@ -1583,15 +1723,24 @@ public class DeckEditorScreen extends Screen
         {
             widest = Math.max(widest, font.width(sort.label()));
         }
-        return clamp(widest + 8, Math.max(1, rightW - pad * 2),
-            Layout.of(LAYOUT).i("trunk.sortWidth", 56));
+        // The widest order it can ever show, plus the same two each side every
+        // other button here gets -- so pressing it cannot re-flow the row, and
+        // it is no wider than the longest word it will hold.
+        return clamp(widest + TEXT_PAD * 2, Math.max(1, rightW - pad * 2),
+            Math.min(widest + TEXT_PAD * 2, Layout.of(LAYOUT).i("trunk.sortWidth", 44)));
     }
 
+    /**
+     * The direction arrow, square with the row it is in.
+     * <p>
+     * No longer measured from a word: it does not carry one. The layout's
+     * {@code trunk.dirWidth} is still honoured as a ceiling for anyone who has
+     * tuned it, but 16 is what a 16-high row wants.
+     */
     private int dirWidth()
     {
-        int widest = Math.max(font.width("ASC"), font.width("DESC"));
-        return clamp(widest + 8, Math.max(1, rightW - pad * 2),
-            Layout.of(LAYOUT).i("trunk.dirWidth", 30));
+        return clamp(12, Math.max(1, rightW - pad * 2),
+            Math.min(16, Layout.of(LAYOUT).i("trunk.dirWidth", 30)));
     }
 
     /** Whatever the sort pair leaves of the first line, down to a floor of 40. */
@@ -1666,18 +1815,146 @@ public class DeckEditorScreen extends Screen
      * {@link #partColumns} for it, because partColumns reads what measure() is
      * in the middle of producing.
      */
+    /**
+     * How many rows a part takes, as a function of its numbers alone.
+     * <p>
+     * Static so {@link #deckFit} can be tested without a deck, a screen or a
+     * font. The instance overload below is this one with the open deck's
+     * figures filled in.
+     */
+    static int rowsFor(int held, int capacity, int columns)
+    {
+        // Exactly the rows the cards need, and no spare one.
+        //
+        // A spare row used to be added whenever the last row came out FULL, as
+        // somewhere to drop the next card. What that draws is an entirely empty
+        // row inside the part's container -- 48 cards across 12 columns is four
+        // full rows and then a band of nothing -- and it is only ever there for
+        // the column counts that happen to divide the deck, so it appears and
+        // vanishes as cards are added. Dropping still works without it: place()
+        // appends to whichever part the cursor is over and does not need a slot
+        // under it, and the grid re-flows to hold what it was given.
+        return Math.max(1, Math.min((int)Math.ceil(capacity / (double)columns),
+            (int)Math.ceil(held / (double)columns)));
+    }
+
+    /**
+     * What a deck panel of this size settles on.
+     *
+     * @param fits false when even the smallest card overflowed, in which case
+     *             this is the best cram available and the panel scrolls
+     */
+    record DeckFit(int columns, int cardW, int cardH, int rows, int content, boolean fits)
+    {
+    }
+
+    /**
+     * The deck grid's size and column count, as a pure function of the room.
+     * <p>
+     * Pulled out of {@code measure} so it can be checked against numbers rather
+     * than against a screenshot. Everything it needs is arithmetic -- the
+     * panel, the card aspect, and how many cards each part holds -- so a test
+     * can ask it exactly what a given window produces, which is what this
+     * screen's layout kept being wrong about.
+     *
+     * @param held     cards in main, extra and side
+     * @param capacity the three limits, which cap a part's rows
+     */
+    static DeckFit deckFit(int usableW, int viewH, int chrome, float aspect, int gap,
+        int cardMin, int cardMax, int[] held, int[] capacity)
+    {
+        int bestW = 0;
+        int bestFill = -1;
+        int bestColumns = 1;
+        int bestRows = 1;
+        for(int columns = 1; columns <= Math.max(1, usableW); columns++)
+        {
+            int byWidth = (usableW - (columns - 1) * gap) / columns;
+            if(byWidth < cardMin)
+            {
+                // Narrower from here on, so there is nothing further to find.
+                break;
+            }
+            int rows = 0;
+            for(int part = 0; part < held.length; part++)
+            {
+                rows += rowsFor(held[part], capacity[part], columns);
+            }
+            for(int candidate = Math.min(cardMax, byWidth); candidate >= cardMin; candidate--)
+            {
+                int height = Math.max(8, Math.round(candidate / aspect));
+                int content = chrome + rows * (height + gap);
+                if(content > viewH)
+                {
+                    continue;
+                }
+                // Bigger wins; between equals, the one that leaves least of the
+                // panel empty -- which is the band above the Sort row -- and
+                // between those, the one with the most columns.
+                //
+                // That last is not a nicety. Several column counts often reach
+                // the same card at the same height, and the fewest of them
+                // wins by arriving first: ten columns of a thirteen-wide card
+                // covers 148 units of a 185-unit panel and reads as a sparse
+                // grid with a margin down one side, where twelve covers 178.
+                if(candidate > bestW
+                    || (candidate == bestW && content > bestFill)
+                    || (candidate == bestW && content == bestFill && columns > bestColumns))
+                {
+                    bestW = candidate;
+                    bestFill = content;
+                    bestColumns = columns;
+                    bestRows = rows;
+                }
+                break;
+            }
+        }
+        if(bestW < cardMin)
+        {
+            // Nothing fits: as many columns as the width holds at the smallest
+            // card, and the panel scrolls, as it always did.
+            bestColumns = Math.max(1, (usableW + gap) / (cardMin + gap));
+            bestW = Math.max(cardMin,
+                Math.min(cardMax, (usableW - (bestColumns - 1) * gap) / bestColumns));
+            bestRows = 0;
+            for(int part = 0; part < held.length; part++)
+            {
+                bestRows += rowsFor(held[part], capacity[part], bestColumns);
+            }
+        }
+        int cardH = Math.max(8, Math.round(bestW / aspect));
+        int content = chrome + bestRows * (cardH + gap);
+        return new DeckFit(bestColumns, bestW, cardH, bestRows, content, content <= viewH);
+    }
+
+    /**
+     * Where a deck section's grid starts, centred in the container it sits in.
+     * <p>
+     * The columns are whole cards, so they almost never add up to the panel's
+     * width exactly -- and the leftover all fell on the RIGHT, because every
+     * card was placed from {@code leftX + pad} while the container was drawn
+     * across the whole panel. A dozen units down one side is enough to read as
+     * a grid that has slipped out of its box.
+     * <p>
+     * Read by the renderer AND by {@code slotIndexAt}: they have to agree about
+     * where column zero is, or the card under the cursor is not the card that
+     * gets picked up.
+     */
+    private int deckGridLeft()
+    {
+        int columns = geom.deckColumns();
+        int containerLeft = leftX + pad - 2;
+        int containerWidth = leftW - pad * 2 + 4;
+        int gridWidth = columns * deckCardW + (columns - 1) * gap;
+        return containerLeft + Math.max(0, (containerWidth - gridWidth) / 2);
+    }
+
     private int rowsFor(DeckList.Part part, int columns)
     {
-        int max = (int)Math.ceil(part.capacity() / (double)columns);
-        int held = EditorState.deck().partFor(part).size();
-        int used = (int)Math.ceil(held / (double)columns);
-        // The spare row is a place to drop a card, and it is only needed when
-        // the last row is FULL. Reserving one unconditionally meant a part
-        // holding a single card drew a container two rows tall with an empty
-        // row under it -- and did the same to every part, so the three
-        // sections between them wasted three rows of the panel.
-        int rows = held % columns == 0 ? used + 1 : used;
-        return Math.max(1, Math.min(max, rows));
+        // Delegated, not a second copy. These two were the same three lines
+        // written twice, which is one edit away from the grid being measured
+        // by one rule and drawn by the other.
+        return rowsFor(EditorState.deck().partFor(part).size(), part.capacity(), columns);
     }
 
     private int partTop(DeckList.Part part)
@@ -1729,7 +2006,7 @@ public class DeckEditorScreen extends Screen
     {
         int columns = partColumns(part);
         int cellW = deckCardW + gap;
-        int column = (int)((mouseX - (leftX + pad)) / cellW);
+        int column = (int)((mouseX - deckGridLeft()) / cellW);
         int row = (int)((mouseY - partTop(part)) / (deckCardH + gap));
         if(column < 0 || column >= columns || row < 0)
         {
@@ -1753,17 +2030,53 @@ public class DeckEditorScreen extends Screen
      * space happened to be left under the last row -- and moved further away
      * as the card size changed, since the row count changes with it.
      */
+    /**
+     * How far under the grid the card count sits.
+     * <p>
+     * Five, not three. At three the digits sat against the bottom row of cards
+     * with no air between them.
+     */
+    private static final int COUNT_DROP = 5;
+
+    /**
+     * And what the grid therefore has to leave for it.
+     * <p>
+     * Derived from the drop and the font rather than written as 12 beside a
+     * drop of 3. Those two agreed by coincidence, so moving the count two units
+     * down pushed it two units past the space the grid had set aside -- which
+     * is the sort of thing that shows up later as a caption clipped on one
+     * window size and not another.
+     */
+    private int countReserve()
+    {
+        return COUNT_DROP + font.lineHeight;
+    }
+
     private int trunkCountY()
     {
-        return trunkGridTop() + trunkVisibleRows() * (trunkCardH + gap) + 3;
+        // The grid's real bottom edge: n rows carry n-1 gaps, so counting a
+        // trailing one put this three units lower than the cards it labels and
+        // could push it past trunkContentBottom on a tight panel.
+        int rows = trunkVisibleRows();
+        return trunkGridTop() + rows * trunkCardH + (rows - 1) * gap + COUNT_DROP;
     }
 
     private int trunkVisibleRows()
     {
-        // 12 below the grid for the card count that is printed there, then the
-        // reserve the slider and the button row actually occupy.
-        int bottom = trunkContentBottom() - 12;
-        return Math.max(1, (bottom - trunkGridTop()) / (trunkCardH + gap));
+        // The card count's own strip, then the reserve the slider and the
+        // button row occupy.
+        int bottom = trunkContentBottom() - countReserve();
+        // The gap is added BACK before dividing, because n rows carry n-1 gaps
+        // and not n: n rows fit when n*h + (n-1)*g <= room, which rearranges to
+        // n <= (room + g) / (h + g).
+        //
+        // Without it this asked how many rows fit if each carried a trailing
+        // gap, and answered one fewer whenever the remainder was at least a
+        // card tall. That is the empty band under the collection -- a whole row
+        // of cards, measured as fitting and then not drawn. The measurement
+        // beside it always had the +gap (see poolRows), so the two disagreed by
+        // exactly one row and only the drawn one was visible.
+        return Math.max(1, (bottom - trunkGridTop() + gap) / (trunkCardH + gap));
     }
 
     /**
@@ -2998,17 +3311,51 @@ public class DeckEditorScreen extends Screen
     }
 
     /** Space between the buttons on a control row. */
-    private static final int BUTTON_GAP = 6;
+    /**
+     * Between the buttons of the deck panel's own row.
+     * <p>
+     * Four, not six. These five belong together -- they are all things done to
+     * the open deck -- and the gap between them was wide enough to read as
+     * three separate groups.
+     */
+    /**
+     * How much air a button's label gets on each side.
+     * <p>
+     * Two, which is as tight as a button can be and still be a button. One
+     * number for every button on this screen, so a row cannot end up padded
+     * differently from the row above it.
+     */
+    private static final int TEXT_PAD = 2;
+
+    private static final int BUTTON_GAP = 3;
 
     /**
      * How wide a button has to be for its label.
      * <p>
      * A floor as well as a measure, so a one-word button is still big enough
-     * to aim at rather than shrinking to the width of its text.
+     * to aim at rather than shrinking to the width of its text. Forty by the
+     * row's twenty is still a comfortable target.
+     * <p>
+     * Two pixels each side of the text and nothing else -- no floor, because a
+     * floor is what made Sort, Import and Export come out identical at 56 when
+     * none of them needed it, and that identical over-padding is what read as a
+     * row of empty boxes rather than a row of buttons.
      */
     private int buttonWidth(Component label)
     {
-        return Math.max(56, font.width(label) + 16);
+        return font.width(label) + TEXT_PAD * 2;
+    }
+
+    /**
+     * The sleeve and deck-case swatches, which are icons rather than labels.
+     * <p>
+     * One expression for both the want and the floor below, because they are
+     * the same button at any size -- and a floor WIDER than its want silently
+     * breaks {@code pack}, which is what happens if these two drift apart.
+     */
+    private int swatchWidth()
+    {
+        return SWATCH_ROOM + TEXT_PAD * 2;
     }
 
     /**
@@ -3270,31 +3617,17 @@ public class DeckEditorScreen extends Screen
     {
         DeckList deck = EditorState.deck();
 
-        // The band the open deck's name sits in, drawn before the name so the
-        // name is on top of it, and sized to the title strip so the first
-        // section heading starts immediately beneath.
-        NineSlice.draw(poseStack, HubTextures.TITLE_RIBBON, leftX + pad - 2, panelTop + pad - 2,
-            leftW - pad * 2 + 4, titleH);
-
-        if(rename == null)
-        {
-            String title = deck.name();
-            List<DeckList> all = EditorState.decks();
-            if(all.size() > 1)
-            {
-                title += "  (" + (EditorState.currentIndex() + 1) + "/" + all.size() + ")";
-            }
-            if(deck.origin() == DeckList.Origin.STRUCTURE)
-            {
-                title += "  [structure]";
-            }
-            // Centred in the ribbon rather than sitting on its top edge, and
-            // cut to the ribbon's own width -- the name gains "  (n/m)" and
-            // "  [structure]" and ran off the panel at any resolution. Same
-            // measure the artwork picker's header uses.
-            title = font.plainSubstrByWidth(title, Math.max(1, leftW - pad * 2 - 4));
-            poseStack.text(font, title, (int)(leftX + pad + 2), (int)(panelTop + pad + (titleH - font.lineHeight) / 2F), 0xFFF4D089, true);
-        }
+        // The deck's name is not drawn here.
+        //
+        // It sat in a ribbon across the top of the panel, and the ribbon was
+        // taken out: it read as a strip laid on the panel rather than the head
+        // of it, and its titleHeight was fourteen units the three sections
+        // could have had. Where the name goes instead is still open -- see
+        // deck.titleHeight, which is 0 and is what reserves the space for it.
+        //
+        // NOTE: startRename still places its EditBox at panelTop + pad, which
+        // is now inside the Main Deck's own strip. Renaming from this screen
+        // needs somewhere to live along with the name.
 
         // The sections scroll, so they are clipped to their own strip. Without
         // this the top row would be drawn over the deck's name and the bottom
@@ -3327,8 +3660,11 @@ public class DeckEditorScreen extends Screen
             // One rectangle for the whole area rather than a frame per card:
             // a grid of empty slots is a lot of visual noise for something the
             // cards themselves already make obvious.
+            // Two units of margin above the first row and two below the last.
+            // Counting a trailing gap put four under it and two over it, which
+            // is the same slip as the columns but vertical.
             NineSlice.draw(poseStack, HubTextures.PANEL_INSET, leftX + pad - 2, top - 2,
-                leftW - pad * 2 + 4, rows * (deckCardH + gap) + 4);
+                leftW - pad * 2 + 4, rows * deckCardH + (rows - 1) * gap + 4);
             for(int row = 0; row < rows; row++)
             {
                 for(int column = 0; column < columns; column++)
@@ -3346,7 +3682,7 @@ public class DeckEditorScreen extends Screen
                                 > EditorState.trunk().countOf(cards.get(index));
                         // The artwork is read per POSITION, so two copies of
                         // the same card in the same grid can and do differ.
-                        drawCard(poseStack, card, leftX + pad + column * cellW,
+                        drawCard(poseStack, card, deckGridLeft() + column * cellW,
                             top + row * (deckCardH + gap), deckCardW, deckCardH, 1F, missing,
                             deck.artAt(cards, index), true);
                     }
