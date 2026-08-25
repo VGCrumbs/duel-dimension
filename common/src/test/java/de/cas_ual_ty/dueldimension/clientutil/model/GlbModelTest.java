@@ -31,33 +31,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class GlbModelTest
 {
     /**
-     * The model lives beside the sprite sheets it is an alternative to, in the
-     * game's config folder — so a duellist who wants a 3D hologram drops a .glb
-     * next to the .pngs rather than learning a second place for it.
+     * Where the model is, and whether it is here.
      * <p>
-     * Found through an override first, so a build on another machine can point
-     * at its own copy; then at the developer instance, which is where it
-     * actually is. Absent either, the model-dependent tests skip and the
-     * container ones still run — a test that cannot see the file should say
-     * nothing rather than fail.
+     * Both live in {@link GlbFixtures} now rather than in this class. They were
+     * package-visible fields here, which a sibling test in ANOTHER module cannot
+     * see once the tree is split by Minecraft version -- a test source set is
+     * not shared by a project dependency.
      */
-    /** Package-visible so a sibling test can pose the same model. */
-    static final Path DRAGON = dragon();
-
-    private static Path dragon()
-    {
-        String override = System.getProperty("dueldimension.testModel");
-        if(override != null && !override.isBlank())
-        {
-            return Path.of(override);
-        }
-        return Path.of(System.getProperty("user.home"), "AppData", "Roaming", "ModrinthApp",
-            "profiles", "Duel", "config", "dueldimension", "models", "curse_of_dragon.glb");
-    }
+    static final Path DRAGON = GlbFixtures.DRAGON;
 
     static boolean dragonPresent()
     {
-        return Files.isRegularFile(DRAGON);
+        return GlbFixtures.dragonPresent();
     }
 
     // ---- the model, where it is available ----

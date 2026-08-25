@@ -12,10 +12,19 @@
 
 plugins {
     id 'java-library'
+    // Publishes a second artifact, `common-test-fixtures`, for helpers that
+    // more than one module's TESTS need. A plain project dependency shares main
+    // classes only, and a custom configuration carrying the whole test source
+    // set does not survive the composite below -- a composite substitutes
+    // module coordinates and test fixtures, not arbitrary configurations.
+    id 'java-test-fixtures'
 }
 
-version = rootProject.mod_version
-group = rootProject.maven_group
+// Its OWN build now, not a subproject, so `rootProject` here is this build.
+// The version and group are stated rather than inherited for the same reason,
+// and they are what the platforms name in their dependency blocks.
+version = '0.1.0-fabric'
+group = 'de.cas_ual_ty.dueldimension'
 
 java {
     // 21, not 25, and this is the load-bearing setting in the file.
@@ -37,6 +46,12 @@ java {
 
 repositories {
     mavenCentral()
+}
+
+// Set here rather than inherited: a standalone build is not a subproject of the
+// root and gets none of its conventions.
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
 }
 
 dependencies {
@@ -69,30 +84,6 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-// Test classes, published so a platform can build on them.
-//
-// A project dependency shares main classes and nothing else, so a platform test
-// extending or calling a shared one -- IdleAnimationTest reaching for
-// GlbModelTest's dragon fixture -- does not compile. The alternative was to
-// duplicate the helper per platform, which is two copies of a fixture that has
-// to agree about a file on disk.
-configurations {
-    testArtifacts {
-        canBeConsumed = true
-        canBeResolved = false
-    }
-}
-
-tasks.register('testJar', Jar) {
-    description = 'The shared test classes, for platform tests that build on them.'
-    archiveClassifier = 'tests'
-    from sourceSets.test.output
-}
-
-artifacts {
-    testArtifacts tasks.named('testJar')
-}
-
 test {
     useJUnitPlatform()
 
@@ -102,5 +93,8 @@ test {
     // property and only fall back to a relative path, so this is the hook they
     // were written for. Without it the working directory is common/ and the
     // relative path misses.
-    systemProperty 'ocg.lib', rootProject.file('native/ocgcore.dll').absolutePath
+    // ../native, not rootProject: this is a standalone build now, so its own
+    // root is common/. The native is shared by every platform and stays at the
+    // repository root.
+    systemProperty 'ocg.lib', file('../native/ocgcore.dll').absolutePath
 }

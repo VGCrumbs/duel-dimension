@@ -1,0 +1,10 @@
+// `common` is its own Gradle build, not a subproject, and that is forced by the
+// platforms rather than chosen for tidiness.
+//
+// mc262 needs Loom 1.17.18; mc1211 needs an older Loom with the obfuscated
+// pipeline that 1.17 dropped. A Gradle build resolves ONE version of a plugin,
+// so the two cannot be subprojects of the same build -- they are separate
+// builds in a composite. And a build included in a composite cannot see another
+// build's SUBPROJECTS, only other included builds. So the shared core has to be
+// a build too, or each platform would need its own copy of it.
+rootProject.name = 'common'

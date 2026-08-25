@@ -30,12 +30,12 @@ class IdleAnimationTest
 {
     static boolean dragonPresent()
     {
-        return GlbModelTest.dragonPresent();
+        return GlbFixtures.dragonPresent();
     }
 
     private static ModelSkeleton dragon() throws IOException
     {
-        GlbModel model = GlbModel.load(Files.readAllBytes(GlbModelTest.DRAGON));
+        GlbModel model = GlbModel.load(Files.readAllBytes(GlbFixtures.DRAGON));
         assertNotNull(model.skin(), "the dragon has no skin to pose");
         return new ModelSkeleton(model);
     }

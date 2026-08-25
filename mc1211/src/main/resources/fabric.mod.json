@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "dueldimension",
+  "version": "${version}",
+  "name": "Duel Dimension",
+  "description": "Skeleton for the Minecraft 1.21.1 build. No mod code is ported yet; this exists so the toolchain is proven before anything is.",
+  "license": "GPL-3.0-only",
+  "environment": "*",
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.1",
+    "java": ">=21"
+  }
+}

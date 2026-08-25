@@ -63,17 +63,37 @@ repositories {
     }
 }
 
+// NOT transitive. This resolves common's own classes and nothing else: its
+// dependencies are either bundled deliberately elsewhere (JNA, sqlite, via
+// Loom's `include`) or supplied by Minecraft at runtime (gson, guava, the
+// logging facade). Left transitive, this would silently fold a second copy of
+// Guava into the mod jar.
+configurations {
+    bundledCore {
+        transitive = false
+        canBeConsumed = false
+    }
+}
+
 dependencies {
     // The version-independent half of the mod. `api` rather than
     // `implementation` because the platform's own classes expose common types
     // in their signatures -- a screen hands a CardHolder around -- so anything
     // compiling against this module needs to see them too.
-    api project(':common')
+    // The shared core, BY COORDINATE and not by project path: common is its
+    // own build now (see the root settings.gradle for why), and Gradle's
+    // composite substitutes this to the local source rather than going to a
+    // repository for it.
+    api 'de.cas_ual_ty.dueldimension:common:0.1.0-fabric'
 
-    // Shared TEST classes as well, for platform tests that build on them
-    // (IdleAnimationTest uses GlbModelTest's dragon fixture). A plain project
-    // dependency carries main classes only.
-    testImplementation project(path: ':common', configuration: 'testArtifacts')
+    // Shared TEST helpers, for platform tests that build on them --
+    // IdleAnimationTest poses the same model GlbModelTest does. Test fixtures
+    // rather than the whole test source set, because a composite substitutes
+    // coordinates and fixtures and not arbitrary configurations.
+    testImplementation testFixtures('de.cas_ual_ty.dueldimension:common:0.1.0-fabric')
+
+    // The same classes again, resolved on their own so `jar` can merge them in.
+    bundledCore 'de.cas_ual_ty.dueldimension:common:0.1.0-fabric'
 
     // No mappings dependency and no remapping: Minecraft stopped shipping
     // obfuscated with the move to date versions, so the jar's own names ARE
@@ -328,12 +348,9 @@ tasks.register('engineBundleStamp') {
 // expects a real Fabric mod with its own fabric.mod.json and common is a plain
 // library. remapJar takes jar's output, so this lands in the published artifact
 // too.
-def commonClasses = project(':common').tasks.named('jar', Jar)
-
 tasks.named('jar', Jar) {
-    dependsOn commonClasses
-    from(commonClasses.map { zipTree(it.archiveFile) }) {
-        // The library jar's own manifest and signature files must not overwrite
+    from({ configurations.bundledCore.collect { zipTree(it) } }) {
+        // The library jar's manifest and any signature files must not overwrite
         // the mod's.
         exclude 'META-INF/**'
     }

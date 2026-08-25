@@ -44,5 +44,11 @@ subprojects {
 tasks.register('buildAll') {
     group = 'build'
     description = 'Builds the shared core and every Minecraft platform.'
-    dependsOn ':common:build', ':mc262:build'
+
+    // common and mc1211 are INCLUDED BUILDS, not subprojects, so their tasks are
+    // reached through gradle.includedBuild rather than by a project path. mc262
+    // is a subproject of this build and is addressed normally.
+    dependsOn gradle.includedBuild('common').task(':build')
+    dependsOn ':mc262:build'
+    dependsOn gradle.includedBuild('mc1211').task(':build')
 }

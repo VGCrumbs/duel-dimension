@@ -14,12 +14,21 @@
 //      already written in.
 
 plugins {
-    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    // NOT the root's loom_version. 1.17.18 cannot configure an obfuscated
+    // Minecraft, and 1.21.1 is obfuscated; this is the newest Loom that still
+    // ships the mappings pipeline 1.21.x needs.
+    //
+    // `fabric-loom`, the SHORT id, and not `net.fabricmc.fabric-loom`. Checked
+    // against the Fabric maven's own metadata rather than assumed: the long id's
+    // plugin marker is published for 1.17.x only, while the short id's goes back
+    // through 1.11. The root build uses the long one because 1.17.18 has it.
+    id 'fabric-loom' version '1.12.7'
     id 'java-library'
 }
 
-version = rootProject.mod_version
-group = rootProject.maven_group
+// Its own build, so nothing is inherited from the root.
+version = '0.1.0-fabric'
+group = 'de.cas_ual_ty.dueldimension'
 
 base {
     archivesName = 'dueldimension-fabric-1.21.1'
@@ -39,8 +48,30 @@ loom {
     // need is guessing.
 }
 
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.fabricmc.net/' }
+}
+
+// Same as the 26.2 platform: common's classes have to be INSIDE the mod jar.
+// A dependency puts them on the classpath, which is enough for a dev run and
+// not for a shipped jar. Established the hard way on mc262, whose first jar
+// after the split had no rules engine in it; wired here now so Phase 1 does not
+// rediscover it.
+//
+// Not transitive -- JNA and sqlite are bundled deliberately by Loom's `include`,
+// and gson, guava and the logging facade come from Minecraft at runtime.
+configurations {
+    bundledCore {
+        transitive = false
+        canBeConsumed = false
+    }
+}
+
 dependencies {
-    minecraft "com.mojang:minecraft:${project.mc1211_minecraft_version}"
+    bundledCore 'de.cas_ual_ty.dueldimension:common:0.1.0-fabric'
+
+    minecraft 'com.mojang:minecraft:1.21.1' 
 
     // MOJANG NAMES, not Yarn, and this is the decision that makes the port
     // possible at all.
@@ -56,17 +87,32 @@ dependencies {
     // 26.2 has no mappings dependency and no remapping step; here both exist.
     mappings loom.officialMojangMappings()
 
-    modImplementation "net.fabricmc:fabric-loader:${project.mc1211_loader_version}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.mc1211_fabric_api_version}"
+    modImplementation 'net.fabricmc:fabric-loader:0.16.14'
+    modImplementation 'net.fabricmc.fabric-api:fabric-api:0.116.15+1.21.1'
 
     // The shared core. Same module the 26.2 platform uses, same classes, no
-    // per-version copy.
-    api project(':common')
+    // per-version copy -- named by coordinate and substituted by the composite.
+    api 'de.cas_ual_ty.dueldimension:common:0.1.0-fabric'
 
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    testImplementation project(path: ':common', configuration: 'testArtifacts')
+    testImplementation testFixtures('de.cas_ual_ty.dueldimension:common:0.1.0-fabric')
+}
+
+processResources {
+    // fabric.mod.json names the version once, here, rather than in the file --
+    // a version in two places is a version that disagrees with itself.
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') {
+        expand 'version': project.version
+    }
+}
+
+tasks.named('jar', Jar) {
+    from({ configurations.bundledCore.collect { zipTree(it) } }) {
+        exclude 'META-INF/**'
+    }
 }

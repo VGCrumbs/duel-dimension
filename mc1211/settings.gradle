@@ -1,0 +1,22 @@
+// The 1.21.1 platform's OWN build, so it can pin its own Loom.
+//
+// This is the entire reason the repository is a composite. Loom 1.17.18 -- what
+// 26.2 requires -- cannot configure an obfuscated Minecraft, and 1.21.1 is
+// obfuscated. A Gradle build resolves one version of a plugin, so the only way
+// to have both is two builds.
+pluginManagement {
+    repositories {
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = 'mc1211'
+
+// The shared core, reached the same way the 26.2 platform reaches it: as an
+// included build, substituted for the coordinate this module names.
+includeBuild '../common'
