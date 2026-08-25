@@ -4,7 +4,7 @@ import de.cas_ual_ty.dueldimension.DuelDimension;
 import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;

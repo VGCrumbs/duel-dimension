@@ -3,7 +3,7 @@ package de.cas_ual_ty.dueldimension.duel.screen.widget;
 import de.cas_ual_ty.dueldimension.clientutil.widget.ITooltip;
 import de.cas_ual_ty.dueldimension.duel.playfield.Zone;
 import de.cas_ual_ty.dueldimension.duel.screen.IDuelScreenContext;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 import java.util.function.Consumer;

@@ -1,6 +1,6 @@
 package de.cas_ual_ty.dueldimension.clientutil.hub;
 
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 
 /**
  * The duel mat colour picker: an HSV wheel, a brightness slider, and a live

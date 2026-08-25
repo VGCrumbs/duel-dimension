@@ -1,6 +1,6 @@
 package de.cas_ual_ty.dueldimension.duel.screen;
 
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import de.cas_ual_ty.dueldimension.DuelDimension;
 import de.cas_ual_ty.dueldimension.clientutil.ClientProxy;
 import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;

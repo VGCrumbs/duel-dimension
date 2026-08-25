@@ -1,6 +1,6 @@
 package de.cas_ual_ty.dueldimension.duel.screen;
 
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import de.cas_ual_ty.dueldimension.DuelDimension;
 import de.cas_ual_ty.dueldimension.clientutil.ClientProxy;
 import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
@@ -128,9 +128,13 @@ public abstract class DuelContainerScreen<E extends DuelContainer> extends Switc
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor ms, int mouseX, int mouseY,
-        float partialTicks)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTicks)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor ms = new GuiGraphicsExtractor(vanillaGraphics);
+
         // AbstractContainerScreen's own version, minus the extractContents call
         // extractBackground has already made. super.extractContents reaches that
         // class's implementation -- widgets, slots, labels -- not this chain.

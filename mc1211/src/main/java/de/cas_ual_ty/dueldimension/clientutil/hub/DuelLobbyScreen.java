@@ -3,7 +3,7 @@ package de.cas_ual_ty.dueldimension.clientutil.hub;
 import de.cas_ual_ty.dueldimension.duel.match.LobbyMessages;
 import de.cas_ual_ty.dueldimension.duel.match.MatchConfig;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -171,8 +171,13 @@ public class DuelLobbyScreen extends Screen
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor extractor = new GuiGraphicsExtractor(vanillaGraphics);
+
         // The dim Forge's renderBackground drew, not extractBackground: that
         // BLURS in 26.2, the blur is once-per-frame, and the frame a screen
         // opens over another that already asked for it took the client down.
@@ -194,7 +199,7 @@ public class DuelLobbyScreen extends Screen
         extractor.text(font, guestLine, x + 12 + panelW() / 2 - 12, y + 24,
             room.guestReady() ? 0xFF7CE38B : 0xFFC2C9D6, true);
 
-        super.extractRenderState(extractor, mouseX, mouseY, partialTick);
+        super.render(extractor.vanilla(), mouseX, mouseY, partialTick);
 
         // Why this player cannot be ready, if they cannot. Said here rather
         // than at the duel, which is too late to do anything about it.
@@ -220,7 +225,7 @@ public class DuelLobbyScreen extends Screen
     {
         if(minecraft != null)
         {
-            minecraft.setScreenAndShow(null);
+            minecraft.setScreen(null);
         }
     }
 

@@ -7,7 +7,7 @@ import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
 import de.cas_ual_ty.dueldimension.clientutil.DuelTextures;
 import de.cas_ual_ty.dueldimension.clientutil.ImageHandler;
 import de.cas_ual_ty.dueldimension.clientutil.layout.Layout;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -139,7 +139,7 @@ public class PackOpeningScreen extends Screen
     {
         if(parent != null)
         {
-            minecraft.setScreenAndShow(parent);
+            minecraft.setScreen(parent);
             return;
         }
         super.onClose();
@@ -593,8 +593,13 @@ public class PackOpeningScreen extends Screen
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor poseStack, int mouseX, int mouseY, float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor poseStack = new GuiGraphicsExtractor(vanillaGraphics);
+
         // The dim Forge's renderBackground drew, not extractBackground: that
         // BLURS in 26.2, the blur is once-per-frame, and the frame a screen
         // opens over another that already asked for it took the client down.
@@ -610,7 +615,7 @@ public class PackOpeningScreen extends Screen
         if(stage == Stage.SUMMARY)
         {
             renderSummary(poseStack, layout);
-            super.extractRenderState(poseStack, mouseX, mouseY, partialTick);
+            super.render(poseStack.vanilla(), mouseX, mouseY, partialTick);
             return;
         }
 
@@ -654,7 +659,7 @@ public class PackOpeningScreen extends Screen
             : "Click, scroll or press Space";
         poseStack.text(font, hint, centreX - font.width(hint) / 2, height - 22, 0xFF7A8090, true);
 
-        super.extractRenderState(poseStack, mouseX, mouseY, partialTick);
+        super.render(poseStack.vanilla(), mouseX, mouseY, partialTick);
     }
 
     /**

@@ -1,7 +1,7 @@
 package de.cas_ual_ty.dueldimension.clientutil;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import de.cas_ual_ty.dueldimension.DdDatabase;
@@ -60,7 +60,7 @@ public class EngineDuelScreen extends Screen
      * The panel is a full-height column at the left edge, so this is one
      * rectangle rather than four: start where it ends.
      */
-    private void dimBoard(net.minecraft.client.gui.GuiGraphicsExtractor poseStack, int colour)
+    private void dimBoard(de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor poseStack, int colour)
     {
         poseStack.fill(SIDEBAR_W, 0, width, height, colour);
     }
@@ -1857,8 +1857,13 @@ public class EngineDuelScreen extends Screen
      * cursor wherever it goes.
      */
     @Override
-    public void extractRenderState(GuiGraphicsExtractor poseStack, int mouseX, int mouseY, float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor poseStack = new GuiGraphicsExtractor(vanillaGraphics);
+
         // The dim Forge drew, not vanilla's modern background.
         //
         // Screen.renderBackground in 1.19.2 was a gradient over the world;
@@ -2007,7 +2012,7 @@ public class EngineDuelScreen extends Screen
                 first.getY() + menuButtons.size() * MENU_ROW, 0xC0000000);
         }
 
-        super.extractRenderState(poseStack, mouseX, mouseY, partialTick);
+        super.render(poseStack.vanilla(), mouseX, mouseY, partialTick);
         renderPicker(poseStack, mouseX, mouseY);
         renderWaiting(poseStack);
         renderResult(poseStack);

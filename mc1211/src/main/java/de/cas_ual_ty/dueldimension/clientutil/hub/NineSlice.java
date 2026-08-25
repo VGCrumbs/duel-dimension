@@ -1,6 +1,6 @@
 package de.cas_ual_ty.dueldimension.clientutil.hub;
 
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
 import net.minecraft.resources.ResourceLocation;
 

@@ -106,7 +106,7 @@ public final class DuelPointsCommand
             // The client caches the balance for the shop badge, so it is told
             // rather than left showing a stale number until the next purchase.
             net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, new ShopMessages.SyncPoints(now));
-            source.sendSuccess(() -> Component.literal(player.getGameProfile().name() + " now has ")
+            source.sendSuccess(() -> Component.literal(player.getGameProfile().getName() + " now has ")
                 .append(Component.literal(now + " DP").withStyle(ChatFormatting.GOLD)), true);
         }
         return targets.size();

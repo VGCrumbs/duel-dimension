@@ -1,7 +1,7 @@
 package de.cas_ual_ty.dueldimension.mixin.client;
 
 import de.cas_ual_ty.dueldimension.clientutil.DiskSlotOverlay;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.world.inventory.Slot;

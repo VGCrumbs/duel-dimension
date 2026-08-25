@@ -1,7 +1,7 @@
 package de.cas_ual_ty.dueldimension.clientutil.hub;
 
 import de.cas_ual_ty.dueldimension.clientutil.CardPresentation;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import de.cas_ual_ty.dueldimension.DdDatabase;
 import de.cas_ual_ty.dueldimension.card.CardHolder;
 import de.cas_ual_ty.dueldimension.card.properties.Properties;
@@ -99,7 +99,7 @@ public class CardInfoScreen extends Screen
             {
                 if(minecraft != null)
                 {
-                    minecraft.setScreenAndShow(root());
+                    minecraft.setScreen(root());
                 }
             }));
         }
@@ -462,7 +462,7 @@ public class CardInfoScreen extends Screen
         Properties clicked = relatedAt(mouseX, mouseY);
         if(clicked != null && minecraft != null)
         {
-            minecraft.setScreenAndShow(new CardInfoScreen(this, clicked));
+            minecraft.setScreen(new CardInfoScreen(this, clicked));
             return true;
         }
         return false;
@@ -593,8 +593,13 @@ public class CardInfoScreen extends Screen
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor poseStack, int mouseX, int mouseY, float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor poseStack = new GuiGraphicsExtractor(vanillaGraphics);
+
         // The dim Forge's renderBackground drew, not extractBackground: that
         // BLURS in 26.2, the blur is once-per-frame, and the frame a screen
         // opens over another that already asked for it took the client down.
@@ -602,7 +607,7 @@ public class CardInfoScreen extends Screen
         poseStack.fillGradient(0, 0, width, height, 0xC0101010, 0xD0101010);
         if(card == null)
         {
-            super.extractRenderState(poseStack, mouseX, mouseY, partialTick);
+            super.render(poseStack.vanilla(), mouseX, mouseY, partialTick);
             return;
         }
         NineSlice.draw(poseStack, HubTextures.PANEL, pad() - 4, pad() - 4,
@@ -644,7 +649,7 @@ public class CardInfoScreen extends Screen
         renderSources(poseStack);
         renderRelated(poseStack, mouseX, mouseY);
 
-        super.extractRenderState(poseStack, mouseX, mouseY, partialTick);
+        super.render(poseStack.vanilla(), mouseX, mouseY, partialTick);
     }
 
     /**
@@ -902,7 +907,7 @@ public class CardInfoScreen extends Screen
     {
         if(minecraft != null)
         {
-            minecraft.setScreenAndShow(parent);
+            minecraft.setScreen(parent);
         }
     }
 

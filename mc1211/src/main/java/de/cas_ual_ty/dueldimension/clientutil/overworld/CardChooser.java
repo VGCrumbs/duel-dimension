@@ -9,7 +9,7 @@ import de.cas_ual_ty.dueldimension.clientutil.hub.HubTextures;
 import de.cas_ual_ty.dueldimension.clientutil.hub.NineSlice;
 import de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.List;

@@ -5,7 +5,7 @@ import de.cas_ual_ty.dueldimension.shop.ShopMessages;
 import de.cas_ual_ty.dueldimension.shop.ShopStock;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
@@ -448,9 +448,13 @@ public final class DeckBoxShopScreen extends Screen
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-        float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor graphics = new GuiGraphicsExtractor(vanillaGraphics);
+
         graphics.fillGradient(0, 0, width, height, 0xD0101014, 0xE0101014);
         NineSlice.draw(graphics, HubTextures.PANEL, left, top, panelW, panelH);
         graphics.text(font, "Deck Box Shop", left + 12, top + 10, 0xFFF4D089, true);
@@ -489,7 +493,7 @@ public final class DeckBoxShopScreen extends Screen
             buyButton.setMessage(Component.literal(entry != null && owns(entry.style())
                 ? "Owned" : "Buy"));
         }
-        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+        super.render(graphics.vanilla(), mouseX, mouseY, partialTick);
     }
 
     @Override

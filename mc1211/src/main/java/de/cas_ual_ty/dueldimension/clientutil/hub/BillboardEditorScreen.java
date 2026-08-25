@@ -9,7 +9,7 @@ import de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSprites;
 import de.cas_ual_ty.dueldimension.clientutil.overworld.SpriteSource;
 import de.cas_ual_ty.dueldimension.clientutil.overworld.SpriteLayer;
 import de.cas_ual_ty.dueldimension.clientutil.overworld.Wings;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
@@ -1029,9 +1029,13 @@ public class BillboardEditorScreen extends Screen
     // ------------------------------------------------------------ drawing --
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor extractor, int mouseX, int mouseY,
-        float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor extractor = new GuiGraphicsExtractor(vanillaGraphics);
+
         extractor.fill(panelX(), 0, width, height, 0xC0101014);
         extractor.fill(panelX(), 0, panelX() + 1, height, 0x60FFD700);
 
@@ -1045,7 +1049,7 @@ public class BillboardEditorScreen extends Screen
 
         drawSlices(extractor);
 
-        super.extractRenderState(extractor, mouseX, mouseY, partialTick);
+        super.render(extractor.vanilla(), mouseX, mouseY, partialTick);
     }
 
     /** The sheet's own accent, and the wings' -- blue, as asked for. */

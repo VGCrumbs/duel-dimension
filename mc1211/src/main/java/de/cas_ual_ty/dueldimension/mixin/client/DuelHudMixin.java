@@ -1,7 +1,7 @@
 package de.cas_ual_ty.dueldimension.mixin.client;
 
 import de.cas_ual_ty.dueldimension.clientutil.DuelSuppression;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.Hud;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import org.spongepowered.asm.mixin.Mixin;

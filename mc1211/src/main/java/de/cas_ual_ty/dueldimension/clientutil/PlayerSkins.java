@@ -106,7 +106,7 @@ public final class PlayerSkins
     /** The skin this mod supplies for that player, or null to leave them alone. */
     public static Skin of(AbstractClientPlayer player)
     {
-        String name = player.getGameProfile() == null ? null : player.getGameProfile().name();
+        String name = player.getGameProfile() == null ? null : player.getGameProfile().getName();
         if(name == null)
         {
             return null;

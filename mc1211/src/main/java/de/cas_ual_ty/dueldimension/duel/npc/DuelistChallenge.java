@@ -131,7 +131,7 @@ public final class DuelistChallenge
         // exactly like a duel that was never asked about, and the difference
         // is one boolean that crossed the wire.
         de.cas_ual_ty.dueldimension.DuelDimension.log("challenge accepted: "
-            + player.getGameProfile().name() + " vs " + duelist.displayName()
+            + player.getGameProfile().getName() + " vs " + duelist.displayName()
             + ", overworld=" + overworld);
         double reach = DuelReach.CHALLENGE_RANGE + REPLY_SLACK;
         if(player.distanceToSqr(duelist) > reach * reach)

@@ -2,7 +2,7 @@ package de.cas_ual_ty.dueldimension.duel.screen.widget;
 
 import de.cas_ual_ty.dueldimension.clientutil.widget.ITooltip;
 
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import de.cas_ual_ty.dueldimension.clientutil.ScreenUtil;
 import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
 import de.cas_ual_ty.dueldimension.duel.action.ActionIcon;

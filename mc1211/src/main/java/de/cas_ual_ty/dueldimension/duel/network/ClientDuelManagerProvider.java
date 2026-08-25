@@ -98,7 +98,7 @@ public class ClientDuelManagerProvider implements IDuelManagerProvider
             ? extends de.cas_ual_ty.dueldimension.duel.DuelContainer>> consumer)
     {
         net.minecraft.client.gui.screens.Screen screen =
-            ClientProxy.getMinecraft().gui.screen();
+            ClientProxy.getMinecraft().screen;
 
         if(screen instanceof de.cas_ual_ty.dueldimension.duel.screen.DuelContainerScreen)
         {

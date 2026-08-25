@@ -1,6 +1,6 @@
 package de.cas_ual_ty.dueldimension.clientutil.widget;
 
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 
 /**

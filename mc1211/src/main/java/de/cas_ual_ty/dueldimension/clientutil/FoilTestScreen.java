@@ -1,9 +1,9 @@
 package de.cas_ual_ty.dueldimension.clientutil;
 
 import de.cas_ual_ty.dueldimension.DuelDimension;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.renderer.RenderPipelines;
+import de.cas_ual_ty.dueldimension.compat.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
@@ -57,10 +57,14 @@ public class FoilTestScreen extends Screen
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-        float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
-        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor graphics = new GuiGraphicsExtractor(vanillaGraphics);
+
+        super.render(graphics.vanilla(), mouseX, mouseY, partialTick);
 
         // Two by two, sized to whatever the window actually is. Four across ran
         // off the right edge and a fourth underneath ran off the bottom; a grid

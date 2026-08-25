@@ -81,7 +81,7 @@ public final class ClientDuelTargeting
             clear();
             return;
         }
-        if(client.gui.screen() != null)
+        if(client.screen != null)
         {
             return;
         }

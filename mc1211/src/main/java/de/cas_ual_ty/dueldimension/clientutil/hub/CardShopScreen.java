@@ -8,7 +8,7 @@ import de.cas_ual_ty.dueldimension.clientutil.layout.Layout;
 import de.cas_ual_ty.dueldimension.shop.ShopMessages;
 import de.cas_ual_ty.dueldimension.shop.ShopStock;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
@@ -1360,8 +1360,13 @@ public class CardShopScreen extends Screen
     // ---- rendering ----
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor poseStack, int mouseX, int mouseY, float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor poseStack = new GuiGraphicsExtractor(vanillaGraphics);
+
         // One measure per frame. Fifty int operations, and it is what keeps the
         // layout inspector's hot reload working: the screen holds no copy of
         // any layout number for longer than a frame.
@@ -1393,7 +1398,7 @@ public class CardShopScreen extends Screen
         renderNotice(poseStack);
         renderBalance(poseStack);
 
-        super.extractRenderState(poseStack, mouseX, mouseY, partialTick);
+        super.render(poseStack.vanilla(), mouseX, mouseY, partialTick);
         if(search != null)
         {
             search.extractRenderState(poseStack, mouseX, mouseY, partialTick);

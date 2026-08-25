@@ -2,7 +2,7 @@ package de.cas_ual_ty.dueldimension.clientutil.hub;
 
 import de.cas_ual_ty.dueldimension.shop.DuelReward;
 import de.cas_ual_ty.dueldimension.shop.DuelRewardMessages;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -85,9 +85,13 @@ public final class DuelResultScreen extends Screen
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-        float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor graphics = new GuiGraphicsExtractor(vanillaGraphics);
+
         // The furniture itself is entirely PNG-backed; this dim only separates
         // the modal result from the already-settled world behind it.
         graphics.fillGradient(0, 0, width, height, 0xD0101018, 0xE0080B12);
@@ -119,7 +123,7 @@ public final class DuelResultScreen extends Screen
             renderDetails(graphics, bodyX, bodyY, bodyW);
         }
 
-        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+        super.render(graphics.vanilla(), mouseX, mouseY, partialTick);
     }
 
     private void renderSummary(GuiGraphicsExtractor graphics, int x, int y, int width)
@@ -180,7 +184,7 @@ public final class DuelResultScreen extends Screen
     {
         if(minecraft != null)
         {
-            minecraft.setScreenAndShow(null);
+            minecraft.setScreen(null);
         }
     }
 

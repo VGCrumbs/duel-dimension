@@ -9,7 +9,7 @@ import de.cas_ual_ty.dueldimension.duel.profile.Sleeves;
 import de.cas_ual_ty.dueldimension.net.ProfilePayloads;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
@@ -211,9 +211,13 @@ public class SleevePickerScreen extends Screen
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor poseStack, int mouseX, int mouseY,
-        float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor poseStack = new GuiGraphicsExtractor(vanillaGraphics);
+
         // The dim the editor draws, not extractBackground: that BLURS in 26.2,
         // the blur is once per frame, and a screen opening over another that
         // already asked for it took the client down.
@@ -301,7 +305,7 @@ public class SleevePickerScreen extends Screen
             wearingX, top + panelH - PAD - 20 + (20 - font.lineHeight) / 2 + 1,
             0xFFC2C9D6, true);
 
-        super.extractRenderState(poseStack, mouseX, mouseY, partialTick);
+        super.render(poseStack.vanilla(), mouseX, mouseY, partialTick);
 
         if(!refusal.isEmpty())
         {
@@ -475,7 +479,7 @@ public class SleevePickerScreen extends Screen
     {
         if(minecraft != null)
         {
-            minecraft.setScreenAndShow(parent);
+            minecraft.setScreen(parent);
         }
     }
 

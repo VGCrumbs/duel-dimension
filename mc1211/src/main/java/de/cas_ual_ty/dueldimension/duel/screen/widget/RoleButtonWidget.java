@@ -1,6 +1,6 @@
 package de.cas_ual_ty.dueldimension.duel.screen.widget;
 
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import de.cas_ual_ty.dueldimension.duel.PlayerRole;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;

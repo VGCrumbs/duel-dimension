@@ -7,7 +7,7 @@ import de.cas_ual_ty.dueldimension.clientutil.DuelTextures;
 import de.cas_ual_ty.dueldimension.duel.overworld.display.CardDisplayMessages;
 import de.cas_ual_ty.dueldimension.ocg.OcgConstants;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -256,9 +256,13 @@ public class CardDisplayScreen extends Screen
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor extractor, int mouseX, int mouseY,
-        float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor extractor = new GuiGraphicsExtractor(vanillaGraphics);
+
         extractor.fillGradient(0, 0, width, height, 0xC0101014, 0xD0101014);
         NineSlice.draw(extractor, HubTextures.PANEL, panelX, panelY, panelW, panelH);
 
@@ -315,7 +319,7 @@ public class CardDisplayScreen extends Screen
                 panelY + panelH - FOOTER - 9, 0xFF7A8090, true);
         }
 
-        super.extractRenderState(extractor, mouseX, mouseY, partialTick);
+        super.render(extractor.vanilla(), mouseX, mouseY, partialTick);
     }
 
     /** No blur: the block being edited is behind this, and worth seeing. */

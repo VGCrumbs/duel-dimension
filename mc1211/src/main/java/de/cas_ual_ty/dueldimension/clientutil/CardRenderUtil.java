@@ -11,7 +11,7 @@ import de.cas_ual_ty.dueldimension.duel.playfield.DuelCard;
 import de.cas_ual_ty.dueldimension.rarity.RarityEntry;
 import de.cas_ual_ty.dueldimension.rarity.RarityLayer;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 

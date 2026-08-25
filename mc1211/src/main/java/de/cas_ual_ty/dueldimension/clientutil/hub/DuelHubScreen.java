@@ -1,7 +1,7 @@
 package de.cas_ual_ty.dueldimension.clientutil.hub;
 
 import de.cas_ual_ty.dueldimension.clientutil.CardBacks;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -524,9 +524,13 @@ public class DuelHubScreen extends Screen
      * way round compiles as a new method and silently draws nothing.
      */
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-        float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor graphics = new GuiGraphicsExtractor(vanillaGraphics);
+
         // The panel goes down BEFORE the widgets. Retained mode draws in the
         // order it was described, so calling super first would paint the tabs
         // and then cover them with the panel they sit on.
@@ -546,7 +550,7 @@ public class DuelHubScreen extends Screen
             default -> waiting(graphics, bodyTop);
         }
 
-        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+        super.render(graphics.vanilla(), mouseX, mouseY, partialTick);
 
         renderDeckContextMenu(graphics, mouseX, mouseY);
         renderDeckDrag(graphics, mouseX, mouseY);
@@ -938,7 +942,7 @@ public class DuelHubScreen extends Screen
         graphics.text(font, "Profile", x, y, 0xFFF4D089, true);
         y += 16;
         String name = minecraft != null && minecraft.player != null
-            ? minecraft.player.getGameProfile().name() : "-";
+            ? minecraft.player.getGameProfile().getName() : "-";
         graphics.text(font, "Duelist: " + name, x, y, 0xFFE6EAF2, true);
         y += 12;
 

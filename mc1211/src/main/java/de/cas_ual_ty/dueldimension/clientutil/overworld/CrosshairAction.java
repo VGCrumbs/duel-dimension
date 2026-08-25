@@ -36,7 +36,7 @@ public final class CrosshairAction
      */
     public static boolean click(Minecraft client, boolean secondary)
     {
-        if(!ClientDuelField.locked() || client.gui.screen() != null)
+        if(!ClientDuelField.locked() || client.screen != null)
         {
             return false;
         }

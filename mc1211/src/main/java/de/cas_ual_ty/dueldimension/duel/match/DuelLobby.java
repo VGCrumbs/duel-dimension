@@ -155,7 +155,7 @@ public final class DuelLobby
             if(other != null && !other.getUUID().equals(player.getUUID()))
             {
                 other.sendSystemMessage(net.minecraft.network.chat.Component.literal(
-                    player.getGameProfile().name() + " left the lobby.")
+                    player.getGameProfile().getName() + " left the lobby.")
                     .withStyle(net.minecraft.ChatFormatting.YELLOW));
                 net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(other, new LobbyMessages.CloseLobby());
             }
@@ -213,7 +213,7 @@ public final class DuelLobby
             boolean hostWon = server.overworld().getRandom().nextBoolean();
             ServerPlayer winner = hostWon ? host : guest;
             ServerPlayer loser = hostWon ? guest : host;
-            String winnerName = winner.getGameProfile().name();
+            String winnerName = winner.getGameProfile().getName();
 
             PENDING.put(winner.getUUID(), new Toss(room.host, room.guest, winner.getUUID(),
                 room.machine, room.config, server.overworld().getGameTime() + CHOICE_TIMEOUT_TICKS));
@@ -430,8 +430,8 @@ public final class DuelLobby
         net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, new LobbyMessages.OpenLobby(
                 room.config,
                 room.isHost(player),
-                host == null ? "?" : host.getGameProfile().name(),
-                guest == null ? "?" : guest.getGameProfile().name(),
+                host == null ? "?" : host.getGameProfile().getName(),
+                guest == null ? "?" : guest.getGameProfile().getName(),
                 room.hostReady,
                 room.guestReady,
                 Banlists.all().stream().map(Banlist::id).toList(),

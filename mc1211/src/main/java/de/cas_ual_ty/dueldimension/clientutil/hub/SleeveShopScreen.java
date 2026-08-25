@@ -10,7 +10,7 @@ import de.cas_ual_ty.dueldimension.shop.ShopMessages;
 import de.cas_ual_ty.dueldimension.shop.ShopStock;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
@@ -425,9 +425,13 @@ public class SleeveShopScreen extends Screen
     // ---- rendering ----
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor poseStack, int mouseX, int mouseY,
-        float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor poseStack = new GuiGraphicsExtractor(vanillaGraphics);
+
         // The dim that Forge's renderBackground drew, not extractBackground:
         // that BLURS in 26.2, the blur is once per frame, and a screen opening
         // over one that already asked for it took the client down. Same
@@ -444,7 +448,7 @@ public class SleeveShopScreen extends Screen
         renderNotice(poseStack);
         renderBalance(poseStack);
 
-        super.extractRenderState(poseStack, mouseX, mouseY, partialTick);
+        super.render(poseStack.vanilla(), mouseX, mouseY, partialTick);
     }
 
     /** Left: the highlighted sleeve, large, with what it costs. */

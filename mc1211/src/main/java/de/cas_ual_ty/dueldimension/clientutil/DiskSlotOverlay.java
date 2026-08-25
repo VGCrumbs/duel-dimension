@@ -51,13 +51,13 @@ public final class DiskSlotOverlay
     }
 
     /** Draws the slot at the given screen position. */
-    public static void draw(net.minecraft.client.gui.GuiGraphicsExtractor graphics,
+    public static void draw(de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor graphics,
         int x, int y, int mouseX, int mouseY)
     {
 
         // The empty-slot frame vanilla itself uses, so this reads as part of the
         // inventory rather than as something painted on top of it.
-        graphics.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED,
+        graphics.blitSprite(de.cas_ual_ty.dueldimension.compat.RenderPipelines.GUI_TEXTURED,
             net.minecraft.resources.ResourceLocation.withDefaultNamespace("container/slot"),
             x - 1, y - 1, 18, 18);
 

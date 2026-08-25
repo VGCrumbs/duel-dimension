@@ -7,7 +7,7 @@ import de.cas_ual_ty.dueldimension.clientutil.UnownedPipelines;
 import de.cas_ual_ty.dueldimension.clientutil.hub.EditorState;
 import de.cas_ual_ty.dueldimension.clientutil.hub.HubTextures;
 import de.cas_ual_ty.dueldimension.clientutil.hub.NineSlice;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
@@ -137,14 +137,18 @@ public class BinderPackScreen extends Screen
         addRenderableWidget(Button.builder(Component.literal("Back"), pressed -> onClose())
             .bounds(left + PAD, top + panelH - PAD - 20, 60, 20).build());
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE,
-            pressed -> minecraft.setScreenAndShow(null))
+            pressed -> minecraft.setScreen(null))
             .bounds(left + panelW - PAD - 60, top + panelH - PAD - 20, 60, 20).build());
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor poseStack, int mouseX, int mouseY,
-        float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor poseStack = new GuiGraphicsExtractor(vanillaGraphics);
+
         poseStack.fillGradient(0, 0, width, height, 0xC0101010, 0xD0101010);
         NineSlice.draw(poseStack, HubTextures.PANEL, left, top, panelW, panelH);
 
@@ -206,7 +210,7 @@ public class BinderPackScreen extends Screen
                 cardY + cardH + 1, tile.held() ? 0xFFE6EAF2 : 0xFF6A7080, true);
         }
 
-        super.extractRenderState(poseStack, mouseX, mouseY, partialTick);
+        super.render(poseStack.vanilla(), mouseX, mouseY, partialTick);
 
         if(hovered != null)
         {
@@ -254,7 +258,7 @@ public class BinderPackScreen extends Screen
             Tile tile = tileAt(event.x(), event.y());
             if(tile != null)
             {
-                minecraft.setScreenAndShow(
+                minecraft.setScreen(
                     new CardPreviewScreen(this, tile.card(), tile.rarity(), tile.held()));
                 return true;
             }
@@ -297,6 +301,6 @@ public class BinderPackScreen extends Screen
     @Override
     public void onClose()
     {
-        minecraft.setScreenAndShow(parent);
+        minecraft.setScreen(parent);
     }
 }

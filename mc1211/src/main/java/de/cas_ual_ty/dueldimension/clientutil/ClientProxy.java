@@ -408,8 +408,8 @@ public class ClientProxy implements ISidedProxy
     @Override
     public void openCollectionBinder()
     {
-        getMinecraft().setScreenAndShow(
-            new de.cas_ual_ty.dueldimension.cardbinder.BinderScreen(getMinecraft().gui.screen()));
+        getMinecraft().setScreen(
+            new de.cas_ual_ty.dueldimension.cardbinder.BinderScreen(getMinecraft().screen));
     }
 
     /**
@@ -425,7 +425,7 @@ public class ClientProxy implements ISidedProxy
     {
         // Updated in place when it is already open, so buying a disk does not
         // rebuild the screen under the player's cursor and lose their place.
-        if(getMinecraft().gui.screen()
+        if(getMinecraft().screen
             instanceof de.cas_ual_ty.dueldimension.clientutil.hub.DiskShopScreen open)
         {
             open.update(shop);
@@ -563,7 +563,7 @@ public class ClientProxy implements ISidedProxy
     @Override
     public void openDuelLobby(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.OpenLobby room)
     {
-        if(getMinecraft().gui.screen()
+        if(getMinecraft().screen
             instanceof de.cas_ual_ty.dueldimension.clientutil.hub.DuelLobbyScreen open)
         {
             open.update(room);
@@ -576,7 +576,7 @@ public class ClientProxy implements ISidedProxy
     @Override
     public void closeDuelLobby()
     {
-        if(getMinecraft().gui.screen()
+        if(getMinecraft().screen
             instanceof de.cas_ual_ty.dueldimension.clientutil.hub.DuelLobbyScreen)
         {
             getMinecraft().gui.setScreen(null);
@@ -614,7 +614,7 @@ public class ClientProxy implements ISidedProxy
         // there rather than dumping the player back into the world.
         getMinecraft().gui.setScreen(
             new de.cas_ual_ty.dueldimension.clientutil.hub.PackOpeningScreen(
-                getMinecraft().gui.screen(), setName, codes, rarities));
+                getMinecraft().screen, setName, codes, rarities));
     }
 
     @Override
@@ -685,8 +685,8 @@ public class ClientProxy implements ISidedProxy
             && !(de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()
                 && !de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField
                     .screenPreferred())
-            && !(getMinecraft().gui.screen() instanceof EngineDuelScreen)
-            && !(getMinecraft().gui.screen()
+            && !(getMinecraft().screen instanceof EngineDuelScreen)
+            && !(getMinecraft().screen
                 instanceof de.cas_ual_ty.dueldimension.clientutil.hub.DuelResultScreen))
         {
             // gui.setScreen, not setScreenAndShow: the latter forces a frame,

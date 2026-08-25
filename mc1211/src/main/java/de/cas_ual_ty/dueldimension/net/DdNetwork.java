@@ -586,7 +586,7 @@ public final class DdNetwork
             if(!player.isCreative())
             {
                 de.cas_ual_ty.dueldimension.DuelDimension.log("card display refused for "
-                    + player.getGameProfile().name() + ": not in creative mode");
+                    + player.getGameProfile().getName() + ": not in creative mode");
                 return;
             }
             if(!player.level().isLoaded(message.pos()))
@@ -599,7 +599,7 @@ public final class DdNetwork
                 message.pos().getZ() + 0.5D) > 64D)
             {
                 de.cas_ual_ty.dueldimension.DuelDimension.log("card display refused at "
-                    + message.pos() + ": " + player.getGameProfile().name() + " is too far away");
+                    + message.pos() + ": " + player.getGameProfile().getName() + " is too far away");
                 return;
             }
             if(player.level().getBlockEntity(message.pos())

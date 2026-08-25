@@ -3,7 +3,7 @@ package de.cas_ual_ty.dueldimension.cardbinder;
 import de.cas_ual_ty.dueldimension.clientutil.hub.EditorState;
 import de.cas_ual_ty.dueldimension.clientutil.hub.HubTextures;
 import de.cas_ual_ty.dueldimension.clientutil.hub.NineSlice;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
@@ -133,9 +133,13 @@ public class BinderScreen extends Screen
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor poseStack, int mouseX, int mouseY,
-        float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor poseStack = new GuiGraphicsExtractor(vanillaGraphics);
+
         // fillGradient, not extractBackground: that one blurs, the blur may run
         // only once a frame, and a screen opened over one that already asked
         // takes the client down. Same choice every other screen here makes.
@@ -194,7 +198,7 @@ public class BinderScreen extends Screen
             scrollbar(poseStack, left + WIDTH - 6, listTop, visibleRows * ROW_H);
         }
 
-        super.extractRenderState(poseStack, mouseX, mouseY, partialTick);
+        super.render(poseStack.vanilla(), mouseX, mouseY, partialTick);
     }
 
     /**
@@ -302,7 +306,7 @@ public class BinderScreen extends Screen
             rebuildRows();
             return true;
         }
-        minecraft.setScreenAndShow(new BinderPackScreen(this, row.pack()));
+        minecraft.setScreen(new BinderPackScreen(this, row.pack()));
         return true;
     }
 
@@ -349,6 +353,6 @@ public class BinderScreen extends Screen
     @Override
     public void onClose()
     {
-        minecraft.setScreenAndShow(parent);
+        minecraft.setScreen(parent);
     }
 }

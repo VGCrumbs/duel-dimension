@@ -280,7 +280,7 @@ public final class DuelistDuels
             de.cas_ual_ty.dueldimension.ocg.OcgDuel.PlayerConfig.DEFAULT.startingLP());
 
         DuelSession session = DuelSession.create(
-            "npc-" + serverPlayer.getGameProfile().name(),
+            "npc-" + serverPlayer.getGameProfile().getName(),
             engine.api(), engine.defaultFlags(), seeds,
             engine.cards(), engine.scripts(), deck0, deck1,
             human,
@@ -303,7 +303,7 @@ public final class DuelistDuels
         serverPlayer.sendSystemMessage(Component.literal("You are playing; prompts will open as the duel needs them.")
             .withStyle(ChatFormatting.DARK_GRAY));
         net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(serverPlayer,
-            new PromptMessages.DuelNames(serverPlayer.getGameProfile().name(),
+            new PromptMessages.DuelNames(serverPlayer.getGameProfile().getName(),
                 duelist.displayName()));
 
         // Tell the client which cards it will need art for. Only the player's
@@ -339,7 +339,7 @@ public final class DuelistDuels
             RunningDuel busy = ACTIVE.get(Watcher.of(player));
             if(busy != null && busy.session.isRunning())
             {
-                return player.getGameProfile().name() + " is already duelling";
+                return player.getGameProfile().getName() + " is already duelling";
             }
         }
 
@@ -412,7 +412,7 @@ public final class DuelistDuels
         seat0.setStartingLifePoints(config.lifePoints());
         seat1.setStartingLifePoints(config.lifePoints());
         DuelSession session = DuelSession.create(
-            "pvp-" + first.getGameProfile().name() + "-" + second.getGameProfile().name(),
+            "pvp-" + first.getGameProfile().getName() + "-" + second.getGameProfile().getName(),
             engine.api(), engine.defaultFlags(), seeds,
             engine.cards(), engine.scripts(), deck0, deck1, seat0, seat1,
             config.lifePoints());
@@ -438,7 +438,7 @@ public final class DuelistDuels
     {
         player.sendSystemMessage(Component.literal("Duel started against ")
             .withStyle(ChatFormatting.GOLD)
-            .append(Component.literal(opponent.getGameProfile().name())
+            .append(Component.literal(opponent.getGameProfile().getName())
                 .withStyle(ChatFormatting.YELLOW))
             .append(Component.literal(" - "))
             .append(Component.literal(own.displayName()).withStyle(ChatFormatting.AQUA))
@@ -446,8 +446,8 @@ public final class DuelistDuels
             .append(Component.literal(theirs.displayName()).withStyle(ChatFormatting.LIGHT_PURPLE)));
 
         net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
-            new PromptMessages.DuelNames(player.getGameProfile().name(),
-                opponent.getGameProfile().name()));
+            new PromptMessages.DuelNames(player.getGameProfile().getName(),
+                opponent.getGameProfile().getName()));
 
         // Only this player's own list: the opponent's deck is hidden
         // information, and their cards are fetched as they reach the field.
@@ -1352,7 +1352,7 @@ public final class DuelistDuels
             // arriving a duel late so hard to place.
             de.cas_ual_ty.dueldimension.DuelDimension.log(String.format(
                 "duel %s concluded: %s %s game %d (%d-%d), %d points sent",
-                duel.rewardId, player.getGameProfile().name(), outcome,
+                duel.rewardId, player.getGameProfile().getName(), outcome,
                 duel.gameNumber, duel.wins[seat], duel.wins[1 - seat], reward.total()));
         }
     }
@@ -1427,7 +1427,7 @@ public final class DuelistDuels
             }
         }
         de.cas_ual_ty.dueldimension.DuelDimension.log("Duel deck for "
-            + player.getGameProfile().name() + " \"" + deck.name() + "\": main="
+            + player.getGameProfile().getName() + " \"" + deck.name() + "\": main="
             + deck.main().size() + " extra=" + deck.extra().size()
             + (strays.isEmpty() ? " (no strays)" : " STRAYS IN MAIN: " + strays));
     }
@@ -1452,7 +1452,7 @@ public final class DuelistDuels
         {
             return deck;
         }
-        de.cas_ual_ty.dueldimension.DuelDimension.log("Chaos Disk: " + player.getGameProfile().name()
+        de.cas_ual_ty.dueldimension.DuelDimension.log("Chaos Disk: " + player.getGameProfile().getName()
             + " will open with The Seal of Orichalcos");
         return deck.guaranteeing(seal);
     }

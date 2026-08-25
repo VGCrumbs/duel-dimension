@@ -68,7 +68,7 @@ public final class HubKeybinds
             && !de.cas_ual_ty.dueldimension.clientutil.PromptOptions.needsPicker(
                 de.cas_ual_ty.dueldimension.clientutil.DuelClientState.prompt);
 
-        if(minecraft.gui.screen()
+        if(minecraft.screen
             instanceof de.cas_ual_ty.dueldimension.clientutil.overworld.BoardPointerScreen open)
         {
             // A pointer borrowed to answer one question keeps the cursor until
@@ -83,7 +83,7 @@ public final class HubKeybinds
         // Only over a bare world, and only if the board is what this player
         // asked to play on. Any other screen -- the duel screen, the deck list,
         // the pause menu -- is one they opened, and is theirs.
-        if(!camera && minecraft.gui.screen() == null
+        if(!camera && minecraft.screen == null
             && !de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.screenPreferred())
         {
             // gui.setScreen: setScreenAndShow forces a frame, and forcing one
@@ -181,7 +181,7 @@ public final class HubKeybinds
         }
         if(pressed)
         {
-            minecraft.setScreenAndShow(new DuelHubScreen());
+            minecraft.setScreen(new DuelHubScreen());
         }
 
         boolean disk = false;
@@ -206,7 +206,7 @@ public final class HubKeybinds
         }
         if(foil)
         {
-            minecraft.setScreenAndShow(
+            minecraft.setScreen(
                 new de.cas_ual_ty.dueldimension.clientutil.FoilTestScreen());
         }
     }

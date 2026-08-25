@@ -12,7 +12,7 @@ import de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot;
 import de.cas_ual_ty.dueldimension.duel.overworld.FieldSiting;
 import de.cas_ual_ty.dueldimension.duel.overworld.FieldTransform;
 import net.minecraft.client.Camera;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -991,14 +991,14 @@ public class BoardPointerScreen extends Screen
         // board on its own.
         if(minecraft.options.keyChat.matches(event))
         {
-            minecraft.setScreenAndShow(
+            minecraft.setScreen(
                 new net.minecraft.client.gui.screens.ChatScreen("", false));
             return true;
         }
         if(minecraft.options.keyCommand.matches(event))
         {
             // Opened already carrying the slash, which is what the key means.
-            minecraft.setScreenAndShow(
+            minecraft.setScreen(
                 new net.minecraft.client.gui.screens.ChatScreen("/", false));
             return true;
         }
@@ -1006,13 +1006,17 @@ public class BoardPointerScreen extends Screen
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor extractor, int mouseX, int mouseY,
-        float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor extractor = new GuiGraphicsExtractor(vanillaGraphics);
+
         // No dim and no panel. The board behind this is the thing being used;
         // every other screen in the mod covers what it replaces, and this one
         // replaces nothing.
-        super.extractRenderState(extractor, mouseX, mouseY, partialTick);
+        super.render(extractor.vanilla(), mouseX, mouseY, partialTick);
         if(choices.isEmpty())
         {
             updateHover(mouseX, mouseY);

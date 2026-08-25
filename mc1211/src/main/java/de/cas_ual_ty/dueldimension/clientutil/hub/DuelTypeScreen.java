@@ -2,7 +2,7 @@ package de.cas_ual_ty.dueldimension.clientutil.hub;
 
 import de.cas_ual_ty.dueldimension.duel.npc.DuelistChallengeMessages;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -78,9 +78,13 @@ public class DuelTypeScreen extends Screen
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor extractor, int mouseX, int mouseY,
-        float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor extractor = new GuiGraphicsExtractor(vanillaGraphics);
+
         // fillGradient, not extractBackground: that one BLURS, the blur may
         // only run once a frame, and a screen opening over one that already
         // asked for it took the client down. Every screen here settled on this.
@@ -96,13 +100,13 @@ public class DuelTypeScreen extends Screen
         extractor.text(font, hint, x + (panelW() - font.width(hint)) / 2, y + 26,
             0xFFC2C9D6, true);
 
-        super.extractRenderState(extractor, mouseX, mouseY, partialTick);
+        super.render(extractor.vanilla(), mouseX, mouseY, partialTick);
     }
 
     @Override
     public void onClose()
     {
-        minecraft.setScreenAndShow(null);
+        minecraft.setScreen(null);
     }
 
     /** The world carries on behind it; this is a question, not a pause. */

@@ -75,29 +75,29 @@ public final class DuelInvites
         Invite existing = PENDING.get(to.getUUID());
         if(existing != null && existing.challenger.equals(from.getUUID()))
         {
-            return "You have already challenged " + to.getGameProfile().name();
+            return "You have already challenged " + to.getGameProfile().getName();
         }
 
         MatchStateMachine machine = new MatchStateMachine();
         machine.moveTo(MatchState.INVITED);
-        PENDING.put(to.getUUID(), new Invite(from.getUUID(), from.getGameProfile().name(),
+        PENDING.put(to.getUUID(), new Invite(from.getUUID(), from.getGameProfile().getName(),
             machine, to.level().getServer().overworld().getGameTime() + EXPIRY_TICKS));
 
         from.sendSystemMessage(Component.literal("Challenge sent to ")
             .withStyle(ChatFormatting.GRAY)
-            .append(Component.literal(to.getGameProfile().name()).withStyle(ChatFormatting.YELLOW)));
+            .append(Component.literal(to.getGameProfile().getName()).withStyle(ChatFormatting.YELLOW)));
 
         // The clickable half of the invitation. RUN_COMMAND rather than
         // SUGGEST_COMMAND so accepting is one click, and the command it runs is
         // the same one a player could type, so there is no privileged path.
-        to.sendSystemMessage(Component.literal(from.getGameProfile().name())
+        to.sendSystemMessage(Component.literal(from.getGameProfile().getName())
             .withStyle(ChatFormatting.YELLOW)
             .append(Component.literal(" challenges you to a duel! ").withStyle(ChatFormatting.GOLD))
             .append(button("[ACCEPT]", ChatFormatting.GREEN,
-                "/duel accept " + from.getGameProfile().name(), "Accept the challenge"))
+                "/duel accept " + from.getGameProfile().getName(), "Accept the challenge"))
             .append(Component.literal(" "))
             .append(button("[DECLINE]", ChatFormatting.RED,
-                "/duel decline " + from.getGameProfile().name(), "Turn it down")));
+                "/duel decline " + from.getGameProfile().getName(), "Turn it down")));
         return null;
     }
 
@@ -157,7 +157,7 @@ public final class DuelInvites
         ServerPlayer challenger = target.level().getServer().getPlayerList().getPlayer(invite.challenger);
         if(challenger != null)
         {
-            challenger.sendSystemMessage(Component.literal(target.getGameProfile().name()
+            challenger.sendSystemMessage(Component.literal(target.getGameProfile().getName()
                 + " declined your challenge.").withStyle(ChatFormatting.RED));
         }
         return null;

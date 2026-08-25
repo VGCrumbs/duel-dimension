@@ -5,7 +5,7 @@ import de.cas_ual_ty.dueldimension.duel.profile.DuelDisks;
 import de.cas_ual_ty.dueldimension.shop.DiskShopMessages;
 import de.cas_ual_ty.dueldimension.shop.ShopStock;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -185,7 +185,7 @@ public class DiskShopScreen extends Screen
         addRenderableWidget(action);
 
         addRenderableWidget(new HubWidgets.TextureButton(x + buttonW + PAD, buttonsY, buttonW, 20,
-            Component.literal("Back"), pressed -> minecraft.setScreenAndShow(new DuelHubScreen())));
+            Component.literal("Back"), pressed -> minecraft.setScreen(new DuelHubScreen())));
         addRenderableWidget(new HubWidgets.TextureButton(
             panelX() + panelW() - buttonW, buttonsY, buttonW, 20,
             Component.literal("Close"), pressed -> onClose()));
@@ -240,9 +240,13 @@ public class DiskShopScreen extends Screen
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor extractor, int mouseX, int mouseY,
-        float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor extractor = new GuiGraphicsExtractor(vanillaGraphics);
+
         // fillGradient, never extractBackground: it blurs in 26.2 and has taken
         // the client down when one screen opened over another.
         extractor.fillGradient(0, 0, width, height, 0xC0101010, 0xD0101010);
@@ -275,7 +279,7 @@ public class DiskShopScreen extends Screen
         // buttons and then cover them with the panel. Missing entirely, which
         // is what it was, the buttons exist and answer clicks but are never
         // painted -- a shop with an invisible Buy button.
-        super.extractRenderState(extractor, mouseX, mouseY, partialTick);
+        super.render(extractor.vanilla(), mouseX, mouseY, partialTick);
 
         drawFooter(extractor);
     }

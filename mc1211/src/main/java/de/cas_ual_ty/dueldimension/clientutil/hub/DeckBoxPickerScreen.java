@@ -5,7 +5,7 @@ import de.cas_ual_ty.dueldimension.duel.profile.DeckBoxStyle;
 import de.cas_ual_ty.dueldimension.duel.profile.DeckList;
 import de.cas_ual_ty.dueldimension.net.ProfilePayloads;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -48,9 +48,13 @@ public class DeckBoxPickerScreen extends Screen
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-        float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor graphics = new GuiGraphicsExtractor(vanillaGraphics);
+
         graphics.fillGradient(0, 0, width, height, 0xC0101010, 0xD0101010);
         NineSlice.draw(graphics, HubTextures.PANEL, left, top, PANEL_W, PANEL_H);
         graphics.text(font, "Deck Box", left + PAD, top + 8, 0xFFF4D089, true);
@@ -81,7 +85,7 @@ public class DeckBoxPickerScreen extends Screen
                     : style == worn ? 0xFFF4D089 : 0xFFE8E8E8, true);
         }
 
-        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+        super.render(graphics.vanilla(), mouseX, mouseY, partialTick);
     }
 
     private static String shortLabel(DeckBoxStyle style)
@@ -135,7 +139,7 @@ public class DeckBoxPickerScreen extends Screen
     {
         if(minecraft != null)
         {
-            minecraft.setScreenAndShow(parent);
+            minecraft.setScreen(parent);
         }
     }
 

@@ -2,7 +2,7 @@ package de.cas_ual_ty.dueldimension.clientutil.hub;
 
 import de.cas_ual_ty.dueldimension.clientutil.CardPresentation;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import de.cas_ual_ty.dueldimension.card.properties.Properties;
 import de.cas_ual_ty.dueldimension.clientutil.CardImageManager;
 import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
@@ -2514,7 +2514,7 @@ public class DeckEditorScreen extends Screen
             EditorState.flush();
             if(minecraft != null)
             {
-                minecraft.setScreenAndShow(new CardInfoScreen(this, target));
+                minecraft.setScreen(new CardInfoScreen(this, target));
             }
             return true;
         }
@@ -3105,8 +3105,13 @@ public class DeckEditorScreen extends Screen
     // ---- rendering ----
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor poseStack, int mouseX, int mouseY, float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor poseStack = new GuiGraphicsExtractor(vanillaGraphics);
+
         // The dim Forge's renderBackground drew, not extractBackground: that
         // BLURS in 26.2, the blur is once-per-frame, and the frame a screen
         // opens over another that already asked for it took the client down.
@@ -3129,7 +3134,7 @@ public class DeckEditorScreen extends Screen
         if(altCard != null)
         {
             renderAltArts(poseStack, mouseX, mouseY);
-            super.extractRenderState(poseStack, mouseX, mouseY, partialTick);
+            super.render(poseStack.vanilla(), mouseX, mouseY, partialTick);
             // Everything below this point draws over whatever super drew, so
             // none of it may run while the picker is up: the search field, the
             // filter drawer, the rename box, the refusal line, the hover
@@ -3138,7 +3143,7 @@ public class DeckEditorScreen extends Screen
             return;
         }
 
-        super.extractRenderState(poseStack, mouseX, mouseY, partialTick);
+        super.render(poseStack.vanilla(), mouseX, mouseY, partialTick);
         search.extractRenderState(poseStack, mouseX, mouseY, partialTick);
         if(filtersOpen && levelMin != null)
         {
@@ -4325,7 +4330,7 @@ public class DeckEditorScreen extends Screen
         EditorState.save();
         if(minecraft != null)
         {
-            minecraft.setScreenAndShow(parent);
+            minecraft.setScreen(parent);
         }
     }
 
@@ -4340,7 +4345,7 @@ public class DeckEditorScreen extends Screen
         EditorState.flush();
         if(minecraft != null)
         {
-            minecraft.setScreenAndShow(parent);
+            minecraft.setScreen(parent);
         }
     }
 
@@ -4589,7 +4594,7 @@ public class DeckEditorScreen extends Screen
             EditorState.flush();
             if(minecraft != null)
             {
-                minecraft.setScreenAndShow(new SleevePickerScreen(DeckEditorScreen.this));
+                minecraft.setScreen(new SleevePickerScreen(DeckEditorScreen.this));
             }
         }
 
@@ -4631,7 +4636,7 @@ public class DeckEditorScreen extends Screen
             EditorState.flush();
             if(minecraft != null)
             {
-                minecraft.setScreenAndShow(new DeckBoxPickerScreen(DeckEditorScreen.this));
+                minecraft.setScreen(new DeckBoxPickerScreen(DeckEditorScreen.this));
             }
         }
 

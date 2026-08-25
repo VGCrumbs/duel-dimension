@@ -11,7 +11,7 @@ import de.cas_ual_ty.dueldimension.clientutil.hub.HubTextures;
 import de.cas_ual_ty.dueldimension.clientutil.hub.NineSlice;
 import de.cas_ual_ty.dueldimension.rarity.RarityEntry;
 import de.cas_ual_ty.dueldimension.rarity.RarityLayer;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -153,9 +153,13 @@ public class CardPreviewScreen extends Screen
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor poseStack, int mouseX, int mouseY,
-        float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor poseStack = new GuiGraphicsExtractor(vanillaGraphics);
+
         long now = net.minecraft.util.Util.getMillis();
         long since = lastFrame == 0L ? 0L : now - lastFrame;
         lastFrame = now;
@@ -188,7 +192,7 @@ public class CardPreviewScreen extends Screen
         poseStack.text(font, hint, left + (PANEL_W - font.width(hint)) / 2,
             top + PANEL_H - PAD - 10, 0xFF7A8090, true);
 
-        super.extractRenderState(poseStack, mouseX, mouseY, partialTick);
+        super.render(poseStack.vanilla(), mouseX, mouseY, partialTick);
     }
 
     /** Draws the turned card, then its foil, inside the picture-in-picture pass. */
@@ -502,6 +506,6 @@ public class CardPreviewScreen extends Screen
     @Override
     public void onClose()
     {
-        minecraft.setScreenAndShow(parent);
+        minecraft.setScreen(parent);
     }
 }

@@ -301,7 +301,7 @@ public final class DuelClientState
                 // dismiss it.
                 net.minecraft.client.Minecraft minecraft =
                     net.minecraft.client.Minecraft.getInstance();
-                if(minecraft.gui.screen() instanceof EngineDuelScreen open)
+                if(minecraft.screen instanceof EngineDuelScreen open)
                 {
                     open.onClose();
                 }
@@ -360,7 +360,7 @@ public final class DuelClientState
         net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
         // 26.2 moved the current screen off Minecraft and onto its Gui, which
         // now owns it; Minecraft.screen is gone rather than renamed.
-        if(!(minecraft.gui.screen() instanceof EngineDuelScreen))
+        if(!(minecraft.screen instanceof EngineDuelScreen))
         {
             // Gui.setScreen, not Minecraft.setScreenAndShow: the latter is that
         // plus a forced renderFrame, and this runs inside tickPlayback's lock

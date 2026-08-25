@@ -2,7 +2,7 @@ package de.cas_ual_ty.dueldimension.clientutil.hub;
 
 import de.cas_ual_ty.dueldimension.duel.match.LobbyMessages;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -96,16 +96,20 @@ public class CoinTossScreen extends Screen
     public static void dismiss()
     {
         net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
-        if(client.gui.screen() instanceof CoinTossScreen)
+        if(client.screen instanceof CoinTossScreen)
         {
             client.gui.setScreen(null);
         }
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor extractor, int mouseX, int mouseY,
-        float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor extractor = new GuiGraphicsExtractor(vanillaGraphics);
+
         // fillGradient, never extractBackground: that blurs in 26.2 and has
         // taken the client down when one screen opened over another that had
         // already asked for it. Same decision as every other screen here.
@@ -135,7 +139,7 @@ public class CoinTossScreen extends Screen
         // question with no answers and the duel appears to have hung. Every
         // other screen in this mod ends this way; this was the one that did
         // not, and the shop had the same fault before it.
-        super.extractRenderState(extractor, mouseX, mouseY, partialTick);
+        super.render(extractor.vanilla(), mouseX, mouseY, partialTick);
     }
 
     /**

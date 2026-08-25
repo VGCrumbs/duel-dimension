@@ -3,7 +3,7 @@ package de.cas_ual_ty.dueldimension.card;
 import com.mojang.blaze3d.platform.InputConstants;
 import de.cas_ual_ty.dueldimension.clientutil.CardRenderUtil;
 import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
@@ -36,8 +36,13 @@ public class InspectCardScreen extends Screen
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor extractor, int pMouseX, int pMouseY, float pPartialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int pMouseX, int pMouseY, float pPartialTick)
     {
+        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
+        // immediately from render(). The body below is unchanged -- it is
+        // handed the compatibility surface over the real GuiGraphics.
+        GuiGraphicsExtractor extractor = new GuiGraphicsExtractor(vanillaGraphics);
+
         // The dim Forge's renderBackground drew, not extractBackground: that
         // BLURS in 26.2, the blur is once-per-frame, and the frame a screen
         // opens over another that already asked for it took the client down.
@@ -55,7 +60,7 @@ public class InspectCardScreen extends Screen
             DdBlitUtil.fullBlit(extractor, CardRenderUtil.bindInfoResourceLocation(cardHolder), x, y, w, h);
         }
 
-        super.extractRenderState(extractor, pMouseX, pMouseY, pPartialTick);
+        super.render(extractor.vanilla(), pMouseX, pMouseY, pPartialTick);
     }
 
     @Override

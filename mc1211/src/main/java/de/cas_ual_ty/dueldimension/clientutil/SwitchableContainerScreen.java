@@ -35,6 +35,6 @@ public abstract class SwitchableContainerScreen<T extends AbstractContainerMenu>
     public void switchScreen(AbstractContainerScreen<T> screen)
     {
         isClosedByPlayer = false;
-        minecraft.setScreenAndShow(screen);
+        minecraft.setScreen(screen);
     }
 }

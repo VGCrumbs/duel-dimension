@@ -1,8 +1,8 @@
 package de.cas_ual_ty.dueldimension.clientutil;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.renderer.RenderPipelines;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.RenderPipelines;
 import net.minecraft.resources.ResourceLocation;
 
 /**
