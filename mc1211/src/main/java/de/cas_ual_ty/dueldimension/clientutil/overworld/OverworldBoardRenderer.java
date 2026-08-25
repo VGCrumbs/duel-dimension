@@ -1087,11 +1087,20 @@ public final class OverworldBoardRenderer
             float v0 = whole ? 0F : DuelTextures.CARD_V0;
             float u1 = whole ? 1F : DuelTextures.CARD_U1;
             float v1 = whole ? 1F : DuelTextures.CARD_V1;
+            // TOP corners first, and that is the whole of it: WorldQuad maps
+            // corner 0 to (u0, v0), and v0 is the TOP of the texture. Passing
+            // bottomLeft first therefore put the top of the sleeve at the bottom
+            // of the card, and every back in the opponent's hand was drawn
+            // upside down. Only a sleeve showed it -- the one other quad built
+            // bottom-first is a bar drawn on a flat white texture, where a
+            // vertical flip cannot be seen.
             WorldQuad.submit(poseStack, collector, kindFor(heldTint), back, camera,
-                new Vec3[] {bottomLeft, topLeft, topRight, bottomRight}, heldTint,
+                new Vec3[] {topLeft, bottomLeft, bottomRight, topRight}, heldTint,
                 u0, v0, u1, v1);
+            // The far side, wound the other way so it faces behind. Corner for
+            // corner the mirror of the front, so it is upright from there too.
             WorldQuad.submit(poseStack, collector, kindFor(heldTint), back, camera,
-                new Vec3[] {bottomRight, topRight, topLeft, bottomLeft}, heldTint,
+                new Vec3[] {topRight, bottomRight, bottomLeft, topLeft}, heldTint,
                 u0, v0, u1, v1);
         }
     }
