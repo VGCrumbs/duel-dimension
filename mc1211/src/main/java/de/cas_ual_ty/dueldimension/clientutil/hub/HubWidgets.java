@@ -1,6 +1,6 @@
 package de.cas_ual_ty.dueldimension.clientutil.hub;
 
-import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 

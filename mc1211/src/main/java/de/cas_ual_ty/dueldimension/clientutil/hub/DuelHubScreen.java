@@ -1,7 +1,7 @@
 package de.cas_ual_ty.dueldimension.clientutil.hub;
 
 import de.cas_ual_ty.dueldimension.clientutil.CardBacks;
-import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -147,6 +147,16 @@ public class DuelHubScreen extends Screen
 
     /** Static like the section used to be on Forge: reopening remembers. */
     private static DeckView deckView = DeckView.DECKS;
+
+    /**
+     * Re-asks the server for this profile. Shown only while shift is held.
+     * <p>
+     * Kept as a field because its visibility is answered every frame in
+     * {@link #extractRenderState} rather than at build time -- shift goes up and
+     * down without the screen rebuilding, and rebuilding on a modifier key would
+     * drop focus and scroll position.
+     */
+    private HubWidgets.TextureButton refreshButton;
 
     /**
      * How the deck list is laid out.
@@ -309,6 +319,27 @@ public class DuelHubScreen extends Screen
 
         addRenderableWidget(new HubWidgets.TextureButton(left + WIDTH - PAD - 80,
             top + HEIGHT - 32, 80, 20, Component.literal("Close"), pressed -> onClose()));
+
+        if(section == Section.DECKS)
+        {
+            // Hidden behind shift because it is a repair tool, not a feature: a
+            // deck list that needs refreshing is a bug, and a button offering
+            // that to everyone all the time invites it to become the workaround
+            // instead of the bug being fixed.
+            refreshButton = new HubWidgets.TextureButton(left + WIDTH - PAD - 168,
+                top + HEIGHT - 32, 84, 20, Component.literal("Refresh"), pressed ->
+                    net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+                        new de.cas_ual_ty.dueldimension.net.ProfilePayloads.RefreshProfile()));
+            refreshButton.setTooltipLines(java.util.List.of(
+                "Ask the server for your decks again.",
+                "Use this if the list looks wrong."));
+            refreshButton.visible = false;
+            addRenderableWidget(refreshButton);
+        }
+        else
+        {
+            refreshButton = null;
+        }
 
         if(section == Section.SHOP)
         {
@@ -514,6 +545,24 @@ public class DuelHubScreen extends Screen
     }
 
     /**
+     * Is shift held right now?
+     * <p>
+     * Read from the WINDOW, not {@code Screen.hasShiftDown()} -- that reports
+     * the modifier carried by a key EVENT, and this is a per-frame poll rather
+     * than an event. CardShopScreen's paging modifier reads it the same way for
+     * the same reason.
+     */
+    private static boolean shiftHeld()
+    {
+        return com.mojang.blaze3d.platform.InputConstants.isKeyDown(
+                net.minecraft.client.Minecraft.getInstance().getWindow(),
+                org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT)
+            || com.mojang.blaze3d.platform.InputConstants.isKeyDown(
+                net.minecraft.client.Minecraft.getInstance().getWindow(),
+                org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT);
+    }
+
+    /**
      * A screen describes itself rather than drawing itself now: the extractor
      * collects everything and the game draws it in one pass afterwards.
      * <p>
@@ -524,12 +573,16 @@ public class DuelHubScreen extends Screen
      * way round compiles as a new method and silently draws nothing.
      */
     @Override
-    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
+        float partialTick)
     {
-        // 26.2 draws screens by EXTRACTING a render state; 1.21.1 draws
-        // immediately from render(). The body below is unchanged -- it is
-        // handed the compatibility surface over the real GuiGraphics.
-        GuiGraphicsExtractor graphics = new GuiGraphicsExtractor(vanillaGraphics);
+        // Asked here rather than through a supplier on the button itself: a
+        // widget's own render is skipped while it is invisible, so a button that
+        // hid itself could never decide to come back. The screen always renders.
+        if(refreshButton != null)
+        {
+            refreshButton.visible = shiftHeld();
+        }
 
         // The panel goes down BEFORE the widgets. Retained mode draws in the
         // order it was described, so calling super first would paint the tabs
@@ -550,7 +603,7 @@ public class DuelHubScreen extends Screen
             default -> waiting(graphics, bodyTop);
         }
 
-        super.render(graphics.vanilla(), mouseX, mouseY, partialTick);
+        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 
         renderDeckContextMenu(graphics, mouseX, mouseY);
         renderDeckDrag(graphics, mouseX, mouseY);
@@ -942,7 +995,7 @@ public class DuelHubScreen extends Screen
         graphics.text(font, "Profile", x, y, 0xFFF4D089, true);
         y += 16;
         String name = minecraft != null && minecraft.player != null
-            ? minecraft.player.getGameProfile().getName() : "-";
+            ? minecraft.player.getGameProfile().name() : "-";
         graphics.text(font, "Duelist: " + name, x, y, 0xFFE6EAF2, true);
         y += 12;
 

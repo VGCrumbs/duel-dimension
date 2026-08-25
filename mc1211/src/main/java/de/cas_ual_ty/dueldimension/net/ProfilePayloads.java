@@ -332,6 +332,35 @@ public final class ProfilePayloads
         }
     }
 
+    /**
+     * "Send me my profile again."
+     * <p>
+     * A manual resync, behind a shift-held button in the deck list. It carries
+     * nothing: the server already knows who asked, and the answer is the same
+     * {@link Sync} every other change sends.
+     * <p>
+     * It exists because a client whose deck list has gone wrong has, until now,
+     * had no way to ask for the truth again short of relogging. The underlying
+     * causes are being fixed -- see {@code DuelProfiles.LAST_SEEN} for the
+     * mid-respawn one -- but a button that costs one packet is worth having
+     * regardless, and it turns "my decks vanished" into something a player can
+     * act on and a report that says whether the data or only the view was lost.
+     */
+    public record RefreshProfile() implements CustomPacketPayload
+    {
+        public static final CustomPacketPayload.Type<RefreshProfile> TYPE =
+            DdNetwork.type("profile_refresh");
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, RefreshProfile> CODEC =
+            StreamCodec.unit(new RefreshProfile());
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
+        {
+            return TYPE;
+        }
+    }
+
     public record SetActiveDeck(String name) implements CustomPacketPayload
     {
         public static final CustomPacketPayload.Type<SetActiveDeck> TYPE =
@@ -462,6 +491,7 @@ public final class ProfilePayloads
         DdNetwork.serverbound(DeleteDeck.TYPE, DeleteDeck.CODEC);
         DdNetwork.serverbound(CopyRecipe.TYPE, CopyRecipe.CODEC);
         DdNetwork.serverbound(SetActiveDeck.TYPE, SetActiveDeck.CODEC);
+        DdNetwork.serverbound(RefreshProfile.TYPE, RefreshProfile.CODEC);
         DdNetwork.serverbound(PublishRecipe.TYPE, PublishRecipe.CODEC);
         DdNetwork.serverbound(SetDeckSleeve.TYPE, SetDeckSleeve.CODEC);
         DdNetwork.serverbound(SetDeckBox.TYPE, SetDeckBox.CODEC);
@@ -483,6 +513,11 @@ public final class ProfilePayloads
             answer(player, DeckEdits.deleteDeck(player, message.name())));
         DdNetwork.onServer(CopyRecipe.TYPE, (message, player) ->
             answer(player, DeckEdits.copyRecipe(player, message.recipe(), message.name())));
+        // Reads nothing and writes nothing -- it re-sends what the server
+        // already holds. Safe to spam, which matters for a button whose whole
+        // purpose is being pressed when something looks wrong.
+        DdNetwork.onServer(RefreshProfile.TYPE, (message, player) -> sync(player));
+
         DdNetwork.onServer(SetActiveDeck.TYPE, (message, player) ->
             answer(player, DeckEdits.setActive(player, message.name())));
         DdNetwork.onServer(PublishRecipe.TYPE, (message, player) ->

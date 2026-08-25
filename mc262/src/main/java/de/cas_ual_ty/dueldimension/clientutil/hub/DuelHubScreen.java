@@ -149,6 +149,16 @@ public class DuelHubScreen extends Screen
     private static DeckView deckView = DeckView.DECKS;
 
     /**
+     * Re-asks the server for this profile. Shown only while shift is held.
+     * <p>
+     * Kept as a field because its visibility is answered every frame in
+     * {@link #extractRenderState} rather than at build time -- shift goes up and
+     * down without the screen rebuilding, and rebuilding on a modifier key would
+     * drop focus and scroll position.
+     */
+    private HubWidgets.TextureButton refreshButton;
+
+    /**
      * How the deck list is laid out.
      * <p>
      * A row carries the deck AND everything you can do to it, which is right
@@ -309,6 +319,27 @@ public class DuelHubScreen extends Screen
 
         addRenderableWidget(new HubWidgets.TextureButton(left + WIDTH - PAD - 80,
             top + HEIGHT - 32, 80, 20, Component.literal("Close"), pressed -> onClose()));
+
+        if(section == Section.DECKS)
+        {
+            // Hidden behind shift because it is a repair tool, not a feature: a
+            // deck list that needs refreshing is a bug, and a button offering
+            // that to everyone all the time invites it to become the workaround
+            // instead of the bug being fixed.
+            refreshButton = new HubWidgets.TextureButton(left + WIDTH - PAD - 168,
+                top + HEIGHT - 32, 84, 20, Component.literal("Refresh"), pressed ->
+                    net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+                        new de.cas_ual_ty.dueldimension.net.ProfilePayloads.RefreshProfile()));
+            refreshButton.setTooltipLines(java.util.List.of(
+                "Ask the server for your decks again.",
+                "Use this if the list looks wrong."));
+            refreshButton.visible = false;
+            addRenderableWidget(refreshButton);
+        }
+        else
+        {
+            refreshButton = null;
+        }
 
         if(section == Section.SHOP)
         {
@@ -514,6 +545,24 @@ public class DuelHubScreen extends Screen
     }
 
     /**
+     * Is shift held right now?
+     * <p>
+     * Read from the WINDOW, not {@code Screen.hasShiftDown()} -- that reports
+     * the modifier carried by a key EVENT, and this is a per-frame poll rather
+     * than an event. CardShopScreen's paging modifier reads it the same way for
+     * the same reason.
+     */
+    private static boolean shiftHeld()
+    {
+        return com.mojang.blaze3d.platform.InputConstants.isKeyDown(
+                net.minecraft.client.Minecraft.getInstance().getWindow(),
+                org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT)
+            || com.mojang.blaze3d.platform.InputConstants.isKeyDown(
+                net.minecraft.client.Minecraft.getInstance().getWindow(),
+                org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT);
+    }
+
+    /**
      * A screen describes itself rather than drawing itself now: the extractor
      * collects everything and the game draws it in one pass afterwards.
      * <p>
@@ -527,6 +576,14 @@ public class DuelHubScreen extends Screen
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
         float partialTick)
     {
+        // Asked here rather than through a supplier on the button itself: a
+        // widget's own render is skipped while it is invisible, so a button that
+        // hid itself could never decide to come back. The screen always renders.
+        if(refreshButton != null)
+        {
+            refreshButton.visible = shiftHeld();
+        }
+
         // The panel goes down BEFORE the widgets. Retained mode draws in the
         // order it was described, so calling super first would paint the tabs
         // and then cover them with the panel they sit on.

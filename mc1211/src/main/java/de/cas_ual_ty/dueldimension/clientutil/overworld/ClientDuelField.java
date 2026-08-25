@@ -78,7 +78,14 @@ public final class ClientDuelField
         // gated on present(); if the thing that suppresses the duel screen is
         // not, the two disagree the moment a player changes dimension and the
         // duellist is left with no board and no screen either.
-        return present() && locked;
+        //
+        // AND NEVER A SPECTATOR. Being locked is what suppresses movement, the
+        // HUD, block outlines, name tags and the hotbar -- it is the state of
+        // being IN a duel, and a bystander is not. The server used to send
+        // locked = true to watchers, which put every passer-by in a duel they
+        // had not joined and could not leave. That is fixed at the source too,
+        // but this is the invariant: a seat of SPECTATOR is not a seat.
+        return present() && locked && !spectating();
     }
 
     /**
@@ -270,17 +277,24 @@ public final class ClientDuelField
         {
             de.cas_ual_ty.dueldimension.clientutil.DuelClientState.openScreen();
         }
-        else if(client.screen
+        else if(client.gui.screen()
             instanceof de.cas_ual_ty.dueldimension.clientutil.EngineDuelScreen open)
         {
             open.onClose();
         }
     }
 
-    /** Is this player walking to a mark right now? */
+    /**
+     * Is this player walking to a mark right now?
+     * <p>
+     * Spectators excluded for the same reason as {@link #locked}: "has a board
+     * and is not locked to it" describes a duellist on their way to it, and a
+     * watcher is neither. Without this, fixing the lock would simply have made
+     * every bystander count as walking to a mark instead.
+     */
     public static boolean walking()
     {
-        return present() && !locked;
+        return present() && !locked && !spectating();
     }
 
     public static void apply(OverworldPayloads.ShowField field)

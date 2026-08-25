@@ -77,19 +77,78 @@ public final class DuelProfiles
     }
 
     /**
+     * The last profile each online player was known to have, by UUID.
+     * <p>
+     * <b>A safety net against reading a player who is between bodies.</b>
+     * Respawning replaces the {@link ServerPlayer} object, and the attachment
+     * arrives on the new one by {@code copyOnDeath}. Until it does, the new
+     * player has no profile — and {@link #get} used to answer that by MINTING a
+     * starting one and persisting it, which is a wiped collection that looks
+     * exactly like a player who has never played.
+     * <p>
+     * That hazard was known: the respawn handler defers its own read by a tick
+     * to stay out of the window. But that fixes ONE caller. Anything else that
+     * reads a profile in the same window — a tick handler, a packet arriving, an
+     * entity event — destroys the same data the same way, and the reported
+     * symptom is that it still happens.
+     * <p>
+     * So the window is closed here instead of avoided at each call site. If the
+     * attachment is missing but this player was seen with a profile earlier in
+     * the session, that profile is restored rather than a new one invented.
+     * Keyed by UUID because that is the thing that survives the body.
+     */
+    private static final java.util.Map<java.util.UUID, DuelProfile> LAST_SEEN =
+        new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
      * That player's profile, creating and granting a starting one the first
      * time they are seen.
+     * <p>
+     * "The first time they are seen" is doing real work in that sentence: see
+     * {@link #LAST_SEEN} for why a player who is merely mid-respawn must not be
+     * mistaken for a new one.
      */
     public static DuelProfile get(ServerPlayer player)
     {
-        DuelProfile profile = player.getAttachedOrCreate(Storage.PROFILE);
+        DuelProfile profile = player.getAttached(Storage.PROFILE);
+
+        if(profile == null)
+        {
+            // No attachment. Either a genuinely new player, or one whose body
+            // has just been replaced and whose copy has not landed yet. Only
+            // the second case has something to restore.
+            DuelProfile remembered = LAST_SEEN.get(player.getUUID());
+            if(remembered != null)
+            {
+                profile = remembered;
+                player.setAttached(Storage.PROFILE, profile);
+            }
+            else
+            {
+                profile = player.getAttachedOrCreate(Storage.PROFILE);
+            }
+        }
+
         boolean expanded = grantMissingStarters(profile);
         if(expanded)
         {
             profile = profile.snapshot();
             player.setAttached(Storage.PROFILE, profile);
         }
+        LAST_SEEN.put(player.getUUID(), profile);
         return profile;
+    }
+
+    /**
+     * Forgets a player who has left.
+     * <p>
+     * The net is for the gap between two bodies in one session, not a second
+     * store: once they are gone the attachment on disk is the truth, and
+     * holding a copy would let a stale session overwrite a newer save.
+     */
+    public static void forget(java.util.UUID player)
+    {
+        LAST_SEEN.remove(player);
     }
 
     /**

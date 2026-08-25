@@ -122,6 +122,11 @@ public class DuelDimensionFabric implements ModInitializer
             net.minecraft.server.level.ServerPlayer player = handler.getPlayer();
             de.cas_ual_ty.dueldimension.duel.match.DuelLobby.forget(player);
             de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels.abandon(player);
+            // Drop the mid-respawn safety net for this player. It exists to
+            // bridge the gap between two BODIES in one session; holding it past
+            // the session would let a stale copy overwrite a newer save on the
+            // next login. See DuelProfiles.LAST_SEEN.
+            de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.forget(player.getUUID());
             // Saved, but not forgotten -- there is nothing to forget. Forge
             // kept profiles in a map that had to be cleared on logout or it
             // leaked; here a profile is a data attachment on the player, so it
@@ -228,7 +233,7 @@ public class DuelDimensionFabric implements ModInitializer
                     .hasInviteFrom(me, them);
                 String error = accepting
                     ? de.cas_ual_ty.dueldimension.duel.match.DuelInvites
-                        .accept(me, them.getGameProfile().getName())
+                        .accept(me, them.getGameProfile().name())
                     : de.cas_ual_ty.dueldimension.duel.match.DuelInvites.invite(me, them);
                 if(error != null)
                 {

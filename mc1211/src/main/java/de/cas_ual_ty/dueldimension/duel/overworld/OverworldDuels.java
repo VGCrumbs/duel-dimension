@@ -181,7 +181,7 @@ public final class OverworldDuels
             return;
         }
         de.cas_ual_ty.dueldimension.DuelDimension.log("siting a duel between "
-            + first.getGameProfile().getName() + " and " + second.getGameProfile().getName());
+            + first.getGameProfile().name() + " and " + second.getGameProfile().name());
 
         ServerLevel level = (ServerLevel)first.level();
         LevelSampler sampler = new LevelSampler(level);
@@ -258,7 +258,7 @@ public final class OverworldDuels
             // never asked for a board -- and silence is exactly what made this
             // undiagnosable the first two times it was reported.
             de.cas_ual_ty.dueldimension.DuelDimension.warn("cannot site a duel for "
-                + player.getGameProfile().getName() + ": server=" + (server != null)
+                + player.getGameProfile().name() + ": server=" + (server != null)
                 + " sameLevel=" + (player.level() == opponent.level()));
             tell(player, refusalMessage(Refusal.DIFFERENT_WORLD));
             outcome.refused(Refusal.DIFFERENT_WORLD.name());
@@ -283,7 +283,7 @@ public final class OverworldDuels
         SitingResult result = SitingSearch.site(new LevelSampler(level), playerFloor,
             opponentFloor, FieldSpec.current());
         de.cas_ual_ty.dueldimension.DuelDimension.log("siting against "
-            + opponent.getType() + " for " + player.getGameProfile().getName() + ": "
+            + opponent.getType() + " for " + player.getGameProfile().name() + ": "
             + result.getClass().getSimpleName()
             + (result.siting() == null ? "" : " at " + result.siting().anchor()
                 + " facing " + result.siting().facing()));
@@ -950,8 +950,13 @@ public final class OverworldDuels
             near.add(id);
             if(watching.add(id))
             {
+                // locked = FALSE. A watcher gets the board to look at and
+                // nothing else. The flag means "this player is in the duel and
+                // held at it" -- it suppresses their movement, HUD, block
+                // outlines, name tags and hotbar -- and sending true here put
+                // every passer-by into a duel they had not joined.
                 ServerPlayNetworking.send(viewer, new OverworldPayloads.ShowField(board.siting(),
-                    board.level(), OverworldPayloads.SPECTATOR, true));
+                    board.level(), OverworldPayloads.SPECTATOR, false));
                 de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot view =
                     PUBLIC_VIEW.get(board.seat0());
                 if(view != null)
