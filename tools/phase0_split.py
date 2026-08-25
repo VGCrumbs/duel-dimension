@@ -32,8 +32,14 @@ import os
 import re
 import sys
 
-SRC = 'src/main/java'
-TEST = 'src/test/java'
+#: Scanned for code that could MOVE to the shared core. Points at a platform,
+#: because that is where anything not yet shared lives; `common` is the
+#: destination and is not scanned. Was the repository root before the split.
+SRC = 'mc262/src/main/java'
+TEST = 'mc262/src/test/java'
+
+#: Where a promoted file goes. Paths are rewritten from SRC to here.
+COMMON = 'common'
 
 #: Anything from these roots means the file belongs to one Minecraft version.
 #: `com.mojang.blaze3d` and `com.mojang.math` are Minecraft's own; the rest of

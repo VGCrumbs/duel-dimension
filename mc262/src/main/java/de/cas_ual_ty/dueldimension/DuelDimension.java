@@ -1,7 +1,5 @@
 package de.cas_ual_ty.dueldimension;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 
@@ -32,12 +30,16 @@ public final class DuelDimension
      */
     public static final java.util.Random random = new java.util.Random();
 
-    public static final String MOD_ID = "dueldimension";
+    /**
+     * Read from {@link de.cas_ual_ty.dueldimension.util.DdLog}, which the
+     * shared half can see and this class cannot be seen BY. One definition of
+     * the string, in the module that both platforms share.
+     */
+    public static final String MOD_ID = de.cas_ual_ty.dueldimension.util.DdLog.MOD_ID;
 
     /** The id in capitals, for the places that name a thread after the mod. */
     public static final String MOD_ID_UP = MOD_ID.toUpperCase(java.util.Locale.ROOT);
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     /**
      * Where the card database is unpacked, inside the game directory.
@@ -109,16 +111,16 @@ public final class DuelDimension
 
     public static void log(String message)
     {
-        LOGGER.info("[{}] {}", MOD_ID, message);
+        de.cas_ual_ty.dueldimension.util.DdLog.log(message);
     }
 
     public static void debug(String message)
     {
-        LOGGER.debug("[{}] {}", MOD_ID, message);
+        de.cas_ual_ty.dueldimension.util.DdLog.debug(message);
     }
 
     public static void warn(String message)
     {
-        LOGGER.warn("[{}] {}", MOD_ID, message);
+        de.cas_ual_ty.dueldimension.util.DdLog.warn(message);
     }
 }

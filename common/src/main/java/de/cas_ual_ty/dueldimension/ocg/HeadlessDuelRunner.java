@@ -640,11 +640,11 @@ public class HeadlessDuelRunner
         String line = "ocgcore [" + kind + "]: " + message;
         if(type == OcgConstants.LOG_TYPE_FROM_SCRIPT || type == OcgConstants.LOG_TYPE_FOR_DEBUG)
         {
-            de.cas_ual_ty.dueldimension.DuelDimension.debug(line);
+            de.cas_ual_ty.dueldimension.util.DdLog.debug(line);
         }
         else
         {
-            de.cas_ual_ty.dueldimension.DuelDimension.log(line);
+            de.cas_ual_ty.dueldimension.util.DdLog.log(line);
         }
     }
 
