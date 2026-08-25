@@ -115,6 +115,22 @@ tasks.withType(JavaCompile).configureEach {
     options.release = 25
 }
 
+// The Blockbench file is the one authored duel-disk model. The game needs a
+// static frame plus dynamic slot coordinates, so derive both before resources
+// are copied instead of relying on somebody to remember a manual generator
+// step. Without this, editing duel_disk.json can leave the client loading an
+// older frame and older card positions from the previous build.
+tasks.register('generateDuelDiskModel', Exec) {
+    description = 'Splits the authored duel_disk.json into its runtime frame and card slots.'
+    workingDir rootProject.projectDir
+    commandLine 'python', 'tools/gen_disk_cards.py'
+    inputs.file 'tools/gen_disk_cards.py'
+    inputs.file 'src/main/resources/assets/dueldimension/models/item/duel_disk.json'
+    outputs.files(
+        'src/main/resources/assets/dueldimension/models/item/duel_disk_frame.json',
+        'src/main/resources/assets/dueldimension/models/item/duel_disk_slots.json')
+}
+
 // ---------------------------------------------------------------------------
 // The bundled rules engine.
 //
@@ -289,7 +305,7 @@ sourceSets {
 
 processResources {
     dependsOn tasks.named('engineScriptsZip'), tasks.named('cardDatabaseZip'),
-        tasks.named('engineBundleStamp')
+        tasks.named('engineBundleStamp'), tasks.named('generateDuelDiskModel')
     inputs.property 'version', project.version
     filesMatching('fabric.mod.json') {
         expand 'version': project.version

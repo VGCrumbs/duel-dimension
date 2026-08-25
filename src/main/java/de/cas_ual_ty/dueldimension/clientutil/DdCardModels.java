@@ -21,10 +21,14 @@ public class DdCardModels
         DuelDimension.MOD_ID, "card");
     public static final Identifier CARD_SET = Identifier.fromNamespaceAndPath(
         DuelDimension.MOD_ID, "card_set");
+    /** The cards on a worn duel disk; see {@link DiskCardsItemModel}. */
+    public static final Identifier DUEL_DISK_CARDS = Identifier.fromNamespaceAndPath(
+        DuelDimension.MOD_ID, "duel_disk_cards");
 
     public static void register()
     {
         ItemModels.ID_MAPPER.put(CARD, CardItemModel.Unbaked.MAP_CODEC);
         ItemModels.ID_MAPPER.put(CARD_SET, CardSetItemModel.Unbaked.MAP_CODEC);
+        ItemModels.ID_MAPPER.put(DUEL_DISK_CARDS, DiskCardsItemModel.Unbaked.MAP_CODEC);
     }
 }

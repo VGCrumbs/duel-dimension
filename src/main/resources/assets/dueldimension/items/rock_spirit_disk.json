@@ -1,6 +1,15 @@
 {
   "model": {
-    "type": "minecraft:model",
-    "model": "dueldimension:item/rock_spirit_disk"
+    "type": "minecraft:composite",
+    "models": [
+      {
+        "type": "minecraft:model",
+        "model": "dueldimension:item/rock_spirit_disk"
+      },
+      {
+        "type": "dueldimension:duel_disk_cards",
+        "base": "dueldimension:item/rock_spirit_disk"
+      }
+    ]
   }
 }
