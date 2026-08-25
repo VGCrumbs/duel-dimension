@@ -132,6 +132,47 @@ public final class ProfilePayloads
      */
     public static void syncEngineUnknown(ServerPlayer player)
     {
+        // OFF the server thread, and that is the whole point of this method
+        // existing separately from the one below.
+        //
+        // The first call after a launch pays for the whole ocgcore runtime:
+        // JNA loads a 1.4 MB native, then two full-table reads run over 8.4 MB
+        // of EDOPro's SQLite databases -- measured at 226-240 ms across three
+        // runs. It was doing that inline in the JOIN handler, so every world
+        // load blocked the server thread on it, and the answer is only ever read
+        // by the deck editor, which a player may never open.
+        //
+        // A fresh thread rather than a pooled one: it runs once per join, and
+        // Paths.defaults() joins the engine installer thread if an install is in
+        // flight, so this must never occupy a worker something else is waiting
+        // on. It must also never be called FROM the installer, which would make
+        // that thread join itself.
+        // Read here, on the server thread, and captured. Reaching through the
+        // player for its level from the worker would be touching entity state
+        // off-thread for no reason -- the server does not change identity.
+        net.minecraft.server.MinecraftServer server = player.level().getServer();
+        if(server == null)
+        {
+            return;
+        }
+        Thread worker = new Thread(() -> sendEngineUnknown(player, server),
+            "dueldimension-engine-unknown");
+        worker.setDaemon(true);
+        // Below the server thread. Nothing waits on this, and a join should
+        // never be slower because of it -- which was the original complaint.
+        worker.setPriority(Thread.NORM_PRIORITY - 1);
+        worker.start();
+    }
+
+    /**
+     * The actual work, on whatever thread called it.
+     * <p>
+     * Split out so the cost is visible in a stack trace under its own name, and
+     * so a caller that already has a thread to spare can run it directly.
+     */
+    private static void sendEngineUnknown(ServerPlayer player,
+        net.minecraft.server.MinecraftServer server)
+    {
         List<Integer> unknown = new java.util.ArrayList<>();
         de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime.Paths paths =
             de.cas_ual_ty.dueldimension.ocg.session.EngineRuntime.Paths.defaults();
@@ -150,8 +191,21 @@ public final class ProfilePayloads
                 }
             }
         }
-        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
-            new EngineUnknown(unknown));
+        // Back onto the server thread to send. Packets go out from there, and by
+        // now the player may have left -- a join immediately abandoned is
+        // exactly the case a background thread introduces. Asked of the player
+        // LIST rather than of the player, because that is the server's own
+        // answer to "is this still a connected player" and is read on the thread
+        // that owns it.
+        server.execute(() ->
+        {
+            if(server.getPlayerList().getPlayer(player.getUUID()) != player)
+            {
+                return;
+            }
+            net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
+                new EngineUnknown(unknown));
+        });
     }
 
     // ---- client to server ----

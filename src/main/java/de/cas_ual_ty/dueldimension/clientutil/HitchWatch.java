@@ -16,6 +16,29 @@ import de.cas_ual_ty.dueldimension.task.TaskQueue;
  * So this reports from inside the hitch instead. It costs one subtraction per
  * tick and prints nothing until a tick overruns, which makes it cheap enough to
  * leave switched on and useless to leave switched off.
+ *
+ * <h2>How to read what it prints</h2>
+ *
+ * Two kinds of line, and they mean different things:
+ *
+ * <ul>
+ * <li><b>{@code client tick took N ms}</b> — a duration. The tick that just
+ * ended ran for N milliseconds. This one is a measurement.</li>
+ * <li><b>{@code client thread still in this tick at N ms (sample k)}</b> — a
+ * position, not a duration. It says the tick had been running N milliseconds
+ * when this stack was taken. It does <b>not</b> say the frame at the top cost N
+ * milliseconds, or cost anything at all.</li>
+ * </ul>
+ *
+ * <b>That distinction is not pedantry — misreading it cost a whole
+ * investigation.</b> A stall was diagnosed as "1178 ms inside another mod's
+ * thread-pool resize" on the strength of one sample; the resize was in fact a
+ * sub-second sleep the thread merely happened to be in when the stack was
+ * taken, and the real cost was elsewhere in the same tick. A single sample can
+ * only tell you the thread was <em>somewhere</em> at <em>some instant</em>.
+ * Several samples across one stall, which is what this now takes, tell you
+ * where the time went; the {@code stacks} figure on the tick line says how many
+ * there were to look at, and zero means nobody looked inside.
  */
 public final class HitchWatch
 {
@@ -32,6 +55,27 @@ public final class HitchWatch
 
     /** Two of these a second would be noise; this is a report, not a stream. */
     private static final long QUIET_MS = 2000;
+
+    /**
+     * A stall this long is never noise, so it is never rate-limited.
+     * <p>
+     * <b>This exists because the rationing hid the thing worth seeing.</b> The
+     * quiet window applies between one report and the next, and a world load
+     * produces a burst — so the small stall at the front of the burst claimed
+     * the window and the multi-second one behind it printed nothing. Measured
+     * across the archived logs, the single largest stall of a world load was
+     * suppressed in 62 of 76 recorded loads. The rate limiter is for a stream of
+     * 130 ms stumbles; a four-second freeze is the report.
+     */
+    private static final long LOUD_MS = 1000;
+
+    /**
+     * How many stacks to take from one stall before letting it be.
+     * <p>
+     * Reached only by a stall of about thirty seconds, given the doubling
+     * below. A stall that long has bigger problems than log volume.
+     */
+    private static final int MAX_SAMPLES = 8;
 
     private static long lastTick;
     private static long lastReport;
@@ -50,7 +94,30 @@ public final class HitchWatch
     /** When that thread last got through a tick, for the watchdog to compare against. */
     private static volatile long lastTickNanos;
 
-    private static volatile boolean sampled;
+    /**
+     * How many stacks have been taken from the stall in progress.
+     * <p>
+     * Was a boolean, and that was the defect: one stack from a four-second
+     * freeze, taken at whatever instant the rate limiter happened to allow,
+     * names whichever method the thread was passing through at that moment. It
+     * reads like an accusation and is barely evidence. Several stacks across the
+     * stall show where the time actually went.
+     */
+    private static volatile int samples;
+
+    /**
+     * How far into the stall the next stack is due, in milliseconds.
+     * <p>
+     * Doubles after each one — 120, 240, 480, 960, 1920 — so a stumble costs a
+     * single line and a long freeze is sampled through its whole length without
+     * the log filling up. The cost is the same one subtraction per poll either
+     * way.
+     */
+    private static volatile long nextSampleAt = THRESHOLD_MS;
+
+    /** When a stack was last taken, for rationing across stalls (not within one). */
+    private static volatile long lastSample;
+
     private static Thread watchdog;
 
     private HitchWatch()
@@ -62,7 +129,12 @@ public final class HitchWatch
     {
         client = Thread.currentThread();
         lastTickNanos = System.nanoTime();
-        sampled = false;
+        // Taken BEFORE the reset: the report below describes the tick that just
+        // ended, and so must the count of stacks taken during it. Reading the
+        // field after clearing it reports zero every time.
+        int stacks = samples;
+        samples = 0;
+        nextSampleAt = THRESHOLD_MS;
         startWatchdog();
 
         // Read and cleared EVERY tick, not only on a report, or it would count
@@ -80,7 +152,15 @@ public final class HitchWatch
         }
 
         long elapsed = now - previous;
-        if(elapsed < THRESHOLD_MS || now - lastReport < QUIET_MS)
+        if(elapsed < THRESHOLD_MS)
+        {
+            return;
+        }
+        // A big one always prints. Rationing exists so a stream of small
+        // stumbles does not bury the log, and a four-second freeze is not that
+        // -- it is the thing being looked for, and it was being dropped
+        // whenever a small stall had claimed the window just before it.
+        if(elapsed < LOUD_MS && now - lastReport < QUIET_MS)
         {
             return;
         }
@@ -112,11 +192,16 @@ public final class HitchWatch
         // being realised somewhere other than CardImageManager, which means a
         // producer bypassed getTextureCard or a release forgot to reset the
         // status, and either restores the original hitch invisibly.
-        LOG.warn("[hitch] client tick took {} ms  |  screen {}  |  queued tasks {},"
-                + " images in flight {}, pipeline requests {}"
+        //
+        // "stacks" joins this line to the watchdog's. A tick reported with zero
+        // stacks is a stall nobody looked inside — which is itself worth
+        // knowing, and used to be indistinguishable from a stall whose stack
+        // simply was not printed.
+        LOG.warn("[hitch] client tick took {} ms  |  {} stacks  |  screen {}"
+                + "  |  queued tasks {}, images in flight {}, pipeline requests {}"
                 + "  |  card art: {} queued, {} decoded, resident {} MB"
                 + "  |  decode {}  |  upload {}  |  report {}",
-            elapsed, screen(), queuedTasks(), ImageHandler.inFlight(),
+            elapsed, stacks, screen(), queuedTasks(), ImageHandler.inFlight(),
             imageRequests,
             CardImageManager.queued(), CardImageManager.decoded(),
             CardTextureCache.residentBytes() / (1024L * 1024L),
@@ -213,26 +298,45 @@ public final class HitchWatch
                     return;
                 }
                 Thread stuck = client;
-                if(stuck == null || sampled)
+                if(stuck == null || samples >= MAX_SAMPLES)
                 {
                     continue;
                 }
                 long stalled = (System.nanoTime() - lastTickNanos) / 1_000_000L;
-                if(stalled < THRESHOLD_MS
-                    || System.currentTimeMillis() - lastReport < QUIET_MS)
+                if(stalled < nextSampleAt)
                 {
                     continue;
                 }
-                // Once per stall: a long one would otherwise print the same
-                // stack every twenty milliseconds until it ended.
-                sampled = true;
+                // The ration applies to the FIRST stack of a stall and to
+                // nothing else. It used to be checked against lastReport, which
+                // is set when a TICK report prints -- a different event
+                // entirely -- so the sample landed at "whenever the last report
+                // happened plus two seconds", an instant with no relationship to
+                // the stall being sampled. Later stacks are never rationed:
+                // this stall has already been judged worth looking at, and the
+                // whole point is to see it change.
+                if(samples == 0 && System.currentTimeMillis() - lastSample < QUIET_MS)
+                {
+                    continue;
+                }
+                samples++;
+                lastSample = System.currentTimeMillis();
+                nextSampleAt = stalled * 2;
+
                 StackTraceElement[] frames = stuck.getStackTrace();
                 StringBuilder where = new StringBuilder();
                 for(int i = 0; i < Math.min(frames.length, 24); i++)
                 {
                     where.append("\n    at ").append(frames[i]);
                 }
-                LOG.warn("[hitch] client thread stalled {} ms, caught in:{}", stalled, where);
+                // "at {} ms" and not "for {} ms". The number is how long the
+                // tick has been running when the stack was taken, NOT time
+                // spent in the frame at the top of it -- reading it the second
+                // way turns a thread that was merely passing through into the
+                // culprit, and that misreading has already cost one whole
+                // investigation.
+                LOG.warn("[hitch] client thread still in this tick at {} ms"
+                    + " (sample {}), passing through:{}", stalled, samples, where);
             }
         }, "dueldimension-hitch-watch");
         watchdog.setDaemon(true);
