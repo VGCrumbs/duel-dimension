@@ -1003,7 +1003,7 @@ public class DuelHubScreen extends Screen
         graphics.text(font, "Profile", x, y, 0xFFF4D089, true);
         y += 16;
         String name = minecraft != null && minecraft.player != null
-            ? minecraft.player.getGameProfile().name() : "-";
+            ? minecraft.player.getGameProfile().getName() : "-";
         graphics.text(font, "Duelist: " + name, x, y, 0xFFE6EAF2, true);
         y += 12;
 

@@ -247,8 +247,8 @@ public final class OrichalcosRenderer
             return;
         }
         Minecraft client = Minecraft.getInstance();
-        float partial = client.getDeltaTracker().getGameTimeDeltaPartialTick(false);
-        Vec3 camera = client.gameRenderer.mainCamera().position();
+        float partial = client.getFrameTime().getGameTimeDeltaPartialTick(false);
+        Vec3 camera = client.gameRenderer.getMainCamera().position();
         PoseStack poseStack = context.poseStack();
         SubmitNodeCollector collector = context.submitNodeCollector();
         long gameTime = context.levelState().gameTime;

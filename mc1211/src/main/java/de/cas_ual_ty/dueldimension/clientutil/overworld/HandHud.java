@@ -59,7 +59,7 @@ public final class HandHud implements HudElement
         Minecraft client = Minecraft.getInstance();
         return client.level == null ? 0F
             : client.level.getGameTime() % 100000L
-                + client.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+                + client.getFrameTime().getGameTimeDeltaPartialTick(false);
     }
 
     @Override
@@ -75,7 +75,7 @@ public final class HandHud implements HudElement
         // The pointer draws its own copy, because a HUD element is not
         // extracted while a screen is open. Drawing here as well would draw it
         // twice on the frames where both could run.
-        if(Minecraft.getInstance().gui.screen() instanceof BoardPointerScreen)
+        if(Minecraft.getInstance().screen instanceof BoardPointerScreen)
         {
             return;
         }

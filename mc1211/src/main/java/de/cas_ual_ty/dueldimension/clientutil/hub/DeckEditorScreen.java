@@ -3919,7 +3919,7 @@ public class DeckEditorScreen extends Screen
      */
     private static float deltaMillis()
     {
-        return net.minecraft.client.Minecraft.getInstance().getDeltaTracker()
+        return net.minecraft.client.Minecraft.getInstance().getFrameTime()
             .getRealtimeDeltaTicks() * 50F;
     }
 

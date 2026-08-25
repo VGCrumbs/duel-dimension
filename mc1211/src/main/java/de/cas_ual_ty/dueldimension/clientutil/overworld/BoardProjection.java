@@ -33,7 +33,7 @@ public final class BoardProjection
     public static double[] project(Vec3 world, int screenW, int screenH)
     {
         Minecraft client = Minecraft.getInstance();
-        Camera camera = client.gameRenderer.mainCamera();
+        Camera camera = client.gameRenderer.getMainCamera();
         Vec3 delta = world.subtract(camera.position());
         Vec3 look = viewVector(camera.xRot(), camera.yRot());
         Vec3 right = viewVector(0F, camera.yRot() + 90F);

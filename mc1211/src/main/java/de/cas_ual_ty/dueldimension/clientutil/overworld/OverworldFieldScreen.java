@@ -295,6 +295,6 @@ public class OverworldFieldScreen extends Screen
     @Override
     public void onClose()
     {
-        minecraft.setScreenAndShow(parent);
+        minecraft.setScreen(parent);
     }
 }

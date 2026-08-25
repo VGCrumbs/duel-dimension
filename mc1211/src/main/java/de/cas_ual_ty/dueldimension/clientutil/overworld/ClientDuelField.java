@@ -277,7 +277,7 @@ public final class ClientDuelField
         {
             de.cas_ual_ty.dueldimension.clientutil.DuelClientState.openScreen();
         }
-        else if(client.gui.screen()
+        else if(client.screen
             instanceof de.cas_ual_ty.dueldimension.clientutil.EngineDuelScreen open)
         {
             open.onClose();

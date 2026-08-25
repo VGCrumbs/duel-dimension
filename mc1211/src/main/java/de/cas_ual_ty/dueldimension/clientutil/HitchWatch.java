@@ -257,11 +257,11 @@ public final class HitchWatch
     private static String screen()
     {
         net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
-        if(client == null || client.gui == null || client.gui.screen() == null)
+        if(client == null || client.gui == null || client.screen == null)
         {
             return "none";
         }
-        return client.gui.screen().getClass().getSimpleName();
+        return client.screen.getClass().getSimpleName();
     }
 
     /**

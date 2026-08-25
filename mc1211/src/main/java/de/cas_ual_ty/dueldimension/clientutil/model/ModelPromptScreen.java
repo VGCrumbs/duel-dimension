@@ -59,7 +59,7 @@ public class ModelPromptScreen extends Screen
             {
                 ModelPrompt.notNow();
                 ModelInstall.start();
-                minecraft.setScreenAndShow(new ModelInstallScreen(parent));
+                minecraft.setScreen(new ModelInstallScreen(parent));
             }).bounds(width / 2 - WIDE / 2, rowY(), WIDE, ROW_H).build());
 
         // The way out when the automatic one cannot work -- Drive enforces a
@@ -67,14 +67,14 @@ public class ModelPromptScreen extends Screen
         // rather than the archive. Vanilla's own confirmation shows where it
         // goes before the game is left.
         addRenderableWidget(Button.builder(Component.literal("Open the download page instead"),
-            pressed -> minecraft.setScreenAndShow(new ConfirmLinkScreen(opened ->
+            pressed -> minecraft.setScreen(new ConfirmLinkScreen(opened ->
             {
                 if(opened)
                 {
                     Util.getPlatform().openUri(ModelPrompt.URL);
                 }
                 ModelPrompt.notNow();
-                minecraft.setScreenAndShow(parent);
+                minecraft.setScreen(parent);
             }, ModelPrompt.URL, true)))
             .bounds(width / 2 - WIDE / 2, rowY(), WIDE, ROW_H).build());
 
@@ -137,6 +137,6 @@ public class ModelPromptScreen extends Screen
     {
         ModelPrompt.notNow();
         // setScreenAndShow, not setScreen: renamed in 26.2.
-        minecraft.setScreenAndShow(parent);
+        minecraft.setScreen(parent);
     }
 }

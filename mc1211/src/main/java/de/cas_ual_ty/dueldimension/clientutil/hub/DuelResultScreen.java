@@ -244,7 +244,7 @@ public final class DuelResultScreen extends Screen
     {
         if(minecraft != null)
         {
-            minecraft.setScreenAndShow(null);
+            minecraft.setScreen(null);
         }
     }
 

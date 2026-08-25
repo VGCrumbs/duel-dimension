@@ -68,9 +68,9 @@ public final class PlacementGuideRenderer
         }
 
         int seat = ClientDuelField.seat();
-        float partial = client.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        float partial = client.getFrameTime().getGameTimeDeltaPartialTick(false);
         float age = context.levelState().gameTime + partial;
-        Vec3 camera = client.gameRenderer.mainCamera().position();
+        Vec3 camera = client.gameRenderer.getMainCamera().position();
         PoseStack poseStack = context.poseStack();
         SubmitNodeCollector collector = context.submitNodeCollector();
 

@@ -92,7 +92,7 @@ public class SealConfigScreen extends Screen
         // on/off rows.
         addRenderableWidget(Button.builder(
             Component.literal("Overworld duel field size..."),
-            button -> minecraft.setScreenAndShow(
+            button -> minecraft.setScreen(
                 new de.cas_ual_ty.dueldimension.clientutil.overworld
                     .OverworldFieldScreen(this)))
             .bounds(width / 2 - WIDE / 2, rowY(), WIDE, ROW_H).build());
@@ -173,6 +173,6 @@ public class SealConfigScreen extends Screen
     public void onClose()
     {
         // setScreenAndShow, not setScreen: renamed in 26.2.
-        minecraft.setScreenAndShow(parent);
+        minecraft.setScreen(parent);
     }
 }

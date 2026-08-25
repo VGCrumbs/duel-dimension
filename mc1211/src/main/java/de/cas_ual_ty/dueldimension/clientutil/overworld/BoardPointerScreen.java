@@ -426,7 +426,7 @@ public class BoardPointerScreen extends Screen
      */
     private Vec3 rayThroughCursor(double mouseX, double mouseY)
     {
-        Camera camera = minecraft.gameRenderer.mainCamera();
+        Camera camera = minecraft.gameRenderer.getMainCamera();
         float yaw = camera.yRot();
         float pitch = camera.xRot();
 
@@ -507,7 +507,7 @@ public class BoardPointerScreen extends Screen
             return;
         }
         FieldTransform transform = new FieldTransform(siting);
-        Vec3 from = minecraft.gameRenderer.mainCamera().position();
+        Vec3 from = minecraft.gameRenderer.getMainCamera().position();
         float[] field = BoardPicker.aim(transform, from, rayThroughCursor(mouseX, mouseY), REACH);
         hovered = BoardPicker.at(ClientDuelField.boardToDraw(),
             Math.max(0, ClientDuelField.seat()), field);

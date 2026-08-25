@@ -233,7 +233,7 @@ public class DuelDimensionFabric implements ModInitializer
                     .hasInviteFrom(me, them);
                 String error = accepting
                     ? de.cas_ual_ty.dueldimension.duel.match.DuelInvites
-                        .accept(me, them.getGameProfile().name())
+                        .accept(me, them.getGameProfile().getName())
                     : de.cas_ual_ty.dueldimension.duel.match.DuelInvites.invite(me, them);
                 if(error != null)
                 {
