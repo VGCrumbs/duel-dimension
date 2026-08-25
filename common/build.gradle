@@ -1,0 +1,106 @@
+// The half of the mod that does not know what Minecraft is.
+//
+// The rules engine (ocgcore over JNA), the bots, the card database, the deck
+// and duel model, and every layout function that was extracted to a pure static
+// so it could be unit-tested. None of it imports Minecraft, the loader, LWJGL or
+// Mixin -- which is not a coincidence, it is the entry condition, enforced by
+// tools/phase0_split.py and by this file having no Minecraft dependency to
+// compile against even if somebody tried.
+//
+// NO LOOM HERE, deliberately. The moment this applies the Fabric plugin it
+// acquires a Minecraft version, and the whole point is that it has none.
+
+plugins {
+    id 'java-library'
+}
+
+version = rootProject.mod_version
+group = rootProject.maven_group
+
+java {
+    // 21, not 25, and this is the load-bearing setting in the file.
+    //
+    // Minecraft 26.2 needs Java 25; 1.21.1 needs Java 21. Shared code has to
+    // run on both, so it is compiled to the OLDER one -- a class file at 25
+    // simply will not load on 21. `release` rather than `sourceCompatibility`
+    // because release also swaps in the Java 21 API signatures, so a call to
+    // something added in 22 fails HERE, at the point it was written, instead of
+    // at runtime on the version that lacks it.
+    //
+    // Measured before committing to it: the tree uses no Java 22+ language
+    // feature -- no unnamed `_` variables, no Markdown javadoc, no module
+    // imports -- so nothing had to be rewritten to drop to 21.
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // JNA for the ocgcore (EDOPro-core) rules engine binding -- the reason this
+    // mod exists, and loader-agnostic: pure Java over a native library.
+    api 'net.java.dev.jna:jna:5.13.0'
+
+    // SQLite driver for reading BabelCDB card databases (cards.cdb).
+    api 'org.xerial:sqlite-jdbc:3.42.0.0'
+
+    // Minecraft supplies gson and the logging facade to a platform module, but
+    // nothing supplies them here, so they are named. Versions match what
+    // Minecraft ships on BOTH targets, so a platform never sees two.
+    api 'com.google.code.gson:gson:2.11.0'
+    api 'org.slf4j:slf4j-api:2.0.9'
+    api 'org.apache.logging.log4j:log4j-api:2.22.1'
+
+    // Guava, for the same reason. Not bundled into either platform's jar --
+    // Minecraft already provides it at runtime on both -- so this is a compile
+    // dependency that happens to be satisfied twice, which is harmless, rather
+    // than a second copy shipped inside the mod.
+    api 'com.google.guava:guava:32.1.2-jre'
+
+    // javax.annotation.Nullable, which the upstream mod's sources use
+    // throughout. Compile-only: documentation for javac, not a runtime need.
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
+
+    testImplementation platform('org.junit:junit-bom:5.10.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// Test classes, published so a platform can build on them.
+//
+// A project dependency shares main classes and nothing else, so a platform test
+// extending or calling a shared one -- IdleAnimationTest reaching for
+// GlbModelTest's dragon fixture -- does not compile. The alternative was to
+// duplicate the helper per platform, which is two copies of a fixture that has
+// to agree about a file on disk.
+configurations {
+    testArtifacts {
+        canBeConsumed = true
+        canBeResolved = false
+    }
+}
+
+tasks.register('testJar', Jar) {
+    description = 'The shared test classes, for platform tests that build on them.'
+    archiveClassifier = 'tests'
+    from sourceSets.test.output
+}
+
+artifacts {
+    testArtifacts tasks.named('testJar')
+}
+
+test {
+    useJUnitPlatform()
+
+    // The engine tests drive the REAL ygopro-core through JNA, so they need the
+    // native. It lives at the repository root because both platforms and this
+    // module all want the same one; the tests already read an `ocg.lib`
+    // property and only fall back to a relative path, so this is the hook they
+    // were written for. Without it the working directory is common/ and the
+    // relative path misses.
+    systemProperty 'ocg.lib', rootProject.file('native/ocgcore.dll').absolutePath
+}

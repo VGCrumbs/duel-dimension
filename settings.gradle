@@ -10,3 +10,37 @@ pluginManagement {
 }
 
 rootProject.name = 'dueldimension'
+
+// One tree, one version of every rule, built for more than one Minecraft.
+//
+// `common` knows nothing about Minecraft at all -- not the classes, not the
+// loader, not even which version is being built. That is a stricter line than
+// "shared code" usually means, and it is drawn there on purpose: the two
+// targets are far enough apart (1.21.1 against 26.2 spans the retained-mode GUI
+// rewrite, the item-model split, the NBT accessor change and the
+// ResourceLocation/Identifier rename) that any shared module which DID name
+// Minecraft would have to be written against the intersection of two APIs, and
+// that intersection moves every time either side updates.
+//
+// So the rule is mechanical and checkable: if it imports Minecraft, it belongs
+// to a platform. `tools/phase0_split.py` is what checks it.
+include 'common'
+include 'mc262'
+
+// mc1211 IS NOT INCLUDED YET, and the reason is a hard toolchain limit rather
+// than unfinished work.
+//
+// Loom 1.17.18 -- the version 26.2 requires -- refuses to configure an
+// obfuscated Minecraft. `loom.officialMojangMappings()` throws "Cannot use
+// Mojang mappings in a non-obfuscated environment" and the `mappings`
+// dependency configuration is never created, so there is no way to name a
+// mapping set at all. Measured, not assumed: it fails identically with mc262
+// removed from this build, so it is not shared per-build state, it is the
+// plugin. Loom dropped the obfuscated pipeline because modern Minecraft does
+// not need one, and 1.21.1 predates that.
+//
+// A Gradle build resolves ONE version of a plugin, so the two platforms cannot
+// share this build. The fix is a composite build: mc1211 gets its own
+// settings.gradle pinning an older Loom, and the root pulls it in with
+// includeBuild. See mc1211/README.md.
+// include 'mc1211'

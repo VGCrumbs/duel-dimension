@@ -1,0 +1,72 @@
+// The Minecraft 1.21.1 platform.
+//
+// A skeleton: it holds the toolchain and one file that proves the toolchain
+// works. No ported code yet -- that is Phase 1 onwards, and the port is a real
+// one, because 1.21.1 and 26.2 are far enough apart that the client layer has
+// to be written twice (retained-mode GUI, the item-model split, the NBT
+// accessor change, and ResourceLocation/Identifier all land between them).
+//
+// WHAT THIS MODULE EXISTS TO PROVE, before anybody ports anything into it:
+//   1. Loom resolves 1.21.1 alongside a 26.2 module in the same build.
+//   2. `common` -- compiled to Java 21, against no Minecraft at all -- is
+//      usable from a 1.21.1 module.
+//   3. Mojang names work here, so ported code keeps the vocabulary it is
+//      already written in.
+
+plugins {
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    id 'java-library'
+}
+
+version = rootProject.mod_version
+group = rootProject.maven_group
+
+base {
+    archivesName = 'dueldimension-fabric-1.21.1'
+}
+
+java {
+    // 1.21.1 runs on Java 21. The 26.2 platform is on 25; they do not have to
+    // agree, and `common` is built to 21 so both can load it.
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+loom {
+    // No access widener yet. 26.2's exists to open MenuType's constructor; that
+    // is a 26.2 problem and 1.21.1 may not have it. Adding one before a real
+    // need is guessing.
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.mc1211_minecraft_version}"
+
+    // MOJANG NAMES, not Yarn, and this is the decision that makes the port
+    // possible at all.
+    //
+    // 26.2 ships unobfuscated, so the whole codebase is already written in
+    // Mojang's vocabulary -- `ResourceLocation`, `LivingEntity`, `PoseStack`.
+    // 1.21.1 IS obfuscated and needs a mapping set chosen here. Yarn would
+    // rename everything and turn every ported file into a translation exercise
+    // on top of the version differences it already has. Official mappings mean
+    // a file moved from mc262 differs only where the API genuinely differs.
+    //
+    // This is also the one real toolchain divergence between the platforms:
+    // 26.2 has no mappings dependency and no remapping step; here both exist.
+    mappings loom.officialMojangMappings()
+
+    modImplementation "net.fabricmc:fabric-loader:${project.mc1211_loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.mc1211_fabric_api_version}"
+
+    // The shared core. Same module the 26.2 platform uses, same classes, no
+    // per-version copy.
+    api project(':common')
+
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
+
+    testImplementation platform('org.junit:junit-bom:5.10.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation project(path: ':common', configuration: 'testArtifacts')
+}

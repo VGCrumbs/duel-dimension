@@ -1,0 +1,412 @@
+// PATHS AFTER THE SPLIT. This file used to be the repository root's, so its
+// relative paths meant the root. It is a platform now, so they mean mc262/ --
+// and the engine bundle, the native and the generator scripts are SHARED, so
+// they stay at the root and are named through rootProject. Anything that
+// resolved silently to the wrong tree is spelled out below rather than left to
+// be rediscovered.
+
+plugins {
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    id 'java-library'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+loom {
+    // MenuType's constructor is private on 26.2 and Fabric's screen-handler
+    // helper is unusable here, so the mod widens the constructor to build its
+    // own menu types. See the file's header for the full reason.
+    accessWidenerPath = file("src/main/resources/dueldimension.accesswidener")
+
+    mods {
+        "dueldimension" {
+            sourceSet sourceSets.main
+        }
+    }
+
+    runs {
+        client {
+            // The same account name the Forge workspace runs under, so a
+            // screenshot from either tree is recognisably the same player --
+            // and so PlayerSkins can resolve a skin for it. See that class:
+            // a dev client is offline, so the game has nowhere to fetch one
+            // from and every dev player is Steve unless the mod supplies it.
+            programArgs "--username", "Alpha"
+
+            // The duel screen is laid out in logical GUI pixels, so the window
+            // size decides how much board there is to lay out on. The Forge
+            // workspace fixes it at 920p for that reason; matching it means a
+            // layout checked in one tree is the layout in the other.
+            programArgs "--width", "1634", "--height", "920"
+        }
+    }
+}
+
+/**
+ * Jade's jar, if one has been dropped in libs/. Resolved at configuration time
+ * because the source set has to know whether the integration can compile.
+ */
+def jadeApi = fileTree('libs') { include 'Jade-*.jar' }
+
+repositories {
+    mavenCentral()
+    // ModMenu, for the config screen. Its 26.2 build is Mojang-named like
+    // everything else here, so it needs no remapping.
+    maven {
+        name = 'TerraformersMC'
+        url = 'https://maven.terraformersmc.com/releases'
+    }
+}
+
+dependencies {
+    // The version-independent half of the mod. `api` rather than
+    // `implementation` because the platform's own classes expose common types
+    // in their signatures -- a screen hands a CardHolder around -- so anything
+    // compiling against this module needs to see them too.
+    api project(':common')
+
+    // Shared TEST classes as well, for platform tests that build on them
+    // (IdleAnimationTest uses GlbModelTest's dragon fixture). A plain project
+    // dependency carries main classes only.
+    testImplementation project(path: ':common', configuration: 'testArtifacts')
+
+    // No mappings dependency and no remapping: Minecraft stopped shipping
+    // obfuscated with the move to date versions, so the jar's own names ARE
+    // Mojang's names -- the same vocabulary the Forge tree was written against
+    // (ForgeGradle's parchment channel layered docs over official names),
+    // which is what lets ported files keep their vanilla references untouched.
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+    // JNA for the ocgcore (EDOPro-core) rules engine binding — the reason this
+    // mod exists, and loader-agnostic: pure Java over a native library.
+    implementation 'net.java.dev.jna:jna:5.13.0'
+    include 'net.java.dev.jna:jna:5.13.0'
+
+    // SQLite driver for reading BabelCDB card databases (cards.cdb).
+    implementation 'org.xerial:sqlite-jdbc:3.42.0.0'
+    include 'org.xerial:sqlite-jdbc:3.42.0.0'
+
+    // javax.annotation.Nullable, which the upstream mod's sources use
+    // throughout. Compile-only: it is documentation for javac, not something
+    // the mod needs at runtime.
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
+
+    // ModMenu supplies the config screen's front door and nothing else, so it
+    // is compile-only: the loader stores entrypoint values as plain strings and
+    // only classloads them on getOrCreate, which means the "modmenu" entrypoint
+    // is inert -- not an error -- when ModMenu is not installed.
+    compileOnly 'com.terraformersmc:modmenu:20.0.1'
+
+    // Jade's API, for the callback that hides its tooltip during a duel.
+    //
+    // From libs/ rather than a maven: no public repository serves the 26.2
+    // build -- three were probed and none had it -- and a coordinate that does
+    // not resolve breaks the build for everyone rather than for nobody. Drop a
+    // Jade release in libs/ and JadeIntegration compiles; leave it out and the
+    // integration is left out of the source set, which is the same thing that
+    // happens at runtime for anyone without Jade installed.
+    //
+    // The jar is NOT committed. It is somebody else's work and this repository
+    // does not redistribute it.
+    compileOnly jadeApi
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+java {
+    // What Minecraft 26.2 itself requires, per its launcher manifest.
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 25
+}
+
+// The Blockbench file is the one authored duel-disk model. The game needs a
+// static frame plus dynamic slot coordinates, so derive both before resources
+// are copied instead of relying on somebody to remember a manual generator
+// step. Without this, editing duel_disk.json can leave the client loading an
+// older frame and older card positions from the previous build.
+tasks.register('generateDuelDiskModel', Exec) {
+    description = 'Splits the authored duel_disk.json into its runtime frame and card slots.'
+    // Runs IN this platform, from the shared script: gen_disk_cards.py takes
+    // its resource root as a relative path, so the working directory is what
+    // decides which platform's assets it rewrites.
+    workingDir projectDir
+    commandLine 'python', rootProject.file('tools/gen_disk_cards.py').absolutePath
+    inputs.file rootProject.file('tools/gen_disk_cards.py')
+    inputs.file 'src/main/resources/assets/dueldimension/models/item/duel_disk.json'
+    outputs.files(
+        'src/main/resources/assets/dueldimension/models/item/duel_disk_frame.json',
+        'src/main/resources/assets/dueldimension/models/item/duel_disk_slots.json')
+}
+
+// ---------------------------------------------------------------------------
+// The bundled rules engine.
+//
+// The mod embeds ocgcore and plays Project Ignis's card scripts; without them
+// there is no duel. Until this existed a player had to install EDOPro first,
+// which is a second download, a second install, and a licence-bearing tree the
+// mod then read out of someone else's folder. The jar now carries a copy.
+//
+// Two resource roots feed it, and they are separate for a reason:
+//
+//   bundle/payload  the pieces that ship as ordinary jar entries -- the card
+//                   database, strings.conf, the native core, the notices.
+//   bundle/script   12,727 card-script files, which do NOT ship as 12,727 jar
+//                   entries. They are zipped into ONE entry first (below), so
+//                   the jar's index stays near two thousand names instead of
+//                   fourteen thousand, and so the unpack at runtime can stream
+//                   through the archive rather than consult an index naming
+//                   every file -- a jar's directories cannot be listed through
+//                   a classloader, which is why the bundled card extras need
+//                   exactly such an index.
+//   bundle/ydm_db   the card database, 14,686 files, zipped for the same
+//                   reason and stamped by the same task. Rules and cards are
+//                   two different downloads a player used to have to make, and
+//                   one mechanism carries both.
+// ---------------------------------------------------------------------------
+def engineBundleOut = layout.buildDirectory.dir('generated/engine-bundle')
+
+tasks.register('engineScriptsZip', Zip) {
+    description = 'Packs the bundled card scripts into the single jar entry the mod unpacks at runtime.'
+    from rootProject.layout.projectDirectory.dir('bundle/script')
+    archiveFileName = 'script.zip'
+    destinationDirectory = engineBundleOut.map { it.dir('dueldimension_engine') }
+    // The bundle is versioned by hashing its own bytes, so the same inputs have
+    // to produce the same bytes. Timestamps and directory order would otherwise
+    // change the hash on every build and re-unpack 28 MB on every player's
+    // machine for no reason at all.
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+// The card database, packed the same way and for the same reasons.
+//
+// It is 14,686 files and 16.9 MB raw, which is the difference between a mod
+// that duels on a machine with no connection and one that downloads tens of
+// megabytes before it can show a single card. Deflate takes it to about 8.3 MB
+// in the jar, most of that the 23 rarity overlay PNGs, which are already
+// compressed and do not shrink again.
+tasks.register('cardDatabaseZip', Zip) {
+    description = 'Packs the bundled card database into the single jar entry the mod unpacks at runtime.'
+    from rootProject.layout.projectDirectory.dir('bundle/ydm_db')
+    archiveFileName = 'ydm_db.zip'
+    destinationDirectory = engineBundleOut.map { it.dir('dueldimension_engine') }
+    // Same reason as the scripts: the bundle version is a digest over its own
+    // bytes, so the same inputs have to produce the same bytes or every build
+    // re-unpacks the database on every player's machine.
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+tasks.register('engineBundleStamp') {
+    description = 'Stamps the engine bundle with a version derived from its contents.'
+    dependsOn tasks.named('engineScriptsZip'), tasks.named('cardDatabaseZip')
+
+    def payloadDir = rootProject.layout.projectDirectory.dir('bundle/payload')
+    def provenanceFile = rootProject.layout.projectDirectory.file('bundle/provenance.properties')
+    def scriptsZip = tasks.named('engineScriptsZip', Zip).flatMap { it.archiveFile }
+    def cardDbZip = tasks.named('cardDatabaseZip', Zip).flatMap { it.archiveFile }
+    def stamp = engineBundleOut.map { it.file('dueldimension_engine/bundle.properties') }
+    def modVersion = project.version.toString()
+
+    inputs.dir(payloadDir)
+    inputs.file(provenanceFile)
+    inputs.file(scriptsZip)
+    inputs.file(cardDbZip)
+    inputs.property('modVersion', modVersion)
+    outputs.file(stamp)
+
+    doLast {
+        // Neither cards.cdb nor the script tree carries a version of its own --
+        // PRAGMA user_version is 0, there is no .git under script/, and a card
+        // script says only its name and who wrote it. Upstream's version IS a
+        // git commit in a repo this build does not check out, so the bundle has
+        // to stamp itself: a digest over the CONTENT of everything it ships.
+        // That is stable across rebuilds, changes the moment any shipped byte
+        // does, and is the thing the unpacked copy on a player's disk is
+        // compared against.
+        def payloadRoot = payloadDir.asFile.toPath()
+        def parts = [['script.zip', scriptsZip.get().asFile]]
+        payloadDir.asFile.eachFileRecurse(groovy.io.FileType.FILES) { file ->
+            parts << [payloadRoot.relativize(file.toPath()).toString().replace('\\', '/'), file]
+        }
+        parts.sort { it[0] }
+
+        def whole = java.security.MessageDigest.getInstance('SHA-256')
+        long bytes = 0
+        parts.each { name, file ->
+            def each = java.security.MessageDigest.getInstance('SHA-256')
+            file.withInputStream { input ->
+                byte[] buffer = new byte[1 << 16]
+                int read
+                while((read = input.read(buffer)) > 0)
+                {
+                    each.update(buffer, 0, read)
+                }
+            }
+            bytes += file.length()
+            whole.update("${name}:${each.digest().encodeHex()}\n".getBytes('UTF-8'))
+        }
+
+        // The card database is digested SEPARATELY, and deliberately so.
+        //
+        // Folding it into `version` would have been one line less code and would
+        // have made every existing player re-unpack 28 MB of card scripts the
+        // first time they launched a build that carries a database -- the
+        // scripts are skipped or rewritten as a whole on a version mismatch, and
+        // adding cards to the jar is not a reason to rewrite a single Lua file.
+        // Two payloads that change on different schedules get two versions.
+        def cardDb = cardDbZip.get().asFile
+        def cardDbDigest = java.security.MessageDigest.getInstance('SHA-256')
+        cardDb.withInputStream { input ->
+            byte[] buffer = new byte[1 << 16]
+            int read
+            while((read = input.read(buffer)) > 0)
+            {
+                cardDbDigest.update(buffer, 0, read)
+            }
+        }
+        def cardDbFiles = 0
+        new java.util.zip.ZipFile(cardDb).withCloseable { zip ->
+            cardDbFiles = zip.entries().toList().count { !it.directory }
+        }
+
+        def provenance = new Properties()
+        provenanceFile.asFile.withInputStream { provenance.load(it) }
+
+        def target = stamp.get().asFile
+        target.parentFile.mkdirs()
+        // Written by hand rather than with Properties.store, which stamps the
+        // file with the time it was written and would make every build differ.
+        def text = new StringBuilder()
+        text << '# Generated by the engineBundleStamp task. Do not edit.\n'
+        text << '# bundle.version is a SHA-256 over the content of every file shipped\n'
+        text << '# in this bundle; it is what the unpacked copy under the game\n'
+        text << '# directory is compared against to decide whether to unpack again.\n'
+        text << '# carddb.version is the same idea over the bundled card database,\n'
+        text << '# which is versioned apart from the engine so that a change to one\n'
+        text << '# does not rewrite the other.\n'
+        text << "version=${whole.digest().encodeHex().toString().substring(0, 16)}\n"
+        text << "files=${parts.size()}\n"
+        text << "bytes=${bytes}\n"
+        text << "carddb.version=${cardDbDigest.digest().encodeHex().toString().substring(0, 16)}\n"
+        text << "carddb.files=${cardDbFiles}\n"
+        text << "carddb.bytes=${cardDb.length()}\n"
+        text << "mod.version=${modVersion}\n"
+        provenance.stringPropertyNames().sort().each { key ->
+            text << "${key}=${provenance.getProperty(key)}\n"
+        }
+        target.text = text.toString()
+        logger.lifecycle("Engine bundle stamped: ${target.readLines().find { it.startsWith('version=') }}, ${parts.size()} parts, ${bytes} bytes")
+        logger.lifecycle("Card database stamped: ${target.readLines().find { it.startsWith('carddb.version=') }}, ${cardDbFiles} files, ${cardDb.length()} bytes compressed")
+    }
+}
+
+// The shared core has to be INSIDE the mod jar.
+//
+// A project dependency puts common on the compile and runtime classpath, which
+// is enough for tests and for the dev client, and is NOT enough for a shipped
+// jar: nothing copies those classes into it. Caught by looking -- the first jar
+// built after the split was missing OcgApi and BattleProtection, i.e. the whole
+// rules engine, and would have loaded fine right up until someone started a
+// duel.
+//
+// Merged into `jar` rather than nested with Loom's `include`, because JiJ
+// expects a real Fabric mod with its own fabric.mod.json and common is a plain
+// library. remapJar takes jar's output, so this lands in the published artifact
+// too.
+def commonClasses = project(':common').tasks.named('jar', Jar)
+
+tasks.named('jar', Jar) {
+    dependsOn commonClasses
+    from(commonClasses.map { zipTree(it.archiveFile) }) {
+        // The library jar's own manifest and signature files must not overwrite
+        // the mod's.
+        exclude 'META-INF/**'
+    }
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDir rootProject.file('bundle/payload')
+            srcDir engineBundleOut
+        }
+    }
+}
+
+processResources {
+    dependsOn tasks.named('engineScriptsZip'), tasks.named('cardDatabaseZip'),
+        tasks.named('engineBundleStamp'), tasks.named('generateDuelDiskModel')
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') {
+        expand 'version': project.version
+    }
+}
+
+jar {
+    // AGPL-3.0 section 4: "give all recipients a copy of this License along
+    // with the Program". Naming a licence is not giving one, and until now the
+    // jar named AGPL-3.0-or-later in textures/duel/LICENSE.md without carrying
+    // a word of it -- and carried no CREDITS.md at all, so a player who
+    // received the jar received none of the attribution the repository records.
+    // These four files are the notices that have to travel with the artefact.
+    from(rootProject.file('LICENSE')) { rename { 'LICENSE-GPL-3.0.txt' } }
+    from(rootProject.file('LICENSE-AGPL-3.0.txt'))
+    from(rootProject.file('CREDITS.md'))
+    from(rootProject.file('NOTICE.md'))
+}
+
+test {
+    useJUnitPlatform()
+    // THE BUNDLED ENGINE, not this machine's EDOPro install.
+    //
+    // These defaults used to be C:/ProjectIgnis/..., which meant a green suite
+    // proved the engine worked on the developer's machine and said nothing
+    // whatsoever about the copy that actually ships. That is the same
+    // passes-for-the-wrong-reason trap that hid every portability fault until a
+    // reviewer went looking: the artefact a player receives was never the thing
+    // under test.
+    //
+    // Pointing them at bundle/ makes the suite exercise exactly what goes into
+    // the jar. The -PocgLib / -PocgScripts / -PocgCdb / -PocgStrings overrides
+    // still work, so a run against a real EDOPro install is one flag away.
+    def enginePayload = rootProject.file('bundle/payload/dueldimension_engine')
+    systemProperty 'ocg.lib', project.findProperty('ocgLib')
+        ?: new File(enginePayload, 'native/win32-x86-64/ocgcore.dll').absolutePath
+    systemProperty 'ocg.scripts', project.findProperty('ocgScripts')
+        ?: rootProject.file('bundle/script').absolutePath
+    systemProperty 'ocg.cdb', project.findProperty('ocgCdb')
+        ?: new File(enginePayload, 'expansions/cards.cdb').absolutePath
+    systemProperty 'ocg.strings', project.findProperty('ocgStrings')
+        ?: new File(enginePayload, 'config/strings.conf').absolutePath
+}
+
+// javac stops at 100 errors by default, which hides how much is actually left
+// during a large port -- the count looked stuck at 100 for three passes running
+// while real progress was being made underneath it.
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs << '-Xmaxerrs' << '10000'
+}
+
+// Without Jade's API there is nothing for JadeIntegration to implement, so it
+// is not compiled. Nothing else references it -- the loader reaches it through
+// an entrypoint string -- so its absence costs the rest of the mod nothing.
+if(jadeApi.isEmpty())
+{
+    sourceSets.main.java.exclude '**/JadeIntegration.java'
+    logger.lifecycle('Jade API not in libs/: the Jade integration will not be compiled.')
+}
