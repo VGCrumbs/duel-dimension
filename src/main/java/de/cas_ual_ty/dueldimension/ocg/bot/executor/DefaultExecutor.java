@@ -1,6 +1,7 @@
 package de.cas_ual_ty.dueldimension.ocg.bot.executor;
 
 import de.cas_ual_ty.dueldimension.ocg.OcgConstants;
+import de.cas_ual_ty.dueldimension.ocg.bot.BattleProtection;
 
 import java.util.List;
 
@@ -520,6 +521,36 @@ public abstract class DefaultExecutor extends Executor
     @Override
     public boolean onSelectMonsterSummonOrSet(BotCard card)
     {
+        if(card == null)
+        {
+            return false;
+        }
+        // ---- beyond the reference, and universal ------------------------
+        // A FLIP monster face-up has thrown its effect away. Its whole text is
+        // "when this card is flipped face-up", and one summoned in attack can
+        // never be flipped face-up because it already is. The engine classifies
+        // these itself, so this asks the TYPE rather than reading anything.
+        if(card.hasType(OcgConstants.TYPE_FLIP))
+        {
+            return true;
+        }
+        // And outclassed by everything they control, set it. The reference says
+        // this too, in the rule below -- but only for a level 4 or lower
+        // monster, and only while we control nothing face-up. Those gates keep
+        // it from firing in the case that costs the most: a board where they
+        // have the bigger body everywhere and a face-up summon is a free attack
+        // and free life points. Neither gate is a rule about whether the summon
+        // is a good idea.
+        //
+        // A monster that answers a battle regardless is exempt, which is the
+        // same question BattleProtection settles for attacking, asked from the
+        // other side of the table.
+        if(util.isAllEnemyBetter(true) && !winsAFightAnyway(card))
+        {
+            return true;
+        }
+
+        // ---- and the reference's own rule, unchanged --------------------
         int faceUp = 0;
         for(BotCard monster : bot().getMonsters())
         {
@@ -634,10 +665,121 @@ public abstract class DefaultExecutor extends Executor
      * of Justice Catastor, Moon Mirror Shield. None can appear in a starter
      * deck, so the generic remainder is "no objection", which is what the
      * reference itself returns once those checks fall through.
+     * <p>
+     * <b>What follows is NOT from the reference.</b> It is the same question
+     * those 117 lines answer — is this attack worth making — asked of the
+     * defender's rules text instead of a list of passcodes, so it covers the
+     * cards a starter deck actually holds. See {@link BattleProtection} for why
+     * it reads the card rather than a table, and for how conservative it is.
+     * <p>
+     * Three outcomes, in order:
+     * <ul>
+     * <li>the defender has no shield, or this attacker answers it anyway — the
+     *     reference's "no objection";</li>
+     * <li>the shield never lapses — decline, whatever the numbers say;</li>
+     * <li>the shield absorbs N battles a turn — attack only if N+1 bodies can
+     *     reach it this turn, counting the ones that already have.</li>
+     * </ul>
      */
     @Override
     public boolean onPreBattleBetween(BotCard attacker, BotCard defender)
     {
-        return true;
+        int survives = BattleProtection.battlesSurvived(textOf(defender));
+        if(survives == BattleProtection.NONE)
+        {
+            return true;
+        }
+        // The attacker's own effect may not care whether the thing dies in
+        // combat -- bouncing it, banishing it, flipping it down. That is the
+        // exception the request turns on, so it is checked before the shield.
+        if(BattleProtection.bypassesProtection(textOf(attacker)))
+        {
+            return true;
+        }
+        // Nor does the shield stop DAMAGE.
+        //
+        // A monster that cannot be destroyed by battle still loses the battle,
+        // and its controller still takes the difference. So an indestructible
+        // wall in ATTACK position is a perfectly good thing to attack -- the
+        // point of the attack is the life points, not the kill. The size
+        // comparison in onSelectAttackTarget already refuses this unless the
+        // attacker is bigger, so nothing further is needed here.
+        if(defender.isAttack())
+        {
+            return true;
+        }
+        // In DEFENCE it takes piercing, which most monsters do not have. Same
+        // comparison again: onSelectAttackTarget weighs the attacker against
+        // getDefensePower, so reaching this with a bigger attacker means the
+        // difference is real damage.
+        if(BattleProtection.pierces(textOf(attacker)))
+        {
+            return true;
+        }
+        if(survives == BattleProtection.ALWAYS)
+        {
+            return false;
+        }
+        // Spent shields plus swings still to come. The current attacker is
+        // included in attackersLeft, so N+1 is the honest threshold: one to
+        // spend the shield and one to land.
+        return battlesThisTurn(defender) + attackersLeft() > survives;
+    }
+
+    /**
+     * Whether this monster is worth having face-up even against bigger bodies.
+     * <p>
+     * Either it does something to what it battles rather than needing to beat
+     * it, or it cannot be destroyed by battle at all. Both are read from the
+     * card's own text by {@link BattleProtection}, so a monster the bot would
+     * happily ATTACK a wall with is also one it will stand up.
+     */
+    private boolean winsAFightAnyway(BotCard card)
+    {
+        String text = textOf(card);
+        return BattleProtection.bypassesProtection(text)
+            || BattleProtection.battlesSurvived(text) != BattleProtection.NONE;
+    }
+
+    /**
+     * A card's printed rules text, or empty when it cannot be identified.
+     * <p>
+     * Code 0 is a card the viewer may not see -- a set monster -- and a set
+     * monster's text is not something the bot is entitled to read. Empty means
+     * {@link BattleProtection#NONE}, so an unknown defender is attacked exactly
+     * as it was before.
+     */
+    protected String textOf(BotCard card)
+    {
+        if(card == null || card.code() == 0)
+        {
+            return "";
+        }
+        de.cas_ual_ty.dueldimension.card.properties.Properties properties =
+            de.cas_ual_ty.dueldimension.DdDatabase.PROPERTIES_LIST.get((long)card.code());
+        if(properties == null || properties.text == null || properties.text.isBlank())
+        {
+            // Said once per card, not once per attack: every battle rule here
+            // reads this, and a card the database cannot describe is judged as
+            // if it had no effects at all. If a monster the bot plainly should
+            // respect is being walked into, this is the line that says why.
+            warnMissingText(card.code());
+            return "";
+        }
+        return properties.text;
+    }
+
+    /** Codes already complained about, so a duel does not fill the log. */
+    private static final java.util.Set<Integer> MISSING_TEXT =
+        java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    private static void warnMissingText(int code)
+    {
+        if(MISSING_TEXT.add(code))
+        {
+            de.cas_ual_ty.dueldimension.DuelDimension.warn(
+                "the bot has no rules text for card " + code
+                    + "; its battle effects cannot be weighed");
+        }
     }
 }

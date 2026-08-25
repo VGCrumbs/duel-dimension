@@ -401,6 +401,9 @@ public class ExecutorBot implements ResponseSource
             // read off the host's OWN sorted list, not from the engine. This is
             // that list, sorted the same way.
             attacker.isLastAttacker = position == order.size() - 1;
+            // Swings still to come, this one included -- what a shield that
+            // absorbs one battle a turn has to be weighed against.
+            executor.setAttackersLeft(order.size() - position);
             if(option.canDirect() || defenders.isEmpty())
             {
                 expectingAttackTarget = true;
@@ -588,6 +591,9 @@ public class ExecutorBot implements ResponseSource
                 int index = offered.indexOf(chosen);
                 if(index >= 0)
                 {
+                    // Recorded here and not at declaration, because this is
+                    // where the defender is actually known.
+                    executor.noteBattle(chosen);
                     return Responses.selectCards(new int[] {index});
                 }
             }

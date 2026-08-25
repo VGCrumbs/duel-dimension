@@ -270,6 +270,68 @@ public abstract class Executor
         return lastSummonPlayer < 0 ? -1 : lastSummonPlayer == player ? 0 : 1;
     }
 
+    /**
+     * Attackers still to declare this battle phase, including the current one.
+     * <p>
+     * Not part of the reference. It exists for one rule: a monster that
+     * survives its first battle each turn is worth attacking only if a second
+     * body can follow up, and "is there a second body" is a question about the
+     * attacker LIST, which lives in the host. {@code ExecutorBot} sets it from
+     * the same sorted list it reads {@code isLastAttacker} off.
+     */
+    private int attackersLeft;
+
+    /** Battles each defender has been in this turn, and the turn that counts. */
+    private final java.util.Map<String, Integer> battlesThisTurn = new java.util.HashMap<>();
+    private int battlesCountedOn = -1;
+
+    public final void setAttackersLeft(int count)
+    {
+        attackersLeft = count;
+    }
+
+    protected final int attackersLeft()
+    {
+        return attackersLeft;
+    }
+
+    /** Where a card is, which is what makes two copies of one passcode distinct. */
+    private static String identityOf(BotCard card)
+    {
+        return card.controller() + ":" + card.location() + ":" + card.sequence()
+            + ":" + card.code();
+    }
+
+    /**
+     * Records that a defender has been attacked, so a shield that absorbs one
+     * battle a turn is known to be spent.
+     * <p>
+     * Without this the follow-up never happens: the second attacker asks the
+     * same question, reads the same "once per turn" off the same text, finds
+     * only itself left to swing, and declines -- wasting the first attack,
+     * which is the exact opposite of the rule's intent.
+     */
+    public final void noteBattle(BotCard defender)
+    {
+        forgetBattlesIfTurnChanged();
+        battlesThisTurn.merge(identityOf(defender), 1, Integer::sum);
+    }
+
+    protected final int battlesThisTurn(BotCard defender)
+    {
+        forgetBattlesIfTurnChanged();
+        return battlesThisTurn.getOrDefault(identityOf(defender), 0);
+    }
+
+    private void forgetBattlesIfTurnChanged()
+    {
+        if(battlesCountedOn != turn())
+        {
+            battlesCountedOn = turn();
+            battlesThisTurn.clear();
+        }
+    }
+
     // ---- overridable hooks, matching Executor.cs's virtuals ----
 
     /** Which of their monsters this attacker should hit, or null to decline. */
