@@ -4,17 +4,41 @@ A Minecraft mod that plays real Yu-Gi-Oh!, by embedding the actual ygopro-core
 (`ocgcore`) engine through JNA rather than reimplementing the rules. Forked from
 CAS-ual-TY/YgoDuelingMod; mod id `dueldimension`.
 
-Two trees, one repository (`VGCrumbs/duel-dimension`):
+**This tree — `CrumbyDuelingMulti`, branch `multi-version` — is canonical.** It
+supersedes `CrumbyDuelingFabric`, which is the same history up to `0ffdbaf5` and
+is kept only for reference. Work here.
 
-| | branch | MC | loader | JDK | wrapper |
-| --- | --- | --- | --- | --- | --- |
-| **`CrumbyDueling`** — canonical, playable | `crumby` | 1.19.2 | Forge 43.2.8 | 17 | `gradlew17.cmd` |
-| **`CrumbyDuelingFabric`** — this tree, in progress | `fabric` | 26.2 | Fabric | 25 | `gradlew25.cmd` |
+One repository (`VGCrumbs/duel-dimension`), and this tree is a Gradle
+**composite** of three builds, because two Minecraft versions cannot share one:
 
-The Fabric tree is a port in progress. **`PORTING.md` is the map** — the
-toolchain, every measured API difference, what is across, what is not and where
-it goes, and the decisions taken along the way. Read it before porting anything;
-add to it when you learn something the next person would otherwise rediscover.
+| | what it is | MC | Java | Loom |
+| --- | --- | --- | --- | --- |
+| `common/` | knows nothing about Minecraft | — | 21 | none |
+| `mc262/` | the working mod | 26.2 | 25 | 1.17.18 |
+| `mc1211/` | the port, in progress | 1.21.1 | 21 | 1.12.7 |
+
+`CrumbyDueling` (branch `crumby`, 1.19.2 / Forge 43.2.8, JDK 17,
+`gradlew17.cmd`) is a separate checkout and still the reference for anything
+drawn in immediate mode — its rendering idiom is 1.21.1's, where 26.2's is not.
+
+### Why a composite and not subprojects
+
+Loom 1.17.18, which 26.2 requires, cannot configure an obfuscated Minecraft, and
+1.21.1 is obfuscated. A Gradle build resolves one version of a plugin, so each
+platform is its own build. `common` had to become one too: a build included in a
+composite can see other included builds, not another build's subprojects.
+
+Cross-build dependencies are named by coordinate
+(`de.cas_ual_ty.dueldimension:common:0.1.0-fabric`) and substituted from local
+source. Nothing is published or fetched.
+
+### The two maps
+
+**`PORTING.md`** — the 1.19.2 → 26.2 port: the toolchain, every measured API
+difference, what is across and what is not. **`mc1211/README.md`** — the 26.2 →
+1.21.1 port: why the composite exists, what has been shimmed, and what is left.
+Read the relevant one before porting anything; add to it when you learn
+something the next person would otherwise rediscover.
 
 ## How to work on this
 
@@ -40,17 +64,33 @@ layouts are measured against.
 
 ## Building
 
-    ./gradlew25.cmd build        # Fabric tree, JDK 25
-    ./gradlew25.cmd test         # unit tests
-    ./gradlew25.cmd runClient    # dev client, --username Alpha, 1634×920
+    ./gradlew25.cmd buildAll     # every module; this is the one to run
+    ./gradlew25.cmd :mc262:build # the working mod alone
+    ./gradlew25.cmd -p mc1211 compileJava   # the port alone
+    ./gradlew25.cmd -p common test          # the shared core, on Java 21
+
+`buildAll` green means **no finished part has regressed**. It does NOT mean the
+1.21.1 port is done: `mc1211/port-excludes.txt` lists the files that do not
+compile yet and the build skips them. That file is the progress bar. Fix a file,
+delete its line, build — a red build then means the fix was wrong, which is the
+feedback the port would otherwise not have.
+
+The 26.2 `runClient` still exists under `:mc262:runClient` (`--username Alpha`,
+1634×920).
 
 Two things do not work outside a Windows machine with a GPU:
 
 - **`native/ocgcore.dll` is a Windows native**, loaded through JNA. The duel
-  engine tests need it. (It is 32-bit — a 64-bit JVM cannot load it, which cost
-  an afternoon once.)
+  engine tests need it. It lives at the REPOSITORY root, shared by every module;
+  `common`'s test task points at it with the `ocg.lib` property, since its own
+  working directory is `common/`. (It is 32-bit — a 64-bit JVM cannot load it,
+  which cost an afternoon once.)
 - **`runClient` launches a real game.** Anything verified by looking at it has to
   be verified on that machine.
 
 Everything else — the source port, the pure-Java tests, `compileJava` — is
 portable, which is most of what is left to do.
+
+The engine tests run in `common` and therefore on **Java 21**, which is 1.21.1's.
+That is deliberate: the rules engine ships in both jars, and a shared engine
+proven on only one version is a claim rather than parity.
