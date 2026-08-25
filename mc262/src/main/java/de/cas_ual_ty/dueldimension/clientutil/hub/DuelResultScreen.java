@@ -15,7 +15,31 @@ public final class DuelResultScreen extends Screen
     private static final int PANEL_HEIGHT = 238;
     private static final int ROWS_PER_PAGE = 7;
 
+    /**
+     * How long the result stands before it takes itself away.
+     * <p>
+     * A duel that has just ended should hand the player back their controls, not
+     * wait to be dismissed. The board has already held the outcome and faded it
+     * (HOLD_MS then FADE_MS) before this screen ever opens, so by the time it is
+     * up the player has been told who won; this is the payout, and five seconds
+     * is long enough to read a line of it.
+     */
+    private static final long AUTO_CLOSE_MS = 5000L;
+
     private final DuelRewardMessages.Result reward;
+
+    /** When this was put in front of somebody, for {@link #AUTO_CLOSE_MS}. */
+    private final long shownAt = System.currentTimeMillis();
+
+    /**
+     * Set the moment the player does anything with this screen.
+     * <p>
+     * Reading the bonus breakdown takes longer than five seconds, and a screen
+     * that closed while somebody was paging through it would be worse than one
+     * that waited to be dismissed. Any interaction stops the clock for good --
+     * from then on it closes when they say so.
+     */
+    private boolean engaged;
     /** 0 is the summary; 1 and above are pages of line items. */
     private int page;
 
@@ -78,8 +102,44 @@ public final class DuelResultScreen extends Screen
             Component.literal("Done"), button -> onClose()));
     }
 
+    /**
+     * Closes itself once the result has been up long enough.
+     * <p>
+     * The whole point is that finishing a duel returns control without a
+     * keypress. {@code Done} and Escape both still work and are still the way
+     * out for anyone who has started reading.
+     */
+    @Override
+    public void tick()
+    {
+        super.tick();
+        if(!engaged && System.currentTimeMillis() - shownAt >= AUTO_CLOSE_MS)
+        {
+            onClose();
+        }
+    }
+
+    /**
+     * Any click means somebody is using this, so stop the clock.
+     * <p>
+     * Checked BEFORE the click is dispatched: a click on Done closes the screen
+     * anyway, and a click on a page button needs the timer already stopped, so
+     * asking afterwards would be a frame late in one case and pointless in the
+     * other.
+     */
+    @Override
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
+        boolean doubled)
+    {
+        engaged = true;
+        return super.mouseClicked(event, doubled);
+    }
+
     private void setPage(int value)
     {
+        // Reached from the buttons, and also the honest place to stop the clock
+        // for anything that changes what is being read.
+        engaged = true;
         page = Math.max(0, Math.min(detailPages(), value));
         rebuildWidgets();
     }

@@ -9,7 +9,7 @@ import de.cas_ual_ty.dueldimension.clientutil.FieldLayout;
 import de.cas_ual_ty.dueldimension.clientutil.PlayMats;
 import de.cas_ual_ty.dueldimension.ocg.OcgConstants;
 import de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import de.cas_ual_ty.dueldimension.duel.overworld.FieldSiting;
 import de.cas_ual_ty.dueldimension.duel.overworld.FieldTransform;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
@@ -980,7 +980,7 @@ public final class OverworldBoardRenderer
             // with that for the duellist sitting at seat 0. Asked the wrong
             // way round, a player at the far seat got their own sleeve drawn
             // on their opponent's cards and their opponent's on theirs.
-            Identifier back = CardFaces.back(own ? 0 : 1);
+            ResourceLocation back = CardFaces.back(own ? 0 : 1);
 
             // The engine numbers controllers from the seat it is asking; the
             // board's halves are absolute. Both are needed here -- one to draw
@@ -1044,7 +1044,7 @@ public final class OverworldBoardRenderer
      * and still see a hand rather than a row of nothing.
      */
     private static void drawStandingHand(PoseStack poseStack, SubmitNodeCollector collector,
-        FieldTransform transform, Vec3 camera, int controller, int cards, Identifier back)
+        FieldTransform transform, Vec3 camera, int controller, int cards, ResourceLocation back)
     {
         if(cards <= 0)
         {
@@ -1153,7 +1153,7 @@ public final class OverworldBoardRenderer
 
     private static void drawPile(PoseStack poseStack, SubmitNodeCollector collector,
         FieldTransform transform, Vec3 camera, int controller, int asked, int location, int count,
-        Identifier top, Identifier back)
+        ResourceLocation top, ResourceLocation back)
     {
         FieldLayout.Rect zone = FieldLayout.zone(controller, location, 0);
         if(zone == null || count <= 0)
@@ -1208,8 +1208,8 @@ public final class OverworldBoardRenderer
      * other face, so a face-down banished card is still face down on top of its
      * pile.
      */
-    private static Identifier topFace(List<BoardSnapshot.Slot> slots, int asked,
-        Identifier back)
+    private static ResourceLocation topFace(List<BoardSnapshot.Slot> slots, int asked,
+        ResourceLocation back)
     {
         if(slots == null || slots.isEmpty())
         {
@@ -1244,7 +1244,7 @@ public final class OverworldBoardRenderer
 
     private static void drawRow(PoseStack poseStack, SubmitNodeCollector collector,
         FieldTransform transform, Vec3 camera, List<BoardSnapshot.Slot> slots, int controller,
-        int asked, int location, Identifier back)
+        int asked, int location, ResourceLocation back)
     {
         if(slots == null)
         {

@@ -5,7 +5,7 @@
 # equivalent, or because it references a file that does. Fix one,
 # delete its line, build. A red build means the fix was wrong.
 #
-# 323 file(s) remaining.
+# 325 file(s) remaining.
 de/cas_ual_ty/dueldimension/CommonConfig.java
 de/cas_ual_ty/dueldimension/CosmeticItem.java
 de/cas_ual_ty/dueldimension/DdBlocks.java
@@ -122,8 +122,10 @@ de/cas_ual_ty/dueldimension/clientutil/overworld/CrosshairAction.java
 de/cas_ual_ty/dueldimension/clientutil/overworld/HandLayout.java
 de/cas_ual_ty/dueldimension/clientutil/overworld/MonsterSheets.java
 de/cas_ual_ty/dueldimension/clientutil/overworld/MonsterSprites.java
+de/cas_ual_ty/dueldimension/clientutil/overworld/OverworldBoardRenderer.java
 de/cas_ual_ty/dueldimension/clientutil/overworld/SpriteLayer.java
 de/cas_ual_ty/dueldimension/clientutil/overworld/SpriteSource.java
+de/cas_ual_ty/dueldimension/clientutil/overworld/StatOverlay.java
 de/cas_ual_ty/dueldimension/clientutil/overworld/Wings.java
 de/cas_ual_ty/dueldimension/clientutil/widget/ColoredButton.java
 de/cas_ual_ty/dueldimension/clientutil/widget/ColoredTextWidget.java

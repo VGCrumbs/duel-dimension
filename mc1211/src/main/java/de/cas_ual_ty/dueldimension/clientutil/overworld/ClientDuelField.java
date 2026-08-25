@@ -285,6 +285,26 @@ public final class ClientDuelField
     }
 
     /**
+     * Is there a duel here to LOOK at?
+     * <p>
+     * Split from {@link #locked} because that flag was doing two jobs, and
+     * separating them broke the other one. It meant both "the duel is under way,
+     * so draw the board" and "this player is held in the duel, so take their
+     * controls away" — fine while only duellists ever had it, and wrong the
+     * moment a watcher needed the first without the second. Making {@code
+     * locked} exclude spectators fixed the controls and left bystanders looking
+     * at an empty field outline.
+     * <p>
+     * So drawing asks this and control asks {@link #locked}. A duellist is
+     * running once they are locked; a watcher is running whenever there is a
+     * board, because they never walk to a mark and have no phase before it.
+     */
+    public static boolean running()
+    {
+        return present() && (locked || spectating());
+    }
+
+    /**
      * Is this player walking to a mark right now?
      * <p>
      * Spectators excluded for the same reason as {@link #locked}: "has a board
