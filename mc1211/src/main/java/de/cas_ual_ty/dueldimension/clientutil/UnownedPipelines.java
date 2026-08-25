@@ -6,7 +6,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import de.cas_ual_ty.dueldimension.DuelDimension;
 import de.cas_ual_ty.dueldimension.compat.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.rendertype.TextureTransform;
 import net.minecraft.resources.ResourceLocation;
 
@@ -203,7 +203,7 @@ public final class UnownedPipelines
     }
 
     /**
-     * The desaturating twin of {@code RenderTypes.breezeWind(texture, 0, 0)}.
+     * The desaturating twin of {@code RenderType.breezeWind(texture, 0, 0)}.
      * <p>
      * Every step is that method's, read off its bytecode rather than guessed —
      * the {@code Sampler0} binding, the zero texture offset {@code BREEZE_WIND}

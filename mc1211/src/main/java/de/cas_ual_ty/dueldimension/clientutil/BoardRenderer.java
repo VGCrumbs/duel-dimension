@@ -7,7 +7,7 @@ import de.cas_ual_ty.dueldimension.ocg.OcgConstants;
 import de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot;
 import de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 

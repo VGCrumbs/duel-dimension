@@ -4,7 +4,7 @@ import com.mojang.blaze3d.platform.NativeImage;
 import de.cas_ual_ty.dueldimension.DuelDimension;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 
 import java.io.ByteArrayInputStream;

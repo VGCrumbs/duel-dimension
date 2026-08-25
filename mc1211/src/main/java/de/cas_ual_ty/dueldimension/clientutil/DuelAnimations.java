@@ -6,7 +6,7 @@ import de.cas_ual_ty.dueldimension.DdSounds;
 import de.cas_ual_ty.dueldimension.card.properties.Properties;
 import de.cas_ual_ty.dueldimension.ocg.prompt.DuelEvent;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;

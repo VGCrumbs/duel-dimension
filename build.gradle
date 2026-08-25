@@ -51,15 +51,11 @@ tasks.register('buildAll') {
     dependsOn gradle.includedBuild('common').task(':build')
     dependsOn ':mc262:build'
 
-    // mc1211 IS NOT BUILT HERE while the port is under way.
+    // mc1211 IS built here again. It compiles -- of the files in its build.
     //
-    // 348 of mc262's 405 files are across and ~1000 API errors remain, so it
-    // does not compile yet and would make every `buildAll` red -- which would
-    // hide a real regression in the two halves that DO work. It is still in the
-    // composite, so build it deliberately:
-    //
-    //     ./gradlew25.cmd -p mc1211 compileJava
-    //
-    // Put this line back the day it compiles; that is the milestone.
-    // dependsOn gradle.includedBuild('mc1211').task(':build')
+    // mc1211/port-excludes.txt holds the ones that do not yet, and the build
+    // skips them. So this being green does NOT mean the port is done; it means
+    // no finished part of it has regressed, which is the property worth having
+    // during the months this will take. The exclude list is the progress bar.
+    dependsOn gradle.includedBuild('mc1211').task(':build')
 }

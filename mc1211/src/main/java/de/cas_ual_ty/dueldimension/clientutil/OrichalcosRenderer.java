@@ -5,7 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import de.cas_ual_ty.dueldimension.DuelDimension;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BeaconRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
@@ -318,7 +318,7 @@ public final class OrichalcosRenderer
             // for how that was established. A seal that dims with the local
             // block light would be a seal that vanishes at night, which is
             // exactly when it is most likely to be seen.
-            net.minecraft.client.renderer.rendertype.RenderTypes.breezeWind(SEAL_TEXTURE, 0F, 0F),
+            net.minecraft.client.renderer.RenderType.breezeWind(SEAL_TEXTURE, 0F, 0F),
             (unused, buffer) ->
             {
                 corner(buffer, pose, -radius, -radius, cos, sin, 0F, 0F, tint);
@@ -366,8 +366,8 @@ public final class OrichalcosRenderer
         // texture does not stretch as the beam narrows.
         float v1 = v0 + BEAM_HEIGHT * 0.5F / (CORE_RATIO * BEAM_THICKNESS);
 
-        net.minecraft.client.renderer.rendertype.RenderType type =
-            net.minecraft.client.renderer.rendertype.RenderTypes
+        net.minecraft.client.renderer.RenderType type =
+            net.minecraft.client.renderer.RenderType
                 .beaconBeam(BeaconRenderer.BEAM_LOCATION, true);
         // Copied: the stack recycles its Pose objects and the draw is
         // deferred, so a reference held here can be overwritten before it is
@@ -393,7 +393,7 @@ public final class OrichalcosRenderer
      * away.
      */
     private static void column(SubmitNodeCollector collector, PoseStack poseStack,
-        PoseStack.Pose pose, net.minecraft.client.renderer.rendertype.RenderType type,
+        PoseStack.Pose pose, net.minecraft.client.renderer.RenderType type,
         float radius, float v0, float v1, int tint, float toCameraX, float toCameraZ)
     {
         collector.submitCustomGeometry(poseStack, type, (unused, buffer) ->

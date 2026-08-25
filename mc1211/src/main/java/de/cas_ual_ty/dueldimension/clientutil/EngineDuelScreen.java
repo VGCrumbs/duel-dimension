@@ -2,7 +2,7 @@ package de.cas_ual_ty.dueldimension.clientutil;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import de.cas_ual_ty.dueldimension.DdDatabase;
 import de.cas_ual_ty.dueldimension.card.properties.Properties;

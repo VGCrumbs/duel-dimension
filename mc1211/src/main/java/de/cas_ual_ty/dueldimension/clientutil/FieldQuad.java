@@ -2,7 +2,7 @@ package de.cas_ual_ty.dueldimension.clientutil;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector;
 import net.minecraft.resources.ResourceLocation;
 
 /**
@@ -147,7 +147,7 @@ public final class FieldQuad
             // the fragment shader, so an unowned card is greyed by the draw
             // rather than by a second copy of its image.
             desaturate ? UnownedPipelines.mesh(texture)
-                : net.minecraft.client.renderer.rendertype.RenderTypes.breezeWind(texture, 0F, 0F),
+                : net.minecraft.client.renderer.RenderType.breezeWind(texture, 0F, 0F),
             (pose, buffer) ->
             {
                 vertex(buffer, pose, corners.x0(), corners.y0(), u0, v0, tint);
@@ -185,7 +185,7 @@ public final class FieldQuad
         float u0, float v0, float u1, float v1, int tint)
     {
         collector.order(layer++).submitCustomGeometry(poseStack,
-            net.minecraft.client.renderer.rendertype.RenderTypes.breezeWind(texture, 0F, 0F),
+            net.minecraft.client.renderer.RenderType.breezeWind(texture, 0F, 0F),
             (pose, buffer) ->
             {
                 vertex3D(buffer, pose, corners.x0(), corners.y0(), corners.z0(), u0, v0, tint);
@@ -336,7 +336,7 @@ public final class FieldQuad
         int tint = ScreenUtil.colour(red, green, blue, alpha);
 
         collector.order(layer++).submitCustomGeometry(poseStack,
-            net.minecraft.client.renderer.rendertype.RenderTypes.breezeWind(texture, 0F, 0F),
+            net.minecraft.client.renderer.RenderType.breezeWind(texture, 0F, 0F),
             (pose, buffer) ->
         {
             for(int row = 0; row < steps; row++)
@@ -446,10 +446,10 @@ public final class FieldQuad
      */
     public static void submit(PoseStack poseStack, SubmitNodeCollector collector,
         ResourceLocation texture,
-        net.minecraft.client.renderer.SubmitNodeCollector.CustomGeometryRenderer painter)
+        de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector.CustomGeometryRenderer painter)
     {
         collector.order(layer++).submitCustomGeometry(poseStack,
-            net.minecraft.client.renderer.rendertype.RenderTypes.breezeWind(texture, 0F, 0F),
+            net.minecraft.client.renderer.RenderType.breezeWind(texture, 0F, 0F),
             painter);
     }
 

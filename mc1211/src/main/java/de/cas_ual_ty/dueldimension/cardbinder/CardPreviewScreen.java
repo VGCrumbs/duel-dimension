@@ -197,7 +197,7 @@ public class CardPreviewScreen extends Screen
 
     /** Draws the turned card, then its foil, inside the picture-in-picture pass. */
     private void paint(com.mojang.blaze3d.vertex.PoseStack pose,
-        net.minecraft.client.renderer.SubmitNodeCollector collector, int viewW, int viewH)
+        de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector collector, int viewW, int viewH)
     {
         // Call order is draw order from here; see FieldQuad.resetLayers. This
         // screen used to skip it, and the counter it feeds is static -- so it
@@ -294,7 +294,7 @@ public class CardPreviewScreen extends Screen
      * margin the card art gets, so the two register pixel for pixel.
      */
     private void foilLayer(com.mojang.blaze3d.vertex.PoseStack pose,
-        net.minecraft.client.renderer.SubmitNodeCollector collector, ResourceLocation texture,
+        de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector collector, ResourceLocation texture,
         float scale, boolean inverted, float gain)
     {
         FieldQuad.submit(pose, collector, texture, (vertexPose, buffer) ->
@@ -382,7 +382,7 @@ public class CardPreviewScreen extends Screen
      *                   missing
      */
     private void mesh(com.mojang.blaze3d.vertex.PoseStack pose,
-        net.minecraft.client.renderer.SubmitNodeCollector collector, ResourceLocation texture,
+        de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector collector, ResourceLocation texture,
         float scale, float u0, float v0, float uSpan, float vSpan, float alpha,
         boolean desaturate)
     {
