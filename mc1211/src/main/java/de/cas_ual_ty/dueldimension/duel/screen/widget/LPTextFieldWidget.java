@@ -4,7 +4,7 @@ import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import de.cas_ual_ty.dueldimension.clientutil.widget.ITooltip;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.input.KeyEvent;
+import de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent;
 import net.minecraft.network.chat.Component;
 
 import java.util.function.Predicate;
@@ -85,11 +85,15 @@ public class LPTextFieldWidget extends EditBox
      * on the one thing above it that is public.
      */
     @Override
-    public boolean keyPressed(KeyEvent event)
+    public boolean keyPressed(int vanillaKey, int vanillaScancode, int vanillaModifiers)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values. Built
+        // here so the body below is the 26.2 one, unchanged.
+        KeyEvent event = new KeyEvent(vanillaKey, vanillaScancode, vanillaModifiers);
+
         String before = getValue();
         int cursor = getCursorPosition();
-        boolean handled = super.keyPressed(event);
+        boolean handled = super.keyPressed(vanillaKey, vanillaScancode, vanillaModifiers);
         undoIfRefused(before, cursor);
         return handled;
     }

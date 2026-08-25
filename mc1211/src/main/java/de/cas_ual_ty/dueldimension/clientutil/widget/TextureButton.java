@@ -76,8 +76,13 @@ public class TextureButton extends Button
     }
 
     @Override
-    protected void extractContents(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTicks)
+    protected void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTicks)
     {
+        // 26.2 describes itself into a render state; 1.21.1 draws now. The
+        // body is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        GuiGraphicsExtractor extractor = new GuiGraphicsExtractor(vanillaGraphics);
+
         extractTooltip(extractor, mouseX, mouseY);
         extractDefaultSprite(extractor);
 

@@ -27,8 +27,13 @@ public class ImprovedButton extends Button
     }
 
     @Override
-    protected void extractContents(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick)
+    protected void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 describes itself into a render state; 1.21.1 draws now. The
+        // body is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        GuiGraphicsExtractor extractor = new GuiGraphicsExtractor(vanillaGraphics);
+
         // The standard button sprite; the label is added by the base's
         // extractDefaultLabel around this call. Button is abstract in 26.2, so
         // the drawing has to be stated even when it is the default one.

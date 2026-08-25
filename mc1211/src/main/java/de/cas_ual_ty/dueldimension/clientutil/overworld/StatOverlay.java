@@ -7,7 +7,7 @@ import de.cas_ual_ty.dueldimension.duel.overworld.FieldTransform;
 import de.cas_ual_ty.dueldimension.ocg.OcgConstants;
 import de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;

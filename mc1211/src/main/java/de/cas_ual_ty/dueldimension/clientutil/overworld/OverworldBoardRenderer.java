@@ -14,7 +14,7 @@ import de.cas_ual_ty.dueldimension.duel.overworld.FieldSiting;
 import de.cas_ual_ty.dueldimension.duel.overworld.FieldTransform;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.SubmitNodeCollector;
+import de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;

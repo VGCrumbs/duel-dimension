@@ -38,8 +38,13 @@ public class InteractionWidget extends Button
     }
 
     @Override
-    protected void extractContents(GuiGraphicsExtractor ms, int mouseX, int mouseY, float partialTicks)
+    protected void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTicks)
     {
+        // 26.2 describes itself into a render state; 1.21.1 draws now. The
+        // body is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        GuiGraphicsExtractor ms = new GuiGraphicsExtractor(vanillaGraphics);
+
         // PORT-NOTE: Forge pushed the pose and translated z by 5 around all of
         // this, so the icon sat above anything the duel screen drew later at z 0 —
         // the card info panel among them. The GUI matrix is 2D and the depth test

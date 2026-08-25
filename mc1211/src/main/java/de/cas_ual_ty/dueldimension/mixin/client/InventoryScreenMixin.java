@@ -117,7 +117,7 @@ public abstract class InventoryScreenMixin
     }
 
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
-    private void dueldimension$clickDiskSlot(net.minecraft.client.input.MouseButtonEvent event,
+    private void dueldimension$clickDiskSlot(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
         boolean doubled, CallbackInfoReturnable<Boolean> callback)
     {
         int[] at = dueldimension$slot();

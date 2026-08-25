@@ -2126,7 +2126,7 @@ public class DeckEditorScreen extends Screen
     // ---- interaction ----
 
     @Override
-    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
+    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
         boolean doubleClick)
     {
         // The artwork picker before ANYTHING, the scrollbar included. That bar
@@ -2930,7 +2930,7 @@ public class DeckEditorScreen extends Screen
      * would be impossible.
      */
     @Override
-    public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event)
+    public boolean mouseReleased(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event)
     {
         if(altCard != null)
         {
@@ -3035,7 +3035,7 @@ public class DeckEditorScreen extends Screen
     }
 
     @Override
-    public boolean keyPressed(net.minecraft.client.input.KeyEvent event)
+    public boolean keyPressed(de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent event)
     {
         int key = event.key();
         int scan = event.scancode();
@@ -3081,7 +3081,7 @@ public class DeckEditorScreen extends Screen
     }
 
     @Override
-    public boolean charTyped(net.minecraft.client.input.CharacterEvent event)
+    public boolean charTyped(de.cas_ual_ty.dueldimension.compat.InputEvents.CharacterEvent event)
     {
         char typed = (char)event.codepoint();
         int modifiers = 0;
@@ -3996,7 +3996,7 @@ public class DeckEditorScreen extends Screen
     }
 
     @Override
-    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event,
+    public boolean mouseDragged(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
         double dragX, double dragY)
     {
         if(altCard != null)
@@ -4401,8 +4401,13 @@ public class DeckEditorScreen extends Screen
         }
 
         @Override
-        protected void extractContents(GuiGraphicsExtractor poseStack, int mouseX, int mouseY, float partialTick)
-        {
+        protected void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
+    {
+        // 26.2 describes itself into a render state; 1.21.1 draws now. The
+        // body is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        GuiGraphicsExtractor poseStack = new GuiGraphicsExtractor(vanillaGraphics);
+
             int row = openList == this ? NineSlice.SELECTED
                 : isHoveredOrFocused() ? NineSlice.HOVER : NineSlice.IDLE;
             NineSlice.draw(poseStack, HubTextures.CHIP, getX(), getY(), getWidth(), getHeight(), row, 3);
@@ -4541,8 +4546,13 @@ public class DeckEditorScreen extends Screen
         }
 
         @Override
-        protected void extractContents(GuiGraphicsExtractor poseStack, int mouseX, int mouseY, float partialTick)
-        {
+        protected void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
+    {
+        // 26.2 describes itself into a render state; 1.21.1 draws now. The
+        // body is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        GuiGraphicsExtractor poseStack = new GuiGraphicsExtractor(vanillaGraphics);
+
             boolean on = lit.getAsBoolean();
             int row = on ? NineSlice.SELECTED : isHoveredOrFocused() ? NineSlice.HOVER : NineSlice.IDLE;
             NineSlice.draw(poseStack, HubTextures.CHIP, getX(), getY(), getWidth(), getHeight(), row, 3);
@@ -4599,9 +4609,13 @@ public class DeckEditorScreen extends Screen
         }
 
         @Override
-        protected void extractContents(GuiGraphicsExtractor poseStack, int mouseX, int mouseY,
-            float partialTick)
-        {
+        protected void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
+    {
+        // 26.2 describes itself into a render state; 1.21.1 draws now. The
+        // body is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        GuiGraphicsExtractor poseStack = new GuiGraphicsExtractor(vanillaGraphics);
+
             int row = !active ? NineSlice.DISABLED
                 : isHoveredOrFocused() ? NineSlice.HOVER : NineSlice.IDLE;
             NineSlice.draw(poseStack, HubTextures.BUTTON, getX(), getY(), getWidth(),
@@ -4641,9 +4655,13 @@ public class DeckEditorScreen extends Screen
         }
 
         @Override
-        protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-            float partialTick)
-        {
+        protected void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
+    {
+        // 26.2 describes itself into a render state; 1.21.1 draws now. The
+        // body is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        GuiGraphicsExtractor graphics = new GuiGraphicsExtractor(vanillaGraphics);
+
             int row = !active ? NineSlice.DISABLED
                 : isHoveredOrFocused() ? NineSlice.HOVER : NineSlice.IDLE;
             NineSlice.draw(graphics, HubTextures.BUTTON, getX(), getY(), getWidth(),
@@ -4669,8 +4687,13 @@ public class DeckEditorScreen extends Screen
         }
 
         @Override
-        protected void extractContents(GuiGraphicsExtractor poseStack, int mouseX, int mouseY, float partialTick)
-        {
+        protected void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
+    {
+        // 26.2 describes itself into a render state; 1.21.1 draws now. The
+        // body is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        GuiGraphicsExtractor poseStack = new GuiGraphicsExtractor(vanillaGraphics);
+
             int row = lit.getAsBoolean() ? NineSlice.SELECTED
                 : isHoveredOrFocused() ? NineSlice.HOVER : NineSlice.IDLE;
             NineSlice.draw(poseStack, HubTextures.CHIP, getX(), getY(), getWidth(), getHeight(), row, 3);

@@ -16,9 +16,14 @@ public class NonSecretStackZoneWidget extends StackZoneWidget
     }
 
     @Override
-    protected void extractContents(GuiGraphicsExtractor ms, int mouseX, int mouseY, float partialTicks)
+    protected void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTicks)
     {
-        super.extractContents(ms, mouseX, mouseY, partialTicks);
+        // 26.2 describes itself into a render state; 1.21.1 draws now. The
+        // body is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        GuiGraphicsExtractor ms = new GuiGraphicsExtractor(vanillaGraphics);
+
+        super.renderWidget(ms.vanilla(), mouseX, mouseY, partialTicks);
         hoverCard = null; // dont select top card when clicking on it, ever
     }
 }

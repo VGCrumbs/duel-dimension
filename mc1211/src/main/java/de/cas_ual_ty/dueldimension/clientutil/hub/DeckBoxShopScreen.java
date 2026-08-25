@@ -7,7 +7,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.MouseButtonEvent;
+import de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
@@ -497,9 +497,14 @@ public final class DeckBoxShopScreen extends Screen
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
+    public boolean mouseClicked(double vanillaX, double vanillaY, int vanillaButton)
     {
-        if(super.mouseClicked(event, doubleClick))
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values. Built
+        // here so the body below is the 26.2 one, unchanged.
+        MouseButtonEvent event = new MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+        boolean doubleClick = false;
+
+        if(super.mouseClicked(vanillaX, vanillaY, vanillaButton))
         {
             return true;
         }
@@ -528,21 +533,29 @@ public final class DeckBoxShopScreen extends Screen
     }
 
     @Override
-    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY)
+    public boolean mouseDragged(double vanillaX, double vanillaY, int vanillaButton, double dragX, double dragY)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values. Built
+        // here so the body below is the 26.2 one, unchanged.
+        MouseButtonEvent event = new MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+
         if(scrollGrab >= 0)
         {
             dragScrollbar(event.y());
             return true;
         }
-        return super.mouseDragged(event, dragX, dragY);
+        return super.mouseDragged(vanillaX, vanillaY, vanillaButton, vanillaDragX, vanillaDragY);
     }
 
     @Override
-    public boolean mouseReleased(MouseButtonEvent event)
+    public boolean mouseReleased(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values. Built
+        // here so the body below is the 26.2 one, unchanged.
+        MouseButtonEvent event = new MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+
         scrollGrab = -1;
-        return super.mouseReleased(event);
+        return super.mouseReleased(vanillaX, vanillaY, vanillaButton);
     }
 
     @Override

@@ -206,7 +206,7 @@ public class DiskShopScreen extends Screen
     }
 
     @Override
-    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
+    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
         boolean doubled)
     {
         int hit = diskAt(event.x(), event.y());

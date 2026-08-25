@@ -1480,7 +1480,7 @@ public class EngineDuelScreen extends Screen
     // ---- input ----
 
     @Override
-    public boolean keyPressed(net.minecraft.client.input.KeyEvent event)
+    public boolean keyPressed(de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent event)
     {
         int keyCode = event.key();
 
@@ -1582,7 +1582,7 @@ public class EngineDuelScreen extends Screen
     }
 
     @Override
-    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event,
+    public boolean mouseDragged(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
         double dragX, double dragY)
     {
         if(barGrabOffset >= 0)
@@ -1594,7 +1594,7 @@ public class EngineDuelScreen extends Screen
     }
 
     @Override
-    public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event)
+    public boolean mouseReleased(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event)
     {
         barGrabOffset = -1;
         return super.mouseReleased(event);
@@ -1636,7 +1636,7 @@ public class EngineDuelScreen extends Screen
     }
 
     @Override
-    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
+    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
         boolean doubleClick)
     {
         double mouseX = event.x();
@@ -2139,8 +2139,13 @@ public class EngineDuelScreen extends Screen
         }
 
         @Override
-        protected void extractContents(GuiGraphicsExtractor poseStack, int mouseX, int mouseY, float partialTick)
-        {
+        protected void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
+    {
+        // 26.2 describes itself into a render state; 1.21.1 draws now. The
+        // body is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        GuiGraphicsExtractor poseStack = new GuiGraphicsExtractor(vanillaGraphics);
+
             boolean hovered = isHoveredOrFocused();
             int x = getX();
             int y = getY();
@@ -2231,8 +2236,13 @@ public class EngineDuelScreen extends Screen
         }
 
         @Override
-        protected void extractContents(GuiGraphicsExtractor poseStack, int mouseX, int mouseY, float partialTick)
-        {
+        protected void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
+    {
+        // 26.2 describes itself into a render state; 1.21.1 draws now. The
+        // body is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        GuiGraphicsExtractor poseStack = new GuiGraphicsExtractor(vanillaGraphics);
+
             BoardSnapshot board = currentBoard();
             // Pointing at a reachable phase previews it as lit.
             int state = isHoveredOrFocused() ? PHASE_LIT : phaseState(board, index);

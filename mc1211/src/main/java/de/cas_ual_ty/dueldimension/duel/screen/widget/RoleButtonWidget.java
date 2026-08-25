@@ -20,8 +20,13 @@ public class RoleButtonWidget extends Button
     }
 
     @Override
-    protected void extractContents(GuiGraphicsExtractor ms, int mouseX, int mouseY, float partial)
+    protected void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partial)
     {
+        // 26.2 describes itself into a render state; 1.21.1 draws now. The
+        // body is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        GuiGraphicsExtractor ms = new GuiGraphicsExtractor(vanillaGraphics);
+
         // A seat is taken and freed by the other player while this screen is
         // open, so availability is asked every frame rather than at build time.
         // extractContents is the first thing AbstractButton does, so the sprite

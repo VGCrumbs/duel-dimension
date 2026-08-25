@@ -447,7 +447,7 @@ public class CardInfoScreen extends Screen
     }
 
     @Override
-    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
+    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
         boolean doubleClick)
     {
         double mouseX = event.x();
@@ -887,8 +887,13 @@ public class CardInfoScreen extends Screen
         }
 
         @Override
-        protected void extractContents(GuiGraphicsExtractor poseStack, int mouseX, int mouseY, float partialTick)
-        {
+        protected void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
+    {
+        // 26.2 describes itself into a render state; 1.21.1 draws now. The
+        // body is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        GuiGraphicsExtractor poseStack = new GuiGraphicsExtractor(vanillaGraphics);
+
             boolean on = lit.getAsBoolean();
             NineSlice.draw(poseStack, HubTextures.BUTTON, getX(), getY(), getWidth(), getHeight(),
                 isHoveredOrFocused() ? NineSlice.HOVER : NineSlice.IDLE, 3);

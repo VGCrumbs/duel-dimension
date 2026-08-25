@@ -12,7 +12,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.MouseButtonEvent;
+import de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
@@ -370,11 +370,16 @@ public class SleeveShopScreen extends Screen
     // ---- input ----
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
+    public boolean mouseClicked(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values. Built
+        // here so the body below is the 26.2 one, unchanged.
+        MouseButtonEvent event = new MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+        boolean doubleClick = false;
+
         // Widgets first: the grid covers most of the screen, and a control drawn
         // over it should be what receives a click on it.
-        if(super.mouseClicked(event, doubleClick))
+        if(super.mouseClicked(vanillaX, vanillaY, vanillaButton))
         {
             return true;
         }

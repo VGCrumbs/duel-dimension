@@ -57,7 +57,7 @@ public class DuelScreenIdle<E extends DuelContainer> extends DuelContainerScreen
     public void extractContents(GuiGraphicsExtractor ms, int mouseX, int mouseY,
         float partialTicks)
     {
-        super.extractContents(ms, mouseX, mouseY, partialTicks);
+        super.renderWidget(ms.vanilla(), mouseX, mouseY, partialTicks);
         
         // The parent already describes this exact panel; the Forge original drew
         // it a second time here and the port keeps that rather than deciding on

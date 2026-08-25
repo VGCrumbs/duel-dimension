@@ -5,7 +5,7 @@ import de.cas_ual_ty.dueldimension.clientutil.CardRenderUtil;
 import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
 import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.KeyEvent;
+import de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent;
 import net.minecraft.network.chat.Component;
 
 /**
@@ -64,8 +64,12 @@ public class InspectCardScreen extends Screen
     }
 
     @Override
-    public boolean keyPressed(KeyEvent keyEvent)
+    public boolean keyPressed(int vanillaKey, int vanillaScancode, int vanillaModifiers)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values. Built
+        // here so the body below is the 26.2 one, unchanged.
+        KeyEvent keyEvent = new KeyEvent(vanillaKey, vanillaScancode, vanillaModifiers);
+
         InputConstants.Key mouseKey = InputConstants.getKey(keyEvent);
 
         if(minecraft.options.keyInventory.matches(mouseKey))
@@ -74,7 +78,7 @@ public class InspectCardScreen extends Screen
             return true;
         }
 
-        return super.keyPressed(keyEvent);
+        return super.keyPressed(vanillaKey, vanillaScancode, vanillaModifiers);
     }
 
     @Override

@@ -1,7 +1,7 @@
 package de.cas_ual_ty.dueldimension.clientutil.hub;
 
 import de.cas_ual_ty.dueldimension.clientutil.CardBacks;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -524,9 +524,13 @@ public class DuelHubScreen extends Screen
         }
 
         @Override
-        protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-            float partialTick)
-        {
+        protected void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
+    {
+        // 26.2 describes itself into a render state; 1.21.1 draws now. The
+        // body is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        GuiGraphicsExtractor graphics = new GuiGraphicsExtractor(vanillaGraphics);
+
             // The chosen one wears the disabled surface. It stays clickable
             // rather
             // than being switched inactive, because active is fixed at build
@@ -573,9 +577,13 @@ public class DuelHubScreen extends Screen
      * way round compiles as a new method and silently draws nothing.
      */
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-        float partialTick)
+    public void render(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
+        // 26.2 describes itself into a render state; 1.21.1 draws now. The
+        // body is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        GuiGraphicsExtractor graphics = new GuiGraphicsExtractor(vanillaGraphics);
+
         // Asked here rather than through a supplier on the button itself: a
         // widget's own render is skipped while it is invisible, so a button that
         // hid itself could never decide to come back. The screen always renders.
@@ -603,7 +611,7 @@ public class DuelHubScreen extends Screen
             default -> waiting(graphics, bodyTop);
         }
 
-        super.extractRenderState(graphics, mouseX, mouseY, partialTick);
+        super.render(graphics.vanilla(), mouseX, mouseY, partialTick);
 
         renderDeckContextMenu(graphics, mouseX, mouseY);
         renderDeckDrag(graphics, mouseX, mouseY);
@@ -792,7 +800,7 @@ public class DuelHubScreen extends Screen
     // directly -- so the three mouse events reach it by hand, and it gets first
     // refusal ahead of the widgets so a drag across the wheel is not stolen.
     @Override
-    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
+    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
         boolean doubled)
     {
         if(contextDeck != null)
@@ -853,7 +861,7 @@ public class DuelHubScreen extends Screen
     }
 
     @Override
-    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event,
+    public boolean mouseDragged(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
         double dragX, double dragY)
     {
         if(event.button() == 0 && dragCandidate != null)
@@ -877,7 +885,7 @@ public class DuelHubScreen extends Screen
     }
 
     @Override
-    public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event)
+    public boolean mouseReleased(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event)
     {
         if(event.button() == 0 && dragCandidate != null)
         {
@@ -913,7 +921,7 @@ public class DuelHubScreen extends Screen
     }
 
     @Override
-    public boolean keyPressed(net.minecraft.client.input.KeyEvent event)
+    public boolean keyPressed(de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent event)
     {
         if(contextDeck != null && event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE)
         {

@@ -34,8 +34,13 @@ public class ReadyCheckboxWidget extends Button
     }
 
     @Override
-    protected void extractContents(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partial)
+    protected void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partial)
     {
+        // 26.2 describes itself into a render state; 1.21.1 draws now. The
+        // body is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        GuiGraphicsExtractor extractor = new GuiGraphicsExtractor(vanillaGraphics);
+
         active = isActive.get();
         Minecraft minecraft = Minecraft.getInstance();
         extractDefaultSprite(extractor);

@@ -250,7 +250,7 @@ public class BinderPackScreen extends Screen
     }
 
     @Override
-    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
+    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
         boolean doubleClick)
     {
         if(event.button() == 0)

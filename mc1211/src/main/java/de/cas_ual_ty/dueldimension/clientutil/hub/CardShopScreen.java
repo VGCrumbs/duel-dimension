@@ -11,9 +11,9 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.CharacterEvent;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
+import de.cas_ual_ty.dueldimension.compat.InputEvents.CharacterEvent;
+import de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent;
+import de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
@@ -1206,8 +1206,13 @@ public class CardShopScreen extends Screen
     // ---- input ----
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
+    public boolean mouseClicked(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values. Built
+        // here so the body below is the 26.2 one, unchanged.
+        MouseButtonEvent event = new MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+        boolean doubleClick = false;
+
         double mouseX = event.x();
         double mouseY = event.y();
         int button = event.button();
@@ -1220,7 +1225,7 @@ public class CardShopScreen extends Screen
         }
         // Widgets first. The grid covers most of the screen, and a control
         // drawn over it should be the thing that receives a click on it.
-        if(super.mouseClicked(event, doubleClick))
+        if(super.mouseClicked(vanillaX, vanillaY, vanillaButton))
         {
             return true;
         }
@@ -1251,21 +1256,29 @@ public class CardShopScreen extends Screen
     }
 
     @Override
-    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY)
+    public boolean mouseDragged(double vanillaX, double vanillaY, int vanillaButton, double dragX, double dragY)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values. Built
+        // here so the body below is the 26.2 one, unchanged.
+        MouseButtonEvent event = new MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+
         if(scrollGrab >= 0)
         {
             dragScrollBar(event.y());
             return true;
         }
-        return super.mouseDragged(event, dragX, dragY);
+        return super.mouseDragged(vanillaX, vanillaY, vanillaButton, vanillaDragX, vanillaDragY);
     }
 
     @Override
-    public boolean mouseReleased(MouseButtonEvent event)
+    public boolean mouseReleased(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values. Built
+        // here so the body below is the 26.2 one, unchanged.
+        MouseButtonEvent event = new MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+
         scrollGrab = -1;
-        return super.mouseReleased(event);
+        return super.mouseReleased(vanillaX, vanillaY, vanillaButton);
     }
 
     @Override
@@ -1313,8 +1326,12 @@ public class CardShopScreen extends Screen
     }
 
     @Override
-    public boolean keyPressed(KeyEvent event)
+    public boolean keyPressed(int vanillaKey, int vanillaScancode, int vanillaModifiers)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values. Built
+        // here so the body below is the 26.2 one, unchanged.
+        KeyEvent event = new KeyEvent(vanillaKey, vanillaScancode, vanillaModifiers);
+
         // The search field takes the keyboard while it has focus, so typing a
         // set's name does not also fire whatever the letters are bound to --
         // and Escape still closes the shop rather than being swallowed.
@@ -1323,17 +1340,21 @@ public class CardShopScreen extends Screen
         {
             return true;
         }
-        return super.keyPressed(event);
+        return super.keyPressed(vanillaKey, vanillaScancode, vanillaModifiers);
     }
 
     @Override
-    public boolean charTyped(CharacterEvent event)
+    public boolean charTyped(char vanillaCodepoint, int vanillaModifiers)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values. Built
+        // here so the body below is the 26.2 one, unchanged.
+        CharacterEvent event = new CharacterEvent(vanillaCodepoint);
+
         if(search != null && search.isFocused() && search.charTyped(event))
         {
             return true;
         }
-        return super.charTyped(event);
+        return super.charTyped(vanillaCodepoint, vanillaModifiers);
     }
 
     private int packAt(double mouseX, double mouseY)

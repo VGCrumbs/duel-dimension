@@ -334,7 +334,7 @@ public class BillboardEditorScreen extends Screen
     }
 
     @Override
-    public boolean keyPressed(net.minecraft.client.input.KeyEvent event)
+    public boolean keyPressed(de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent event)
     {
         if(typing != null)
         {
@@ -361,7 +361,7 @@ public class BillboardEditorScreen extends Screen
     }
 
     @Override
-    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
+    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
         boolean doubled)
     {
         // Clicking away takes the number rather than discarding it: the value is
@@ -1384,7 +1384,7 @@ public class BillboardEditorScreen extends Screen
         }
 
         @Override
-        public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
+        public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
             boolean doubled)
         {
             if(event.button() == 1 && isMouseOver(event.x(), event.y()))
@@ -1474,7 +1474,7 @@ public class BillboardEditorScreen extends Screen
         }
 
         @Override
-        public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
+        public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
             boolean doubled)
         {
             if(event.button() == 1 && isMouseOver(event.x(), event.y()))

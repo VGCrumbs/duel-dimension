@@ -14,8 +14,8 @@ import de.cas_ual_ty.dueldimension.duel.overworld.FieldTransform;
 import net.minecraft.client.Camera;
 import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
+import de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent;
+import de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 
@@ -518,8 +518,13 @@ public class BoardPointerScreen extends Screen
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubled)
+    public boolean mouseClicked(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values. Built
+        // here so the body below is the 26.2 one, unchanged.
+        MouseButtonEvent event = new MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+        boolean doubled = false;
+
         // Before everything, including an open menu. A way out that only worked
         // when no menu happened to be sitting over it is a way out a player
         // cannot trust -- and the menu is part of the action being backed out
@@ -660,7 +665,7 @@ public class BoardPointerScreen extends Screen
 
         if(options.isEmpty())
         {
-            return super.mouseClicked(event, doubled);
+            return super.mouseClicked(vanillaX, vanillaY, vanillaButton);
         }
         // A pile is a stack of face-down cards, so what it can offer are VERBS
         // and not cards: three summonable monsters gave three rows all reading
@@ -921,8 +926,12 @@ public class BoardPointerScreen extends Screen
     }
 
     @Override
-    public boolean keyPressed(KeyEvent event)
+    public boolean keyPressed(int vanillaKey, int vanillaScancode, int vanillaModifiers)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values. Built
+        // here so the body below is the 26.2 one, unchanged.
+        KeyEvent event = new KeyEvent(vanillaKey, vanillaScancode, vanillaModifiers);
+
         if(minecraft.options.keyTogglePerspective.matches(event))
         {
             // Relinquish the transparent pointer and decline the event. The
@@ -1002,7 +1011,7 @@ public class BoardPointerScreen extends Screen
                 new net.minecraft.client.gui.screens.ChatScreen("/", false));
             return true;
         }
-        return super.keyPressed(event);
+        return super.keyPressed(vanillaKey, vanillaScancode, vanillaModifiers);
     }
 
     @Override

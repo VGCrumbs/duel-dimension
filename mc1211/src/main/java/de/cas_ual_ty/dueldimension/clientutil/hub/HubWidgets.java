@@ -1,6 +1,6 @@
 package de.cas_ual_ty.dueldimension.clientutil.hub;
 
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 
@@ -80,9 +80,13 @@ public final class HubWidgets
         }
 
         @Override
-        protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-            float partialTick)
-        {
+        protected void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
+    {
+        // 26.2 describes itself into a render state; 1.21.1 draws now. The
+        // body is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        GuiGraphicsExtractor graphics = new GuiGraphicsExtractor(vanillaGraphics);
+
             // Answered before the surface is chosen, and written back to
             // `active` so the CLICK agrees with the picture rather than only
             // the paint doing.
@@ -162,9 +166,13 @@ public final class HubWidgets
         }
 
         @Override
-        protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-            float partialTick)
-        {
+        protected void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
+    {
+        // 26.2 describes itself into a render state; 1.21.1 draws now. The
+        // body is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        GuiGraphicsExtractor graphics = new GuiGraphicsExtractor(vanillaGraphics);
+
             boolean on = selected.getAsBoolean();
             int row = on ? NineSlice.SELECTED
                 : isHoveredOrFocused() ? NineSlice.HOVER : NineSlice.IDLE;
@@ -271,9 +279,13 @@ public final class HubWidgets
         }
 
         @Override
-        protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-            float partialTick)
-        {
+        protected void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
+    {
+        // 26.2 describes itself into a render state; 1.21.1 draws now. The
+        // body is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        GuiGraphicsExtractor graphics = new GuiGraphicsExtractor(vanillaGraphics);
+
             de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.fullBlit(graphics,
                 selected ? HubTextures.DECK_TILE_SELECTED : HubTextures.DECK_TILE,
                 getX(), getY(), getWidth(), getHeight());

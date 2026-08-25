@@ -9,8 +9,8 @@ import de.cas_ual_ty.dueldimension.clientutil.ImageHandler;
 import de.cas_ual_ty.dueldimension.clientutil.layout.Layout;
 import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
+import de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent;
+import de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
@@ -271,8 +271,13 @@ public class PackOpeningScreen extends Screen
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
+    public boolean mouseClicked(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values. Built
+        // here so the body below is the 26.2 one, unchanged.
+        MouseButtonEvent event = new MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+        boolean doubleClick = false;
+
         // The menu is tested BEFORE super, so a click landing on it cannot fall
         // through to the strip underneath and advance the pull.
         if(menuCard >= 0)
@@ -297,7 +302,7 @@ public class PackOpeningScreen extends Screen
                 return true;
             }
         }
-        if(super.mouseClicked(event, doubleClick))
+        if(super.mouseClicked(vanillaX, vanillaY, vanillaButton))
         {
             return true;
         }
@@ -316,12 +321,16 @@ public class PackOpeningScreen extends Screen
     }
 
     @Override
-    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy)
+    public boolean mouseDragged(double vanillaX, double vanillaY, int vanillaButton, double dx, double dy)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values. Built
+        // here so the body below is the 26.2 one, unchanged.
+        MouseButtonEvent event = new MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+
         double mouseX = event.x();
         if(!dragging || stage != Stage.STRIP)
         {
-            return super.mouseDragged(event, dx, dy);
+            return super.mouseDragged(vanillaX, vanillaY, vanillaButton, vanillaDragX, vanillaDragY);
         }
         float spacing = Math.max(1F, spacing());
         position = dragFromPosition - (float)((mouseX - dragFromX) / spacing);
@@ -334,8 +343,12 @@ public class PackOpeningScreen extends Screen
     }
 
     @Override
-    public boolean mouseReleased(MouseButtonEvent event)
+    public boolean mouseReleased(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values. Built
+        // here so the body below is the 26.2 one, unchanged.
+        MouseButtonEvent event = new MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+
         double mouseX = event.x();
         if(dragging && stage == Stage.STRIP)
         {
@@ -354,7 +367,7 @@ public class PackOpeningScreen extends Screen
             }
             return true;
         }
-        return super.mouseReleased(event);
+        return super.mouseReleased(vanillaX, vanillaY, vanillaButton);
     }
 
     /** The card whose menu is open, or -1. */
@@ -544,8 +557,12 @@ public class PackOpeningScreen extends Screen
     }
 
     @Override
-    public boolean keyPressed(KeyEvent event)
+    public boolean keyPressed(int vanillaKey, int vanillaScancode, int vanillaModifiers)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values. Built
+        // here so the body below is the 26.2 one, unchanged.
+        KeyEvent event = new KeyEvent(vanillaKey, vanillaScancode, vanillaModifiers);
+
         int key = event.key();
         if(stage == Stage.STRIP)
         {
@@ -568,7 +585,7 @@ public class PackOpeningScreen extends Screen
             onClose();
             return true;
         }
-        return super.keyPressed(event);
+        return super.keyPressed(vanillaKey, vanillaScancode, vanillaModifiers);
     }
 
     private void playSound(net.minecraft.sounds.SoundEvent sound, float pitch)

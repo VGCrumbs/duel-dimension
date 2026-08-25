@@ -247,7 +247,7 @@ public class BinderScreen extends Screen
     }
 
     @Override
-    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
+    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
         boolean doubleClick)
     {
         if(event.button() == 0 && grabBar(event.x(), event.y()))
@@ -262,7 +262,7 @@ public class BinderScreen extends Screen
     }
 
     @Override
-    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event,
+    public boolean mouseDragged(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
         double dragX, double dragY)
     {
         if(barGrab >= 0)
@@ -274,7 +274,7 @@ public class BinderScreen extends Screen
     }
 
     @Override
-    public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event)
+    public boolean mouseReleased(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event)
     {
         barGrab = -1;
         return super.mouseReleased(event);

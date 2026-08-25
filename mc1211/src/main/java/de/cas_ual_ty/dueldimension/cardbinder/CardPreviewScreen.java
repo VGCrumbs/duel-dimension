@@ -467,7 +467,7 @@ public class CardPreviewScreen extends Screen
     }
 
     @Override
-    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
+    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
         boolean doubleClick)
     {
         if(event.button() == 0)
@@ -481,7 +481,7 @@ public class CardPreviewScreen extends Screen
     }
 
     @Override
-    public boolean mouseDragged(net.minecraft.client.input.MouseButtonEvent event,
+    public boolean mouseDragged(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
         double dragX, double dragY)
     {
         if(dragging)
@@ -497,7 +497,7 @@ public class CardPreviewScreen extends Screen
     }
 
     @Override
-    public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event)
+    public boolean mouseReleased(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event)
     {
         dragging = false;
         return super.mouseReleased(event);

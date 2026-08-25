@@ -146,7 +146,7 @@ public class DuelScreenPreparing<E extends DuelContainer> extends DuelContainerS
     public void extractContents(GuiGraphicsExtractor ms, int mouseX, int mouseY,
         float partialTicks)
     {
-        super.extractContents(ms, mouseX, mouseY, partialTicks);
+        super.renderWidget(ms.vanilla(), mouseX, mouseY, partialTicks);
         
         if(renderDeckChoosing())
         {

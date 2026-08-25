@@ -231,7 +231,7 @@ public class CardDisplayScreen extends Screen
     }
 
     @Override
-    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubled)
+    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event, boolean doubled)
     {
         // The grid first. Its cells are drawn by this screen rather than being
         // widgets, so nothing else is going to claim them -- and asking super

@@ -21,8 +21,8 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
+import de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent;
+import de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
@@ -138,7 +138,7 @@ public abstract class DuelContainerScreen<E extends DuelContainer> extends Switc
         // AbstractContainerScreen's own version, minus the extractContents call
         // extractBackground has already made. super.extractContents reaches that
         // class's implementation -- widgets, slots, labels -- not this chain.
-        super.extractContents(ms, mouseX, mouseY, partialTicks);
+        super.renderWidget(ms.vanilla(), mouseX, mouseY, partialTicks);
         extractCarriedItem(ms, mouseX, mouseY);
         extractTooltip(ms, mouseX, mouseY);
     }
@@ -156,7 +156,7 @@ public abstract class DuelContainerScreen<E extends DuelContainer> extends Switc
         // ran the rest around it; here the two are one method, so overriding it
         // without this line silently loses every slot and label on this screen
         // and on all four that extend it.
-        super.extractContents(ms, mouseX, mouseY, partialTicks);
+        super.renderWidget(ms.vanilla(), mouseX, mouseY, partialTicks);
     }
 
     @Override
@@ -180,19 +180,28 @@ public abstract class DuelContainerScreen<E extends DuelContainer> extends Switc
     }
     
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick)
+    public boolean mouseClicked(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values. Built
+        // here so the body below is the 26.2 one, unchanged.
+        MouseButtonEvent event = new MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+        boolean doubleClick = false;
+
         if(textFieldWidget != null && textFieldWidget.isFocused() && !textFieldWidget.isMouseOver(event.x(), event.y()))
         {
             textFieldWidget.setFocused(false);
         }
 
-        return super.mouseClicked(event, doubleClick);
+        return super.mouseClicked(vanillaX, vanillaY, vanillaButton);
     }
 
     @Override
-    public boolean keyPressed(KeyEvent event)
+    public boolean keyPressed(int vanillaKey, int vanillaScancode, int vanillaModifiers)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values. Built
+        // here so the body below is the 26.2 one, unchanged.
+        KeyEvent event = new KeyEvent(vanillaKey, vanillaScancode, vanillaModifiers);
+
         if(textFieldWidget != null && textFieldWidget.isFocused())
         {
             if(event.key() == GLFW.GLFW_KEY_ENTER)
@@ -207,7 +216,7 @@ public abstract class DuelContainerScreen<E extends DuelContainer> extends Switc
         }
         else
         {
-            return super.keyPressed(event);
+            return super.keyPressed(vanillaKey, vanillaScancode, vanillaModifiers);
         }
     }
     

@@ -334,7 +334,7 @@ public class DuelScreenDueling<E extends DuelContainer> extends DuelContainerScr
     public void extractContents(GuiGraphicsExtractor ms, int mouseX, int mouseY,
         float partialTicks)
     {
-        super.extractContents(ms, mouseX, mouseY, partialTicks);
+        super.renderWidget(ms.vanilla(), mouseX, mouseY, partialTicks);
         
         // super already blits the background, and the Forge code blitted it once
         // more before the foreground. Both stay: the repeat costs a quad and
@@ -354,7 +354,7 @@ public class DuelScreenDueling<E extends DuelContainer> extends DuelContainerScr
     }
     
     @Override
-    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
+    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
         boolean doubleClick)
     {
         double mouseX = event.x();
@@ -390,7 +390,7 @@ public class DuelScreenDueling<E extends DuelContainer> extends DuelContainerScr
     }
     
     @Override
-    public boolean keyPressed(net.minecraft.client.input.KeyEvent event)
+    public boolean keyPressed(de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent event)
     {
         int keyCode = event.key();
         if(lifePointsWidget != null && lifePointsWidget.isFocused())
