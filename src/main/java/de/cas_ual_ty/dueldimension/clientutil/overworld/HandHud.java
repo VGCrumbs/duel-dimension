@@ -126,7 +126,7 @@ public final class HandHud implements HudElement
             if(DuelHighlight.handCardIsOffered(board, card))
             {
                 DuelHighlight.around(extractor, at.x(), at.y() - lift, at.width(), at.height(),
-                    ticks());
+                    ticks(), DuelHighlight.handTarget(board, card));
             }
             // inHand is true: a set card in your OWN hand is one you are
             // allowed to look at, and this overlay is only ever drawn for its

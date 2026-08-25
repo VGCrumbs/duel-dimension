@@ -813,7 +813,11 @@ public class EngineDuelScreen extends Screen
             // drawing it. Any option will do; they are all the same card.
             case POSITION -> prompt.options().isEmpty() ? ""
                 : prompt.options().get(0).detail();
-            default -> prompt.isSingleChoice() ? "Click a card"
+            // Nothing for a single choice. "Click a card" was the panel telling
+            // a duellist to do the only thing the panel affords, under a header
+            // that has already named the question -- and it sat directly behind
+            // the Back button, so half of it was a truncated word.
+            default -> prompt.isSingleChoice() ? ""
                 : "Choose " + prompt.minSelect()
                     + (prompt.maxSelect() > prompt.minSelect() ? " to " + prompt.maxSelect() : "")
                     + "   (" + DuelSelection.count() + " picked)";

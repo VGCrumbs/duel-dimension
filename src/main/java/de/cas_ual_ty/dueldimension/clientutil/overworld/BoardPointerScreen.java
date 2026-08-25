@@ -923,6 +923,17 @@ public class BoardPointerScreen extends Screen
     @Override
     public boolean keyPressed(KeyEvent event)
     {
+        if(minecraft.options.keyTogglePerspective.matches(event))
+        {
+            // Relinquish the transparent pointer and decline the event. The
+            // keyboard handler rechecks the current screen after keyPressed;
+            // finding none, it follows its ordinary in-game path and sends the
+            // physical key through every mapping bound to it. That is what lets
+            // vanilla, Perspective API and third-person mods agree on one
+            // camera transition. cameraHeld restores the pointer at end tick.
+            onClose();
+            return false;
+        }
         // Escape means "put this away", and the resting cursor is not a thing
         // that can be put away -- closing it only opens it again on the next
         // tick. So it dismisses an open menu, and with no menu open it reaches

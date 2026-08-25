@@ -3,7 +3,9 @@
   "minVersion": "0.8",
   "package": "de.cas_ual_ty.dueldimension.mixin",
   "compatibilityLevel": "JAVA_21",
-  "mixins": [],
+  "mixins": [
+    "DuelPushMixin"
+  ],
   "client": [
     "client.AbstractClientPlayerMixin",
     "client.AvatarRendererMixin",
@@ -15,6 +17,7 @@
     "client.InventoryScreenMixin",
     "client.ItemInHandRendererMixin",
     "client.KeyMappingAccessor",
+    "client.LocalDuelPushMixin",
     "client.MinecraftDuelClickMixin",
     "client.MinecraftPackMixin",
     "client.NameTagMixin",
