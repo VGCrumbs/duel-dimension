@@ -1,5 +1,6 @@
 package de.cas_ual_ty.dueldimension.cardbinder;
 
+import de.cas_ual_ty.dueldimension.card.CardHolderNbt;
 import de.cas_ual_ty.dueldimension.card.CardHolder;
 import de.cas_ual_ty.dueldimension.net.DdNetwork;
 import net.minecraft.nbt.CompoundTag;
@@ -26,7 +27,7 @@ import java.util.function.Consumer;
  * and that helper lives in {@code duel/network} which is not ported yet. Rather
  * than pull the whole helper across for one method, the same wire shape — a
  * present flag and the holder's NBT — is inlined here, using
- * {@link CardHolder#writeCardHolderToNBT} and the {@code CompoundTag}
+ * {@link CardHolderNbt#write} and the {@code CompoundTag}
  * constructor it already has.
  */
 public class CardBinderMessages
@@ -49,14 +50,14 @@ public class CardBinderMessages
         {
             buf.writeBoolean(true);
             CompoundTag nbt = new CompoundTag();
-            card.writeCardHolderToNBT(nbt);
+            CardHolderNbt.write(card, nbt);
             buf.writeNbt(nbt);
         }
     }
 
     private static CardHolder decodeCardHolder(FriendlyByteBuf buf)
     {
-        return buf.readBoolean() ? new CardHolder(buf.readNbt()) : null;
+        return buf.readBoolean() ? CardHolderNbt.read(buf.readNbt()) : null;
     }
 
     // client changes page, tells server

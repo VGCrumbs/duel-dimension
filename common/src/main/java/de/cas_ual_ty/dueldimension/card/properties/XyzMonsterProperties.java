@@ -2,7 +2,7 @@ package de.cas_ual_ty.dueldimension.card.properties;
 
 import com.google.gson.JsonObject;
 import de.cas_ual_ty.dueldimension.util.JsonKeys;
-import net.minecraft.network.chat.Component;
+import de.cas_ual_ty.dueldimension.card.CardLine;
 
 import java.util.List;
 
@@ -55,9 +55,9 @@ public class XyzMonsterProperties extends DefMonsterProperties
     }
     
     @Override
-    public void addMonsterHeader1(List<Component> list)
+    public void addMonsterHeader1(List<CardLine> list)
     {
-        list.add(Component.literal(getAttribute() + " / Rank " + getRank()));
+        list.add(CardLine.of(getAttribute() + " / Rank " + getRank()));
     }
     
     // --- Getters ---

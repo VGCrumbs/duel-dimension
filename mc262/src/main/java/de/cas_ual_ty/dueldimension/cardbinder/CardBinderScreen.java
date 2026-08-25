@@ -1,5 +1,6 @@
 package de.cas_ual_ty.dueldimension.cardbinder;
 
+import de.cas_ual_ty.dueldimension.clientutil.CardPresentation;
 import de.cas_ual_ty.dueldimension.DuelDimension;
 import de.cas_ual_ty.dueldimension.card.CardHolder;
 import de.cas_ual_ty.dueldimension.cardinventory.CardInventory;
@@ -111,7 +112,7 @@ public class CardBinderScreen extends AbstractContainerScreen<CardBinderContaine
                     CardRenderUtil.renderCardInfo(ms, button.getCard(), leftPos);
 
                     List<Component> list = new LinkedList<>();
-                    button.getCard().addInformation(list);
+                    CardPresentation.addInformation(button.getCard(), list);
 
                     List<Component> tooltip = new ArrayList<>(list.size());
                     for(Component t : list)

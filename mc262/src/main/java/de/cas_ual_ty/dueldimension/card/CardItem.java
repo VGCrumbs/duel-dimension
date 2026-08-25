@@ -1,5 +1,6 @@
 package de.cas_ual_ty.dueldimension.card;
 
+import de.cas_ual_ty.dueldimension.clientutil.CardPresentation;
 import de.cas_ual_ty.dueldimension.DuelDimension;
 import de.cas_ual_ty.dueldimension.rarity.Rarities;
 import net.minecraft.network.chat.Component;
@@ -38,7 +39,7 @@ public class CardItem extends Item
         TooltipDisplay display, Consumer<Component> lines, TooltipFlag flag)
     {
         List<Component> information = new ArrayList<>();
-        getCardHolder(itemStack).addInformation(information);
+        CardPresentation.addInformation(getCardHolder(itemStack), information);
         information.forEach(lines);
     }
 

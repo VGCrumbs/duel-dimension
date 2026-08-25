@@ -2,7 +2,7 @@ package de.cas_ual_ty.dueldimension.card.properties;
 
 import com.google.gson.JsonObject;
 import de.cas_ual_ty.dueldimension.util.JsonKeys;
-import net.minecraft.network.chat.Component;
+import de.cas_ual_ty.dueldimension.card.CardLine;
 
 import java.util.List;
 
@@ -56,9 +56,9 @@ public class DefMonsterProperties extends MonsterProperties
     }
     
     @Override
-    public void addMonsterHeader2(List<Component> list)
+    public void addMonsterHeader2(List<CardLine> list)
     {
-        list.add(Component.literal(getAtk() + " ATK / " + getDef() + " DEF"));
+        list.add(CardLine.of(getAtk() + " ATK / " + getDef() + " DEF"));
     }
     
     // --- Getters ---

@@ -109,7 +109,7 @@ public class CardRenderUtil
         Font fontRenderer = ClientProxy.getMinecraft().font;
 
         List<Component> list = new LinkedList<>();
-        card.getCard().addInformation(list);
+        CardPresentation.addInformation(card.getCard(), list);
 
         ScreenUtil.drawSplitString(ms, fontRenderer, list, margin, imageSize * 2 + margin * 2,
             maxWidth, 0xFFFFFF);
@@ -130,22 +130,22 @@ public class CardRenderUtil
      */
     public static Identifier bindInfoResourceLocation(CardHolder c)
     {
-        return CardRenderUtil.bindInfoResourceLocation(c.getInfoImageResourceLocation());
+        return CardRenderUtil.bindInfoResourceLocation(CardPresentation.infoImage(c));
     }
 
     public static Identifier bindMainResourceLocation(CardHolder c)
     {
-        return CardRenderUtil.bindMainResourceLocation(c.getMainImageResourceLocation());
+        return CardRenderUtil.bindMainResourceLocation(CardPresentation.mainImage(c));
     }
 
     public static Identifier bindInfoResourceLocation(Properties p, byte imageIndex)
     {
-        return CardRenderUtil.bindInfoResourceLocation(p.getInfoImageResourceLocation(imageIndex));
+        return CardRenderUtil.bindInfoResourceLocation(CardPresentation.infoImage(p, imageIndex));
     }
 
     public static Identifier bindMainResourceLocation(Properties p, byte imageIndex)
     {
-        return CardRenderUtil.bindMainResourceLocation(p.getMainImageResourceLocation(imageIndex));
+        return CardRenderUtil.bindMainResourceLocation(CardPresentation.mainImage(p, imageIndex));
     }
 
     public static Identifier bindInfoResourceLocation(Identifier r)

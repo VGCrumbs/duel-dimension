@@ -63,7 +63,7 @@ public class CardSpecialRenderer implements SpecialModelRenderer<CardHolder>
         // again (the Forge "blanc"/single-back fallback — a stack with no card
         // still needs two drawable faces).
         Identifier front = (card != null && card.getCard() != null)
-            ? card.getItemImageResourceLocation()
+            ? CardPresentation.itemImage(card)
             : back;
 
         drawTwoFaces(pose, collector, front, back);

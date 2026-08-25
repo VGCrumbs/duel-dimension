@@ -1,5 +1,6 @@
 package de.cas_ual_ty.dueldimension.clientutil.hub;
 
+import de.cas_ual_ty.dueldimension.clientutil.CardPresentation;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import de.cas_ual_ty.dueldimension.DdDatabase;
 import de.cas_ual_ty.dueldimension.card.CardHolder;
@@ -708,7 +709,7 @@ public class CardInfoScreen extends Screen
         // the facts -- which is where a monster's species comes from.
         List<Component> information = new ArrayList<>();
         information.add(Component.literal(card.getName() == null ? "" : card.getName()));
-        card.addFacts(information);
+        CardPresentation.addFacts(card, information);
         String released = firstRelease();
         if(!released.isEmpty())
         {

@@ -53,7 +53,7 @@ class EngineDuelSidebarTest
         elf.hasEffect = false;
 
         List<net.minecraft.network.chat.Component> facts = new java.util.ArrayList<>();
-        elf.addFacts(facts);
+        CardPresentation.addFacts(elf, facts);
 
         assertEquals(EngineDuelScreen.sidebarHeader(elf).stream()
                 .map(component -> component.getString()).toList(),
@@ -75,7 +75,7 @@ class EngineDuelSidebarTest
         spell.type = Type.SPELL;
 
         List<net.minecraft.network.chat.Component> facts = new java.util.ArrayList<>();
-        spell.addFacts(facts);
+        CardPresentation.addFacts(spell, facts);
 
         assertEquals(List.of("Spell"),
             facts.stream().map(component -> component.getString()).toList());

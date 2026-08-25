@@ -1,5 +1,6 @@
 package de.cas_ual_ty.dueldimension.duel.network;
 
+import de.cas_ual_ty.dueldimension.card.CardHolderNbt;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.network.chat.ComponentSerialization;
 import de.cas_ual_ty.dueldimension.DdDuelRegistries;
@@ -150,7 +151,7 @@ public class DuelMessageUtility
         {
             buf.writeBoolean(true);
             CompoundTag nbt = new CompoundTag();
-            card.writeCardHolderToNBT(nbt);
+            CardHolderNbt.write(card, nbt);
             buf.writeNbt(nbt);
         }
         else
@@ -161,7 +162,7 @@ public class DuelMessageUtility
     
     public static CardHolder decodeCardHolder(RegistryFriendlyByteBuf buf)
     {
-        return buf.readBoolean() ? new CardHolder(buf.readNbt()) : null;
+        return buf.readBoolean() ? CardHolderNbt.read(buf.readNbt()) : null;
     }
     
     public static void encodeDeckHolder(DeckHolder deck, RegistryFriendlyByteBuf buf)

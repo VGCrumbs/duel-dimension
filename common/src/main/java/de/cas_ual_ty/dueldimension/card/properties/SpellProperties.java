@@ -2,7 +2,7 @@ package de.cas_ual_ty.dueldimension.card.properties;
 
 import com.google.gson.JsonObject;
 import de.cas_ual_ty.dueldimension.util.JsonKeys;
-import net.minecraft.network.chat.Component;
+import de.cas_ual_ty.dueldimension.card.CardLine;
 
 import java.util.List;
 
@@ -56,9 +56,9 @@ public class SpellProperties extends Properties
     }
     
     @Override
-    public void addCardType(List<Component> list)
+    public void addCardType(List<CardLine> list)
     {
-        list.add(Component.literal(getSpellType().name + " " + getType().name));
+        list.add(CardLine.of(getSpellType().name + " " + getType().name));
     }
     
     // --- Getters ---

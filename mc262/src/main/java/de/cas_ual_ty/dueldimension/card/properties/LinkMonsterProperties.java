@@ -4,8 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import de.cas_ual_ty.dueldimension.util.JsonKeys;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
+import de.cas_ual_ty.dueldimension.card.CardLine;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,23 +75,24 @@ public class LinkMonsterProperties extends MonsterProperties
     }
     
     @Override
-    public void addMonsterHeader2(List<Component> list)
+    public void addMonsterHeader2(List<CardLine> list)
     {
-        list.add(Component.literal(getAtk() + " ATK / LINK-" + getLinkRating()));
+        list.add(CardLine.of(getAtk() + " ATK / LINK-" + getLinkRating()));
     }
     
     @Override
-    public void addText(List<Component> list)
+    public void addText(List<CardLine> list)
     {
         addLinkMarkers(list);
-        list.add(Component.empty());
+        list.add(CardLine.blank());
         super.addText(list);
     }
     
-    public void addLinkMarkers(List<Component> list)
+    public void addLinkMarkers(List<CardLine> list)
     {
         //        list.add(this.linkArrows.stream().map((arrow) -> arrow.name).collect(Collectors.joining(", ")));
-        list.addAll(LinkArrow.buildSymbolsString(getLinkArrows(), ChatFormatting.DARK_GRAY, ChatFormatting.RED, "  "));
+        list.addAll(LinkArrow.buildSymbolsString(getLinkArrows(),
+            CardLine.Colour.DARK_GRAY, CardLine.Colour.RED, "  "));
     }
     
     // --- Getters ---

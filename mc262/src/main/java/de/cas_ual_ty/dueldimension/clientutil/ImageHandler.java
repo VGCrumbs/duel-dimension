@@ -568,7 +568,7 @@ public class ImageHandler
         
         DdDatabase.forAllCardVariants((card, imageIndex) ->
         {
-            if(!card.getIsHardcoded() && !ImageHandler.getCardImageFile(card.getItemImageName(imageIndex)).exists())
+            if(!card.getIsHardcoded() && !ImageHandler.getCardImageFile(CardPresentation.itemImageName(card, imageIndex)).exists())
             {
                 list.add(new CardHolder(card, imageIndex, null, null));
             }
@@ -596,7 +596,7 @@ public class ImageHandler
     {
         for(CardHolder card : missingList)
         {
-            ImageHandler.makeImageReady(card.getImageName(), card.getImageURL(), ClientProxy.activeCardItemImageSize, ImageHandler.getCardImageFile(card.getItemImageName()), ImageHandler.getRawCardImageFile(card.getImageName()));
+            ImageHandler.makeImageReady(card.getImageName(), card.getImageURL(), ClientProxy.activeCardItemImageSize, ImageHandler.getCardImageFile(CardPresentation.itemImageName(card)), ImageHandler.getRawCardImageFile(card.getImageName()));
         }
     }
     

@@ -48,7 +48,7 @@ public final class CardFacts
         {
             return facts;
         }
-        card.addFacts(facts);
+        CardPresentation.addFacts(card, facts);
         if(liveRace == 0L || !(card instanceof MonsterProperties monster))
         {
             return facts;

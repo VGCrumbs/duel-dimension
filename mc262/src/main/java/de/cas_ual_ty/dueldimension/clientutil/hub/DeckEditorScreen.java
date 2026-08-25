@@ -1,5 +1,6 @@
 package de.cas_ual_ty.dueldimension.clientutil.hub;
 
+import de.cas_ual_ty.dueldimension.clientutil.CardPresentation;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import de.cas_ual_ty.dueldimension.card.properties.Properties;
@@ -3523,7 +3524,7 @@ public class DeckEditorScreen extends Screen
         // The card's facts, not its tooltip header: the header starts with the
         // name (drawn separately below) and leaves a monster's species out.
         java.util.List<Component> header = new java.util.ArrayList<>();
-        card.addFacts(header);
+        CardPresentation.addFacts(card, header);
         java.util.List<net.minecraft.util.FormattedCharSequence> headerLines =
             new java.util.ArrayList<>();
         for(Component component : header)

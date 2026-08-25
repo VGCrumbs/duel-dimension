@@ -2,10 +2,7 @@ package de.cas_ual_ty.dueldimension.card.properties;
 
 import com.google.gson.JsonObject;
 import de.cas_ual_ty.dueldimension.util.JsonKeys;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
+import de.cas_ual_ty.dueldimension.card.CardLine;
 
 import java.util.List;
 
@@ -160,7 +157,7 @@ public class MonsterProperties extends Properties
     }
     
     @Override
-    public void addHeader(List<Component> list)
+    public void addHeader(List<CardLine> list)
     {
         super.addHeader(list);
         addMonsterHeader(list);
@@ -175,86 +172,96 @@ public class MonsterProperties extends Properties
      * / Effect" already says everything "Effect Monster" did.
      */
     @Override
-    protected void addFactLines(List<Component> list)
+    protected void addFactLines(List<CardLine> list)
     {
         addMonsterTextHeader(list);
         addMonsterHeader(list);
     }
     
     @Override
-    public void addText(List<Component> list)
+    public void addText(List<CardLine> list)
     {
         if(getIsPendulum())
         {
             addPendulumTextHeader(list);
-            list.add(Component.literal(getPendulumText()));
-            list.add(Component.empty());
+            list.add(CardLine.of(getPendulumText()));
+            list.add(CardLine.blank());
         }
         addMonsterTextHeader(list);
         super.addText(list);
     }
     
-    public void addPendulumTextHeader(List<Component> list)
+    public void addPendulumTextHeader(List<CardLine> list)
     {
-        MutableComponent leftScale = Component.literal("" + getPendulumScaleLeftBlue());//.setStyle(Style.EMPTY.applyFormatting(ChatFormatting.WHITE));
-        MutableComponent leftArrow = Component.literal("◀").setStyle(Style.EMPTY.applyFormat(ChatFormatting.BLUE));
-        MutableComponent rightArrow = Component.literal("▶").setStyle(Style.EMPTY.applyFormat(ChatFormatting.RED));
-        MutableComponent rightScale = Component.literal("" + getPendulumScaleRightRed());//.setStyle(Style.EMPTY.applyFormatting(ChatFormatting.WHITE));
-        list.add(leftScale.append(" ").append(leftArrow).append(" / ").append(rightArrow).append(" ").append(rightScale));
+        // One line of six pieces, two of them coloured. This is the case that
+        // decided CardLine is a list of segments rather than a string with a
+        // colour: split into a line each, the scales would stack vertically
+        // instead of reading as "1 <blue> / <red> 8".
+        list.add(CardLine.of(
+            new CardLine.Segment("" + getPendulumScaleLeftBlue(), CardLine.Colour.DEFAULT),
+            new CardLine.Segment(" ", CardLine.Colour.DEFAULT),
+            new CardLine.Segment("◀", CardLine.Colour.BLUE),
+            new CardLine.Segment(" / ", CardLine.Colour.DEFAULT),
+            new CardLine.Segment("▶", CardLine.Colour.RED),
+            new CardLine.Segment(" ", CardLine.Colour.DEFAULT),
+            new CardLine.Segment("" + getPendulumScaleRightRed(), CardLine.Colour.DEFAULT)));
     }
     
     @Override
-    public void addCardType(List<Component> list)
+    public void addCardType(List<CardLine> list)
     {
         if(getMonsterType() != null)
         {
-            list.add(Component.literal(getMonsterType().name + " " + getType().name));
+            list.add(CardLine.of(getMonsterType().name + " " + getType().name));
         }
         else if(getHasEffect())
         {
-            list.add(Component.literal("Effect " + getType().name));
+            list.add(CardLine.of("Effect " + getType().name));
         }
         else
         {
-            list.add(Component.literal("Normal " + getType().name));
+            list.add(CardLine.of("Normal " + getType().name));
         }
     }
     
-    public void addMonsterHeader(List<Component> list)
+    public void addMonsterHeader(List<CardLine> list)
     {
         addMonsterHeader1(list);
         addMonsterHeader2(list);
     }
     
-    public void addMonsterHeader1(List<Component> list)
+    public void addMonsterHeader1(List<CardLine> list)
     {
-        list.add(Component.literal(getAttribute()));
+        list.add(CardLine.of(getAttribute()));
     }
     
-    public void addMonsterHeader2(List<Component> list)
+    public void addMonsterHeader2(List<CardLine> list)
     {
-        list.add(Component.literal(getAtk() + " ATK"));
+        list.add(CardLine.of(getAtk() + " ATK"));
     }
     
-    public void addMonsterTextHeader(List<Component> list)
+    public void addMonsterTextHeader(List<CardLine> list)
     {
-        MutableComponent s = Component.literal(getSpecies() + " / ");
-        
+        // A StringBuilder, because every append here was a plain string onto a
+        // literal -- the component carried no style at any point, so this is
+        // the same line by a cheaper route.
+        StringBuilder s = new StringBuilder(getSpecies() + " / ");
+
         if(getMonsterType() != null)
         {
             s.append(getMonsterType().name + " / ");
         }
-        
+
         if(getIsPendulum())
         {
             s.append("Pendulum" + " / ");
         }
-        
+
         if(getAbility() != null && !getAbility().isEmpty())
         {
             s.append(getAbility() + " / ");
         }
-        
+
         if(getHasEffect())
         {
             s.append("Effect");
@@ -263,8 +270,8 @@ public class MonsterProperties extends Properties
         {
             s.append("Normal");
         }
-        
-        list.add(s);
+
+        list.add(CardLine.of(s.toString()));
     }
     
     // --- Getters ---

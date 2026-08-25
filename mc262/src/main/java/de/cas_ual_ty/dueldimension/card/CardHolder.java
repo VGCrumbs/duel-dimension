@@ -5,9 +5,7 @@ import de.cas_ual_ty.dueldimension.DdDatabase;
 import de.cas_ual_ty.dueldimension.card.properties.Properties;
 import de.cas_ual_ty.dueldimension.rarity.Rarities;
 import de.cas_ual_ty.dueldimension.util.JsonKeys;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import de.cas_ual_ty.dueldimension.card.CardLine;
 
 import java.util.List;
 
@@ -37,24 +35,24 @@ public class CardHolder implements Comparable<CardHolder>
         this(null, (byte) 0, "", "");
     }
     
-    public CardHolder(CompoundTag nbt)
-    {
-        this();
-        readCardHolderFromNBT(nbt);
-    }
-    
     public CardHolder(JsonObject json)
     {
         this();
         readFromJson(json);
     }
     
-    public void addInformation(List<Component> tooltip)
+    /**
+     * What this copy is, as text.
+     * <p>
+     * Lines rather than components: see {@link CardLine}. The platform turns
+     * them into whatever it draws with.
+     */
+    public void addInformation(List<CardLine> tooltip)
     {
-        tooltip.add(Component.literal(getCard().getName()));
-        tooltip.add(Component.literal(getCode()));
-        tooltip.add(Component.literal(getRarity()));
-        tooltip.add(Component.literal("Image Variant " + (1 + getImageIndex())));
+        tooltip.add(CardLine.of(getCard().getName()));
+        tooltip.add(CardLine.of(getCode()));
+        tooltip.add(CardLine.of(getRarity()));
+        tooltip.add(CardLine.of("Image Variant " + (1 + getImageIndex())));
     }
     
     public String getImageName()
@@ -62,39 +60,9 @@ public class CardHolder implements Comparable<CardHolder>
         return getCard().getImageName(getImageIndex());
     }
     
-    public String getInfoImageName()
-    {
-        return getCard().getInfoImageName(getImageIndex());
-    }
-    
-    public String getItemImageName()
-    {
-        return getCard().getItemImageName(getImageIndex());
-    }
-    
-    public String getMainImageName()
-    {
-        return getCard().getMainImageName(getImageIndex());
-    }
-    
     public String getImageURL()
     {
         return getCard().getImageURL(getImageIndex());
-    }
-    
-    public Identifier getInfoImageResourceLocation()
-    {
-        return getCard().getInfoImageResourceLocation(getImageIndex());
-    }
-    
-    public Identifier getItemImageResourceLocation()
-    {
-        return getCard().getItemImageResourceLocation(getImageIndex());
-    }
-    
-    public Identifier getMainImageResourceLocation()
-    {
-        return getCard().getMainImageResourceLocation(getImageIndex());
     }
     
     public void override(CardHolder cardHolder)
@@ -143,32 +111,6 @@ public class CardHolder implements Comparable<CardHolder>
     public String getCode()
     {
         return code;
-    }
-    
-    public void readCardHolderFromNBT(CompoundTag nbt)
-    {
-        card = DdDatabase.PROPERTIES_LIST.get(nbt.getLongOr(JsonKeys.ID, 0L));
-        
-        if(card == null)
-        {
-            card = Properties.DUMMY;
-        }
-        
-        imageIndex = nbt.getByteOr(JsonKeys.IMAGE_INDEX, (byte) 0);
-        rarity = nbt.getStringOr(JsonKeys.RARITY, "");
-        code = nbt.getStringOr(JsonKeys.CODE, "");
-    }
-    
-    public void writeCardHolderToNBT(CompoundTag nbt)
-    {
-        if(card != Properties.DUMMY)
-        {
-            nbt.putLong(JsonKeys.ID, card.getId());
-        }
-        
-        nbt.putByte(JsonKeys.IMAGE_INDEX, imageIndex);
-        nbt.putString(JsonKeys.RARITY, rarity);
-        nbt.putString(JsonKeys.CODE, code);
     }
     
     public void readFromJson(JsonObject json)

@@ -1,10 +1,7 @@
 package de.cas_ual_ty.dueldimension.card.properties;
 
+import de.cas_ual_ty.dueldimension.card.CardLine;
 import de.cas_ual_ty.dueldimension.util.DdUtil;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.Style;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,87 +46,63 @@ public enum LinkArrow
         return null;
     }
     
-    public static List<Component> buildSymbolsString(List<LinkArrow> arrows, ChatFormatting unactive, ChatFormatting active, String joiner)
+    /**
+     * The link arrows as three rows of symbols, lit where the card has one.
+     * <p>
+     * Produces {@link CardLine}s rather than components. Each row is ONE line
+     * built from several differently-coloured pieces -- a lit arrow beside an
+     * unlit one -- which is why a line is a list of segments and not a string
+     * with a colour: splitting these into a line each would stack eight arrows
+     * vertically instead of drawing the three-by-three box they represent.
+     *
+     * @param unactive the colour of an arrow this card does not have
+     * @param active   the colour of one it does
+     */
+    public static List<CardLine> buildSymbolsString(List<LinkArrow> arrows,
+        CardLine.Colour unactive, CardLine.Colour active, String joiner)
     {
-        LinkArrow arrow;
-        List<Component> list = new ArrayList<>(3);
-        
+        List<CardLine> list = new ArrayList<>(3);
+
         // Top row
-        
-        MutableComponent s = Component.literal("");
-        
+        List<CardLine.Segment> row = new ArrayList<>();
         for(int i = 0; i < 3; ++i)
         {
-            arrow = LinkArrow.VALUES[i];
-            
-            if(arrows.contains(arrow))
-            {
-                s.append(Component.literal(arrow.symbolActive).setStyle(Style.EMPTY.applyFormat(active)));
-            }
-            else
-            {
-                s.append(Component.literal(arrow.symbolUnactive).setStyle(Style.EMPTY.applyFormat(unactive)));
-            }
-            
+            row.add(symbol(arrows, LinkArrow.VALUES[i], unactive, active));
             if(i < 2)
             {
-                s.append(joiner);
+                row.add(new CardLine.Segment(joiner, CardLine.Colour.DEFAULT));
             }
         }
-        
-        list.add(s);
-        
-        // Middle row
-        
-        s = Component.literal("");
-        
-        if(arrows.contains(LEFT))
-        {
-            s.append(Component.literal(LEFT.symbolActive).setStyle(Style.EMPTY.applyFormat(active)));
-        }
-        else
-        {
-            s.append(Component.literal(LEFT.symbolUnactive).setStyle(Style.EMPTY.applyFormat(unactive)));
-        }
-        
-        s.append(joiner + "" + joiner);
-        
-        if(arrows.contains(RIGHT))
-        {
-            s.append(Component.literal(RIGHT.symbolActive).setStyle(Style.EMPTY.applyFormat(active)));
-        }
-        else
-        {
-            s.append(Component.literal(RIGHT.symbolUnactive).setStyle(Style.EMPTY.applyFormat(unactive)));
-        }
-        
-        list.add(s);
-        
-        // Bottom row
-        
-        s = Component.literal("");
-        
+        list.add(new CardLine(List.copyOf(row)));
+
+        // Middle row -- left and right only, with the centre left as spacing.
+        row = new ArrayList<>();
+        row.add(symbol(arrows, LEFT, unactive, active));
+        row.add(new CardLine.Segment(joiner + "" + joiner, CardLine.Colour.DEFAULT));
+        row.add(symbol(arrows, RIGHT, unactive, active));
+        list.add(new CardLine(List.copyOf(row)));
+
+        // Bottom row, walked backwards so it reads left to right on screen.
+        row = new ArrayList<>();
         for(int i = 6; i > 3; --i)
         {
-            arrow = LinkArrow.VALUES[i];
-            
-            if(arrows.contains(arrow))
-            {
-                s.append(Component.literal(arrow.symbolActive).setStyle(Style.EMPTY.applyFormat(active)));
-            }
-            else
-            {
-                s.append(Component.literal(arrow.symbolUnactive).setStyle(Style.EMPTY.applyFormat(unactive)));
-            }
-            
+            row.add(symbol(arrows, LinkArrow.VALUES[i], unactive, active));
             if(i > 4)
             {
-                s.append(joiner);
+                row.add(new CardLine.Segment(joiner, CardLine.Colour.DEFAULT));
             }
         }
-        
-        list.add(s);
-        
+        list.add(new CardLine(List.copyOf(row)));
+
         return list;
+    }
+
+    /** One arrow, lit or not. */
+    private static CardLine.Segment symbol(List<LinkArrow> arrows, LinkArrow arrow,
+        CardLine.Colour unactive, CardLine.Colour active)
+    {
+        return arrows.contains(arrow)
+            ? new CardLine.Segment(arrow.symbolActive, active)
+            : new CardLine.Segment(arrow.symbolUnactive, unactive);
     }
 }

@@ -2,8 +2,7 @@ package de.cas_ual_ty.dueldimension.card.properties;
 
 import com.google.gson.JsonObject;
 import de.cas_ual_ty.dueldimension.util.JsonKeys;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
+import de.cas_ual_ty.dueldimension.card.CardLine;
 
 import java.util.List;
 
@@ -61,15 +60,16 @@ public class LevelMonsterProperties extends DefMonsterProperties
     }
     
     @Override
-    public void addMonsterHeader1(List<Component> list)
+    public void addMonsterHeader1(List<CardLine> list)
     {
-        list.add(Component.literal(getAttribute() + " / Level " + getLevel()));
+        list.add(CardLine.of(getAttribute() + " / Level " + getLevel()));
     }
     
     @Override
-    public void addMonsterTextHeader(List<Component> list)
+    public void addMonsterTextHeader(List<CardLine> list)
     {
-        MutableComponent s = Component.literal(getSpecies() + " / ");
+        // Plain string throughout -- no segment ever carried a style.
+        StringBuilder s = new StringBuilder(getSpecies() + " / ");
         
         if(getMonsterType() != null)
         {
@@ -100,7 +100,7 @@ public class LevelMonsterProperties extends DefMonsterProperties
             s.append("Normal");
         }
         
-        list.add(s);
+        list.add(CardLine.of(s.toString()));
     }
     
     // --- Getters ---

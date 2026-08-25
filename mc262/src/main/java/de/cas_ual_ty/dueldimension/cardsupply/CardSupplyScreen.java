@@ -1,5 +1,6 @@
 package de.cas_ual_ty.dueldimension.cardsupply;
 
+import de.cas_ual_ty.dueldimension.clientutil.CardPresentation;
 import de.cas_ual_ty.dueldimension.DdDatabase;
 import de.cas_ual_ty.dueldimension.card.CardHolder;
 import de.cas_ual_ty.dueldimension.cardbinder.CardButton;
@@ -96,7 +97,7 @@ public class CardSupplyScreen extends AbstractContainerScreen<CardSupplyContaine
                     CardRenderUtil.renderCardInfo(ms, button.getCard(), leftPos);
 
                     List<Component> list = new LinkedList<>();
-                    button.getCard().addInformation(list);
+                    CardPresentation.addInformation(button.getCard(), list);
 
                     List<Component> tooltip = new ArrayList<>(list.size());
                     for(Component t : list)

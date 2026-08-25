@@ -2,12 +2,8 @@ package de.cas_ual_ty.dueldimension.card.properties;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import de.cas_ual_ty.dueldimension.DuelDimension;
+import de.cas_ual_ty.dueldimension.card.CardLine;
 import de.cas_ual_ty.dueldimension.util.JsonKeys;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.Style;
-import net.minecraft.resources.Identifier;
 
 import java.util.List;
 
@@ -22,7 +18,7 @@ public class Properties
         }
         
         @Override
-        public void addCardType(List<Component> list)
+        public void addCardType(List<CardLine> list)
         {
             
         }
@@ -231,40 +227,10 @@ public class Properties
         return getId() + "_" + adjustImageIndex(imageIndex);
     }
     
-    public String getInfoImageName(byte imageIndex)
-    {
-        return DuelDimension.proxy.addCardInfoTag(getImageName(imageIndex));
-    }
-    
-    public String getItemImageName(byte imageIndex)
-    {
-        return DuelDimension.proxy.addCardItemTag(getImageName(imageIndex));
-    }
-    
-    public String getMainImageName(byte imageIndex)
-    {
-        return DuelDimension.proxy.addCardMainTag(getImageName(imageIndex));
-    }
-    
-    public Identifier getInfoImageResourceLocation(byte imageIndex)
-    {
-        return Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "textures/item/" + DuelDimension.proxy.getCardInfoReplacementImage(this, adjustImageIndex(imageIndex)) + ".png");
-    }
-    
-    public Identifier getItemImageResourceLocation(byte imageIndex)
-    {
-        return Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "item/" + getItemImageName(imageIndex));
-    }
-    
-    public Identifier getMainImageResourceLocation(byte imageIndex)
-    {
-        return Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "textures/item/" + DuelDimension.proxy.getCardMainReplacementImage(this, adjustImageIndex(imageIndex)) + ".png");
-    }
-    
-    public void addInformation(List<Component> list)
+    public void addInformation(List<CardLine> list)
     {
         addHeader(list);
-        list.add(Component.empty());
+        list.add(CardLine.blank());
         addText(list);
     }
     
@@ -282,43 +248,42 @@ public class Properties
      * Overridden rather than instanceof-tested, so a card kind added later
      * says what it is here and every preview picks it up.
      */
-    public void addFacts(List<Component> list)
+    public void addFacts(List<CardLine> list)
     {
         if(getCustom())
         {
-            list.add(Component.literal("Custom Card")
-                .setStyle(Style.EMPTY.applyFormat(ChatFormatting.RED)));
+            list.add(CardLine.of("Custom Card", CardLine.Colour.RED));
         }
         addFactLines(list);
     }
 
     /** The classification and stat lines; see {@link #addFacts}. */
-    protected void addFactLines(List<Component> list)
+    protected void addFactLines(List<CardLine> list)
     {
         addCardType(list);
     }
 
-    public void addHeader(List<Component> list)
+    public void addHeader(List<CardLine> list)
     {
-        list.add(Component.literal(getName()));
+        list.add(CardLine.of(getName()));
         
         if(isCustom)
         {
-            list.add(Component.literal("Custom Card").setStyle(Style.EMPTY.applyFormat(ChatFormatting.RED)));
+            list.add(CardLine.of("Custom Card", CardLine.Colour.RED));
         }
         
-        list.add(Component.empty());
+        list.add(CardLine.blank());
         addCardType(list);
     }
     
-    public void addText(List<Component> list)
+    public void addText(List<CardLine> list)
     {
-        list.add(Component.literal(getText()));
+        list.add(CardLine.of(getText()));
     }
     
-    public void addCardType(List<Component> list)
+    public void addCardType(List<CardLine> list)
     {
-        list.add(Component.literal(type.name));
+        list.add(CardLine.of(type.name));
     }
     
     // --- Getters ---
