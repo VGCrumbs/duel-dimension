@@ -1,0 +1,712 @@
+package de.cas_ual_ty.dueldimension.clientutil;
+
+import de.cas_ual_ty.dueldimension.DuelDimension;
+import de.cas_ual_ty.dueldimension.util.DdIOUtil;
+import de.cas_ual_ty.dueldimension.util.ISidedProxy;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.player.Player;
+
+import java.io.File;
+
+/**
+ * The client half of the mod: where card images live, and how big they are.
+ * <p>
+ * The Forge version of this class was nine hundred lines, because on that
+ * loader a proxy is also where every client event subscription lives — key
+ * bindings, renderers, screen opening, the tick hook. On Fabric those are
+ * registered by the client entrypoint instead, so what belongs here is only
+ * what the name says: the client-side state the rest of the mod reads.
+ * <p>
+ * Right now that is the image pipeline's settings. The sizes and folders are
+ * static because {@link ImageHandler} reads them from its worker threads, and
+ * a worker that had to reach through a proxy instance to find out where to
+ * write a PNG would be a worker holding a reference to the game.
+ */
+public class ClientProxy implements ISidedProxy
+{
+    // ---- image sizes ----
+    //
+    // One image per (card, size), so these decide both how sharp a card looks
+    // and how much disk the cache takes. The defaults are the Forge build's.
+
+    /** Card art on an inspect screen or a preview panel. */
+    public static int activeCardInfoImageSize = 256;
+    /** Card art on an item, which is drawn small and drawn a lot. */
+    public static volatile int activeCardItemImageSize = 64;
+    /** Card art on the duel field and in the deck editor's grids. */
+    public static int activeCardMainImageSize = 256;
+
+    public static int activeSetInfoImageSize = 256;
+    public static volatile int activeSetItemImageSize = 64;
+
+    /**
+     * Whether a downloaded image survives a restart.
+     * <p>
+     * On by default: the database is twenty thousand cards, and fetching one
+     * again because the game closed would be rude to both the player and the
+     * server holding the images.
+     */
+    public static boolean keepCachedImages = true;
+
+
+    // ---- where they live ----
+
+    /**
+     * Card art, and deliberately NOT inside {@code ydm_db}.
+     * <p>
+     * A database update deletes {@code ydm_db} recursively before unpacking the
+     * new one. Images nested under it would go with it, and the client would
+     * re-download thousands of them every time the card list changed.
+     * <p>
+     * In the game directory rather than the working directory, for the reason
+     * given on {@link DuelDimension#mainFolder}: a launcher that passes
+     * {@code --gameDir} would otherwise scatter one instance's image cache into
+     * whichever folder it happened to start the JVM in, and two instances would
+     * share it.
+     */
+    public static File imagesParentFolder = de.cas_ual_ty.dueldimension.util.GameDir.file("ydm_db_images");
+    public static File cardImagesFolder = new File(imagesParentFolder, "cards");
+    public static File setImagesFolder = new File(imagesParentFolder, "sets");
+    public static File rarityImagesFolder = new File(imagesParentFolder, "rarities");
+
+    /**
+     * The originals, before they are scaled to the sizes above. Kept separately
+     * so changing a size re-scales from the source rather than re-downloading.
+     */
+    public static File rawCardImagesFolder = new File(cardImagesFolder, "raw");
+    public static File rawSetImagesFolder = new File(setImagesFolder, "raw");
+
+    /**
+     * The rarity foils, which are the one thing here that is not downloaded
+     * per-card: they arrive inside the database zip, so they live where the
+     * database put them rather than beside the other raw images.
+     */
+    public static File rawRarityImagesFolder = new File(DuelDimension.mainFolder, "rarity_images");
+
+    // ---- animation lengths ----
+    //
+    // In ticks, from the client config. Static for the same reason the image
+    // sizes are: an animation reads its own length when it is created, and
+    // reaching through a proxy instance for a number would be a strange thing
+    // to do sixty times a second.
+
+    /**
+     * How far the duel chat's text is scaled down, 0.5 to 1. Read per frame by
+     * the chat widget, which is why it lives here rather than being asked of
+     * the config.
+     */
+    public static double duelChatSize = 1D;
+
+    public static int moveAnimationLength = 10;
+    public static int specialAnimationLength = 10;
+    public static int attackAnimationLength = 12;
+    public static int announcementAnimationLength = 16;
+
+    // The maxInfoImages/maxMainImages copies that used to be here are gone with
+    // the LimitedTextureBinder they configured. What decides when a card image
+    // is let go is now CardTextureCache, and it decides in BYTES per size class
+    // rather than in a count: a 512px preview is sixteen times the memory of a
+    // 128px icon, so one number could never mean the same thing for both. The
+    // config keys are still read and written by ClientConfig, so nobody's
+    // settings file changes.
+
+    /** The settings this client was started with. */
+    public static ClientConfig clientConfig;
+
+    /**
+     * Reads the config and copies out what the rest of the client reads.
+     * <p>
+     * Copied into fields rather than read through {@code clientConfig} at each
+     * use, because that is what the Forge code did and what its call sites
+     * expect -- and because these are read per frame.
+     */
+    public static void loadConfig()
+    {
+        clientConfig = ClientConfig.load();
+        activeCardInfoImageSize = clientConfig.activeCardInfoImageSize.get();
+        activeCardItemImageSize = clientConfig.activeCardItemImageSize.get();
+        activeCardMainImageSize = clientConfig.activeCardMainImageSize.get();
+        activeSetInfoImageSize = clientConfig.activeSetInfoImageSize.get();
+        activeSetItemImageSize = clientConfig.activeSetItemImageSize.get();
+        keepCachedImages = clientConfig.keepCachedImages.get();
+        duelChatSize = clientConfig.duelChatSize.get();
+        moveAnimationLength = clientConfig.moveAnimationLength.get();
+        specialAnimationLength = clientConfig.specialAnimationLength.get();
+        attackAnimationLength = clientConfig.attackAnimationLength.get();
+        announcementAnimationLength = clientConfig.announcementAnimationLength.get();
+    }
+
+    /**
+     * The client-side setup Forge did from its proxy's init event.
+     * <p>
+     * Separate from {@link #loadConfig()} because it reads the settings that
+     * one loads. Missing it is not subtle: the card image folders are never
+     * created, so every download throws, and the loader threads never start, so
+     * no card art is ever decoded and every card in the game stays a
+     * placeholder.
+     */
+    public static void initClient()
+    {
+        // The image folders, before a worker thread tries to write into one.
+        // Nothing creates these lazily on the download path -- downloadRawImage
+        // copies straight into rawCardImagesFolder -- so a missing directory is
+        // a NoSuchFileException per card and no art anywhere in the game.
+        DdIOUtil.createDirIfNonExistant(imagesParentFolder);
+        DdIOUtil.createDirIfNonExistant(cardImagesFolder);
+        DdIOUtil.createDirIfNonExistant(setImagesFolder);
+        DdIOUtil.createDirIfNonExistant(rarityImagesFolder);
+        DdIOUtil.createDirIfNonExistant(rawCardImagesFolder);
+        DdIOUtil.createDirIfNonExistant(rawSetImagesFolder);
+        DdIOUtil.createDirIfNonExistant(rawRarityImagesFolder);
+
+        // Custom cards shipped in the jar. AFTER the folders exist, because
+        // that is where their art is written; nothing here overwrites a file
+        // the player put there themselves.
+        de.cas_ual_ty.dueldimension.ocg.session.CustomCardBundle.install();
+
+        ImageHandler.prepareRarityImages(activeCardMainImageSize);
+        ImageHandler.prepareRarityImages(activeCardInfoImageSize);
+        // The four card-image decode threads. EDOPro spawns its own in the
+        // ImageManager constructor (image_manager.cpp:47-53); this is the same
+        // moment in our lifecycle -- after the settings they read, before the
+        // first screen that could ask for a card.
+        CardImageManager.init();
+    }
+
+    // ---- world chat, mirrored for the duel screen ----
+    //
+    // A duel screen shows world chat beside duel chat, so it needs the recent
+    // messages -- and the vanilla chat component keeps its own history in a form
+    // that is not readable from outside. Forge subscribed to
+    // ClientChatReceivedEvent for this; Fabric has the same hook by another name.
+
+    public static int maxMessages = 50; //TODO make configurable
+    public static final java.util.List<net.minecraft.network.chat.Component> chatMessages =
+        new java.util.ArrayList<>(50);
+
+    /**
+     * Remembers a message, dropping the oldest once the buffer is full.
+     * <p>
+     * The cap is what stops a long session turning this into a leak: nothing
+     * ever removes from it otherwise, and a duel screen only ever shows the
+     * last screenful.
+     */
+    public static void rememberChatMessage(net.minecraft.network.chat.Component message)
+    {
+        if(message == null || message.getString().isEmpty())
+        {
+            return;
+        }
+        if(chatMessages.size() >= maxMessages)
+        {
+            chatMessages.remove(0);
+        }
+        chatMessages.add(message);
+    }
+
+    /**
+     * The player at this client.
+     * <p>
+     * Static because the duel screens ask for it from static context. The
+     * instance method {@link #getClientPlayer()} is the same answer through
+     * {@code ISidedProxy}, which is how common code asks.
+     */
+    public static net.minecraft.client.player.LocalPlayer getPlayer()
+    {
+        return Minecraft.getInstance().player;
+    }
+
+
+    // ---- what only a client can do ----
+    //
+    // These were the interface's no-op defaults until the duel screen existed.
+    // Every one of them is the Forge ClientProxy's body, with the two calls that
+    // changed name in 26.2 brought up to date.
+
+    /**
+     * Sends a duel message to the server.
+     * <p>
+     * Common code reaches this through the proxy so that Fabric's client
+     * networking class never has to be on a dedicated server's classpath.
+     */
+    @Override
+    public void sendDuelMessage(de.cas_ual_ty.dueldimension.duel.network.DuelMessage message)
+    {
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+            new de.cas_ual_ty.dueldimension.duel.network.DuelPayloads.ToServer(message));
+    }
+
+    /**
+     * Wraps a duel manager so updates also reach the screen.
+     * <p>
+     * The server talks to the manager directly; a client needs the wrapper, and
+     * this is the side that knows which it is.
+     */
+    @Override
+    public de.cas_ual_ty.dueldimension.duel.network.IDuelManagerProvider duelProvider(
+        de.cas_ual_ty.dueldimension.duel.DuelManager duelManager)
+    {
+        return new de.cas_ual_ty.dueldimension.duel.network.ClientDuelManagerProvider(duelManager);
+    }
+
+    @Override
+    public void setOpponentSleeve(String sleeve)
+    {
+        de.cas_ual_ty.dueldimension.card.CardSleevesType named =
+            de.cas_ual_ty.dueldimension.duel.profile.Sleeves.byName(sleeve);
+        DuelClientState.opponentSleeve = named == null
+            ? de.cas_ual_ty.dueldimension.duel.profile.Sleeves.DEFAULT : named;
+    }
+
+    @Override
+    public void setOwnSleeve(String sleeve)
+    {
+        // byName returns null for a name this build does not know, rather than
+        // guessing. An unknown sleeve is simply the plain back.
+        de.cas_ual_ty.dueldimension.card.CardSleevesType named =
+            de.cas_ual_ty.dueldimension.duel.profile.Sleeves.byName(sleeve);
+        DuelClientState.ownSleeve = named == null
+            ? de.cas_ual_ty.dueldimension.duel.profile.Sleeves.DEFAULT : named;
+    }
+
+    /**
+     * The player's own deck list, as the server shuffled it.
+     * <p>
+     * Built into slots here rather than through {@code Slot.of(CardView)}: the
+     * deck query asks for no position, so {@code CardView.isFaceUp()} would be
+     * false and {@code Slot.of} would mark every one of these face down. That
+     * renders correctly today only because the pile panel never reads the flag,
+     * which makes it a trap for whoever adds "if faceDown, draw the cover".
+     * These cards are the viewer's own and are meant to be read, so the flag is
+     * written out explicitly. Everything else takes its neutral value; none of
+     * it is drawn, and an equip is null because a card in a deck equips nothing.
+     */
+    @Override
+    public void showOwnDeck(int[] codes, int[] arts)
+    {
+        java.util.List<de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot.Slot> deck =
+            new java.util.ArrayList<>(codes.length);
+        for(int i = 0; i < codes.length; i++)
+        {
+            int art = i < arts.length ? arts[i] : 0;
+            deck.add(new de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot.Slot(
+                true, codes[i], false, false, -1, -1, -1, -1, -1, -1, 0, null, false, art));
+        }
+        DuelClientState.deckView = java.util.List.copyOf(deck);
+    }
+
+    @Override
+    public void setOpponentPlayMat(String matId)
+    {
+        DuelClientState.opponentMat = PlayMats.byId(matId);
+        // The id may be a colour now rather than a mat name.
+        DuelClientState.opponentMatColour =
+            DuelClientState.parseMatColour(matId, DuelClientState.DEFAULT_MAT_COLOUR);
+    }
+
+    @Override
+    public void showEnginePrompt(de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt prompt,
+        int serial)
+    {
+        // Into the playback queue, never straight onto the screen: the prompt
+        // was sent after the events it concludes, and it must not be seen
+        // before they have PLAYED. Applying it here let it jump the queue.
+        synchronized(DuelClientState.class)
+        {
+            DuelClientState.pending.add(DuelClientState.PendingUpdate.ofPrompt(prompt, serial));
+        }
+    }
+
+    // ---- where a card or set image lives ----
+    //
+    // Every one of these is the Forge ClientProxy's body. They are how a
+    // Properties, a CardSet or a RarityLayer turns into a texture path, and
+    // the interface's defaults return NULL -- so with them missing the path
+    // came out "textures/item/null.png", every binder, supply, shop and card
+    // item drew the missing-texture checkerboard, and ImageHandler was never
+    // asked to fetch the real image either. The duel screen was unaffected
+    // only because it goes through DuelTextures instead, which is why this
+    // survived so long.
+
+    @Override
+    public String addCardInfoTag(String imageName)
+    {
+        return ClientProxy.activeCardInfoImageSize + "/" + imageName;
+    }
+
+    @Override
+    public String addCardItemTag(String imageName)
+    {
+        return ClientProxy.activeCardItemImageSize + "/" + imageName;
+    }
+
+    @Override
+    public String addCardMainTag(String imageName)
+    {
+        return ClientProxy.activeCardMainImageSize + "/" + imageName;
+    }
+
+    @Override
+    public String addSetInfoTag(String imageName)
+    {
+        return ClientProxy.activeSetInfoImageSize + "/" + imageName;
+    }
+
+    @Override
+    public String addSetItemTag(String imageName)
+    {
+        return ClientProxy.activeSetItemImageSize + "/" + imageName;
+    }
+
+    @Override
+    public String getCardInfoReplacementImage(
+        de.cas_ual_ty.dueldimension.card.properties.Properties properties, byte imageIndex)
+    {
+        return ImageHandler.getInfoReplacementImage(properties, imageIndex);
+    }
+
+    @Override
+    public String getCardMainReplacementImage(
+        de.cas_ual_ty.dueldimension.card.properties.Properties properties, byte imageIndex)
+    {
+        return ImageHandler.getMainReplacementImage(properties, imageIndex);
+    }
+
+    @Override
+    public String getSetInfoReplacementImage(de.cas_ual_ty.dueldimension.set.CardSet set)
+    {
+        return ImageHandler.getInfoReplacementImage(set);
+    }
+
+    @Override
+    public String getRarityMainImage(de.cas_ual_ty.dueldimension.rarity.RarityLayer layer)
+    {
+        return ImageHandler.getRarityMainImage(layer);
+    }
+
+    @Override
+    public String getRarityInfoImage(de.cas_ual_ty.dueldimension.rarity.RarityLayer layer)
+    {
+        return ImageHandler.getRarityInfoImage(layer);
+    }
+
+    /** Reading a card item. Ported, reachable, and never called until now. */
+    @Override
+    public void openCardInspectScreen(de.cas_ual_ty.dueldimension.card.CardHolder card)
+    {
+        getMinecraft().gui.setScreen(
+            new de.cas_ual_ty.dueldimension.card.InspectCardScreen(card));
+    }
+
+    /**
+     * Opens the collection binder over whatever is on screen.
+     * <p>
+     * It reads the already-synced profile, so this needs nothing from the
+     * server and no menu; {@code gui.screen()} is the current screen, which
+     * becomes the one to go back to.
+     */
+    @Override
+    public void openCollectionBinder()
+    {
+        getMinecraft().setScreenAndShow(
+            new de.cas_ual_ty.dueldimension.cardbinder.BinderScreen(getMinecraft().gui.screen()));
+    }
+
+    /**
+     * The PvP lobby, opened or refreshed.
+     * <p>
+     * Every change re-sends the whole room, so an open lobby is updated in
+     * place rather than replaced: rebuilding the screen would drop focus and
+     * flicker on every click either player made.
+     */
+    @Override
+    public void openDiskShop(
+        de.cas_ual_ty.dueldimension.shop.DiskShopMessages.OpenDiskShop shop)
+    {
+        // Updated in place when it is already open, so buying a disk does not
+        // rebuild the screen under the player's cursor and lose their place.
+        if(getMinecraft().gui.screen()
+            instanceof de.cas_ual_ty.dueldimension.clientutil.hub.DiskShopScreen open)
+        {
+            open.update(shop);
+            return;
+        }
+        getMinecraft().gui.setScreen(
+            new de.cas_ual_ty.dueldimension.clientutil.hub.DiskShopScreen(shop));
+    }
+
+    @Override
+    public void showDuelField(
+        de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.ShowField field)
+    {
+        // A board arriving IS the duel starting, so a coin toss still up has
+        // said everything it has to say -- and the seat that lost the toss has
+        // no button to press and nothing else that would ever take it away.
+        // This is also the packet that asks both players to walk to their
+        // marks, which is not a thing anybody can do from behind a screen.
+        de.cas_ual_ty.dueldimension.clientutil.hub.CoinTossScreen.dismiss();
+        de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.apply(field);
+    }
+
+    @Override
+    public void offerDuelType(
+        de.cas_ual_ty.dueldimension.duel.npc.DuelistChallengeMessages.OfferDuel offer)
+    {
+        getMinecraft().gui.setScreen(
+            new de.cas_ual_ty.dueldimension.clientutil.hub.DuelTypeScreen(offer));
+    }
+
+    @Override
+    public void showSpectatorBoard(
+        de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.SpectatorBoard board)
+    {
+        de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField
+            .applySpectatorBoard(board.board());
+    }
+
+    @Override
+    public void hideDuelField()
+    {
+        // Read BEFORE the clear, and read `over` rather than asking the board.
+        //
+        // ClientDuelField.ending() is gated on present(), and clear() is
+        // precisely what makes present() false -- so asking afterwards always
+        // says no. Asking the board at all would also strand a duellist who
+        // walked through a portal mid-fade, whose field is already gone while
+        // the duel they just finished is still owed its result.
+        boolean owedAnEnding = DuelClientState.over;
+
+        de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.clear();
+        de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelTargeting.clear();
+
+        if(owedAnEnding)
+        {
+            // The board's goodbye was cut short, and the hand-off it owed has
+            // to happen here or nowhere.
+            //
+            // The server lingers a finished board for a fixed ten seconds and
+            // then takes it away, calling itself "the backstop for the client
+            // that never says". The client's ending, though, cannot even START
+            // until the queued animations have played -- the winning blow rides
+            // the same ordered stream as the result -- and then costs HOLD_MS
+            // plus FADE_MS on top. When a duel ends on somebody else's long
+            // turn, which is the usual shape of LOSING one, the backstop wins a
+            // race it was written to lose.
+            //
+            // What that used to leave behind: ClientDuelField.clear() nulls
+            // siting, so present() and with it ending() are false forever, and
+            // advanceEnding() -- the only caller of finish() -- returns at its
+            // first line. The result and the reward, which the server sent in
+            // the same tick it said the duel was over, simply sat in
+            // DuelClientState until the NEXT duel put a board back and the
+            // stale ending finally ran. That is the conclusion screen arriving
+            // one duel late.
+            //
+            // Logged because this branch IS the race being lost. It should be
+            // rare -- the server calls its linger a backstop -- so if it turns
+            // up in every duel, the budget is wrong rather than the hand-off.
+            de.cas_ual_ty.dueldimension.DuelDimension.log(
+                "the board was taken away before its ending finished; "
+                + "handing the result over here instead");
+            // false: the board went before it finished -- or before it started
+            // -- saying who won, so the result still has to be shown somewhere.
+            DuelClientState.finish(false);
+            return;
+        }
+
+        // The board can go while a question is outstanding -- somebody built in
+        // the field, a duellist died, the world changed under it. The duel is
+        // still running and still waiting for an answer, so the screen that can
+        // give one has to come back; otherwise the fallback leaves a player
+        // staring at bare ground with a duel thread parked on their reply.
+        if(DuelClientState.prompt != null)
+        {
+            DuelClientState.openScreen();
+        }
+    }
+
+    @Override
+    public void openCoinToss(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.CoinToss toss)
+    {
+        // ONLY the seat that has to choose gets a screen.
+        //
+        // The other one had a modal screen with no buttons on it, saying it was
+        // waiting -- and waiting was the one thing it made impossible. An
+        // overworld duel does not begin when the toss is answered; it begins
+        // when both duellists have WALKED to their marks, and nobody walks
+        // anywhere from behind a screen. So the seat that could not choose sat
+        // in front of a window telling it to wait for a duel that was waiting
+        // for it, and no message could break that: the update that would have
+        // closed the screen is sent by the duel that the screen was preventing.
+        //
+        // Three fixes went into closing that window on cue before it was clear
+        // that the window should not have been there. A line of chat says the
+        // same thing and takes nothing away.
+        if(!toss.won())
+        {
+            net.minecraft.client.player.LocalPlayer player = getMinecraft().player;
+            if(player != null)
+            {
+                player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                        toss.winnerName() + " won the toss and is choosing who goes first")
+                    .withStyle(net.minecraft.ChatFormatting.GOLD));
+            }
+            // And anything still up from the last one goes, since this client
+            // is now between duels either way.
+            de.cas_ual_ty.dueldimension.clientutil.hub.CoinTossScreen.dismiss();
+            return;
+        }
+        getMinecraft().gui.setScreen(
+            new de.cas_ual_ty.dueldimension.clientutil.hub.CoinTossScreen(toss));
+    }
+
+    @Override
+    public void openDuelLobby(de.cas_ual_ty.dueldimension.duel.match.LobbyMessages.OpenLobby room)
+    {
+        if(getMinecraft().gui.screen()
+            instanceof de.cas_ual_ty.dueldimension.clientutil.hub.DuelLobbyScreen open)
+        {
+            open.update(room);
+            return;
+        }
+        getMinecraft().gui.setScreen(
+            new de.cas_ual_ty.dueldimension.clientutil.hub.DuelLobbyScreen(room));
+    }
+
+    @Override
+    public void closeDuelLobby()
+    {
+        if(getMinecraft().gui.screen()
+            instanceof de.cas_ual_ty.dueldimension.clientutil.hub.DuelLobbyScreen)
+        {
+            getMinecraft().gui.setScreen(null);
+        }
+    }
+
+    /**
+     * The shop, with the stock and the balance the server just sent.
+     * <p>
+     * Both facts arrive in the packet rather than being read from anywhere on
+     * the client, because both are the server's: the balance is spendable and
+     * the stock is what is actually for sale.
+     */
+    @Override
+    public void openCardShop(int points,
+        java.util.List<de.cas_ual_ty.dueldimension.shop.ShopStock.Pack> packs)
+    {
+        de.cas_ual_ty.dueldimension.clientutil.hub.CardShopScreen.setPoints(points);
+        getMinecraft().gui.setScreen(
+            new de.cas_ual_ty.dueldimension.clientutil.hub.CardShopScreen(packs));
+    }
+
+    @Override
+    public void setDuelPoints(int points)
+    {
+        de.cas_ual_ty.dueldimension.clientutil.hub.CardShopScreen.setPoints(points);
+    }
+
+    /** The pack-opening reveal, over whatever screen asked for the packs. */
+    @Override
+    public void openPackReveal(String setName, java.util.List<Integer> codes,
+        java.util.List<String> rarities)
+    {
+        // The screen that asked for the packs, so closing the reveal returns
+        // there rather than dumping the player back into the world.
+        getMinecraft().gui.setScreen(
+            new de.cas_ual_ty.dueldimension.clientutil.hub.PackOpeningScreen(
+                getMinecraft().gui.screen(), setName, codes, rarities));
+    }
+
+    @Override
+    public void updateEngineDuel(
+        de.cas_ual_ty.dueldimension.ocg.prompt.PromptMessages.DuelUpdate update)
+    {
+        // The same for a duel played on the screen, where this is the first
+        // thing to arrive instead. Before the suppression check below, because
+        // that check is exactly what stops the duel screen replacing a coin
+        // toss on a board.
+        de.cas_ual_ty.dueldimension.clientutil.hub.CoinTossScreen.dismiss();
+        update.log().forEach(DuelClientState::addLog);
+        DuelClientState.warmUpArt(update.warmUp());
+        synchronized(DuelClientState.class)
+        {
+            // Board and events travel together and are played in order, so the
+            // field advances at the pace of the animation rather than jumping
+            // to the settled state the moment the packet lands.
+            DuelClientState.pending.add(
+                DuelClientState.PendingUpdate.ofUpdate(update.events(), update.board()));
+            if(update.over())
+            {
+                // The result rides the stream too, after the win animation.
+                // The word the server actually sends, which is the same one the
+                // banner and the board's outcome line compare against.
+                // "Winner: you" was a phrase from an older result string that
+                // named who had won; that was dropped as saying the same thing
+                // twice, and this was left reading for it -- so a victory has
+                // been arriving here as a loss ever since.
+                boolean won = update.result() != null
+                    && "Victory".equalsIgnoreCase(update.result().trim());
+                DuelClientState.pending.add(
+                    DuelClientState.PendingUpdate.ofOver(won, update.result()));
+            }
+        }
+        // The opponent's whole turn arrives as updates with no prompt attached.
+        // Only opening the screen for prompts meant those events queued up
+        // unseen and then replayed in a rush at the next prompt, so a duel
+        // update reopens the screen too -- that is what makes an opponent's
+        // sequence watchable rather than something that happens off-screen.
+        //
+        // Not on a world board, where the opponent's sequence is watchable by
+        // looking at it.
+        //
+        // There are THREE callers of DuelClientState.openScreen, and they were
+        // once described as two, which is how one of them went unexamined:
+        //   - this one, for watching an opponent's turn: suppressed on a board;
+        //   - openScreenForPrompt, for a question: suppressed on a board when
+        //     the board can answer the question;
+        //   - hideDuelField below, for a board that has just gone away mid
+        //     question: NOT suppressed, and must not be, because by then there
+        //     is no board to answer on.
+        // They have to be considered together. Branching one and not the others
+        // is how a board ends up covered by a screen at the one moment its
+        // owner was looking at it.
+        //
+        // And a duel that is FINISHED has no opponent's turn left to watch, so
+        // nothing arriving afterwards may open a screen to watch it in. The
+        // board suppression alone does not cover this: the board is cleared the
+        // moment it has finished fading, so from then on locked() is false and
+        // this reads exactly like a duel being played on the screen. Two things
+        // say otherwise, and both are needed because they cover different
+        // moments -- DuelClientState.over while the board is still saying
+        // goodbye, and the result screen once it has gone and the player is
+        // reading what happened. Without the second, a straggling update lands
+        // on top of the result and replaces it with an empty duel.
+        if(!update.over() && !DuelClientState.over && !update.events().isEmpty()
+            && !(de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()
+                && !de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField
+                    .screenPreferred())
+            && !(getMinecraft().gui.screen() instanceof EngineDuelScreen)
+            && !(getMinecraft().gui.screen()
+                instanceof de.cas_ual_ty.dueldimension.clientutil.hub.DuelResultScreen))
+        {
+            // gui.setScreen, not setScreenAndShow: the latter forces a frame,
+            // and this runs while the update batch is still being applied.
+            getMinecraft().gui.setScreen(new EngineDuelScreen());
+        }
+        if(update.board() != null)
+        {
+            DuelClientState.warmUpBoard(update.board());
+        }
+    }
+
+    public static Minecraft getMinecraft()
+    {
+        return Minecraft.getInstance();
+    }
+
+    @Override
+    public Player getClientPlayer()
+    {
+        return Minecraft.getInstance().player;
+    }
+}

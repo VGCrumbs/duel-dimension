@@ -1,0 +1,54 @@
+package de.cas_ual_ty.dueldimension.duel.action;
+
+import de.cas_ual_ty.dueldimension.card.CardSleevesType;
+import de.cas_ual_ty.dueldimension.duel.playfield.PlayField;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+
+public class InitSleevesAction extends Action
+{
+    public CardSleevesType player1Sleeves;
+    public CardSleevesType player2Sleeves;
+    
+    public InitSleevesAction(ActionType actionType, CardSleevesType player1Sleeves, CardSleevesType player2Sleeves)
+    {
+        super(actionType);
+        this.player1Sleeves = player1Sleeves;
+        this.player2Sleeves = player2Sleeves;
+    }
+    
+    public InitSleevesAction(ActionType actionType, RegistryFriendlyByteBuf buf)
+    {
+        this(actionType, CardSleevesType.getFromIndex(buf.readByte()), CardSleevesType.getFromIndex(buf.readByte()));
+    }
+    
+    @Override
+    public void writeToBuf(RegistryFriendlyByteBuf buf)
+    {
+        buf.writeByte(player1Sleeves.getIndex());
+        buf.writeByte(player2Sleeves.getIndex());
+    }
+    
+    @Override
+    public void initClient(PlayField playField)
+    {
+        playField.initSleeves(player1Sleeves, player2Sleeves);
+    }
+    
+    @Override
+    public void doAction()
+    {
+        
+    }
+    
+    @Override
+    public void undoAction()
+    {
+        
+    }
+    
+    @Override
+    public void redoAction()
+    {
+        
+    }
+}

@@ -50,5 +50,16 @@ tasks.register('buildAll') {
     // is a subproject of this build and is addressed normally.
     dependsOn gradle.includedBuild('common').task(':build')
     dependsOn ':mc262:build'
-    dependsOn gradle.includedBuild('mc1211').task(':build')
+
+    // mc1211 IS NOT BUILT HERE while the port is under way.
+    //
+    // 348 of mc262's 405 files are across and ~1000 API errors remain, so it
+    // does not compile yet and would make every `buildAll` red -- which would
+    // hide a real regression in the two halves that DO work. It is still in the
+    // composite, so build it deliberately:
+    //
+    //     ./gradlew25.cmd -p mc1211 compileJava
+    //
+    // Put this line back the day it compiles; that is the milestone.
+    // dependsOn gradle.includedBuild('mc1211').task(':build')
 }

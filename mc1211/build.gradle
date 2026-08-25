@@ -122,3 +122,9 @@ tasks.named('jar', Jar) {
         exclude 'META-INF/**'
     }
 }
+
+// Show every error, not the first hundred. A port produces errors in bulk and
+// javac's default cap hides how much is actually left.
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs << '-Xmaxerrs' << '2000'
+}

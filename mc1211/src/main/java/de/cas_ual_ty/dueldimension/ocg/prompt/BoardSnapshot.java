@@ -1,0 +1,339 @@
+package de.cas_ual_ty.dueldimension.ocg.prompt;
+
+import de.cas_ual_ty.dueldimension.ocg.query.BoardState;
+import de.cas_ual_ty.dueldimension.ocg.query.CardView;
+import net.minecraft.network.FriendlyByteBuf;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * The field as one player may see it, flattened for the wire and for drawing.
+ * <p>
+ * Built from {@link BoardState}, which has already stripped anything the
+ * viewer isn't entitled to know — a face-down card arrives here with code 0
+ * and {@code faceDown} set, so no client tampering can recover what it was.
+ * <p>
+ * Zone sequences follow the core: monster 0–4 main row, 5–6 extra monster
+ * zones; spell 0–4 backrow, 5 field spell, 6–7 pendulum zones.
+ *
+ * @param turn       turn number (from MSG_NEW_TURN count)
+ * @param phase      PHASE_* value of the current phase
+ * @param turnPlayer 0/1 whose turn it is, from the viewer's seat numbering
+ */
+public record BoardSnapshot(Side self, Side opponent, int turn, int phase, int turnPlayer)
+{
+    public static final BoardSnapshot EMPTY = new BoardSnapshot(Side.empty(), Side.empty(), 0, 0, 0);
+
+    /**
+     * A card in a zone, or an empty zone when {@code present} is false.
+     *
+     * @param art which artwork this physical copy wears, 0 for the printed
+     *            one. It arrives only for a card this viewer may already
+     *            identify: {@link BoardState}'s conceal zeroes it beside the
+     *            code, because with only ~122 cards having a second artwork
+     *            an art index all but names the card.
+     */
+    public record Slot(boolean present, int code, boolean faceDown, boolean defence, int attack, int defense,
+        int baseAttack, int baseDefense, int leftScale, int rightScale, int overlays,
+        CardView.Equip equip, boolean negated, int art, long race)
+    {
+        /**
+         * The shape before the card's LIVE race, for slots built without an
+         * engine behind them.
+         * <p>
+         * Zero is what the core itself answers for a card with no race, so it
+         * doubles as "not stated" without needing a sentinel of its own -- and
+         * a concealed card is given zero deliberately, since naming the race of
+         * a set monster names most of the monster.
+         */
+        public Slot(boolean present, int code, boolean faceDown, boolean defence, int attack,
+            int defense, int baseAttack, int baseDefense, int leftScale, int rightScale,
+            int overlays, CardView.Equip equip, boolean negated, int art)
+        {
+            this(present, code, faceDown, defence, attack, defense, baseAttack, baseDefense,
+                leftScale, rightScale, overlays, equip, negated, art, 0L);
+        }
+
+        /**
+         * The shape before per-copy artwork, for the places that build a slot
+         * without one — a copy nobody dressed wears its printed artwork.
+         */
+        public Slot(boolean present, int code, boolean faceDown, boolean defence, int attack,
+            int defense, int baseAttack, int baseDefense, int leftScale, int rightScale,
+            int overlays, CardView.Equip equip, boolean negated)
+        {
+            this(present, code, faceDown, defence, attack, defense, baseAttack, baseDefense,
+                leftScale, rightScale, overlays, equip, negated, 0);
+        }
+
+        /**
+         * The old shape, for the places that build a slot without engine state.
+         * <p>
+         * {@code overlays} was carried across the wire for every card from the
+         * day this record was written, hardcoded to 0 at every construction
+         * site and read by nothing. It means something now.
+         */
+        public Slot(boolean present, int code, boolean faceDown, boolean defence, int attack,
+            int defense, int baseAttack, int baseDefense, int leftScale, int rightScale,
+            int overlays, CardView.Equip equip)
+        {
+            this(present, code, faceDown, defence, attack, defense, baseAttack, baseDefense,
+                leftScale, rightScale, overlays, equip, false);
+        }
+
+        public static final Slot EMPTY =
+            new Slot(false, 0, false, false, 0, 0, 0, 0, -1, -1, 0, null);
+
+        /**
+         * Has an effect made this card a different KIND of monster?
+         * <p>
+         * Compared against the printed race from the local database, because
+         * the engine cannot be asked: there is a QUERY_RACE and no
+         * QUERY_BASE_RACE, and base values exist in that API only for attack
+         * and defence. So unlike a boosted statistic, which carries its own
+         * "before" across the wire, this one is answered by looking the card
+         * up -- which is sound, since the printed race is a fact about the
+         * card and not about the duel.
+         * <p>
+         * False for anything concealed or unidentified: race is zero there,
+         * deliberately, and "changed to nothing" is not a change worth
+         * colouring.
+         */
+        public boolean raceChanged(long printed)
+        {
+            return present && !faceDown && code != 0 && race != 0L && printed != 0L
+                && race != printed;
+        }
+
+        /** Whether this slot holds a card the engine gave a pendulum scale. */
+        public boolean hasScale()
+        {
+            return present && !faceDown && leftScale >= 0 && rightScale >= 0;
+        }
+
+        /**
+         * True if an effect has moved this stat off its printed value. An
+         * unknown value (-1 from the core) counts as unchanged rather than as
+         * a huge drop.
+         */
+        public boolean attackBoosted()
+        {
+            return attack >= 0 && baseAttack >= 0 && attack > baseAttack;
+        }
+
+        public boolean attackWeakened()
+        {
+            return attack >= 0 && baseAttack >= 0 && attack < baseAttack;
+        }
+
+        public boolean defenseBoosted()
+        {
+            return defense >= 0 && baseDefense >= 0 && defense > baseDefense;
+        }
+
+        public boolean defenseWeakened()
+        {
+            return defense >= 0 && baseDefense >= 0 && defense < baseDefense;
+        }
+
+        public static Slot of(CardView card)
+        {
+            if(card == null)
+            {
+                return EMPTY;
+            }
+            // -1 is the core's "you may not know this", and it is kept:
+            // flattening it to 0 turned "unknown" into a stated 0 ATK.
+            return new Slot(true, card.code(), !card.isFaceUp(), !card.isAttackPosition(),
+                card.attack(), card.defense(), card.baseAttack(), card.baseDefense(),
+                card.leftScale(), card.rightScale(), card.overlays(), card.equip(),
+                card.negated(), card.art(), card.race());
+        }
+
+        public void write(FriendlyByteBuf buffer)
+        {
+            buffer.writeBoolean(present);
+            if(present)
+            {
+                buffer.writeVarInt(code);
+                buffer.writeBoolean(faceDown);
+                buffer.writeBoolean(defence);
+                // Shifted by one so the -1 sentinel survives a VarInt.
+                buffer.writeVarInt(attack + 1);
+                buffer.writeVarInt(defense + 1);
+                buffer.writeVarInt(baseAttack + 1);
+                buffer.writeVarInt(baseDefense + 1);
+                // Shifted like the stats, for the same -1 sentinel.
+                buffer.writeVarInt(leftScale + 1);
+                buffer.writeVarInt(rightScale + 1);
+                buffer.writeVarInt(overlays);
+            buffer.writeBoolean(negated);
+                // Only written when there is an identity to attach it to, so a
+                // slot the viewer may not read cannot carry an artwork index
+                // even by mistake -- the byte is not on the wire to be filled
+                // in. Costs one zero byte per identified card and nothing for
+                // the rest.
+                if(code != 0)
+                {
+                    buffer.writeVarInt(art);
+                    // Beside the artwork and behind the same gate, because it
+                    // is the same kind of secret: a race narrows a face-down
+                    // card as surely as an art index does. A long, because the
+                    // core's race is a 64-bit mask and the highest bits are
+                    // real races.
+                    buffer.writeVarLong(race);
+                }
+                // An equip and the monster under it are both face up, so this
+                // relation is public knowledge and needs no concealment.
+                buffer.writeBoolean(equip != null);
+                if(equip != null)
+                {
+                    buffer.writeVarInt(equip.controller());
+                    buffer.writeVarInt(equip.location());
+                    buffer.writeVarInt(equip.sequence());
+                }
+            }
+        }
+
+        public static Slot read(FriendlyByteBuf buffer)
+        {
+            if(!buffer.readBoolean())
+            {
+                return EMPTY;
+            }
+            int code = buffer.readVarInt();
+            boolean faceDown = buffer.readBoolean();
+            boolean defence = buffer.readBoolean();
+            int attack = buffer.readVarInt() - 1;
+            int defense = buffer.readVarInt() - 1;
+            int baseAttack = buffer.readVarInt() - 1;
+            int baseDefense = buffer.readVarInt() - 1;
+            int leftScale = buffer.readVarInt() - 1;
+            int rightScale = buffer.readVarInt() - 1;
+            int overlays = buffer.readVarInt();
+            boolean negated = buffer.readBoolean();
+            int art = code != 0 ? buffer.readVarInt() : 0;
+            long race = code != 0 ? buffer.readVarLong() : 0L;
+            CardView.Equip equip = buffer.readBoolean()
+                ? new CardView.Equip(buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt())
+                : null;
+            return new Slot(true, code, faceDown, defence, attack, defense,
+                baseAttack, baseDefense, leftScale, rightScale, overlays, equip, negated, art,
+                race);
+        }
+    }
+
+    /**
+     * @param startingLifePoints what this duel began at, so the life bar can be
+     *                           drawn as a fraction of it rather than of a
+     *                           hardcoded 8000. It rides on the snapshot rather
+     *                           than being announced once because a spectator
+     *                           who walks up mid-duel is only ever sent a cached
+     *                           snapshot — a one-shot packet would leave every
+     *                           spectator's bar measuring against the wrong
+     *                           total. Zero means "not stated", which the bar
+     *                           reads as the engine's own default.
+     *                           <p>
+     *                           On the side rather than on the snapshot because
+     *                           the engine takes one {@code PlayerConfig} per
+     *                           TEAM, so the two seats could legitimately differ.
+     */
+    public record Side(int lifePoints, int startingLifePoints, List<Slot> monsters, List<Slot> spells,
+        List<Slot> hand, List<Slot> grave, List<Slot> banished, List<Slot> extra, int deckCount)
+    {
+        public static Side empty()
+        {
+            return new Side(0, 0, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), 0);
+        }
+
+        public static Side of(BoardState.PlayerBoard board, int startingLifePoints)
+        {
+            return new Side(board.lifePoints(), startingLifePoints,
+                board.monsters().stream().map(Slot::of).toList(),
+                board.spells().stream().map(Slot::of).toList(),
+                board.hand().stream().map(Slot::of).toList(),
+                board.grave().stream().map(Slot::of).toList(),
+                board.banished().stream().map(Slot::of).toList(),
+                board.extra().stream().map(Slot::of).toList(),
+                board.deckCount());
+        }
+
+        public void write(FriendlyByteBuf buffer)
+        {
+            buffer.writeVarInt(lifePoints);
+            // Immediately after lifePoints in BOTH directions. A field written
+            // here and read elsewhere does not fail loudly -- it silently
+            // shifts every list that follows.
+            buffer.writeVarInt(startingLifePoints);
+            writeSlots(buffer, monsters);
+            writeSlots(buffer, spells);
+            writeSlots(buffer, hand);
+            writeSlots(buffer, grave);
+            writeSlots(buffer, banished);
+            writeSlots(buffer, extra);
+            buffer.writeVarInt(deckCount);
+        }
+
+        public static Side read(FriendlyByteBuf buffer)
+        {
+            return new Side(buffer.readVarInt(), buffer.readVarInt(),
+                readSlots(buffer), readSlots(buffer), readSlots(buffer),
+                readSlots(buffer), readSlots(buffer), readSlots(buffer), buffer.readVarInt());
+        }
+    }
+
+    public static BoardSnapshot of(BoardState state)
+    {
+        return of(state, 0, 0, 0, 0);
+    }
+
+    /**
+     * @param startingLifePoints what the duel began at, carried onto both sides
+     *                           so the life bars can measure against it. Zero
+     *                           reads as "not stated" rather than as an empty
+     *                           bar; see {@link Side#startingLifePoints()}.
+     */
+    public static BoardSnapshot of(BoardState state, int turn, int phase, int turnPlayer,
+        int startingLifePoints)
+    {
+        if(state == null)
+        {
+            return EMPTY;
+        }
+        return new BoardSnapshot(Side.of(state.self(), startingLifePoints),
+            Side.of(state.opponent(), startingLifePoints), turn, phase, turnPlayer);
+    }
+
+    public void write(FriendlyByteBuf buffer)
+    {
+        self.write(buffer);
+        opponent.write(buffer);
+        buffer.writeVarInt(turn);
+        buffer.writeVarInt(phase);
+        buffer.writeVarInt(turnPlayer);
+    }
+
+    public static BoardSnapshot read(FriendlyByteBuf buffer)
+    {
+        return new BoardSnapshot(Side.read(buffer), Side.read(buffer),
+            buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt());
+    }
+
+    private static void writeSlots(FriendlyByteBuf buffer, List<Slot> slots)
+    {
+        buffer.writeVarInt(slots.size());
+        slots.forEach(slot -> slot.write(buffer));
+    }
+
+    private static List<Slot> readSlots(FriendlyByteBuf buffer)
+    {
+        int count = buffer.readVarInt();
+        List<Slot> slots = new ArrayList<>(count);
+        for(int i = 0; i < count; i++)
+        {
+            slots.add(Slot.read(buffer));
+        }
+        return slots;
+    }
+}

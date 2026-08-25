@@ -1,0 +1,49 @@
+package de.cas_ual_ty.dueldimension.duel.screen;
+
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.duel.playfield.DuelCard;
+import de.cas_ual_ty.dueldimension.duel.playfield.PlayField;
+import de.cas_ual_ty.dueldimension.duel.playfield.Zone;
+import de.cas_ual_ty.dueldimension.duel.playfield.ZoneOwner;
+
+import javax.annotation.Nullable;
+
+public interface IDuelScreenContext
+{
+    @Nullable
+    default Zone getClickedZone()
+    {
+        return getPlayField().getClickedZoneForPlayer(getViewOwner());
+    }
+    
+    @Nullable
+    default DuelCard getClickedCard()
+    {
+        return getPlayField().getClickedCardForPlayer(getViewOwner());
+    }
+    
+    @Nullable
+    default Zone getOpponentClickedZone()
+    {
+        return getPlayField().getClickedZoneForPlayer(getViewOwner().opponent());
+    }
+    
+    @Nullable
+    default DuelCard getOpponentClickedCard()
+    {
+        return getPlayField().getClickedCardForPlayer(getViewOwner().opponent());
+    }
+    
+    default ZoneOwner getViewOwner()
+    {
+        return getZoneOwner().isPlayer() ? getZoneOwner() : ZoneOwner.PLAYER1;
+    }
+    
+    PlayField getPlayField();
+    
+    ZoneOwner getView();
+    
+    ZoneOwner getZoneOwner();
+    
+    void renderCardInfo(GuiGraphicsExtractor ms, DuelCard card);
+}
