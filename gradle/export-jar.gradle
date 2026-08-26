@@ -39,9 +39,16 @@ def exportDestination = project.findProperty('exportTo')
 tasks.register('exportJar') {
     description = 'Copies the remapped jar into the Modrinth profile for this Minecraft version.'
     group = 'distribution'
-    dependsOn tasks.named('remapJar')
+    // remapJar WHERE THERE IS ONE. 26.2 ships unobfuscated, so Loom 1.17.18
+    // creates no remap step at all and the shippable artefact is `jar`; 1.21.1
+    // is obfuscated and `jar` there holds named classes the game cannot load.
+    // Asked rather than assumed, because assuming remapJar made this task fail
+    // to CONFIGURE on 26.2 -- not to run, to configure, which takes the whole
+    // build down with it.
+    def shippable = tasks.names.contains('remapJar') ? 'remapJar' : 'jar'
+    dependsOn tasks.named(shippable)
 
-    def jarFile = tasks.named('remapJar').flatMap { it.archiveFile }
+    def jarFile = tasks.named(shippable, Jar).flatMap { it.archiveFile }
     def baseName = base.archivesName
     def logger = project.logger
 

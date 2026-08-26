@@ -294,6 +294,61 @@ public final class MonsterModels
         }
     }
 
+    /**
+     * Deletes every installed model, and answers how many went.
+     *
+     * <h2>Scoped narrowly on purpose</h2>
+     *
+     * Only files whose name ends {@code .glb}, only directly inside
+     * {@link #folder()}, and never a directory. A duellist's models folder is a
+     * folder they were invited to drop files into -- {@link #open()} exists for
+     * exactly that -- so it can contain anything, and a delete that took the
+     * whole folder would take whatever else they had put there with it.
+     * <p>
+     * The cache is forgotten afterwards for the same reason a fresh install
+     * forgets it: {@code LOADED} holds baked meshes whose files no longer exist,
+     * and something drawing from one would be drawing a model that has been
+     * deleted. Must therefore run on the RENDER thread, like every other caller
+     * of {@link #clear()}.
+     *
+     * @return how many files were removed
+     */
+    public static int deleteAll()
+    {
+        if(!Files.isDirectory(folder()))
+        {
+            return 0;
+        }
+        int removed = 0;
+        try(Stream<Path> files = Files.list(folder()))
+        {
+            for(Path file : files.filter(Files::isRegularFile)
+                .filter(path -> path.getFileName().toString().toLowerCase(Locale.ROOT)
+                    .endsWith(".glb"))
+                .toList())
+            {
+                try
+                {
+                    Files.delete(file);
+                    removed++;
+                }
+                catch(java.io.IOException stuck)
+                {
+                    // Named rather than swallowed: a file the OS will not let go
+                    // of leaves the count short, and a count that is short for
+                    // an unsaid reason reads as the delete having failed.
+                    DuelDimension.warn("could not delete " + file + ": " + stuck);
+                }
+            }
+        }
+        catch(java.io.IOException unreadable)
+        {
+            DuelDimension.warn("could not list " + folder() + ": " + unreadable);
+        }
+        clear();
+        return removed;
+    }
+
     /** Opens the models folder in whatever the system uses to show folders. */
     public static void open()
     {

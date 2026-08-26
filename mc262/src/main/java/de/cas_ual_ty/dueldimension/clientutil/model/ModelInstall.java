@@ -50,6 +50,16 @@ public final class ModelInstall
     private static final String SHA256 =
         "b321e85c36720b6e846054ca04c802d2e8772b6a576a047e6002327976cb0419";
 
+    /**
+     * The human-facing download page, for a duellist who would rather fetch the
+     * archive themselves than have the game do it.
+     * <p>
+     * Lived on {@code ModelPrompt} until the launch-time question was removed;
+     * it moved here because this is the class that still exists and the one that
+     * already owns the direct download link beside it.
+     */
+    public static final String PAGE_URL = "https://drive.google.com/file/d/1vXZ7Ng9eaZbhH2o915jiFnv2n7PI8KtH/view?usp=sharing";
+
     private static final long EXPECTED_BYTES = 286_355_168L;
 
     /** What the installer is doing, for something to draw. */

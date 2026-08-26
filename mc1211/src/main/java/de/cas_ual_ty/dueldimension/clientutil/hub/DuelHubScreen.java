@@ -81,15 +81,21 @@ public class DuelHubScreen extends Screen
     private static final int BACK_TILES = 7;
 
     /**
-     * The four sections, with what each is still waiting on. The order is the
-     * Forge build's, so the strip reads the same.
+     * The sections, with what each is still waiting on. The order is the Forge
+     * build's, so the strip reads the same; Misc is last because it was not in
+     * that build and appending is the only place that does not move anything.
+     * <p>
+     * {@link #tabW()} shares the strip between however many there are, which is
+     * what makes adding one safe -- a fifth tab used to run 36 units past the
+     * panel's right edge.
      */
     private enum Section
     {
         PROFILE("Profile", ""),
         DECKS("Decks", ""),
         SHOP("Shop", ""),
-        SETTINGS("Settings", "");
+        SETTINGS("Settings", ""),
+        MISC("Misc", "");
 
         private final String label;
         private final String waitingOn;
@@ -102,6 +108,18 @@ public class DuelHubScreen extends Screen
     }
 
     private Section section = Section.PROFILE;
+
+    /**
+     * Whether the delete button has been pressed once and is asking.
+     * <p>
+     * Not static and cleared on every tab rebuild: a confirm that outlived the
+     * tab it was asked on would turn an unrelated click into a delete.
+     */
+    private boolean deleteArmed;
+
+    /** What the last delete did, shown until this screen closes. */
+    private String deleteReport;
+
     private int left;
     private int top;
 
@@ -357,6 +375,84 @@ public class DuelHubScreen extends Screen
                     de.cas_ual_ty.dueldimension.shop.DiskShopMessages.RequestShop.DECK_BOXES)));
         }
 
+        // The Misc tab's one job today: the monster models.
+        //
+        // Rebuilt with the tab rather than kept, like the mat picker below, so
+        // it always opens saying what is actually on disk. `armed` is cleared
+        // here for the same reason -- a confirm left half-answered on another
+        // tab is a delete waiting to happen on a click meant for something else.
+        deleteArmed = false;
+        if(section == Section.MISC)
+        {
+            int miscX = left + PAD + 8;
+            int miscY = bodyTop + 52;
+            int miscW = WIDTH - PAD * 2 - 16;
+            boolean installed = !de.cas_ual_ty.dueldimension.clientutil.model
+                .MonsterModels.names().isEmpty();
+
+            if(installed)
+            {
+                // One button that asks before it acts. Arming in place rather
+                // than opening a confirm screen: the question is one line, and a
+                // screen to ask it would be a screen to dismiss.
+                addRenderableWidget(new HubWidgets.TextureButton(miscX, miscY, miscW, 20,
+                    Component.literal(deleteArmed
+                        ? "Really delete them? This cannot be undone"
+                        : "Delete monster models"), pressed ->
+                    {
+                        if(!deleteArmed)
+                        {
+                            deleteArmed = true;
+                            rebuildWidgets();
+                            return;
+                        }
+                        // On the render thread, which is where this runs and
+                        // where MonsterModels.deleteAll has to run: it forgets
+                        // baked meshes, and a frame drawing from one would be
+                        // drawing a model that no longer exists.
+                        int removed = de.cas_ual_ty.dueldimension.clientutil.model
+                            .MonsterModels.deleteAll();
+                        deleteArmed = false;
+                        deleteReport = removed + (removed == 1 ? " model deleted"
+                            : " models deleted");
+                        rebuildWidgets();
+                    }));
+                if(deleteArmed)
+                {
+                    addRenderableWidget(new HubWidgets.TextureButton(miscX, miscY + 26,
+                        miscW, 20, Component.literal("Keep them"), pressed ->
+                        {
+                            deleteArmed = false;
+                            rebuildWidgets();
+                        }));
+                }
+            }
+            else
+            {
+                addRenderableWidget(new HubWidgets.TextureButton(miscX, miscY, miscW, 20,
+                    Component.literal("Download monster models (273 MB)"), pressed ->
+                    {
+                        de.cas_ual_ty.dueldimension.clientutil.model.ModelInstall.start();
+                        minecraft.setScreen(
+                            new de.cas_ual_ty.dueldimension.clientutil.model
+                                .ModelInstallScreen(this));
+                    }));
+                addRenderableWidget(new HubWidgets.TextureButton(miscX, miscY + 26, miscW, 20,
+                    Component.literal("Open the download page instead"), pressed ->
+                        // net.minecraft.Util here, not net.minecraft.util.Util:
+                        // the class moved up a package after 1.21.1.
+                        net.minecraft.Util.getPlatform().openUri(
+                            de.cas_ual_ty.dueldimension.clientutil.model
+                                .ModelInstall.PAGE_URL)));
+            }
+
+            // Always offered, installed or not: it is how a duellist adds one
+            // model by hand, and how they check what the delete left behind.
+            addRenderableWidget(new HubWidgets.TextureButton(miscX, miscY + 52, miscW, 20,
+                Component.literal("Open the models folder"), pressed ->
+                    de.cas_ual_ty.dueldimension.clientutil.model.MonsterModels.open()));
+        }
+
         // The mat picker is rebuilt with the tab rather than kept, so it always
         // opens showing the colour actually in force. Nulled on every other tab
         // because render and the mouse handlers all key off it being non-null.
@@ -608,6 +704,7 @@ public class DuelHubScreen extends Screen
             // SHOP is three buttons and a line of explanation; the buttons are
             // widgets, added in init(), so there is nothing to paint under them.
             case SHOP -> shopPanel(graphics, bodyTop);
+            case MISC -> miscPanel(graphics, bodyTop);
             default -> waiting(graphics, bodyTop);
         }
 
@@ -993,6 +1090,41 @@ public class DuelHubScreen extends Screen
         // No caption: two labelled buttons say what this is, and a sentence
         // explaining them was a sentence to read every time.
         graphics.text(font, "Shop", left + PAD + 8, bodyTop + 8, 0xFFF4D089, true);
+    }
+
+    /**
+     * Misc: the monster models, and nothing else yet.
+     * <p>
+     * This tab exists because the models used to ask about THEMSELVES, from a
+     * notice on the title screen at launch. That is a question nobody asked to
+     * be asked, and it could only ever be answered once -- there was no way back
+     * to it, and no way to undo a yes. Here it is a place a duellist goes when
+     * they want it, and the same button takes the models away again.
+     */
+    private void miscPanel(GuiGraphicsExtractor graphics, int bodyTop)
+    {
+        graphics.text(font, "Misc", left + PAD + 8, bodyTop + 8, 0xFFF4D089, true);
+
+        java.util.List<String> models = de.cas_ual_ty.dueldimension.clientutil.model
+            .MonsterModels.names();
+        String status = models.isEmpty()
+            ? "Monster models: not installed"
+            : "Monster models: " + models.size()
+                + (models.size() == 1 ? " model installed" : " models installed");
+        graphics.text(font, status, left + PAD + 8, bodyTop + 24, 0xFFC2C9D6, true);
+
+        // The report of the last delete, which otherwise leaves no trace: the
+        // button changes back to "Download", and a button that has changed is
+        // not the same as being told what happened.
+        if(deleteReport != null)
+        {
+            graphics.text(font, deleteReport, left + PAD + 8, bodyTop + 36, 0xFF7A8090, true);
+        }
+        else if(models.isEmpty())
+        {
+            graphics.text(font, "3D monsters on the duel board, in place of flat sprites.",
+                left + PAD + 8, bodyTop + 36, 0xFF7A8090, true);
+        }
     }
 
     /**

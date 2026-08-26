@@ -89,13 +89,6 @@ public class DuelDimensionFabricClient implements ClientModInitializer
             // touch the model cache, because baking what replaces it reaches for
             // the graphics device.
             de.cas_ual_ty.dueldimension.clientutil.model.ModelInstall.tick();
-            net.minecraft.client.gui.screens.Screen title =
-                de.cas_ual_ty.dueldimension.clientutil.model.ModelPrompt.takeRequest();
-            if(title != null)
-            {
-                client.setScreen(
-                    new de.cas_ual_ty.dueldimension.clientutil.model.ModelPromptScreen(title));
-            }
             de.cas_ual_ty.dueldimension.clientutil.HitchWatch.tick();
             de.cas_ual_ty.dueldimension.clientutil.OrichalcosRenderer.tick();
             de.cas_ual_ty.dueldimension.clientutil.CardPreloadJob.tick();
@@ -141,23 +134,14 @@ public class DuelDimensionFabricClient implements ClientModInitializer
         // it already registered.
         de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSheets.load();
 
-        // The offer, once, on a fresh install with no models at all. Hung on the
-        // title screen rather than on world join: it is a thing to do BEFORE
-        // playing, and a screen that opens over someone who has just walked into
-        // their world is an interruption rather than an offer.
-        net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.AFTER_INIT.register(
-            (client, screen, width, height) ->
-        {
-            // Noticed here, opened on the next tick. Opening it here reaches
-            // setScreen while Minecraft's constructor is still running, which
-            // renders a frame against a frame limiter that has not been built
-            // yet -- a startup crash naming none of this.
-            if(screen instanceof net.minecraft.client.gui.screens.TitleScreen
-                && de.cas_ual_ty.dueldimension.clientutil.model.ModelPrompt.shouldOffer())
-            {
-                de.cas_ual_ty.dueldimension.clientutil.model.ModelPrompt.request(screen);
-            }
-        });
+        // NO LAUNCH-TIME OFFER. There was one: a title-screen notice asking
+        // whether to download the monster models, with "not now" and "don't ask
+        // again" and a config file remembering the answer.
+        //
+        // It is a question nobody asked to be asked. The models are optional,
+        // 273 MB, and wanted by the duellist who wants them -- so the offer now
+        // waits where someone would go looking for it, as the Misc tab of the
+        // Duel Hub, which can also take them away again. See DuelHubScreen.
 
         // The monster sprites: the shipped list, then whatever the player has
         // edited on top of it. Read here rather than from a static block --
