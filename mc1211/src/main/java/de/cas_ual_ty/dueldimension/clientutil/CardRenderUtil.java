@@ -12,6 +12,7 @@ import de.cas_ual_ty.dueldimension.rarity.RarityEntry;
 import de.cas_ual_ty.dueldimension.rarity.RarityLayer;
 import net.minecraft.client.gui.Font;
 import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
+import de.cas_ual_ty.dueldimension.compat.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
@@ -249,12 +250,15 @@ public class CardRenderUtil
         {
             // The mask is drawn at the CURSOR, not at the card: that offset is
             // the whole effect. It writes alpha only, so nothing of it shows.
-            ms.blit(FoilPipelines.MASK, MASK_RL, mouseX - width / 2, mouseY - height / 2,
+            FoilPipelines.MASK.apply();
+            ms.blit(RenderPipelines.GUI_TEXTURED, MASK_RL, mouseX - width / 2, mouseY - height / 2,
                 0F, 0F, width, height, width, height, width, height, tint);
-            ms.blit(layer.type.invertedRendering ? FoilPipelines.FOIL_INVERTED
-                    : FoilPipelines.FOIL,
+            (layer.type.invertedRendering ? FoilPipelines.FOIL_INVERTED
+                : FoilPipelines.FOIL).apply();
+            ms.blit(RenderPipelines.GUI_TEXTURED,
                 layer.getMainImageResourceLocation(), x, y,
                 0F, 0F, width, height, width, height, width, height, tint);
+            FoilPipelines.reset();
         }
     }
 

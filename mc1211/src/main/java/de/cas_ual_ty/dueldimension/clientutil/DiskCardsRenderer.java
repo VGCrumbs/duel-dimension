@@ -3,7 +3,7 @@ package de.cas_ual_ty.dueldimension.clientutil;
 import com.mojang.blaze3d.vertex.PoseStack;
 import de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot;
 import de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector;
-import net.minecraft.client.renderer.special.SpecialModelRenderer;
+import de.cas_ual_ty.dueldimension.compat.SpecialModelRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.joml.Vector3f;

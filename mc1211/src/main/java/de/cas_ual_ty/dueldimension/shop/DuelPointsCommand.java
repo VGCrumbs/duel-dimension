@@ -35,7 +35,7 @@ public final class DuelPointsCommand
             // Reading your own balance needs no permission.
             .executes(context -> query(context.getSource()))
             .then(Commands.literal("add")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .then(Commands.argument("amount", IntegerArgumentType.integer(1))
                     .executes(context -> apply(context.getSource(),
                         List.of(context.getSource().getPlayerOrException()),
@@ -45,7 +45,7 @@ public final class DuelPointsCommand
                             EntityArgument.getPlayers(context, "targets"),
                             IntegerArgumentType.getInteger(context, "amount"), Mode.ADD)))))
             .then(Commands.literal("take")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .then(Commands.argument("amount", IntegerArgumentType.integer(1))
                     .executes(context -> apply(context.getSource(),
                         List.of(context.getSource().getPlayerOrException()),
@@ -55,7 +55,7 @@ public final class DuelPointsCommand
                             EntityArgument.getPlayers(context, "targets"),
                             IntegerArgumentType.getInteger(context, "amount"), Mode.TAKE)))))
             .then(Commands.literal("set")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .then(Commands.argument("amount", IntegerArgumentType.integer(0))
                     .executes(context -> apply(context.getSource(),
                         List.of(context.getSource().getPlayerOrException()),

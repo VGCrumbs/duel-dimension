@@ -507,7 +507,7 @@ public class BoardPointerScreen extends Screen
             return;
         }
         FieldTransform transform = new FieldTransform(siting);
-        Vec3 from = minecraft.gameRenderer.getMainCamera().position();
+        Vec3 from = minecraft.gameRenderer.getMainCamera().getPosition();
         float[] field = BoardPicker.aim(transform, from, rayThroughCursor(mouseX, mouseY), REACH);
         hovered = BoardPicker.at(ClientDuelField.boardToDraw(),
             Math.max(0, ClientDuelField.seat()), field);

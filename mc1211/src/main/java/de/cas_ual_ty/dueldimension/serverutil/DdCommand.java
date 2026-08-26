@@ -123,7 +123,7 @@ public class DdCommand
      */
     private static boolean singleplayerOrOp(CommandSourceStack source)
     {
-        if(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS).test(source))
+        if(source.hasPermission(Commands.LEVEL_GAMEMASTERS))
         {
             return true;
         }
@@ -211,7 +211,7 @@ public class DdCommand
                 .then(Commands.literal("engine")
                         .executes((context) -> DdCommand.engineStatus(context))
                         .then(Commands.literal("testduel")
-                                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                                .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
                                 .executes((context) -> DdCommand.testDuel(context))
                         )
                 )
@@ -225,7 +225,7 @@ public class DdCommand
                         )
                 )
                 .then(Commands.literal("seal")
-                        .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .then(Commands.literal("test")
                                 .executes((context) -> DdCommand.sealTest(context))
                         )
@@ -235,7 +235,7 @@ public class DdCommand
                         )
                 )
                 .then(Commands.literal("duelist")
-                        .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .then(Commands.argument("profile", com.mojang.brigadier.arguments.StringArgumentType.word())
                                 .suggests((context, builder) ->
                                 {

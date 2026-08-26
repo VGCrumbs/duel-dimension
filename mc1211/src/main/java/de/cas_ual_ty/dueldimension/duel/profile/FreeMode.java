@@ -1,14 +1,12 @@
 package de.cas_ual_ty.dueldimension.duel.profile;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
 import de.cas_ual_ty.dueldimension.DuelDimension;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
-import net.minecraft.world.level.saveddata.SavedDataType;
 
 /**
  * Whether the deck builder ignores what a player actually owns.
@@ -21,21 +19,23 @@ import net.minecraft.world.level.saveddata.SavedDataType;
  * A property of the world, not of a player, so it lives in the overworld's
  * saved data the way any world-wide switch does.
  * <p>
- * {@link SavedData} is Codec-driven in this version: a {@link SavedDataType}
- * carries the id, the constructor and the Codec together, and the old
- * {@code save(CompoundTag)} override is gone entirely. That suits this -- the
- * state is one boolean, and describing it once is the whole implementation.
+ * {@link SavedData} is tag-driven in 1.21.1: a {@link SavedData.Factory} carries
+ * the empty constructor, the loader and the data-fix type, the file name is a
+ * plain string passed alongside it, and {@code save(CompoundTag, Provider)} is
+ * an abstract override. The state is one boolean, so all of that is four lines.
  */
 public class FreeMode extends SavedData
 {
-    private static final Codec<FreeMode> CODEC = RecordCodecBuilder.create(instance ->
-        instance.group(
-            Codec.BOOL.optionalFieldOf("Enabled", false).forGetter(state -> state.enabled)
-        ).apply(instance, FreeMode::new));
+    /**
+     * The file this lives in, under the world's {@code data} folder. The same
+     * name the Forge build used, so a world carried across keeps its setting.
+     */
+    private static final String NAME = DuelDimension.MOD_ID + "_freemode";
 
-    private static final SavedDataType<FreeMode> TYPE = new SavedDataType<>(
-        ResourceLocation.fromNamespaceAndPath(DuelDimension.MOD_ID, "freemode"),
-        () -> new FreeMode(false), CODEC, DataFixTypes.LEVEL);
+    private static final SavedData.Factory<FreeMode> FACTORY = new SavedData.Factory<>(
+        () -> new FreeMode(false),
+        (tag, registries) -> new FreeMode(tag.getBoolean("Enabled")),
+        DataFixTypes.LEVEL);
 
     /**
      * What the client believes, so the deck editor can grey a card without
@@ -50,9 +50,16 @@ public class FreeMode extends SavedData
         this.enabled = enabled;
     }
 
+    @Override
+    public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries)
+    {
+        tag.putBoolean("Enabled", enabled);
+        return tag;
+    }
+
     private static FreeMode of(MinecraftServer server)
     {
-        return server.overworld().getDataStorage().computeIfAbsent(TYPE);
+        return server.overworld().getDataStorage().computeIfAbsent(FACTORY, NAME);
     }
 
     public static boolean isEnabled(MinecraftServer server)

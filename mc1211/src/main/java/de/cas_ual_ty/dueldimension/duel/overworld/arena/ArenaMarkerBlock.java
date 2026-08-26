@@ -154,13 +154,12 @@ public class ArenaMarkerBlock extends Block
             .mapColor(MapColor.NONE)
             // Bedrock's: refused by every tool, ignored by creative mode.
             .strength(-1F, 3600000F)
-            .noCollision()
+            .noCollission()
             .noOcclusion()
             .noLootTable()
             // A piston shoving an arena's corner one block sideways would move
             // a wall of the board without anybody touching it.
             .pushReaction(PushReaction.BLOCK)
-            .sound(SoundType.EMPTY)
-            .setId(key);
+            .sound(SoundType.EMPTY);
     }
 }

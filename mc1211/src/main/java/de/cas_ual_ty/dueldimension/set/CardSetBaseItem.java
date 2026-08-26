@@ -19,12 +19,10 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * Port: the Forge build kept a set-item's code in the stack's tag under
@@ -44,12 +42,12 @@ public abstract class CardSetBaseItem extends Item
 
     @Override
     public void appendHoverText(ItemStack itemStack, TooltipContext context,
-        TooltipDisplay display, Consumer<Component> lines, TooltipFlag flag)
+        List<Component> lines, TooltipFlag flag)
     {
         CardSet set = getCardSet(itemStack);
         List<Component> tooltip = new ArrayList<>();
         set.addItemInformation(tooltip);
-        tooltip.forEach(lines);
+        lines.addAll(tooltip);
     }
 
     @Override

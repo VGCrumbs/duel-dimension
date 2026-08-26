@@ -115,10 +115,10 @@ public final class ArenaRenderer
             return;
         }
 
-        Vec3 camera = client.gameRenderer.getMainCamera().position();
+        Vec3 camera = client.gameRenderer.getMainCamera().getPosition();
         PoseStack poseStack = context.poseStack();
         SubmitNodeCollector collector = context.submitNodeCollector();
-        float partial = client.getFrameTime().getGameTimeDeltaPartialTick(false);
+        float partial = client.getTimer().getGameTimeDeltaPartialTick(false);
         float age = context.levelState().gameTime + partial;
         float pulse = 0.55F + 0.45F * Mth.sin(age / PULSE_TICKS * Mth.TWO_PI);
         boolean asking = tabHeld(client);

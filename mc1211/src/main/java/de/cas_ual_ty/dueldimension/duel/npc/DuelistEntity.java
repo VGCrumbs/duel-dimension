@@ -18,8 +18,6 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.storage.ValueOutput;
-import net.minecraft.world.level.storage.ValueInput;
 
 /**
  * An NPC you can challenge to a duel. Which duelist it is — name, skin and
@@ -258,12 +256,14 @@ public class DuelistEntity extends PathfinderMob
     }
 
     /**
-     * Entity save data goes through {@link ValueOutput} rather than a raw
-     * {@code CompoundTag} -- a typed view that cannot be handed the wrong kind
-     * of tag, and that carries its own error reporting.
+     * Entity save data is a raw {@link CompoundTag} in 1.21.1; the typed
+     * {@code ValueOutput}/{@code ValueInput} views arrived in 1.21.6.
+     * <p>
+     * {@code Mob} widens both hooks to public, so an override here has to be
+     * public too -- {@code Entity} declares them protected, {@code Mob} does not.
      */
     @Override
-    protected void addAdditionalSaveData(ValueOutput output)
+    public void addAdditionalSaveData(CompoundTag output)
     {
         super.addAdditionalSaveData(output);
         output.putString("Profile", getProfileId());
@@ -271,11 +271,16 @@ public class DuelistEntity extends PathfinderMob
     }
 
     @Override
-    protected void readAdditionalSaveData(ValueInput input)
+    public void readAdditionalSaveData(CompoundTag input)
     {
         super.readAdditionalSaveData(input);
-        input.getString("Profile").ifPresent(this::setProfileId);
-        stationary = input.getBooleanOr("Stationary", false);
+        // getString returns "" for a missing key rather than an Optional, so
+        // the presence check that ifPresent gave for free is written out.
+        if(input.contains("Profile"))
+        {
+            setProfileId(input.getString("Profile"));
+        }
+        stationary = input.getBoolean("Stationary");
     }
 
     @Override

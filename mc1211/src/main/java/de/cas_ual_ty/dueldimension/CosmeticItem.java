@@ -5,9 +5,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.TooltipDisplay;
 
-import java.util.function.Consumer;
+import java.util.List;
 
 public class CosmeticItem extends Item
 {
@@ -17,14 +16,14 @@ public class CosmeticItem extends Item
     }
     
     /**
-     * A tooltip is fed to a consumer now rather than added to a list, and the
-     * level it used to be given became a {@link TooltipContext}.
+     * The tooltip is still a {@link List} to add to on 1.21.1; what changed
+     * from 1.19.2 is that the level became a {@link TooltipContext}.
      */
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context,
-        TooltipDisplay display, Consumer<Component> lines, TooltipFlag flag)
+        List<Component> lines, TooltipFlag flag)
     {
-        super.appendHoverText(stack, context, display, lines, flag);
-        lines.accept(Component.translatable(getDescriptionId() + ".desc"));
+        super.appendHoverText(stack, context, lines, flag);
+        lines.add(Component.translatable(getDescriptionId() + ".desc"));
     }
 }

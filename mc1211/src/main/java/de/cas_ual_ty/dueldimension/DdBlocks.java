@@ -20,8 +20,8 @@ import java.util.function.Function;
 /**
  * The mod's blocks.
  * <p>
- * Same three registry changes as {@link DdItems} — direct
- * {@link Registry#register}, the field is the block, {@code setId} is required —
+ * Same two registry changes as {@link DdItems} — direct
+ * {@link Registry#register}, and the field is the block —
  * plus two that are the block layer's own. {@code Material}/{@code MaterialColor}
  * were removed, so a block states its map colour, sound and strength
  * separately; and every block now supplies a {@code MapCodec} through
@@ -36,13 +36,13 @@ public final class DdBlocks
     public static final de.cas_ual_ty.dueldimension.duel.block.DuelBlock DUEL_PLAYMAT =
         register("duel_playmat", key -> new de.cas_ual_ty.dueldimension.duel.block.DuelBlock(
             BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(5.0F, 6.0F)
-                .sound(SoundType.METAL).setId(key),
+                .sound(SoundType.METAL),
             Block.box(2D, 0, 2D, 14D, 1D, 14D)));
 
     public static final de.cas_ual_ty.dueldimension.duel.block.DuelBlock DUEL_TABLE =
         register("duel_table", key -> new de.cas_ual_ty.dueldimension.duel.block.DuelBlock(
             BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(5.0F, 6.0F)
-                .sound(SoundType.METAL).setId(key),
+                .sound(SoundType.METAL),
             net.minecraft.world.phys.shapes.Shapes.or(
                 Block.box(4, 3, 4, 12, 12.5, 12),
                 Block.box(1, 0, 1, 15, 3, 15),
@@ -51,13 +51,13 @@ public final class DdBlocks
 
     public static final CardSupplyBlock CARD_SUPPLY = register("card_supply",
         key -> new CardSupplyBlock(BlockBehaviour.Properties.of()
-            .mapColor(MapColor.METAL).strength(5.0F, 6.0F).sound(SoundType.METAL).setId(key)));
+            .mapColor(MapColor.METAL).strength(5.0F, 6.0F).sound(SoundType.METAL)));
 
     // Forge's Material.METAL + MaterialColor.COLOR_BLUE became a MapColor plus
     // separate sound/strength. COLOR_BLUE is the shop's original map colour.
     public static final de.cas_ual_ty.dueldimension.shop.CardShopBlock CARD_SHOP = register("card_shop",
         key -> new de.cas_ual_ty.dueldimension.shop.CardShopBlock(BlockBehaviour.Properties.of()
-            .mapColor(MapColor.COLOR_BLUE).strength(5.0F, 6.0F).sound(SoundType.METAL).setId(key)));
+            .mapColor(MapColor.COLOR_BLUE).strength(5.0F, 6.0F).sound(SoundType.METAL)));
 
     // The counter beside it, selling sleeves rather than packs. The same
     // properties as the card shop down to the map colour: on a map the two are
@@ -66,8 +66,7 @@ public final class DdBlocks
     public static final de.cas_ual_ty.dueldimension.shop.SleeveShopBlock SLEEVE_SHOP =
         register("sleeve_shop",
             key -> new de.cas_ual_ty.dueldimension.shop.SleeveShopBlock(BlockBehaviour.Properties.of()
-                .mapColor(MapColor.COLOR_BLUE).strength(5.0F, 6.0F).sound(SoundType.METAL)
-                .setId(key)));
+                .mapColor(MapColor.COLOR_BLUE).strength(5.0F, 6.0F).sound(SoundType.METAL)));
 
     /**
      * The four corners of a hand-built duel arena, and the two squares its
@@ -89,7 +88,7 @@ public final class DdBlocks
         CARD_DISPLAY = register("card_display",
             key -> new de.cas_ual_ty.dueldimension.duel.overworld.display.CardDisplayBlock(
                 BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(5.0F, 6.0F)
-                    .sound(SoundType.METAL).noLootTable().setId(key)));
+                    .sound(SoundType.METAL).noLootTable()));
 
     private DdBlocks()
     {
@@ -104,7 +103,7 @@ public final class DdBlocks
 
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, id);
         Registry.register(BuiltInRegistries.ITEM, itemKey, new ArenaMarkerItem(block,
-            new Item.Properties().setId(itemKey).useBlockDescriptionPrefix()));
+            new Item.Properties()));
 
         return block;
     }
@@ -117,7 +116,7 @@ public final class DdBlocks
 
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, id);
         Registry.register(BuiltInRegistries.ITEM, itemKey,
-            new BlockItem(block, new Item.Properties().setId(itemKey).useBlockDescriptionPrefix()));
+            new BlockItem(block, new Item.Properties()));
 
         return block;
     }

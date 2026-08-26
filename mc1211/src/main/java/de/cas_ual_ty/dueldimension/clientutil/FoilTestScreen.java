@@ -108,13 +108,16 @@ public class FoilTestScreen extends Screen
         {
             // Writes alpha only. Nothing should appear from this draw itself;
             // centred on the cursor, which is what makes the glint follow it.
-            graphics.blit(FoilPipelines.MASK, MASK,
+            FoilPipelines.MASK.apply();
+            graphics.blit(RenderPipelines.GUI_TEXTURED, MASK,
                 mouseX - SIZE / 2, mouseY - SIZE / 2, 0F, 0F, SIZE, SIZE,
                 SIZE, SIZE, SIZE, SIZE, DdBlitUtil.NO_TINT);
         }
 
-        graphics.blit(additive ? FoilPipelines.ADDITIVE : FoilPipelines.FOIL, FOIL,
+        (additive ? FoilPipelines.ADDITIVE : FoilPipelines.FOIL).apply();
+        graphics.blit(RenderPipelines.GUI_TEXTURED, FOIL,
             x, y, 0F, 0F, SIZE, SIZE, SIZE, SIZE, SIZE, SIZE, DdBlitUtil.NO_TINT);
+        FoilPipelines.reset();
     }
 
     @Override

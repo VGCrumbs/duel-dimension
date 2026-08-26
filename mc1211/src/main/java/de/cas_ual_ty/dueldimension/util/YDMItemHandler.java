@@ -3,11 +3,7 @@ package de.cas_ual_ty.dueldimension.util;
 import com.google.common.base.Suppliers;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
-import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.ContainerHelper;
-import net.minecraft.world.level.storage.TagValueInput;
-import net.minecraft.world.level.storage.TagValueOutput;
-import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
@@ -211,16 +207,12 @@ public class YDMItemHandler extends SimpleContainer
      */
     public CompoundTag serializeNBT(HolderLookup.Provider registries)
     {
-        TagValueOutput output = TagValueOutput.createWithContext(
-            ProblemReporter.DISCARDING, registries);
-        ContainerHelper.saveAllItems(output.child(ITEMS), getItems(), true);
-        return output.buildResult();
+        return ContainerHelper.saveAllItems(new CompoundTag(), getItems(), true, registries);
     }
 
     public void deserializeNBT(HolderLookup.Provider registries, CompoundTag tag)
     {
-        ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, registries, tag);
-        ContainerHelper.loadAllItems(input.childOrEmpty(ITEMS), getItems());
+        ContainerHelper.loadAllItems(tag, getItems(), registries);
     }
 
     public void load()

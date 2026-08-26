@@ -33,8 +33,9 @@ import java.util.function.Function;
  * <li>No {@code .tab(...)}. An item does not choose its creative tab any more;
  *     a tab chooses its items. See {@link DdItemGroup}.</li>
  * </ul>
- * What is new is {@code setId}: an item has to be told its own registry key
- * before it is built, so the key is made first and used twice.
+ * The registry key is built first because {@link Registry#register} takes one.
+ * It is not handed to the item: {@code Item.Properties.setId} arrived in
+ * 1.21.2, and here an item learns its id by being registered under it.
  */
 public final class DdItems
 {
@@ -159,11 +160,11 @@ public final class DdItems
     {
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(DuelDimension.MOD_ID, name);
         ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, id);
-        // The key goes into the properties as well as into the registry call:
-        // an item is required to know its own id now, and building one without
-        // saying so fails at construction rather than at registration.
+        // 1.21.1 takes the id from the registry call alone: Item.Properties has
+        // no setId until 1.21.2, and an item learns its own key by being
+        // registered under it.
         return Registry.register(BuiltInRegistries.ITEM, key,
-            factory.apply(new Item.Properties().setId(key)));
+            factory.apply(new Item.Properties()));
     }
 
     /**

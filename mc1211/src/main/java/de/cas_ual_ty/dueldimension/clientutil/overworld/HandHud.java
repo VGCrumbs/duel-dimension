@@ -59,7 +59,7 @@ public final class HandHud implements HudElement
         Minecraft client = Minecraft.getInstance();
         return client.level == null ? 0F
             : client.level.getGameTime() % 100000L
-                + client.getFrameTime().getGameTimeDeltaPartialTick(false);
+                + client.getTimer().getGameTimeDeltaPartialTick(false);
     }
 
     @Override

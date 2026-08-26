@@ -58,7 +58,7 @@ public final class OverworldBoardRenderer
         Minecraft client = Minecraft.getInstance();
         return client.level == null ? 0F
             : client.level.getGameTime() % 100000L
-                + client.getFrameTime().getGameTimeDeltaPartialTick(false);
+                + client.getTimer().getGameTimeDeltaPartialTick(false);
     }
 
     /** How far the board floats over the ground: enough not to z-fight the floor. */
@@ -106,7 +106,7 @@ public final class OverworldBoardRenderer
         }
 
         FieldTransform transform = new FieldTransform(siting);
-        Vec3 camera = client.gameRenderer.getMainCamera().position();
+        Vec3 camera = client.gameRenderer.getMainCamera().getPosition();
         PoseStack poseStack = context.poseStack();
         SubmitNodeCollector collector = context.submitNodeCollector();
 

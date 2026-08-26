@@ -10,12 +10,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 /** A single card, as an item. */
 public class CardItem extends Item
@@ -26,21 +24,25 @@ public class CardItem extends Item
     }
 
     /**
-     * The whole tooltip, replacing the default rather than adding to it.
+     * The card's own description, added under the item's name line.
      * <p>
-     * The signature changed: a tooltip is built by feeding lines to a
-     * {@link Consumer} now, not by editing a list. The old code called
-     * {@code tooltip.clear()} first, which was how it dropped the item's own
-     * name and description in favour of the card's. There is nothing to clear
-     * when nothing has been handed over yet, so the clear simply goes.
+     * 1.21.1 hands the tooltip over as a {@link List}, the shape 1.19.2 used,
+     * so the lines are added to it rather than fed to a consumer. 26.2's
+     * behaviour is kept otherwise: the list is NOT cleared first. 1.19.2 called
+     * {@code tooltip.clear()} here to drop the item's own name in favour of the
+     * card's; 26.2's consumer had nothing to clear, so the clear went, and the
+     * name line now sits above a card description that repeats it. Adding
+     * {@code lines.clear();} as the first statement would restore the 1.19.2
+     * tooltip -- that is a change to what the working mod does, so it is not
+     * made here.
      */
     @Override
     public void appendHoverText(ItemStack itemStack, TooltipContext context,
-        TooltipDisplay display, Consumer<Component> lines, TooltipFlag flag)
+        List<Component> lines, TooltipFlag flag)
     {
         List<Component> information = new ArrayList<>();
         CardPresentation.addInformation(getCardHolder(itemStack), information);
-        information.forEach(lines);
+        lines.addAll(information);
     }
 
     @Override

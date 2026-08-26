@@ -5,7 +5,7 @@ import de.cas_ual_ty.dueldimension.DdItems;
 import de.cas_ual_ty.dueldimension.DuelDimension;
 import de.cas_ual_ty.dueldimension.set.CardSet;
 import de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector;
-import net.minecraft.client.renderer.special.SpecialModelRenderer;
+import de.cas_ual_ty.dueldimension.compat.SpecialModelRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.joml.Vector3f;

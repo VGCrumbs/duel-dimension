@@ -31,7 +31,7 @@ public final class FreeModeCommand
                 // the deck they are building will be playable.
                 .executes(context -> report(context.getSource()))
                 .then(Commands.argument("enabled", BoolArgumentType.bool())
-                    .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                    .requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
                     .executes(context -> set(context.getSource(),
                         BoolArgumentType.getBool(context, "enabled"))))));
     }

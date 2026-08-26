@@ -17,12 +17,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
 
 import java.util.List;
 import java.util.Random;
-import java.util.function.Consumer;
 
 /**
  * Port: an opened pack's contents lived in the Forge {@code CARD_ITEM_INVENTORY}
@@ -40,10 +38,10 @@ public class OpenedCardSetItem extends CardSetBaseItem
 
     @Override
     public void appendHoverText(ItemStack itemStack, TooltipContext context,
-        TooltipDisplay display, Consumer<Component> lines, TooltipFlag flag)
+        List<Component> lines, TooltipFlag flag)
     {
-        super.appendHoverText(itemStack, context, display, lines, flag);
-        lines.accept(Component.translatable(getDescriptionId() + ".desc").withStyle((s) -> s.applyFormat(ChatFormatting.RED)));
+        super.appendHoverText(itemStack, context, lines, flag);
+        lines.add(Component.translatable(getDescriptionId() + ".desc").withStyle((s) -> s.applyFormat(ChatFormatting.RED)));
     }
 
     @Override

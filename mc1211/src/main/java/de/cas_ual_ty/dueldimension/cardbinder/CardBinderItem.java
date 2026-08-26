@@ -13,11 +13,10 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.TooltipDisplay;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 /**
  * Port: the binder's cards are still a server-side {@link CardBinderCardsManager}
@@ -75,21 +74,21 @@ public class CardBinderItem extends Item implements MenuProvider
 
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context,
-        TooltipDisplay display, Consumer<Component> tooltip, TooltipFlag flagIn)
+        List<Component> tooltip, TooltipFlag flagIn)
     {
-        super.appendHoverText(stack, context, display, tooltip, flagIn);
+        super.appendHoverText(stack, context, tooltip, flagIn);
 
-        tooltip.accept(Component.translatable(getDescriptionId() + ".uuid"));
+        tooltip.add(Component.translatable(getDescriptionId() + ".uuid"));
 
         UUID uuid = getUUID(stack);
 
         if(uuid != null)
         {
-            tooltip.accept(Component.literal(uuid.toString()));
+            tooltip.add(Component.literal(uuid.toString()));
         }
         else
         {
-            tooltip.accept(Component.translatable(getDescriptionId() + ".uuid.empty"));
+            tooltip.add(Component.translatable(getDescriptionId() + ".uuid.empty"));
         }
     }
 

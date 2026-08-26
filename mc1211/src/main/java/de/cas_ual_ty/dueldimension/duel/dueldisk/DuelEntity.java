@@ -91,12 +91,12 @@ public class DuelEntity extends Entity implements MenuProvider
     }
     
     @Override
-    protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput pCompound)
+    protected void readAdditionalSaveData(net.minecraft.nbt.CompoundTag pCompound)
     {
     }
     
     @Override
-    protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput pCompound)
+    protected void addAdditionalSaveData(net.minecraft.nbt.CompoundTag pCompound)
     {
     }
     /*

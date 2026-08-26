@@ -9,8 +9,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
 
 /**
  * The one card a display block is showing.
@@ -98,21 +96,24 @@ public class CardDisplayTileEntity extends BlockEntity
     }
 
     @Override
-    protected void saveAdditional(ValueOutput output)
+    protected void saveAdditional(CompoundTag output, HolderLookup.Provider registries)
     {
-        super.saveAdditional(output);
+        super.saveAdditional(output, registries);
         output.putLong("Card", code);
         output.putByte("Art", art);
         output.putInt("Position", position);
     }
 
     @Override
-    protected void loadAdditional(ValueInput input)
+    protected void loadAdditional(CompoundTag input, HolderLookup.Provider registries)
     {
-        super.loadAdditional(input);
-        code = input.getLongOr("Card", 0L);
-        art = input.getByteOr("Art", (byte)0);
-        position = input.getIntOr("Position", OcgConstants.POS_FACEUP_ATTACK);
+        super.loadAdditional(input, registries);
+        code = input.getLong("Card");
+        art = input.getByte("Art");
+        // getInt gives 0 for a missing key, and 0 is not a position, so the
+        // default POS_FACEUP_ATTACK has to be chosen explicitly.
+        position = input.contains("Position") ? input.getInt("Position")
+            : OcgConstants.POS_FACEUP_ATTACK;
     }
 
     /** A change, to anybody already watching this block. */
