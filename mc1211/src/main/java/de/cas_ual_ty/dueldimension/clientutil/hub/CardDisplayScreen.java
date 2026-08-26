@@ -46,6 +46,14 @@ public class CardDisplayScreen extends Screen
 
     private EditBox search;
     private final List<Properties> results = new ArrayList<>();
+
+    /**
+     * Whether the list is narrowed to cards that have a 3D model installed.
+     * <p>
+     * Off by default, because most cards do not have one and a search that
+     * silently hid nine tenths of the database would read as a broken search.
+     */
+    private boolean modelsOnly;
     private int scroll;
 
     private static final int GAP = 4;
@@ -136,6 +144,18 @@ public class CardDisplayScreen extends Screen
                 pressed -> choosePosition(OcgConstants.POS_FACEDOWN_DEFENSE))
             .bounds(panelX + PAD + (buttonW + GAP) * 2, buttonY, buttonW, 18).build());
 
+        // Narrow the list to cards a model exists for. Beside the search rather
+        // than in the footer, because it is part of the QUESTION being asked --
+        // the footer's three buttons are what happens to the card once chosen.
+        addRenderableWidget(Button.builder(
+                Component.literal(modelsOnly ? "[x] Models" : "[ ] Models"), pressed ->
+        {
+            modelsOnly = !modelsOnly;
+            refresh();
+            // The label carries the state, so it is rebuilt with it.
+            rebuildWidgets();
+        }).bounds(panelX + panelW - PAD - 70 - GAP - 62, panelY + 3, 62, 14).build());
+
         // The billboard editor, for whatever card is on the block. Reached from
         // here because the card is chosen here: put a card down, then build its
         // monster while looking at it.
@@ -172,9 +192,21 @@ public class CardDisplayScreen extends Screen
         results.clear();
         scroll = 0;
         String query = search == null ? "" : search.getValue().trim().toLowerCase(Locale.ROOT);
+        // Read ONCE, not per card. MonsterModels.names() lists the models
+        // folder off the disk every time it is called -- deliberately, so a file
+        // dropped in a moment ago is seen -- and asking it fourteen thousand
+        // times would be fourteen thousand directory listings per keystroke.
+        java.util.Set<String> installed = modelsOnly
+            ? new java.util.HashSet<>(
+                de.cas_ual_ty.dueldimension.clientutil.model.MonsterModels.names())
+            : java.util.Set.of();
         for(Properties card : DdDatabase.PROPERTIES_LIST.getList())
         {
             if(card == null || card.getName() == null)
+            {
+                continue;
+            }
+            if(modelsOnly && !hasModel(card, installed))
             {
                 continue;
             }
@@ -188,6 +220,29 @@ public class CardDisplayScreen extends Screen
                 break;
             }
         }
+    }
+
+    /**
+     * Whether this card has a 3D model that is actually on disk.
+     *
+     * <h2>Two conditions, and both are needed</h2>
+     *
+     * A definition NAMES a model; the models folder is what decides whether that
+     * file is there. Filtering on the name alone would offer a duellist who has
+     * never installed the models a list of cards whose blocks then show a flat
+     * sprite -- a filter that promises something it cannot deliver.
+     * <p>
+     * {@code hasModel} and not {@code usesModel}: this asks what the card HAS,
+     * not what the board is currently choosing to draw. Someone who has turned
+     * 3D models off in the Misc tab is still entitled to find the cards that
+     * have one.
+     */
+    private static boolean hasModel(Properties card, java.util.Set<String> installed)
+    {
+        de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSprites.Definition definition =
+            de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSprites.of(card.getId());
+        return definition != null && definition.hasModel()
+            && installed.contains(definition.model());
     }
 
     private void send()
