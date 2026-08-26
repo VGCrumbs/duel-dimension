@@ -155,6 +155,22 @@ public final class MonsterSprites
             return model != null && !model.isBlank();
         }
 
+        /**
+         * Whether this monster is DRAWN as a model, which is the question every
+         * renderer actually wants.
+         * <p>
+         * {@link #hasModel} asks what the definition says; this asks what the
+         * duellist has chosen on top of it. They are separated rather than
+         * folded together because the installer needs the first one -- it looks
+         * at definitions to decide what to fetch, and a switch turned off is not
+         * a reason to stop downloading a model.
+         */
+        public boolean usesModel()
+        {
+            return hasModel()
+                && de.cas_ual_ty.dueldimension.clientutil.HologramSettings.models();
+        }
+
         public boolean hasAnimation()
         {
             return animation != null && !animation.isBlank();

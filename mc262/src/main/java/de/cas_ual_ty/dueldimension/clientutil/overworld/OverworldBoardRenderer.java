@@ -1615,7 +1615,7 @@ public final class OverworldBoardRenderer
         // it is what the monster looks like if the .glb is missing, unreadable,
         // or uses a corner of glTF the loader will not guess at.
         de.cas_ual_ty.dueldimension.clientutil.model.ModelMesh mesh =
-            definition != null && definition.hasModel()
+            definition != null && definition.usesModel()
                 ? de.cas_ual_ty.dueldimension.clientutil.model.MonsterModels
                     .get(definition.model())
                 : null;

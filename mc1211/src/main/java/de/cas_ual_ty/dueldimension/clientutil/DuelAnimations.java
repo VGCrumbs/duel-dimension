@@ -395,7 +395,7 @@ public class DuelAnimations
         }
         de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSprites.Definition definition
             = de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSprites.of(code);
-        if(definition == null || !definition.hasModel())
+        if(definition == null || !definition.usesModel())
         {
             return false;
         }
@@ -413,7 +413,7 @@ public class DuelAnimations
         }
         de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSprites.Definition definition
             = de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSprites.of(code);
-        if(definition == null || !definition.hasModel())
+        if(definition == null || !definition.usesModel())
         {
             return ATTACK_MS;
         }

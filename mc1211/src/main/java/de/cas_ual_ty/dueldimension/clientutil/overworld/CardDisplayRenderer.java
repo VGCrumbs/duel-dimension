@@ -121,7 +121,7 @@ public class CardDisplayRenderer implements BlockEntityRenderer<CardDisplayTileE
         MonsterSprites.Definition definition = MonsterSprites.of(state.code);
         SpriteLayer body = MonsterSprites.layerFor(state.code, state.defence);
         de.cas_ual_ty.dueldimension.clientutil.model.ModelMesh mesh =
-            definition != null && definition.hasModel()
+            definition != null && definition.usesModel()
                 ? de.cas_ual_ty.dueldimension.clientutil.model.MonsterModels
                     .get(definition.model())
                 : null;

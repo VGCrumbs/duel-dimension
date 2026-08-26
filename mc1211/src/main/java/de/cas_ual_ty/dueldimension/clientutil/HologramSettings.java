@@ -71,6 +71,18 @@ public final class HologramSettings
 
     private static Mode mode = Mode.BOTH;
 
+    /**
+     * Whether a monster with a 3D model is drawn as one at all.
+     * <p>
+     * Separate from {@link Mode}, and the difference matters: the mode decides
+     * WHOSE monsters appear on the board, and this decides WHAT they appear as.
+     * Off, a monster that has a model falls back to its flat sprite -- the same
+     * thing a duellist who never installed the models sees, rather than an empty
+     * square. So the two compose: holograms off and models on still shows
+     * nothing, and models off with holograms on shows sprites.
+     */
+    private static boolean models = true;
+
     private HologramSettings()
     {
     }
@@ -78,6 +90,21 @@ public final class HologramSettings
     public static Mode mode()
     {
         return mode;
+    }
+
+    /** Whether a monster with a model is drawn as one rather than as a sprite. */
+    public static boolean models()
+    {
+        return models;
+    }
+
+    public static void setModels(boolean use)
+    {
+        if(models != use)
+        {
+            models = use;
+            save();
+        }
     }
 
     public static void setMode(Mode value)
@@ -120,7 +147,11 @@ public final class HologramSettings
         try
         {
             Files.createDirectories(file().getParent());
-            Files.writeString(file(), mode.name(), StandardCharsets.UTF_8);
+            // Two values on one line, the mode first, so a file written by an
+            // older build still parses -- parse() reads the first token and
+            // ignores what it does not recognise.
+            Files.writeString(file(), mode.name() + " models=" + models,
+                StandardCharsets.UTF_8);
         }
         catch(IOException unwritable)
         {
@@ -139,7 +170,7 @@ public final class HologramSettings
      */
     private static Mode parse(String saved)
     {
-        String text = saved.trim();
+        String text = saved.trim().split("\\s+")[0];
         for(Mode candidate : Mode.values())
         {
             if(candidate.name().equalsIgnoreCase(text))
@@ -169,7 +200,11 @@ public final class HologramSettings
         {
             if(Files.isRegularFile(file()))
             {
-                value = parse(Files.readString(file(), StandardCharsets.UTF_8));
+                String saved = Files.readString(file(), StandardCharsets.UTF_8);
+                value = parse(saved);
+                // Absent means ON, which is what every existing file says by
+                // saying nothing: the models were not optional before this.
+                models = !saved.contains("models=false");
             }
         }
         catch(IOException unreadable)
