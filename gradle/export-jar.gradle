@@ -48,7 +48,11 @@ tasks.register('exportJar') {
     def shippable = tasks.names.contains('remapJar') ? 'remapJar' : 'jar'
     dependsOn tasks.named(shippable)
 
-    def jarFile = tasks.named(shippable, Jar).flatMap { it.archiveFile }
+    // Untyped. Loom's RemapJarTask is NOT a Jar -- it extends DefaultTask and
+    // merely exposes an archiveFile of its own -- so naming Jar here fails at
+    // configuration time on the platform that has one. Both tasks answer
+    // archiveFile, which is the only thing this needs.
+    def jarFile = tasks.named(shippable).flatMap { it.archiveFile }
     def baseName = base.archivesName
     def logger = project.logger
 

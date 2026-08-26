@@ -124,6 +124,25 @@ public abstract class InventoryScreenMixin
      * point inside one of those would fire only while something was being
      * dragged. So this is the same position as 26.2's, expressed as the last
      * thing the body does rather than as the end of the method.
+     *
+     * <h2>And the pose here is NOT the screen's</h2>
+     *
+     * The thing that made moving off TAIL a bug rather than a nudge.
+     * {@code render} does {@code pushPose(); translate(leftPos, topPos, 0)}
+     * before it draws a single slot, and does not pop until after the carried
+     * item -- offsets 28, 42 and 461 of the compiled method. TAIL was therefore
+     * outside that translate and this is inside it, so the same
+     * {@code leftPos + slot.x} that was right at the end of the method arrives
+     * here already counted once. The disk slot was flung a whole panel's width
+     * right and a panel's height down, which at 1634x920 put it off in the empty
+     * space beside the inventory.
+     * <p>
+     * Undone rather than compensated for. Subtracting the offset from the
+     * coordinates would leave {@link #dueldimension$slot} answering in one frame
+     * for the draw and another for the click, and a hitbox that does not sit
+     * under the icon it belongs to is the kind of wrong nobody finds by reading.
+     * So the translate is reversed for the duration of the draw and there stays
+     * exactly one coordinate system: the screen's.
      */
     @Inject(method = "render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V",
         at = @At(value = "INVOKE", shift = At.Shift.AFTER,
@@ -133,11 +152,17 @@ public abstract class InventoryScreenMixin
         int mouseX, int mouseY, float partialTick, CallbackInfo callback)
     {
         int[] at = dueldimension$slot();
-        if(at != null)
+        if(at == null)
         {
-            DiskSlotOverlay.draw(new GuiGraphicsExtractor(graphics), at[0], at[1],
-                mouseX, mouseY);
+            return;
         }
+        // Back into screen space; see the note above. Same numbers the caller
+        // translated by, so this lands exactly on the screen's own origin.
+        graphics.pose().pushPose();
+        graphics.pose().translate(-leftPos, -topPos, 0F);
+        DiskSlotOverlay.draw(new GuiGraphicsExtractor(graphics), at[0], at[1],
+            mouseX, mouseY);
+        graphics.pose().popPose();
     }
 
     /**
