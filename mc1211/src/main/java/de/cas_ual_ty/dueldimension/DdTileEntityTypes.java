@@ -27,7 +27,7 @@ public final class DdTileEntityTypes
 {
     public static final BlockEntityType<DuelTileEntity> DUEL = register("duel",
         new BlockEntityType<>((pos, state) -> new DuelTileEntity(DdTileEntityTypes.DUEL, pos, state),
-            Set.of(DdBlocks.DUEL_PLAYMAT, DdBlocks.DUEL_TABLE)));
+            Set.of(DdBlocks.DUEL_PLAYMAT, DdBlocks.DUEL_TABLE), null));
 
     /**
      * The card display's own, because it keeps something: a passcode, an
@@ -40,7 +40,7 @@ public final class DdTileEntityTypes
             new BlockEntityType<>((pos, state) ->
                 new de.cas_ual_ty.dueldimension.duel.overworld.display.CardDisplayTileEntity(
                     DdTileEntityTypes.CARD_DISPLAY, pos, state),
-                Set.of(DdBlocks.CARD_DISPLAY)));
+                Set.of(DdBlocks.CARD_DISPLAY), null));
 
     private DdTileEntityTypes()
     {

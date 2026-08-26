@@ -54,8 +54,9 @@ public abstract class Animation implements Renderable
         return tickTime >= maxTickTime;
     }
     
-    @Override
-    public abstract void extractRenderState(GuiGraphicsExtractor ms, int mouseX, int mouseY, float partialTicks);
+    // Renderable.render is the hook in 1.21.1 and all eight subclasses already
+    // override it, so there is nothing to declare here: the abstract method is
+    // inherited from Renderable. 26.2's extractRenderState was the same hook.
     
     /**
      * @return true if this animation works in parallel to other animations

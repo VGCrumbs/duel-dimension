@@ -247,9 +247,11 @@ public class BinderScreen extends Screen
     }
 
     @Override
-    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
-        boolean doubleClick)
+    public boolean mouseClicked(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+        boolean doubleClick = false;
         if(event.button() == 0 && grabBar(event.x(), event.y()))
         {
             return true;
@@ -258,26 +260,29 @@ public class BinderScreen extends Screen
         {
             return true;
         }
-        return super.mouseClicked(event, doubleClick);
+        return super.mouseClicked(vanillaX, vanillaY, vanillaButton);
     }
 
     @Override
-    public boolean mouseDragged(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
-        double dragX, double dragY)
+    public boolean mouseDragged(double vanillaX, double vanillaY, int vanillaButton, double dragX, double dragY)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
         if(barGrab >= 0)
         {
             dragBar(event.y());
             return true;
         }
-        return super.mouseDragged(event, dragX, dragY);
+        return super.mouseDragged(vanillaX, vanillaY, vanillaButton, dragX, dragY);
     }
 
     @Override
-    public boolean mouseReleased(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event)
+    public boolean mouseReleased(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
         barGrab = -1;
-        return super.mouseReleased(event);
+        return super.mouseReleased(vanillaX, vanillaY, vanillaButton);
     }
 
     /**

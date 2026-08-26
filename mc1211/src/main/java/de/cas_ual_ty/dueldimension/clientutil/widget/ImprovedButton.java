@@ -37,6 +37,6 @@ public class ImprovedButton extends Button
         // The standard button sprite; the label is added by the base's
         // extractDefaultLabel around this call. Button is abstract in 26.2, so
         // the drawing has to be stated even when it is the default one.
-        extractDefaultSprite(extractor);
+        super.renderWidget(vanillaGraphics, mouseX, mouseY, partialTick);
     }
 }

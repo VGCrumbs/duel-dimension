@@ -54,53 +54,27 @@ public final class PlayerSkins
     }
 
     /**
-     * A {@link net.minecraft.world.entity.player.PlayerSkin} for a texture this
+     * A {@link net.minecraft.client.resources.PlayerSkin} for a texture this
      * mod ships.
      * <p>
-     * Built by patching the default skin rather than calling a constructor: a
-     * PlayerSkin also carries a cape, an elytra texture and a "secure" flag, and
-     * a patch leaves all of those at sensible values instead of making this
-     * class invent them.
+     * 1.21.1's PlayerSkin is a flat record and there is no {@code Patch} type to
+     * lay over a default, so this calls the constructor with exactly the values
+     * vanilla's own defaults carry: the texture, no texture URL, no cape, no
+     * elytra, the body type, and secure. Checked against
+     * {@code DefaultPlayerSkin}, which builds its eighteen built-in skins that
+     * way.
      * <p>
-     * Note what the id has to be. The one-argument {@code ResourceTexture}
-     * constructor takes an ASSET id and derives the file from it -- {@code ns:foo}
-     * becomes {@code ns:textures/foo.png} -- so a complete path handed to it is
-     * wrapped twice and the result does not exist. Everything here holds
-     * complete paths, so the id is worked back out of the path.
+     * There is no {@code ClientAsset} on 1.21.1 either -- a PlayerSkin's texture
+     * is a bare, complete ResourceLocation -- so the asset-id derivation 26.2
+     * needed is gone rather than ported.
      */
-    public static net.minecraft.world.entity.player.PlayerSkin skinFor(ResourceLocation texture,
+    public static net.minecraft.client.resources.PlayerSkin skinFor(ResourceLocation texture,
         boolean slim)
     {
-        return net.minecraft.client.resources.DefaultPlayerSkin.getDefaultSkin()
-            .with(new net.minecraft.world.entity.player.PlayerSkin.Patch(
-                java.util.Optional.of(asset(texture)),
-                java.util.Optional.empty(),
-                java.util.Optional.empty(),
-                java.util.Optional.of(slim
-                    ? net.minecraft.world.entity.player.PlayerModelType.SLIM
-                    : net.minecraft.world.entity.player.PlayerModelType.WIDE)));
-    }
-
-    /**
-     * A complete texture path, named the way a {@code ClientAsset} wants it.
-     * <p>
-     * The one-argument {@code ResourceTexture} constructor takes an ASSET id and
-     * derives the file from it -- {@code ns:foo} becomes
-     * {@code ns:textures/foo.png} -- so a path that is already complete gets
-     * wrapped a second time and the result does not exist. There is no warning
-     * for it; the player simply renders in missing-texture magenta. Everything
-     * in this mod holds complete paths, so the id is worked back out of the
-     * path and the two-argument constructor is used.
-     */
-    public static net.minecraft.core.ClientAsset.ResourceTexture asset(ResourceLocation texture)
-    {
-        String path = texture.getPath();
-        if(path.startsWith("textures/") && path.endsWith(".png"))
-        {
-            path = path.substring("textures/".length(), path.length() - ".png".length());
-        }
-        return new net.minecraft.core.ClientAsset.ResourceTexture(
-            ResourceLocation.fromNamespaceAndPath(texture.getNamespace(), path), texture);
+        return new net.minecraft.client.resources.PlayerSkin(texture, null, null, null,
+            slim ? net.minecraft.client.resources.PlayerSkin.Model.SLIM
+                : net.minecraft.client.resources.PlayerSkin.Model.WIDE,
+            true);
     }
 
     /** The skin this mod supplies for that player, or null to leave them alone. */
@@ -119,14 +93,18 @@ public final class PlayerSkins
      * there is one, otherwise whatever the game already resolved.
      */
     /**
-     * What to change about the skin the game resolved, or null to leave it be.
+     * The skin the game resolved with this mod's override applied, or null to
+     * leave it be.
      * <p>
      * Takes the game's answer rather than asking for it: this runs from inside
      * {@code getSkin}, and asking there would call itself.
      * <p>
-     * A {@code Patch} rather than a rebuilt {@code PlayerSkin} because only the
-     * fields named are replaced, so a cape, an elytra texture and anything
-     * added later survive untouched.
+     * 1.21.1 has no {@code Patch} type, so the replacement is rebuilt field by
+     * field out of the resolved skin: only the texture and the body type change,
+     * and the cape, the elytra texture, the texture URL and the secure flag are
+     * carried across untouched. That is what the 26.2 patch did; here it is
+     * spelled out rather than expressed by a type, which means a field added to
+     * PlayerSkin later would have to be added here too.
      * <p>
      * The body matters as much as the texture. The game picks the player
      * renderer -- and therefore the classic or slim arms -- from
@@ -141,21 +119,22 @@ public final class PlayerSkins
      * session, so no profile properties, so nowhere for the game to fetch a
      * skin from -- it is the only reason anyone is not Steve.
      */
-    public static net.minecraft.world.entity.player.PlayerSkin.Patch patch(
-        AbstractClientPlayer player, net.minecraft.world.entity.player.PlayerSkin resolved)
+    public static net.minecraft.client.resources.PlayerSkin patched(
+        AbstractClientPlayer player, net.minecraft.client.resources.PlayerSkin resolved)
     {
         Skin supplied = of(player);
         if(supplied == null)
         {
             return null;
         }
-        return new net.minecraft.world.entity.player.PlayerSkin.Patch(
-            java.util.Optional.of(asset(supplied.texture())),
-            java.util.Optional.empty(),
-            java.util.Optional.empty(),
-            java.util.Optional.of(supplied.slim()
-                ? net.minecraft.world.entity.player.PlayerModelType.SLIM
-                : net.minecraft.world.entity.player.PlayerModelType.WIDE));
+        return new net.minecraft.client.resources.PlayerSkin(
+            supplied.texture(),
+            resolved.textureUrl(),
+            resolved.capeTexture(),
+            resolved.elytraTexture(),
+            supplied.slim() ? net.minecraft.client.resources.PlayerSkin.Model.SLIM
+                : net.minecraft.client.resources.PlayerSkin.Model.WIDE,
+            resolved.secure());
     }
 
     public static Skin resolve(AbstractClientPlayer player)
@@ -165,12 +144,12 @@ public final class PlayerSkins
         {
             return override;
         }
-        // The two separate accessors became one PlayerSkin record, which is a
+        // One PlayerSkin record rather than two separate accessors, which is a
         // better shape: a skin and the body it is drawn on always travelled
-        // together and could previously disagree. The texture is behind a
-        // ClientAsset now rather than being a bare ResourceLocation.
-        net.minecraft.world.entity.player.PlayerSkin skin = player.getSkin();
-        return new Skin(skin.body().texturePath(),
-            skin.model() == net.minecraft.world.entity.player.PlayerModelType.SLIM);
+        // together and could previously disagree. On 1.21.1 its texture is a
+        // bare ResourceLocation -- there is no ClientAsset in the way.
+        net.minecraft.client.resources.PlayerSkin skin = player.getSkin();
+        return new Skin(skin.texture(),
+            skin.model() == net.minecraft.client.resources.PlayerSkin.Model.SLIM);
     }
 }

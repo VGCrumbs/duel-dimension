@@ -65,7 +65,7 @@ public class UUIDHolder implements IUUIDHolder
 
     public void deserializeNBT(StringTag nbt)
     {
-        String uuid = nbt.asString().orElse("");
+        String uuid = nbt.getAsString();
 
         if(uuid.isEmpty())
         {

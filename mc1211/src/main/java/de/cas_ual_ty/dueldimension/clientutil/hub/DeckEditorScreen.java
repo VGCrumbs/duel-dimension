@@ -2126,9 +2126,11 @@ public class DeckEditorScreen extends Screen
     // ---- interaction ----
 
     @Override
-    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
-        boolean doubleClick)
+    public boolean mouseClicked(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+        boolean doubleClick = false;
         // The artwork picker before ANYTHING, the scrollbar included. That bar
         // is tested first below and is still under the scrim, so a click on
         // where it used to be would scrub the collection behind the picker.
@@ -2136,7 +2138,7 @@ public class DeckEditorScreen extends Screen
         {
             // Its Back button is the only widget there is, and it is drawn
             // after the overlay, so it gets the click first.
-            if(overControl(event.x(), event.y()) && super.mouseClicked(event, false))
+            if(overControl(event.x(), event.y()) && super.mouseClicked(vanillaX, vanillaY, vanillaButton))
             {
                 return true;
             }
@@ -2188,7 +2190,7 @@ public class DeckEditorScreen extends Screen
         // first, which is why pressing Done picked up whatever card happened
         // to be behind it.
         if(carried == null && overControl(mouseX, mouseY)
-            && super.mouseClicked(event, false))
+            && super.mouseClicked(vanillaX, vanillaY, vanillaButton))
         {
             return true;
         }
@@ -2270,7 +2272,7 @@ public class DeckEditorScreen extends Screen
             returnCarried();
             return true;
         }
-        return super.mouseClicked(event, false);
+        return super.mouseClicked(vanillaX, vanillaY, vanillaButton);
     }
 
     private void place(DeckList.Part part)
@@ -2930,13 +2932,15 @@ public class DeckEditorScreen extends Screen
      * would be impossible.
      */
     @Override
-    public boolean mouseReleased(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event)
+    public boolean mouseReleased(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
         if(altCard != null)
         {
             // The picker owns the screen; a release under it must not finish a
             // scrollbar drag or drop a carried card into the editor behind.
-            return super.mouseReleased(event);
+            return super.mouseReleased(vanillaX, vanillaY, vanillaButton);
         }
         trunkBarGrab = -1;
         filterBarGrab = -1;
@@ -2971,7 +2975,7 @@ public class DeckEditorScreen extends Screen
             }
         }
         pressedOnCard = false;
-        return super.mouseReleased(event);
+        return super.mouseReleased(vanillaX, vanillaY, vanillaButton);
     }
 
     @Override
@@ -2998,7 +3002,7 @@ public class DeckEditorScreen extends Screen
         // collection could not be scrolled at all. Reading a long effect is the
         // rarer thing to want, so it is the one that takes the modifier.
         if(carried == null && com.mojang.blaze3d.platform.InputConstants.isKeyDown(
-                net.minecraft.client.Minecraft.getInstance().getWindow(), org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT)
+                net.minecraft.client.Minecraft.getInstance().getWindow().getWindow(), org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT)
             && cardAt(mouseX, mouseY) != null)
         {
             previewScroll = Math.max(0, previewScroll - (int)Math.signum(delta));
@@ -3035,8 +3039,10 @@ public class DeckEditorScreen extends Screen
     }
 
     @Override
-    public boolean keyPressed(de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent event)
+    public boolean keyPressed(int vanillaKey, int vanillaScancode, int vanillaModifiers)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent(vanillaKey, vanillaScancode, vanillaModifiers);
         int key = event.key();
         int scan = event.scancode();
         int modifiers = event.modifiers();
@@ -3068,21 +3074,23 @@ public class DeckEditorScreen extends Screen
                 rebuildControls();
                 return true;
             }
-            if(rename.keyPressed(event))
+            if(rename.keyPressed(event.key(), event.scancode(), event.modifiers()))
             {
                 return true;
             }
         }
-        if(search != null && search.isFocused() && search.keyPressed(event))
+        if(search != null && search.isFocused() && search.keyPressed(event.key(), event.scancode(), event.modifiers()))
         {
             return true;
         }
-        return super.keyPressed(event);
+        return super.keyPressed(vanillaKey, vanillaScancode, vanillaModifiers);
     }
 
     @Override
-    public boolean charTyped(de.cas_ual_ty.dueldimension.compat.InputEvents.CharacterEvent event)
+    public boolean charTyped(char vanillaCodepoint, int vanillaModifiers)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.CharacterEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.CharacterEvent(vanillaCodepoint);
         char typed = (char)event.codepoint();
         int modifiers = 0;
         if(altCard != null)
@@ -3091,15 +3099,15 @@ public class DeckEditorScreen extends Screen
             // their own idea of being focused.
             return true;
         }
-        if(rename != null && rename.isFocused() && rename.charTyped(event))
+        if(rename != null && rename.isFocused() && rename.charTyped((char) event.codepoint(), vanillaModifiers))
         {
             return true;
         }
-        if(search != null && search.isFocused() && search.charTyped(event))
+        if(search != null && search.isFocused() && search.charTyped((char) event.codepoint(), vanillaModifiers))
         {
             return true;
         }
-        return super.charTyped(event);
+        return super.charTyped(vanillaCodepoint, vanillaModifiers);
     }
 
     // ---- rendering ----
@@ -3144,7 +3152,7 @@ public class DeckEditorScreen extends Screen
         }
 
         super.render(poseStack.vanilla(), mouseX, mouseY, partialTick);
-        search.extractRenderState(poseStack, mouseX, mouseY, partialTick);
+        search.render(poseStack.vanilla(), mouseX, mouseY, partialTick);
         if(filtersOpen && levelMin != null)
         {
             for(EditBox box : List.of(levelMin, levelMax, attackMin, attackMax,
@@ -3152,7 +3160,7 @@ public class DeckEditorScreen extends Screen
             {
                 if(inFilterView(box.getY() - 2, 16))
                 {
-                    box.extractRenderState(poseStack, mouseX, mouseY, partialTick);
+                    box.render(poseStack.vanilla(), mouseX, mouseY, partialTick);
                 }
             }
         }
@@ -3162,7 +3170,7 @@ public class DeckEditorScreen extends Screen
         }
         if(rename != null)
         {
-            rename.extractRenderState(poseStack, mouseX, mouseY, partialTick);
+            rename.render(poseStack.vanilla(), mouseX, mouseY, partialTick);
         }
 
         if(!refusal.isEmpty())
@@ -3284,21 +3292,24 @@ public class DeckEditorScreen extends Screen
          * handle grows no larger, but what it stands for is unmistakable.
          */
         @Override
-        public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX,
-            int mouseY, float partialTick)
+        public void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
         {
-            super.extractWidgetRenderState(graphics, mouseX, mouseY, partialTick);
+            // 26.2 describes a widget into a render state; 1.21.1 draws it now. The
+            // body below is unchanged -- it is handed the compatibility surface over
+            // the real GuiGraphics.
+            de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor graphics = new de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor(vanillaGraphics);
+            super.renderWidget(graphics.vanilla(), mouseX, mouseY, partialTick);
 
             // Where vanilla puts its handle, to the pixel: getX() + (int)(value
             // * (width - HANDLE_WIDTH)), read off the bytecode. Truncated, not
             // rounded -- rounding would sit this half a pixel right of the grey
             // handle underneath and let it peek out at half the positions.
-            int x = getX() + (int)(value * (getWidth() - HANDLE_WIDTH));
+            int x = getX() + (int)(value * (getWidth() - 8)); // HANDLE_WIDTH
             // Card-shaped and as tall as the widget, so it reads as a card
             // standing in the track rather than a square sitting on it.
             int cardH = getHeight();
-            int cardW = Math.max(HANDLE_WIDTH, Math.round(cardH * DuelTextures.CARD_ASPECT));
-            int cardX = x + (HANDLE_WIDTH - cardW) / 2;
+            int cardW = Math.max(8, Math.round(cardH * DuelTextures.CARD_ASPECT));
+            int cardX = x + (8 - cardW) / 2;
             DdBlitUtil.blit(graphics,
                 de.cas_ual_ty.dueldimension.duel.profile.Sleeves.DEFAULT
                     .getMainRL(de.cas_ual_ty.dueldimension.clientutil.ClientProxy
@@ -3311,8 +3322,10 @@ public class DeckEditorScreen extends Screen
             // buried it. Put it back, exactly as the superclass drew it -- the
             // same glyphs at the same place, which costs a second opaque pass
             // and nothing else.
-            extractScrollingStringOverContents(graphics.textRendererForWidget(this,
-                GuiGraphicsExtractor.HoveredTextEffects.NONE), getMessage(), 2);
+            renderScrollingString(graphics.vanilla(),
+                net.minecraft.client.Minecraft.getInstance().font, 2,
+                (active ? 0xFFFFFF : 0xA0A0A0)
+                    | net.minecraft.util.Mth.ceil(alpha * 255.0F) << 24);
         }
     }
 
@@ -3485,8 +3498,8 @@ public class DeckEditorScreen extends Screen
         }
         // isKeyDown takes the Window OBJECT, not its handle -- the same trap
         // PackOpeningScreen's shift-peek hit.
-        com.mojang.blaze3d.platform.Window window =
-            net.minecraft.client.Minecraft.getInstance().getWindow();
+        long window =
+            net.minecraft.client.Minecraft.getInstance().getWindow().getWindow();
         return com.mojang.blaze3d.platform.InputConstants.isKeyDown(window,
             org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT)
             || com.mojang.blaze3d.platform.InputConstants.isKeyDown(window,
@@ -3996,9 +4009,10 @@ public class DeckEditorScreen extends Screen
     }
 
     @Override
-    public boolean mouseDragged(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
-        double dragX, double dragY)
+    public boolean mouseDragged(double vanillaX, double vanillaY, int vanillaButton, double dragX, double dragY)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
         if(altCard != null)
         {
             // A drag begun before the picker opened must not keep scrubbing the
@@ -4015,7 +4029,7 @@ public class DeckEditorScreen extends Screen
             dragFilterBar(event.y());
             return true;
         }
-        return super.mouseDragged(event, dragX, dragY);
+        return super.mouseDragged(vanillaX, vanillaY, vanillaButton, dragX, dragY);
     }
 
     /**
@@ -4384,7 +4398,7 @@ public class DeckEditorScreen extends Screen
         }
 
         @Override
-        public void onPress(net.minecraft.client.input.InputWithModifiers input)
+        public void onPress()
         {
             openList = openList == this ? null : this;
             openListScroll = 0;
@@ -4596,7 +4610,7 @@ public class DeckEditorScreen extends Screen
         }
 
         @Override
-        public void onPress(net.minecraft.client.input.InputWithModifiers input)
+        public void onPress()
         {
             // Written out on the way, as the route to the card page is: the
             // tick that normally saves a deck does not run while another
@@ -4645,7 +4659,7 @@ public class DeckEditorScreen extends Screen
         }
 
         @Override
-        public void onPress(net.minecraft.client.input.InputWithModifiers input)
+        public void onPress()
         {
             EditorState.flush();
             if(minecraft != null)

@@ -69,7 +69,7 @@ public class QueueAnimation extends Animation
         if(!animations.isEmpty())
         {
             Animation a = animations.peek();
-            a.extractRenderState(ms, mouseX, mouseY, partialTicks);
+            a.render(ms.vanilla(), mouseX, mouseY, partialTicks);
         }
     }
     

@@ -35,7 +35,7 @@ public final class CardHolderNbt
      */
     public static CardHolder read(CompoundTag nbt)
     {
-        Properties card = DdDatabase.PROPERTIES_LIST.get(nbt.getLongOr(JsonKeys.ID, 0L));
+        Properties card = DdDatabase.PROPERTIES_LIST.get(nbt.getLong(JsonKeys.ID));
 
         if(card == null)
         {
@@ -43,9 +43,9 @@ public final class CardHolderNbt
         }
 
         return new CardHolder(card,
-            nbt.getByteOr(JsonKeys.IMAGE_INDEX, (byte) 0),
-            nbt.getStringOr(JsonKeys.RARITY, ""),
-            nbt.getStringOr(JsonKeys.CODE, ""));
+            nbt.getByte(JsonKeys.IMAGE_INDEX),
+            nbt.getString(JsonKeys.RARITY),
+            nbt.getString(JsonKeys.CODE));
     }
 
     /**

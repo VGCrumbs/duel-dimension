@@ -447,13 +447,15 @@ public class CardInfoScreen extends Screen
     }
 
     @Override
-    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
-        boolean doubleClick)
+    public boolean mouseClicked(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+        boolean doubleClick = false;
         double mouseX = event.x();
         double mouseY = event.y();
         int button = event.button();
-        if(super.mouseClicked(event, false))
+        if(super.mouseClicked(vanillaX, vanillaY, vanillaButton))
         {
             return true;
         }

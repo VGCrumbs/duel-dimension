@@ -2,7 +2,7 @@ package de.cas_ual_ty.dueldimension.mixin.client;
 
 import de.cas_ual_ty.dueldimension.clientutil.PlayerSkins;
 import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.world.entity.player.PlayerSkin;
+import net.minecraft.client.resources.PlayerSkin;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -37,12 +37,15 @@ public abstract class AbstractClientPlayerMixin
     {
         PlayerSkin resolved = callback.getReturnValue();
         // The game's own answer is passed in rather than asked for: this runs
-        // inside getSkin, and asking would call itself.
-        PlayerSkin.Patch patch = PlayerSkins.patch(
+        // inside getSkin, and asking would call itself. 1.21.1 has no Patch
+        // type, so PlayerSkins hands back the finished skin -- this one rebuilt
+        // with only the texture and the body type changed -- or null when the
+        // mod supplies nothing for this player.
+        PlayerSkin supplied = PlayerSkins.patched(
             (AbstractClientPlayer)(Object)this, resolved);
-        if(patch != null)
+        if(supplied != null)
         {
-            callback.setReturnValue(resolved.with(patch));
+            callback.setReturnValue(supplied);
         }
     }
 }

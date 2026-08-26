@@ -138,7 +138,7 @@ public final class MonsterSheets
             // DynamicTexture uploads from the pixels it holds, so closing them
             // here would hand the game an empty sheet.
             Minecraft.getInstance().getTextureManager()
-                .register(id, new DynamicTexture(() -> name, image));
+                .register(id, new DynamicTexture(image));
             IMPORTED.put(name, id);
             SIZES.put(id, new int[] {image.getWidth(), image.getHeight()});
         }
@@ -251,7 +251,7 @@ public final class MonsterSheets
         try
         {
             Files.createDirectories(folder());
-            net.minecraft.util.Util.getPlatform().openPath(folder());
+            net.minecraft.Util.getPlatform().openPath(folder());
         }
         catch(Exception unopenable)
         {

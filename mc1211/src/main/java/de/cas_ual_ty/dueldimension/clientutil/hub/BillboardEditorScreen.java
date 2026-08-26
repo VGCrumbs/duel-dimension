@@ -334,8 +334,10 @@ public class BillboardEditorScreen extends Screen
     }
 
     @Override
-    public boolean keyPressed(de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent event)
+    public boolean keyPressed(int vanillaKey, int vanillaScancode, int vanillaModifiers)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent(vanillaKey, vanillaScancode, vanillaModifiers);
         if(typing != null)
         {
             int key = event.key();
@@ -357,13 +359,15 @@ public class BillboardEditorScreen extends Screen
                 return true;
             }
         }
-        return super.keyPressed(event);
+        return super.keyPressed(vanillaKey, vanillaScancode, vanillaModifiers);
     }
 
     @Override
-    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
-        boolean doubled)
+    public boolean mouseClicked(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+        boolean doubled = false;
         // Clicking away takes the number rather than discarding it: the value is
         // visible in the box while it is being typed, so leaving it is a much
         // more natural way to say "yes, that one" than reaching for enter.
@@ -372,7 +376,7 @@ public class BillboardEditorScreen extends Screen
             commitTyped();
             return true;
         }
-        return super.mouseClicked(event, doubled);
+        return super.mouseClicked(vanillaX, vanillaY, vanillaButton);
     }
 
     /**
@@ -1176,8 +1180,7 @@ public class BillboardEditorScreen extends Screen
 
     /** No dim and no blur: the world behind this panel is the preview. */
     @Override
-    public void extractBackground(GuiGraphicsExtractor extractor, int mouseX, int mouseY,
-        float partialTick)
+    public void renderBackground(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
     }
 
@@ -1195,7 +1198,7 @@ public class BillboardEditorScreen extends Screen
     @Override
     public void onClose()
     {
-        minecraft.gui.setScreen(parent);
+        minecraft.setScreen(parent);
     }
 
     /**
@@ -1333,7 +1336,14 @@ public class BillboardEditorScreen extends Screen
             {
                 return false;
             }
-            setValue(value + Math.signum(scrollY) / Math.max(1, max - min));
+            // setValue is private in 1.21.1; this is its body.
+            double moved = net.minecraft.util.Mth.clamp(value + Math.signum(scrollY) / Math.max(1, max - min), 0D, 1D);
+            if(moved != value)
+            {
+                value = moved;
+                applyValue();
+            }
+            updateMessage();
             return true;
         }
 
@@ -1384,15 +1394,17 @@ public class BillboardEditorScreen extends Screen
         }
 
         @Override
-        public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
-            boolean doubled)
+        public boolean mouseClicked(double vanillaX, double vanillaY, int vanillaButton)
         {
+            // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+            de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+            boolean doubled = false;
             if(event.button() == 1 && isMouseOver(event.x(), event.y()))
             {
                 type(this);
                 return true;
             }
-            return super.mouseClicked(event, doubled);
+            return super.mouseClicked(vanillaX, vanillaY, vanillaButton);
         }
 
         @Override
@@ -1428,7 +1440,14 @@ public class BillboardEditorScreen extends Screen
             {
                 return false;
             }
-            setValue(value + Math.signum(scrollY) * 0.01D / (max - min));
+            // setValue is private in 1.21.1; this is its body.
+            double moved = net.minecraft.util.Mth.clamp(value + Math.signum(scrollY) * 0.01D / (max - min), 0D, 1D);
+            if(moved != value)
+            {
+                value = moved;
+                applyValue();
+            }
+            updateMessage();
             return true;
         }
 
@@ -1474,15 +1493,17 @@ public class BillboardEditorScreen extends Screen
         }
 
         @Override
-        public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
-            boolean doubled)
+        public boolean mouseClicked(double vanillaX, double vanillaY, int vanillaButton)
         {
+            // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+            de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+            boolean doubled = false;
             if(event.button() == 1 && isMouseOver(event.x(), event.y()))
             {
                 type(this);
                 return true;
             }
-            return super.mouseClicked(event, doubled);
+            return super.mouseClicked(vanillaX, vanillaY, vanillaButton);
         }
 
         @Override

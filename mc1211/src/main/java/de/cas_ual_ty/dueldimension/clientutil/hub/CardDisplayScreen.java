@@ -140,7 +140,7 @@ public class CardDisplayScreen extends Screen
         // here because the card is chosen here: put a card down, then build its
         // monster while looking at it.
         addRenderableWidget(Button.builder(Component.literal("Billboard..."), pressed ->
-                minecraft.gui.setScreen(new BillboardEditorScreen(this, code)))
+                minecraft.setScreen(new BillboardEditorScreen(this, code)))
             .bounds(panelX + panelW - PAD - 70, panelY + 3, 70, 14).build());
 
         refresh();
@@ -231,8 +231,11 @@ public class CardDisplayScreen extends Screen
     }
 
     @Override
-    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event, boolean doubled)
+    public boolean mouseClicked(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+        boolean doubled = false;
         // The grid first. Its cells are drawn by this screen rather than being
         // widgets, so nothing else is going to claim them -- and asking super
         // first would hand the click to the search box, which covers none of
@@ -245,7 +248,7 @@ public class CardDisplayScreen extends Screen
             send();
             return true;
         }
-        return super.mouseClicked(event, doubled);
+        return super.mouseClicked(vanillaX, vanillaY, vanillaButton);
     }
 
     @Override
@@ -324,8 +327,7 @@ public class CardDisplayScreen extends Screen
 
     /** No blur: the block being edited is behind this, and worth seeing. */
     @Override
-    public void extractBackground(GuiGraphicsExtractor extractor, int mouseX, int mouseY,
-        float partialTick)
+    public void renderBackground(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
     }
 

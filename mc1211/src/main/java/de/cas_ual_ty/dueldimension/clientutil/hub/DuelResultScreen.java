@@ -128,11 +128,13 @@ public final class DuelResultScreen extends Screen
      * other.
      */
     @Override
-    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
-        boolean doubled)
+    public boolean mouseClicked(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+        boolean doubled = false;
         engaged = true;
-        return super.mouseClicked(event, doubled);
+        return super.mouseClicked(vanillaX, vanillaY, vanillaButton);
     }
 
     private void setPage(int value)

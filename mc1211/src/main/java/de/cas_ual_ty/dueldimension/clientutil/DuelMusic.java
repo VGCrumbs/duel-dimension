@@ -121,7 +121,7 @@ public final class DuelMusic
     {
         Minecraft minecraft = Minecraft.getInstance();
         return minecraft != null && minecraft.options != null
-            && minecraft.options.getFinalSoundSourceVolume(SoundSource.RECORDS) <= 0F;
+            && minecraft.options.getSoundSourceVolume(SoundSource.RECORDS) <= 0F;
     }
 
     /** The track with this id, or the default — never null, and never a guess. */
@@ -199,26 +199,16 @@ public final class DuelMusic
             return;
         }
         playing = new Loop(track.sound());
-        // The engine's own verdict, logged. It has three, and two of them look
-        // identical from here: NOT_STARTED means it refused the sound, and
-        // STARTED_SILENTLY means it accepted it and opened no channel because
-        // the volume worked out to zero. Both are silence with no exception,
-        // which is the failure mode this whole feature kept landing in.
-        net.minecraft.client.sounds.SoundEngine.PlayResult result =
-            minecraft.getSoundManager().play(playing);
-        if(result == net.minecraft.client.sounds.SoundEngine.PlayResult.STARTED)
-        {
-            de.cas_ual_ty.dueldimension.DuelDimension.log(
-                "Duel music: playing " + track.id());
-        }
-        else
-        {
-            playing = null;
-            de.cas_ual_ty.dueldimension.DuelDimension.warn("Duel music: " + track.id()
-                + " did not start (" + result + ")"
-                + (silencedByGameVolume()
-                    ? " -- Jukebox/Note Blocks volume is at zero" : ""));
-        }
+        // BEHAVIOUR NOTE: 1.21.1's SoundManager.play returns void -- there is no
+        // PlayResult to inspect -- so this can no longer say whether the engine
+        // opened a channel, only that the sound was handed to it. The failure this
+        // logging exists to catch (silence with no exception) is no longer
+        // distinguishable here, and `playing` is no longer cleared on a refusal;
+        // the volume check that explains the commonest cause is kept.
+        minecraft.getSoundManager().play(playing);
+        de.cas_ual_ty.dueldimension.DuelDimension.log("Duel music: playing " + track.id()
+            + (silencedByGameVolume()
+                ? " -- but Jukebox/Note Blocks volume is at zero" : ""));
     }
 
     /**

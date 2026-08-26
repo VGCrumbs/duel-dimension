@@ -5,9 +5,8 @@
 # equivalent, or because it references a file that does. Fix one,
 # delete its line, build. A red build means the fix was wrong.
 #
-# 380 file(s) remaining.
+# 360 file(s) remaining.
 de/cas_ual_ty/dueldimension/CommonConfig.java
-de/cas_ual_ty/dueldimension/CosmeticItem.java
 de/cas_ual_ty/dueldimension/DdBlocks.java
 de/cas_ual_ty/dueldimension/DdComponents.java
 de/cas_ual_ty/dueldimension/DdContainerTypes.java
@@ -84,7 +83,6 @@ de/cas_ual_ty/dueldimension/clientutil/DiskSlotOverlay.java
 de/cas_ual_ty/dueldimension/clientutil/DuelActionController.java
 de/cas_ual_ty/dueldimension/clientutil/DuelAnimations.java
 de/cas_ual_ty/dueldimension/clientutil/DuelClientState.java
-de/cas_ual_ty/dueldimension/clientutil/DuelEntityRenderer.java
 de/cas_ual_ty/dueldimension/clientutil/DuelMusic.java
 de/cas_ual_ty/dueldimension/clientutil/DuelSelection.java
 de/cas_ual_ty/dueldimension/clientutil/DuelSuppression.java
@@ -92,7 +90,6 @@ de/cas_ual_ty/dueldimension/clientutil/DuelTextures.java
 de/cas_ual_ty/dueldimension/clientutil/EngineDuelScreen.java
 de/cas_ual_ty/dueldimension/clientutil/FieldLayout.java
 de/cas_ual_ty/dueldimension/clientutil/FieldQuad.java
-de/cas_ual_ty/dueldimension/clientutil/FoilPipelines.java
 de/cas_ual_ty/dueldimension/clientutil/FoilTestScreen.java
 de/cas_ual_ty/dueldimension/clientutil/HitchWatch.java
 de/cas_ual_ty/dueldimension/clientutil/HologramSettings.java
@@ -105,8 +102,6 @@ de/cas_ual_ty/dueldimension/clientutil/PlayerSkins.java
 de/cas_ual_ty/dueldimension/clientutil/PreloadHud.java
 de/cas_ual_ty/dueldimension/clientutil/PromptOptions.java
 de/cas_ual_ty/dueldimension/clientutil/SealConfigScreen.java
-de/cas_ual_ty/dueldimension/clientutil/SkinLayersCompat.java
-de/cas_ual_ty/dueldimension/clientutil/SwitchableContainerScreen.java
 de/cas_ual_ty/dueldimension/clientutil/UnownedPipelines.java
 de/cas_ual_ty/dueldimension/clientutil/hub/BillboardEditorScreen.java
 de/cas_ual_ty/dueldimension/clientutil/hub/CardDisplayScreen.java
@@ -147,7 +142,6 @@ de/cas_ual_ty/dueldimension/clientutil/overworld/ArenaRenderer.java
 de/cas_ual_ty/dueldimension/clientutil/overworld/BoardMesh.java
 de/cas_ual_ty/dueldimension/clientutil/overworld/BoardPicker.java
 de/cas_ual_ty/dueldimension/clientutil/overworld/BoardPointerScreen.java
-de/cas_ual_ty/dueldimension/clientutil/overworld/BoardProjection.java
 de/cas_ual_ty/dueldimension/clientutil/overworld/CardBubble.java
 de/cas_ual_ty/dueldimension/clientutil/overworld/CardChooser.java
 de/cas_ual_ty/dueldimension/clientutil/overworld/CardDisplayRenderer.java
@@ -173,12 +167,7 @@ de/cas_ual_ty/dueldimension/clientutil/overworld/StatOverlay.java
 de/cas_ual_ty/dueldimension/clientutil/overworld/Wings.java
 de/cas_ual_ty/dueldimension/clientutil/widget/ColoredButton.java
 de/cas_ual_ty/dueldimension/clientutil/widget/ColoredTextWidget.java
-de/cas_ual_ty/dueldimension/clientutil/widget/ImprovedButton.java
 de/cas_ual_ty/dueldimension/clientutil/widget/ItemStackWidget.java
-de/cas_ual_ty/dueldimension/clientutil/widget/ReadyCheckboxWidget.java
-de/cas_ual_ty/dueldimension/clientutil/widget/SmallTextButton.java
-de/cas_ual_ty/dueldimension/clientutil/widget/SmallTextWidget.java
-de/cas_ual_ty/dueldimension/clientutil/widget/TextWidget.java
 de/cas_ual_ty/dueldimension/clientutil/widget/TextureButton.java
 de/cas_ual_ty/dueldimension/deckbox/CustomDecks.java
 de/cas_ual_ty/dueldimension/deckbox/DeckBoxContainer.java
@@ -268,11 +257,9 @@ de/cas_ual_ty/dueldimension/duel/overworld/OverworldSettings.java
 de/cas_ual_ty/dueldimension/duel/overworld/SitingResult.java
 de/cas_ual_ty/dueldimension/duel/overworld/SitingSearch.java
 de/cas_ual_ty/dueldimension/duel/overworld/arena/Arena.java
-de/cas_ual_ty/dueldimension/duel/overworld/arena/ArenaMarkerBlock.java
 de/cas_ual_ty/dueldimension/duel/overworld/arena/ArenaScan.java
 de/cas_ual_ty/dueldimension/duel/overworld/display/CardDisplayBlock.java
 de/cas_ual_ty/dueldimension/duel/overworld/display/CardDisplayMessages.java
-de/cas_ual_ty/dueldimension/duel/overworld/display/CardDisplayTileEntity.java
 de/cas_ual_ty/dueldimension/duel/overworld/display/PedestalSpace.java
 de/cas_ual_ty/dueldimension/duel/playfield/DuelCard.java
 de/cas_ual_ty/dueldimension/duel/playfield/PlayField.java
@@ -297,12 +284,8 @@ de/cas_ual_ty/dueldimension/duel/screen/DuelScreenDueling.java
 de/cas_ual_ty/dueldimension/duel/screen/DuelScreenIdle.java
 de/cas_ual_ty/dueldimension/duel/screen/DuelScreenPreparing.java
 de/cas_ual_ty/dueldimension/duel/screen/IDuelScreenContext.java
-de/cas_ual_ty/dueldimension/duel/screen/animation/Animation.java
 de/cas_ual_ty/dueldimension/duel/screen/animation/AttackAnimation.java
-de/cas_ual_ty/dueldimension/duel/screen/animation/DummyAnimation.java
 de/cas_ual_ty/dueldimension/duel/screen/animation/MoveAnimation.java
-de/cas_ual_ty/dueldimension/duel/screen/animation/ParallelListAnimation.java
-de/cas_ual_ty/dueldimension/duel/screen/animation/QueueAnimation.java
 de/cas_ual_ty/dueldimension/duel/screen/animation/RemoveTokenAnimation.java
 de/cas_ual_ty/dueldimension/duel/screen/animation/SpecialSummonAnimation.java
 de/cas_ual_ty/dueldimension/duel/screen/animation/SpecialSummonOverlayAnimation.java
@@ -312,12 +295,9 @@ de/cas_ual_ty/dueldimension/duel/screen/widget/AnimationsWidget.java
 de/cas_ual_ty/dueldimension/duel/screen/widget/DisplayChatWidget.java
 de/cas_ual_ty/dueldimension/duel/screen/widget/HandZoneWidget.java
 de/cas_ual_ty/dueldimension/duel/screen/widget/InteractionWidget.java
-de/cas_ual_ty/dueldimension/duel/screen/widget/LPTextFieldWidget.java
 de/cas_ual_ty/dueldimension/duel/screen/widget/LifePointsWidget.java
 de/cas_ual_ty/dueldimension/duel/screen/widget/MonsterZoneWidget.java
 de/cas_ual_ty/dueldimension/duel/screen/widget/NonSecretStackZoneWidget.java
-de/cas_ual_ty/dueldimension/duel/screen/widget/RoleButtonWidget.java
-de/cas_ual_ty/dueldimension/duel/screen/widget/RoleOccupantsWidget.java
 de/cas_ual_ty/dueldimension/duel/screen/widget/StackZoneWidget.java
 de/cas_ual_ty/dueldimension/duel/screen/widget/ViewCardStackWidget.java
 de/cas_ual_ty/dueldimension/duel/screen/widget/ZoneWidget.java

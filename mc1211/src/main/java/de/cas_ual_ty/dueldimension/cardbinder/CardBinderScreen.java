@@ -59,7 +59,10 @@ public class CardBinderScreen extends AbstractContainerScreen<CardBinderContaine
 
     public CardBinderScreen(CardBinderContainer screenContainer, Inventory inv, Component titleIn)
     {
-        super(screenContainer, inv, titleIn, 176, 114 + CardInventory.DEFAULT_PAGE_ROWS * 18); //222
+        super(screenContainer, inv, titleIn);
+        // 26.2 passed the panel size to super; here the fields are assigned.
+        this.imageWidth = 176;
+        this.imageHeight = 114 + CardInventory.DEFAULT_PAGE_ROWS * 18;
     }
 
     @Override
@@ -91,9 +94,14 @@ public class CardBinderScreen extends AbstractContainerScreen<CardBinderContaine
     }
 
     @Override
-    public void extractBackground(GuiGraphicsExtractor ms, int mouseX, int mouseY, float partialTicks)
+    public void renderBg(net.minecraft.client.gui.GuiGraphics vanillaGraphics, float partialTicks, int mouseX, int mouseY)
     {
-        super.extractBackground(ms, mouseX, mouseY, partialTicks);
+        // 26.2 describes a screen into a render state; 1.21.1 draws it now. The
+        // body below is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor ms = new de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor(vanillaGraphics);
+        // The dim was super.extractBackground. In 1.21.1 AbstractContainerScreen.renderBackground
+        // draws it and then calls this, so it still happens, and once.
         DdBlitUtil.blit(ms, CardBinderScreen.CARD_BINDER_GUI_TEXTURE, leftPos, topPos, panelWidth, imageHeight,
             0F, 0F, panelWidth / 256F, imageHeight / 256F, DdBlitUtil.NO_TINT);
     }
@@ -135,8 +143,12 @@ public class CardBinderScreen extends AbstractContainerScreen<CardBinderContaine
     }
 
     @Override
-    protected void extractLabels(GuiGraphicsExtractor ms, int mouseX, int mouseY)
+    protected void renderLabels(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY)
     {
+        // 26.2 describes a screen into a render state; 1.21.1 draws it now. The
+        // body below is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor ms = new de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor(vanillaGraphics);
         MutableComponent title = Component.literal(this.title.getString());
 
         if(!getMenu().loaded)
@@ -201,7 +213,7 @@ public class CardBinderScreen extends AbstractContainerScreen<CardBinderContaine
 
         if(cardSearch != null && cardSearch.isFocused())
         {
-            return cardSearch.keyPressed(keyEvent);
+            return cardSearch.keyPressed(vanillaKey, vanillaScancode, vanillaModifiers);
         }
         else if(getMenu().loaded)
         {

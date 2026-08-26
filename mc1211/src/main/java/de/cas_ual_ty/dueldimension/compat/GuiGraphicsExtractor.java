@@ -198,6 +198,12 @@ public class GuiGraphicsExtractor
         graphics.renderTooltip(font, text, x, y);
     }
 
+    /** The already-wrapped form the duel screens build. */
+    public void setTooltipForNextFrame(Font font, List<FormattedCharSequence> lines, int x, int y)
+    {
+        graphics.renderTooltip(font, lines, x, y);
+    }
+
     public void setComponentTooltipForNextFrame(Font font, List<Component> lines, int x, int y)
     {
         graphics.renderComponentTooltip(font, lines, x, y);

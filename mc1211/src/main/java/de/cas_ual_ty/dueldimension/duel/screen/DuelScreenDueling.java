@@ -334,7 +334,7 @@ public class DuelScreenDueling<E extends DuelContainer> extends DuelContainerScr
     public void extractContents(GuiGraphicsExtractor ms, int mouseX, int mouseY,
         float partialTicks)
     {
-        super.renderWidget(ms.vanilla(), mouseX, mouseY, partialTicks);
+        super.extractContents(ms, mouseX, mouseY, partialTicks);
         
         // super already blits the background, and the Forge code blitted it once
         // more before the foreground. Both stay: the repeat costs a quad and
@@ -349,14 +349,16 @@ public class DuelScreenDueling<E extends DuelContainer> extends DuelContainerScr
     }
     
     @Override
-    protected void extractLabels(GuiGraphicsExtractor ms, int x, int y)
+    protected void renderLabels(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int x, int y)
     {
     }
     
     @Override
-    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
-        boolean doubleClick)
+    public boolean mouseClicked(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+        boolean doubleClick = false;
         double mouseX = event.x();
         double mouseY = event.y();
         int button = event.button();
@@ -372,7 +374,7 @@ public class DuelScreenDueling<E extends DuelContainer> extends DuelContainerScr
             resetToNormalZoneWidgets();
         }
         
-        return super.mouseClicked(event, doubleClick);
+        return super.mouseClicked(vanillaX, vanillaY, vanillaButton);
     }
     
     @Override
@@ -390,8 +392,10 @@ public class DuelScreenDueling<E extends DuelContainer> extends DuelContainerScr
     }
     
     @Override
-    public boolean keyPressed(de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent event)
+    public boolean keyPressed(int vanillaKey, int vanillaScancode, int vanillaModifiers)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent(vanillaKey, vanillaScancode, vanillaModifiers);
         int keyCode = event.key();
         if(lifePointsWidget != null && lifePointsWidget.isFocused())
         {
@@ -402,12 +406,12 @@ public class DuelScreenDueling<E extends DuelContainer> extends DuelContainerScr
             }
             else
             {
-                return lifePointsWidget.keyPressed(event);
+                return lifePointsWidget.keyPressed(event.key(), event.scancode(), event.modifiers());
             }
         }
         else
         {
-            return super.keyPressed(event);
+            return super.keyPressed(vanillaKey, vanillaScancode, vanillaModifiers);
         }
     }
     

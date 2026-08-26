@@ -43,7 +43,7 @@ public class ReadyCheckboxWidget extends Button
 
         active = isActive.get();
         Minecraft minecraft = Minecraft.getInstance();
-        extractDefaultSprite(extractor);
+        super.renderWidget(vanillaGraphics, mouseX, mouseY, partial);
 
         if(isChecked.get())
         {

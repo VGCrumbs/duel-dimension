@@ -206,9 +206,11 @@ public class DiskShopScreen extends Screen
     }
 
     @Override
-    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
-        boolean doubled)
+    public boolean mouseClicked(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+        boolean doubled = false;
         int hit = diskAt(event.x(), event.y());
         if(hit >= 0)
         {
@@ -217,7 +219,7 @@ public class DiskShopScreen extends Screen
             rebuildWidgets();
             return true;
         }
-        return super.mouseClicked(event, doubled);
+        return super.mouseClicked(vanillaX, vanillaY, vanillaButton);
     }
 
     /** Which tile the pointer is over, or -1. */

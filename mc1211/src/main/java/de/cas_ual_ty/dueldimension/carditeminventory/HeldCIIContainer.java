@@ -56,7 +56,7 @@ public abstract class HeldCIIContainer extends CIIContainer
             {
                 id = j1 + l * 9 + 9;
 
-                if(id == playerInventoryIn.getSelectedSlot())
+                if(id == playerInventoryIn.selected)
                 {
                     addSlot(new Slot(playerInventoryIn, id, 8 + j1 * 18, 103 + l * 18 + i)
                     {
@@ -78,7 +78,7 @@ public abstract class HeldCIIContainer extends CIIContainer
         {
             id = i1;
 
-            if(id == playerInventoryIn.getSelectedSlot())
+            if(id == playerInventoryIn.selected)
             {
                 addSlot(new Slot(playerInventoryIn, i1, 8 + i1 * 18, 161 + i)
                 {

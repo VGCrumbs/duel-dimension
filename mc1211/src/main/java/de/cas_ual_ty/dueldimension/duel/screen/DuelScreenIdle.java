@@ -48,8 +48,12 @@ public class DuelScreenIdle<E extends DuelContainer> extends DuelContainerScreen
     }
     
     @Override
-    protected void extractLabels(GuiGraphicsExtractor ms, int mouseX, int mouseY)
+    protected void renderLabels(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY)
     {
+        // 26.2 describes a screen into a render state; 1.21.1 draws it now. The
+        // body below is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor ms = new de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor(vanillaGraphics);
         ms.text(font, "Waiting for players...", 8, 6, 0xFF404040, false);
     }
     
@@ -57,7 +61,7 @@ public class DuelScreenIdle<E extends DuelContainer> extends DuelContainerScreen
     public void extractContents(GuiGraphicsExtractor ms, int mouseX, int mouseY,
         float partialTicks)
     {
-        super.renderWidget(ms.vanilla(), mouseX, mouseY, partialTicks);
+        super.extractContents(ms, mouseX, mouseY, partialTicks);
         
         // The parent already describes this exact panel; the Forge original drew
         // it a second time here and the port keeps that rather than deciding on

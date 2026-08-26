@@ -122,8 +122,7 @@ public class DuelEntity extends Entity implements MenuProvider
      * not a creature; there is nothing to damage.
      */
     @Override
-    public boolean hurtServer(net.minecraft.server.level.ServerLevel serverLevel,
-        net.minecraft.world.damagesource.DamageSource source, float amount)
+    public boolean hurt(net.minecraft.world.damagesource.DamageSource source, float amount)
     {
         return false;
     }

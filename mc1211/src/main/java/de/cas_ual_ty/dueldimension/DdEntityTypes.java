@@ -37,14 +37,14 @@ public final class DdEntityTypes
                 .noSave()
                 .sized(0F, 0F)
                 .fireImmune()
-                .build(DUEL_KEY));
+                .build("duel"));
 
     /** An NPC you can challenge. Player-shaped, so player-sized. */
     public static final EntityType<DuelistEntity> DUELIST = Registry.register(
         BuiltInRegistries.ENTITY_TYPE, DUELIST_KEY,
         EntityType.Builder.of(DuelistEntity::new, MobCategory.CREATURE)
             .sized(0.6F, 1.8F)
-            .build(DUELIST_KEY));
+            .build("duelist"));
 
     private DdEntityTypes()
     {

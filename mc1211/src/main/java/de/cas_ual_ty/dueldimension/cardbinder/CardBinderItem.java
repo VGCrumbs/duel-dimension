@@ -6,6 +6,7 @@ import de.cas_ual_ty.dueldimension.DuelDimension;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -93,7 +94,7 @@ public class CardBinderItem extends Item implements MenuProvider
     }
 
     @Override
-    public InteractionResult use(net.minecraft.world.level.Level world, Player player, InteractionHand hand)
+    public InteractionResultHolder<ItemStack> use(net.minecraft.world.level.Level world, Player player, InteractionHand hand)
     {
         // must also fix UUID on client side if player is in creative mode
         getUUID(player.getItemInHand(hand));
@@ -111,7 +112,7 @@ public class CardBinderItem extends Item implements MenuProvider
                 // round trip to wait on.
                 de.cas_ual_ty.dueldimension.DuelDimension.proxy.openCollectionBinder();
             }
-            return InteractionResult.SUCCESS;
+            return InteractionResultHolder.success(stack);
         }
 
         return super.use(world, player, hand);

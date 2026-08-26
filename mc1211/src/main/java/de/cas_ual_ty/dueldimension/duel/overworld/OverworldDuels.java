@@ -411,7 +411,7 @@ public final class OverworldDuels
     {
         BlockPos stand = siting.stand(1);
         Direction look = siting.look(1);
-        opponent.snapTo(stand.getX() + 0.5D, stand.getY() + 1, stand.getZ() + 0.5D,
+        opponent.moveTo(stand.getX() + 0.5D, stand.getY() + 1, stand.getZ() + 0.5D,
             look.toYRot(), 0F);
         opponent.setYHeadRot(look.toYRot());
     }

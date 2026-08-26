@@ -106,8 +106,8 @@ public final class DuelInvites
         return Component.literal(label).setStyle(Style.EMPTY
             .withColor(colour)
             .withBold(true)
-            .withClickEvent(new ClickEvent.RunCommand(command))
-            .withHoverEvent(new HoverEvent.ShowText(Component.literal(tooltip))));
+            .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, command))
+            .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal(tooltip))));
     }
 
     /** Accepts the challenge from this player. Returns null on success, else why not. */

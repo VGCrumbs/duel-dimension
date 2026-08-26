@@ -491,9 +491,10 @@ public final class EngineRuntime
                 .withStyle(style -> style
                     .withColor(net.minecraft.ChatFormatting.AQUA)
                     .withUnderlined(true)
-                    .withClickEvent(new net.minecraft.network.chat.ClickEvent.OpenUrl(
-                        java.net.URI.create(DOWNLOAD_URL)))
-                    .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(
+                    .withClickEvent(new net.minecraft.network.chat.ClickEvent(
+                        net.minecraft.network.chat.ClickEvent.Action.OPEN_URL, DOWNLOAD_URL))
+                    .withHoverEvent(new net.minecraft.network.chat.HoverEvent(
+                        net.minecraft.network.chat.HoverEvent.Action.SHOW_TEXT,
                         net.minecraft.network.chat.Component.literal(DOWNLOAD_URL))));
 
         String lead = hostedElsewhere

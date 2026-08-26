@@ -113,8 +113,12 @@ public class DuelScreenPreparing<E extends DuelContainer> extends DuelContainerS
      * deck panel in an earlier stratum and hide it behind the duel panel.
      */
     @Override
-    protected void extractLabels(GuiGraphicsExtractor ms, int mouseX, int mouseY)
+    protected void renderLabels(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY)
     {
+        // 26.2 describes a screen into a render state; 1.21.1 draws it now. The
+        // body below is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor ms = new de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor(vanillaGraphics);
         ms.text(font, "Choose your decks...", 8, 6, 0xFF404040, false);
 
         PlayerRole role = getPlayerRole();
@@ -146,7 +150,7 @@ public class DuelScreenPreparing<E extends DuelContainer> extends DuelContainerS
     public void extractContents(GuiGraphicsExtractor ms, int mouseX, int mouseY,
         float partialTicks)
     {
-        super.renderWidget(ms.vanilla(), mouseX, mouseY, partialTicks);
+        super.extractContents(ms, mouseX, mouseY, partialTicks);
         
         if(renderDeckChoosing())
         {

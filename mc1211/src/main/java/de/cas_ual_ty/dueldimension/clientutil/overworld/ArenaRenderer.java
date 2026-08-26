@@ -212,7 +212,7 @@ public final class ArenaRenderer
      */
     private static boolean tabHeld(Minecraft client)
     {
-        return com.mojang.blaze3d.platform.InputConstants.isKeyDown(client.getWindow(),
+        return com.mojang.blaze3d.platform.InputConstants.isKeyDown(client.getWindow().getWindow(),
             org.lwjgl.glfw.GLFW.GLFW_KEY_TAB);
     }
 

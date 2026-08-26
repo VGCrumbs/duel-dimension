@@ -394,7 +394,7 @@ public class ClientProxy implements ISidedProxy
     @Override
     public void openCardInspectScreen(de.cas_ual_ty.dueldimension.card.CardHolder card)
     {
-        getMinecraft().gui.setScreen(
+        getMinecraft().setScreen(
             new de.cas_ual_ty.dueldimension.card.InspectCardScreen(card));
     }
 
@@ -431,7 +431,7 @@ public class ClientProxy implements ISidedProxy
             open.update(shop);
             return;
         }
-        getMinecraft().gui.setScreen(
+        getMinecraft().setScreen(
             new de.cas_ual_ty.dueldimension.clientutil.hub.DiskShopScreen(shop));
     }
 
@@ -452,7 +452,7 @@ public class ClientProxy implements ISidedProxy
     public void offerDuelType(
         de.cas_ual_ty.dueldimension.duel.npc.DuelistChallengeMessages.OfferDuel offer)
     {
-        getMinecraft().gui.setScreen(
+        getMinecraft().setScreen(
             new de.cas_ual_ty.dueldimension.clientutil.hub.DuelTypeScreen(offer));
     }
 
@@ -556,7 +556,7 @@ public class ClientProxy implements ISidedProxy
             de.cas_ual_ty.dueldimension.clientutil.hub.CoinTossScreen.dismiss();
             return;
         }
-        getMinecraft().gui.setScreen(
+        getMinecraft().setScreen(
             new de.cas_ual_ty.dueldimension.clientutil.hub.CoinTossScreen(toss));
     }
 
@@ -569,7 +569,7 @@ public class ClientProxy implements ISidedProxy
             open.update(room);
             return;
         }
-        getMinecraft().gui.setScreen(
+        getMinecraft().setScreen(
             new de.cas_ual_ty.dueldimension.clientutil.hub.DuelLobbyScreen(room));
     }
 
@@ -579,7 +579,7 @@ public class ClientProxy implements ISidedProxy
         if(getMinecraft().screen
             instanceof de.cas_ual_ty.dueldimension.clientutil.hub.DuelLobbyScreen)
         {
-            getMinecraft().gui.setScreen(null);
+            getMinecraft().setScreen(null);
         }
     }
 
@@ -595,7 +595,7 @@ public class ClientProxy implements ISidedProxy
         java.util.List<de.cas_ual_ty.dueldimension.shop.ShopStock.Pack> packs)
     {
         de.cas_ual_ty.dueldimension.clientutil.hub.CardShopScreen.setPoints(points);
-        getMinecraft().gui.setScreen(
+        getMinecraft().setScreen(
             new de.cas_ual_ty.dueldimension.clientutil.hub.CardShopScreen(packs));
     }
 
@@ -612,7 +612,7 @@ public class ClientProxy implements ISidedProxy
     {
         // The screen that asked for the packs, so closing the reveal returns
         // there rather than dumping the player back into the world.
-        getMinecraft().gui.setScreen(
+        getMinecraft().setScreen(
             new de.cas_ual_ty.dueldimension.clientutil.hub.PackOpeningScreen(
                 getMinecraft().screen, setName, codes, rarities));
     }
@@ -691,7 +691,7 @@ public class ClientProxy implements ISidedProxy
         {
             // gui.setScreen, not setScreenAndShow: the latter forces a frame,
             // and this runs while the update batch is still being applied.
-            getMinecraft().gui.setScreen(new EngineDuelScreen());
+            getMinecraft().setScreen(new EngineDuelScreen());
         }
         if(update.board() != null)
         {

@@ -90,7 +90,7 @@ public final class DuelDisks
             return null;
         }
         net.minecraft.world.item.Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM
-            .getValue(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
+            .get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
                 de.cas_ual_ty.dueldimension.DuelDimension.MOD_ID, name));
         return item instanceof DuelDiskItem disk ? disk : null;
     }

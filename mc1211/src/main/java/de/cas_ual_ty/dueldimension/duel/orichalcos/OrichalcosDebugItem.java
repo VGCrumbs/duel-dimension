@@ -42,13 +42,13 @@ public class OrichalcosDebugItem extends Item
         {
             // sendOverlayMessage, not displayClientMessage: the action-bar
             // method was renamed in 26.2.
-            player.sendOverlayMessage(
-                Component.literal(target.getName().getString() + " is already marked."));
+            player.displayClientMessage(
+                Component.literal(target.getName().getString() + " is already marked."), true);
             return InteractionResult.FAIL;
         }
-        player.sendOverlayMessage(
+        player.displayClientMessage(
             Component.literal("The Seal of Orichalcos closes on "
-                + target.getName().getString() + "."));
+                + target.getName().getString() + "."), true);
         return InteractionResult.SUCCESS;
     }
 }

@@ -61,7 +61,7 @@ public final class CrosshairAction
             // that already have somewhere to be.
             if(BoardPointerScreen.isOwnDeck(target))
             {
-                client.gui.setScreen(new BoardPointerScreen(target,
+                client.setScreen(new BoardPointerScreen(target,
                     BoardPointerScreen.deckMenu()));
                 return true;
             }
@@ -85,7 +85,7 @@ public final class CrosshairAction
                 // stopped rather than as a question waiting to be answered.
                 // Borrowed with the rows already up, and pinned so that still
                 // holding the camera key does not take them away again.
-                client.gui.setScreen(new BoardPointerScreen(null, loose));
+                client.setScreen(new BoardPointerScreen(null, loose));
                 return true;
             }
             return false;
@@ -127,7 +127,7 @@ public final class CrosshairAction
         // player who pointed and asked once is not asked to point again.
         // Borrowed for exactly as long as the answer takes, and no forced
         // frame: see BoardPointerScreen.onClose.
-        client.gui.setScreen(new BoardPointerScreen(target, options));
+        client.setScreen(new BoardPointerScreen(target, options));
         return true;
     }
 

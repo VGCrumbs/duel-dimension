@@ -84,7 +84,7 @@ public class TextureButton extends Button
         GuiGraphicsExtractor extractor = new GuiGraphicsExtractor(vanillaGraphics);
 
         extractTooltip(extractor, mouseX, mouseY);
-        extractDefaultSprite(extractor);
+        super.renderWidget(vanillaGraphics, mouseX, mouseY, partialTicks);
 
         if(textureLocation != null)
         {

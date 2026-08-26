@@ -16,21 +16,33 @@ public class DeckBoxScreen extends AbstractContainerScreen<DeckBoxContainer>
 
     public DeckBoxScreen(DeckBoxContainer screenContainer, Inventory inv, Component titleIn)
     {
-        super(screenContainer, inv, titleIn, 284, 250);
+        super(screenContainer, inv, titleIn);
+        // 26.2 passed the panel size to super; here the fields are assigned.
+        this.imageWidth = 284;
+        this.imageHeight = 250;
     }
 
     @Override
-    public void extractBackground(GuiGraphicsExtractor ms, int mouseX, int mouseY, float partialTicks)
+    public void renderBg(net.minecraft.client.gui.GuiGraphics vanillaGraphics, float partialTicks, int mouseX, int mouseY)
     {
-        super.extractBackground(ms, mouseX, mouseY, partialTicks);
+        // 26.2 describes a screen into a render state; 1.21.1 draws it now. The
+        // body below is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor ms = new de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor(vanillaGraphics);
+        // The dim was super.extractBackground. In 1.21.1 AbstractContainerScreen.renderBackground
+        // draws it and then calls this, so it still happens, and once.
         // The panel is a 284x250 window inside a 512x256 file.
         DdBlitUtil.blit(ms, DeckBoxScreen.DECK_BOX_GUI_TEXTURE, leftPos, topPos, imageWidth, imageHeight,
             0F, 0F, imageWidth / 512F, imageHeight / 256F, DdBlitUtil.NO_TINT);
     }
 
     @Override
-    protected void extractLabels(GuiGraphicsExtractor ms, int mouseX, int mouseY)
+    protected void renderLabels(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY)
     {
+        // 26.2 describes a screen into a render state; 1.21.1 draws it now. The
+        // body below is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor ms = new de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor(vanillaGraphics);
         Slot s;
         int amount;
 

@@ -121,10 +121,36 @@ public abstract class DuelContainerScreen<E extends DuelContainer> extends Switc
      * in place of {@code renderBackground}.
      */
     @Override
-    public void extractBackground(GuiGraphicsExtractor ms, int mouseX, int mouseY,
-        float partialTicks)
+    public void renderBg(net.minecraft.client.gui.GuiGraphics vanillaGraphics, float partialTicks,
+        int mouseX, int mouseY)
     {
+        // 26.2 had no renderBg; 1.21.1 does, and calls it from renderBackground
+        // before the widgets and the slots -- which is exactly where the Forge
+        // chain this class is emulating ran. Note the argument order.
+        GuiGraphicsExtractor ms = new GuiGraphicsExtractor(vanillaGraphics);
         extractContents(ms, mouseX, mouseY, partialTicks);
+    }
+
+    /**
+     * The world is NOT dimmed by vanilla here, because this screen dims it
+     * itself.
+     * <p>
+     * 1.21.1 calls {@code renderBg} from {@code renderBackground}, whose body is
+     * {@code renderTransparentBackground} then {@code renderBg} -- unconditionally.
+     * The 26.2 version of this class deliberately skipped its equivalent of that
+     * first step and said so, dimming instead through its own 50%-black fill. Left
+     * alone, the two stack and the duel screen comes out twice as dark.
+     * <p>
+     * The four screens extending this one inherit the opt-out, which is right:
+     * they inherit the fill too. The container screens that DID call super --
+     * CardBinderScreen, CIIScreen, CardSupplyScreen, DeckBoxScreen -- are
+     * untouched and still get vanilla's dim.
+     */
+    @Override
+    public void renderBackground(net.minecraft.client.gui.GuiGraphics vanillaGraphics,
+        int mouseX, int mouseY, float partialTicks)
+    {
+        renderBg(vanillaGraphics, partialTicks, mouseX, mouseY);
     }
 
     @Override
@@ -135,15 +161,16 @@ public abstract class DuelContainerScreen<E extends DuelContainer> extends Switc
         // handed the compatibility surface over the real GuiGraphics.
         GuiGraphicsExtractor ms = new GuiGraphicsExtractor(vanillaGraphics);
 
-        // AbstractContainerScreen's own version, minus the extractContents call
-        // extractBackground has already made. super.extractContents reaches that
-        // class's implementation -- widgets, slots, labels -- not this chain.
-        super.renderWidget(ms.vanilla(), mouseX, mouseY, partialTicks);
-        extractCarriedItem(ms, mouseX, mouseY);
-        extractTooltip(ms, mouseX, mouseY);
+        // 1.21.1's AbstractContainerScreen.render draws the panel, the slots and
+        // the carried item. It does NOT draw the hovered-slot tooltip: its
+        // bytecode ends at renderFloatingItem, and renderTooltip is protected and
+        // invoked by vanilla's own subclasses rather than by the base. 26.2's
+        // extractTooltip did it, so leaving this out silently loses every item
+        // tooltip on this screen and the four that extend it.
+        super.render(vanillaGraphics, mouseX, mouseY, partialTicks);
+        this.renderTooltip(vanillaGraphics, mouseX, mouseY);
     }
 
-    @Override
     public void extractContents(GuiGraphicsExtractor ms, int mouseX, int mouseY,
         float partialTicks)
     {
@@ -151,12 +178,9 @@ public abstract class DuelContainerScreen<E extends DuelContainer> extends Switc
 
         DdBlitUtil.blitTexels(ms, DUEL_BACKGROUND_GUI_TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, DdBlitUtil.NO_TINT);
 
-        // The base's extractContents is what describes the slots and calls
-        // extractLabels. Forge's renderBg was only the backdrop and the parent
-        // ran the rest around it; here the two are one method, so overriding it
-        // without this line silently loses every slot and label on this screen
-        // and on all four that extend it.
-        super.renderWidget(ms.vanilla(), mouseX, mouseY, partialTicks);
+        // The slots, the labels and the widgets are drawn by the base class after
+        // renderBg returns, so there is nothing to call for them here. On 26.2 the
+        // base's extractContents was the same pass and had to be invoked.
     }
 
     @Override
@@ -211,7 +235,7 @@ public abstract class DuelContainerScreen<E extends DuelContainer> extends Switc
             }
             else
             {
-                return textFieldWidget.keyPressed(event);
+                return textFieldWidget.keyPressed(event.key(), event.scancode(), event.modifiers());
             }
         }
         else

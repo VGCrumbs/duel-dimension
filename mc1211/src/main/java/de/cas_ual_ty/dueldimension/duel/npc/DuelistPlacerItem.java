@@ -49,8 +49,7 @@ public class DuelistPlacerItem extends Item
         // ground stands on it rather than inside it.
         BlockPos at = context.getClickedPos().relative(context.getClickedFace());
 
-        DuelistEntity duelist = DdEntityTypes.DUELIST.create(server.getLevel(),
-            net.minecraft.world.entity.EntitySpawnReason.MOB_SUMMONED);
+        DuelistEntity duelist = DdEntityTypes.DUELIST.create(server.getLevel());
         if(duelist == null)
         {
             return InteractionResult.FAIL;

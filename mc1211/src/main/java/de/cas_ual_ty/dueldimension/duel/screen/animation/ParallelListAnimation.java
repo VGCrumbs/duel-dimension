@@ -87,7 +87,7 @@ public class ParallelListAnimation extends Animation
         {
             if(!a.ended())
             {
-                a.extractRenderState(ms, mouseX, mouseY, partialTicks);
+                a.render(ms.vanilla(), mouseX, mouseY, partialTicks);
             }
         }
     }

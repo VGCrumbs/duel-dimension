@@ -42,7 +42,10 @@ public class CardSupplyScreen extends AbstractContainerScreen<CardSupplyContaine
 
     public CardSupplyScreen(CardSupplyContainer screenContainer, Inventory inv, Component titleIn)
     {
-        super(screenContainer, inv, titleIn, 176, 114 + 6 * 18); //222
+        super(screenContainer, inv, titleIn);
+        // 26.2 passed the panel size to super; here the fields are assigned.
+        this.imageWidth = 176;
+        this.imageHeight = 114 + 6 * 18;
         cardsList = new ArrayList<>(DdDatabase.getTotalCardsAndVariants());
     }
 
@@ -76,9 +79,14 @@ public class CardSupplyScreen extends AbstractContainerScreen<CardSupplyContaine
     }
 
     @Override
-    public void extractBackground(GuiGraphicsExtractor ms, int mouseX, int mouseY, float partialTicks)
+    public void renderBg(net.minecraft.client.gui.GuiGraphics vanillaGraphics, float partialTicks, int mouseX, int mouseY)
     {
-        super.extractBackground(ms, mouseX, mouseY, partialTicks);
+        // 26.2 describes a screen into a render state; 1.21.1 draws it now. The
+        // body below is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor ms = new de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor(vanillaGraphics);
+        // The dim was super.extractBackground. In 1.21.1 AbstractContainerScreen.renderBackground
+        // draws it and then calls this, so it still happens, and once.
         DdBlitUtil.blit(ms, CardSupplyScreen.CARD_SUPPLY_GUI_TEXTURE, leftPos, topPos, imageWidth, imageHeight,
             0F, 0F, imageWidth / 256F, imageHeight / 256F, DdBlitUtil.NO_TINT);
     }
@@ -120,8 +128,12 @@ public class CardSupplyScreen extends AbstractContainerScreen<CardSupplyContaine
     }
 
     @Override
-    protected void extractLabels(GuiGraphicsExtractor ms, int mouseX, int mouseY)
+    protected void renderLabels(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY)
     {
+        // 26.2 describes a screen into a render state; 1.21.1 draws it now. The
+        // body below is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor ms = new de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor(vanillaGraphics);
         ms.text(font, title, 8, 6, 0xFF404040);
         ms.text(font, playerInventoryTitle, 8, imageHeight - 96 + 2, 0xFF404040);
     }
@@ -142,7 +154,7 @@ public class CardSupplyScreen extends AbstractContainerScreen<CardSupplyContaine
             }
             else
             {
-                return textField.keyPressed(keyEvent);
+                return textField.keyPressed(vanillaKey, vanillaScancode, vanillaModifiers);
             }
         }
         else

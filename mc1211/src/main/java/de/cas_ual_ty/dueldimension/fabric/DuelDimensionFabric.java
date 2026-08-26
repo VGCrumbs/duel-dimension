@@ -1,6 +1,6 @@
 package de.cas_ual_ty.dueldimension.fabric;
 
-import net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents;
+import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
 import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -291,7 +291,7 @@ public class DuelDimensionFabric implements ModInitializer
                     : net.minecraft.world.InteractionResult.PASS);
 
         // Renamed in 26.2: "world" became "level" throughout this API.
-        ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(
+        ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register(
             (player, origin, destination) ->
                 de.cas_ual_ty.dueldimension.net.ProfilePayloads.sync(player));
 

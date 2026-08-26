@@ -300,7 +300,7 @@ public final class MonsterModels
         try
         {
             Files.createDirectories(folder());
-            net.minecraft.util.Util.getPlatform().openPath(folder());
+            net.minecraft.Util.getPlatform().openPath(folder());
         }
         catch(Exception unopenable)
         {

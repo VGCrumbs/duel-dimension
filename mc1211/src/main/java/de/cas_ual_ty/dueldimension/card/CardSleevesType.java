@@ -95,7 +95,7 @@ public enum CardSleevesType
     {
         // Registries are looked up directly now: BuiltInRegistries is the
         // registry itself, where ForgeRegistries was a wrapper around it.
-        return net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(
+        return net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
             ResourceLocation.fromNamespaceAndPath(DuelDimension.MOD_ID, getResourceName()));
     }
     

@@ -198,7 +198,7 @@ public class SleevePickerScreen extends Screen
      */
     private static int textureSizeFor(int drawnWidth)
     {
-        int scale = Math.max(1, Minecraft.getInstance().getWindow().getGuiScale());
+        int scale = Math.max(1, (int) Minecraft.getInstance().getWindow().getGuiScale());
         int needed = Math.round(drawnWidth * scale / (DuelTextures.CARD_U1 - DuelTextures.CARD_U0));
         for(int size : SIZES)
         {
@@ -395,9 +395,11 @@ public class SleevePickerScreen extends Screen
     // ---- interaction ----
 
     @Override
-    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
-        boolean doubleClick)
+    public boolean mouseClicked(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+        boolean doubleClick = false;
         if(event.button() == 0)
         {
             CardSleevesType sleeve = sleeveAt(event.x(), event.y());
@@ -407,7 +409,7 @@ public class SleevePickerScreen extends Screen
                 return true;
             }
         }
-        return super.mouseClicked(event, doubleClick);
+        return super.mouseClicked(vanillaX, vanillaY, vanillaButton);
     }
 
     /**

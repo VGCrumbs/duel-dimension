@@ -2,7 +2,7 @@ package de.cas_ual_ty.dueldimension.clientutil.hub;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.glfw.GLFW;
@@ -54,7 +54,7 @@ public final class HubKeybinds
             return;
         }
         boolean camera = com.mojang.blaze3d.platform.InputConstants.isKeyDown(
-            minecraft.getWindow(),
+            minecraft.getWindow().getWindow(),
             ((de.cas_ual_ty.dueldimension.mixin.client.KeyMappingAccessor)(Object)TOGGLE_DISK)
                 .dueldimension$key().getValue())
             // Unless the duel is waiting on a question only the cursor can
@@ -89,16 +89,17 @@ public final class HubKeybinds
             // gui.setScreen: setScreenAndShow forces a frame, and forcing one
             // while the cursor is being handed over is what made the swap
             // flicker.
-            minecraft.gui.setScreen(
+            minecraft.setScreen(
                 new de.cas_ual_ty.dueldimension.clientutil.overworld.BoardPointerScreen());
         }
     }
 
-    private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
-        net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
-            de.cas_ual_ty.dueldimension.DuelDimension.MOD_ID, "duel_dimension"));
+    // 1.21.1 has no KeyMapping.Category: a category is the translation key
+    // itself. "key.categories.dueldimension" is already in the mod's en_us.json,
+    // left there by the Forge version which named it the same way.
+    private static final String CATEGORY = "key.categories.dueldimension";
 
-    public static final KeyMapping OPEN_HUB = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+    public static final KeyMapping OPEN_HUB = KeyBindingHelper.registerKeyBinding(new KeyMapping(
         "key.dueldimension.duel_hub",
         InputConstants.Type.KEYSYM,
         GLFW.GLFW_KEY_Y,
@@ -112,7 +113,7 @@ public final class HubKeybinds
      * what is happening. Worth having because some things really are easier on
      * the screen: reading a long chain, or a selection with a dozen candidates.
      */
-    public static final KeyMapping DUEL_VIEW = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+    public static final KeyMapping DUEL_VIEW = KeyBindingHelper.registerKeyBinding(new KeyMapping(
         "key.dueldimension.duel_view",
         InputConstants.Type.KEYSYM,
         GLFW.GLFW_KEY_G,
@@ -127,7 +128,7 @@ public final class HubKeybinds
      * in place with nothing else to do with their hands, so a spare key costs
      * them nothing and can be rebound.
      */
-    public static final KeyMapping DUEL_ACT = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+    public static final KeyMapping DUEL_ACT = KeyBindingHelper.registerKeyBinding(new KeyMapping(
         "key.dueldimension.duel_act",
         InputConstants.Type.KEYSYM,
         GLFW.GLFW_KEY_R,
@@ -137,7 +138,7 @@ public final class HubKeybinds
      * Opens the foil blend test. Temporary, and goes when the question it asks
      * is answered -- see {@code FoilTestScreen}.
      */
-    public static final KeyMapping FOIL_TEST = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+    public static final KeyMapping FOIL_TEST = KeyBindingHelper.registerKeyBinding(new KeyMapping(
         "key.dueldimension.foil_test",
         InputConstants.Type.KEYSYM,
         GLFW.GLFW_KEY_J,
@@ -152,7 +153,7 @@ public final class HubKeybinds
      * it: the client may not conjure an item into a slot, and the server is
      * the side that knows which disk the player owns and has active.
      */
-    public static final KeyMapping TOGGLE_DISK = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+    public static final KeyMapping TOGGLE_DISK = KeyBindingHelper.registerKeyBinding(new KeyMapping(
         "key.dueldimension.toggle_disk",
         InputConstants.Type.KEYSYM,
         GLFW.GLFW_KEY_LEFT_ALT,

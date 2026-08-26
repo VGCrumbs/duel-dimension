@@ -245,7 +245,7 @@ public class EngineDuelScreen extends Screen
     {
         // Window.getWindow() -- the GLFW handle -- is Window.handle() now.
         return minecraft != null && org.lwjgl.glfw.GLFW.glfwGetMouseButton(
-            minecraft.getWindow().handle(),
+            minecraft.getWindow().getWindow(),
             org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
     }
 
@@ -262,7 +262,7 @@ public class EngineDuelScreen extends Screen
                 de.cas_ual_ty.dueldimension.shop.DuelRewardMessages.Result reward =
                     DuelClientState.takeReward();
                 DuelClientState.reset();
-                minecraft.gui.setScreen(
+                minecraft.setScreen(
                     new de.cas_ual_ty.dueldimension.clientutil.hub.DuelResultScreen(reward));
                 return;
             }
@@ -1223,7 +1223,7 @@ public class EngineDuelScreen extends Screen
                     de.cas_ual_ty.dueldimension.shop.DuelRewardMessages.Result reward =
                         DuelClientState.takeReward();
                     DuelClientState.reset();
-                    minecraft.gui.setScreen(
+                    minecraft.setScreen(
                         new de.cas_ual_ty.dueldimension.clientutil.hub.DuelResultScreen(reward));
                     return;
                 }
@@ -1480,14 +1480,16 @@ public class EngineDuelScreen extends Screen
     // ---- input ----
 
     @Override
-    public boolean keyPressed(de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent event)
+    public boolean keyPressed(int vanillaKey, int vanillaScancode, int vanillaModifiers)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent(vanillaKey, vanillaScancode, vanillaModifiers);
         int keyCode = event.key();
 
         // Back to the board. A key binding is not polled while a screen is
         // open, so the swap key has to be read here as well or the trip is
         // one-way: out to the screen and no way home without ending the duel.
-        if(de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds.DUEL_VIEW.matches(event)
+        if(de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds.DUEL_VIEW.matches(event.key(), event.scancode())
             && de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked())
         {
             de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField
@@ -1525,7 +1527,7 @@ public class EngineDuelScreen extends Screen
                 return true;
             }
         }
-        return super.keyPressed(event);
+        return super.keyPressed(vanillaKey, vanillaScancode, vanillaModifiers);
     }
 
     /**
@@ -1582,22 +1584,25 @@ public class EngineDuelScreen extends Screen
     }
 
     @Override
-    public boolean mouseDragged(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
-        double dragX, double dragY)
+    public boolean mouseDragged(double vanillaX, double vanillaY, int vanillaButton, double dragX, double dragY)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
         if(barGrabOffset >= 0)
         {
             dragDescriptionBar(event.y());
             return true;
         }
-        return super.mouseDragged(event, dragX, dragY);
+        return super.mouseDragged(vanillaX, vanillaY, vanillaButton, dragX, dragY);
     }
 
     @Override
-    public boolean mouseReleased(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event)
+    public boolean mouseReleased(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
         barGrabOffset = -1;
-        return super.mouseReleased(event);
+        return super.mouseReleased(vanillaX, vanillaY, vanillaButton);
     }
 
     @Override
@@ -1636,9 +1641,11 @@ public class EngineDuelScreen extends Screen
     }
 
     @Override
-    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
-        boolean doubleClick)
+    public boolean mouseClicked(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+        boolean doubleClick = false;
         double mouseX = event.x();
         double mouseY = event.y();
         int button = event.button();
@@ -1695,7 +1702,7 @@ public class EngineDuelScreen extends Screen
                 return true;
             }
         }
-        if(super.mouseClicked(event, doubleClick))
+        if(super.mouseClicked(vanillaX, vanillaY, vanillaButton))
         {
             return true; // a widget (including a menu entry) took it
         }

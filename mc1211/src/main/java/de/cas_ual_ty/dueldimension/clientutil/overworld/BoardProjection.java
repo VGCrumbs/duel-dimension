@@ -34,10 +34,10 @@ public final class BoardProjection
     {
         Minecraft client = Minecraft.getInstance();
         Camera camera = client.gameRenderer.getMainCamera();
-        Vec3 delta = world.subtract(camera.position());
-        Vec3 look = viewVector(camera.xRot(), camera.yRot());
-        Vec3 right = viewVector(0F, camera.yRot() + 90F);
-        Vec3 up = viewVector(camera.xRot() - 90F, camera.yRot());
+        Vec3 delta = world.subtract(camera.getPosition());
+        Vec3 look = viewVector(camera.getXRot(), camera.getYRot());
+        Vec3 right = viewVector(0F, camera.getYRot() + 90F);
+        Vec3 up = viewVector(camera.getXRot() - 90F, camera.getYRot());
 
         double along = delta.dot(look);
         // Behind the eye, or exactly level with it: there is no point on the
@@ -46,7 +46,12 @@ public final class BoardProjection
         {
             return null;
         }
-        double half = Math.tan(Math.toRadians(camera.getFov()) / 2D);
+        // 1.21.1 has no Camera.getFov and GameRenderer.getFov is private, so the
+        // setting is read instead. BEHAVIOUR NOTE: that is the base field of view,
+        // without the dynamic adjustments 26.2's camera value carried; a duellist is
+        // locked in place while a board is on screen, so none are usually in play.
+        double half = Math.tan(Math.toRadians(
+            net.minecraft.client.Minecraft.getInstance().options.fov().get()) / 2D);
         double aspect = (double)screenW / Math.max(1, screenH);
         double ndcX = delta.dot(right) / along / (aspect * half);
         double ndcY = delta.dot(up) / along / half;

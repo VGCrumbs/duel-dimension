@@ -218,8 +218,8 @@ public final class ClientDuelField
      */
     public static boolean shiftHeld()
     {
-        com.mojang.blaze3d.platform.Window window =
-            net.minecraft.client.Minecraft.getInstance().getWindow();
+        long window =
+            net.minecraft.client.Minecraft.getInstance().getWindow().getWindow();
         return com.mojang.blaze3d.platform.InputConstants.isKeyDown(window,
             org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT)
             || com.mojang.blaze3d.platform.InputConstants.isKeyDown(window,
@@ -240,11 +240,11 @@ public final class ClientDuelField
         }
         if(heldSlot < 0)
         {
-            heldSlot = client.player.getInventory().getSelectedSlot();
+            heldSlot = client.player.getInventory().selected;
         }
-        else if(client.player.getInventory().getSelectedSlot() != heldSlot)
+        else if(client.player.getInventory().selected != heldSlot)
         {
-            client.player.getInventory().setSelectedSlot(heldSlot);
+            client.player.getInventory().selected = heldSlot;
         }
     }
 

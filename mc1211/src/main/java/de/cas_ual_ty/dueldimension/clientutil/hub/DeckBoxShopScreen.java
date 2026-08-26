@@ -131,7 +131,7 @@ public final class DeckBoxShopScreen extends Screen
     public static void open(int points, List<ShopStock.DeckBoxOffer> offers)
     {
         CardShopScreen.setPoints(points);
-        Minecraft.getInstance().gui.setScreen(new DeckBoxShopScreen(offers));
+        Minecraft.getInstance().setScreen(new DeckBoxShopScreen(offers));
     }
 
     private DeckBoxShopScreen(List<ShopStock.DeckBoxOffer> offers)
@@ -544,7 +544,7 @@ public final class DeckBoxShopScreen extends Screen
             dragScrollbar(event.y());
             return true;
         }
-        return super.mouseDragged(vanillaX, vanillaY, vanillaButton, vanillaDragX, vanillaDragY);
+        return super.mouseDragged(vanillaX, vanillaY, vanillaButton, dragX, dragY);
     }
 
     @Override

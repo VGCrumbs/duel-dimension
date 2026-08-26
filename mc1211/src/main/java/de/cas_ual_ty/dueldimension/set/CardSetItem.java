@@ -3,6 +3,7 @@ package de.cas_ual_ty.dueldimension.set;
 import de.cas_ual_ty.dueldimension.DdItems;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -16,7 +17,7 @@ public class CardSetItem extends CardSetBaseItem
     }
 
     @Override
-    public InteractionResult use(Level world, Player player, InteractionHand hand)
+    public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand)
     {
         ItemStack stack = CardSetItem.getActiveSet(player);
 

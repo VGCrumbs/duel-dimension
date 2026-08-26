@@ -269,7 +269,7 @@ public class BoardPointerScreen extends Screen
     private boolean rightButtonHeld()
     {
         return minecraft != null && org.lwjgl.glfw.GLFW.glfwGetMouseButton(
-            minecraft.getWindow().handle(),
+            minecraft.getWindow().getWindow(),
             org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
     }
 
@@ -407,8 +407,7 @@ public class BoardPointerScreen extends Screen
      * mouse is that it is the same view with a pointer in it.
      */
     @Override
-    public void extractBackground(GuiGraphicsExtractor extractor, int mouseX, int mouseY,
-        float partialTick)
+    public void renderBackground(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTick)
     {
         // Nothing at all. Even a trace of shade is a step change the moment the
         // cursor appears, and freeing the mouse is meant to be the same view
@@ -427,8 +426,8 @@ public class BoardPointerScreen extends Screen
     private Vec3 rayThroughCursor(double mouseX, double mouseY)
     {
         Camera camera = minecraft.gameRenderer.getMainCamera();
-        float yaw = camera.yRot();
-        float pitch = camera.xRot();
+        float yaw = camera.getYRot();
+        float pitch = camera.getXRot();
 
         Vec3 look = viewVector(pitch, yaw);
         // The two axes across the view, taken as view vectors of their own so
@@ -437,7 +436,12 @@ public class BoardPointerScreen extends Screen
         Vec3 right = viewVector(0F, yaw + 90F);
         Vec3 up = viewVector(pitch - 90F, yaw);
 
-        double half = Math.tan(Math.toRadians(camera.getFov()) / 2D);
+        // 1.21.1 has no Camera.getFov and GameRenderer.getFov is private, so the
+        // setting is read instead. BEHAVIOUR NOTE: that is the base field of view,
+        // without the dynamic adjustments (sprint, spyglass, effects) 26.2's camera
+        // value carried. A duellist is locked in place while this cursor is open, so
+        // none of those are usually in play; if one is, the ray is off by that much.
+        double half = Math.tan(Math.toRadians(minecraft.options.fov().get()) / 2D);
         double aspect = (double)width / Math.max(1, height);
         // Gui coordinates rather than pixels: the ratio is the same either way,
         // and this avoids caring what the gui scale happens to be.
@@ -845,7 +849,7 @@ public class BoardPointerScreen extends Screen
                 de.cas_ual_ty.dueldimension.shop.DuelRewardMessages.Result reward =
                     DuelClientState.takeReward();
                 DuelClientState.reset();
-                minecraft.gui.setScreen(new de.cas_ual_ty.dueldimension.clientutil.hub
+                minecraft.setScreen(new de.cas_ual_ty.dueldimension.clientutil.hub
                     .DuelResultScreen(reward));
                 return;
             }
@@ -932,7 +936,7 @@ public class BoardPointerScreen extends Screen
         // here so the body below is the 26.2 one, unchanged.
         KeyEvent event = new KeyEvent(vanillaKey, vanillaScancode, vanillaModifiers);
 
-        if(minecraft.options.keyTogglePerspective.matches(event))
+        if(minecraft.options.keyTogglePerspective.matches(event.key(), event.scancode()))
         {
             // Relinquish the transparent pointer and decline the event. The
             // keyboard handler rechecks the current screen after keyPressed;
@@ -982,7 +986,7 @@ public class BoardPointerScreen extends Screen
         // is open. The cursor is now open for the whole duel, so the swap
         // stopped working the moment it became the resting state -- the same
         // trap the duel screen already sidesteps by handling this key itself.
-        if(HubKeybinds.DUEL_VIEW.matches(event))
+        if(HubKeybinds.DUEL_VIEW.matches(event.key(), event.scancode()))
         {
             ClientDuelField.toggleScreen(minecraft);
             return true;
@@ -998,17 +1002,17 @@ public class BoardPointerScreen extends Screen
         // The cursor is the resting state and the tick handler puts it back, so
         // there is nothing to restore afterwards: closing chat returns to the
         // board on its own.
-        if(minecraft.options.keyChat.matches(event))
+        if(minecraft.options.keyChat.matches(event.key(), event.scancode()))
         {
             minecraft.setScreen(
-                new net.minecraft.client.gui.screens.ChatScreen("", false));
+                new net.minecraft.client.gui.screens.ChatScreen(""));
             return true;
         }
-        if(minecraft.options.keyCommand.matches(event))
+        if(minecraft.options.keyCommand.matches(event.key(), event.scancode()))
         {
             // Opened already carrying the slash, which is what the key means.
             minecraft.setScreen(
-                new net.minecraft.client.gui.screens.ChatScreen("/", false));
+                new net.minecraft.client.gui.screens.ChatScreen("/"));
             return true;
         }
         return super.keyPressed(vanillaKey, vanillaScancode, vanillaModifiers);
@@ -1390,7 +1394,7 @@ public class BoardPointerScreen extends Screen
     {
         de.cas_ual_ty.dueldimension.clientutil.EngineDuelScreen screen =
             new de.cas_ual_ty.dueldimension.clientutil.EngineDuelScreen();
-        minecraft.gui.setScreen(screen);
+        minecraft.setScreen(screen);
         screen.showPileChoices(verb, group);
     }
 
@@ -1544,6 +1548,6 @@ public class BoardPointerScreen extends Screen
         // back is a frame with the pointer half gone -- which is the flicker
         // felt on every hold and release. The same reason DuelClientState opens
         // the duel screen this way.
-        minecraft.gui.setScreen(null);
+        minecraft.setScreen(null);
     }
 }

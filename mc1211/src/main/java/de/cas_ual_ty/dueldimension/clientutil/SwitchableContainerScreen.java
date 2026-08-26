@@ -14,7 +14,10 @@ public abstract class SwitchableContainerScreen<T extends AbstractContainerMenu>
 
     public SwitchableContainerScreen(T screenContainer, Inventory inv, Component titleIn, int imageWidth, int imageHeight)
     {
-        super(screenContainer, inv, titleIn, imageWidth, imageHeight);
+        super(screenContainer, inv, titleIn);
+        // 26.2 passed the panel size to super; here the fields are assigned.
+        this.imageWidth = imageWidth;
+        this.imageHeight = imageHeight;
         isClosedByPlayer = true;
     }
 

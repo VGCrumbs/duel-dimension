@@ -91,8 +91,7 @@ public class DdCommand
     {
         CommandSourceStack source = context.getSource();
         de.cas_ual_ty.dueldimension.duel.npc.DuelistEntity duelist =
-                de.cas_ual_ty.dueldimension.DdEntityTypes.DUELIST.create(source.getLevel(),
-                        net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+                de.cas_ual_ty.dueldimension.DdEntityTypes.DUELIST.create(source.getLevel());
         if(duelist == null)
         {
             source.sendFailure(Component.literal("Could not create duelist"));
@@ -100,7 +99,7 @@ public class DdCommand
         }
         // moveTo became snapTo: same act, and the name now says it is a
         // teleport rather than a step, which is what spawning wants.
-        duelist.snapTo(source.getPosition().x, source.getPosition().y, source.getPosition().z,
+        duelist.moveTo(source.getPosition().x, source.getPosition().y, source.getPosition().z,
                 source.getRotation().y, 0F);
         duelist.setProfileId(profile);
         source.getLevel().addFreshEntity(duelist);

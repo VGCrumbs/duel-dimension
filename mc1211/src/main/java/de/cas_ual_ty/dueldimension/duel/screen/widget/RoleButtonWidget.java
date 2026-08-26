@@ -32,6 +32,6 @@ public class RoleButtonWidget extends Button
         // extractContents is the first thing AbstractButton does, so the sprite
         // chosen just below already reflects the answer.
         active = available.get();
-        extractDefaultSprite(ms);
+        super.renderWidget(vanillaGraphics, mouseX, mouseY, partial);
     }
 }

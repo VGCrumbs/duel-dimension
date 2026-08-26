@@ -42,8 +42,12 @@ public class ItemStackWidget extends AbstractWidget
     }
 
     @Override
-    protected void extractWidgetRenderState(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partial)
+    protected void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partial)
     {
+        // 26.2 describes a widget into a render state; 1.21.1 draws it now. The
+        // body below is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor extractor = new de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor(vanillaGraphics);
         ResourceLocation rl = replacement;
 
         if(!itemStack.isEmpty())

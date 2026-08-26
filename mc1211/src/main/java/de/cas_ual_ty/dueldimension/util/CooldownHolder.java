@@ -87,7 +87,7 @@ public class CooldownHolder implements ICooldownHolder
     @Override
     public void deserializeNBT(CompoundTag nbt)
     {
-        cooldown = nbt.getIntOr("cooldown", 0);
-        applyElapsed(nbt.getLongOr("time", 0L));
+        cooldown = nbt.getInt("cooldown");
+        applyElapsed(nbt.getLong("time"));
     }
 }

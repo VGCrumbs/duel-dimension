@@ -550,7 +550,7 @@ public final class DdNetwork
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
             de.cas_ual_ty.dueldimension.duel.overworld.display.CardDisplayMessages.OpenEditor.TYPE,
             (payload, context) -> context.client().execute(() ->
-                context.client().gui.setScreen(
+                context.client().setScreen(
                     new de.cas_ual_ty.dueldimension.clientutil.hub.CardDisplayScreen(
                         payload.pos(), payload.code(), payload.art(), payload.position()))));
 

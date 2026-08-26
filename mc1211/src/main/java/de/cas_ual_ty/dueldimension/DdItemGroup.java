@@ -6,7 +6,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
-import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab;
+import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 
@@ -54,7 +54,7 @@ public final class DdItemGroup
 
     public static void register()
     {
-        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, MAIN, FabricCreativeModeTab.builder()
+        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, MAIN, FabricItemGroup.builder()
             .icon(() -> new ItemStack(DdItems.MILLENIUM_PUZZLE))
             .title(Component.translatable("itemGroup." + DuelDimension.MOD_ID + ".main"))
             .displayItems((parameters, output) ->

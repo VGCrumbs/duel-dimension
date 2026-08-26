@@ -333,7 +333,7 @@ public final class ModelHologram
         {
             return 0F;
         }
-        return (float)(((net.minecraft.util.Util.getNanos() + offsetAt(at, span)) % span)
+        return (float)(((net.minecraft.Util.getNanos() + offsetAt(at, span)) % span)
             / 1.0e9D);
     }
 

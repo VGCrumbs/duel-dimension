@@ -37,7 +37,14 @@ public class SmallTextButton extends Button
 
         Minecraft minecraft = Minecraft.getInstance();
         Font fontrenderer = minecraft.font;
-        extractDefaultSprite(extractor);
+        // The plate alone, because this class draws its own half-size label and
+        // says so above. 1.21.1's AbstractButton keeps its WidgetSprites private;
+        // these are its three sprite names, read off the class.
+        vanillaGraphics.blitSprite(
+            net.minecraft.resources.ResourceLocation.withDefaultNamespace(
+                !active ? "widget/button_disabled"
+                    : isHoveredOrFocused() ? "widget/button_highlighted" : "widget/button"),
+            getX(), getY(), getWidth(), getHeight());
 
         int x = getX();
         int y = getY();

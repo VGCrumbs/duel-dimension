@@ -125,8 +125,12 @@ public class LPTextFieldWidget extends EditBox
      * {@code extractWidgetRenderState}, which the class makes public.
      */
     @Override
-    public void extractWidgetRenderState(GuiGraphicsExtractor ms, int mouseX, int mouseY, float partialTicks)
+    public void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTicks)
     {
+        // 26.2 describes a widget into a render state; 1.21.1 draws it now. The
+        // body below is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor ms = new de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor(vanillaGraphics);
         int x = getX();
         int y = getY();
         int w = width;
@@ -144,7 +148,7 @@ public class LPTextFieldWidget extends EditBox
         ms.pose().pushMatrix();
         ms.pose().scale(0.5F, 0.5F);
 
-        super.extractWidgetRenderState(ms, mouseX * 2, mouseY * 2, partialTicks);
+        super.renderWidget(ms.vanilla(), mouseX * 2, mouseY * 2, partialTicks);
 
         ms.pose().popMatrix();
 

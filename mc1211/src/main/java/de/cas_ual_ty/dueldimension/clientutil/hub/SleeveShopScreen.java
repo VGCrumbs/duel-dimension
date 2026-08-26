@@ -94,7 +94,7 @@ public class SleeveShopScreen extends Screen
         // means a purchase made at either counter is reflected at both without
         // a second field that could disagree.
         CardShopScreen.setPoints(points);
-        Minecraft.getInstance().gui.setScreen(new SleeveShopScreen(sleeves));
+        Minecraft.getInstance().setScreen(new SleeveShopScreen(sleeves));
     }
 
     public SleeveShopScreen(List<ShopStock.SleeveOffer> sleeves)

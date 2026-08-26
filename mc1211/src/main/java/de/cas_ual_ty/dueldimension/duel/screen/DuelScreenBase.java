@@ -13,8 +13,12 @@ public class DuelScreenBase<E extends DuelContainer> extends DuelContainerScreen
     }
     
     @Override
-    protected void extractLabels(GuiGraphicsExtractor ms, int x, int y)
+    protected void renderLabels(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int x, int y)
     {
+        // 26.2 describes a screen into a render state; 1.21.1 draws it now. The
+        // body below is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor ms = new de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor(vanillaGraphics);
         ms.text(font, "Waiting for server...", 8, 6, 0xFF404040, false);
     }
 }

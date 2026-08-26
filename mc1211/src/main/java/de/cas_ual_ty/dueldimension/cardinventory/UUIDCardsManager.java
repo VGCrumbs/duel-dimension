@@ -37,9 +37,9 @@ public abstract class UUIDCardsManager extends JsonCardsManager
     @Override
     public void readFromNBT(CompoundTag nbt)
     {
-        if(nbt.read(JsonKeys.UUID, UUIDUtil.CODEC).isPresent())
+        if(nbt.hasUUID(JsonKeys.UUID))
         {
-            uuid = nbt.read(JsonKeys.UUID, UUIDUtil.CODEC).orElseThrow();
+            uuid = nbt.getUUID(JsonKeys.UUID);
         }
     }
     
@@ -48,7 +48,7 @@ public abstract class UUIDCardsManager extends JsonCardsManager
     {
         if(getUUID() != null)
         {
-            nbt.store(JsonKeys.UUID, UUIDUtil.CODEC, getUUID());
+            nbt.putUUID(JsonKeys.UUID, getUUID());
         }
     }
 }

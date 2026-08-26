@@ -5,7 +5,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.metadata.MetadataSectionType;
+import net.minecraft.server.packs.metadata.MetadataSectionSerializer;
 import net.minecraft.server.packs.resources.IoSupplier;
 
 import javax.annotation.Nullable;
@@ -118,7 +118,7 @@ public class DdCardResourcePack implements PackResources
     }
 
     @Override
-    public <T> T getMetadataSection(MetadataSectionType<T> type)
+    public <T> T getMetadataSection(MetadataSectionSerializer<T> type)
     {
         return null;
     }

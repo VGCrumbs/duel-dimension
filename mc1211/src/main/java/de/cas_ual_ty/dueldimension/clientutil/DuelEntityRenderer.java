@@ -1,12 +1,11 @@
 package de.cas_ual_ty.dueldimension.clientutil;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.entity.state.EntityRenderState;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 
 /**
@@ -17,11 +16,11 @@ import net.minecraft.world.entity.Entity;
  * refuses to be considered for rendering at all and draws nothing if it ever
  * is.
  * <p>
- * The render-state refactor makes this smaller rather than larger: there is no
- * texture to name and no {@code render} to leave empty, only a state nobody
- * fills and a {@code submit} nobody reaches.
+ * 1.21.1 renders straight from the entity, so this is back to the 1.19.2 shape:
+ * an empty {@code render} and a {@code getTextureLocation} that names nothing.
+ * Neither is ever reached, because {@code shouldRender} is false.
  */
-public class DuelEntityRenderer extends EntityRenderer<Entity, EntityRenderState>
+public class DuelEntityRenderer extends EntityRenderer<Entity>
 {
     public DuelEntityRenderer(EntityRendererProvider.Context context)
     {
@@ -36,14 +35,14 @@ public class DuelEntityRenderer extends EntityRenderer<Entity, EntityRenderState
     }
 
     @Override
-    public EntityRenderState createRenderState()
+    public void render(Entity entity, float entityYaw, float partialTick, PoseStack poseStack,
+        MultiBufferSource buffer, int packedLight)
     {
-        return new EntityRenderState();
     }
 
     @Override
-    public void submit(EntityRenderState state, PoseStack poseStack,
-        SubmitNodeCollector collector, CameraRenderState camera)
+    public ResourceLocation getTextureLocation(Entity entity)
     {
+        return null;
     }
 }

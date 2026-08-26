@@ -559,10 +559,10 @@ public class DuelHubScreen extends Screen
     private static boolean shiftHeld()
     {
         return com.mojang.blaze3d.platform.InputConstants.isKeyDown(
-                net.minecraft.client.Minecraft.getInstance().getWindow(),
+                net.minecraft.client.Minecraft.getInstance().getWindow().getWindow(),
                 org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT)
             || com.mojang.blaze3d.platform.InputConstants.isKeyDown(
-                net.minecraft.client.Minecraft.getInstance().getWindow(),
+                net.minecraft.client.Minecraft.getInstance().getWindow().getWindow(),
                 org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT);
     }
 
@@ -800,9 +800,11 @@ public class DuelHubScreen extends Screen
     // directly -- so the three mouse events reach it by hand, and it gets first
     // refusal ahead of the widgets so a drag across the wheel is not stolen.
     @Override
-    public boolean mouseClicked(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
-        boolean doubled)
+    public boolean mouseClicked(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
+        boolean doubled = false;
         if(contextDeck != null)
         {
             if(event.button() == 0)
@@ -857,13 +859,14 @@ public class DuelHubScreen extends Screen
         {
             commitRename();
         }
-        return super.mouseClicked(event, doubled);
+        return super.mouseClicked(vanillaX, vanillaY, vanillaButton);
     }
 
     @Override
-    public boolean mouseDragged(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
-        double dragX, double dragY)
+    public boolean mouseDragged(double vanillaX, double vanillaY, int vanillaButton, double dragX, double dragY)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
         if(event.button() == 0 && dragCandidate != null)
         {
             double dx = event.x() - dragStartX;
@@ -881,12 +884,14 @@ public class DuelHubScreen extends Screen
         {
             return true;
         }
-        return super.mouseDragged(event, dragX, dragY);
+        return super.mouseDragged(vanillaX, vanillaY, vanillaButton, dragX, dragY);
     }
 
     @Override
-    public boolean mouseReleased(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event)
+    public boolean mouseReleased(double vanillaX, double vanillaY, int vanillaButton)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
         if(event.button() == 0 && dragCandidate != null)
         {
             de.cas_ual_ty.dueldimension.duel.profile.DeckList source = dragCandidate;
@@ -908,7 +913,7 @@ public class DuelHubScreen extends Screen
                 EditorState.select(EditorState.indexOf(source));
                 if(minecraft != null)
                 {
-                    minecraft.gui.setScreen(new DeckEditorScreen(this));
+                    minecraft.setScreen(new DeckEditorScreen(this));
                 }
             }
             return true;
@@ -917,12 +922,14 @@ public class DuelHubScreen extends Screen
         {
             matPicker.mouseReleased();
         }
-        return super.mouseReleased(event);
+        return super.mouseReleased(vanillaX, vanillaY, vanillaButton);
     }
 
     @Override
-    public boolean keyPressed(de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent event)
+    public boolean keyPressed(int vanillaKey, int vanillaScancode, int vanillaModifiers)
     {
+        // 26.2 wraps GUI input in records; 1.21.1 passes loose values.
+        de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent event = new de.cas_ual_ty.dueldimension.compat.InputEvents.KeyEvent(vanillaKey, vanillaScancode, vanillaModifiers);
         if(contextDeck != null && event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE)
         {
             contextDeck = null;
@@ -953,7 +960,7 @@ public class DuelHubScreen extends Screen
             // The field is a real widget here, so its own editing keys reach it
             // through super rather than needing the hand-forwarding Forge did.
         }
-        return super.keyPressed(event);
+        return super.keyPressed(vanillaKey, vanillaScancode, vanillaModifiers);
     }
 
     /** A section whose body has not been ported, saying what it waits on. */
@@ -1212,7 +1219,7 @@ public class DuelHubScreen extends Screen
                     EditorState.select(EditorState.indexOf(decks.get(target)));
                     if(minecraft != null)
                     {
-                        minecraft.gui.setScreen(new DeckEditorScreen(this));
+                        minecraft.setScreen(new DeckEditorScreen(this));
                     }
                 });
                 // The player's own decks are the ones that end up short or full
@@ -1350,7 +1357,7 @@ public class DuelHubScreen extends Screen
                 EditorState.select(EditorState.indexOf(decks.get(target)));
                 if(minecraft != null)
                 {
-                    minecraft.gui.setScreen(new DeckEditorScreen(this));
+                    minecraft.setScreen(new DeckEditorScreen(this));
                 }
             });
             tile.setTooltipLines(java.util.List.of(deck.name(), deck.main().size() + " cards"));

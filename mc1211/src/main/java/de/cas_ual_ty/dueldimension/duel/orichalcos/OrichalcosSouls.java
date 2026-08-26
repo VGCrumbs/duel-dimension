@@ -403,7 +403,7 @@ public final class OrichalcosSouls
 
         Holder<DamageType> type = level.registryAccess()
             .lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(ORICHALCOS);
-        if(!target.hurtServer(level, new DamageSource(type), Float.MAX_VALUE))
+        if(!target.hurt(new DamageSource(type), Float.MAX_VALUE))
         {
             // Creative, invulnerable, or a gamerule in the way. Said out loud
             // rather than swallowed: a seal that visibly closes and then does

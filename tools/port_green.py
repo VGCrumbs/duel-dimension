@@ -63,13 +63,20 @@ def failing(output):
 
 
 def main():
+    # FROM EMPTY, every time. The list only ever grew before, so a file that
+    # had been fixed stayed excluded forever and the count never fell -- which
+    # made the one number meant to measure progress incapable of showing any.
+    # Rebuilding it costs a few extra compiles and is the whole point.
+    #
+    # --keep starts from the existing list instead, for when only a handful of
+    # files changed and a full rebuild is not worth the wall time.
     excluded = set()
-    if os.path.exists(EXCLUDES):
+    if '--keep' in sys.argv and os.path.exists(EXCLUDES):
         for line in io.open(EXCLUDES, encoding='utf-8'):
             line = line.strip()
             if line and not line.startswith('#'):
                 excluded.add(line)
-        print('starting from %d already excluded' % len(excluded))
+        print('--keep: starting from %d already excluded' % len(excluded))
 
     for round_number in range(1, MAX_ROUNDS + 1):
         write_excludes(excluded)

@@ -36,7 +36,10 @@ public class CIIScreen<T extends CIIContainer> extends AbstractContainerScreen<T
 
     public CIIScreen(T container, Inventory playerInventory, Component title)
     {
-        super(container, playerInventory, title, 176, 114 + 6 * 18);
+        super(container, playerInventory, title);
+        // 26.2 passed the panel size to super; here the fields are assigned.
+        this.imageWidth = 176;
+        this.imageHeight = 114 + 6 * 18;
         inventoryRows = 6;
         inventoryLabelY = imageHeight - 94;
     }
@@ -51,9 +54,14 @@ public class CIIScreen<T extends CIIContainer> extends AbstractContainerScreen<T
     }
 
     @Override
-    public void extractBackground(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float partialTick)
+    public void renderBg(net.minecraft.client.gui.GuiGraphics vanillaGraphics, float partialTick, int mouseX, int mouseY)
     {
-        super.extractBackground(extractor, mouseX, mouseY, partialTick);
+        // 26.2 describes a screen into a render state; 1.21.1 draws it now. The
+        // body below is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor extractor = new de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor(vanillaGraphics);
+        // The dim was super.extractBackground. In 1.21.1 AbstractContainerScreen.renderBackground
+        // draws it and then calls this, so it still happens, and once.
         extractor.blit(RenderPipelines.GUI_TEXTURED, CHEST_GUI_TEXTURE, leftPos, topPos,
             0F, 0F, imageWidth, inventoryRows * 18 + 17, 256, 256);
         extractor.blit(RenderPipelines.GUI_TEXTURED, CHEST_GUI_TEXTURE, leftPos, topPos + inventoryRows * 18 + 17,
@@ -61,8 +69,12 @@ public class CIIScreen<T extends CIIContainer> extends AbstractContainerScreen<T
     }
 
     @Override
-    protected void extractLabels(GuiGraphicsExtractor extractor, int mouseX, int mouseY)
+    protected void renderLabels(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY)
     {
+        // 26.2 describes a screen into a render state; 1.21.1 draws it now. The
+        // body below is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor extractor = new de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor(vanillaGraphics);
         MutableComponent title = Component.literal(this.title.getString());
         title = title.append(" ").append(Component.literal((menu.getPage() + 1) + "/" + menu.getMaxPage()));
         extractor.text(font, title, 8, 6, 0xFF404040);

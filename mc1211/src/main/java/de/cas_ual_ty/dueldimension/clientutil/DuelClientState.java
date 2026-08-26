@@ -318,7 +318,7 @@ public final class DuelClientState
         }
         de.cas_ual_ty.dueldimension.shop.DuelRewardMessages.Result earned = takeReward();
         reset();
-        net.minecraft.client.Minecraft.getInstance().gui.setScreen(
+        net.minecraft.client.Minecraft.getInstance().setScreen(
             new de.cas_ual_ty.dueldimension.clientutil.hub.DuelResultScreen(earned));
     }
 
@@ -366,7 +366,7 @@ public final class DuelClientState
         // plus a forced renderFrame, and this runs inside tickPlayback's lock
         // with the update batch half-drained -- it would paint a frame of a
         // half-applied board. Forge's setScreen forced no frame either.
-        minecraft.gui.setScreen(new EngineDuelScreen());
+        minecraft.setScreen(new EngineDuelScreen());
         }
     }
 

@@ -2,19 +2,15 @@ package de.cas_ual_ty.dueldimension.duel.npc;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import de.cas_ual_ty.dueldimension.DuelDimension;
-import de.cas_ual_ty.dueldimension.clientutil.PlayerSkins;
 import de.cas_ual_ty.dueldimension.clientutil.SkinLayersCompat;
+import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.builders.CubeDeformation;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.model.geom.ModelLayers;
-import net.minecraft.client.model.player.PlayerModel;
-import de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
-import net.minecraft.client.renderer.entity.state.AvatarRenderState;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.player.PlayerModelType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,16 +21,14 @@ import java.util.Set;
  * Skins are looked up by profile id, so a new opponent needs a texture and a
  * profile, not a new renderer.
  * <p>
- * The render state is {@code AvatarRenderState} -- the player's own -- and that
- * is the whole trick. A renderer's layers are handed a state, never the entity,
- * so "which duelist is this" has to be answered during extraction and carried
- * across. {@code AvatarRenderState} already carries a {@code PlayerSkin}, which
- * is exactly a texture plus a body type, so there is nothing to invent: the
- * profile is resolved to a skin once per frame and both the texture and the arm
- * width come off it -- which also means they can no longer disagree.
+ * 1.21.1 renders straight from the entity, and hands the entity to the layers
+ * too, so there is no render state and nothing has to be carried across. "Which
+ * duelist is this" is answered from the profile id in {@code render} and in
+ * {@code getTextureLocation}, and the texture and the arm width are both derived
+ * from that one id, so they still cannot disagree.
  */
 public class DuelistRenderer
-    extends HumanoidMobRenderer<DuelistEntity, AvatarRenderState, PlayerModel>
+    extends HumanoidMobRenderer<DuelistEntity, PlayerModel<DuelistEntity>>
 {
     private static final ResourceLocation FALLBACK =
         ResourceLocation.withDefaultNamespace("textures/entity/steve.png");
@@ -48,77 +42,48 @@ public class DuelistRenderer
     private static final Set<String> SLIM_PROFILES = Set.of("joey");
 
     /** One model per skin: injected voxel meshes must never be shared across NPC profiles. */
-    private final Map<String, PlayerModel> models = new HashMap<>();
+    private final Map<String, PlayerModel<DuelistEntity>> models = new HashMap<>();
 
     public DuelistRenderer(EntityRendererProvider.Context context)
     {
-        super(context, new PlayerModel(context.bakeLayer(ModelLayers.PLAYER), false), 0.5F);
+        super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false), 0.5F);
     }
 
     @Override
-    public AvatarRenderState createRenderState()
-    {
-        return new AvatarRenderState();
-    }
-
-    @Override
-    public void extractRenderState(DuelistEntity entity, AvatarRenderState state,
-        float partialTick)
-    {
-        super.render(entity.vanilla(), state, partialTick);
-        // The one moment the entity is in hand. Everything below reads the skin.
-        String profile = entity.getProfileId();
-        state.skin = PlayerSkins.skinFor(
-            SKINS.computeIfAbsent(profile, id -> ResourceLocation.fromNamespaceAndPath(
-                DuelDimension.MOD_ID, "textures/entity/duelist/" + id + ".png")),
-            SLIM_PROFILES.contains(profile));
-        // HumanoidMobRenderer does not populate AvatarRenderState's player
-        // cosmetic flags. Their defaults are false, which made every flat or
-        // injected second-skin part invisible on NPC duelists.
-        showAllSkinLayers(state);
-    }
-
-    static void showAllSkinLayers(AvatarRenderState state)
-    {
-        state.showHat = true;
-        state.showJacket = true;
-        state.showLeftSleeve = true;
-        state.showRightSleeve = true;
-        state.showLeftPants = true;
-        state.showRightPants = true;
-    }
-
-    @Override
-    public void submit(AvatarRenderState state, PoseStack poseStack,
-        SubmitNodeCollector collector, CameraRenderState camera)
+    public void render(DuelistEntity entity, float entityYaw, float partialTick,
+        PoseStack poseStack, MultiBufferSource buffer, int packedLight)
     {
         // Chosen per duelist rather than per renderer, as it was on Forge. The
         // layers reach their model through getModel(), so they follow this
         // without being rebuilt.
-        String profile = profileFor(state.skin.body().texturePath());
-        boolean slim = state.skin.model() == PlayerModelType.SLIM;
-        model = models.computeIfAbsent(profile, ignored -> new PlayerModel(LayerDefinition.create(
-            PlayerModel.createMesh(CubeDeformation.NONE, slim), 64, 64).bakeRoot(), slim));
-        SkinLayersCompat.apply(model, state.skin.body().texturePath(), slim);
-        super.submit(state, poseStack, collector, camera);
+        String profile = entity.getProfileId();
+        ResourceLocation texture = textureFor(profile);
+        boolean slim = SLIM_PROFILES.contains(profile);
+        // One model per skin, baked rather than swapped between two shared ones
+        // the way the 1.19.2 version did: injected voxel meshes must never be
+        // shared across NPC profiles.
+        model = models.computeIfAbsent(profile, ignored -> new PlayerModel<>(
+            LayerDefinition.create(PlayerModel.createMesh(CubeDeformation.NONE, slim), 64, 64)
+                .bakeRoot(), slim));
+        SkinLayersCompat.apply(model, texture, slim);
+        super.render(entity, entityYaw, partialTick, poseStack, buffer, packedLight);
     }
 
-    private static String profileFor(ResourceLocation texture)
+    private static ResourceLocation textureFor(String profile)
     {
-        String path = texture.getPath();
-        int slash = path.lastIndexOf('/');
-        int dot = path.lastIndexOf('.');
-        return path.substring(slash + 1, dot > slash ? dot : path.length());
+        return SKINS.computeIfAbsent(profile, id -> ResourceLocation.fromNamespaceAndPath(
+            DuelDimension.MOD_ID, "textures/entity/duelist/" + id + ".png"));
     }
 
     @Override
-    public ResourceLocation getTextureLocation(AvatarRenderState state)
+    public ResourceLocation getTextureLocation(DuelistEntity entity)
     {
-        return state.skin == null ? FALLBACK : state.skin.body().texturePath();
+        String profile = entity.getProfileId();
+        return profile == null ? FALLBACK : textureFor(profile);
     }
 
     @Override
-    protected void scale(AvatarRenderState state, PoseStack poseStack)
+    protected void scale(DuelistEntity entity, PoseStack poseStack, float partialTick)
     {
         poseStack.scale(0.9375F, 0.9375F, 0.9375F); // same trim the player model uses
     }

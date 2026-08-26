@@ -304,12 +304,11 @@ public class DuelistEntity extends PathfinderMob
      * damage source with no attacker behind it is not a creative player.
      */
     @Override
-    public boolean hurtServer(net.minecraft.server.level.ServerLevel level,
-        net.minecraft.world.damagesource.DamageSource source, float amount)
+    public boolean hurt(net.minecraft.world.damagesource.DamageSource source, float amount)
     {
         boolean allowed = source.isCreativePlayer()
             || source.is(de.cas_ual_ty.dueldimension.duel.orichalcos.OrichalcosSouls.ORICHALCOS);
-        return allowed && super.hurtServer(level, source, amount);
+        return allowed && super.hurt(source, amount);
     }
 
     @Override

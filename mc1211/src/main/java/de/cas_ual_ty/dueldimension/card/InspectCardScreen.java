@@ -70,9 +70,7 @@ public class InspectCardScreen extends Screen
         // here so the body below is the 26.2 one, unchanged.
         KeyEvent keyEvent = new KeyEvent(vanillaKey, vanillaScancode, vanillaModifiers);
 
-        InputConstants.Key mouseKey = InputConstants.getKey(keyEvent);
-
-        if(minecraft.options.keyInventory.matches(mouseKey))
+        if(minecraft.options.keyInventory.matches(vanillaKey, vanillaScancode))
         {
             onClose();
             return true;

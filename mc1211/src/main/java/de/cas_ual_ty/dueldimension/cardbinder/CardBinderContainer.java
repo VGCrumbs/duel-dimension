@@ -170,7 +170,7 @@ public class CardBinderContainer extends AbstractContainerMenu
     protected void updateHoldingItemStack(ItemStack itemStack)
     {
         // Forge's Inventory.setPickedItem is addAndPickItem in 26.2.
-        player.getInventory().addAndPickItem(itemStack);
+        player.getInventory().setPickedItem(itemStack);
     }
 
     protected CardHolder extractCard(int index)

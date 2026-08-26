@@ -31,8 +31,12 @@ public class DisplayChatWidget extends AbstractWidget
     }
     
     @Override
-    protected void extractWidgetRenderState(GuiGraphicsExtractor ms, int mouseX, int mouseY, float partialTicks)
+    protected void renderWidget(net.minecraft.client.gui.GuiGraphics vanillaGraphics, int mouseX, int mouseY, float partialTicks)
     {
+        // 26.2 describes a widget into a render state; 1.21.1 draws it now. The
+        // body below is unchanged -- it is handed the compatibility surface over
+        // the real GuiGraphics.
+        de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor ms = new de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor(vanillaGraphics);
         // Forge split this in two: render() refused to draw a widget with no
         // supplier yet, and renderButton() drew it. There is one hook now, so
         // the refusal is the early return.

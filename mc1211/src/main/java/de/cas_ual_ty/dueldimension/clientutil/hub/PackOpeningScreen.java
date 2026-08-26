@@ -330,7 +330,7 @@ public class PackOpeningScreen extends Screen
         double mouseX = event.x();
         if(!dragging || stage != Stage.STRIP)
         {
-            return super.mouseDragged(vanillaX, vanillaY, vanillaButton, vanillaDragX, vanillaDragY);
+            return super.mouseDragged(vanillaX, vanillaY, vanillaButton, dx, dy);
         }
         float spacing = Math.max(1F, spacing());
         position = dragFromPosition - (float)((mouseX - dragFromX) / spacing);
@@ -487,8 +487,8 @@ public class PackOpeningScreen extends Screen
     /** Whether either shift key is down right now, event or no event. */
     private static boolean shiftHeld()
     {
-        com.mojang.blaze3d.platform.Window window =
-            net.minecraft.client.Minecraft.getInstance().getWindow();
+        long window =
+            net.minecraft.client.Minecraft.getInstance().getWindow().getWindow();
         return com.mojang.blaze3d.platform.InputConstants.isKeyDown(
                 window, org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT)
             || com.mojang.blaze3d.platform.InputConstants.isKeyDown(

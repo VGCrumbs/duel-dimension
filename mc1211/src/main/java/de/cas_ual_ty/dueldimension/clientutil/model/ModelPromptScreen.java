@@ -1,6 +1,6 @@
 package de.cas_ual_ty.dueldimension.clientutil.model;
 
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;

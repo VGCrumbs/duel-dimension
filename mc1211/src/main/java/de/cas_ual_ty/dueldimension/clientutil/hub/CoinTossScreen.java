@@ -82,7 +82,7 @@ public class CoinTossScreen extends Screen
         // both players WALK to their marks, which nobody can do from behind a
         // screen that will not close. The duel then timed out waiting for a
         // walk that this screen was preventing.
-        minecraft.gui.setScreen(null);
+        minecraft.setScreen(null);
     }
 
     /**
@@ -98,7 +98,7 @@ public class CoinTossScreen extends Screen
         net.minecraft.client.Minecraft client = net.minecraft.client.Minecraft.getInstance();
         if(client.screen instanceof CoinTossScreen)
         {
-            client.gui.setScreen(null);
+            client.setScreen(null);
         }
     }
 
@@ -178,7 +178,7 @@ public class CoinTossScreen extends Screen
     {
         if(answered || ++ticks > STANDS_FOR_TICKS)
         {
-            minecraft.gui.setScreen(null);
+            minecraft.setScreen(null);
         }
     }
 

@@ -6,7 +6,6 @@ import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
 import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
@@ -69,7 +68,7 @@ public class CardButton extends AbstractButton
     }
 
     @Override
-    public void onPress(InputWithModifiers input)
+    public void onPress()
     {
         onPress.accept(this, index);
     }

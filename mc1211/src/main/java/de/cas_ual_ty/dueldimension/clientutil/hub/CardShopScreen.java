@@ -1267,7 +1267,7 @@ public class CardShopScreen extends Screen
             dragScrollBar(event.y());
             return true;
         }
-        return super.mouseDragged(vanillaX, vanillaY, vanillaButton, vanillaDragX, vanillaDragY);
+        return super.mouseDragged(vanillaX, vanillaY, vanillaButton, dragX, dragY);
     }
 
     @Override
@@ -1322,7 +1322,7 @@ public class CardShopScreen extends Screen
     private static boolean keyDown(int key)
     {
         return com.mojang.blaze3d.platform.InputConstants.isKeyDown(
-            net.minecraft.client.Minecraft.getInstance().getWindow(), key);
+            net.minecraft.client.Minecraft.getInstance().getWindow().getWindow(), key);
     }
 
     @Override
@@ -1336,7 +1336,7 @@ public class CardShopScreen extends Screen
         // set's name does not also fire whatever the letters are bound to --
         // and Escape still closes the shop rather than being swallowed.
         if(search != null && search.isFocused() && event.key() != 256
-            && search.keyPressed(event))
+            && search.keyPressed(event.key(), event.scancode(), event.modifiers()))
         {
             return true;
         }
@@ -1350,7 +1350,7 @@ public class CardShopScreen extends Screen
         // here so the body below is the 26.2 one, unchanged.
         CharacterEvent event = new CharacterEvent(vanillaCodepoint);
 
-        if(search != null && search.isFocused() && search.charTyped(event))
+        if(search != null && search.isFocused() && search.charTyped((char) event.codepoint(), vanillaModifiers))
         {
             return true;
         }
@@ -1422,7 +1422,7 @@ public class CardShopScreen extends Screen
         super.render(poseStack.vanilla(), mouseX, mouseY, partialTick);
         if(search != null)
         {
-            search.extractRenderState(poseStack, mouseX, mouseY, partialTick);
+            search.render(poseStack.vanilla(), mouseX, mouseY, partialTick);
         }
     }
 
