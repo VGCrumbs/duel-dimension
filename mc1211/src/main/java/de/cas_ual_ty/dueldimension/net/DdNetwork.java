@@ -646,13 +646,13 @@ public final class DdNetwork
     public static <T extends CustomPacketPayload> void serverbound(
         CustomPacketPayload.Type<T> type, StreamCodec<? super RegistryFriendlyByteBuf, T> codec)
     {
-        PayloadTypeRegistry.serverboundPlay().register(type, codec);
+        PayloadTypeRegistry.playC2S().register(type, codec);
     }
 
     public static <T extends CustomPacketPayload> void clientbound(
         CustomPacketPayload.Type<T> type, StreamCodec<? super RegistryFriendlyByteBuf, T> codec)
     {
-        PayloadTypeRegistry.clientboundPlay().register(type, codec);
+        PayloadTypeRegistry.playS2C().register(type, codec);
     }
 
     /**

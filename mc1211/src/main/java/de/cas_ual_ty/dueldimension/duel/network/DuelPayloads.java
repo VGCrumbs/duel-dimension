@@ -146,8 +146,8 @@ public final class DuelPayloads
     /** Both directions, on both sides. Called from the common entry point. */
     public static void register()
     {
-        PayloadTypeRegistry.serverboundPlay().register(ToServer.TYPE, ToServer.CODEC);
-        PayloadTypeRegistry.clientboundPlay().register(ToClient.TYPE, ToClient.CODEC);
+        PayloadTypeRegistry.playC2S().register(ToServer.TYPE, ToServer.CODEC);
+        PayloadTypeRegistry.playS2C().register(ToClient.TYPE, ToClient.CODEC);
     }
 
     /**

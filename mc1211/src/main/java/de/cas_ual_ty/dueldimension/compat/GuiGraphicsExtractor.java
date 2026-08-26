@@ -168,6 +168,29 @@ public class GuiGraphicsExtractor
             textureWidth, textureHeight);
     }
 
+    /**
+     * The tinted blit, which 1.21.1 has no single call for.
+     * <p>
+     * 26.2 takes an ARGB as the last argument and multiplies it into the draw.
+     * Here the colour is set on the graphics, the blit issued, and the colour
+     * put back -- which is the same result and is how 1.21.1 does a tinted draw
+     * everywhere else. Resetting is not optional: {@code setColor} is global
+     * state, so leaving it would tint whatever the GUI drew next.
+     */
+    public void blit(Object pipeline, ResourceLocation texture, int x, int y,
+        float u, float v, int width, int height, int regionWidth, int regionHeight,
+        int textureWidth, int textureHeight, int tint)
+    {
+        float alpha = (tint >>> 24) / 255F;
+        float red = (tint >>> 16 & 0xFF) / 255F;
+        float green = (tint >>> 8 & 0xFF) / 255F;
+        float blue = (tint & 0xFF) / 255F;
+        graphics.setColor(red, green, blue, alpha);
+        graphics.blit(texture, x, y, width, height, u, v, regionWidth, regionHeight,
+            textureWidth, textureHeight);
+        graphics.setColor(1F, 1F, 1F, 1F);
+    }
+
     public void blitSprite(Object pipeline, ResourceLocation sprite, int x, int y,
         int width, int height)
     {
