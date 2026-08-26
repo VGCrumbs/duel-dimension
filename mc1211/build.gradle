@@ -43,9 +43,21 @@ java {
 }
 
 loom {
-    // No access widener yet. 26.2's exists to open MenuType's constructor; that
-    // is a 26.2 problem and 1.21.1 may not have it. Adding one before a real
-    // need is guessing.
+    // NO ACCESS WIDENER, and now for a checked reason rather than a hopeful one.
+    //
+    // mc262 carries four entries. Every one of them turned out to be a 26.2
+    // problem:
+    //   MenuType's constructor and its MenuSupplier -- both public here.
+    //   MenuScreens.register and its ScreenConstructor -- public here.
+    //   ItemModels.ID_MAPPER -- the whole model-type registry is 1.21.4+; the
+    //     binding is per ITEM through Fabric, so there is nothing to widen.
+    //   RenderType.create -- only wanted for the unowned-card pipeline, which
+    //     does not exist here (UnownedPipelines.available() is false).
+    //
+    // One place wanted one and did not get it: ItemRenderer.renderQuadList and
+    // renderModelLists are both private. DiskCardsItemModel goes in through the
+    // public ItemRenderer.render with ItemDisplayContext.NONE instead, whose
+    // transform is the identity -- same work, no widening.
 }
 
 repositories {
