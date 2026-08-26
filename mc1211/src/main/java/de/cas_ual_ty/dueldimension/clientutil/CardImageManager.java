@@ -2,7 +2,8 @@ package de.cas_ual_ty.dueldimension.clientutil;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.SimpleTexture;
-import net.minecraft.client.renderer.texture.TextureContents;
+import com.mojang.blaze3d.platform.NativeImage;
+import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.ArrayDeque;
@@ -110,7 +111,7 @@ public final class CardImageManager
 
     /** One finished decode on its way to the GPU. {@code image_manager.h}:74-79. */
     record LoadReturn(loadStatus status, ResourceLocation id, int sizeIndex, int size,
-        long timestamp, boolean requeued, TextureContents contents)
+        long timestamp, boolean requeued, NativeImage contents)
     {
     }
 
@@ -498,9 +499,13 @@ public final class CardImageManager
                 continue;
             }
 
-            TextureContents contents = loaded.contents();
-            int width = contents.image().getWidth();
-            int height = contents.image().getHeight();
+            // 26.2 carries a TextureContents -- a NativeImage plus its texture
+            // metadata. 1.21.1 has no such record and reads metadata separately;
+            // nothing here ever asked for the metadata half, so the image IS the
+            // contents.
+            NativeImage contents = loaded.contents();
+            int width = contents.getWidth();
+            int height = contents.getHeight();
             if(width != loaded.size() || height != loaded.size())
             {
                 // :391-404, with one adaptation. EDOPro re-queues because its
@@ -542,11 +547,16 @@ public final class CardImageManager
             long start = System.nanoTime();
             try
             {
-                SimpleTexture texture = new SimpleTexture(loaded.id());
+                // DynamicTexture, not SimpleTexture: 1.21.1's SimpleTexture
+                // loads from the resource manager by id and has no public
+                // "here is an image I already decoded" entry point, which is
+                // exactly what this pipeline has. DynamicTexture(NativeImage)
+                // takes ownership and uploads, which is the same two steps
+                // 26.2's apply() did.
+                DynamicTexture texture = new DynamicTexture(contents);
                 // apply() closes the NativeImage itself once doLoad has copied
                 // it, which is EDOPro's texture->drop() at :397 -- also on the
                 // render thread. Only ABANDONED images go to the clear thread.
-                texture.apply(contents);
                 client.getTextureManager().register(loaded.id(), texture);
             }
             catch(RuntimeException gpu)
@@ -663,12 +673,19 @@ public final class CardImageManager
             return fail(p);
         }
 
-        TextureContents contents;
+        NativeImage contents;
         long start = System.nanoTime();
         try
         {
-            contents = TextureContents.load(
-                Minecraft.getInstance().getResourceManager(), p.id());
+            // TextureContents.load is EDOPro's createImageFromFile; on 1.21.1
+            // the same two steps are open-the-resource and NativeImage.read.
+            // Still off the render thread, still throwing on a truncated PNG
+            // in exactly the place the catch below expects.
+            try(java.io.InputStream stream = Minecraft.getInstance().getResourceManager()
+                .open(p.id()))
+            {
+                contents = NativeImage.read(stream);
+            }
             CardTextureCache.decodeTook(p.size(), System.nanoTime() - start);
         }
         catch(Exception missing)

@@ -71,7 +71,7 @@ public final class HandHud implements HudRenderCallback
      */
     @Override
     public void onHudRender(net.minecraft.client.gui.GuiGraphics vanillaGraphics,
-        float partialTick)
+        net.minecraft.client.DeltaTracker delta)
     {
         GuiGraphicsExtractor extractor = new GuiGraphicsExtractor(vanillaGraphics);
         // A spectator has no hand, and the board they were sent has somebody

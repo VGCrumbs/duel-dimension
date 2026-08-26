@@ -2,7 +2,7 @@ package de.cas_ual_ty.dueldimension.mixin.client;
 
 import de.cas_ual_ty.dueldimension.clientutil.DuelSuppression;
 import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
-import net.minecraft.client.gui.Hud;
+import net.minecraft.client.gui.Gui;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -25,7 +25,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * duels in the first place. The hotbar stays for the same reason: nobody asked
  * for it to go, and it is not in the way.
  */
-@Mixin(Hud.class)
+@Mixin(Gui.class)
 public class DuelHudMixin
 {
     /**

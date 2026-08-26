@@ -38,8 +38,12 @@ public final class PreloadHud implements HudRenderCallback
     private static final int LABEL_MIN_GAP = 12;
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor poseStack, DeltaTracker delta)
+    public void onHudRender(net.minecraft.client.gui.GuiGraphics vanillaGraphics,
+        DeltaTracker delta)
     {
+        // See the screens: 26.2 extracts a render state, 1.21.1 draws now, and
+        // the body below is unchanged behind the compatibility surface.
+        GuiGraphicsExtractor poseStack = new GuiGraphicsExtractor(vanillaGraphics);
         if(!CardPreloadJob.visible())
         {
             return;

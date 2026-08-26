@@ -197,6 +197,30 @@ public class GuiGraphicsExtractor
         graphics.blitSprite(sprite, x, y, width, height);
     }
 
+    /**
+     * A texture stretched across a rectangle, given NORMALISED uv bounds.
+     * <p>
+     * 26.2 takes {@code (x1, y1, x2, y2, minU, maxU, minV, maxV)} with the uvs
+     * as fractions. 1.21.1's blit takes uvs in PIXELS plus the texture's own
+     * size, and divides one by the other.
+     * <p>
+     * So a nominal size is supplied and the fractions scaled to it. Any value
+     * works and the choice cancels out — 1.21.1 computes {@code u / textureWidth},
+     * so feeding it {@code u * N} and {@code N} gives back exactly {@code u}.
+     * 256 is arbitrary and is the only reason this is exact rather than
+     * approximate; the real texture's dimensions are not needed and are not
+     * available here.
+     */
+    public void blit(ResourceLocation texture, int x1, int y1, int x2, int y2,
+        float minU, float maxU, float minV, float maxV)
+    {
+        final int nominal = 256;
+        graphics.blit(texture, x1, y1, x2 - x1, y2 - y1,
+            minU * nominal, minV * nominal,
+            Math.round((maxU - minU) * nominal), Math.round((maxV - minV) * nominal),
+            nominal, nominal);
+    }
+
     public void item(ItemStack stack, int x, int y)
     {
         graphics.renderItem(stack, x, y);

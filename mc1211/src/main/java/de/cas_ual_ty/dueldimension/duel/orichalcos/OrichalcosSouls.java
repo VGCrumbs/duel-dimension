@@ -327,7 +327,22 @@ public final class OrichalcosSouls
         }
         for(ServerLevel level : server.getAllLevels())
         {
-            Entity entity = level.getEntityInAnyDimension(id);
+            // 26.2 has getEntityInAnyDimension; 1.21.1 does not, so the
+            // server's levels are walked. Same answer, and the same null when
+            // the entity is gone -- this is a lookup by UUID either way.
+            Entity entity = null;
+            if(level.getServer() != null)
+            {
+                for(net.minecraft.server.level.ServerLevel candidate
+                    : level.getServer().getAllLevels())
+                {
+                    entity = candidate.getEntity(id);
+                    if(entity != null)
+                    {
+                        break;
+                    }
+                }
+            }
             if(entity instanceof LivingEntity living)
             {
                 return living;
