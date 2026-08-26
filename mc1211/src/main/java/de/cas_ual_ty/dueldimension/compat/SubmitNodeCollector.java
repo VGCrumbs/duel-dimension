@@ -81,6 +81,43 @@ public class SubmitNodeCollector
         }
     }
 
+    /**
+     * Draws a line of text now, into the same buffer source everything else goes
+     * into.
+     * <p>
+     * The argument list is 26.2's, verbatim, so the call sites port unchanged:
+     * {@code (pose, x, y, string, dropShadow, displayMode, lightCoords, color,
+     * backgroundColor, outlineColor)}. 1.21.1's {@code Font.drawInBatch} takes the
+     * same information in a different order and one field short, so the mapping is
+     * a reshuffle rather than a translation.
+     * <p>
+     * <b>{@code outlineColor} is dropped, and that is safe here rather than in
+     * general.</b> 26.2 carries it as a fourth colour on the submission; 1.21.1's
+     * font has no outlined-batch variant reachable from this call. Both call sites
+     * in this mod pass {@code 0} -- no outline -- so nothing is lost today. A
+     * future caller that wants one will get plain text and no warning, which is why
+     * this says so out loud.
+     * <p>
+     * Flushed per call for the same reason {@link #submitCustomGeometry} is: text
+     * batched by render type would otherwise surface at the end of the frame, on
+     * top of board geometry drawn after it.
+     */
+    public void submitText(PoseStack pose, float x, float y,
+        net.minecraft.util.FormattedCharSequence string, boolean dropShadow,
+        net.minecraft.client.gui.Font.DisplayMode displayMode, int lightCoords,
+        int color, int backgroundColor, int outlineColor)
+    {
+        net.minecraft.client.gui.Font font =
+            net.minecraft.client.Minecraft.getInstance().font;
+        font.drawInBatch(string, x, y, color, dropShadow, pose.last().pose(),
+            buffers, displayMode, backgroundColor, lightCoords);
+
+        if(buffers instanceof MultiBufferSource.BufferSource source)
+        {
+            source.endBatch();
+        }
+    }
+
     /** The painter, with the same shape it has on 26.2. */
     public interface CustomGeometryRenderer
     {

@@ -1,8 +1,6 @@
 package de.cas_ual_ty.dueldimension.clientutil.model;
 
 import com.mojang.blaze3d.platform.NativeImage;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.FilterMode;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 
 import java.util.function.Supplier;
@@ -28,13 +26,25 @@ import java.util.function.Supplier;
  */
 final class Ps2Texture extends DynamicTexture
 {
+    /**
+     * The {@code label} is accepted and dropped. 26.2's {@link DynamicTexture}
+     * takes a debug name for its GPU object; 1.21.1's has nowhere to put one, and
+     * inventing a field would only mean carrying a string nothing reads. Kept in
+     * the signature so {@code ModelMesh}'s call site is the same text on both
+     * versions.
+     */
     Ps2Texture(Supplier<String> label, NativeImage image)
     {
-        super(label, image);
-        // Replaced after construction rather than passed in: the superclass
-        // builds its own sampler in a private method and offers no say in it.
-        // The cache hands back a shared object per combination, so every model
-        // texture in the game shares this one.
-        sampler = RenderSystem.getSamplerCache().getRepeat(FilterMode.LINEAR);
+        super(image);
+        // Set after construction rather than passed in, on both versions and for
+        // the same reason: the superclass decides filtering while it uploads and
+        // offers no say in it. 26.2 swaps the sampler afterwards; here the same
+        // override is a texture parameter.
+        //
+        // blur = bilinear, mipmap = false. The pair is exactly the class note:
+        // smoothed, and no mip chain. Safe to call now because the superclass
+        // constructor has already uploaded -- an upload sets these parameters
+        // itself, so doing this first would be overwritten a line later.
+        setFilter(true, false);
     }
 }

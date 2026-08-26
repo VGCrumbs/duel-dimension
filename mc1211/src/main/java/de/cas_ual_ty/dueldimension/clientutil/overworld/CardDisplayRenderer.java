@@ -3,11 +3,11 @@ package de.cas_ual_ty.dueldimension.clientutil.overworld;
 import com.mojang.blaze3d.vertex.PoseStack;
 import de.cas_ual_ty.dueldimension.duel.overworld.display.CardDisplayTileEntity;
 import de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
-import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -20,21 +20,36 @@ import net.minecraft.world.phys.Vec3;
  * among. A pedestal is a block, so its card is measured in blocks.
  * <p>
  * <b>Two frames of reference, and only two.</b> The level renderer has already
- * translated the pose by (this block - the eye) before {@code submit} is
- * called, so anything drawn in BLOCK-LOCAL coordinates lands on this block and
- * needs to know nothing else -- which is how the card is drawn. The billboard
- * is the exception: which way it turns depends on where the viewer is standing,
- * which is the one fact block-local coordinates cannot express, so it works in
- * world space and is given both. A MODEL does not turn to the viewer -- it is
- * placed, not aimed -- but it shares that path, since it stands in the same
- * spot the billboard would.
+ * translated the pose by (this block - the eye) before this is called, so
+ * anything drawn in BLOCK-LOCAL coordinates lands on this block and needs to
+ * know nothing else -- which is how the card is drawn. The billboard is the
+ * exception: which way it turns depends on where the viewer is standing, which
+ * is the one fact block-local coordinates cannot express, so it works in world
+ * space and is given both. A MODEL does not turn to the viewer -- it is placed,
+ * not aimed -- but it shares that path, since it stands in the same spot the
+ * billboard would.
+ *
+ * <h2>Why the 26.2 shape is kept without the 26.2 types</h2>
+ *
+ * 26.2 splits a block entity renderer in two: {@code extractRenderState} copies
+ * what a frame needs off the block entity, and {@code submit} draws from the
+ * copy and may not look at the world. 1.21.1 has one method,
+ * {@code render(T, float, PoseStack, MultiBufferSource, int, int)}, called with
+ * the block entity itself -- there is no {@code BlockEntityRenderState}, no
+ * {@code CameraRenderState}, and no extract phase to put in one.
+ * <p>
+ * The split is kept anyway, as a plain object rather than a vanilla supertype.
+ * Not out of tidiness: {@link #drawMonster} is forty lines of placement rules
+ * shared with the duel board, and keeping its parameters identical is what makes
+ * the two versions the same text and a change to one a change to both. What
+ * changes is only who fills the state in and when.
  */
-public class CardDisplayRenderer
-    implements BlockEntityRenderer<CardDisplayTileEntity, CardDisplayRenderer.State>
+public class CardDisplayRenderer implements BlockEntityRenderer<CardDisplayTileEntity>
 {
     /** What a frame needs to know, copied off the block entity before drawing. */
-    public static class State extends BlockEntityRenderState
+    public static class State
     {
+        public BlockPos blockPos;
         public long code;
         public byte art;
         public boolean defence;
@@ -42,44 +57,51 @@ public class CardDisplayRenderer
         public long gameTime;
     }
 
+    /**
+     * Reused rather than allocated per frame.
+     * <p>
+     * 26.2 has {@code createRenderState} and the game pools the result; here the
+     * pooling is this field. Sound because block entity rendering is on the
+     * render thread and one {@code render} call is finished with the state
+     * before the next begins -- the same reason 26.2's pool is safe.
+     */
+    private final State state = new State();
+
     public CardDisplayRenderer(BlockEntityRendererProvider.Context context)
     {
     }
 
     @Override
-    public State createRenderState()
+    public void render(CardDisplayTileEntity display, float partialTick, PoseStack poseStack,
+        MultiBufferSource bufferSource, int packedLight, int packedOverlay)
     {
-        return new State();
-    }
-
-    @Override
-    public void extractRenderState(CardDisplayTileEntity display, State state, float partialTick,
-        Vec3 cameraPos, ModelFeatureRenderer.CrumblingOverlay crumbling)
-    {
-        BlockEntityRenderState.extractBase(display, state, crumbling);
-        state.code = display.code();
-        state.art = display.art();
-        state.defence = display.defence();
-        state.faceDown = display.faceDown();
-        // The LEVEL's clock, read here rather than in submit: extract is where
-        // a renderer is allowed to look at the world, and submit is handed only
-        // what extract wrote down.
-        state.gameTime = display.getLevel() == null ? 0L : display.getLevel().getGameTime();
-    }
-
-    @Override
-    public void submit(State state, PoseStack poseStack, SubmitNodeCollector collector,
-        CameraRenderState camera)
-    {
+        extractRenderState(display, state);
         if(state.code == 0L)
         {
             // Nothing chosen yet. Not a failure -- a display block starts
             // empty, and an empty one is a bare pedestal.
             return;
         }
+        SubmitNodeCollector collector = new SubmitNodeCollector(bufferSource);
         DisplayCard.submit(poseStack, collector, (int)state.code, state.art, state.defence,
             state.faceDown, 0xFFFFFFFF);
-        drawMonster(state, poseStack, collector, camera);
+        drawMonster(state, poseStack, collector,
+            Minecraft.getInstance().gameRenderer.getMainCamera().getPosition());
+    }
+
+    private static void extractRenderState(CardDisplayTileEntity display, State state)
+    {
+        state.blockPos = display.getBlockPos();
+        state.code = display.code();
+        state.art = display.art();
+        state.defence = display.defence();
+        state.faceDown = display.faceDown();
+        // The LEVEL's clock. On 26.2 this has to be read in extract, because
+        // submit is handed only what extract wrote down; here the separation is
+        // convention rather than enforcement, but reading it in one place is
+        // still what stops the card and the monster it carries disagreeing about
+        // what time it is.
+        state.gameTime = display.getLevel() == null ? 0L : display.getLevel().getGameTime();
     }
 
     /**
@@ -90,7 +112,7 @@ public class CardDisplayRenderer
      * what it is to the whole room.
      */
     private static void drawMonster(State state, PoseStack poseStack,
-        SubmitNodeCollector collector, CameraRenderState camera)
+        SubmitNodeCollector collector, Vec3 cameraPos)
     {
         if(state.faceDown)
         {
@@ -137,7 +159,7 @@ public class CardDisplayRenderer
                 definition.offsetX(), definition.offsetZ());
             return;
         }
-        MonsterBillboard.submit(poseStack, collector, block, camera.pos, feet,
+        MonsterBillboard.submit(poseStack, collector, block, cameraPos, feet,
             height, body,
             MonsterSprites.frameAt(body, state.gameTime), wings,
             wings == null ? 0 : MonsterSprites.frameAt(wings.layer(), state.gameTime),
@@ -162,9 +184,11 @@ public class CardDisplayRenderer
      * above the pedestal, so looking slightly down -- or standing close enough
      * that the block falls below the screen -- took the monster with it. What
      * is on screen is the monster; the block is only where it is standing.
+     * <p>
+     * Takes the block entity here where 26.2 takes nothing; same answer.
      */
     @Override
-    public boolean shouldRenderOffScreen()
+    public boolean shouldRenderOffScreen(CardDisplayTileEntity display)
     {
         return true;
     }

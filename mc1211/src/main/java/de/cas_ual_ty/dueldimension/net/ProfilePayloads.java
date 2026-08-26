@@ -247,15 +247,52 @@ public final class ProfilePayloads
             ByteBufCodecs.<RegistryFriendlyByteBuf, Integer>list(PART_LIMIT)
                 .apply(ByteBufCodecs.VAR_INT.cast());
 
-        public static final StreamCodec<RegistryFriendlyByteBuf, SaveDeck> CODEC = StreamCodec.composite(
-            ByteBufCodecs.stringUtf8(NAME_LIMIT), SaveDeck::name,
-            PART, SaveDeck::main,
-            PART, SaveDeck::extra,
-            PART, SaveDeck::side,
-            PART, SaveDeck::mainArts,
-            PART, SaveDeck::extraArts,
-            PART, SaveDeck::sideArts,
-            SaveDeck::new);
+        /**
+         * Written out by hand, because this record has seven components and
+         * {@code StreamCodec.composite} stops at six.
+         * <p>
+         * On 26.2 the same declaration is a {@code composite} call, because that
+         * class gained a seven-argument overload after 1.21.1. There is nothing
+         * to shim: {@code composite} is a static factory on a vanilla interface,
+         * and the overload it is missing is the whole of the difference. So the
+         * factory is inlined instead.
+         * <p>
+         * <b>The field order below is the wire format, and it must stay exactly
+         * the order of the record's components</b> -- name, the three deck parts,
+         * then the three art lists. Encode and decode are two separate lists
+         * here rather than one declaration, so a field added to one and not the
+         * other still compiles and only fails over the network. The 26.2
+         * spelling could not have that bug; this one can, which is why the order
+         * is written once in a comment and twice in code that mirrors it.
+         */
+        public static final StreamCodec<RegistryFriendlyByteBuf, SaveDeck> CODEC =
+            new StreamCodec<>()
+            {
+                @Override
+                public void encode(RegistryFriendlyByteBuf buffer, SaveDeck value)
+                {
+                    ByteBufCodecs.stringUtf8(NAME_LIMIT).encode(buffer, value.name());
+                    PART.encode(buffer, value.main());
+                    PART.encode(buffer, value.extra());
+                    PART.encode(buffer, value.side());
+                    PART.encode(buffer, value.mainArts());
+                    PART.encode(buffer, value.extraArts());
+                    PART.encode(buffer, value.sideArts());
+                }
+
+                @Override
+                public SaveDeck decode(RegistryFriendlyByteBuf buffer)
+                {
+                    return new SaveDeck(
+                        ByteBufCodecs.stringUtf8(NAME_LIMIT).decode(buffer),
+                        PART.decode(buffer),
+                        PART.decode(buffer),
+                        PART.decode(buffer),
+                        PART.decode(buffer),
+                        PART.decode(buffer),
+                        PART.decode(buffer));
+                }
+            };
 
         @Override
         public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
