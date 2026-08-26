@@ -32,6 +32,14 @@ class BattleAnimationsTest
         // Authored speed, so the phases below read as the seconds they are.
         // The speed itself is covered on its own further down.
         AnimationSettings.setSpeed(1F);
+        // Turned ON explicitly, because the DEFAULT is off.
+        //
+        // This is a test about what an attack animation does once it is
+        // running, not about whether a fresh install runs one -- and it caught
+        // the default being flipped, correctly, by every latch here returning
+        // nothing. Stating the precondition is the fix; weakening the
+        // assertions would have been the other one.
+        AnimationSettings.setExtras(true);
     }
 
     /** The two beats at one instant, which is what the old single latch did. */

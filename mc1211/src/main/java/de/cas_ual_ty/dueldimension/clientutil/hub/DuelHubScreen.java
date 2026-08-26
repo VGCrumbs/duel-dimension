@@ -120,6 +120,15 @@ public class DuelHubScreen extends Screen
     /** What the last delete did, shown until this screen closes. */
     private String deleteReport;
 
+    /**
+     * Whether the Misc tab's monster-models category is open.
+     * <p>
+     * Static, so reopening the hub finds it as it was left -- the same choice
+     * {@link #deckView} makes, and for the same reason: a duellist who collapsed
+     * a category did so on purpose.
+     */
+    private static boolean modelsOpen = true;
+
     private int left;
     private int top;
 
@@ -375,82 +384,144 @@ public class DuelHubScreen extends Screen
                     de.cas_ual_ty.dueldimension.shop.DiskShopMessages.RequestShop.DECK_BOXES)));
         }
 
-        // The Misc tab's one job today: the monster models.
+        // The Misc tab, which is a list of collapsible CATEGORIES rather than a
+        // flat column. One today; the shape is what lets a second arrive without
+        // the first having to move or shrink.
         //
         // Rebuilt with the tab rather than kept, like the mat picker below, so
-        // it always opens saying what is actually on disk. `armed` is cleared
-        // here for the same reason -- a confirm left half-answered on another
-        // tab is a delete waiting to happen on a click meant for something else.
+        // it always opens saying what is actually on disk. `deleteArmed` is
+        // cleared here for the same reason -- a confirm left half-answered on
+        // another tab is a delete waiting to happen on a click meant for
+        // something else.
         deleteArmed = false;
         if(section == Section.MISC)
         {
             int miscX = left + PAD + 8;
-            int miscY = bodyTop + 52;
             int miscW = WIDTH - PAD * 2 - 16;
-            boolean installed = !de.cas_ual_ty.dueldimension.clientutil.model
-                .MonsterModels.names().isEmpty();
+            int row = bodyTop + 26;
 
-            if(installed)
-            {
-                // One button that asks before it acts. Arming in place rather
-                // than opening a confirm screen: the question is one line, and a
-                // screen to ask it would be a screen to dismiss.
-                addRenderableWidget(new HubWidgets.TextureButton(miscX, miscY, miscW, 20,
-                    Component.literal(deleteArmed
-                        ? "Really delete them? This cannot be undone"
-                        : "Delete monster models"), pressed ->
-                    {
-                        if(!deleteArmed)
-                        {
-                            deleteArmed = true;
-                            rebuildWidgets();
-                            return;
-                        }
-                        // On the render thread, which is where this runs and
-                        // where MonsterModels.deleteAll has to run: it forgets
-                        // baked meshes, and a frame drawing from one would be
-                        // drawing a model that no longer exists.
-                        int removed = de.cas_ual_ty.dueldimension.clientutil.model
-                            .MonsterModels.deleteAll();
-                        deleteArmed = false;
-                        deleteReport = removed + (removed == 1 ? " model deleted"
-                            : " models deleted");
-                        rebuildWidgets();
-                    }));
-                if(deleteArmed)
+            // The header, which is the whole of the dropdown. [+] and [-] rather
+            // than a triangle glyph: this font falls back to unifont for
+            // anything exotic, and a category header is not the place to find
+            // out which glyphs a resource pack happened to keep.
+            addRenderableWidget(new HubWidgets.TextureButton(miscX, row, miscW, 20,
+                Component.literal((modelsOpen ? "[-] " : "[+] ") + "Monster models"),
+                pressed ->
                 {
-                    addRenderableWidget(new HubWidgets.TextureButton(miscX, miscY + 26,
-                        miscW, 20, Component.literal("Keep them"), pressed ->
+                    modelsOpen = !modelsOpen;
+                    rebuildWidgets();
+                }));
+            row += 26;
+
+            if(modelsOpen)
+            {
+                boolean installed = !de.cas_ual_ty.dueldimension.clientutil.model
+                    .MonsterModels.names().isEmpty();
+                // Indented, so the category reads as containing these rather
+                // than as sitting above them.
+                int itemX = miscX + 10;
+                int itemW = miscW - 10;
+                // Room for the status line the panel draws under the header.
+                row += 12;
+
+                if(installed)
+                {
+                    // One button that asks before it acts. Arming in place
+                    // rather than opening a confirm screen: the question is one
+                    // line, and a screen to ask it would be a screen to dismiss.
+                    addRenderableWidget(new HubWidgets.TextureButton(itemX, row, itemW, 20,
+                        Component.literal(deleteArmed
+                            ? "Really delete them? This cannot be undone"
+                            : "Delete monster models"), pressed ->
                         {
+                            if(!deleteArmed)
+                            {
+                                deleteArmed = true;
+                                rebuildWidgets();
+                                return;
+                            }
+                            // On the render thread, which is where this runs and
+                            // where MonsterModels.deleteAll has to run: it
+                            // forgets baked meshes, and a frame drawing from one
+                            // would be drawing a model that no longer exists.
+                            int removed = de.cas_ual_ty.dueldimension.clientutil.model
+                                .MonsterModels.deleteAll();
                             deleteArmed = false;
+                            deleteReport = removed + (removed == 1 ? " model deleted"
+                                : " models deleted");
                             rebuildWidgets();
                         }));
-                }
-            }
-            else
-            {
-                addRenderableWidget(new HubWidgets.TextureButton(miscX, miscY, miscW, 20,
-                    Component.literal("Download monster models (273 MB)"), pressed ->
+                    row += 24;
+                    if(deleteArmed)
                     {
-                        de.cas_ual_ty.dueldimension.clientutil.model.ModelInstall.start();
-                        minecraft.setScreen(
-                            new de.cas_ual_ty.dueldimension.clientutil.model
-                                .ModelInstallScreen(this));
-                    }));
-                addRenderableWidget(new HubWidgets.TextureButton(miscX, miscY + 26, miscW, 20,
-                    Component.literal("Open the download page instead"), pressed ->
-                        // net.minecraft.Util here, not net.minecraft.util.Util:
-                        // the class moved up a package after 1.21.1.
-                        net.minecraft.Util.getPlatform().openUri(
-                            de.cas_ual_ty.dueldimension.clientutil.model
-                                .ModelInstall.PAGE_URL)));
-            }
+                        addRenderableWidget(new HubWidgets.TextureButton(itemX, row,
+                            itemW, 20, Component.literal("Keep them"), pressed ->
+                            {
+                                deleteArmed = false;
+                                rebuildWidgets();
+                            }));
+                        row += 24;
+                    }
+                }
+                else
+                {
+                    addRenderableWidget(new HubWidgets.TextureButton(itemX, row, itemW, 20,
+                        Component.literal("Download monster models (273 MB)"), pressed ->
+                        {
+                            de.cas_ual_ty.dueldimension.clientutil.model.ModelInstall.start();
+                            minecraft.setScreen(
+                                new de.cas_ual_ty.dueldimension.clientutil.model
+                                    .ModelInstallScreen(this));
+                        }));
+                    row += 24;
+                    addRenderableWidget(new HubWidgets.TextureButton(itemX, row, itemW, 20,
+                        Component.literal("Open the download page instead"), pressed ->
+                            net.minecraft.Util.getPlatform().openUri(
+                                de.cas_ual_ty.dueldimension.clientutil.model
+                                    .ModelInstall.PAGE_URL)));
+                    row += 24;
+                }
 
-            // Always offered, installed or not: it is how a duellist adds one
-            // model by hand, and how they check what the delete left behind.
-            addRenderableWidget(new HubWidgets.TextureButton(miscX, miscY + 52, miscW, 20,
-                Component.literal("Open the models folder"), pressed ->
-                    de.cas_ual_ty.dueldimension.clientutil.model.MonsterModels.open()));
+                // Always offered, installed or not: it is how a duellist adds
+                // one model by hand, and how they check what a delete left.
+                addRenderableWidget(new HubWidgets.TextureButton(itemX, row, itemW, 20,
+                    Component.literal("Open the models folder"), pressed ->
+                        de.cas_ual_ty.dueldimension.clientutil.model.MonsterModels.open()));
+                row += 24;
+
+                // The two settings that decide what a model DOES, which belong
+                // with the models rather than three screens away in the seal
+                // config -- that screen keeps them too, because a duellist who
+                // knows where they were should still find them there.
+                addRenderableWidget(new HubWidgets.TextureButton(itemX, row, itemW, 20,
+                    Component.literal("Monster attack and hit animations: "
+                        + (de.cas_ual_ty.dueldimension.clientutil.model.AnimationSettings
+                            .extras() ? "ON" : "IDLE ONLY")), pressed ->
+                    {
+                        de.cas_ual_ty.dueldimension.clientutil.model.AnimationSettings
+                            .setExtras(!de.cas_ual_ty.dueldimension.clientutil.model
+                                .AnimationSettings.extras());
+                        // The speed row below is only meaningful while these
+                        // are on, so it is rebuilt with them.
+                        rebuildWidgets();
+                    }));
+                row += 24;
+
+                // Disabled rather than hidden, so its greyed presence is a fact
+                // about the row above it. Same decision as SealConfigScreen's.
+                HubWidgets.TextureButton speed = new HubWidgets.TextureButton(itemX, row,
+                    itemW, 20, Component.literal("Attack animation speed: "
+                        + de.cas_ual_ty.dueldimension.clientutil.model.AnimationSettings
+                            .speedLabel()), pressed ->
+                    {
+                        de.cas_ual_ty.dueldimension.clientutil.model.AnimationSettings
+                            .cycleSpeed();
+                        rebuildWidgets();
+                    });
+                speed.active = de.cas_ual_ty.dueldimension.clientutil.model
+                    .AnimationSettings.extras();
+                addRenderableWidget(speed);
+            }
         }
 
         // The mat picker is rebuilt with the tab rather than kept, so it always
@@ -1093,38 +1164,36 @@ public class DuelHubScreen extends Screen
     }
 
     /**
-     * Misc: the monster models, and nothing else yet.
+     * Misc: a list of collapsible categories. One so far, the monster models.
      * <p>
      * This tab exists because the models used to ask about THEMSELVES, from a
      * notice on the title screen at launch. That is a question nobody asked to
      * be asked, and it could only ever be answered once -- there was no way back
      * to it, and no way to undo a yes. Here it is a place a duellist goes when
-     * they want it, and the same button takes the models away again.
+     * they want it, the same button takes the models away again, and the two
+     * settings that decide what a model does sit with the models.
+     * <p>
+     * The buttons are widgets, added in {@code init}; what is drawn here is the
+     * caption and the one line of status that no button says.
      */
     private void miscPanel(GuiGraphicsExtractor graphics, int bodyTop)
     {
         graphics.text(font, "Misc", left + PAD + 8, bodyTop + 8, 0xFFF4D089, true);
 
+        if(!modelsOpen)
+        {
+            return;
+        }
         java.util.List<String> models = de.cas_ual_ty.dueldimension.clientutil.model
             .MonsterModels.names();
         String status = models.isEmpty()
-            ? "Monster models: not installed"
-            : "Monster models: " + models.size()
-                + (models.size() == 1 ? " model installed" : " models installed");
-        graphics.text(font, status, left + PAD + 8, bodyTop + 24, 0xFFC2C9D6, true);
-
-        // The report of the last delete, which otherwise leaves no trace: the
-        // button changes back to "Download", and a button that has changed is
-        // not the same as being told what happened.
-        if(deleteReport != null)
-        {
-            graphics.text(font, deleteReport, left + PAD + 8, bodyTop + 36, 0xFF7A8090, true);
-        }
-        else if(models.isEmpty())
-        {
-            graphics.text(font, "3D monsters on the duel board, in place of flat sprites.",
-                left + PAD + 8, bodyTop + 36, 0xFF7A8090, true);
-        }
+            ? "Not installed -- 3D monsters on the board, in place of flat sprites."
+            : models.size() + (models.size() == 1 ? " model installed" : " models installed");
+        // The report of the last delete wins, because it otherwise leaves no
+        // trace: the button changes back to "Download", and a button that has
+        // changed is not the same as being told what happened.
+        graphics.text(font, deleteReport != null ? deleteReport : status,
+            left + PAD + 18, bodyTop + 56, 0xFFC2C9D6, true);
     }
 
     /**

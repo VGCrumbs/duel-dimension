@@ -10,9 +10,13 @@ import java.nio.file.Path;
 /**
  * Whether a modelled monster does anything but stand there.
  * <p>
- * On by default, because a monster that swings when it attacks is most of the
- * point of it being a model. Off leaves the idle, which every monster has and
- * which loops harmlessly for ever.
+ * <b>Off by default</b>, which is the opposite of what it was. Off leaves the
+ * idle, which every monster has and which loops harmlessly for ever, and the
+ * duel keeps EDOPro's own beat. The paragraph below is why: an attack authored
+ * as a cutscene holds the board for a median of 8.7 seconds and up to 33.7, and
+ * a duellist meeting this mod for the first time should not have their first
+ * battle take half a minute before they know the setting exists. Turning it on
+ * is one click in the Duel Hub's Misc tab, next to the models themselves.
  * <p>
  * <b>This costs duel pace, which is why it is a setting.</b> Duelists of the
  * Roses blocks its battle on the animation — its state machine sets a slot and
@@ -145,7 +149,10 @@ public final class AnimationSettings
      */
     static
     {
-        boolean value = true;
+        // false, matching the class note: the default is idle-only. A file
+        // that says nothing therefore means off, and only the word "true"
+        // turns them on -- the inverse of the test this used to make.
+        boolean value = false;
         float times = DEFAULT_SPEED;
         try
         {
@@ -153,7 +160,7 @@ public final class AnimationSettings
             {
                 String[] parts = Files.readString(file(), StandardCharsets.UTF_8)
                     .trim().split("\s+");
-                value = parts.length == 0 || !"false".equalsIgnoreCase(parts[0]);
+                value = parts.length > 0 && "true".equalsIgnoreCase(parts[0]);
                 if(parts.length > 1)
                 {
                     try

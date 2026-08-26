@@ -250,8 +250,55 @@ public final class ModelHologram
                     // would hand the collector megabytes a second to sweep up.
                     float[] point = new float[3];
                     float[] direction = new float[3];
-                    for(int i = 0; i < vertices; i++)
+                    // TRIANGLES INTO A QUADS BUFFER, which is what 1.21.1 has.
+                    //
+                    // The mesh is de-indexed triangles: three vertices per face,
+                    // one after another. Every stock entity render type here is
+                    // VertexFormat.Mode.QUADS, so a flat loop handing it one
+                    // vertex at a time has it stitch corners 0-3 into a quad --
+                    // which spans the whole of the first triangle and one corner
+                    // of the second. The result is not a slightly wrong monster,
+                    // it is polygon soup, and that is exactly what it drew.
+                    //
+                    // So each triangle is emitted as a DEGENERATE quad, its last
+                    // corner repeated: 0, 1, 2, 2. The fourth vertex has zero
+                    // area and rasterises to nothing.
+                    //
+                    // This is the cost 26.2 avoids by building its own TRIANGLES
+                    // pipeline, and the class note above already spells out what
+                    // it buys: under Iris, one face normal is computed per group
+                    // of four vertices and written over all four, so an artist's
+                    // smooth per-vertex normals are flattened and the creature
+                    // renders faceted. Without Iris, vanilla reads the supplied
+                    // normals and the shading is as exported. Faceted under a
+                    // shaderpack is a real loss; soup was not a trade.
+                    for(int triangle = 0; triangle + 2 < vertices; triangle += 3)
                     {
+                        for(int corner = 0; corner < 4; corner++)
+                        {
+                            emit(buffer, pose, triangle + Math.min(corner, 2),
+                                positions, normals, uvs, joints, weights, bones,
+                                tint, point, direction);
+                        }
+                    }
+                });
+        }
+        poseStack.popPose();
+    }
+
+    /**
+     * One vertex of a part, skinned if the part has bones.
+     * <p>
+     * Lifted out of the draw loop when that loop grew a second dimension --
+     * triangles outside, corners inside. Inlining it again would mean the
+     * skinning arithmetic appearing four times per face in the source, and it is
+     * the same arithmetic every time.
+     */
+    private static void emit(com.mojang.blaze3d.vertex.VertexConsumer buffer,
+        PoseStack.Pose pose, int i, float[] positions, float[] normals, float[] uvs,
+        int[] joints, float[] weights, float[] bones, int tint,
+        float[] point, float[] direction)
+    {
                         float px = positions[i * 3];
                         float py = positions[i * 3 + 1];
                         float pz = positions[i * 3 + 2];
@@ -282,10 +329,6 @@ public final class ModelHologram
                             .setOverlay(OverlayTexture.NO_OVERLAY)
                             .setLight(FULL_BRIGHT)
                             .setNormal(pose, nx, ny, nz);
-                    }
-                });
-        }
-        poseStack.popPose();
     }
 
     /**
