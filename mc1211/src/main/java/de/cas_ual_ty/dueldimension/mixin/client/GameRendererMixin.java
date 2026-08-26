@@ -36,7 +36,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(GameRenderer.class)
 public class GameRendererMixin
 {
-    @Inject(method = "extract(Lnet/minecraft/client/DeltaTracker;Z)V", at = @At("HEAD"))
+    /**
+     * 26.2 calls this {@code extract}; here it is {@code render}, with the same
+     * two arguments in the same order.
+     * <p>
+     * The name is the whole difference, and it is the honest one: 1.21.1 does not
+     * extract a frame description, it draws. So the divergence the class note
+     * claims in our favour -- landing before the extract pass, and therefore in
+     * the same frame -- is even plainer here. This runs at the head of the frame's
+     * draw, so an upload is visible in the frame that made it.
+     */
+    @Inject(method = "render(Lnet/minecraft/client/DeltaTracker;Z)V", at = @At("HEAD"))
     private void dueldimension$uploadCardTextures(DeltaTracker deltaTracker,
         boolean renderLevel, CallbackInfo callback)
     {

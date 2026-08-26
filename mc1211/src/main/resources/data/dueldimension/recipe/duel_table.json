@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "RPB",
+    " W "
+  ],
+  "key": {
+    "R": "minecraft:red_concrete",
+    "P": "dueldimension:duel_playmat",
+    "B": "minecraft:blue_concrete",
+    "W": "minecraft:white_concrete"
+  },
+  "result": {
+    "id": "dueldimension:duel_table"
+  }
+}

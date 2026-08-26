@@ -1,0 +1,123 @@
+{
+  "parent": "minecraft:builtin/entity",
+  "__ported": "frame quads + live board, both from DiskCardsItemModel; 26.2 does the same two things with a minecraft:composite",
+  "textures": {
+    "particle": "dueldimension:item/rock_spirit_disk"
+  },
+  "display": {
+    "thirdperson_righthand": {
+      "rotation": [
+        0,
+        0,
+        -90
+      ],
+      "translation": [
+        3.25,
+        -2.25,
+        -4.75
+      ],
+      "scale": [
+        0.6,
+        0.6,
+        0.6
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        90,
+        -180,
+        90
+      ],
+      "translation": [
+        3.9,
+        -4.7,
+        3.75
+      ],
+      "scale": [
+        0.6,
+        0.6,
+        0.6
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        -90,
+        0,
+        90
+      ],
+      "translation": [
+        0,
+        -4,
+        -2.5
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        10,
+        0,
+        5.5
+      ],
+      "translation": [
+        3.75,
+        4.25,
+        0
+      ],
+      "scale": [
+        1.25,
+        1,
+        1
+      ]
+    },
+    "ground": {
+      "rotation": [
+        -16.5,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        2,
+        0
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    "gui": {
+      "rotation": [
+        90,
+        -45,
+        0
+      ],
+      "translation": [
+        0,
+        -1.5,
+        0
+      ],
+      "scale": [
+        0.6,
+        0.6,
+        0.6
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        -90,
+        135,
+        0
+      ],
+      "translation": [
+        0,
+        -1.5,
+        -4.75
+      ],
+      "scale": [
+        0.7,
+        0.7,
+        0.7
+      ]
+    }
+  }
+}

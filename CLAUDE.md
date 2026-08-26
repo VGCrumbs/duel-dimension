@@ -15,7 +15,7 @@ One repository (`VGCrumbs/duel-dimension`), and this tree is a Gradle
 | --- | --- | --- | --- | --- |
 | `common/` | knows nothing about Minecraft | — | 21 | none |
 | `mc262/` | the working mod | 26.2 | 25 | 1.17.18 |
-| `mc1211/` | the port, in progress | 1.21.1 | 21 | 1.12.7 |
+| `mc1211/` | the port; compiles, never launched | 1.21.1 | 21 | 1.12.7 |
 
 `CrumbyDueling` (branch `crumby`, 1.19.2 / Forge 43.2.8, JDK 17,
 `gradlew17.cmd`) is a separate checkout and still the reference for anything
@@ -69,11 +69,17 @@ layouts are measured against.
     ./gradlew25.cmd -p mc1211 compileJava   # the port alone
     ./gradlew25.cmd -p common test          # the shared core, on Java 21
 
-`buildAll` green means **no finished part has regressed**. It does NOT mean the
-1.21.1 port is done: `mc1211/port-excludes.txt` lists the files that do not
-compile yet and the build skips them. That file is the progress bar. Fix a file,
-delete its line, build — a red build then means the fix was wrong, which is the
-feedback the port would otherwise not have.
+`buildAll` green means **no finished part has regressed**.
+
+`mc1211/port-excludes.txt` is now **empty**: every file compiles and the build
+skips nothing. It stays in the build because it is how a file is taken back out
+if one has to be, and because a build that silently compiled everything would
+lose the one place that says how much was left.
+
+Compiling is not running. `mc1211` has never been launched, and the mixin target
+strings — invisible to `compileJava`, fatal at load — are checked by
+`:mc1211:test` (`MixinTargetsTest`) rather than by the compiler. Run it after
+touching anything under `mixin/`.
 
 The 26.2 `runClient` still exists under `:mc262:runClient` (`--username Alpha`,
 1634×920).

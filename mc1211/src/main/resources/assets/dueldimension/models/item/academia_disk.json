@@ -1,0 +1,135 @@
+{
+  "parent": "minecraft:builtin/entity",
+  "__ported": "frame quads + live board, both from DiskCardsItemModel; 26.2 does the same two things with a minecraft:composite",
+  "textures": {
+    "particle": "dueldimension:item/academia_disk"
+  },
+  "display": {
+    "thirdperson_righthand": {
+      "rotation": [
+        0,
+        -180,
+        90
+      ],
+      "translation": [
+        3.5,
+        -2.5,
+        -2.5
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        90,
+        0,
+        -90
+      ],
+      "translation": [
+        6.75,
+        -2,
+        4
+      ],
+      "scale": [
+        0.6,
+        0.6,
+        0.6
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        92,
+        0,
+        93.5
+      ],
+      "translation": [
+        0,
+        -1,
+        0
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        18,
+        166,
+        -10
+      ],
+      "translation": [
+        7,
+        4,
+        2.25
+      ],
+      "scale": [
+        1.25,
+        1,
+        1
+      ]
+    },
+    "ground": {
+      "rotation": [
+        22,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        3.5,
+        0
+      ],
+      "scale": [
+        0.4,
+        0.4,
+        0.4
+      ]
+    },
+    "gui": {
+      "rotation": [
+        90,
+        135,
+        0
+      ],
+      "translation": [
+        -2.75,
+        -3,
+        0
+      ],
+      "scale": [
+        0.45,
+        0.45,
+        0.45
+      ]
+    },
+    "head": {
+      "rotation": [
+        -90,
+        0,
+        90
+      ],
+      "translation": [
+        -6.75,
+        0.25,
+        0
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        -90,
+        -45,
+        0
+      ],
+      "translation": [
+        3.75,
+        -4.5,
+        -5
+      ],
+      "scale": [
+        0.6,
+        0.6,
+        0.6
+      ]
+    }
+  }
+}

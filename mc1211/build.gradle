@@ -123,6 +123,17 @@ tasks.named('jar', Jar) {
     }
 }
 
+test {
+    useJUnitPlatform()
+
+    // The engine's own tests live in `common` and run on Java 21 there. What runs
+    // HERE is what needs 1.21.1's classes on the classpath to be checkable at all
+    // -- currently MixinTargetsTest, which reads every mixin's target strings and
+    // asks the real Minecraft classes whether they mean anything. Those strings
+    // are invisible to compileJava and fatal at launch, so this is the only place
+    // between a port and a crash that looks at them.
+}
+
 // Show every error, not the first hundred. A port produces errors in bulk and
 // javac's default cap hides how much is actually left.
 tasks.withType(JavaCompile).configureEach {

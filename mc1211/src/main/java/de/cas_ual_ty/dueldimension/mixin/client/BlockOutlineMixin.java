@@ -20,15 +20,24 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * interactions and the click is spent on the board instead, so the one thing
  * the outline promises is the one thing it cannot deliver.
  * <p>
- * Cancelled at the point the outline is SUBMITTED rather than by hiding the hit
+ * Cancelled at the point the outline is DRAWN rather than by hiding the hit
  * result, because the hit result is what the board's own picking runs on -- and
  * a duellist who could no longer target anything would be a duellist who could
  * no longer play.
+ * <p>
+ * 26.2 calls that point {@code submitBlockOutline}, because 26.2 submits
+ * geometry rather than drawing it. Here it is {@code renderHitOutline}, which is
+ * the same decision at the same place under the name it had before the
+ * submission model arrived.
  */
 @Mixin(LevelRenderer.class)
 public class BlockOutlineMixin
 {
-    @Inject(method = "submitBlockOutline", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "renderHitOutline(Lcom/mojang/blaze3d/vertex/PoseStack;"
+        + "Lcom/mojang/blaze3d/vertex/VertexConsumer;Lnet/minecraft/world/entity/Entity;"
+        + "DDDLnet/minecraft/core/BlockPos;"
+        + "Lnet/minecraft/world/level/block/state/BlockState;)V",
+        at = @At("HEAD"), cancellable = true)
     private void dueldimension$hideDuringDuel(CallbackInfo callback)
     {
         // Either presentation, and the same one answer every other overlay

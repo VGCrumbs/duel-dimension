@@ -1,0 +1,29 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "de.cas_ual_ty.dueldimension.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "DuelPushMixin"
+  ],
+  "client": [
+    "client.AbstractClientPlayerMixin",
+    "client.BlockOutlineMixin",
+    "client.DuelHudMixin",
+    "client.DuelMovementMixin",
+    "client.GameRendererMixin",
+    "client.InventoryScreenMixin",
+    "client.ItemInHandLayerMixin",
+    "client.ItemInHandRendererMixin",
+    "client.KeyMappingAccessor",
+    "client.LocalDuelPushMixin",
+    "client.MinecraftDuelClickMixin",
+    "client.MinecraftPackMixin",
+    "client.NameTagMixin",
+    "client.SlotWrapperAccessor",
+    "client.XaeroHudMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

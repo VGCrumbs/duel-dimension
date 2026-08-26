@@ -79,7 +79,71 @@ source for it. Nothing is published and nothing is fetched from a repository.
   are bundled deliberately by Loom's `include`, and gson, Guava and the logging
   facade come from Minecraft at runtime.
 
-## What Phase 1 faces
+## Where the port actually is
+
+**All 407 Java files compile and 1,299 of 1,355 resources are across.**
+`port-excludes.txt` is empty and `dueldimension-fabric-1.21.1.jar` builds, with
+its mixins remapped in place — no refmap, because Loom's remapper rewrites the
+annotation strings into intermediary itself.
+
+**That is not the same as "it runs."** Nothing in this tree has been launched.
+What is proven is that it compiles, that every mixin names a method 1.21.1
+actually has (`MixinTargetsTest`, which is the only thing between a stale target
+string and a crash before the title screen), and that the jar assembles. What is
+NOT proven is that any injection point is reachable, that any screen lays out,
+or that a duel plays. The next step is a run, and the first run of a port this
+size is a list, not a verdict.
+
+### The shims, and what each one costs
+
+Written where 1.21.1 has no counterpart for something 26.2 assumes. All in
+`de.cas_ual_ty.dueldimension.compat`:
+
+| shim | stands in for | what it cannot do |
+| --- | --- | --- |
+| `GuiGraphicsExtractor` | 26.2's retained-mode GUI extractor | `nextStratum`, `blurBeforeThisStratum` and `dispose` are no-ops |
+| `SubmitNodeCollector` | the submission API | flushes per submission to keep call order; `submitText` drops the outline colour |
+| `RenderPipelines` | named GUI pipelines | valueless `Object`s; 1.21.1 has one GUI path |
+| `InputEvents` | 26.2's input records | the double-click flag is lost — the bridge passes `false` |
+| `SpecialModelRenderer` | the 1.21.4 item-render split | nothing; it is the same interface, mod-owned |
+
+### Where a decision was made rather than a rename
+
+- **`BoardPip`** is nearly empty here. 26.2 needs picture-in-picture because a
+  screen cannot draw a quad; 1.21.1 hands out a `PoseStack` and a
+  `BufferSource`, so it does the three things the pip did implicitly — origin at
+  the region's top-left, a scissor, and the `(s, s, -s)` z flip — and gets out of
+  the way.
+- **The item-model layer is gone.** 1.21.4's `items/foo.json` has no 1.21.1
+  counterpart. Sixty of the seventy-three said only "use my own model", which is
+  the default; the card, the two sets and ten disks became `builtin/entity`
+  markers bound per ITEM in `DdCardModels`. A missing binding there is silent —
+  the item just draws plain.
+- **A disk draws its own frame.** 26.2 composites [frame model, cards]; here
+  `DiskCardsItemModel` does both, and `tools/port_resources_1211.py` moves each
+  disk's geometry to `<id>_frame.json` so there is one rule and no special case.
+- **Unowned cards are tinted, not shaded.** The two fragment shaders are not
+  ported — they are written against 26.2's uniform blocks — so
+  `UnownedPipelines.available()` is permanently false and every caller takes the
+  `dimmed(tint)` branch the mod already had. Known gap: `FieldQuad.draw`'s
+  `desaturate` reaches `mesh()` without asking `available()`, so an unowned card
+  on the 3D board still looks owned.
+- **`CardDisplayRenderer`** keeps 26.2's extract/submit split as a plain object,
+  because `drawMonster` is forty lines of placement rules shared with the board
+  and identical parameters are what keep the two versions one piece of text.
+- **The HUD.** 1.21.1's `HudRenderCallback` can only add, so the two additions
+  are in the client initialiser and the two REPLACEMENTS (hiding the hotbar and
+  the held-item name) are injections in `DuelHudMixin`.
+
+### Still missing
+
+- `JadeIntegration` and `ModMenuIntegration` — see
+  `src/main/java/.../fabric/README-integrations.md`.
+- The two card-desaturate shaders.
+- 73 of the 74 `mc262` tests. Only `MixinTargetsTest` is here; the engine's own
+  suite lives in `common` and runs on Java 21, which is 1.21.1's.
+
+## What Phase 1 faced
 
 Measured, not estimated — see the root `PORTING.md` and `tools/phase0_split.py`:
 

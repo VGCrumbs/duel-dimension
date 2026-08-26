@@ -1,0 +1,200 @@
+{
+  "duel.summon": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/summon",
+        "stream": false
+      }
+    ]
+  },
+  "duel.specialsummon": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/specialsummon",
+        "stream": false
+      }
+    ]
+  },
+  "duel.set": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/set",
+        "stream": false
+      }
+    ]
+  },
+  "duel.activate": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/activate",
+        "stream": false
+      }
+    ]
+  },
+  "duel.attack": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/attack",
+        "stream": false
+      }
+    ]
+  },
+  "duel.damage": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/num_red",
+        "stream": false
+      }
+    ]
+  },
+  "duel.destroyed": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/destroyed",
+        "stream": false
+      }
+    ]
+  },
+  "duel.draw": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/draw",
+        "stream": false
+      }
+    ]
+  },
+  "duel.flip": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/flip",
+        "stream": false
+      }
+    ]
+  },
+  "duel.gainlp": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/num_green",
+        "stream": false
+      }
+    ]
+  },
+  "duel.nextturn": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/nextturn",
+        "stream": false
+      }
+    ]
+  },
+  "duel.phase": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/phase",
+        "stream": false
+      }
+    ]
+  },
+  "duel.shuffle": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/shuffle",
+        "stream": false
+      }
+    ]
+  },
+  "duel.addcounter": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/addcounter",
+        "stream": false
+      }
+    ]
+  },
+  "duel.coinflip": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/coinflip",
+        "stream": false
+      }
+    ]
+  },
+  "duel.diceroll": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/diceroll",
+        "stream": false
+      }
+    ]
+  },
+  "duel.equip": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/equip",
+        "stream": false
+      }
+    ]
+  },
+  "duel.music.normal": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/music/normal",
+        "stream": true
+      }
+    ]
+  },
+  "duel.phasechange": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/phasechange",
+        "stream": false
+      }
+    ]
+  },
+  "duel.music.somethingevil": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/music/something_evil",
+        "stream": true
+      }
+    ]
+  },
+  "duel.orichalcos.buzz": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/orichalcos/buzz",
+        "stream": false
+      }
+    ]
+  },
+  "duel.orichalcos.fade": {
+    "category": "player",
+    "sounds": [
+      {
+        "name": "dueldimension:duel/orichalcos/fade",
+        "stream": false
+      }
+    ]
+  }
+}

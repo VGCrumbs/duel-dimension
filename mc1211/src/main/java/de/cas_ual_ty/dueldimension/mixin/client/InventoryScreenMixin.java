@@ -25,9 +25,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * separate crashes were spent learning that, so: <b>verify with javap that the
  * target class actually declares the member, because javac cannot.</b>
  * <p>
- * There is also no {@code render} in 26.2 -- screens draw through
+ * There is no {@code render} in 26.2 -- screens draw through
  * {@code extractRenderState}, and a container screen's body through
- * {@code extractContents}, which is what this injects into.
+ * {@code extractContents}, which is what the 26.2 copy injects into. 1.21.1 draws
+ * immediately and has {@code render}, so that is the target here; see the two
+ * injections below, which each note what moved.
  * <p>
  * The wider target means every container screen runs this, so it checks it is
  * really the inventory before drawing anything.
@@ -105,23 +107,42 @@ public abstract class InventoryScreenMixin
             : new int[] {leftPos + shield.x - DiskSlotOverlay.STEP, topPos + shield.y};
     }
 
-    @Inject(method = "extractContents", at = @At("TAIL"))
-    private void dueldimension$drawDiskSlot(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
-        float partialTick, CallbackInfo callback)
+    /**
+     * 26.2 injects into {@code extractContents}; 1.21.1 has no such method and
+     * draws from {@code render}.
+     * <p>
+     * <b>One behavioural difference, stated because it is invisible otherwise.</b>
+     * {@code extractContents} is the container's BODY on 26.2 -- the floating
+     * item a player is dragging is described after it, so the disk slot goes
+     * underneath. Here {@code render} is the whole thing, so TAIL is after the
+     * floating item and the slot goes over a dragged stack instead. The
+     * alternative is injecting at the call to {@code renderFloatingItem}, which
+     * ties this to a call site that is one refactor from moving; a slot drawn over
+     * a stack in transit is the cheaper wrong.
+     */
+    @Inject(method = "render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V", at = @At("TAIL"))
+    private void dueldimension$drawDiskSlot(net.minecraft.client.gui.GuiGraphics graphics,
+        int mouseX, int mouseY, float partialTick, CallbackInfo callback)
     {
         int[] at = dueldimension$slot();
         if(at != null)
         {
-            DiskSlotOverlay.draw(graphics, at[0], at[1], mouseX, mouseY);
+            DiskSlotOverlay.draw(new GuiGraphicsExtractor(graphics), at[0], at[1],
+                mouseX, mouseY);
         }
     }
 
-    @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
-    private void dueldimension$clickDiskSlot(de.cas_ual_ty.dueldimension.compat.InputEvents.MouseButtonEvent event,
-        boolean doubled, CallbackInfoReturnable<Boolean> callback)
+    /**
+     * 1.21.1 passes the click as three primitives where 26.2 passes an event
+     * record. The double-click flag 26.2's second argument carries has no
+     * counterpart here and is not needed: this slot answers a single click.
+     */
+    @Inject(method = "mouseClicked(DDI)Z", at = @At("HEAD"), cancellable = true)
+    private void dueldimension$clickDiskSlot(double mouseX, double mouseY, int button,
+        CallbackInfoReturnable<Boolean> callback)
     {
         int[] at = dueldimension$slot();
-        if(at != null && DiskSlotOverlay.click(at[0], at[1], event.x(), event.y()))
+        if(at != null && DiskSlotOverlay.click(at[0], at[1], mouseX, mouseY))
         {
             // Consumed at HEAD so the menu never sees it: the slot sits outside
             // the menu's own grid, and a click there would otherwise register as

@@ -3,12 +3,43 @@
   "id": "dueldimension",
   "version": "${version}",
   "name": "Duel Dimension",
-  "description": "Skeleton for the Minecraft 1.21.1 build. No mod code is ported yet; this exists so the toolchain is proven before anything is.",
-  "license": "GPL-3.0-only",
+  "description": "Yu-Gi-Oh! duelling on the real ygopro-core rules engine. Fabric fork of the Forge original.",
+  "authors": [
+    "VGCrumbs"
+  ],
+  "license": [
+    "AGPL-3.0-or-later",
+    "GPL-3.0-or-later",
+    "GPL-2.0-only",
+    "MIT",
+    "Unlicense",
+    "CC0-1.0",
+    "CC-BY-3.0",
+    "Apache-2.0",
+    "LGPL-2.1-or-later",
+    "LicenseRef-DuelDimension-NOTICE"
+  ],
+  "contact": {
+    "homepage": "https://github.com/VGCrumbs/duel-dimension",
+    "sources": "https://github.com/VGCrumbs/duel-dimension",
+    "issues": "https://github.com/VGCrumbs/duel-dimension/issues"
+  },
   "environment": "*",
+  "entrypoints": {
+    "main": [
+      "de.cas_ual_ty.dueldimension.fabric.DuelDimensionFabric"
+    ],
+    "client": [
+      "de.cas_ual_ty.dueldimension.fabric.DuelDimensionFabricClient"
+    ]
+  },
   "depends": {
     "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
     "minecraft": "~1.21.1",
     "java": ">=21"
-  }
+  },
+  "mixins": [
+    "dueldimension.mixins.json"
+  ]
 }
