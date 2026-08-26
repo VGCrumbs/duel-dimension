@@ -19,9 +19,8 @@ import net.fabricmc.api.ClientModInitializer;
  * injections in {@code DuelHudMixin} instead. Order is registration order, so
  * the hand still draws after the preload bar.
  * <li><b>World geometry.</b> {@code LevelRenderEvents.COLLECT_SUBMITS} became
- * {@code WorldRenderEvents.AFTER_ENTITIES} — the stage at which entity geometry
- * has been handed over and the translucent pass has not begun, which is where
- * these four belong for the same reason they belong in COLLECT_SUBMITS there.
+ * {@code WorldRenderEvents.LAST} — see the note at the registrations for why the
+ * obvious choice, AFTER_ENTITIES, is a trap.
  * <li><b>The board's picture-in-picture region.</b> Registered on 26.2, a no-op
  * here; see {@code BoardPip}, which needs no registry because a 1.21.1 screen can
  * draw a quad itself.
@@ -117,15 +116,40 @@ public class DuelDimensionFabricClient implements ClientModInitializer
         net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback.EVENT.register(
             new de.cas_ual_ty.dueldimension.clientutil.overworld.HandHud());
 
-        // The seal is drawn in the world, not in a GUI. AFTER_ENTITIES is where
-        // entity geometry has been submitted and the translucent pass has not
-        // started; its context carries both the pose stack and the buffer source.
-        net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.AFTER_ENTITIES
+        // The seal is drawn in the world, not in a GUI.
+        //
+        // LAST, and NOT AFTER_ENTITIES, which is where these four were and is a
+        // trap twice over.
+        //
+        // FIRST: AFTER_ENTITIES fires when entity geometry has been SUBMITTED,
+        // not when it has been drawn. Vanilla flushes only the block-atlas
+        // entity buffers by name at that point -- endBatch(entitySolid(
+        // LOCATION_BLOCKS)), entityCutout, and so on -- and a mob wearing a SKIN
+        // is on entityCutoutNoCull(<that skin>), a different RenderType
+        // instance, which waits for the flush-all much later. So a duelist
+        // standing behind a monster had not been rasterised yet when the monster
+        // wrote its depth, and was rejected when it finally was: the monster is
+        // see-through, and the NPC behind it vanished entirely.
+        //
+        // SECOND, and the reason this is LAST rather than AFTER_TRANSLUCENT: a
+        // monster must cull ITSELF and nothing else. The two-pass draw in
+        // ModelHologram writes depth on purpose -- that is what makes it show
+        // only its nearest surface -- and depth written into the shared buffer
+        // rejects whatever is drawn after it. The only way for that to reject
+        // nothing is for nothing to come after, which is what LAST means:
+        // particles, clouds and weather have all been drawn by then.
+        //
+        // Being occluded still works, and is worth stating because it sounds
+        // like it should not. The depth TEST is untouched -- a wall in front of
+        // a monster wrote its depth long before, so the monster's fragments
+        // fail LEQUAL and are discarded exactly as they always were. What
+        // changes is only who can be rejected BY us, and the answer is nobody.
+        net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.LAST
             .register(de.cas_ual_ty.dueldimension.clientutil.OrichalcosRenderer::render);
 
         // Where to stand for an overworld duel. Same event, same reasons; it
         // returns immediately unless this client has been sent a field.
-        net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.AFTER_ENTITIES
+        net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.LAST
             .register(de.cas_ual_ty.dueldimension.clientutil.overworld
                 .PlacementGuideRenderer::render);
 
@@ -157,13 +181,13 @@ public class DuelDimensionFabricClient implements ClientModInitializer
         // The arena markers a builder has put down, and the board they
         // describe while TAB is held. Registered before the duel's own board so
         // a preview never draws over a duel actually being played.
-        net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.AFTER_ENTITIES
+        net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.LAST
             .register(de.cas_ual_ty.dueldimension.clientutil.overworld.ArenaRenderer::render);
 
         // The board itself, once both duellists are standing at it. Registered
         // after the guide so it draws over the markers in the frame they both
         // exist, which is the frame the duel begins.
-        net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.AFTER_ENTITIES
+        net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.LAST
             .register(de.cas_ual_ty.dueldimension.clientutil.overworld
                 .OverworldBoardRenderer::render);
 
