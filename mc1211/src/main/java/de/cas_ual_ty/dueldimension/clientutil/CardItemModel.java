@@ -1,84 +1,57 @@
 package de.cas_ual_ty.dueldimension.clientutil;
 
-import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
-import de.cas_ual_ty.dueldimension.card.CardHolder;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.item.ItemModel;
-import net.minecraft.client.renderer.item.ItemModelResolver;
-import net.minecraft.client.renderer.item.ItemStackRenderState;
-import net.minecraft.client.resources.model.ResolvableModel;
-import net.minecraft.world.entity.ItemOwner;
+import com.mojang.blaze3d.vertex.PoseStack;
+import de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector;
+import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * The {@link ItemModel} bound to the card item, wiring it to {@link
- * CardSpecialRenderer}.
+ * Draws the card item, by handing the stack to {@link CardSpecialRenderer}.
+ *
+ * <h2>Why this is a different class from the 26.2 one</h2>
+ *
+ * 26.2 splits item rendering in two: an {@code ItemModel} decides what to draw
+ * for a stack, and a {@code SpecialModelRenderer} draws it. That split arrived
+ * in 1.21.4. Here there is no {@code ItemModel}, no {@code ItemStackRenderState},
+ * no unbaked/bake/resolveDependencies protocol and no {@code MapCodec} keyed
+ * model type — so this cannot be edited into shape, only replaced.
  * <p>
- * <b>Forge origin.</b> On Forge the binding of the card item to its dynamic model
- * happened in {@code ClientProxy.modelBake}, which swapped the item's baked model
- * for a {@code CardBakedModel} in the model registry. There was no separate
- * "item model" type — the {@code BakedModel} was the whole story.
- * <p>
- * <b>26.2 mapping.</b> 26.2 splits the job: an {@link ItemModel} decides, per
- * stack, what to draw, and a {@link net.minecraft.client.renderer.special.SpecialModelRenderer}
- * does the drawing. This {@code ItemModel} does the deciding — it extracts the
- * {@link CardHolder} and hands it, with the renderer, to a fresh render layer.
- * The type is registered under {@code dueldimension:card} (see {@link
- * DdCardModels}) and the item's {@code assets/dueldimension/items/card.json}
- * selects it.
+ * What replaces it is the path 1.21.1 already has for an item that draws itself:
+ * a model whose JSON says {@code "parent": "minecraft:builtin/entity"}, which
+ * makes {@code BakedModel.isCustomRenderer()} true, which makes
+ * {@code ItemRenderer.render} call through to a renderer instead of drawing
+ * quads. Fabric exposes that hook as {@code DynamicItemRenderer}, and it hands
+ * over exactly the {@code PoseStack} and {@code MultiBufferSource} that
+ * {@link SubmitNodeCollector} wraps — so {@link CardSpecialRenderer}'s drawing
+ * is untouched.
+ *
+ * <h2>The binding moved from JSON to Java</h2>
+ *
+ * On 26.2 {@code assets/dueldimension/items/card.json} names a model TYPE and
+ * the type is registered by id. Here the registration is per ITEM, in
+ * {@link DdCardModels}. Worth knowing because a missing binding fails quietly:
+ * the item simply draws as its plain model.
  */
-public class CardItemModel implements ItemModel
+public final class CardItemModel implements BuiltinItemRendererRegistry.DynamicItemRenderer
 {
-    private final CardSpecialRenderer renderer;
-
-    public CardItemModel(CardSpecialRenderer renderer)
-    {
-        this.renderer = renderer;
-    }
+    private final CardSpecialRenderer renderer = new CardSpecialRenderer();
 
     @Override
-    public void update(ItemStackRenderState state, ItemStack stack, ItemModelResolver resolver,
-        ItemDisplayContext ctx, ClientLevel level, ItemOwner owner, int seed)
+    public void render(ItemStack stack, ItemDisplayContext ctx, PoseStack pose,
+        MultiBufferSource buffers, int light, int overlay)
     {
-        CardHolder card = renderer.extractArgument(stack);
-        ItemStackRenderState.LayerRenderState layer = state.newLayer();
-        layer.setupSpecialModel(renderer, card);
-        // TODO(visual): display transforms. Forge's applyTransform scaled the
-        // card to 0.5 and nudged it up in hand/ground and flipped it 180 in the
-        // item frame. A card at the default transform still renders; the exact
-        // per-context ItemTransform is left for the GPU pass.
-    }
-
-    /**
-     * The unbaked form the {@link ItemModel} system deserialises from the
-     * ClientItem JSON. It carries no fields — the card's identity comes from the
-     * stack at render time, not from the model JSON — so its codec is a unit
-     * codec and {@link #bake} just constructs the model.
-     */
-    public record Unbaked() implements ItemModel.Unbaked
-    {
-        public static final MapCodec<Unbaked> MAP_CODEC =
-            RecordCodecBuilder.mapCodec(i -> i.point(new Unbaked()));
-
-        @Override
-        public MapCodec<? extends ItemModel.Unbaked> type()
-        {
-            return MAP_CODEC;
-        }
-
-        @Override
-        public ItemModel bake(ItemModel.BakingContext ctx, org.joml.Matrix4fc transform)
-        {
-            return new CardItemModel(new CardSpecialRenderer());
-        }
-
-        @Override
-        public void resolveDependencies(ResolvableModel.Resolver resolver)
-        {
-            // No sub-model dependencies to resolve — the card face is drawn from
-            // runtime-loaded textures, not from referenced JSON models.
-        }
+        // Centred, because the two ends disagree about the origin.
+        // ItemRenderer.render translates by -0.5 on every axis before calling a
+        // custom renderer, so the pose arrives with its origin at the model's
+        // CORNER -- while CardSpecialRenderer draws a quad from -0.5 to +0.5
+        // about the middle, as the 26.2 item transform expected. Without this
+        // the card is drawn half a block off in three directions.
+        pose.pushPose();
+        pose.translate(0.5F, 0.5F, 0.5F);
+        renderer.submit(renderer.extractArgument(stack), pose,
+            new SubmitNodeCollector(buffers), light, overlay, false, 0);
+        pose.popPose();
     }
 }

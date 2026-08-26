@@ -70,6 +70,18 @@ public class ItemInHandLayerMixin
             return offhand;
         }
         ItemStack disk = DiskSlotOverlay.wornDiskFor(player);
-        return disk.isEmpty() ? offhand : disk;
+        if(disk.isEmpty())
+        {
+            return offhand;
+        }
+        // Tell the disk's renderer whose arm this is, which is the one thing
+        // 1.21.1's item-rendering path cannot pass it. See DiskCardsItemModel:
+        // it is read and cleared by the very next draw, so a disk drawn any
+        // other way -- a GUI slot, an item frame -- correctly gets nothing.
+        if(player == net.minecraft.client.Minecraft.getInstance().player)
+        {
+            de.cas_ual_ty.dueldimension.clientutil.DiskCardsItemModel.markLocalPlayer();
+        }
+        return disk;
     }
 }

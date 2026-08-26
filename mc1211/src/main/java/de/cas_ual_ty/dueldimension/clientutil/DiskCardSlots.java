@@ -27,7 +27,7 @@ import java.util.List;
  * where the placeholder was rather than somewhere that looked about right.
  * <p>
  * Coordinates are Blockbench's: 0..16 per axis, y up. {@link #WORLD} converts to
- * the space a {@link net.minecraft.client.renderer.special.SpecialModelRenderer}
+ * the space a {@link de.cas_ual_ty.dueldimension.compat.SpecialModelRenderer}
  * draws in, where the item spans -0.5..0.5 and 8 is the middle.
  */
 public final class DiskCardSlots

@@ -1,63 +1,46 @@
 package de.cas_ual_ty.dueldimension.clientutil;
 
-import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
-import de.cas_ual_ty.dueldimension.set.CardSet;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.item.ItemModel;
-import net.minecraft.client.renderer.item.ItemModelResolver;
-import net.minecraft.client.renderer.item.ItemStackRenderState;
-import net.minecraft.client.resources.model.ResolvableModel;
-import net.minecraft.world.entity.ItemOwner;
+import com.mojang.blaze3d.vertex.PoseStack;
+import de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector;
+import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * The {@link ItemModel} bound to the card-SET item, wiring it to {@link
- * CardSetSpecialRenderer}. The set-item mirror of {@link CardItemModel}; see that
- * class for the Forge-to-26.2 mapping. Registered under {@code
- * dueldimension:card_set} (see {@link DdCardModels}) and selected by {@code
- * assets/dueldimension/items/card_set.json}.
+ * Draws the card-SET item, by handing the stack to {@link CardSetSpecialRenderer}.
+ * <p>
+ * The set-item mirror of {@link CardItemModel}; see that class for why 26.2's
+ * item-model split has no counterpart here and what replaces it.
+ *
+ * <h2>One instance, two items</h2>
+ *
+ * <b>This must be registered against BOTH the sealed and the opened set.</b> On
+ * 26.2 that happens in JSON — {@code items/set.json} and
+ * {@code items/opened_set.json} are identical files naming the same model type —
+ * so binding both is something the 26.2 build does without anyone deciding to.
+ * Here the binding is a Java call per item, and forgetting the second one does
+ * not fail: an opened pack simply draws as its plain model, with no art. See
+ * {@link DdCardModels#register}, which registers one instance twice for exactly
+ * this reason.
+ * <p>
+ * Both items are {@code CardSetBaseItem}s, so
+ * {@link CardSetSpecialRenderer#extractArgument} answers for either.
  */
-public class CardSetItemModel implements ItemModel
+public final class CardSetItemModel implements BuiltinItemRendererRegistry.DynamicItemRenderer
 {
-    private final CardSetSpecialRenderer renderer;
-
-    public CardSetItemModel(CardSetSpecialRenderer renderer)
-    {
-        this.renderer = renderer;
-    }
+    private final CardSetSpecialRenderer renderer = new CardSetSpecialRenderer();
 
     @Override
-    public void update(ItemStackRenderState state, ItemStack stack, ItemModelResolver resolver,
-        ItemDisplayContext ctx, ClientLevel level, ItemOwner owner, int seed)
+    public void render(ItemStack stack, ItemDisplayContext ctx, PoseStack pose,
+        MultiBufferSource buffers, int light, int overlay)
     {
-        CardSet set = renderer.extractArgument(stack);
-        ItemStackRenderState.LayerRenderState layer = state.newLayer();
-        layer.setupSpecialModel(renderer, set);
-        // TODO(visual): display transforms, as in CardItemModel.
-    }
-
-    public record Unbaked() implements ItemModel.Unbaked
-    {
-        public static final MapCodec<Unbaked> MAP_CODEC =
-            RecordCodecBuilder.mapCodec(i -> i.point(new Unbaked()));
-
-        @Override
-        public MapCodec<? extends ItemModel.Unbaked> type()
-        {
-            return MAP_CODEC;
-        }
-
-        @Override
-        public ItemModel bake(ItemModel.BakingContext ctx, org.joml.Matrix4fc transform)
-        {
-            return new CardSetItemModel(new CardSetSpecialRenderer());
-        }
-
-        @Override
-        public void resolveDependencies(ResolvableModel.Resolver resolver)
-        {
-        }
+        // See CardItemModel: ItemRenderer translates to the model's corner
+        // before calling a custom renderer, and these quads are centred.
+        pose.pushPose();
+        pose.translate(0.5F, 0.5F, 0.5F);
+        renderer.submit(renderer.extractArgument(stack), pose,
+            new SubmitNodeCollector(buffers), light, overlay, false, 0);
+        pose.popPose();
     }
 }
