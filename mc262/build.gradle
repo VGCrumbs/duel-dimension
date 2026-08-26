@@ -433,3 +433,8 @@ if(jadeApi.isEmpty())
     sourceSets.main.java.exclude '**/JadeIntegration.java'
     logger.lifecycle('Jade API not in libs/: the Jade integration will not be compiled.')
 }
+
+// Where a 26.2 build goes. The 1.21.1 platform names a different profile; see
+// mc1211/build.gradle.
+ext.exportTo = 'C:/Users/Admin/AppData/Roaming/ModrinthApp/profiles/Duel'
+apply from: rootProject.file('gradle/export-jar.gradle')

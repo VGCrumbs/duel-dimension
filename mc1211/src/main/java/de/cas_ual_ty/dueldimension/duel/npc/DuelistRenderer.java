@@ -65,8 +65,38 @@ public class DuelistRenderer
         model = models.computeIfAbsent(profile, ignored -> new PlayerModel<>(
             LayerDefinition.create(PlayerModel.createMesh(CubeDeformation.NONE, slim), 64, 64)
                 .bakeRoot(), slim));
+        showAllSkinLayers(model);
         SkinLayersCompat.apply(model, texture, slim);
         super.render(entity, entityYaw, partialTick, poseStack, buffer, packedLight);
+    }
+
+    /**
+     * Every second-skin layer on, which is what a player's own renderer does.
+     *
+     * <h2>The same decision as 26.2, made on a different thing</h2>
+     *
+     * 26.2 sets six booleans on an {@code AvatarRenderState}, because
+     * {@code HumanoidMobRenderer} does not populate a player's cosmetic flags
+     * and their default is false — which made every flat or injected
+     * second-skin part invisible on NPC duelists.
+     * <p>
+     * 1.21.1 has no render state; the same information lives on the MODEL, as
+     * {@code ModelPart.visible}. Those default to TRUE, so this is not fixing
+     * the same bug — a duelist here already shows its layers. It is here so the
+     * two trees say the same thing about the same intent, and because it is not
+     * free: {@code SkinLayersCompat.apply} runs on the next line and injects
+     * geometry into exactly these parts, and anything that later switches one
+     * off — a layer hidden for a cosmetic, a model reused between profiles —
+     * would hide the injection with it and be very hard to see.
+     */
+    static void showAllSkinLayers(PlayerModel<DuelistEntity> model)
+    {
+        model.hat.visible = true;
+        model.jacket.visible = true;
+        model.leftSleeve.visible = true;
+        model.rightSleeve.visible = true;
+        model.leftPants.visible = true;
+        model.rightPants.visible = true;
     }
 
     private static ResourceLocation textureFor(String profile)

@@ -309,12 +309,29 @@ tasks.named('jar', Jar) {
 test {
     useJUnitPlatform()
 
-    // The engine's own tests live in `common` and run on Java 21 there. What runs
-    // HERE is what needs 1.21.1's classes on the classpath to be checkable at all
-    // -- currently MixinTargetsTest, which reads every mixin's target strings and
-    // asks the real Minecraft classes whether they mean anything. Those strings
-    // are invisible to compileJava and fatal at launch, so this is the only place
-    // between a port and a crash that looks at them.
+    // THE BUNDLED ENGINE, not this machine's EDOPro install -- mc262's four
+    // properties, verbatim, and for its reason: pointing them at bundle/ makes
+    // the suite exercise exactly what goes into the jar, rather than proving the
+    // engine works on the developer's machine.
+    //
+    // Sixteen tests skipped themselves with "native core not present" until this
+    // existed, and a suite that reports 437 passing while sixteen of them quietly
+    // did nothing is worse than one that fails. They are the tests that actually
+    // run duels -- board concealment, prompt translation, replay determinism,
+    // both-seats-playable -- so they are most of what "the rules engine works on
+    // 1.21.1" means.
+    //
+    // ../-relative because mc1211 is an INCLUDED BUILD: rootProject is this
+    // module, not the repository. Same correction as the engine-bundle tasks.
+    def enginePayload = file('../bundle/payload/dueldimension_engine')
+    systemProperty 'ocg.lib', project.findProperty('ocgLib')
+        ?: new File(enginePayload, 'native/win32-x86-64/ocgcore.dll').absolutePath
+    systemProperty 'ocg.scripts', project.findProperty('ocgScripts')
+        ?: file('../bundle/script').absolutePath
+    systemProperty 'ocg.cdb', project.findProperty('ocgCdb')
+        ?: new File(enginePayload, 'expansions/cards.cdb').absolutePath
+    systemProperty 'ocg.strings', project.findProperty('ocgStrings')
+        ?: new File(enginePayload, 'config/strings.conf').absolutePath
 }
 
 // Show every error, not the first hundred. A port produces errors in bulk and
@@ -344,3 +361,10 @@ if(portExcludes.exists())
     sourceSets.main.java.exclude(skip)
     logger.lifecycle("mc1211: ${skip.size()} file(s) excluded while porting")
 }
+
+// Where a 1.21.1 build goes. The 26.2 platform names a different profile; see
+// mc262/build.gradle. Two Minecraft versions, two Modrinth instances, and a jar
+// in the wrong one is a mod that refuses to load with a version-mismatch error
+// that names neither of them helpfully.
+ext.exportTo = 'C:/Users/Admin/AppData/Roaming/ModrinthApp/profiles/Cobblemon'
+apply from: file('../gradle/export-jar.gradle')

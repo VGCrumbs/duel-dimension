@@ -1,0 +1,97 @@
+// `exportJar`: put this platform's remapped jar into its Modrinth profile.
+//
+// Applied by both platforms, which name only their own destination. There is one
+// copy of this because the interesting part is not the copy -- it is the two
+// rules below, and two build files stating them separately is two places for one
+// of them to be forgotten.
+//
+// ---------------------------------------------------------------------------
+// RULE ONE: NEVER OVERWRITE A JAR THE GAME HAS OPEN.
+//
+// This was a house rule kept in someone's head, and it was broken once: a jar
+// replaced under a running client, which then behaved like a mod that was half
+// one build and half another. Every bug reported from that session was fiction,
+// and working out that they were fiction cost more than the session did.
+//
+// It is enforced here instead, and by the operating system rather than by a
+// guess. Fabric holds every mod jar open as a ZipFile for the whole session, so
+// Windows refuses to replace one while the game is running. So the export writes
+// beside the destination and MOVES onto it: a move onto a locked file fails
+// whole, before a single byte of the old jar is touched, and the failure is
+// turned into a sentence naming the cause instead of a stack trace about access
+// being denied.
+//
+// A pre-flight process scan was the other option. This is better: it cannot
+// disagree with reality, because it IS the write that would have done the harm.
+//
+// ---------------------------------------------------------------------------
+// RULE TWO: ONE JAR OF THIS MOD IN THE FOLDER.
+//
+// Fabric refuses to start with two jars declaring the same mod id, so a version
+// bump silently turns into a launcher that will not launch until someone deletes
+// the old file. The export removes any other jar whose name begins with this
+// platform's own archive name, and prints each one it removed -- scoped that
+// narrowly so it can never touch another mod, and printed so that a deletion is
+// never something that merely happened.
+
+def exportDestination = project.findProperty('exportTo')
+
+tasks.register('exportJar') {
+    description = 'Copies the remapped jar into the Modrinth profile for this Minecraft version.'
+    group = 'distribution'
+    dependsOn tasks.named('remapJar')
+
+    def jarFile = tasks.named('remapJar').flatMap { it.archiveFile }
+    def baseName = base.archivesName
+    def logger = project.logger
+
+    doLast {
+        if(exportDestination == null)
+        {
+            throw new GradleException('No export destination: apply this script with '
+                + 'ext.exportTo set to the profile directory.')
+        }
+        def mods = new File(exportDestination as String, 'mods')
+        if(!mods.isDirectory())
+        {
+            throw new GradleException("No mods folder at ${mods}. Is that profile still there?")
+        }
+
+        def source = jarFile.get().asFile
+        def prefix = baseName.get() + '-'
+        def target = new File(mods, source.name)
+
+        // Rule two, before the copy: an old jar left beside a new one is a mod
+        // id declared twice, which Fabric will not start with.
+        mods.listFiles({ File f ->
+            f.isFile() && f.name.startsWith(prefix) && f.name.endsWith('.jar')
+                && f.name != source.name
+        } as FileFilter).each { stale ->
+            logger.lifecycle("exportJar: removing superseded ${stale.name}")
+            if(!stale.delete())
+            {
+                throw new GradleException("Could not remove ${stale}; is the game running?")
+            }
+        }
+
+        // Rule one: staged beside the destination so the replace is a move.
+        // Same volume, so the move is atomic and cannot half-happen.
+        def staged = new File(mods, source.name + '.incoming')
+        try
+        {
+            java.nio.file.Files.copy(source.toPath(), staged.toPath(),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+            java.nio.file.Files.move(staged.toPath(), target.toPath(),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        }
+        catch(java.nio.file.FileSystemException locked)
+        {
+            staged.delete()
+            throw new GradleException("Cannot replace ${target.name}: the game has it open."
+                + " Close the Minecraft client and run this again. Nothing was changed."
+                + " (${locked.reason})", locked)
+        }
+
+        logger.lifecycle("exportJar: ${target} (${source.length() >> 20} MB)")
+    }
+}

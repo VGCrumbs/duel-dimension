@@ -187,6 +187,32 @@ def recipes(dry, log):
             log.append(f'{name}: {len(key)} pattern key(s) -> ingredient objects')
 
 
+def authored_model(dry, log):
+    """Put the authored duel disk where mc1211's tests can still read it.
+
+    `DiskRackTest` checks that the generated slot table really is a split of the
+    Blockbench model it claims to come from -- which needs that model. mc262 has
+    it at `models/item/duel_disk.json`; here that path is a builtin/entity
+    marker, so the authored file has nowhere to live in the asset tree.
+
+    It goes into TEST resources instead, and under a different name, for two
+    reasons that are both about not being loaded. 1.21.1's bakery reads every
+    file under `models/` whether anything references it or not, so an unused
+    copy in the asset tree would be parsed -- and it is the file with the 42.5
+    degree rotation, so it would log the same failure the snap exists to
+    prevent. And a second file at the SAME classpath path as the marker would be
+    a coin toss over which one a test opened.
+    """
+    source = 'assets/dueldimension/models/item/duel_disk.json'
+    target = os.path.join(ROOT, 'mc1211', 'src', 'test', 'resources', 'authored',
+        'duel_disk.json')
+    if dry:
+        return
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+    shutil.copy2(os.path.join(SRC, source.replace('/', os.sep)), target)
+    log.append('duel_disk.json -> src/test/resources/authored/ (for DiskRackTest)')
+
+
 def specials(dry, log):
     """The thirteen models the bulk copy is not allowed to answer for."""
     for name in SELF_DRAWN:
@@ -250,6 +276,7 @@ def main():
     # After the bulk copy, not before: these overwrite files it just wrote.
     log = []
     specials(dry, log)
+    authored_model(dry, log)
     snap_rotations(dry, log)
     recipes(dry, log)
 

@@ -54,8 +54,59 @@ public final class UnownedPipelines
     public static final float DIM_GREEN = 0.62F;
     public static final float DIM_BLUE = 0.68F;
 
+    /**
+     * Rec.709 luma. The same weights the CPU pass used, so the look does not
+     * change with the mechanism.
+     */
+    public static final float RED_WEIGHT = 0.2126F;
+    public static final float GREEN_WEIGHT = 0.7152F;
+    public static final float BLUE_WEIGHT = 0.0722F;
+
+    /**
+     * How much of the original chroma survives.
+     * <p>
+     * Not zero: a little hue keeps monster, Spell and Trap frames recognizable
+     * while ownership stays unmistakable at thumbnail size.
+     */
+    public static final float KEPT_CHROMA = 0.15F;
+
     private UnownedPipelines()
     {
+    }
+
+    /**
+     * What the greying looks like, for one pixel.
+     *
+     * <h2>Why this is here when nothing on 1.21.1 can call it</h2>
+     *
+     * On 26.2 this is the reference the two {@code .fsh} files are a
+     * transliteration of, and a test pins both halves against each other. There
+     * are no {@code .fsh} files here — they are written against 26.2's uniform
+     * blocks — so on this version it is the reference for nothing yet.
+     * <p>
+     * Carried across anyway, because it is the SPECIFICATION of the look rather
+     * than an implementation of it, and losing it would mean the day 1.21.1
+     * grows a desaturating pipeline someone re-derives four constants from a
+     * screenshot. The arithmetic is version-independent and the test that pins
+     * it runs here unchanged.
+     * <p>
+     * <b>It is not the fallback, and cannot be.</b> {@link #dimmed} is, because
+     * a vertex tint is a per-vertex multiply and desaturation is a per-pixel
+     * operation — no colour handed to a vertex can turn a red card grey. That is
+     * the whole reason the 26.2 version needs a shader for this and a multiply
+     * for the fallback, and why the gap here is real rather than cosmetic.
+     */
+    public static int unownedColour(int argb)
+    {
+        int alpha = argb >>> 24;
+        int red = argb >>> 16 & 0xFF;
+        int green = argb >>> 8 & 0xFF;
+        int blue = argb & 0xFF;
+        int grey = Math.round(red * RED_WEIGHT + green * GREEN_WEIGHT + blue * BLUE_WEIGHT);
+        red = Math.round(grey + (red - grey) * KEPT_CHROMA);
+        green = Math.round(grey + (green - grey) * KEPT_CHROMA);
+        blue = Math.round(grey + (blue - grey) * KEPT_CHROMA);
+        return alpha << 24 | red << 16 | green << 8 | blue;
     }
 
     /**
