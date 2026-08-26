@@ -48,10 +48,15 @@ public final class DuelTextures
      *
      * @see CardBacks
      */
+    // The anime back, matching CardBacks.ALL's first entry, which is the
+    // default. These are overwritten the moment the stored choice is read --
+    // but "the moment" is not zero, and a frame drawn before it showed the
+    // other back. Two places naming one default is the cost of the field being
+    // assigned rather than computed; the paragraph above is why it is.
     public static volatile Identifier COVER =
-        Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "textures/duel/backs/tcg.png");
+        Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "textures/duel/backs/anime.png");
     public static volatile Identifier COVER_OPPONENT =
-        Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "textures/duel/backs/tcg.png");
+        Identifier.fromNamespaceAndPath(DuelDimension.MOD_ID, "textures/duel/backs/anime.png");
 
     /**
      * Prints both sides' cards on the given backs.

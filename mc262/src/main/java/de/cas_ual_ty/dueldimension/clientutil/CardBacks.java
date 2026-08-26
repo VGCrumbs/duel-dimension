@@ -60,15 +60,17 @@ public final class CardBacks
      * Every back, in the order the settings tab offers them.
      * <p>
      * The first is the default, which is what a fresh install and an
-     * unrecognised stored id both fall back to. Every file is 480x700, the
+     * unrecognised stored id both fall back to. That is the ANIME back, and the
+     * order here is the only thing that says so -- a duellist who has already
+     * chosen keeps their choice, because the stored id is read back by name. Every file is 480x700, the
      * shape {@link DuelTextures#CARD_ASPECT} describes, so a back is drawn
      * through the full 0..1 UV range rather than the letterbox window — which
      * is what the {@code texture.equals(COVER)} tests across the duel screen
      * are asking.
      */
     public static final List<Back> ALL = List.of(
-        new Back("tcg", "TCG", texture("tcg")),
-        new Back("anime", "Anime", texture("anime")));
+        new Back("anime", "Anime", texture("anime")),
+        new Back("tcg", "TCG", texture("tcg")));
 
     /**
      * The key the id is stored under. Named rather than positional so a second
