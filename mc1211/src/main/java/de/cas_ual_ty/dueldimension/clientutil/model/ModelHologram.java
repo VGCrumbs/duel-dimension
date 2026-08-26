@@ -253,6 +253,25 @@ public final class ModelHologram
             int[] joints = bones != null && part.skinned() ? part.joints() : null;
             float[] weights = joints == null ? null : part.weights();
 
+            // THE DEPTH PASS IS DRAWN OPAQUE, and this is the difference
+            // between a clean cutout and a creature torn to pieces.
+            //
+            // The cutout shader alpha-tests AFTER multiplying the texture by
+            // the vertex colour, and the vertex colour here carries the
+            // monster's solidity -- a half-there monster hands it 0.5, and one
+            // fading in hands it less. So a texel at 0.3 alpha arrives at the
+            // test as 0.15, and one at 0.15 arrives as 0.075 and is DISCARDED.
+            // No depth is written there, so the colour pass finds nothing to
+            // match with EQUAL and that fragment is missing -- a hole. Wings
+            // and soft edges are where a model keeps its low alpha, which is
+            // exactly where the tearing was.
+            //
+            // Forcing alpha to full for the depth pass makes the test see the
+            // TEXTURE's alpha and nothing else, which is what "the shape of
+            // this model" means. The colour pass keeps the real tint, because
+            // that is the pass anybody sees.
+            int shade = depthPass ? (tint | 0xFF000000) : tint;
+
             // Which of the three types this part is drawn through:
             //   opaque      -> typeFor, alpha-tested, one fragment per pixel
             //                  already because the depth test says so.
@@ -299,7 +318,7 @@ public final class ModelHologram
                         {
                             emit(buffer, pose, triangle + Math.min(corner, 2),
                                 positions, normals, uvs, joints, weights, bones,
-                                tint, point, direction);
+                                shade, point, direction);
                         }
                     }
                 });

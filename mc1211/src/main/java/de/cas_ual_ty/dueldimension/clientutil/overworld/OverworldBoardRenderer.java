@@ -1022,7 +1022,31 @@ public final class OverworldBoardRenderer
                     size(side.hand()), back);
             }
         }
+
+        // Every monster, after every card, mat and pile. See HOLOGRAMS.
+        for(Runnable hologram : HOLOGRAMS)
+        {
+            hologram.run();
+        }
+        HOLOGRAMS.clear();
     }
+
+    /**
+     * Monsters waiting for the rest of the board to be drawn.
+     * <p>
+     * A hologram writes depth on purpose -- {@code ModelMesh.depthOnly} is what
+     * makes it show only its nearest surface rather than every surface it has --
+     * and depth in the shared buffer rejects whatever is drawn after it. Drawn
+     * where they are decided, in the middle of a loop over zones, a monster in
+     * the first zone rejected the cards of every zone after it, and the board
+     * had a monster-shaped hole in it.
+     * <p>
+     * So the decision stays where the slot is read and the DRAW moves to the
+     * end. Cleared after each frame's run rather than reused, and never held
+     * across one: a lambda in here captures a pose stack, and a pose stack is
+     * only good for the frame it belongs to.
+     */
+    private static final List<Runnable> HOLOGRAMS = new java.util.ArrayList<>();
 
     /**
      * How tall a held card stands, in blocks. A metre: the size a card would be
@@ -1300,8 +1324,16 @@ public final class OverworldBoardRenderer
                 slot.defence(), cardLift(transform), CardFaces.face(slot, false, asked),
                 CardFaces.underside(slot, asked), fade(0xFFFFFFFF));
 
-            drawHologram(poseStack, collector, transform, camera, zone, slot, location,
-                asked, controller, sequence);
+            // DEFERRED, not drawn here. A hologram writes depth -- that is
+            // what makes it show only its nearest surface -- and this is the
+            // middle of a loop over zones, so a monster in the first zone was
+            // rejecting the cards of every zone drawn after it. Held until the
+            // whole board is down; see HOLOGRAMS.
+            final FieldLayout.Rect heldZone = zone;
+            final BoardSnapshot.Slot heldSlot = slot;
+            final int heldSequence = sequence;
+            HOLOGRAMS.add(() -> drawHologram(poseStack, collector, transform, camera,
+                heldZone, heldSlot, location, asked, controller, heldSequence));
 
             // Switched off. drawing.cpp composites tNegated over any face-up
             // card the core has disabled or forbidden, and the flat board has
