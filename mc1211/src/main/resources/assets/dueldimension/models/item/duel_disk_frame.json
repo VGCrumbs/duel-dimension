@@ -5822,5 +5822,9 @@
       ]
     }
   ],
+  "texture_size": [
+    16,
+    16
+  ],
   "__generated": "tools/gen_disk_cards.py -- edit duel_disk.json instead"
 }

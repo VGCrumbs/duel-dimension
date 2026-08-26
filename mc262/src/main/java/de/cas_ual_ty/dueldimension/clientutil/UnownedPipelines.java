@@ -94,7 +94,13 @@ public final class UnownedPipelines
      * {@link #available()}: a model either draws or the pipeline failed, and
      * there is no dimmer fallback to fall back to.
      */
-    public static final RenderPipeline MODEL = PipelineCopy.of(RenderPipelines.ENTITY_CUTOUT,
+    // ENTITY_CUTOUT_CULL, not ENTITY_CUTOUT. The suffix is the whole difference
+    // and it reads backwards from 1.21.1, where entityCutout culls and
+    // entityCutoutNoCull is the exception -- here the bare name is the one that
+    // does NOT cull. A monster is a closed solid; its far side has no business
+    // being visible through its near side.
+    public static final RenderPipeline MODEL = PipelineCopy.of(
+        RenderPipelines.ENTITY_CUTOUT_CULL,
         "model_triangles", null, null, com.mojang.blaze3d.PrimitiveTopology.TRIANGLES);
 
     /**
@@ -107,12 +113,16 @@ public final class UnownedPipelines
      * a half-there fragment at all.
      * <p>
      * Only while fading. Translucent geometry is not depth-sorted against
-     * itself, so a solid creature drawn this way can show its own far side
-     * through its near side; that is acceptable for a fifth of a second in the
-     * middle of a movement and would not be acceptable as the resting state.
+     * itself, so a creature drawn this way can show one part of itself through
+     * another; culling removes the worst of that -- the far side of the same
+     * surface -- but not overlap between separate parts, a wing across a
+     * shoulder. That is acceptable for a fifth of a second in the middle of a
+     * movement, and it is also what a permanently half-solid monster looks
+     * like, which is why the board's own solidity rule is the thing to change
+     * if it ever stops being acceptable.
      */
     public static final RenderPipeline MODEL_BLEND = PipelineCopy.of(
-        RenderPipelines.ENTITY_TRANSLUCENT, "model_triangles_blend", null, null,
+        RenderPipelines.ENTITY_TRANSLUCENT_CULL, "model_triangles_blend", null, null,
         com.mojang.blaze3d.PrimitiveTopology.TRIANGLES);
 
     /**

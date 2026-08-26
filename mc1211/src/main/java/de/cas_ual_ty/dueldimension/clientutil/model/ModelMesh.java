@@ -170,8 +170,17 @@ public final class ModelMesh
         // The stock types 26.2's mod pipelines were copies of. It built its own
         // in order to swap the fragment shader; nothing here needs that, so the
         // vanilla pair is the same recipe without the copy.
+        // BOTH CULL. entityCutout does already; entityTranslucent does NOT --
+        // it is the NO_CULL variant, and entityTranslucentCull is the one that
+        // does. A monster is a closed solid, so its far side has no business
+        // being visible through its near side, and drawing it was most of what
+        // made a half-solid creature read as damaged rather than as translucent.
+        //
+        // It also halves the geometry that reaches the blend, which is the one
+        // thing that helps an unsorted translucent draw: fewer overlapping
+        // fragments, fewer places for the order to be wrong.
         return types.computeIfAbsent(texture,
-            id -> blend ? RenderType.entityTranslucent(id) : RenderType.entityCutout(id));
+            id -> blend ? RenderType.entityTranslucentCull(id) : RenderType.entityCutout(id));
     }
 
     /**
