@@ -121,6 +121,18 @@ public final class FieldQuad
         Identifier texture, Corners corners,
         float u0, float v0, float u1, float v1, int tint, boolean desaturate)
     {
+        // The greying is the shader's job when there is a shader, and the
+        // TINT's when there is not -- which is the same fallback every other
+        // unowned-card draw already takes, and this one was not taking.
+        //
+        // Asked here rather than at the call site on purpose. The caller is
+        // BoardRenderer, which knows about ownership and has no business
+        // knowing whether a pipeline compiled; without this an unowned card on
+        // the 3D board came out in full colour, looking owned, on any machine
+        // where the shader failed -- and on every machine at all on 1.21.1,
+        // where there is no shader to compile.
+        int shade = desaturate && !UnownedPipelines.available()
+            ? UnownedPipelines.dimmed(tint) : tint;
         collector.order(layer++).submitCustomGeometry(poseStack,
             // The one entity render type that is truly UNLIT. Read off the
             // 26.2 pipeline bytecode, not guessed:
@@ -150,10 +162,10 @@ public final class FieldQuad
                 : net.minecraft.client.renderer.rendertype.RenderTypes.breezeWind(texture, 0F, 0F),
             (pose, buffer) ->
             {
-                vertex(buffer, pose, corners.x0(), corners.y0(), u0, v0, tint);
-                vertex(buffer, pose, corners.x3(), corners.y3(), u0, v1, tint);
-                vertex(buffer, pose, corners.x2(), corners.y2(), u1, v1, tint);
-                vertex(buffer, pose, corners.x1(), corners.y1(), u1, v0, tint);
+                vertex(buffer, pose, corners.x0(), corners.y0(), u0, v0, shade);
+                vertex(buffer, pose, corners.x3(), corners.y3(), u0, v1, shade);
+                vertex(buffer, pose, corners.x2(), corners.y2(), u1, v1, shade);
+                vertex(buffer, pose, corners.x1(), corners.y1(), u1, v0, shade);
             });
     }
 

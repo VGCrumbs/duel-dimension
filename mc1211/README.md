@@ -1,12 +1,16 @@
 # The 1.21.1 platform
 
-**The toolchain works. Nothing is ported yet.**
+**The mod is ported, it builds, it runs, and its test suite matches 26.2's.**
+See [Where the port actually is](#where-the-port-actually-is) for what that does
+and does not mean — the short version is that the code is across and most of the
+UI has still never been looked at on this version.
 
-`gradlew25 buildAll` at the repository root builds this alongside 26.2 and
-produces a real, loadable Fabric 1.21.1 mod jar. It contains `ToolchainProof`
-and the shared rules engine, and no mod — porting is Phase 1.
+`gradlew25 buildAll` at the repository root builds this alongside 26.2.
 
-## What `ToolchainProof` is for
+## What `ToolchainProof` was for
+
+Kept because the three questions it answered are the three that made this
+platform possible, and the reasoning is worth more than the file.
 
 It is one file, it is not an entrypoint, and it is registered nowhere. It exists
 because three things could not be known until a 1.21.1 build actually compiled:
@@ -21,8 +25,8 @@ because three things could not be known until a 1.21.1 build actually compiled:
    26.2 ships unobfuscated, so official mappings mean a ported file differs only
    where the API genuinely differs — not in every type name.
 
-All three now answer yes. Delete the file once real code lands; at that point
-the compiler asks these questions on every file anyway.
+All three answer yes, and 407 ported files now ask them on every build, which is
+what the file was holding the place for.
 
 ## Why the repository is a composite
 
@@ -81,18 +85,24 @@ source for it. Nothing is published and nothing is fetched from a repository.
 
 ## Where the port actually is
 
-**All 407 Java files compile and 1,299 of 1,355 resources are across.**
-`port-excludes.txt` is empty and `dueldimension-fabric-1.21.1.jar` builds, with
-its mixins remapped in place — no refmap, because Loom's remapper rewrites the
-annotation strings into intermediary itself.
+**All 407 Java files compile, the resources are across, and the test suite is
+437 tests — the same 437 mc262 runs, none failing and none skipped.** (mc262
+skips one, for want of a card database.) `port-excludes.txt` is empty, and
+`dueldimension-fabric-1.21.1.jar` builds with its mixins remapped in place — no
+refmap, because Loom's remapper rewrites the annotation strings into
+intermediary itself. `./gradlew25.cmd -p mc1211 exportJar` puts it in the
+Modrinth profile.
 
-**That is not the same as "it runs."** Nothing in this tree has been launched.
-What is proven is that it compiles, that every mixin names a method 1.21.1
-actually has (`MixinTargetsTest`, which is the only thing between a stale target
-string and a crash before the title screen), and that the jar assembles. What is
-NOT proven is that any injection point is reachable, that any screen lays out,
-or that a duel plays. The next step is a run, and the first run of a port this
-size is a list, not a verdict.
+**It has been run.** The client launches, a world loads, the bundled engine
+unpacks, and a duel starts. Four things the first run found are fixed: the
+interface drew blurred, the jar carried no engine, "are the card scripts
+supplied?" was asking the wrong question, and card backs flipped 180° when a
+placement animation ended.
+
+**What is still unproven is most of the UI.** One hub screen and one duel start.
+The deck editor, the shops, pack opening, the 3D board and every animation have
+not been looked at on this version. A green suite and a clean launch are not the
+same as a screen that lays out.
 
 ### The shims, and what each one costs
 
@@ -104,7 +114,7 @@ Written where 1.21.1 has no counterpart for something 26.2 assumes. All in
 | `GuiGraphicsExtractor` | 26.2's retained-mode GUI extractor | `nextStratum`, `blurBeforeThisStratum` and `dispose` are no-ops |
 | `SubmitNodeCollector` | the submission API | flushes per submission to keep call order; `submitText` drops the outline colour |
 | `RenderPipelines` | named GUI pipelines | valueless `Object`s; 1.21.1 has one GUI path |
-| `InputEvents` | 26.2's input records | the double-click flag is lost — the bridge passes `false` |
+| `InputEvents` | 26.2's input records | the double-click flag is lost, and costs nothing — no mod code on either version branches on it, and 1.21.1's `AbstractContainerScreen` does its own detection |
 | `SpecialModelRenderer` | the 1.21.4 item-render split | nothing; it is the same interface, mod-owned |
 
 ### Where a decision was made rather than a rename
@@ -125,9 +135,10 @@ Written where 1.21.1 has no counterpart for something 26.2 assumes. All in
 - **Unowned cards are tinted, not shaded.** The two fragment shaders are not
   ported — they are written against 26.2's uniform blocks — so
   `UnownedPipelines.available()` is permanently false and every caller takes the
-  `dimmed(tint)` branch the mod already had. Known gap: `FieldQuad.draw`'s
-  `desaturate` reaches `mesh()` without asking `available()`, so an unowned card
-  on the 3D board still looks owned.
+  `dimmed(tint)` branch the mod already had, including `FieldQuad.draw` on the 3D
+  board. A tint cannot desaturate, so the look is dimmer and cooler rather than
+  grey; that is the same degraded state 26.2 falls back to when the shader will
+  not compile, not a new one.
 - **`CardDisplayRenderer`** keeps 26.2's extract/submit split as a plain object,
   because `drawMonster` is forty lines of placement rules shared with the board
   and identical parameters are what keep the two versions one piece of text.
@@ -137,11 +148,18 @@ Written where 1.21.1 has no counterpart for something 26.2 assumes. All in
 
 ### Still missing
 
+- **The two card-desaturate shaders** — the one remaining gap you can see. An
+  unowned card is dimmed here and greyed on 26.2. `UnownedPipelines` carries the
+  arithmetic and the constants, and `available()` is permanently false. Closing
+  it means 1.21.1 core shaders (a `.json`, a `.vsh` and a `.fsh` each), a
+  `CoreShaderRegistrationCallback` registration, and an access widener for
+  `RenderType.create` — which would be the one entry of mc262's four that turns
+  out to be needed here after all.
 - `JadeIntegration` and `ModMenuIntegration` — see
   `src/main/java/.../fabric/README-integrations.md`.
-- The two card-desaturate shaders.
-- 73 of the 74 `mc262` tests. Only `MixinTargetsTest` is here; the engine's own
-  suite lives in `common` and runs on Java 21, which is 1.21.1's.
+- One duel-disk element is drawn at 45° where it was authored at 42.5°, because
+  1.21.1 accepts only multiples of 22.5. Re-authoring it onto a legal angle is
+  the fix; snapping is what the resource port does meanwhile.
 
 ## What Phase 1 faced
 

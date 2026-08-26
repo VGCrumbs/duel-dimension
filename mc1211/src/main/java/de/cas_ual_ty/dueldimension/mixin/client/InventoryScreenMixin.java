@@ -111,16 +111,24 @@ public abstract class InventoryScreenMixin
      * 26.2 injects into {@code extractContents}; 1.21.1 has no such method and
      * draws from {@code render}.
      * <p>
-     * <b>One behavioural difference, stated because it is invisible otherwise.</b>
-     * {@code extractContents} is the container's BODY on 26.2 -- the floating
-     * item a player is dragging is described after it, so the disk slot goes
-     * underneath. Here {@code render} is the whole thing, so TAIL is after the
-     * floating item and the slot goes over a dragged stack instead. The
-     * alternative is injecting at the call to {@code renderFloatingItem}, which
-     * ties this to a call site that is one refactor from moving; a slot drawn over
-     * a stack in transit is the cheaper wrong.
+     * <b>After {@code renderLabels}, and not at TAIL.</b> 26.2's
+     * {@code extractContents} is the container's BODY -- the stack a player is
+     * dragging is described after it, so the disk slot goes underneath, which is
+     * right: a slot painted over a stack in transit looks like the stack went
+     * behind the furniture. 1.21.1's {@code render} is the whole thing, and TAIL
+     * is past the carried item.
+     * <p>
+     * {@code renderLabels} is the last call before that carried-item block, and
+     * it is unconditional -- read off the bytecode rather than assumed, because
+     * the block after it is full of {@code isEmpty} branches and an injection
+     * point inside one of those would fire only while something was being
+     * dragged. So this is the same position as 26.2's, expressed as the last
+     * thing the body does rather than as the end of the method.
      */
-    @Inject(method = "render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V", at = @At("TAIL"))
+    @Inject(method = "render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V",
+        at = @At(value = "INVOKE", shift = At.Shift.AFTER,
+            target = "Lnet/minecraft/client/gui/screens/inventory/AbstractContainerScreen;"
+                + "renderLabels(Lnet/minecraft/client/gui/GuiGraphics;II)V"))
     private void dueldimension$drawDiskSlot(net.minecraft.client.gui.GuiGraphics graphics,
         int mouseX, int mouseY, float partialTick, CallbackInfo callback)
     {

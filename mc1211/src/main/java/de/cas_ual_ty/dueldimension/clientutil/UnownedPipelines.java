@@ -141,12 +141,10 @@ public final class UnownedPipelines
      * full colour; the dim comes from the tint instead, at the call sites that
      * ask {@link #available()} first.
      * <p>
-     * <b>Known gap.</b> {@code FieldQuad.draw}'s {@code desaturate} parameter
-     * reaches here WITHOUT asking {@link #available()}, so on the 3D board an
-     * unowned card is neither greyed nor dimmed — it looks owned. That is one
-     * call site, it only affects the card preview on the world board, and
-     * fixing it means threading the dim through {@code FieldQuad} rather than
-     * anything about this class. Written down rather than quietly accepted.
+     * A caller that reaches here is not left in full colour: {@code FieldQuad
+     * .draw} asks {@link #available()} and dims the TINT when the answer is no,
+     * which is the same fallback every other unowned-card draw takes. It used
+     * not to, and an unowned card on the 3D board looked owned.
      */
     public static RenderType mesh(ResourceLocation texture)
     {
