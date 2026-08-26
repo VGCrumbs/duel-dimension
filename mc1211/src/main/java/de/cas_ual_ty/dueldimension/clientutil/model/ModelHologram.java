@@ -215,6 +215,23 @@ public final class ModelHologram
         // this dragon is a third of the way up its body.
         poseStack.translate(-foot[0], -foot[1], -foot[2]);
 
+        // TWO PASSES WHEN BLENDED, and the order across PARTS is the whole
+        // reason this is a loop over passes rather than a loop over parts.
+        //
+        // The depth pass has to finish for the WHOLE model before any colour is
+        // drawn. Done per part -- depth then colour, part by part -- part A's
+        // colour would be compared against a depth buffer that does not yet know
+        // about part B, so a wing in front of a shoulder would let the shoulder
+        // through until the wing's own depth arrived, which is the artifact this
+        // exists to remove.
+        //
+        // Opaque models need none of it: the depth test already leaves one
+        // fragment per pixel, so they run the second pass alone and the first is
+        // skipped rather than wasted.
+        boolean blend = (tint >>> 24) < 0xFF;
+        for(int pass = blend ? 0 : 1; pass <= 1; pass++)
+        {
+        boolean depthPass = pass == 0;
         for(ModelMesh.Part part : mesh.parts())
         {
             if(part.texture() == null)
@@ -236,12 +253,16 @@ public final class ModelHologram
             int[] joints = bones != null && part.skinned() ? part.joints() : null;
             float[] weights = joints == null ? null : part.weights();
 
-            // Blended only while it is actually part way there. A monster at
-            // full solidity keeps the depth-sorted pipeline, which is the one
-            // that draws a creature correctly.
-            boolean blend = (tint >>> 24) < 0xFF;
+            // Which of the three types this part is drawn through:
+            //   opaque      -> typeFor, alpha-tested, one fragment per pixel
+            //                  already because the depth test says so.
+            //   blend, pass 0 -> depthOnly: shape into the depth buffer.
+            //   blend, pass 1 -> nearestOnly: colour, EQUAL depth, so only the
+            //                  surface pass 0 found is shaded.
             collector.submitCustomGeometry(poseStack,
-                ModelMesh.typeFor(part.texture(), blend),
+                !blend ? ModelMesh.typeFor(part.texture(), false)
+                    : depthPass ? ModelMesh.depthOnly(part.texture())
+                        : ModelMesh.nearestOnly(part.texture()),
                 (unused, buffer) ->
                 {
                     // Skinned straight into the vertex, with no posed copy of the
@@ -282,6 +303,7 @@ public final class ModelHologram
                         }
                     }
                 });
+        }
         }
         poseStack.popPose();
     }

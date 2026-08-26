@@ -43,10 +43,15 @@ java {
 }
 
 loom {
-    // NO ACCESS WIDENER, and now for a checked reason rather than a hopeful one.
-    //
-    // mc262 carries four entries. Every one of them turned out to be a 26.2
-    // problem:
+    // ONE ACCESS WIDENER, generated rather than written -- see
+    // tools/gen_accesswidener.py. It opens RenderType.create and the state
+    // shards, so the models can be drawn nearest-surface-only: depth in one
+    // pass, colour in a second with the depth test set to EQUAL. Neither type
+    // exists in vanilla.
+    accessWidenerPath = file('src/main/resources/dueldimension.accesswidener')
+
+    // WHAT IT DOES NOT OPEN, and why -- mc262 carries four entries and every
+    // one of them turned out to be a 26.2 problem:
     //   MenuType's constructor and its MenuSupplier -- both public here.
     //   MenuScreens.register and its ScreenConstructor -- public here.
     //   ItemModels.ID_MAPPER -- the whole model-type registry is 1.21.4+; the

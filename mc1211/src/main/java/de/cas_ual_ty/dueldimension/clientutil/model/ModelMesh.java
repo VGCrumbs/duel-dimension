@@ -1,6 +1,9 @@
 package de.cas_ual_ty.dueldimension.clientutil.model;
 
 import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import net.minecraft.client.renderer.RenderStateShard;
 import de.cas_ual_ty.dueldimension.DuelDimension;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
@@ -182,6 +185,80 @@ public final class ModelMesh
         return types.computeIfAbsent(texture,
             id -> blend ? RenderType.entityTranslucentCull(id) : RenderType.entityCutout(id));
     }
+
+    /**
+     * The depth half of a nearest-surface-only draw: shape, and nothing else.
+     * <p>
+     * Alpha-TESTED, so the silhouette is exactly the model's own -- a fragment
+     * the cutout shader discards writes no depth, and a hole in the texture
+     * stays a hole. Colour is masked off entirely, so this pass paints nothing;
+     * all it does is leave the distance to the nearest surface in the depth
+     * buffer for {@link #nearestOnly} to compare against.
+     *
+     * @see #nearestOnly for why the pair exists
+     */
+    public static RenderType depthOnly(ResourceLocation texture)
+    {
+        return DEPTH.computeIfAbsent(texture, id -> RenderType.create(
+            "dueldimension_model_depth", DefaultVertexFormat.NEW_ENTITY,
+            VertexFormat.Mode.QUADS, 1536, true, false,
+            RenderType.CompositeState.builder()
+                .setShaderState(RenderStateShard.RENDERTYPE_ENTITY_CUTOUT_SHADER)
+                .setTextureState(new RenderStateShard.TextureStateShard(id, false, false))
+                .setTransparencyState(RenderStateShard.NO_TRANSPARENCY)
+                .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
+                // The whole point: depth yes, colour no.
+                .setWriteMaskState(RenderStateShard.DEPTH_WRITE)
+                .setCullState(RenderStateShard.CULL)
+                .setLightmapState(RenderStateShard.LIGHTMAP)
+                .setOverlayState(RenderStateShard.OVERLAY)
+                .createCompositeState(false)));
+    }
+
+    /**
+     * The colour half: only the fragments that ARE the nearest surface.
+     *
+     * <h2>What this is for</h2>
+     *
+     * A monster on your own half is drawn half-solid at rest -- see
+     * {@code OverworldBoardRenderer.solidity}. Translucent geometry is not
+     * depth-sorted against itself, so every surface behind the front one blends
+     * in as well: a wing through a shoulder, the far side of the body through
+     * the near side, the card on the field through the chest. Backface culling
+     * removed the last of those three and could not touch the first two, because
+     * they are different pieces of the model rather than two sides of one
+     * surface.
+     * <p>
+     * <b>EQUAL, not LEQUAL.</b> {@link #depthOnly} has already left the nearest
+     * distance in the depth buffer, so a fragment passes here only if it IS that
+     * distance -- exactly one per pixel, whatever the model does behind it. The
+     * result is a creature of uniform transparency with a clean silhouette,
+     * which is what a hologram should look like and what stacking six blended
+     * layers never will.
+     * <p>
+     * Writes no depth, because the pass before it already did. Writing again
+     * would be harmless and doing it twice is still twice.
+     */
+    public static RenderType nearestOnly(ResourceLocation texture)
+    {
+        return NEAREST.computeIfAbsent(texture, id -> RenderType.create(
+            "dueldimension_model_nearest", DefaultVertexFormat.NEW_ENTITY,
+            VertexFormat.Mode.QUADS, 1536, true, false,
+            RenderType.CompositeState.builder()
+                .setShaderState(RenderStateShard.RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                .setTextureState(new RenderStateShard.TextureStateShard(id, false, false))
+                .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
+                .setDepthTestState(RenderStateShard.EQUAL_DEPTH_TEST)
+                .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+                .setCullState(RenderStateShard.CULL)
+                .setLightmapState(RenderStateShard.LIGHTMAP)
+                .setOverlayState(RenderStateShard.OVERLAY)
+                .createCompositeState(false)));
+    }
+
+    /** Memoized like {@link #TYPES}, and for the same reason. */
+    private static final Map<ResourceLocation, RenderType> DEPTH = new HashMap<>();
+    private static final Map<ResourceLocation, RenderType> NEAREST = new HashMap<>();
 
     /**
      * Bakes a loaded model.
