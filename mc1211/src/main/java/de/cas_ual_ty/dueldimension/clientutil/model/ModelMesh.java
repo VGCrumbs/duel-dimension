@@ -187,68 +187,60 @@ public final class ModelMesh
     }
 
     /**
-     * The depth half of a nearest-surface-only draw: shape, and nothing else.
-     * <p>
-     * Alpha-TESTED, so the silhouette is exactly the model's own -- a fragment
-     * the cutout shader discards writes no depth, and a hole in the texture
-     * stays a hole. Colour is masked off entirely, so this pass paints nothing;
-     * all it does is leave the distance to the nearest surface in the depth
-     * buffer for {@link #nearestOnly} to compare against.
+     * A hologram: translucent, culled, sorted, and writing no depth at all.
      *
-     * @see #nearestOnly for why the pair exists
+     * <h2>Why not the depth pre-pass this replaces</h2>
+     *
+     * The textbook way to stop a transparent model showing its own insides is a
+     * depth PRE-PASS: draw once writing depth and no colour, then again writing
+     * colour with the depth test set to EQUAL, so only the nearest surface is
+     * shaded. That was here and it half worked, and both halves are worth
+     * writing down.
+     * <p>
+     * <b>It tore the models apart.</b> An EQUAL depth test needs the two passes
+     * to produce bit-identical interpolated depth, which means they must run the
+     * same vertex shader. These ran {@code rendertype_entity_cutout} and
+     * {@code rendertype_entity_translucent} -- different programs, and one of
+     * them alpha-clips while the other does not. Fragments that disagreed failed
+     * EQUAL and vanished, scattered across the mesh.
+     * <p>
+     * <b>And it could not meet the requirement.</b> Writing depth is what makes
+     * "nearest surface only" possible AND what hides whatever is drawn behind
+     * it -- one mechanism, both effects. A hologram that must not occlude
+     * anything therefore cannot write depth, and cannot have a depth pre-pass.
+     * The two are the same lever.
+     *
+     * <h2>What this does instead</h2>
+     *
+     * <ul>
+     * <li><b>No depth write</b> ({@code COLOR_WRITE}), so nothing behind a
+     * monster is ever rejected -- not the duelist standing there, not the board,
+     * not another monster. It is still depth TESTED, so a wall in front of it
+     * still hides it.
+     * <li><b>Back faces culled</b>, which removes the far side of every surface
+     * -- half the overlap, and the half that looked worst.
+     * <li><b>Sorted back-to-front</b> ({@code sortOnUpload}), so what overlap
+     * remains -- a wing across a shoulder, genuinely two surfaces -- blends in
+     * the right order instead of whatever order the mesh happened to be in.
+     * That is what makes it read as one translucent creature rather than as
+     * fighting layers.
+     * </ul>
+     *
+     * The honest limit: you can still see a wing through a shoulder, because
+     * both are really there and really translucent. Hiding it needs depth, and
+     * depth is the thing that must not be written.
      */
-    public static RenderType depthOnly(ResourceLocation texture)
+    public static RenderType hologram(ResourceLocation texture)
     {
-        return DEPTH.computeIfAbsent(texture, id -> RenderType.create(
-            "dueldimension_model_depth", DefaultVertexFormat.NEW_ENTITY,
-            VertexFormat.Mode.QUADS, 1536, true, false,
-            RenderType.CompositeState.builder()
-                .setShaderState(RenderStateShard.RENDERTYPE_ENTITY_CUTOUT_SHADER)
-                .setTextureState(new RenderStateShard.TextureStateShard(id, false, false))
-                .setTransparencyState(RenderStateShard.NO_TRANSPARENCY)
-                .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
-                // The whole point: depth yes, colour no.
-                .setWriteMaskState(RenderStateShard.DEPTH_WRITE)
-                .setCullState(RenderStateShard.CULL)
-                .setLightmapState(RenderStateShard.LIGHTMAP)
-                .setOverlayState(RenderStateShard.OVERLAY)
-                .createCompositeState(false)));
-    }
-
-    /**
-     * The colour half: only the fragments that ARE the nearest surface.
-     *
-     * <h2>What this is for</h2>
-     *
-     * A monster on your own half is drawn half-solid at rest -- see
-     * {@code OverworldBoardRenderer.solidity}. Translucent geometry is not
-     * depth-sorted against itself, so every surface behind the front one blends
-     * in as well: a wing through a shoulder, the far side of the body through
-     * the near side, the card on the field through the chest. Backface culling
-     * removed the last of those three and could not touch the first two, because
-     * they are different pieces of the model rather than two sides of one
-     * surface.
-     * <p>
-     * <b>EQUAL, not LEQUAL.</b> {@link #depthOnly} has already left the nearest
-     * distance in the depth buffer, so a fragment passes here only if it IS that
-     * distance -- exactly one per pixel, whatever the model does behind it. The
-     * result is a creature of uniform transparency with a clean silhouette,
-     * which is what a hologram should look like and what stacking six blended
-     * layers never will.
-     * <p>
-     * Writes no depth, because the pass before it already did. Writing again
-     * would be harmless and doing it twice is still twice.
-     */
-    public static RenderType nearestOnly(ResourceLocation texture)
-    {
-        return NEAREST.computeIfAbsent(texture, id -> RenderType.create(
-            "dueldimension_model_nearest", DefaultVertexFormat.NEW_ENTITY,
-            VertexFormat.Mode.QUADS, 1536, true, false,
+        return HOLOGRAM.computeIfAbsent(texture, id -> RenderType.create(
+            "dueldimension_hologram", DefaultVertexFormat.NEW_ENTITY,
+            VertexFormat.Mode.QUADS, 1536, false, /* sortOnUpload */ true,
             RenderType.CompositeState.builder()
                 .setShaderState(RenderStateShard.RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
                 .setTextureState(new RenderStateShard.TextureStateShard(id, false, false))
                 .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
-                .setDepthTestState(RenderStateShard.EQUAL_DEPTH_TEST)
+                .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
+                // Colour only. This one line is the whole "culls nothing" rule.
                 .setWriteMaskState(RenderStateShard.COLOR_WRITE)
                 .setCullState(RenderStateShard.CULL)
                 .setLightmapState(RenderStateShard.LIGHTMAP)
@@ -257,8 +249,7 @@ public final class ModelMesh
     }
 
     /** Memoized like {@link #TYPES}, and for the same reason. */
-    private static final Map<ResourceLocation, RenderType> DEPTH = new HashMap<>();
-    private static final Map<ResourceLocation, RenderType> NEAREST = new HashMap<>();
+    private static final Map<ResourceLocation, RenderType> HOLOGRAM = new HashMap<>();
 
     /**
      * Bakes a loaded model.

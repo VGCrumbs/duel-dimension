@@ -215,23 +215,11 @@ public final class ModelHologram
         // this dragon is a third of the way up its body.
         poseStack.translate(-foot[0], -foot[1], -foot[2]);
 
-        // TWO PASSES WHEN BLENDED, and the order across PARTS is the whole
-        // reason this is a loop over passes rather than a loop over parts.
-        //
-        // The depth pass has to finish for the WHOLE model before any colour is
-        // drawn. Done per part -- depth then colour, part by part -- part A's
-        // colour would be compared against a depth buffer that does not yet know
-        // about part B, so a wing in front of a shoulder would let the shoulder
-        // through until the wing's own depth arrived, which is the artifact this
-        // exists to remove.
-        //
-        // Opaque models need none of it: the depth test already leaves one
-        // fragment per pixel, so they run the second pass alone and the first is
-        // skipped rather than wasted.
+        // One pass. There were two -- depth, then colour with an EQUAL test --
+        // and ModelMesh.hologram explains at length why that had to go: it tore
+        // the models apart, and the depth write it depended on is the same
+        // thing that was hiding the duelist standing behind the monster.
         boolean blend = (tint >>> 24) < 0xFF;
-        for(int pass = blend ? 0 : 1; pass <= 1; pass++)
-        {
-        boolean depthPass = pass == 0;
         for(ModelMesh.Part part : mesh.parts())
         {
             if(part.texture() == null)
@@ -253,35 +241,22 @@ public final class ModelHologram
             int[] joints = bones != null && part.skinned() ? part.joints() : null;
             float[] weights = joints == null ? null : part.weights();
 
-            // THE DEPTH PASS IS DRAWN OPAQUE, and this is the difference
-            // between a clean cutout and a creature torn to pieces.
-            //
-            // The cutout shader alpha-tests AFTER multiplying the texture by
-            // the vertex colour, and the vertex colour here carries the
-            // monster's solidity -- a half-there monster hands it 0.5, and one
-            // fading in hands it less. So a texel at 0.3 alpha arrives at the
-            // test as 0.15, and one at 0.15 arrives as 0.075 and is DISCARDED.
-            // No depth is written there, so the colour pass finds nothing to
-            // match with EQUAL and that fragment is missing -- a hole. Wings
-            // and soft edges are where a model keeps its low alpha, which is
-            // exactly where the tearing was.
-            //
-            // Forcing alpha to full for the depth pass makes the test see the
-            // TEXTURE's alpha and nothing else, which is what "the shape of
-            // this model" means. The colour pass keeps the real tint, because
-            // that is the pass anybody sees.
-            int shade = depthPass ? (tint | 0xFF000000) : tint;
+            // No opaque depth pass to compensate for any more. The old two-pass
+            // forced alpha to full here, because the cutout program alpha-tests
+            // AFTER multiplying the texture by the vertex colour, and a
+            // half-there monster's 0.5 pushed low-alpha texels under the
+            // threshold -- wings and soft edges vanished. With one blended pass
+            // there is no alpha test in the path at all, so the real tint is the
+            // only tint.
 
-            // Which of the three types this part is drawn through:
-            //   opaque      -> typeFor, alpha-tested, one fragment per pixel
-            //                  already because the depth test says so.
-            //   blend, pass 0 -> depthOnly: shape into the depth buffer.
-            //   blend, pass 1 -> nearestOnly: colour, EQUAL depth, so only the
-            //                  surface pass 0 found is shaded.
+            // Solid monsters keep the alpha-tested type: it writes depth, and
+            // for something fully opaque that is right -- it SHOULD hide what
+            // is behind it, and the depth test alone leaves one fragment per
+            // pixel. Only the half-there ones take the hologram type, which
+            // writes no depth and so hides nothing.
             collector.submitCustomGeometry(poseStack,
-                !blend ? ModelMesh.typeFor(part.texture(), false)
-                    : depthPass ? ModelMesh.depthOnly(part.texture())
-                        : ModelMesh.nearestOnly(part.texture()),
+                blend ? ModelMesh.hologram(part.texture())
+                    : ModelMesh.typeFor(part.texture(), false),
                 (unused, buffer) ->
                 {
                     // Skinned straight into the vertex, with no posed copy of the
@@ -318,11 +293,10 @@ public final class ModelHologram
                         {
                             emit(buffer, pose, triangle + Math.min(corner, 2),
                                 positions, normals, uvs, joints, weights, bones,
-                                shade, point, direction);
+                                tint, point, direction);
                         }
                     }
                 });
-        }
         }
         poseStack.popPose();
     }
