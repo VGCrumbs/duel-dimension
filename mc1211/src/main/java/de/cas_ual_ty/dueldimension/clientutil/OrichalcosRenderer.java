@@ -3,7 +3,7 @@ package de.cas_ual_ty.dueldimension.clientutil;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import de.cas_ual_ty.dueldimension.DuelDimension;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.Minecraft;
 import de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BeaconRenderer;
@@ -237,10 +237,10 @@ public final class OrichalcosRenderer
      * <p>
      * Hung on COLLECT_SUBMITS, which is where geometry is handed to the
      * renderer for this frame. {@code WorldRenderEvents} is gone in this
-     * version; this event and its {@link LevelRenderContext} are what replaced
+     * version; this event and its {@link WorldRenderContext} are what replaced
      * it.
      */
-    public static void render(LevelRenderContext context)
+    public static void render(WorldRenderContext context)
     {
         if(ACTIVE.isEmpty())
         {
@@ -249,9 +249,9 @@ public final class OrichalcosRenderer
         Minecraft client = Minecraft.getInstance();
         float partial = client.getTimer().getGameTimeDeltaPartialTick(false);
         Vec3 camera = client.gameRenderer.getMainCamera().getPosition();
-        PoseStack poseStack = context.poseStack();
-        SubmitNodeCollector collector = context.submitNodeCollector();
-        long gameTime = context.levelState().gameTime;
+        PoseStack poseStack = context.matrixStack();
+        SubmitNodeCollector collector = new de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector(context.consumers());
+        long gameTime = context.world().getGameTime();
 
         for(Seal seal : ACTIVE.values())
         {

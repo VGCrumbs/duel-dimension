@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import de.cas_ual_ty.dueldimension.DuelDimension;
 import de.cas_ual_ty.dueldimension.duel.overworld.FieldSiting;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.Minecraft;
 import de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -54,7 +54,7 @@ public final class PlacementGuideRenderer
     /** The other duellist's mark: present, but plainly not the one to walk to. */
     private static final int THEIRS = 0xB08A2A;
 
-    public static void render(LevelRenderContext context)
+    public static void render(WorldRenderContext context)
     {
         FieldSiting siting = ClientDuelField.siting();
         if(siting == null || ClientDuelField.locked())
@@ -69,10 +69,10 @@ public final class PlacementGuideRenderer
 
         int seat = ClientDuelField.seat();
         float partial = client.getTimer().getGameTimeDeltaPartialTick(false);
-        float age = context.levelState().gameTime + partial;
+        float age = context.world().getGameTime() + partial;
         Vec3 camera = client.gameRenderer.getMainCamera().getPosition();
-        PoseStack poseStack = context.poseStack();
-        SubmitNodeCollector collector = context.submitNodeCollector();
+        PoseStack poseStack = context.matrixStack();
+        SubmitNodeCollector collector = new de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector(context.consumers());
 
         // Sine over the tick count rather than over wall-clock: a paused
         // singleplayer world should not have a marker pulsing on it.

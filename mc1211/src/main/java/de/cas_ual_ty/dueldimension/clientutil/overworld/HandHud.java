@@ -5,7 +5,7 @@ import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
 import de.cas_ual_ty.dueldimension.clientutil.DuelClientState;
 import de.cas_ual_ty.dueldimension.clientutil.DuelTextures;
 import de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
@@ -28,7 +28,7 @@ import java.util.List;
  * consequence worth accepting deliberately: the HUD is not extracted at all
  * while the GUI is hidden, so F1 hides the hand along with everything else.
  */
-public final class HandHud implements HudElement
+public final class HandHud implements HudRenderCallback
 {
     /**
      * Life points, whose turn it is, and what is being asked.
@@ -62,9 +62,18 @@ public final class HandHud implements HudElement
                 + client.getTimer().getGameTimeDeltaPartialTick(false);
     }
 
+    /**
+     * 26.2 draws a HUD element by extracting a render state and is handed a
+     * DeltaTracker; 1.21.1's HudRenderCallback is handed a GuiGraphics and a
+     * float tick delta. The body below is unchanged -- the compatibility
+     * surface is wrapped around the real GuiGraphics on the first line, exactly
+     * as the screens do.
+     */
     @Override
-    public void extractRenderState(GuiGraphicsExtractor extractor, DeltaTracker delta)
+    public void onHudRender(net.minecraft.client.gui.GuiGraphics vanillaGraphics,
+        float partialTick)
     {
+        GuiGraphicsExtractor extractor = new GuiGraphicsExtractor(vanillaGraphics);
         // A spectator has no hand, and the board they were sent has somebody
         // else's -- redacted, but still not theirs to have laid along the
         // bottom of their screen as though it were.

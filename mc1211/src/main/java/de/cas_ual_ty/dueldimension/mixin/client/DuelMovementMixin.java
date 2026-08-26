@@ -1,9 +1,8 @@
 package de.cas_ual_ty.dueldimension.mixin.client;
 
 import de.cas_ual_ty.dueldimension.clientutil.DuelSuppression;
-import net.minecraft.client.player.ClientInput;
+import net.minecraft.client.player.Input;
 import net.minecraft.client.player.KeyboardInput;
-import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.phys.Vec2;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -32,7 +31,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * player is actually moved by.
  */
 @Mixin(KeyboardInput.class)
-public abstract class DuelMovementMixin extends ClientInput
+public abstract class DuelMovementMixin extends Input
 {
     @Inject(method = "tick", at = @At("TAIL"))
     private void dueldimension$standStillDuringDuel(CallbackInfo callback)
@@ -42,8 +41,19 @@ public abstract class DuelMovementMixin extends ClientInput
         // open, and this is the same question either way.
         if(DuelSuppression.inDuel())
         {
-            keyPresses = Input.EMPTY;
-            moveVector = Vec2.ZERO;
+            // 26.2 holds the keys as one immutable record and swaps in
+            // Input.EMPTY; 1.21.1 has the plain fields it was made from, so
+            // they are zeroed individually. Same eight values either way,
+            // shiftKeyDown included -- EMPTY clears that too, and a duellist
+            // held at a board should not be sneaking either.
+            leftImpulse = 0F;
+            forwardImpulse = 0F;
+            up = false;
+            down = false;
+            left = false;
+            right = false;
+            jumping = false;
+            shiftKeyDown = false;
         }
     }
 }

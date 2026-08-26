@@ -12,7 +12,7 @@ import de.cas_ual_ty.dueldimension.ocg.prompt.BoardSnapshot;
 import net.minecraft.resources.ResourceLocation;
 import de.cas_ual_ty.dueldimension.duel.overworld.FieldSiting;
 import de.cas_ual_ty.dueldimension.duel.overworld.FieldTransform;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.Minecraft;
 import de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector;
 import net.minecraft.world.phys.Vec3;
@@ -85,7 +85,7 @@ public final class OverworldBoardRenderer
         return (float)((SURFACE_LIFT + BoardMesh.TOP_LAYER) / transform.scale()) + CARD_GAP;
     }
 
-    public static void render(LevelRenderContext context)
+    public static void render(WorldRenderContext context)
     {
         FieldSiting siting = ClientDuelField.siting();
         // Only once the duel is actually on. While a player is still walking to
@@ -107,8 +107,8 @@ public final class OverworldBoardRenderer
 
         FieldTransform transform = new FieldTransform(siting);
         Vec3 camera = client.gameRenderer.getMainCamera().getPosition();
-        PoseStack poseStack = context.poseStack();
-        SubmitNodeCollector collector = context.submitNodeCollector();
+        PoseStack poseStack = context.matrixStack();
+        SubmitNodeCollector collector = new de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector(context.consumers());
 
         int matTint = fade(0xFFFFFFFF);
         for(BoardMesh.Piece piece : BoardMesh.pieces(matsByController()))

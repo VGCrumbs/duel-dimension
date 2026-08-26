@@ -11,7 +11,7 @@ import de.cas_ual_ty.dueldimension.duel.overworld.FieldSpec;
 import de.cas_ual_ty.dueldimension.duel.overworld.arena.Arena;
 import de.cas_ual_ty.dueldimension.duel.overworld.arena.ArenaScan;
 import de.cas_ual_ty.dueldimension.DdBlocks;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.Minecraft;
 import de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -75,7 +75,7 @@ public final class ArenaRenderer
     private static List<BlockPos> points = List.of();
     private static long sweptAt = Long.MIN_VALUE;
 
-    public static void render(LevelRenderContext context)
+    public static void render(WorldRenderContext context)
     {
         Minecraft client = Minecraft.getInstance();
         if(client.player == null || client.level == null)
@@ -97,7 +97,7 @@ public final class ArenaRenderer
             points = List.of();
             return;
         }
-        sweep(client, context.levelState().gameTime);
+        sweep(client, context.world().getGameTime());
         // Filtered where they are DRAWN rather than where they are found, so
         // that swapping what is in hand does not have to wait for the next
         // sweep -- and so the sweep's cache stays a picture of the world rather
@@ -116,10 +116,10 @@ public final class ArenaRenderer
         }
 
         Vec3 camera = client.gameRenderer.getMainCamera().getPosition();
-        PoseStack poseStack = context.poseStack();
-        SubmitNodeCollector collector = context.submitNodeCollector();
+        PoseStack poseStack = context.matrixStack();
+        SubmitNodeCollector collector = new de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector(context.consumers());
         float partial = client.getTimer().getGameTimeDeltaPartialTick(false);
-        float age = context.levelState().gameTime + partial;
+        float age = context.world().getGameTime() + partial;
         float pulse = 0.55F + 0.45F * Mth.sin(age / PULSE_TICKS * Mth.TWO_PI);
         boolean asking = tabHeld(client);
 

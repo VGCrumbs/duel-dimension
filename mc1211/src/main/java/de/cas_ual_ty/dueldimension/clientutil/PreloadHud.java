@@ -2,7 +2,7 @@ package de.cas_ual_ty.dueldimension.clientutil;
 
 import de.cas_ual_ty.dueldimension.clientutil.hub.HubTextures;
 import de.cas_ual_ty.dueldimension.clientutil.hub.NineSlice;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
@@ -19,7 +19,7 @@ import de.cas_ual_ty.dueldimension.compat.GuiGraphicsExtractor;
  * side. The project's rule is that UI is PNG and only text uses the font, so
  * nothing here is a rectangle drawn in code.
  */
-public final class PreloadHud implements HudElement
+public final class PreloadHud implements HudRenderCallback
 {
     /**
      * Width of the bar.

@@ -306,7 +306,6 @@ de/cas_ual_ty/dueldimension/mixin/client/BlockOutlineMixin.java
 de/cas_ual_ty/dueldimension/mixin/client/DuelHudMixin.java
 de/cas_ual_ty/dueldimension/mixin/client/DuelMovementMixin.java
 de/cas_ual_ty/dueldimension/mixin/client/GameRendererMixin.java
-de/cas_ual_ty/dueldimension/mixin/client/GuiGraphicsExtractorAccessor.java
 de/cas_ual_ty/dueldimension/mixin/client/InventoryScreenMixin.java
 de/cas_ual_ty/dueldimension/mixin/client/ItemInHandLayerMixin.java
 de/cas_ual_ty/dueldimension/mixin/client/ItemInHandRendererMixin.java

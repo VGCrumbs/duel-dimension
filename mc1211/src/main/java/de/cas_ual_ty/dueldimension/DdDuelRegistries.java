@@ -56,13 +56,13 @@ public final class DdDuelRegistries
      * the object itself.
      */
     public static final Registry<ActionType> ACTION_TYPES =
-        FabricRegistryBuilder.create(ACTION_TYPE_KEY).buildAndRegister();
+        FabricRegistryBuilder.createSimple(ACTION_TYPE_KEY).buildAndRegister();
     public static final Registry<ActionIcon> ACTION_ICONS =
-        FabricRegistryBuilder.create(ACTION_ICON_KEY).buildAndRegister();
+        FabricRegistryBuilder.createSimple(ACTION_ICON_KEY).buildAndRegister();
     public static final Registry<DuelMessageHeaderType> HEADERS =
-        FabricRegistryBuilder.create(HEADER_KEY).buildAndRegister();
+        FabricRegistryBuilder.createSimple(HEADER_KEY).buildAndRegister();
     public static final Registry<ZoneType> ZONE_TYPES =
-        FabricRegistryBuilder.create(ZONE_TYPE_KEY).buildAndRegister();
+        FabricRegistryBuilder.createSimple(ZONE_TYPE_KEY).buildAndRegister();
 
     private DdDuelRegistries()
     {
