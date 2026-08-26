@@ -158,6 +158,18 @@ public final class OverworldBoardRenderer
         drawMoves(poseStack, collector, transform, camera);
         drawAttacks(poseStack, collector, transform, camera);
         drawShatters(poseStack, collector, transform, camera);
+
+        // THE MONSTERS, LAST OF EVERYTHING. See HOLOGRAMS.
+        //
+        // Not at the end of drawCards, which is where this was and which only
+        // moved the problem: six more things draw after that one -- the equip
+        // links, the markers, and the four animation layers -- and every one of
+        // them was then behind a monster's depth instead.
+        for(Runnable hologram : HOLOGRAMS)
+        {
+            hologram.run();
+        }
+        HOLOGRAMS.clear();
     }
 
     /**
@@ -1022,13 +1034,6 @@ public final class OverworldBoardRenderer
                     size(side.hand()), back);
             }
         }
-
-        // Every monster, after every card, mat and pile. See HOLOGRAMS.
-        for(Runnable hologram : HOLOGRAMS)
-        {
-            hologram.run();
-        }
-        HOLOGRAMS.clear();
     }
 
     /**
@@ -1042,9 +1047,14 @@ public final class OverworldBoardRenderer
      * had a monster-shaped hole in it.
      * <p>
      * So the decision stays where the slot is read and the DRAW moves to the
-     * end. Cleared after each frame's run rather than reused, and never held
-     * across one: a lambda in here captures a pose stack, and a pose stack is
-     * only good for the frame it belongs to.
+     * very end of {@code render} -- after the cards, the mat, the piles, the
+     * equip links, the markers and all four animation layers. The end of
+     * {@code drawCards} was tried first and only moved the victims: six things
+     * draw after that one and each of them lost its turn instead.
+     * <p>
+     * Cleared after each frame's run rather than reused, and never held across
+     * one: a lambda in here captures a pose stack, and a pose stack is only good
+     * for the frame it belongs to.
      */
     private static final List<Runnable> HOLOGRAMS = new java.util.ArrayList<>();
 
