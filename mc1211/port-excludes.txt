@@ -5,7 +5,7 @@
 # equivalent, or because it references a file that does. Fix one,
 # delete its line, build. A red build means the fix was wrong.
 #
-# 360 file(s) remaining.
+# 358 file(s) remaining.
 de/cas_ual_ty/dueldimension/CommonConfig.java
 de/cas_ual_ty/dueldimension/DdBlocks.java
 de/cas_ual_ty/dueldimension/DdComponents.java
@@ -96,13 +96,11 @@ de/cas_ual_ty/dueldimension/clientutil/HologramSettings.java
 de/cas_ual_ty/dueldimension/clientutil/HoverPreviewSettings.java
 de/cas_ual_ty/dueldimension/clientutil/ImageHandler.java
 de/cas_ual_ty/dueldimension/clientutil/OrichalcosRenderer.java
-de/cas_ual_ty/dueldimension/clientutil/PipelineCopy.java
 de/cas_ual_ty/dueldimension/clientutil/PlayMats.java
 de/cas_ual_ty/dueldimension/clientutil/PlayerSkins.java
 de/cas_ual_ty/dueldimension/clientutil/PreloadHud.java
 de/cas_ual_ty/dueldimension/clientutil/PromptOptions.java
 de/cas_ual_ty/dueldimension/clientutil/SealConfigScreen.java
-de/cas_ual_ty/dueldimension/clientutil/UnownedPipelines.java
 de/cas_ual_ty/dueldimension/clientutil/hub/BillboardEditorScreen.java
 de/cas_ual_ty/dueldimension/clientutil/hub/CardDisplayScreen.java
 de/cas_ual_ty/dueldimension/clientutil/hub/CardInfoScreen.java
@@ -306,13 +304,13 @@ de/cas_ual_ty/dueldimension/fabric/JadeIntegration.java
 de/cas_ual_ty/dueldimension/fabric/ModMenuIntegration.java
 de/cas_ual_ty/dueldimension/mixin/DuelPushMixin.java
 de/cas_ual_ty/dueldimension/mixin/client/AbstractClientPlayerMixin.java
-de/cas_ual_ty/dueldimension/mixin/client/AvatarRendererMixin.java
 de/cas_ual_ty/dueldimension/mixin/client/BlockOutlineMixin.java
 de/cas_ual_ty/dueldimension/mixin/client/DuelHudMixin.java
 de/cas_ual_ty/dueldimension/mixin/client/DuelMovementMixin.java
 de/cas_ual_ty/dueldimension/mixin/client/GameRendererMixin.java
 de/cas_ual_ty/dueldimension/mixin/client/GuiGraphicsExtractorAccessor.java
 de/cas_ual_ty/dueldimension/mixin/client/InventoryScreenMixin.java
+de/cas_ual_ty/dueldimension/mixin/client/ItemInHandLayerMixin.java
 de/cas_ual_ty/dueldimension/mixin/client/ItemInHandRendererMixin.java
 de/cas_ual_ty/dueldimension/mixin/client/LocalDuelPushMixin.java
 de/cas_ual_ty/dueldimension/mixin/client/MinecraftDuelClickMixin.java

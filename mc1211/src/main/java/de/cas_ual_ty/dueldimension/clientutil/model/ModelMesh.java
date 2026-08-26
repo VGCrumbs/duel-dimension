@@ -168,15 +168,11 @@ public final class ModelMesh
     public static RenderType typeFor(ResourceLocation texture, boolean blend)
     {
         Map<ResourceLocation, RenderType> types = blend ? BLENDED : TYPES;
-        return types.computeIfAbsent(texture, id -> RenderType.create(
-            blend ? "dd_model_blend" : "dd_model",
-            RenderSetup.builder(blend
-                    ? de.cas_ual_ty.dueldimension.clientutil.UnownedPipelines.MODEL_BLEND
-                    : de.cas_ual_ty.dueldimension.clientutil.UnownedPipelines.MODEL)
-                .withTexture("Sampler0", id)
-                .useLightmap()
-                .useOverlay()
-                .createRenderSetup()));
+        // The stock types 26.2's mod pipelines were copies of. It built its own
+        // in order to swap the fragment shader; nothing here needs that, so the
+        // vanilla pair is the same recipe without the copy.
+        return types.computeIfAbsent(texture,
+            id -> blend ? RenderType.entityTranslucent(id) : RenderType.entityCutout(id));
     }
 
     /**

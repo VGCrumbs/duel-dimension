@@ -130,21 +130,15 @@ public final class DdBlitUtil
             // without it the placeholder would start greying.
             desaturate = false;
         }
-        RenderPipeline pipeline = RenderPipelines.GUI_TEXTURED;
+        Object pipeline = RenderPipelines.GUI_TEXTURED;
         if(desaturate)
         {
-            if(UnownedPipelines.available())
-            {
-                pipeline = UnownedPipelines.GUI;
-            }
-            else
-            {
-                // The shader did not compile. This is a DIM, not a
-                // desaturation -- a multiply cannot remove colour -- and it is
-                // multiplied INTO the caller's tint rather than replacing it so
-                // the deck editor's per-card alpha survives.
-                tint = UnownedPipelines.dimmed(tint);
-            }
+            // 1.21.1 has no desaturating pipeline, so this is always the DIM --
+            // not a desaturation, because a multiply cannot remove colour. It is
+            // multiplied INTO the caller's tint rather than replacing it, so the
+            // deck editor's per-card alpha survives. UnownedPipelines.available()
+            // returns false here by construction; see that class.
+            tint = UnownedPipelines.dimmed(tint);
         }
         graphics.blit(pipeline, texture,
             x, y, u0 * SCALE, v0 * SCALE, width, height,
