@@ -58,6 +58,24 @@ loom {
     // renderModelLists are both private. DiskCardsItemModel goes in through the
     // public ItemRenderer.render with ItemDisplayContext.NONE instead, whose
     // transform is the identity -- same work, no widening.
+
+    runs {
+        client {
+            // Both lines are mc262's, verbatim, and for its reasons.
+            //
+            // The account name, so a screenshot from either tree is recognisably
+            // the same player -- and so PlayerSkins can resolve a skin for it. A
+            // dev client is offline, so the game has nowhere to fetch one from
+            // and every dev player is Steve unless the mod supplies it.
+            programArgs '--username', 'Alpha'
+
+            // 920p, because the duel screen is laid out in logical GUI pixels
+            // and the window size decides how much board there is to lay out on.
+            // Matching mc262 means a layout checked in one tree is the layout in
+            // the other -- which is the whole point of two builds at parity.
+            programArgs '--width', '1634', '--height', '920'
+        }
+    }
 }
 
 repositories {
@@ -114,13 +132,166 @@ dependencies {
     testImplementation testFixtures('de.cas_ual_ty.dueldimension:common:0.1.0-fabric')
 }
 
+// ---------------------------------------------------------------------------
+// The bundled rules engine.
+//
+// THE SAME THREE TASKS AS mc262, reading the SAME three directories at the
+// repository root. Not a copy of the engine -- a second reader of it. See
+// mc262/build.gradle for the long version of why the scripts and the database
+// are zipped into one jar entry each rather than shipped as 12,727 and 14,686
+// names, and why the bundle stamps itself with a digest over its own bytes.
+//
+// This module went without it for the whole port and the omission was invisible
+// until the client ran: the mod fell back to whatever EDOPro install the machine
+// happened to have, found a 32-bit ocgcore.dll under C:\ProjectIgnis, and said
+// so in chat. A player with no EDOPro would have got "install EDOPro first",
+// which is exactly the second download the bundle exists to remove.
+// ---------------------------------------------------------------------------
+def engineBundleOut = layout.buildDirectory.dir('generated/engine-bundle')
+
+tasks.register('engineScriptsZip', Zip) {
+    description = 'Packs the bundled card scripts into the single jar entry the mod unpacks at runtime.'
+    from layout.projectDirectory.dir('../bundle/script')
+    archiveFileName = 'script.zip'
+    destinationDirectory = engineBundleOut.map { it.dir('dueldimension_engine') }
+    // Reproducible, because the bundle is versioned by hashing its own bytes:
+    // timestamps and directory order would change the digest on every build and
+    // re-unpack 28 MB on every player's machine for no reason at all.
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+tasks.register('cardDatabaseZip', Zip) {
+    description = 'Packs the bundled card database into the single jar entry the mod unpacks at runtime.'
+    from layout.projectDirectory.dir('../bundle/ydm_db')
+    archiveFileName = 'ydm_db.zip'
+    destinationDirectory = engineBundleOut.map { it.dir('dueldimension_engine') }
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+tasks.register('engineBundleStamp') {
+    description = 'Stamps the engine bundle with a version derived from its contents.'
+    dependsOn tasks.named('engineScriptsZip'), tasks.named('cardDatabaseZip')
+
+    def payloadDir = layout.projectDirectory.dir('../bundle/payload')
+    def provenanceFile = layout.projectDirectory.file('../bundle/provenance.properties')
+    def scriptsZip = tasks.named('engineScriptsZip', Zip).flatMap { it.archiveFile }
+    def cardDbZip = tasks.named('cardDatabaseZip', Zip).flatMap { it.archiveFile }
+    def stamp = engineBundleOut.map { it.file('dueldimension_engine/bundle.properties') }
+    def modVersion = project.version.toString()
+
+    inputs.dir(payloadDir)
+    inputs.file(provenanceFile)
+    inputs.file(scriptsZip)
+    inputs.file(cardDbZip)
+    inputs.property('modVersion', modVersion)
+    outputs.file(stamp)
+
+    doLast {
+        // Neither cards.cdb nor the script tree carries a version of its own, so
+        // the bundle stamps itself: a digest over the CONTENT of everything it
+        // ships. Stable across rebuilds, changes the moment any shipped byte
+        // does, and is what the unpacked copy on disk is compared against.
+        def payloadRoot = payloadDir.asFile.toPath()
+        def parts = [['script.zip', scriptsZip.get().asFile]]
+        payloadDir.asFile.eachFileRecurse(groovy.io.FileType.FILES) { file ->
+            parts << [payloadRoot.relativize(file.toPath()).toString().replace('\\', '/'), file]
+        }
+        parts.sort { it[0] }
+
+        def whole = java.security.MessageDigest.getInstance('SHA-256')
+        long bytes = 0
+        parts.each { name, file ->
+            def each = java.security.MessageDigest.getInstance('SHA-256')
+            file.withInputStream { input ->
+                byte[] buffer = new byte[1 << 16]
+                int read
+                while((read = input.read(buffer)) > 0)
+                {
+                    each.update(buffer, 0, read)
+                }
+            }
+            bytes += file.length()
+            whole.update("${name}:${each.digest().encodeHex()}\n".getBytes('UTF-8'))
+        }
+
+        // The card database is digested SEPARATELY. Folding it into `version`
+        // would make every existing player re-unpack 28 MB of card scripts the
+        // first time they launched a build that carries a database, and adding
+        // cards to the jar is not a reason to rewrite a single Lua file.
+        def cardDb = cardDbZip.get().asFile
+        def cardDbDigest = java.security.MessageDigest.getInstance('SHA-256')
+        cardDb.withInputStream { input ->
+            byte[] buffer = new byte[1 << 16]
+            int read
+            while((read = input.read(buffer)) > 0)
+            {
+                cardDbDigest.update(buffer, 0, read)
+            }
+        }
+        def cardDbFiles = 0
+        new java.util.zip.ZipFile(cardDb).withCloseable { zip ->
+            cardDbFiles = zip.entries().toList().count { !it.directory }
+        }
+
+        def provenance = new Properties()
+        provenanceFile.asFile.withInputStream { provenance.load(it) }
+
+        def target = stamp.get().asFile
+        target.parentFile.mkdirs()
+        // Written by hand rather than with Properties.store, which stamps the
+        // file with the time it was written and would make every build differ.
+        def text = new StringBuilder()
+        text << '# Generated by the engineBundleStamp task. Do not edit.\n'
+        text << '# bundle.version is a SHA-256 over the content of every file shipped\n'
+        text << '# in this bundle; it is what the unpacked copy under the game\n'
+        text << '# directory is compared against to decide whether to unpack again.\n'
+        text << "version=${whole.digest().encodeHex().toString().substring(0, 16)}\n"
+        text << "files=${parts.size()}\n"
+        text << "bytes=${bytes}\n"
+        text << "carddb.version=${cardDbDigest.digest().encodeHex().toString().substring(0, 16)}\n"
+        text << "carddb.files=${cardDbFiles}\n"
+        text << "carddb.bytes=${cardDb.length()}\n"
+        text << "mod.version=${modVersion}\n"
+        provenance.stringPropertyNames().sort().each { key ->
+            text << "${key}=${provenance.getProperty(key)}\n"
+        }
+        target.text = text.toString()
+        logger.lifecycle("Engine bundle stamped: ${target.readLines().find { it.startsWith('version=') }}, ${parts.size()} parts, ${bytes} bytes")
+    }
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDir file('../bundle/payload')
+            srcDir engineBundleOut
+        }
+    }
+}
+
 processResources {
+    dependsOn tasks.named('engineScriptsZip'), tasks.named('cardDatabaseZip'),
+        tasks.named('engineBundleStamp')
+
     // fabric.mod.json names the version once, here, rather than in the file --
     // a version in two places is a version that disagrees with itself.
     inputs.property 'version', project.version
     filesMatching('fabric.mod.json') {
         expand 'version': project.version
     }
+}
+
+jar {
+    // AGPL-3.0 section 4: "give all recipients a copy of this License along
+    // with the Program". Naming a licence is not giving one. These four files
+    // are the notices that have to travel with the artefact -- the same four
+    // mc262 carries, for the same clause.
+    from(file('../LICENSE')) { rename { 'LICENSE-GPL-3.0.txt' } }
+    from(file('../LICENSE-AGPL-3.0.txt'))
+    from(file('../CREDITS.md'))
+    from(file('../NOTICE.md'))
 }
 
 tasks.named('jar', Jar) {

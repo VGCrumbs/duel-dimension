@@ -1,4 +1,7 @@
 {
   "parent": "minecraft:builtin/entity",
-  "__ported": "drawn by DdCardModels; 26.2 says this in assets/dueldimension/items/opened_set.json"
+  "__ported": "drawn by DdCardModels; 26.2 says this in assets/dueldimension/items/opened_set.json",
+  "textures": {
+    "particle": "dueldimension:item/opened_set"
+  }
 }

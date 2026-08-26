@@ -225,6 +225,76 @@ public class HeadlessDuelRunner
     }
 
     /**
+     * Whether a directory actually holds CARD scripts.
+     *
+     * <h2>Why this is not "does constant.lua exist"</h2>
+     *
+     * Because that was the test, in two places, and it is the wrong question.
+     * {@code constant.lua} is one of about thirty SHARED files -- constants,
+     * utility functions, procedures -- and an EDOPro install can have every one
+     * of them and not a single {@code c<passcode>.lua}. One does: 31 files in
+     * {@code script/}, no {@code official/}, and the card scripts kept
+     * somewhere else entirely.
+     * <p>
+     * On that install everything looked right and nothing worked. The bundle
+     * asked "are the scripts supplied?", saw {@code constant.lua}, answered yes
+     * and unpacked none of its own; the path resolver asked "does the directory
+     * exist?", saw that it did, and pointed the engine at it. Then every card in
+     * the duel failed to load, one {@code Script not found} per card, and the
+     * duel ran with no cards that do anything.
+     * <p>
+     * So the question is asked the way the READER answers it: is there a card
+     * script here, at the root or under {@code official/}, by the same rule
+     * {@link #cardScriptsDirectories} uses to find one. Stops at the first hit,
+     * so it costs one directory entry rather than a walk of twelve thousand.
+     */
+    public static boolean hasCardScripts(Path root)
+    {
+        if(root == null)
+        {
+            return false;
+        }
+        for(Path directory : new Path[] {root, root.resolve("official")})
+        {
+            if(!Files.isDirectory(directory))
+            {
+                continue;
+            }
+            try(java.util.stream.Stream<Path> entries = Files.list(directory))
+            {
+                if(entries.anyMatch(HeadlessDuelRunner::isCardScript))
+                {
+                    return true;
+                }
+            }
+            catch(Exception unreadable)
+            {
+                // An unreadable directory holds nothing this can use, which is
+                // the same answer as an empty one.
+            }
+        }
+        return false;
+    }
+
+    /** {@code c} then digits then {@code .lua} -- a card script and not a shared one. */
+    private static boolean isCardScript(Path file)
+    {
+        String name = file.getFileName().toString();
+        if(!name.startsWith("c") || !name.endsWith(".lua") || name.length() < 6)
+        {
+            return false;
+        }
+        for(int i = 1; i < name.length() - 4; i++)
+        {
+            if(!Character.isDigit(name.charAt(i)))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * {@link OcgDuel.ScriptProvider} over a ProjectIgnis/CardScripts checkout:
      * constant.lua/utility.lua at the root, card scripts under official/.
      */

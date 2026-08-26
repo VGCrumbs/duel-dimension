@@ -1031,7 +1031,12 @@ public class DuelAnimations
             boolean fromDefence = DuelEvent.liesDown(event) != toDefence;
             boolean defenceNow = t < 0.5F ? fromDefence : toDefence;
             ResourceLocation texture = showFace ? artFor(event.code(), event.toZone())
-                : (event.player() == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT);
+                // The back this seat is actually WEARING, not the plain one.
+                // The board draws a face-down card with CardFaces.back, which
+                // is that player's sleeve; drawing COVER here meant a sleeved
+                // player's card travelled with the default back and put its
+                // sleeve on at the instant it landed.
+                : CardFaces.back(event.player());
 
             // |cos| gives one full narrow-and-open across the animation, and
             // only for a card that is turning over.
@@ -1050,7 +1055,11 @@ public class DuelAnimations
                 zone.x() + (zone.w() - cardW) / 2F,
                 zone.y() + (zone.h() - cardH) / 2F, cardW, cardH);
 
-            boolean edopro = !showFace || event.code() == 0;
+            // Asked of the texture rather than restated from showFace: a
+            // sleeve is not card-shaped and needs the letterboxed window, and
+            // "!showFace" stopped being the same question the moment the back
+            // could be a sleeve.
+            boolean edopro = isEdoproArt(texture);
             // A quarter turn on top of the seat's own, so the artwork lies down
             // with the card rather than staying upright inside it.
             int turns = (event.player() == 1 ? 2 : 0) + (defenceNow ? 1 : 0);
@@ -1241,7 +1250,12 @@ public class DuelAnimations
             // geometry. Both read the same bit off the same event.
             boolean faceUp = DuelEvent.endsFaceUp(event);
             ResourceLocation texture = faceUp ? artFor(event.code(), event.toZone())
-                : (event.player() == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT);
+                // The back this seat is actually WEARING, not the plain one.
+                // The board draws a face-down card with CardFaces.back, which
+                // is that player's sleeve; drawing COVER here meant a sleeved
+                // player's card travelled with the default back and put its
+                // sleeve on at the instant it landed.
+                : CardFaces.back(event.player());
             boolean edoproArt = isEdoproArt(texture);
             // And a monster arriving in defence lies down for the whole slide,
             // rather than flying in upright and turning a quarter on landing.
@@ -1249,8 +1263,15 @@ public class DuelAnimations
             FieldLayout.Rect travelling = defence
                 ? new FieldLayout.Rect(x, y - lift, to.h(), to.w())
                 : new FieldLayout.Rect(x, y - lift, to.w(), to.h());
+            // The SEAT's turn as well as the card's, because that is what the
+            // board it is landing on will draw. FieldLayout.turnsFor adds two
+            // quarter turns for controller 1 -- client_field.cpp's oppoATK
+            // {0,0,PI}, a playmat facing its owner -- and passing only the
+            // defence quarter meant the opponent's card slid in at 0 or 1 and
+            // arrived at 2 or 3. It spun 180 degrees on the frame the animation
+            // ended, which on a card back is the whole of what you see.
             FieldQuad.drawProjected(poseStack, collector, texture, projection, travelling, 4,
-                defence,
+                FieldLayout.turnsFor(event.player(), defence),
                 edoproArt ? 0F : DuelTextures.CARD_U0, edoproArt ? 0F : DuelTextures.CARD_V0,
                 edoproArt ? 1F : DuelTextures.CARD_U1, edoproArt ? 1F : DuelTextures.CARD_V1);
         }
@@ -1421,8 +1442,13 @@ public class DuelAnimations
             // midpoint regardless is what made a repositioning card blink.
             boolean showFace = turnsOver ? (t < 0.5F) != endsFaceUp : endsFaceUp;
             ResourceLocation texture = showFace ? artFor(event.code(), event.toZone())
-                : (event.player() == 0 ? DuelTextures.COVER : DuelTextures.COVER_OPPONENT);
-            boolean edoproArt = !showFace || event.code() == 0;
+                // The back this seat is actually WEARING, not the plain one.
+                // The board draws a face-down card with CardFaces.back, which
+                // is that player's sleeve; drawing COVER here meant a sleeved
+                // player's card travelled with the default back and put its
+                // sleeve on at the instant it landed.
+                : CardFaces.back(event.player());
+            boolean edoproArt = isEdoproArt(texture);
             boolean toDefence = DuelEvent.endsInDefence(event);
             boolean fromDefence = DuelEvent.liesDown(event) != toDefence;
             views.add(new FlipView(event.code(), event.toZone(), event.player(), showFace, t,

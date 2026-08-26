@@ -119,6 +119,74 @@ def marker(source, note):
     return out
 
 
+# The element rotations a 1.21.1 model loader will accept. 26.2 dropped the
+# restriction; 1.21.1 still throws "Invalid rotation N found, only
+# -45/-22.5/0/22.5/45 allowed" and the whole model fails to bake -- which is how
+# every duel disk in the game came out invisible on the first run, from one
+# element in one file.
+LEGAL_ANGLES = [-45.0, -22.5, 0.0, 22.5, 45.0]
+
+
+def snap_rotations(dry, log):
+    """Snap out-of-range element rotations, and say which.
+
+    Walks the DESTINATION, not the source, and that is not a detail: by the time
+    this runs, thirteen models have been replaced by builtin/entity markers and
+    nine more have been written under new names. Reading the source again would
+    snap a file nobody ships and write the pre-marker model back over the marker
+    -- which it did, once, and every duel disk went back to being a static plate.
+    """
+    root = 'assets/dueldimension/models'
+    for dirpath, _, filenames in os.walk(os.path.join(DST, root.replace('/', os.sep))):
+        for name in filenames:
+            if not name.endswith('.json'):
+                continue
+            rel = os.path.relpath(os.path.join(dirpath, name), DST).replace(os.sep, '/')
+            try:
+                with open(os.path.join(DST, rel.replace('/', os.sep)), encoding='utf-8') as f:
+                    model = json.load(f)
+            except (ValueError, UnicodeDecodeError):
+                continue
+            touched = []
+            for element in model.get('elements', []):
+                rotation = element.get('rotation')
+                if not isinstance(rotation, dict):
+                    continue
+                angle = rotation.get('angle')
+                if not isinstance(angle, (int, float)) or angle in LEGAL_ANGLES:
+                    continue
+                nearest = min(LEGAL_ANGLES, key=lambda legal: abs(legal - angle))
+                rotation['angle'] = nearest
+                touched.append(f'{angle} -> {nearest}')
+            if touched:
+                write(rel, model, dry)
+                log.append(f'{name}: rotation ' + ', '.join(touched))
+
+
+def recipes(dry, log):
+    """Rewrite shaped-recipe keys into 1.21.1's ingredient form.
+
+    26.2 lets a pattern key be a bare item id. 1.21.1 wants an ingredient
+    object, and a bare string fails with "Not a JSON object" -- the recipe is
+    dropped, with the item quietly uncraftable and one line in the log.
+    """
+    root = 'data/dueldimension/recipe'
+    directory = os.path.join(SRC, root.replace('/', os.sep))
+    if not os.path.isdir(directory):
+        return
+    for name in sorted(os.listdir(directory)):
+        rel = f'{root}/{name}'
+        recipe = read(rel)
+        key = recipe.get('key')
+        if not isinstance(key, dict):
+            continue
+        rewritten = {k: ({'item': v} if isinstance(v, str) else v) for k, v in key.items()}
+        if rewritten != key:
+            recipe['key'] = rewritten
+            write(rel, recipe, dry)
+            log.append(f'{name}: {len(key)} pattern key(s) -> ingredient objects')
+
+
 def specials(dry, log):
     """The thirteen models the bulk copy is not allowed to answer for."""
     for name in SELF_DRAWN:
@@ -182,9 +250,11 @@ def main():
     # After the bulk copy, not before: these overwrite files it just wrote.
     log = []
     specials(dry, log)
+    snap_rotations(dry, log)
+    recipes(dry, log)
 
     print(f'{copied} copied, {same} already identical')
-    print(f'\n  REWRITTEN ({len(log)}) -- item models that mod code draws')
+    print(f'\n  REWRITTEN ({len(log)}) -- what 1.21.1 will not read as written')
     for line in log:
         print(f'      {line}')
     for why, files in sorted(skips.items()):

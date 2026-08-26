@@ -5,10 +5,18 @@
     " W "
   ],
   "key": {
-    "R": "minecraft:red_concrete",
-    "P": "dueldimension:duel_playmat",
-    "B": "minecraft:blue_concrete",
-    "W": "minecraft:white_concrete"
+    "R": {
+      "item": "minecraft:red_concrete"
+    },
+    "P": {
+      "item": "dueldimension:duel_playmat"
+    },
+    "B": {
+      "item": "minecraft:blue_concrete"
+    },
+    "W": {
+      "item": "minecraft:white_concrete"
+    }
   },
   "result": {
     "id": "dueldimension:duel_table"

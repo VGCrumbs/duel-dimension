@@ -72,6 +72,24 @@ public class ModelInstallScreen extends Screen
         extractor.centeredText(font, detailLine(), centre, barY + BAR_H + 6, 0xFFA0A0A0);
     }
 
+    /**
+     * No background from vanilla, because this screen draws before
+     * {@code super.render} and vanilla draws the background from inside it.
+     * <p>
+     * In a level that background is the BLUR and nothing else -- the panorama
+     * and {@code renderMenuBackground} are both gated on there being no level --
+     * so leaving it in place blurs everything this screen has already put down,
+     * which is the whole interface. 26.2 refuses it too, in the same words:
+     * <blockquote>fillGradient, not extractBackground: that one blurs.</blockquote>
+     * The dim, where this screen wants one, is its own and goes down first.
+     */
+    @Override
+    public void renderBackground(net.minecraft.client.gui.GuiGraphics vanillaGraphics,
+        int mouseX, int mouseY, float partialTick)
+    {
+    }
+
+
     private static String stageLine()
     {
         return switch(ModelInstall.stage())

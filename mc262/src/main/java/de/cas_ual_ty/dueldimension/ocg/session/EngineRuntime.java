@@ -241,12 +241,38 @@ public final class EngineRuntime
                 // which one they have.
                 resolve("ocg.lib", loadableCore(root),
                     withBundle ? EngineBundle.library() : null, "native/" + libraryName()),
-                resolve("ocg.scripts", root == null ? null : root.resolve("script"),
+                // The one entry that is not resolved on existence alone. A
+                // directory with the shared .lua files and no card scripts
+                // EXISTS, wins the preference, and then fails every card in the
+                // duel -- so this asks whether EDOPro's copy can actually answer
+                // for a card, and falls through to the bundle's complete tree
+                // when it cannot. See HeadlessDuelRunner.hasCardScripts.
+                resolve("ocg.scripts", cardScripts(root),
                     withBundle ? EngineBundle.scriptsDir() : null, "script"),
                 resolve("ocg.cdb", root == null ? null : root.resolve("expansions/cards.cdb"),
                     withBundle ? EngineBundle.cdb() : null, "expansions/cards.cdb"),
                 resolve("ocg.strings", root == null ? null : root.resolve("config/strings.conf"),
                     withBundle ? EngineBundle.stringsConf() : null, "config/strings.conf"));
+        }
+
+        /**
+         * EDOPro's card scripts, if that install actually has some.
+         * <p>
+         * Null when it does not, which is what lets {@link #resolve} fall
+         * through to the bundle -- the same shape as {@link #loadableCore}, and
+         * for the same kind of reason: a piece that is present but cannot do its
+         * job is worse than one that is absent, because it wins the preference
+         * and then fails at the point of use.
+         */
+        private static Path cardScripts(Path root)
+        {
+            if(root == null)
+            {
+                return null;
+            }
+            Path scripts = root.resolve("script");
+            return de.cas_ual_ty.dueldimension.ocg.HeadlessDuelRunner.hasCardScripts(scripts)
+                ? scripts : null;
         }
 
         /**

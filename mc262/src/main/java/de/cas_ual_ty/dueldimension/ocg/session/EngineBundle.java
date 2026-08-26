@@ -491,7 +491,11 @@ public final class EngineBundle
         {
             required.add(LIBRARY);
         }
-        if(!Files.isRegularFile(supplied.scriptsDir().resolve("constant.lua")))
+        // Card scripts, not constant.lua. See HeadlessDuelRunner.hasCardScripts:
+        // an install can have every shared .lua and no card script at all, and
+        // this test used to pass on one and unpack nothing.
+        if(!de.cas_ual_ty.dueldimension.ocg.HeadlessDuelRunner
+            .hasCardScripts(supplied.scriptsDir()))
         {
             required.add(SCRIPTS);
         }
