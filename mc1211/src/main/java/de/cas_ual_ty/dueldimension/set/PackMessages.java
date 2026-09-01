@@ -30,8 +30,32 @@ public final class PackMessages
      * @param codes    each card pulled, in pull order
      * @param rarities each card's rarity, parallel to {@code codes}
      */
-    public record OpenPack(String setName, List<Integer> codes, List<String> rarities) implements CustomPacketPayload
+    /**
+     * @param fresh per card, whether the collection did NOT already hold it.
+     *              Decided server side before the cards were added, because
+     *              afterwards the answer is always "it did".
+     */
+    /**
+     * @param sources per card, the code of the set it actually came out of.
+     *                <p>
+     *                For an ordinary pack this is the product's own code
+     *                repeated, and the reveal ignores it. For a TIN it is the
+     *                booster each card was in — a tin is five real packs in a
+     *                box, and this is the only thing that says which. The
+     *                client cannot work it out: the pull happened server side
+     *                and a card carries no record of the pack it came from.
+     */
+    public record OpenPack(String setName, List<Integer> codes, List<String> rarities,
+        List<Boolean> fresh, List<String> sources) implements CustomPacketPayload
     {
+        public OpenPack
+        {
+            codes = codes == null ? List.of() : List.copyOf(codes);
+            rarities = rarities == null ? List.of() : List.copyOf(rarities);
+            fresh = fresh == null ? List.of() : List.copyOf(fresh);
+            sources = sources == null ? List.of() : List.copyOf(sources);
+        }
+
         /** Names this message on the wire. */
         public static final CustomPacketPayload.Type<OpenPack> TYPE =
             DdNetwork.type("pack_open_pack");
@@ -58,6 +82,13 @@ public final class PackMessages
             {
                 buffer.writeVarInt(message.codes().get(i));
                 buffer.writeUtf(i < message.rarities().size() ? message.rarities().get(i) : "", 64);
+                // Defaulting to false rather than to true: a reveal that forgot
+                // to work it out should mark nothing, not everything.
+                buffer.writeBoolean(i < message.fresh().size() && message.fresh().get(i));
+                // Empty when a pull did not say, which reads as "the product
+                // itself" -- the same safe default the flag above takes.
+                buffer.writeUtf(i < message.sources().size()
+                    ? message.sources().get(i) : "", 32);
             }
         }
 
@@ -67,12 +98,16 @@ public final class PackMessages
             int count = buffer.readVarInt();
             List<Integer> codes = new ArrayList<>(count);
             List<String> rarities = new ArrayList<>(count);
+            List<Boolean> fresh = new ArrayList<>(count);
+            List<String> sources = new ArrayList<>(count);
             for(int i = 0; i < count; i++)
             {
                 codes.add(buffer.readVarInt());
                 rarities.add(buffer.readUtf(64));
+                fresh.add(buffer.readBoolean());
+                sources.add(buffer.readUtf(32));
             }
-            return new OpenPack(setName, codes, rarities);
+            return new OpenPack(setName, codes, rarities, fresh, sources);
         }
 
         /*

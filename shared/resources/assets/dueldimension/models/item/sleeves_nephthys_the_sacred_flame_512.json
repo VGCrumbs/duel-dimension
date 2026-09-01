@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_nephthys_the_sacred_flame",
+  "textures": {
+    "layer0": "dueldimension:item/512/sleeves_nephthys_the_sacred_flame"
+  }
+}

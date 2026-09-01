@@ -30,7 +30,7 @@ class MatchConfigTest
         // lands, or the default only applies to clients that bother to state
         // it -- which is a default in name and not in effect.
         MatchConfig missing = new MatchConfig(Banlist.NO_BANLIST_ID, 8000,
-            MatchConfig.Format.SINGLE, 180, null);
+            MatchConfig.Format.SINGLE, 180, null, false);
         assertEquals(MatchConfig.DEFAULT.presentation(), missing.sanitised().presentation());
     }
 

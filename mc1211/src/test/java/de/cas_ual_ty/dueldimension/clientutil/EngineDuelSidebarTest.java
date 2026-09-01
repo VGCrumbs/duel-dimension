@@ -26,7 +26,12 @@ class EngineDuelSidebarTest
         List<String> lines = EngineDuelScreen.sidebarHeader(elf).stream()
             .map(component -> component.getString()).toList();
 
-        assertEquals(List.of("Spellcaster / Normal", "LIGHT / Level 4",
+        // A printed card's order: attribute and level, then the bracketed
+        // species line, then the stats. This asserted the species line first
+        // until the previews were made to scan like the card they describe --
+        // the ORDER is the thing under test, so it is stated here rather than
+        // loosened to a set.
+        assertEquals(List.of("LIGHT / Level 4", "Spellcaster / Normal",
             "800 ATK / 2000 DEF"), lines);
     }
 

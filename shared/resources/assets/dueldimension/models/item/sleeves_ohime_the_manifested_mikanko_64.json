@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_ohime_the_manifested_mikanko",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_ohime_the_manifested_mikanko"
+  }
+}

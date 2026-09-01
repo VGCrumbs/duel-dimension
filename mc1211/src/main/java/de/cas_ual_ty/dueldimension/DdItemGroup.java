@@ -60,6 +60,7 @@ public final class DdItemGroup
             .displayItems((parameters, output) ->
             {
                 output.accept(DdItems.DUELIST_PLACER);
+                output.accept(DdItems.DUEL_BOT);
                 output.accept(DdItems.MILLENIUM_EYE);
                 output.accept(DdItems.MILLENIUM_KEY);
                 output.accept(DdItems.MILLENIUM_NECKLACE);

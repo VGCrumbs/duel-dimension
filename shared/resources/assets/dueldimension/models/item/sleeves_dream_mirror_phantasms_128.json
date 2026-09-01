@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_dream_mirror_phantasms",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_dream_mirror_phantasms"
+  }
+}

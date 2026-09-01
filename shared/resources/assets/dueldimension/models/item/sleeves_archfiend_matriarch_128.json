@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_archfiend_matriarch",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_archfiend_matriarch"
+  }
+}

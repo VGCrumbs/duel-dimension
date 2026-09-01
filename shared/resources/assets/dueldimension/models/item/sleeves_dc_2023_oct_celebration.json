@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_dc_2023_oct_celebration"
+  }
+}

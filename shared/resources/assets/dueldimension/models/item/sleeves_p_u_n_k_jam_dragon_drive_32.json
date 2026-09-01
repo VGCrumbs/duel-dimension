@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_p_u_n_k_jam_dragon_drive",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_p_u_n_k_jam_dragon_drive"
+  }
+}

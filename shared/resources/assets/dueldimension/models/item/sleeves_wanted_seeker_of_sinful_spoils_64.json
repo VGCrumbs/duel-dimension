@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_wanted_seeker_of_sinful_spoils",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_wanted_seeker_of_sinful_spoils"
+  }
+}

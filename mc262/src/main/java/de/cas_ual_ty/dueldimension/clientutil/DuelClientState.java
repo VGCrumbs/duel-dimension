@@ -246,9 +246,29 @@ public final class DuelClientState
      */
     public static void openScreenForPrompt()
     {
-        if(de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()
-            && !de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.screenPreferred()
-            && PromptOptions.boardCanAnswer(prompt))
+        boolean onBoard =
+            de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked()
+                && !de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField
+                    .screenPreferred();
+        // The Destiny Draw is the one board question with nothing on the board
+        // to point at, so unlike the rest it needs a surface OPENED for it --
+        // and the surface is the board's own pointer, not the flat screen. The
+        // pointer draws the panel and answers the click; see BoardPointerScreen.
+        //
+        // Only when one is not already up: a duellist who is holding the cursor
+        // when the offer arrives should keep the cursor they are holding.
+        if(onBoard && de.cas_ual_ty.dueldimension.clientutil.DestinyPrompt.isOffered(prompt))
+        {
+            net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+            if(!(minecraft.gui.screen()
+                instanceof de.cas_ual_ty.dueldimension.clientutil.overworld.BoardPointerScreen))
+            {
+                minecraft.gui.setScreen(
+                    new de.cas_ual_ty.dueldimension.clientutil.overworld.BoardPointerScreen());
+            }
+            return;
+        }
+        if(onBoard && PromptOptions.boardCanAnswer(prompt))
         {
             return;
         }

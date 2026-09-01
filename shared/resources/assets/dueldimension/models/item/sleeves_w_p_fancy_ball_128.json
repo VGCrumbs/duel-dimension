@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_w_p_fancy_ball",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_w_p_fancy_ball"
+  }
+}

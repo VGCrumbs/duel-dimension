@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_flower_cardian_maple_with_deer",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_flower_cardian_maple_with_deer"
+  }
+}

@@ -59,4 +59,37 @@ public final class GlbFixtures
     {
         return Files.isRegularFile(DRAGON);
     }
+
+    /**
+     * The three Falsebound Kingdom rips, which are a different shape of model
+     * from the dragon: ripped from a GameCube game rather than authored, one
+     * primitive each, and with skeletons whose joints carry real scale.
+     * <p>
+     * They are here because all three were rejected at load for a whole evening
+     * -- "node scale is not supported" against float noise of 3e-5 -- and the
+     * unit test for the tolerance cannot notice a SECOND thing the loader
+     * dislikes behind the first. Loading the actual files can.
+     */
+    public static Path god(String name)
+    {
+        String override = System.getProperty("dueldimension.testModelDir");
+        Path dir = override != null && !override.isBlank()
+            ? Path.of(override)
+            : Path.of(System.getProperty("user.home"), "AppData", "Roaming", "ModrinthApp",
+                "profiles", "Duel", "config", "dueldimension", "models");
+        return dir.resolve(name + ".glb");
+    }
+
+    public static boolean godsPresent()
+    {
+        for(String name : new String[] {"slifer_the_sky_dragon", "obelisk_the_tormentor",
+            "the_winged_dragon_of_ra"})
+        {
+            if(!Files.isRegularFile(god(name)))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 }

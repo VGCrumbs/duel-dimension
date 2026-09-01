@@ -37,10 +37,13 @@ import java.util.List;
  *                stays where it is put
  * @param offsets a nudge for individual cells, in pixels, indexed by cell; a
  *                short list or a missing entry means no nudge
+ * @param directions how many rotations of the monster the sheet holds, one
+ *                below the other, or 1 for a sheet that looks the same from
+ *                every side. Doom's eight is the case this exists for
  */
 public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns, int rows,
     int first, int frames, int ticks, MonsterSprites.Loop loop, int trimX, int trimY, int bob,
-    List<Offset> offsets)
+    List<Offset> offsets, int directions)
 {
     /**
      * How far one cell's art is out of step with the rest, in pixels.
@@ -64,7 +67,19 @@ public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns,
         // definition afterwards -- and so equality stays a question about
         // contents.
         offsets = offsets == null ? List.of() : List.copyOf(offsets);
+        // One rotation is "no rotations", and zero would divide by itself.
+        directions = Math.max(1, directions);
     }
+
+    /** A sheet with one view of the monster, which is almost all of them. */
+    public SpriteLayer(String sheet, int x, int y, int w, int h, int columns, int rows,
+        int first, int frames, int ticks, MonsterSprites.Loop loop, int trimX, int trimY, int bob,
+        List<Offset> offsets)
+    {
+        this(sheet, x, y, w, h, columns, rows, first, frames, ticks, loop, trimX, trimY, bob,
+            offsets, 1);
+    }
+
 
     /** A layer whose cells are all in step, which is most of them. */
     public SpriteLayer(String sheet, int x, int y, int w, int h, int columns, int rows,
@@ -79,6 +94,32 @@ public record SpriteLayer(String sheet, int x, int y, int w, int h, int columns,
         int first, int frames, int ticks, MonsterSprites.Loop loop, int trimX, int trimY)
     {
         this(sheet, x, y, w, h, columns, rows, first, frames, ticks, loop, trimX, trimY, 0);
+    }
+
+    /**
+     * The same run, read from the row that holds one rotation of the monster.
+     * <p>
+     * <b>A rotation is a row, so facing one way rather than another is starting
+     * at a different cell -- and nothing else in this class needs to know.</b>
+     * The trim, the per-cell nudges, the aspect and the geometry all work off
+     * {@link #cell}, which works off {@code first}; moving {@code first} down a
+     * row therefore turns the monster round without any of them being told, and
+     * without the careful business in {@link #uv} about not insetting texels
+     * having to be revisited.
+     * <p>
+     * Returns {@code this} for an ordinary sheet, so a monster with one view
+     * costs nothing and the caller never has to ask which kind it has.
+     */
+    public SpriteLayer facing(int direction)
+    {
+        if(directions <= 1)
+        {
+            return this;
+        }
+        int row = Math.floorMod(direction, directions);
+        return new SpriteLayer(sheet, x, y, w, h, columns, rows,
+            first + row * Math.max(1, columns), frames, ticks, loop, trimX, trimY, bob,
+            offsets, directions);
     }
 
     /** The nudge for one cell of the region. */

@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_protector_wind",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_protector_wind"
+  }
+}

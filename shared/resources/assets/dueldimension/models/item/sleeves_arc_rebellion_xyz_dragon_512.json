@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_arc_rebellion_xyz_dragon",
+  "textures": {
+    "layer0": "dueldimension:item/512/sleeves_arc_rebellion_xyz_dragon"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_runick_fountain",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_runick_fountain"
+  }
+}

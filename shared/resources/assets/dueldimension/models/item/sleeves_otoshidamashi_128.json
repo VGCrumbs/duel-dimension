@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_otoshidamashi",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_otoshidamashi"
+  }
+}

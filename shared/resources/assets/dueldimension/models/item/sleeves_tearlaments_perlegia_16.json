@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_tearlaments_perlegia",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_tearlaments_perlegia"
+  }
+}

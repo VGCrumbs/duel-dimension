@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_clear_wing_synchro_dragon",
+  "textures": {
+    "layer0": "dueldimension:item/512/sleeves_clear_wing_synchro_dragon"
+  }
+}

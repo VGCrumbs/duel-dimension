@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_ame_no_murakumo_no_mitsurugi",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_ame_no_murakumo_no_mitsurugi"
+  }
+}

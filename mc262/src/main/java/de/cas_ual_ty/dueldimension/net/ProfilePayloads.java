@@ -1,5 +1,7 @@
 package de.cas_ual_ty.dueldimension.net;
 
+import de.cas_ual_ty.dueldimension.duel.match.Banlist;
+import de.cas_ual_ty.dueldimension.duel.match.Banlists;
 import de.cas_ual_ty.dueldimension.duel.profile.DeckEdits;
 import de.cas_ual_ty.dueldimension.duel.profile.DuelProfile;
 import de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles;
@@ -42,6 +44,12 @@ public final class ProfilePayloads
     /** How long a sleeve id may be. The longest this build has is 23 characters. */
     private static final int SLEEVE_LIMIT = 64;
     private static final int DECK_BOX_LIMIT = 32;
+
+    /**
+     * How long a banlist id may be. EDOPro's longest is around 24 characters,
+     * so this is room rather than a fit.
+     */
+    private static final int BANLIST_ID_LIMIT = 64;
 
     // ---- server to client ----
 
@@ -423,6 +431,36 @@ public final class ProfilePayloads
         }
     }
 
+    /**
+     * Which cards in a deck a Destiny Draw may reach.
+     *
+     * <h2>Its own message rather than a field on SaveDeck</h2>
+     * The same reason the sleeve, the case and the banlist have theirs: it is a
+     * property of the deck rather than of its contents, and it changes on its
+     * own. Practically it also stays clear of SaveDeck's hand-written codec,
+     * which exists because {@code StreamCodec.composite} stops at six
+     * components and SaveDeck already has seven -- an eighth would have to be
+     * threaded through two mirrored lists that only fail over the network.
+     */
+    public record SetDeckDestiny(String name, List<Integer> codes) implements CustomPacketPayload
+    {
+        public static final CustomPacketPayload.Type<SetDeckDestiny> TYPE =
+            DdNetwork.type("deck_destiny");
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, SetDeckDestiny> CODEC =
+            StreamCodec.composite(
+                ByteBufCodecs.stringUtf8(NAME_LIMIT), SetDeckDestiny::name,
+                ByteBufCodecs.<RegistryFriendlyByteBuf, Integer>list(PART_LIMIT)
+                    .apply(ByteBufCodecs.VAR_INT.cast()), SetDeckDestiny::codes,
+                SetDeckDestiny::new);
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
+        {
+            return TYPE;
+        }
+    }
+
     /** Chooses one of the built-in basic-colour cases for a deck. */
     public record SetDeckBox(String name, String deckBox) implements CustomPacketPayload
     {
@@ -460,6 +498,22 @@ public final class ProfilePayloads
         }
     }
 
+    /** Client to server: star this sealed product, or unstar it. */
+    public record ToggleFavouritePack(String code) implements CustomPacketPayload
+    {
+        public static final CustomPacketPayload.Type<ToggleFavouritePack> TYPE =
+            DdNetwork.type("toggle_favourite_pack");
+        public static final StreamCodec<RegistryFriendlyByteBuf, ToggleFavouritePack> CODEC =
+            StreamCodec.composite(ByteBufCodecs.STRING_UTF8, ToggleFavouritePack::code,
+                ToggleFavouritePack::new);
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
+        {
+            return TYPE;
+        }
+    }
+
     public record ToggleFavourite(int passcode) implements CustomPacketPayload
     {
         public static final CustomPacketPayload.Type<ToggleFavourite> TYPE =
@@ -476,6 +530,146 @@ public final class ProfilePayloads
         }
     }
 
+    /**
+     * Every forbidden/limited list this server offers, limits and all.
+     *
+     * <h2>Why the whole list and not just its name</h2>
+     * Because the deck editor has to ENFORCE it, not merely display it. Copy
+     * limits, the dimming of a card already at its maximum, and the legality
+     * check on a finished deck all go through
+     * {@link de.cas_ual_ty.dueldimension.duel.profile.DeckLimits}, which needs
+     * the passcode-to-limit map itself. Sending ids and display names alone --
+     * which is what the duel lobby is sent, because a lobby only has to NAME the
+     * list it is playing under -- would leave the editor able to show a list and
+     * unable to apply one.
+     * <p>
+     * The lists live on the server: {@link Banlists} reads EDOPro's own
+     * {@code .lflist.conf} files, and a client has no reason to have EDOPro
+     * installed. So this is the only way the editor can know them, and it is
+     * still the server's answer that counts -- a deck save is re-checked there.
+     *
+     * <h2>Size</h2>
+     * A current TCG list is a few hundred entries and a server offers a few
+     * dozen lists, so this is tens of kilobytes. It rides along with
+     * {@link Sync}, which carries the player's whole collection and is larger
+     * again; sending it separately on join would save nothing worth the second
+     * code path that could go out of step.
+     */
+    public record BanlistCatalogue(List<String> ids, List<String> names,
+        List<java.util.Map<Integer, Integer>> limits) implements CustomPacketPayload
+    {
+        public static final CustomPacketPayload.Type<BanlistCatalogue> TYPE =
+            DdNetwork.type("profile_banlists");
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, BanlistCatalogue> CODEC =
+            CustomPacketPayload.codec(BanlistCatalogue::encode, BanlistCatalogue::decode);
+
+        /** What the server has, in the order {@link Banlists#all} offers it. */
+        public static BanlistCatalogue of(List<Banlist> lists)
+        {
+            List<String> ids = new java.util.ArrayList<>(lists.size());
+            List<String> names = new java.util.ArrayList<>(lists.size());
+            List<java.util.Map<Integer, Integer>> limits =
+                new java.util.ArrayList<>(lists.size());
+            for(Banlist list : lists)
+            {
+                ids.add(list.id());
+                names.add(list.displayName());
+                limits.add(list.limits());
+            }
+            return new BanlistCatalogue(ids, names, limits);
+        }
+
+        /** Back into the objects the editor works with. */
+        public List<Banlist> toBanlists()
+        {
+            int count = Math.min(ids.size(), Math.min(names.size(), limits.size()));
+            List<Banlist> lists = new java.util.ArrayList<>(count);
+            for(int i = 0; i < count; i++)
+            {
+                lists.add(new Banlist(ids.get(i), names.get(i), limits.get(i)));
+            }
+            return lists;
+        }
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
+        {
+            return TYPE;
+        }
+
+        public static void encode(BanlistCatalogue message, RegistryFriendlyByteBuf buffer)
+        {
+            int count = Math.min(message.ids().size(),
+                Math.min(message.names().size(), message.limits().size()));
+            buffer.writeVarInt(count);
+            for(int i = 0; i < count; i++)
+            {
+                buffer.writeUtf(message.ids().get(i), BANLIST_ID_LIMIT);
+                buffer.writeUtf(message.names().get(i), BANLIST_ID_LIMIT);
+                java.util.Map<Integer, Integer> entries = message.limits().get(i);
+                buffer.writeVarInt(entries.size());
+                entries.forEach((passcode, limit) ->
+                {
+                    buffer.writeVarInt(passcode);
+                    buffer.writeVarInt(limit);
+                });
+            }
+        }
+
+        public static BanlistCatalogue decode(RegistryFriendlyByteBuf buffer)
+        {
+            int count = buffer.readVarInt();
+            List<String> ids = new java.util.ArrayList<>(count);
+            List<String> names = new java.util.ArrayList<>(count);
+            List<java.util.Map<Integer, Integer>> limits = new java.util.ArrayList<>(count);
+            for(int i = 0; i < count; i++)
+            {
+                ids.add(buffer.readUtf(BANLIST_ID_LIMIT));
+                names.add(buffer.readUtf(BANLIST_ID_LIMIT));
+                int entries = buffer.readVarInt();
+                // Insertion-ordered, so a list decoded here iterates the way the
+                // .conf file wrote it. Banlist keeps the map it is handed in the
+                // same order, which is what makes two catalogues comparable when
+                // one of them is wrong.
+                java.util.Map<Integer, Integer> map =
+                    new java.util.LinkedHashMap<>(Math.max(4, entries));
+                for(int entry = 0; entry < entries; entry++)
+                {
+                    map.put(buffer.readVarInt(), buffer.readVarInt());
+                }
+                limits.add(map);
+            }
+            return new BanlistCatalogue(ids, names, limits);
+        }
+    }
+
+    /**
+     * "Build this deck to this list."
+     * <p>
+     * A request, not a statement, for the reason {@link SetDeckSleeve} gives:
+     * the id is checked against what this server actually offers, in
+     * {@link DeckEdits#setDeckBanlist}, because a client naming a list is
+     * naming a set of copy limits.
+     */
+    public record SetDeckBanlist(String name, String banlist) implements CustomPacketPayload
+    {
+        public static final CustomPacketPayload.Type<SetDeckBanlist> TYPE =
+            DdNetwork.type("deck_banlist");
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, SetDeckBanlist> CODEC =
+            StreamCodec.composite(
+                ByteBufCodecs.stringUtf8(NAME_LIMIT), SetDeckBanlist::name,
+                ByteBufCodecs.stringUtf8(BANLIST_ID_LIMIT), SetDeckBanlist::banlist,
+                SetDeckBanlist::new);
+
+        @Override
+        public CustomPacketPayload.Type<? extends CustomPacketPayload> type()
+        {
+            return TYPE;
+        }
+    }
+
     // ---- registration ----
 
     public static void register()
@@ -483,6 +677,7 @@ public final class ProfilePayloads
         DdNetwork.clientbound(Sync.TYPE, Sync.CODEC);
         DdNetwork.clientbound(SyncFreeMode.TYPE, SyncFreeMode.CODEC);
         DdNetwork.clientbound(EngineUnknown.TYPE, EngineUnknown.CODEC);
+        DdNetwork.clientbound(BanlistCatalogue.TYPE, BanlistCatalogue.CODEC);
 
         DdNetwork.serverbound(SaveDeck.TYPE, SaveDeck.CODEC);
         DdNetwork.serverbound(CreateDeck.TYPE, CreateDeck.CODEC);
@@ -495,7 +690,10 @@ public final class ProfilePayloads
         DdNetwork.serverbound(PublishRecipe.TYPE, PublishRecipe.CODEC);
         DdNetwork.serverbound(SetDeckSleeve.TYPE, SetDeckSleeve.CODEC);
         DdNetwork.serverbound(SetDeckBox.TYPE, SetDeckBox.CODEC);
+        DdNetwork.serverbound(SetDeckBanlist.TYPE, SetDeckBanlist.CODEC);
+        DdNetwork.serverbound(SetDeckDestiny.TYPE, SetDeckDestiny.CODEC);
         DdNetwork.serverbound(ToggleFavourite.TYPE, ToggleFavourite.CODEC);
+        DdNetwork.serverbound(ToggleFavouritePack.TYPE, ToggleFavouritePack.CODEC);
     }
 
     public static void registerServerHandlers()
@@ -526,8 +724,14 @@ public final class ProfilePayloads
             answer(player, DeckEdits.setDeckSleeve(player, message.name(), message.sleeve())));
         DdNetwork.onServer(SetDeckBox.TYPE, (message, player) ->
             answer(player, DeckEdits.setDeckBox(player, message.name(), message.deckBox())));
+        DdNetwork.onServer(SetDeckBanlist.TYPE, (message, player) ->
+            answer(player, DeckEdits.setDeckBanlist(player, message.name(), message.banlist())));
+        DdNetwork.onServer(SetDeckDestiny.TYPE, (message, player) ->
+            answer(player, DeckEdits.setDeckDestiny(player, message.name(), message.codes())));
         DdNetwork.onServer(ToggleFavourite.TYPE, (message, player) ->
             answer(player, DeckEdits.toggleFavourite(player, message.passcode())));
+        DdNetwork.onServer(ToggleFavouritePack.TYPE, (message, player) ->
+            answer(player, DeckEdits.toggleFavouritePack(player, message.code())));
     }
 
     /**
@@ -560,6 +764,20 @@ public final class ProfilePayloads
             new Sync(DuelProfiles.get(player)));
         syncFreeMode(player);
         syncEngineUnknown(player);
+        syncBanlists(player);
+    }
+
+    /**
+     * Sends the lists this server offers, so the editor can enforce one.
+     * <p>
+     * Part of {@link #sync} rather than a join-only message: the editor cannot
+     * apply a list it has not been told, and a catalogue that arrived once would
+     * be one reconnect away from an editor silently enforcing nothing.
+     */
+    public static void syncBanlists(ServerPlayer player)
+    {
+        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
+            BanlistCatalogue.of(Banlists.all()));
     }
 
     /** Sends the world-wide free-mode switch to one client. */

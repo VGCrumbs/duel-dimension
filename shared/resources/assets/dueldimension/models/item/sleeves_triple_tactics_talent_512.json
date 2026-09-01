@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_triple_tactics_talent",
+  "textures": {
+    "layer0": "dueldimension:item/512/sleeves_triple_tactics_talent"
+  }
+}

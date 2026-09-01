@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_yoko_the_graceful_mayakashi",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_yoko_the_graceful_mayakashi"
+  }
+}

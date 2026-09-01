@@ -16,9 +16,76 @@ public class CardSetItem extends CardSetBaseItem
         super(properties);
     }
 
+    /**
+     * Shift + right-click looks the product up instead of opening it.
+     *
+     * <h2>Client only, and it must stay that way</h2>
+     * The browser lives on the player's machine. A server has no browser to
+     * open and no business opening one, so this returns before the interaction
+     * reaches the server at all -- which also means a sealed pack is never
+     * consumed by a lookup, whatever the timing.
+     *
+     * <h2>Through ConfirmLinkScreen</h2>
+     * Vanilla shows the address and asks before following any link it offers,
+     * and a card database is no reason to be the exception. The same route
+     * {@code CardInfoScreen} takes to TCGplayer.
+     */
+    private static InteractionResultHolder<ItemStack> lookUp(Level world, Player player, InteractionHand hand)
+    {
+        if(!world.isClientSide())
+        {
+            return null;
+        }
+        // Read from the WINDOW, not from Screen.hasShiftDown(): that reads a
+        // screen's own cached modifier state, and there is no screen open when
+        // a pack is right-clicked in the world. The same reason CardShopScreen
+        // reads it this way.
+        if(!com.mojang.blaze3d.platform.InputConstants.isKeyDown(
+                net.minecraft.client.Minecraft.getInstance().getWindow().getWindow(),
+                org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT)
+            && !com.mojang.blaze3d.platform.InputConstants.isKeyDown(
+                net.minecraft.client.Minecraft.getInstance().getWindow().getWindow(),
+                org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT))
+        {
+            return null;
+        }
+        de.cas_ual_ty.dueldimension.set.CardSet set = null;
+        ItemStack held = player.getItemInHand(hand);
+        if(held.getItem() instanceof CardSetBaseItem sealed)
+        {
+            set = sealed.getCardSet(held);
+        }
+        if(set == null || set.name == null || set.name.isEmpty())
+        {
+            return null;
+        }
+        net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+        net.minecraft.client.gui.screens.Screen screen = minecraft.screen;
+        String query = java.net.URLEncoder.encode(
+            set.name, java.nio.charset.StandardCharsets.UTF_8);
+        java.net.URI uri = java.net.URI.create(
+            "https://ygoprodeck.com/card-database/?&cardset=" + query);
+        minecraft.setScreen(new net.minecraft.client.gui.screens.ConfirmLinkScreen(
+            confirmed ->
+            {
+                if(confirmed)
+                {
+                    net.minecraft.Util.getPlatform().openUri(uri);
+                }
+                minecraft.setScreen(screen);
+            }, uri.toString(), true));
+        return InteractionResultHolder.success(player.getItemInHand(hand));
+    }
+
     @Override
     public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand)
     {
+        InteractionResultHolder<ItemStack> lookup = lookUp(world, player, hand);
+        if(lookup != null)
+        {
+            return lookup;
+        }
+
         ItemStack stack = CardSetItem.getActiveSet(player);
 
         if(player.getItemInHand(hand) == stack)
@@ -112,8 +179,18 @@ public class CardSetItem extends CardSetBaseItem
         java.util.List<Integer> codes = new java.util.ArrayList<>();
         java.util.List<String> rarities = new java.util.ArrayList<>();
         java.util.List<Integer> arts = new java.util.ArrayList<>();
-        for(ItemStack card : de.cas_ual_ty.dueldimension.set.OpenedCardSetItem.contentsOf(openedStack))
+        // Parallel to `codes`, not to the contents: this loop skips anything
+        // that is not a card, so the source is picked up by index rather than
+        // carried across whole, or a skipped entry would shift every later
+        // card into the wrong pack.
+        java.util.List<String> sources = new java.util.ArrayList<>();
+        java.util.List<ItemStack> contents =
+            de.cas_ual_ty.dueldimension.set.OpenedCardSetItem.contentsOf(openedStack);
+        java.util.List<String> pulledFrom =
+            de.cas_ual_ty.dueldimension.set.OpenedCardSetItem.sourcesOf(openedStack);
+        for(int contentIndex = 0; contentIndex < contents.size(); contentIndex++)
         {
+            ItemStack card = contents.get(contentIndex);
             if(card.isEmpty() || !(card.getItem() instanceof de.cas_ual_ty.dueldimension.card.CardItem item))
             {
                 continue;
@@ -124,6 +201,8 @@ public class CardSetItem extends CardSetBaseItem
                 continue;
             }
             codes.add((int)holder.getCard().getId());
+            sources.add(contentIndex < pulledFrom.size() ? pulledFrom.get(contentIndex)
+                : (set == null ? "" : set.code));
             rarities.add(holder.getRarity() == null ? "" : holder.getRarity());
             // The artwork this printing specifies, which the set file named and
             // the puller has been carrying on the holder all along. Gathered in
@@ -148,6 +227,7 @@ public class CardSetItem extends CardSetBaseItem
         // skipped from all three), so index i is the same card in each.
         de.cas_ual_ty.dueldimension.duel.profile.Trunk trunk =
             de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.get(serverPlayer).trunk();
+        java.util.List<Boolean> fresh = freshAmong(trunk, codes);
         for(int i = 0; i < codes.size(); i++)
         {
             trunk.add(codes.get(i), rarities.get(i), arts.get(i), 1);
@@ -158,7 +238,25 @@ public class CardSetItem extends CardSetBaseItem
         // PacketDistributor target.
         net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(serverPlayer,
             new de.cas_ual_ty.dueldimension.set.PackMessages.OpenPack(
-                set == null ? "Card Pack" : set.name, codes, rarities));
+                set == null ? "Card Pack" : set.name, codes, rarities, fresh, sources));
         return true;
+    }
+
+    /**
+     * Which of these codes the trunk does not already hold.
+     * <p>
+     * Asked BEFORE anything is added, and each code counted once: the second
+     * copy of a card in one payout is not new, even though the first was.
+     */
+    private static java.util.List<Boolean> freshAmong(
+        de.cas_ual_ty.dueldimension.duel.profile.Trunk trunk, java.util.List<Integer> codes)
+    {
+        java.util.Set<Integer> seen = new java.util.HashSet<>();
+        java.util.List<Boolean> fresh = new java.util.ArrayList<>(codes.size());
+        for(int code : codes)
+        {
+            fresh.add(!trunk.has(code) && seen.add(code));
+        }
+        return fresh;
     }
 }

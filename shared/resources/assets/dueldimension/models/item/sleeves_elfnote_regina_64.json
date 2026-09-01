@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_elfnote_regina",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_elfnote_regina"
+  }
+}

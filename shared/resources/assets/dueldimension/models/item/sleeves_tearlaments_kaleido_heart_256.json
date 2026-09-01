@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_tearlaments_kaleido_heart",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_tearlaments_kaleido_heart"
+  }
+}

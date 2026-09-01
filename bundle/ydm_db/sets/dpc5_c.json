@@ -1,0 +1,26 @@
+{
+  "code": "DPC5_C",
+  "type": "Sub-Set",
+  "pull_type": "distribution",
+  "distribution": "duelist_pack_collection_tin_2011",
+  "cards": [
+    {
+      "id": 63465535,
+      "code": "DPC5-EN001",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22858242,
+      "code": "DPC5-EN002",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95453143,
+      "code": "DPC5-EN003",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

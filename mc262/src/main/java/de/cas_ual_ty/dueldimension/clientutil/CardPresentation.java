@@ -102,6 +102,170 @@ public final class CardPresentation
         tooltip.addAll(components(lines));
     }
 
+    /**
+     * A card's own words, wrapped, for a panel that is already showing its
+     * facts -- see {@link Properties#addBodyText}.
+     * <p>
+     * Wrapping is done here rather than by the caller because the body is now
+     * SEVERAL lines rather than one string, and each has to be wrapped on its
+     * own: a Pendulum monster's scales, its Pendulum Effect, a blank, and then
+     * its lower box. Joining them and wrapping once would run the last line of
+     * one paragraph into the first of the next.
+     * <p>
+     * Every panel that shows card text calls this. The one thing that must not
+     * is SEARCH, which matches against {@code getText()} deliberately: a search
+     * index is not a rendering.
+     */
+    public static List<net.minecraft.util.FormattedCharSequence> bodyLines(
+        net.minecraft.client.gui.Font font, Properties card, int wrapWidth)
+    {
+        List<net.minecraft.util.FormattedCharSequence> out = new ArrayList<>();
+        if(card == null)
+        {
+            return out;
+        }
+        List<CardLine> lines = new ArrayList<>();
+        card.addBodyText(lines);
+        for(Component line : components(lines))
+        {
+            if(line.getString().isEmpty())
+            {
+                // A deliberate blank -- the border between a Pendulum card's
+                // two boxes. font.split drops an empty component entirely, so
+                // the separator has to be put back by hand or the two effects
+                // run together as one paragraph.
+                out.add(net.minecraft.util.FormattedCharSequence.EMPTY);
+                continue;
+            }
+            out.addAll(font.split(line, wrapWidth));
+        }
+        return out;
+    }
+
+    /**
+     * How many of {@link #bodyLines}' LEADING lines are the Pendulum box.
+     * <p>
+     * Zero for every card that is not a Pendulum monster, which is nearly all
+     * of them. Wrapped at the same width by the same call, so the answer counts
+     * the same lines the panel is about to draw -- a box measured at one width
+     * and drawn at another is a box that fits the text on some cards and not
+     * others.
+     * <p>
+     * Leading is guaranteed by {@code Properties.addBodyText}, which puts the
+     * box first and everything else after it. A panel can therefore frame rows
+     * {@code 0} to this and needs to know nothing else about what a Pendulum
+     * card is.
+     */
+    public static int pendulumLineCount(net.minecraft.client.gui.Font font, Properties card,
+        int wrapWidth)
+    {
+        if(card == null)
+        {
+            return 0;
+        }
+        List<CardLine> lines = new ArrayList<>();
+        card.addPendulumBox(lines);
+        int count = 0;
+        for(Component line : components(lines))
+        {
+            count += line.getString().isEmpty() ? 1 : font.split(line, wrapWidth).size();
+        }
+        return count;
+    }
+
+    /**
+     * A card's body laid out for a panel that draws the Pendulum scales as a
+     * plate of their own.
+     *
+     * @param lines         every line, in scroll order
+     * @param pendulumLines how many leading lines belong to the Pendulum box
+     * @param scale         the scales, or null when the card has none
+     */
+    public record PeekBody(List<net.minecraft.util.FormattedCharSequence> lines,
+        int pendulumLines, String scale)
+    {
+    }
+
+    /**
+     * The body, with the Pendulum Effect starting ON the scales' line.
+     *
+     * <h2>The hanging indent, and why it is done by hand</h2>
+     * {@code font.split} wraps a whole string to one width; it has no notion of
+     * a first line that is shorter than the rest. So the first line is split at
+     * the narrow width, its text taken back off the front, and the remainder
+     * wrapped at the full width. Splitting the whole thing narrow instead would
+     * indent every line to clear a plate that is only beside the first.
+     *
+     * @param scaleWidth how much room the scales' plate takes on the first
+     *                   line, in the same units as {@code wrap}
+     */
+    public static PeekBody peekBody(net.minecraft.client.gui.Font font, Properties card,
+        int wrap, int scaleWidth)
+    {
+        List<net.minecraft.util.FormattedCharSequence> out = new ArrayList<>();
+        if(card == null)
+        {
+            return new PeekBody(out, 0, null);
+        }
+        String scale = card.pendulumScaleText();
+        String pendulum = card.pendulumEffectText();
+        int pendulumLines = 0;
+        if(scale != null)
+        {
+            String text = pendulum == null ? "" : pendulum;
+            int firstWrap = Math.max(1, wrap - scaleWidth);
+            List<net.minecraft.network.chat.FormattedText> firstPass =
+                font.getSplitter().splitLines(net.minecraft.network.chat.FormattedText.of(text),
+                    firstWrap, net.minecraft.network.chat.Style.EMPTY);
+            String first = firstPass.isEmpty() ? "" : firstPass.get(0).getString();
+            String rest = text.length() <= first.length() ? ""
+                : text.substring(first.length()).stripLeading();
+            // BUILT FROM STRINGS, AND BLANKS DROPPED.
+            //
+            // This is the phantom extra row at the foot of the Pendulum box,
+            // and it was never a spacing constant. Two separate things put an
+            // empty line in here: the splitter and font.split measure the same
+            // text a hair differently, so re-wrapping a line the splitter had
+            // already decided could hand back two; and a wrap landing on a
+            // trailing space produces a final line with nothing in it. Either
+            // way the panel counted a line, reserved a line's height for it,
+            // and drew nothing -- so the tinted box ran a row past its text.
+            //
+            // Splitting to TEXT rather than to a character sequence is what
+            // makes the blanks visible enough to drop: a FormattedCharSequence
+            // will not tell you whether it is empty.
+            List<net.minecraft.network.chat.FormattedText> pieces =
+                new ArrayList<>();
+            pieces.add(net.minecraft.network.chat.FormattedText.of(first));
+            if(!rest.isEmpty())
+            {
+                pieces.addAll(font.getSplitter().splitLines(
+                    net.minecraft.network.chat.FormattedText.of(rest), wrap,
+                    net.minecraft.network.chat.Style.EMPTY));
+            }
+            for(net.minecraft.network.chat.FormattedText piece : pieces)
+            {
+                if(!piece.getString().isBlank())
+                {
+                    out.add(net.minecraft.util.FormattedCharSequence.forward(
+                        piece.getString(), net.minecraft.network.chat.Style.EMPTY));
+                }
+            }
+            pendulumLines = Math.max(1, out.size());
+            // No blank line between the boxes. There was one to stand in for
+            // the border a printed card has -- but the panel now DRAWS that
+            // border, as the tinted plate behind these lines, so a blank as
+            // well is the separator counted twice and the lower box floating
+            // away from the upper one.
+        }
+        String lower = card.getText();
+        if(lower != null && !lower.isEmpty())
+        {
+            out.addAll(font.split(Component.literal(lower), wrap));
+        }
+        return new PeekBody(out, pendulumLines, scale);
+    }
+
     /** One specific copy of a card -- its name, code, rarity and artwork. */
     public static void addInformation(CardHolder holder, List<Component> tooltip)
     {

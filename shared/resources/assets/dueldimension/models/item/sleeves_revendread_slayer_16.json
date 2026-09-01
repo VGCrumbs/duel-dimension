@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_revendread_slayer",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_revendread_slayer"
+  }
+}

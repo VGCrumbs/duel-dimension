@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_ghostrick_festival",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_ghostrick_festival"
+  }
+}

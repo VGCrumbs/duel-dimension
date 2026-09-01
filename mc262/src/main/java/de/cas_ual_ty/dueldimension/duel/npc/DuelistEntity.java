@@ -172,7 +172,11 @@ public class DuelistEntity extends PathfinderMob
      * Asked of the live registry every tick rather than remembered, so a duel
      * that ends by any route leaves the duelist free again.
      */
-    private void faceOpponent()
+    /**
+     * Overridable so a Duel Bot can decline it. A bot is furniture and stays
+     * exactly as it was placed, facing included.
+     */
+    protected void faceOpponent()
     {
         java.util.UUID opponent = DuelistDuels.opponentOf(getUUID());
         if(opponent == null || !(level() instanceof net.minecraft.server.level.ServerLevel level))
@@ -228,6 +232,34 @@ public class DuelistEntity extends PathfinderMob
             .map(entry -> entry.displayName().replace("Starter Deck: ", ""))
             .findFirst()
             .orElse(profileId);
+    }
+
+
+    /**
+     * The deck this NPC brings to the table.
+     * <p>
+     * A duelist's deck is its identity -- the profile id picks both the skin and
+     * the cards, which is what makes adding an opponent content rather than
+     * code. {@link DuelBotEntity} is the exception that needs this to be a
+     * question rather than a lookup: a bot has no identity and plays whichever
+     * deck it was last told to.
+     *
+     * @param challenger who asked for the duel, because a bot may be playing a
+     *                   deck belonging to them. Null where there is no one to
+     *                   ask, which the default ignores.
+     */
+    public de.cas_ual_ty.dueldimension.ocg.HeadlessDuelRunner.Deck npcDeck(
+        net.minecraft.server.level.ServerPlayer challenger)
+    {
+        StarterDecks.Entry entry = StarterDecks.find(getProfileId());
+        return (entry == null ? StarterDecks.JOEY : entry).load().toRunnerDeck();
+    }
+
+    /** What to call that deck in the line announcing the duel. */
+    public String npcDeckName(net.minecraft.server.level.ServerPlayer challenger)
+    {
+        StarterDecks.Entry entry = StarterDecks.find(getProfileId());
+        return (entry == null ? StarterDecks.JOEY : entry).displayName();
     }
 
     @Override
@@ -302,9 +334,21 @@ public class DuelistEntity extends PathfinderMob
     public boolean hurtServer(net.minecraft.server.level.ServerLevel level,
         net.minecraft.world.damagesource.DamageSource source, float amount)
     {
-        boolean allowed = source.isCreativePlayer()
+        return damageAllowed(source) && super.hurtServer(level, source, amount);
+    }
+
+    /**
+     * Whether this damage gets through. Overridable because a Duel Bot is not a
+     * duelist in this respect -- it is equipment, and equipment breaks.
+     * <p>
+     * A hook rather than a second override in the subclass: Java has no way to
+     * skip a superclass implementation, so the only way for a subclass to be
+     * MORE damageable than its parent is for the parent to ask.
+     */
+    protected boolean damageAllowed(net.minecraft.world.damagesource.DamageSource source)
+    {
+        return source.isCreativePlayer()
             || source.is(de.cas_ual_ty.dueldimension.duel.orichalcos.OrichalcosSouls.ORICHALCOS);
-        return allowed && super.hurtServer(level, source, amount);
     }
 
     @Override

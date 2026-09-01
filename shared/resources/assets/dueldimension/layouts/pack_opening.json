@@ -1,0 +1,21 @@
+{
+  "card.width": 128,
+  "card.aspect": 0.6857,
+  "strip.spacing": 0.62,
+  "strip.shrink": 0.26,
+  "strip.reach": 5,
+  "strip.glide": 0.28,
+  "flip.speed": 0.12,
+  "shine.speed": 0.035,
+  "summary.cardWidth": 62,
+  "summary.gap": 6,
+  "summary.pad": 14,
+  "summary.top": 40,
+  "summary.bottom": 28,
+  "summary.step": 42,
+  "summary.glide": 0.3,
+  "summary.cardWidthMin": 34,
+  "summary.cardShare": 0.185,
+  "summary.cardPixelsMin": 118,
+  "summary.cardPixelsMax": 240
+}

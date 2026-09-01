@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_mokomoko",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_mokomoko"
+  }
+}

@@ -113,6 +113,18 @@ public class DuelLobbyScreen extends Screen
                     : MatchConfig.Presentation.OVERWORLD)));
         where.active = host;
         addRenderableWidget(where);
+        y += ROW_H;
+
+        // Tag Force's comeback rule, and the one place it can be settled: it is
+        // registered into the engine before the first turn, so there is no way
+        // to switch it on or off once a duel has started. Both players see the
+        // row; only the host may change it, like every other setting here.
+        HubWidgets.TextureButton destiny = new HubWidgets.TextureButton(x, y, w, 18,
+            Component.literal("Destiny Draws:  "
+                + (room.config().destinyDraw() ? "On" : "Off")),
+            pressed -> propose(room.config().withDestinyDraw(!room.config().destinyDraw())));
+        destiny.active = host;
+        addRenderableWidget(destiny);
         y += 34;
 
         boolean mine = room.host() ? room.hostReady() : room.guestReady();
@@ -188,16 +200,16 @@ public class DuelLobbyScreen extends Screen
         NineSlice.draw(extractor, HubTextures.PANEL, x, y, panelW(), panelH());
 
         String title = "Duel Lobby";
-        extractor.text(font, title, x + (panelW() - font.width(title)) / 2, y + 10, 0xFFF4D089, true);
+        extractor.text(font, title, x + (panelW() - font.width(title)) / 2, y + 10, MenuInk.title(), MenuInk.shadow());
 
         // Who is in the room and who has committed. The host is named first
         // because the host is the one changing things.
         String hostLine = (room.hostReady() ? "[ready] " : "[  ...  ] ") + room.hostName() + "  (host)";
         String guestLine = (room.guestReady() ? "[ready] " : "[  ...  ] ") + room.guestName();
         extractor.text(font, hostLine, x + 12, y + 24,
-            room.hostReady() ? 0xFF7CE38B : 0xFFC2C9D6, true);
+            room.hostReady() ? 0xFF7CE38B : MenuInk.body(), MenuInk.shadow());
         extractor.text(font, guestLine, x + 12 + panelW() / 2 - 12, y + 24,
-            room.guestReady() ? 0xFF7CE38B : 0xFFC2C9D6, true);
+            room.guestReady() ? 0xFF7CE38B : MenuInk.body(), MenuInk.shadow());
 
         super.render(extractor.vanilla(), mouseX, mouseY, partialTick);
 

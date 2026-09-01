@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_wcs2023_legendary_dragon_of_white",
+  "textures": {
+    "layer0": "dueldimension:item/512/sleeves_wcs2023_legendary_dragon_of_white"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_blackbeard_the_plunder_patroll_captain",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_blackbeard_the_plunder_patroll_captain"
+  }
+}

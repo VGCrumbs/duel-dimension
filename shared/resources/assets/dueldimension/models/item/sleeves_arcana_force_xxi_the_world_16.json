@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_arcana_force_xxi_the_world",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_arcana_force_xxi_the_world"
+  }
+}

@@ -70,7 +70,7 @@ class SleevesTest
 
         assertTrue(loaded.ownedSleeves().contains(CardSleevesType.CARD_BACK),
             "everybody owns the plain back from the start");
-        assertFalse(loaded.ownsSleeve(CardSleevesType.GOLD),
+        assertFalse(loaded.ownsSleeve(paid(0)),
             "and nobody owns a bought sleeve merely by having a profile");
     }
 
@@ -95,18 +95,18 @@ class SleevesTest
     void aSleeveIsWrittenByNameSoTheEnumMayGrow()
     {
         DuelProfile profile = parse(oldProfile());
-        profile.grantSleeve(CardSleevesType.GOLD);
-        assertNull(DeckEdits.setDeckSleeve(profile, "Burn", CardSleevesType.GOLD));
+        profile.grantSleeve(paid(0));
+        assertNull(DeckEdits.setDeckSleeve(profile, "Burn", paid(0)));
 
         JsonObject written = write(profile);
-        assertEquals("gold",
+        assertEquals(paid(0).name,
             written.getAsJsonArray("Decks").get(0).getAsJsonObject().get("Sleeve").getAsString(),
             "an ordinal here would become a different sleeve the day a constant is inserted");
-        assertEquals("gold", written.getAsJsonArray("Sleeves").get(0).getAsString());
+        assertEquals(paid(0).name, written.getAsJsonArray("Sleeves").get(0).getAsString());
 
         DuelProfile back = parse(written);
-        assertEquals(CardSleevesType.GOLD, back.deckNamed("Burn").sleeve());
-        assertTrue(back.ownsSleeve(CardSleevesType.GOLD));
+        assertEquals(paid(0), back.deckNamed("Burn").sleeve());
+        assertTrue(back.ownsSleeve(paid(0)));
     }
 
     /**
@@ -117,12 +117,12 @@ class SleevesTest
     void aSnapshotCarriesTheSleeveAndTheEntitlement()
     {
         DuelProfile profile = parse(oldProfile());
-        profile.grantSleeve(CardSleevesType.RUBY);
-        DeckEdits.setDeckSleeve(profile, "Burn", CardSleevesType.RUBY);
+        profile.grantSleeve(paid(1));
+        DeckEdits.setDeckSleeve(profile, "Burn", paid(1));
 
         DuelProfile saved = profile.snapshot();
-        assertTrue(saved.ownsSleeve(CardSleevesType.RUBY), "the entitlement must survive");
-        assertEquals(CardSleevesType.RUBY, saved.deckNamed("Burn").sleeve(),
+        assertTrue(saved.ownsSleeve(paid(1)), "the entitlement must survive");
+        assertEquals(paid(1), saved.deckNamed("Burn").sleeve(),
             "and so must the deck's choice");
     }
 
@@ -131,15 +131,15 @@ class SleevesTest
     {
         DuelProfile profile = parse(oldProfile());
 
-        assertNotNull(DeckEdits.setDeckSleeve(profile, "Burn", CardSleevesType.GOLD),
+        assertNotNull(DeckEdits.setDeckSleeve(profile, "Burn", paid(0)),
             "asking for an unowned sleeve is refused");
         assertEquals(CardSleevesType.CARD_BACK, profile.deckNamed("Burn").sleeve(),
             "and refused means nothing changed");
 
-        assertTrue(profile.grantSleeve(CardSleevesType.GOLD), "granted for the first time");
-        assertFalse(profile.grantSleeve(CardSleevesType.GOLD), "and not a second time");
-        assertNull(DeckEdits.setDeckSleeve(profile, "Burn", CardSleevesType.GOLD));
-        assertEquals(CardSleevesType.GOLD, profile.deckNamed("Burn").sleeve());
+        assertTrue(profile.grantSleeve(paid(0)), "granted for the first time");
+        assertFalse(profile.grantSleeve(paid(0)), "and not a second time");
+        assertNull(DeckEdits.setDeckSleeve(profile, "Burn", paid(0)));
+        assertEquals(paid(0), profile.deckNamed("Burn").sleeve());
     }
 
     @Test
@@ -147,9 +147,12 @@ class SleevesTest
     {
         DuelProfile profile = parse(oldProfile());
 
-        assertTrue(profile.ownsSleeve(CardSleevesType.RED), "the dye colours cost nothing");
-        assertFalse(profile.grantSleeve(CardSleevesType.RED), "so there is nothing to grant");
-        assertNull(DeckEdits.setDeckSleeve(profile, "Burn", CardSleevesType.RED));
+        // The plain back is the only free sleeve now. It used to be the back
+        // plus the sixteen dye colours; those went with the old catalogue, and
+        // the rule they were an example of did not.
+        assertTrue(profile.ownsSleeve(CardSleevesType.CARD_BACK), "the plain back costs nothing");
+        assertFalse(profile.grantSleeve(CardSleevesType.CARD_BACK), "so there is nothing to grant");
+        assertNull(DeckEdits.setDeckSleeve(profile, "Burn", CardSleevesType.CARD_BACK));
 
         assertFalse(write(profile).has("Sleeves"),
             "a rule is not a grant, so it takes no room on disk and cannot be lost");
@@ -179,10 +182,32 @@ class SleevesTest
 
         assertNull(Sleeves.byName("sleeves_from_a_mod_that_left"),
             "byName is strict where the Codec is lenient");
-        assertEquals(CardSleevesType.GOLD, Sleeves.byName("gold"));
-        assertEquals(CardSleevesType.GOLD, Sleeves.byName("GOLD"),
+        assertEquals(paid(0), Sleeves.byName(paid(0).name));
+        assertEquals(paid(0), Sleeves.byName(paid(0).name.toUpperCase(java.util.Locale.ROOT)),
             "the enum's own constant name is accepted; it cannot mean anything else");
-        assertNotNull(DeckEdits.setDeckSleeve(profile, "Nothing", CardSleevesType.RED),
+        assertNotNull(DeckEdits.setDeckSleeve(profile, "Nothing", paid(0)),
             "and a deck the player does not have is refused too");
+    }
+    /**
+     * A sleeve that has to be bought, taken from the catalogue by position.
+     * <p>
+     * Every test here is about a RULE -- written by name, granted before worn,
+     * free by rule, checked on the way in -- and not one of them is about a
+     * particular sleeve. Naming GOLD and RUBY meant the whole file stopped
+     * compiling the day the catalogue was replaced with Master Duel's: a suite
+     * failing for a reason it was not testing. Asking the catalogue instead
+     * means the next replacement costs nothing.
+     */
+    private static CardSleevesType paid(int nth)
+    {
+        int seen = 0;
+        for(CardSleevesType sleeve : CardSleevesType.VALUES)
+        {
+            if(Sleeves.isPurchasable(sleeve) && seen++ == nth)
+            {
+                return sleeve;
+            }
+        }
+        throw new IllegalStateException("no purchasable sleeve at " + nth);
     }
 }

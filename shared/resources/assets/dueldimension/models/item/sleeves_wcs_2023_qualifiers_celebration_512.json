@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_wcs_2023_qualifiers_celebration",
+  "textures": {
+    "layer0": "dueldimension:item/512/sleeves_wcs_2023_qualifiers_celebration"
+  }
+}

@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -38,21 +39,48 @@ class SleeveStockTest
         assertEquals(expected, offers.size());
     }
 
+    /**
+     * The stock IS {@link Sleeves#isPurchasable}, over the whole catalogue.
+     * <p>
+     * Written against the rule rather than against named sleeves. It used to
+     * name RED for the free case and P_1 for the patron one, and both vanished
+     * with the old catalogue -- so the test that guarded the rule stopped
+     * compiling at the moment the rule most needed checking.
+     * <p>
+     * The patron half is vacuous today: nothing in Master Duel's catalogue is a
+     * thank-you, so {@link CardSleevesType#isPatreonReward} has no instances.
+     * It is asserted anyway, because it starts working the day one is added
+     * back and costs nothing until then.
+     */
     @Test
-    void theFreeColoursAndThePatronSleevesAreNotForSale()
+    void theStockIsExactlyWhatIsPurchasable()
     {
         List<String> ids = ShopStock.sleeves().stream()
             .map(ShopStock.SleeveOffer::sleeve).toList();
+
+        int sellable = 0;
+        for(CardSleevesType sleeve : CardSleevesType.VALUES)
+        {
+            String id = Sleeves.nameOf(sleeve);
+            if(Sleeves.isPurchasable(sleeve))
+            {
+                sellable++;
+                assertTrue(ids.contains(id), id + " is purchasable but is not stocked");
+            }
+            else
+            {
+                assertFalse(ids.contains(id), id + " is stocked but is not purchasable");
+            }
+            if(Sleeves.isFree(sleeve) || sleeve.isPatreonReward)
+            {
+                assertFalse(ids.contains(id),
+                    id + " is free or a thank-you, so it is not a product");
+            }
+        }
+        assertEquals(sellable, ids.size(), "and nothing is stocked twice");
+        assertTrue(sellable > 0, "the shop must have something to sell");
         // Free by rule, so there is nothing to sell.
         assertFalse(ids.contains(Sleeves.nameOf(CardSleevesType.CARD_BACK)));
-        assertFalse(ids.contains(Sleeves.nameOf(CardSleevesType.RED)));
-        // A thank-you, not a product.
-        assertFalse(ids.contains(Sleeves.nameOf(CardSleevesType.P_1)));
-        // Drawn art, so it is bought -- including the five appended last, which
-        // no file in the shop mentions by name.
-        assertTrue(ids.contains(Sleeves.nameOf(CardSleevesType.GOLD)));
-        assertTrue(ids.contains(Sleeves.nameOf(CardSleevesType.MILLENIUM_VOID)));
-        assertTrue(ids.contains(Sleeves.nameOf(CardSleevesType.MILLENIUM_WHITE)));
     }
 
     @Test
@@ -83,9 +111,12 @@ class SleeveStockTest
         // path refuses these before reaching the price at all; this states that
         // even if it did not, there is no money in it.
         assertEquals(0, ShopStock.priceOfSleeve(CardSleevesType.CARD_BACK));
-        assertEquals(0, ShopStock.priceOfSleeve(CardSleevesType.RED));
-        assertEquals(0, ShopStock.priceOfSleeve(CardSleevesType.P_2));
-        assertEquals(500, ShopStock.priceOfSleeve(CardSleevesType.MILLENIUM_RED));
+        assertEquals(0, ShopStock.priceOfSleeve(null), "and nothing at all is worth nothing");
+        for(CardSleevesType sleeve : CardSleevesType.VALUES)
+        {
+            assertEquals(Sleeves.isPurchasable(sleeve) ? 500 : 0,
+                ShopStock.priceOfSleeve(sleeve), Sleeves.nameOf(sleeve));
+        }
     }
 
     /** Derived once and kept, the same contract the pack catalogue has. */

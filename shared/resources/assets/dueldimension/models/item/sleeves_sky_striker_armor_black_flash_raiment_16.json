@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_sky_striker_armor_black_flash_raiment",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_sky_striker_armor_black_flash_raiment"
+  }
+}

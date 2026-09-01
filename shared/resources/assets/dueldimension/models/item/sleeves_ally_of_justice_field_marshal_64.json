@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_ally_of_justice_field_marshal",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_ally_of_justice_field_marshal"
+  }
+}

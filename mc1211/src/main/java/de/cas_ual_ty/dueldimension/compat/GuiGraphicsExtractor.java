@@ -5,6 +5,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
@@ -154,9 +155,66 @@ public class GuiGraphicsExtractor
 
     // ---- textures ----
 
+    /**
+     * Turns alpha blending on, because 1.21.1's plain blit does not.
+     *
+     * <h2>The bug this exists for</h2>
+     * {@code GuiGraphics} has two {@code innerBlit} overloads and they disagree
+     * about blending. The one that takes a colour brackets its draw with
+     * {@code RenderSystem.enableBlend()} and {@code disableBlend()}; the one
+     * that does not takes the blend state as it finds it and leaves it alone.
+     * Every blit in this mod reaches the SECOND one -- the tinted overload below
+     * sets a shader colour and then calls the colourless blit -- so not one of
+     * them manages blending.
+     * <p>
+     * That is survivable only while something else happens to have left blending
+     * on, and the thing that most often turns it off is <b>drawing text</b>. A
+     * string is batched into {@code RenderType.text}, which is translucent, and
+     * a translucent render type's teardown ends with {@code disableBlend()}.
+     * {@code drawString} flushes immediately, so the teardown runs immediately,
+     * and the next PNG is drawn with its alpha channel ignored -- transparent
+     * texels come out as whatever RGB the file happens to store behind them,
+     * which for these assets is black.
+     * <p>
+     * Hence the symptom: a label plate that draws correctly in one place and as
+     * a black box in another, the difference being nothing but whether a caption
+     * was drawn just before it. <b>Every element in this mod's interface is an
+     * alpha PNG</b>, so this is not a corner case; it is the common path.
+     * <p>
+     * 26.2 never meets this. Its pipelines carry their own blend state and a
+     * draw cannot inherit one.
+     * <p>
+     * Left ENABLED afterwards rather than restored. There is no state to restore
+     * to -- the caller never established one -- and blending on is what the GUI
+     * wants for everything except the opaque background fills, which set their
+     * own state anyway.
+     *
+     * <h2>It enables blending and does NOT choose the function</h2>
+     * That distinction is the whole of a bug this caused on its first outing.
+     * The Monuments backdrop is two layers, and the second is ADDED at half
+     * strength -- {@code FoilPipelines.ADDITIVE.apply()} sets
+     * {@code blendFuncSeparate(ONE, ONE, ONE, ONE)} and then blits the tiles.
+     * A {@code defaultBlendFunc()} here ran between those two and put the
+     * function back to ordinary alpha, so an OPAQUE tile layer painted straight
+     * over the lattice instead of adding to it, and the lattice -- the layer
+     * with all the depth in it -- disappeared.
+     * <p>
+     * The bug this method exists for is blending being <em>off</em>, not the
+     * function being wrong. The function a translucent render type leaves behind
+     * is already {@code SRC_ALPHA / ONE_MINUS_SRC_ALPHA}, which is the one an
+     * alpha PNG wants, and vanilla's own coloured blit likewise enables blending
+     * without setting a function. So the deliberate choice a caller has made
+     * survives, and the accident it was making survives being fixed.
+     */
+    private void blending()
+    {
+        com.mojang.blaze3d.systems.RenderSystem.enableBlend();
+    }
+
     public void blit(Object pipeline, ResourceLocation texture, int x, int y,
         float u, float v, int width, int height, int textureWidth, int textureHeight)
     {
+        blending();
         graphics.blit(texture, x, y, u, v, width, height, textureWidth, textureHeight);
     }
 
@@ -164,6 +222,7 @@ public class GuiGraphicsExtractor
         float u, float v, int width, int height, int regionWidth, int regionHeight,
         int textureWidth, int textureHeight)
     {
+        blending();
         graphics.blit(texture, x, y, width, height, u, v, regionWidth, regionHeight,
             textureWidth, textureHeight);
     }
@@ -185,6 +244,9 @@ public class GuiGraphicsExtractor
         float red = (tint >>> 16 & 0xFF) / 255F;
         float green = (tint >>> 8 & 0xFF) / 255F;
         float blue = (tint & 0xFF) / 255F;
+        // Before the colour, not after: setColor flushes a managed batch, and a
+        // flush is one of the things that can leave blending off.
+        blending();
         graphics.setColor(red, green, blue, alpha);
         graphics.blit(texture, x, y, width, height, u, v, regionWidth, regionHeight,
             textureWidth, textureHeight);
@@ -194,6 +256,7 @@ public class GuiGraphicsExtractor
     public void blitSprite(Object pipeline, ResourceLocation sprite, int x, int y,
         int width, int height)
     {
+        blending();
         graphics.blitSprite(sprite, x, y, width, height);
     }
 
@@ -214,11 +277,25 @@ public class GuiGraphicsExtractor
     public void blit(ResourceLocation texture, int x1, int y1, int x2, int y2,
         float minU, float maxU, float minV, float maxV)
     {
+        blending();
         final int nominal = 256;
         graphics.blit(texture, x1, y1, x2 - x1, y2 - y1,
             minU * nominal, minV * nominal,
             Math.round((maxU - minU) * nominal), Math.round((maxV - minV) * nominal),
             nominal, nominal);
+    }
+
+    /**
+     * Resolves everything described so far, so what follows lands on top of it.
+     * <p>
+     * A no-op verb on 26.2, where the render state already carries submission
+     * order. Here it is the only way to say "this layer is finished": see
+     * {@code mc1211/README.md}, "GuiGraphics draws in TYPE order, not call
+     * order".
+     */
+    public void flush()
+    {
+        graphics.flush();
     }
 
     public void item(ItemStack stack, int x, int y)
@@ -228,9 +305,50 @@ public class GuiGraphicsExtractor
 
     // ---- scissor ----
 
+    /**
+     * A clip rectangle in the CURRENT POSE's coordinates, which is 26.2's rule
+     * and not 1.21.1's.
+     * <p>
+     * The two versions differ here and nothing catches it: both take four ints
+     * and neither complains. 26.2 runs the rectangle through the pose --
+     * {@code new ScreenRectangle(...).transformMaxBounds(this.pose)} -- so a
+     * caller inside a scaled matrix passes the same numbers it draws with.
+     * 1.21.1 pushes the rectangle onto the scissor stack untouched, in raw GUI
+     * pixels.
+     * <p>
+     * <b>Under a scale that is not a near miss, it is everything or nothing.</b>
+     * The duel sidebar draws its effect text inside {@code scale(0.75)}: text at
+     * pose y=340 lands on screen at 255, while the clip asking for y=340 stays
+     * at 340. The band that should have held the text sat entirely below it, so
+     * every line was scissored away and the card description came out blank --
+     * with the well, the border and the scroll bar all still drawn, because
+     * fill() and blit() DO go through the pose. A widget that looks built and
+     * empty rather than broken.
+     * <p>
+     * All four corners are transformed rather than two, so a rotated pose gets
+     * its bounding box instead of a rectangle read off two corners that are no
+     * longer opposite. Rounded outward, as 26.2 rounds: a clip that splits a
+     * pixel should keep it, since the alternative is shaving the edge off the
+     * glyph row the caller was trying to show.
+     */
     public void enableScissor(int x0, int y0, int x1, int y1)
     {
-        graphics.enableScissor(x0, y0, x1, y1);
+        org.joml.Matrix4f matrix = graphics.pose().last().pose();
+        float minX = Float.POSITIVE_INFINITY;
+        float minY = Float.POSITIVE_INFINITY;
+        float maxX = Float.NEGATIVE_INFINITY;
+        float maxY = Float.NEGATIVE_INFINITY;
+        for(int corner = 0; corner < 4; corner++)
+        {
+            org.joml.Vector3f at = matrix.transformPosition(new org.joml.Vector3f(
+                (corner & 1) == 0 ? x0 : x1, (corner & 2) == 0 ? y0 : y1, 0F));
+            minX = Math.min(minX, at.x);
+            minY = Math.min(minY, at.y);
+            maxX = Math.max(maxX, at.x);
+            maxY = Math.max(maxY, at.y);
+        }
+        graphics.enableScissor(Mth.floor(minX), Mth.floor(minY),
+            Mth.ceil(maxX), Mth.ceil(maxY));
     }
 
     public void disableScissor()

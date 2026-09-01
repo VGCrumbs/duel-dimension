@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_yu_gi_oh_card_game_the_chronicles",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_yu_gi_oh_card_game_the_chronicles"
+  }
+}

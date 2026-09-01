@@ -173,17 +173,55 @@ public final class ModelMesh
         // The stock types 26.2's mod pipelines were copies of. It built its own
         // in order to swap the fragment shader; nothing here needs that, so the
         // vanilla pair is the same recipe without the copy.
-        // BOTH CULL. entityCutout does already; entityTranslucent does NOT --
-        // it is the NO_CULL variant, and entityTranslucentCull is the one that
-        // does. A monster is a closed solid, so its far side has no business
-        // being visible through its near side, and drawing it was most of what
-        // made a half-solid creature read as damaged rather than as translucent.
         //
-        // It also halves the geometry that reaches the blend, which is the one
-        // thing that helps an unsorted translucent draw: fewer overlapping
-        // fragments, fewer places for the order to be wrong.
-        return types.computeIfAbsent(texture,
-            id -> blend ? RenderType.entityTranslucentCull(id) : RenderType.entityCutout(id));
+        // ONLY THE BLENDED ONE CULLS, and the difference is what these models
+        // are. Culling assumes a closed solid, where a triangle facing away is
+        // the far side of something whose near side you are already looking at.
+        // These are rips: capes, wings, fins, hair and cloth are single sheets
+        // with nothing behind them, so a sheet wound away from the camera is not
+        // a back face to discard -- it is the entire surface, and discarding it
+        // leaves a hole where the cloth was.
+        //
+        // The blend keeps CULL because there the original argument holds: an
+        // unsorted translucent draw shows a creature its own insides, and half
+        // of that overlap is a surface's own far side. It also halves the
+        // geometry reaching the blend, which is the one thing that helps.
+        // TRIANGLES, and built here rather than taken from vanilla.
+        //
+        // Every stock entity type is QUADS, which is why this used to feed each
+        // triangle in as a degenerate quad (0,1,2,2). That works without a
+        // shaderpack and is flattened by one WITH: Iris computes a single face
+        // normal per group of four vertices and writes it over all four, so the
+        // smooth per-vertex normals the models ship are discarded and every
+        // polygon shades as a facet. Both this file and IrisCompat already said
+        // so; the port simply accepted it, on the grounds that vanilla's types
+        // are the ones Iris knows.
+        //
+        // A triangle-topology type is the same recipe with the mode changed, so
+        // the geometry arrives as it was authored and Iris's triangle path
+        // leaves the supplied normals alone. It is what 26.2 does with its own
+        // pipeline, reached differently because 1.21.1 has no pipeline objects.
+        return types.computeIfAbsent(texture, id -> RenderType.create(
+            blend ? "dueldimension_model_blend" : "dueldimension_model",
+            DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.TRIANGLES, 1536,
+            true, blend,
+            RenderType.CompositeState.builder()
+                .setShaderState(blend
+                    ? RenderStateShard.RENDERTYPE_ENTITY_TRANSLUCENT_CULL_SHADER
+                    : RenderStateShard.RENDERTYPE_ENTITY_CUTOUT_SHADER)
+                .setTextureState(new RenderStateShard.TextureStateShard(id, false, false))
+                .setTransparencyState(blend
+                    ? RenderStateShard.TRANSLUCENT_TRANSPARENCY
+                    : RenderStateShard.NO_TRANSPARENCY)
+                // CULL on both, because ModelHologram now emits each triangle
+                // twice -- forwards, then reversed with its normal turned round.
+                // NO_CULL showed the back of every sheet lit by a normal facing
+                // away from the viewer, which is dark from one side; the second
+                // face is the same surface lit correctly instead.
+                .setCullState(RenderStateShard.CULL)
+                .setLightmapState(RenderStateShard.LIGHTMAP)
+                .setOverlayState(RenderStateShard.OVERLAY)
+                .createCompositeState(true)));
     }
 
     /**
@@ -234,7 +272,7 @@ public final class ModelMesh
     {
         return HOLOGRAM.computeIfAbsent(texture, id -> RenderType.create(
             "dueldimension_hologram", DefaultVertexFormat.NEW_ENTITY,
-            VertexFormat.Mode.QUADS, 1536, false, /* sortOnUpload */ true,
+            VertexFormat.Mode.TRIANGLES, 1536, false, /* sortOnUpload */ true,
             RenderType.CompositeState.builder()
                 .setShaderState(RenderStateShard.RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
                 .setTextureState(new RenderStateShard.TextureStateShard(id, false, false))

@@ -41,31 +41,23 @@ public final class Sleeves
     public static final CardSleevesType DEFAULT = CardSleevesType.CARD_BACK;
 
     /**
-     * Sleeves nobody has to buy: the plain back, and the sixteen dye colours.
+     * Sleeves nobody has to buy.
      * <p>
-     * <b>Decided here, so record why.</b> The alternative was to sell every
-     * sleeve including the colours. Against that: the colours are flat backs in
-     * Minecraft's own dye palette rather than drawn art, and pricing all sixteen
-     * would put eight thousand duel points between a player and "my deck looks
-     * like mine" — a wall in front of the cheapest thing this feature does. The
-     * shop's stock is meant to be the <em>drawn</em> sleeves (the metals, the
-     * series art, the Millenium set), and ownership stays a real thing because
-     * every one of those is still bought.
+     * Just the plain back now. It used to be the back plus the sixteen dye
+     * colours, on the reasoning that flat dyed backs were not really art and
+     * charging for all sixteen put a wall in front of "my deck looks like mine".
+     * Those colours are gone -- the catalogue is Master Duel's protectors, every
+     * one of which is drawn art -- so the exception has nothing left to apply
+     * to, and the rule it made room for is the whole shop.
      * <p>
      * Free is a <em>rule</em> and not a stored grant: nothing is written to
      * disk, so it cannot be lost, cannot be duplicated by a double grant, and
      * costs a byte of nobody's save file. It is also why a constant appended to
-     * the enum later is <b>not</b> free — new art is paid art unless it is
+     * the enum later is <b>not</b> free -- new art is paid art unless it is
      * listed here on purpose.
      */
     public static final Set<CardSleevesType> FREE = Collections.unmodifiableSet(EnumSet.of(
-        CardSleevesType.CARD_BACK,
-        CardSleevesType.BLACK, CardSleevesType.BLUE, CardSleevesType.BROWN,
-        CardSleevesType.CYAN, CardSleevesType.GRAY, CardSleevesType.GREEN,
-        CardSleevesType.LIGHT_BLUE, CardSleevesType.LIGHT_GRAY, CardSleevesType.LIME,
-        CardSleevesType.MAGENTA, CardSleevesType.ORANGE, CardSleevesType.PINK,
-        CardSleevesType.PURPLE, CardSleevesType.RED, CardSleevesType.WHITE,
-        CardSleevesType.YELLOW));
+        CardSleevesType.CARD_BACK));
 
     /** The id a sleeve is stored and sent under. */
     public static String nameOf(CardSleevesType sleeve)

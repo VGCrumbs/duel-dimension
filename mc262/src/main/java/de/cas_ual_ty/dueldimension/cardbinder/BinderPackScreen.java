@@ -1,5 +1,6 @@
 package de.cas_ual_ty.dueldimension.cardbinder;
 
+import de.cas_ual_ty.dueldimension.clientutil.hub.MenuInk;
 import de.cas_ual_ty.dueldimension.card.CardHolder;
 import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
 import de.cas_ual_ty.dueldimension.clientutil.DuelTextures;
@@ -150,12 +151,12 @@ public class BinderPackScreen extends Screen
 
         int y = top + PAD;
         String name = font.plainSubstrByWidth(pack.set().name, panelW - PAD * 2 - 90);
-        poseStack.text(font, name, left + PAD, y, 0xFFF4D089, true);
+        poseStack.text(font, name, left + PAD, y, MenuInk.title(), MenuInk.shadow());
 
         String progress = pack.held() + " / " + pack.total() + "   "
             + (int)Math.floor(pack.fraction() * 100F) + "%";
         poseStack.text(font, progress, left + panelW - PAD - font.width(progress), y,
-            pack.complete() ? 0xFF8AD98A : 0xFFC2C9D6, true);
+            pack.complete() ? 0xFF8AD98A : MenuInk.body(), MenuInk.shadow());
         y += 12;
 
         NineSlice.draw(poseStack, HubTextures.SCROLLBAR, left + PAD, y, panelW - PAD * 2, 7, 0, 2);
@@ -203,7 +204,7 @@ public class BinderPackScreen extends Screen
 
             String rarity = font.plainSubstrByWidth(shortRarity(tile.rarity()), CARD_W);
             poseStack.text(font, rarity, x + (CARD_W - font.width(rarity)) / 2,
-                cardY + cardH + 1, tile.held() ? 0xFFE6EAF2 : 0xFF6A7080, true);
+                cardY + cardH + 1, tile.held() ? MenuInk.label() : MenuInk.dim(), MenuInk.shadow());
         }
 
         super.extractRenderState(poseStack, mouseX, mouseY, partialTick);

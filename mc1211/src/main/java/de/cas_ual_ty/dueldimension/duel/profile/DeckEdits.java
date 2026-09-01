@@ -2,6 +2,7 @@ package de.cas_ual_ty.dueldimension.duel.profile;
 
 import de.cas_ual_ty.dueldimension.card.CardSleevesType;
 import de.cas_ual_ty.dueldimension.duel.match.Banlist;
+import de.cas_ual_ty.dueldimension.duel.match.Banlists;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.List;
@@ -26,7 +27,33 @@ public final class DeckEdits
     {
     }
 
-    /** The list a deck must be legal against. Not yet chosen per duel, so none. */
+    /**
+     * The list a STORED deck must be legal against: none, deliberately.
+     *
+     * <h2>This stayed none() when decks gained a list of their own</h2>
+     * A deck now carries {@code banlistId}, so passing it here would be the
+     * obvious change and it is the wrong one. Saving is not the moment a format
+     * is enforced:
+     * <ul>
+     * <li><b>It would make a deck uneditable by labelling it.</b> Build three
+     *     copies under no list, then set the deck to a list that limits one, and
+     *     every later autosave -- one per card added -- is refused for a card
+     *     the player is not touching. The way out is to remove the extras, which
+     *     they cannot do while the save that removes them is being rejected for
+     *     containing them.</li>
+     * <li><b>The editor already says it.</b> Copy limits, the dimming and the
+     *     forbidden/limited badges are all drawn from the deck's own list, so a
+     *     fourth copy cannot be added there in the first place.</li>
+     * <li><b>And a duel already checks it.</b> {@code DuelLobby} validates
+     *     against the ROOM's list -- {@code Banlists.byId(config.banlistId())},
+     *     not the deck's -- which is the check that actually decides anything,
+     *     and it is on the server where a replaced client cannot reach it.</li>
+     * </ul>
+     * What this call still enforces is structural and format-independent: deck
+     * capacities, and the hard three-copy ceiling that no list may exceed. Those
+     * are true of every deck under every list, which is why they belong on save
+     * and the format does not.
+     */
     private static Banlist banlist()
     {
         return Banlist.none();
@@ -80,6 +107,34 @@ public final class DeckEdits
             // same dance for `published`; this is it for the sleeve.
             candidate.setSleeve(existing.sleeve());
             candidate.setDeckBox(existing.deckBox());
+            // And the list it is built to, which SetDeckBanlist sets and this
+            // payload does not carry. Without this line every autosave -- one
+            // per card added -- would reset the deck to no list, so the setting
+            // would appear to work and then quietly undo itself.
+            candidate.setBanlistId(existing.banlistId());
+            // AND THE DESTINY CARD FLAGS, for exactly the same reason, which
+            // this method predicted and then did not do.
+            //
+            // They travel on SetDeckDestiny, so they are not in this payload
+            // either -- and every autosave was therefore erasing them. The
+            // symptom was that marks worked until the game was closed: the flag
+            // reached the server and was stored, and then the next card added,
+            // moved or removed replaced the deck with one that had never heard
+            // of it. The mark was gone long before anything was written to disk.
+            //
+            // Filtered to what the NEW main deck holds, not copied wholesale: a
+            // flagged card the player has just taken out of the deck is not a
+            // Destiny Card any more, and keeping its passcode would leave a flag
+            // on a card that is no longer there for the engine to find.
+            List<Integer> flags = new java.util.ArrayList<>();
+            for(Integer code : existing.destiny())
+            {
+                if(code != null && candidate.main().contains(code))
+                {
+                    flags.add(code);
+                }
+            }
+            candidate.setDestiny(flags);
         }
         for(int code : candidate.counts().keySet())
         {
@@ -437,6 +492,92 @@ public final class DeckEdits
         return null;
     }
 
+    /**
+     * Builds a deck to one of the lists this server offers.
+     * <p>
+     * The id is checked against {@link Banlists} rather than taken on trust, for
+     * the reason {@link #setDeckSleeve} gives about ids off the wire: a lenient
+     * codec forgives an old save, but a client naming a list that does not exist
+     * is asserting something, and what it would assert here is a set of copy
+     * limits. An unknown id is refused rather than silently becoming "no list",
+     * because those two answers look identical in the editor and only one of
+     * them is what the player asked for.
+     * <p>
+     * "No list" itself is always accepted: {@link Banlists#all} puts it first
+     * and it needs no files on disk, so it is the one id a server without a
+     * reference install can still honour.
+     */
+    public static String setDeckBanlist(ServerPlayer player, String name, String banlistId)
+    {
+        return setDeckBanlist(DuelProfiles.get(player), name, banlistId);
+    }
+
+    /** The rule itself, on a profile rather than a player, so it can be tested. */
+    public static String setDeckBanlist(DuelProfile profile, String name, String banlistId)
+    {
+        DeckList deck = profile.deckNamed(name);
+        if(deck == null)
+        {
+            return "You have no deck called \"" + name + "\".";
+        }
+        String wanted = banlistId == null || banlistId.isBlank()
+            ? Banlist.DEFAULT_ID : banlistId;
+        // Two ids are always acceptable and are in neither the catalogue nor the
+        // files: "no list", which needs nothing to exist, and the default
+        // sentinel, which is a question rather than a list.
+        if(!Banlist.NO_BANLIST_ID.equals(wanted) && !Banlist.DEFAULT_ID.equals(wanted)
+            && Banlists.all().stream().noneMatch(list -> list.id().equals(wanted)))
+        {
+            return "This server does not have a banlist called \"" + wanted + "\".";
+        }
+        deck.setBanlistId(wanted);
+        return null;
+    }
+
+    public static String setDeckDestiny(ServerPlayer player, String name, List<Integer> codes)
+    {
+        return setDeckDestiny(DuelProfiles.get(player), name, codes);
+    }
+
+    /**
+     * The rule itself, on a profile rather than a player, so it can be tested.
+     *
+     * <h2>Only cards that are actually in the main deck</h2>
+     * A packet is data, not an instruction. A flag on a card the player does
+     * not have would be a flag the engine could never act on -- harmless, but
+     * it would also be a way to write arbitrary numbers into somebody's saved
+     * profile. Filtering to the main deck is both the check and the correct
+     * behaviour: the Extra Deck is never drawn from, so an Extra card cannot be
+     * a Destiny Card however it got flagged.
+     */
+    public static String setDeckDestiny(DuelProfile profile, String name, List<Integer> codes)
+    {
+        DeckList deck = profile.deckNamed(name);
+        if(deck == null)
+        {
+            return "You have no deck called \"" + name + "\".";
+        }
+        List<Integer> kept = new java.util.ArrayList<>();
+        if(codes != null)
+        {
+            for(Integer code : codes)
+            {
+                if(code != null && deck.main().contains(code) && !kept.contains(code))
+                {
+                    kept.add(code);
+                }
+            }
+        }
+        deck.setDestiny(kept);
+        // The other end of the same question. A mark that leaves the client and
+        // does not arrive, and one that arrives and is filtered away, look
+        // identical from the deck editor.
+        de.cas_ual_ty.dueldimension.DuelDimension.log("Destiny flags for \"" + name
+            + "\": " + (codes == null ? 0 : codes.size()) + " arrived, " + kept.size()
+            + " kept");
+        return null;
+    }
+
     public static String setActive(ServerPlayer player, String name)
     {
         DuelProfile profile = DuelProfiles.get(player);
@@ -470,6 +611,30 @@ public final class DeckEdits
      * A favourite is as much a wishlist as a shortcut, so an unowned card may be
      * starred and simply waits in the filter until the player owns it.
      */
+    /**
+     * Stars a sealed product, or unstars one.
+     * <p>
+     * Unbounded, where cards are capped at {@code MAX_FAVOURITES}: the cap
+     * exists because the trunk holds thousands of cards and a starred list is
+     * meant to be a shortlist. There are a few dozen products, so a player who
+     * stars all of them has expressed a preference rather than defeated one.
+     */
+    public static String toggleFavouritePack(ServerPlayer player, String code)
+    {
+        return toggleFavouritePack(DuelProfiles.get(player), code);
+    }
+
+    /** The rule itself, on a profile rather than a player, so it can be tested. */
+    public static String toggleFavouritePack(DuelProfile profile, String code)
+    {
+        if(code == null || code.isEmpty())
+        {
+            return "That is not a product.";
+        }
+        profile.toggleFavouritePack(code);
+        return null;
+    }
+
     public static String toggleFavourite(ServerPlayer player, int passcode)
     {
         return toggleFavourite(DuelProfiles.get(player), passcode);

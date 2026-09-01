@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_gigantic_spright",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_gigantic_spright"
+  }
+}

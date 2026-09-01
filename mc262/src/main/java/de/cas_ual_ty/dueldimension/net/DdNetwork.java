@@ -122,6 +122,15 @@ public final class DdNetwork
             de.cas_ual_ty.dueldimension.shop.DiskShopMessages.OpenDiskShop.CODEC);
         serverbound(de.cas_ual_ty.dueldimension.shop.DiskShopMessages.BuyDisk.TYPE,
             de.cas_ual_ty.dueldimension.shop.DiskShopMessages.BuyDisk.CODEC);
+
+        // Choosing a god on the reward screen. Serverbound only: the reply is
+        // the cards appearing in the trunk, not a packet.
+        serverbound(de.cas_ual_ty.dueldimension.shop.StatueMessages.Choose.TYPE,
+            de.cas_ual_ty.dueldimension.shop.StatueMessages.Choose.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.shop.StatueMessages.Granted.TYPE,
+            de.cas_ual_ty.dueldimension.shop.StatueMessages.Granted.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.shop.StatsMessages.Sync.TYPE,
+            de.cas_ual_ty.dueldimension.shop.StatsMessages.Sync.CODEC);
         serverbound(de.cas_ual_ty.dueldimension.shop.DiskShopMessages.SetActiveDisk.TYPE,
             de.cas_ual_ty.dueldimension.shop.DiskShopMessages.SetActiveDisk.CODEC);
         serverbound(de.cas_ual_ty.dueldimension.shop.DiskShopMessages.BuyStarter.TYPE,
@@ -129,6 +138,12 @@ public final class DdNetwork
 
         clientbound(de.cas_ual_ty.dueldimension.duel.dueldisk.DiskMessages.WornDisk.TYPE,
             de.cas_ual_ty.dueldimension.duel.dueldisk.DiskMessages.WornDisk.CODEC);
+
+        // The created character: a client saying what theirs is, and the
+        // server telling everybody what everybody's is. The look is eight small
+        // numbers and the models are in every jar, so a whole server of unique
+        // characters costs one small packet each rather than a skin each.
+        de.cas_ual_ty.dueldimension.character.CharacterMessages.register();
 
         // Wearing the duel disk, asked for by the hotkey.
         serverbound(de.cas_ual_ty.dueldimension.duel.dueldisk.DiskMessages.ToggleDisk.TYPE,
@@ -144,6 +159,10 @@ public final class DdNetwork
             de.cas_ual_ty.dueldimension.duel.npc.DuelistChallengeMessages.OfferDuel.CODEC);
         serverbound(de.cas_ual_ty.dueldimension.duel.npc.DuelistChallengeMessages.ChooseDuel.TYPE,
             de.cas_ual_ty.dueldimension.duel.npc.DuelistChallengeMessages.ChooseDuel.CODEC);
+        clientbound(de.cas_ual_ty.dueldimension.duel.npc.DuelBotMessages.OfferProgram.TYPE,
+            de.cas_ual_ty.dueldimension.duel.npc.DuelBotMessages.OfferProgram.CODEC);
+        serverbound(de.cas_ual_ty.dueldimension.duel.npc.DuelBotMessages.ChooseProgram.TYPE,
+            de.cas_ual_ty.dueldimension.duel.npc.DuelBotMessages.ChooseProgram.CODEC);
         clientbound(de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.ShowField.TYPE,
             de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.ShowField.CODEC);
         clientbound(de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.HideField.TYPE,
@@ -218,6 +237,13 @@ public final class DdNetwork
     /** Registers the server's side of every message a client may send. */
     public static void registerServerHandlers()
     {
+        // A client choosing its character. Nothing here is worth cheating at
+        // -- a look decides what somebody looks like and nothing else -- so the
+        // server clamps it (the record's constructor does) and passes it on.
+        onServer(de.cas_ual_ty.dueldimension.character.CharacterMessages.SetCharacter.TYPE,
+            (message, player) -> de.cas_ual_ty.dueldimension.character.WornCharacters
+                .set(player, message.look(), message.shown()));
+
         ProfilePayloads.registerServerHandlers();
         de.cas_ual_ty.dueldimension.duel.network.DuelPayloads.registerServerHandlers();
 
@@ -228,6 +254,15 @@ public final class DdNetwork
             (message, player) -> de.cas_ual_ty.dueldimension.duel.npc.DuelistChallenge
                 .begin(player, message.duelistId(), message.overworld()));
 
+        // Which deck a Duel Bot should run. Re-checked on arrival for the same
+        // reasons, plus one more: a custom deck name is confirmed against the
+        // SENDER's own profile, so a crafted packet cannot borrow somebody
+        // else's deck. See DuelBotPrograms.resolve.
+        onServer(de.cas_ual_ty.dueldimension.duel.npc.DuelBotMessages.ChooseProgram.TYPE,
+            (message, player) -> de.cas_ual_ty.dueldimension.duel.npc.DuelBotPrograms
+                .begin(player, message.botId(), message.program(), message.deckId(),
+                    message.destinyDraw()));
+
         // The engine's four client-to-server messages. Each body is the Forge
         // handler's, minus the enqueueWork and the null check: Fabric has
         // already moved to the server thread and already knows the sender.
@@ -236,6 +271,12 @@ public final class DdNetwork
         onServer(de.cas_ual_ty.dueldimension.shop.ShopMessages.Buy.TYPE,
             (message, player) -> de.cas_ual_ty.dueldimension.shop.ShopMessages.Buy
                 .sell(player, message.code(), message.count()));
+
+        // The reward screen's choice. Same shape as a purchase: the message
+        // names what was picked and award() decides everything else.
+        onServer(de.cas_ual_ty.dueldimension.shop.StatueMessages.Choose.TYPE,
+            (message, player) -> de.cas_ual_ty.dueldimension.shop.StatueMessages.Choose
+                .award(player, message.god()));
 
         // The sleeve purchase. Same shape: the message names what to buy and
         // sell() decides everything else, price and entitlement included.
@@ -362,10 +403,28 @@ public final class DdNetwork
     {
         de.cas_ual_ty.dueldimension.duel.network.DuelPayloads.registerClientHandlers();
 
+        // What the reward screen's choice paid. Straight to the open screen,
+        // which is the only thing that can show it.
+        // DE and the win/loss record, for the profile panel.
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.shop.StatsMessages.Sync.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.clientutil.hub.EditorState
+                .setStats(payload.duelEnergy(), payload.wins(), payload.losses(),
+                    payload.npcWins(), payload.npcLosses()));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.shop.StatueMessages.Granted.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.clientutil.statue
+                .StatueRewardScreen.showGranted(payload.codes(), payload.arts(),
+                    payload.fresh(), payload.reason()));
+
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
             ProfilePayloads.EngineUnknown.TYPE,
             (payload, context) -> de.cas_ual_ty.dueldimension.clientutil.hub.EditorState
                 .setEngineUnknown(payload.codes()));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            ProfilePayloads.BanlistCatalogue.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.clientutil.hub.EditorState
+                .setBanlists(payload.toBanlists()));
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
             ProfilePayloads.SyncFreeMode.TYPE,
             (payload, context) ->
@@ -414,6 +473,10 @@ public final class DdNetwork
             (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
                 .closeDuelLobby());
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.character.CharacterMessages.WornCharacter.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.clientutil.character
+                .ClientCharacters.set(payload.player(), payload.look(), payload.shown()));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
             de.cas_ual_ty.dueldimension.duel.dueldisk.DiskMessages.WornDisk.TYPE,
             (payload, context) -> de.cas_ual_ty.dueldimension.clientutil.ClientWornDisks
                 .set(payload.player(), payload.disk(), payload.worn()));
@@ -441,6 +504,10 @@ public final class DdNetwork
             de.cas_ual_ty.dueldimension.duel.npc.DuelistChallengeMessages.OfferDuel.TYPE,
             (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
                 .offerDuelType(payload));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.duel.npc.DuelBotMessages.OfferProgram.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
+                .offerBotProgram(payload));
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
             de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.ShowField.TYPE,
             (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
@@ -484,10 +551,21 @@ public final class DdNetwork
             de.cas_ual_ty.dueldimension.shop.DuelRewardMessages.Result.TYPE,
             (payload, context) -> de.cas_ual_ty.dueldimension.clientutil.DuelClientState
                 .acceptReward(payload));
+        // Trading: the menu a right-clicked player offers, and the table itself.
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.duel.trade.TradeMessages.OfferMenu.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
+                .openPlayerMenu(payload.target(), payload.name()));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
+            de.cas_ual_ty.dueldimension.duel.trade.TradeMessages.State.TYPE,
+            (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
+                .updateTrade(payload));
+
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.registerGlobalReceiver(
             de.cas_ual_ty.dueldimension.set.PackMessages.OpenPack.TYPE,
             (payload, context) -> de.cas_ual_ty.dueldimension.DuelDimension.proxy
-                .openPackReveal(payload.setName(), payload.codes(), payload.rarities()));
+                .openPackReveal(payload.setName(), payload.codes(), payload.rarities(),
+                    payload.fresh(), payload.sources()));
 
         // The engine's three server-to-client messages. They arrive for real --
         // a duel against a duelist runs and sends them -- but what draws them,

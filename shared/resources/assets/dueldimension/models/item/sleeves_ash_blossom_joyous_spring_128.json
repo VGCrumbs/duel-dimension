@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_ash_blossom_joyous_spring",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_ash_blossom_joyous_spring"
+  }
+}

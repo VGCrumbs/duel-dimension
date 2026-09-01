@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_starry_night_starry_dragon",
+  "textures": {
+    "layer0": "dueldimension:item/512/sleeves_starry_night_starry_dragon"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_the_star_ham",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_the_star_ham"
+  }
+}

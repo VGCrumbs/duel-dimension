@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_anubis_the_last_judge",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_anubis_the_last_judge"
+  }
+}

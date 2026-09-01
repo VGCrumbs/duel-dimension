@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_dragon_master_magia",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_dragon_master_magia"
+  }
+}

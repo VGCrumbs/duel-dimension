@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_spirit_charmers",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_spirit_charmers"
+  }
+}

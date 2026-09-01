@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_starving_venom_wing_dragon",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_starving_venom_wing_dragon"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_giant_beetrooper_invincible_atlas",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_giant_beetrooper_invincible_atlas"
+  }
+}

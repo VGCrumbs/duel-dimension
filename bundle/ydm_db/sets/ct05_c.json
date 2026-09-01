@@ -1,0 +1,50 @@
+{
+  "code": "CT05_C",
+  "type": "Sub-Set",
+  "pull_type": "distribution",
+  "distribution": "collectible_tin_promo",
+  "cards": [
+    {
+      "id": 44508094,
+      "code": "CT05-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70902743,
+      "code": "CT05-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 73580471,
+      "code": "CT05-EN003",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46195773,
+      "code": "CT05-EN004",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23303072,
+      "code": "CT05-ENS01",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 18013090,
+      "code": "CT05-ENS02",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7391448,
+      "code": "CT05-ENS03",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

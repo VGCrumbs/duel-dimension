@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_diabellstar_the_black_witch",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_diabellstar_the_black_witch"
+  }
+}

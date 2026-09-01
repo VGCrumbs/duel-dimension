@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_rgb_rainbowlution",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_rgb_rainbowlution"
+  }
+}

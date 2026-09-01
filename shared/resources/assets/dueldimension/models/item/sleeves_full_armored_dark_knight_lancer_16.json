@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_full_armored_dark_knight_lancer",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_full_armored_dark_knight_lancer"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_mekk_knight_crusadia_avramax",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_mekk_knight_crusadia_avramax"
+  }
+}

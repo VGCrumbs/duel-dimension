@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_legendary_six_samurai_shi_en",
+  "textures": {
+    "layer0": "dueldimension:item/512/sleeves_legendary_six_samurai_shi_en"
+  }
+}

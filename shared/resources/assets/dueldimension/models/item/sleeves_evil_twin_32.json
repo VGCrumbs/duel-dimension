@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_evil_twin",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_evil_twin"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_wcs_2024_party_favor",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_wcs_2024_party_favor"
+  }
+}

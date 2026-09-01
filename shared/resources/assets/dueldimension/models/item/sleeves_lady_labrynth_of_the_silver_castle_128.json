@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_lady_labrynth_of_the_silver_castle",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_lady_labrynth_of_the_silver_castle"
+  }
+}

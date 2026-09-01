@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_video_game_awards_2022_commemoration",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_video_game_awards_2022_commemoration"
+  }
+}

@@ -34,6 +34,30 @@ public final class Banlist
     /** The id used when no list is applied and only deck-size rules are checked. */
     public static final String NO_BANLIST_ID = "none";
 
+    /**
+     * The id meaning "whatever this server currently considers standard", which
+     * is the most recent TCG list.
+     *
+     * <h2>Why a sentinel and not the real id</h2>
+     * Because a default has to be answerable in two places that know different
+     * things. A deck is decoded on the CLIENT as well as the server, and a
+     * client has no EDOPro install and therefore no idea which lists exist —
+     * so the constant a {@code DeckList} falls back to cannot be the result of
+     * looking at any. It has to be a name for the question rather than an
+     * answer to it.
+     * <p>
+     * It also keeps two states apart that would otherwise collapse into one:
+     * <b>never chose</b> and <b>chose no list</b>. Those are different answers.
+     * A deck carrying this id follows the server's current TCG list and keeps
+     * following it when the lists are updated; a deck carrying
+     * {@link #NO_BANLIST_ID} has been deliberately set to no list and stays
+     * there. Picking anything in the editor stores that list's own id, which
+     * pins the deck to a format rather than to whatever is current.
+     *
+     * @see #mostRecentTcg the rule both sides resolve it with
+     */
+    public static final String DEFAULT_ID = "default";
+
     /** Deck-size rules, from the official floor rules the core also enforces. */
     public static final int MAIN_MIN = 40;
     public static final int MAIN_MAX = 60;
@@ -144,6 +168,112 @@ public final class Banlist
             lists.add(new Banlist(idOf(currentName), currentName, current));
         }
         return lists;
+    }
+
+    /**
+     * The newest TCG list out of a set, or null if there is not one.
+     *
+     * <h2>The rule, and why it is here rather than on the server</h2>
+     * {@link #DEFAULT_ID} has to resolve to the SAME list on both sides — the
+     * server enforces it and the editor draws badges from it, and a default that
+     * meant different things in those two places would be worse than no default.
+     * The server resolves it against the lists it read off disk and the client
+     * against the catalogue it was sent, which hold the same lists; putting the
+     * rule in {@code common} is what makes those two resolutions one rule rather
+     * than two that agree today.
+     *
+     * <h2>How "newest TCG" is decided</h2>
+     * By the DATE at the front of the display name, not by position in the list.
+     * EDOPro's headers are {@code !2026.05 TCG}, {@code !2005.4 GOAT},
+     * {@code !2026.07 OCG} — a date, then the format — and the files they come
+     * out of are read in filename order, which has nothing to do with recency.
+     * <p>
+     * A name containing "TCG" is a candidate. That is a narrower test than it
+     * looks: "OCG" does not contain it, and neither do "Traditional", "Worlds",
+     * "Speed Duel" or "Rush Duel". It does admit a name like "2015.11 TCG Goat
+     * Format", which is a real TCG list and simply not the most recent one —
+     * which is exactly what comparing the dates settles.
+     * <p>
+     * Dates are compared component by component as numbers, so 2026.05 beats
+     * 2005.4 without either being padded, and a three-part date like
+     * {@code 2026.07.01} compares against a two-part one on the parts they
+     * share. A candidate with no leading date sorts below every dated one rather
+     * than throwing.
+     */
+    public static Banlist mostRecentTcg(List<Banlist> lists)
+    {
+        Banlist best = null;
+        int[] bestDate = null;
+        for(Banlist list : lists)
+        {
+            if(!list.displayName().toLowerCase(java.util.Locale.ROOT).contains("tcg"))
+            {
+                continue;
+            }
+            int[] date = leadingDate(list.displayName());
+            if(best == null || compareDates(date, bestDate) > 0)
+            {
+                best = list;
+                bestDate = date;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * The dotted number a display name opens with, as its parts.
+     * <p>
+     * Empty when there is none, which {@link #compareDates} treats as older than
+     * anything — a list whose name does not start with a date cannot be shown to
+     * be the most recent one.
+     */
+    private static int[] leadingDate(String displayName)
+    {
+        List<Integer> parts = new ArrayList<>(3);
+        int i = 0;
+        while(i < displayName.length())
+        {
+            int start = i;
+            while(i < displayName.length() && Character.isDigit(displayName.charAt(i)))
+            {
+                i++;
+            }
+            if(i == start)
+            {
+                break;
+            }
+            parts.add(Integer.parseInt(displayName.substring(start, i)));
+            if(i < displayName.length() && displayName.charAt(i) == '.')
+            {
+                i++;
+            }
+            else
+            {
+                break;
+            }
+        }
+        int[] date = new int[parts.size()];
+        for(int part = 0; part < parts.size(); part++)
+        {
+            date[part] = parts.get(part);
+        }
+        return date;
+    }
+
+    /** Component by component; a missing component counts as 0. */
+    private static int compareDates(int[] left, int[] right)
+    {
+        int length = Math.max(left.length, right.length);
+        for(int i = 0; i < length; i++)
+        {
+            int compared = Integer.compare(i < left.length ? left[i] : 0,
+                i < right.length ? right[i] : 0);
+            if(compared != 0)
+            {
+                return compared;
+            }
+        }
+        return 0;
     }
 
     /** A stable id for a display name, for use over the wire and in config. */

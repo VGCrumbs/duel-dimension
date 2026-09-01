@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_auram_the_world_chalice_blademaster",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_auram_the_world_chalice_blademaster"
+  }
+}

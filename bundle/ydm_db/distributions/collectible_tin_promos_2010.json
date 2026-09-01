@@ -1,0 +1,22 @@
+{
+  "name": "collectible_tin_promos_2010",
+  "pulls": [
+    {
+      "weight": 1,
+      "entries": [
+        {
+          "count": 4,
+          "rarities": [
+            "Super Rare"
+          ]
+        },
+        {
+          "count": 1,
+          "rarities": [
+            "Secret Rare"
+          ]
+        }
+      ]
+    }
+  ]
+}

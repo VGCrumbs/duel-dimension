@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_stake_your_soul",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_stake_your_soul"
+  }
+}

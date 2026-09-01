@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_the_iris_swordsoul",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_the_iris_swordsoul"
+  }
+}

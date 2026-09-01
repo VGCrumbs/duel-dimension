@@ -16,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * The glTF reader, against numbers taken from an independent implementation.
@@ -267,5 +268,79 @@ class GlbModelTest
             }
         }
         return out.array();
+    }
+
+    // ------------------------------------------------- node scale tolerance --
+
+    /**
+     * The exact scales that were in the shipped Falsebound rips, measured out
+     * of the files after all three failed to load. The old tolerance was 1e-6
+     * and every one of these is larger than that, which is why Slifer, Obelisk
+     * and Ra all came back as "apply scale before exporting" -- for a scale
+     * nobody had applied, produced by float32 coming out of a decomposition.
+     */
+    @Test
+    void float_noise_from_an_exporter_counts_as_unit_scale()
+    {
+        float[][] measured = {
+            {1F, 1.0000054836273193F, 1F},      // Slifer, j015
+            {1F, 1F, 1.0000022649765015F},      // Obelisk, j107
+            {1.000032901763916F, 1F, 1F},       // Ra, j019 -- the worst seen
+        };
+        for(float[] scale : measured)
+        {
+            assertTrue(GlbModel.isUnitScale(scale),
+                "rejected " + java.util.Arrays.toString(scale));
+        }
+    }
+
+    /**
+     * And the point of keeping the check at all. These are the scales the
+     * Falsebound skeletons genuinely carry on their joints, and a model whose
+     * nodes are scaled would be drawn at the wrong size with nothing to say so.
+     */
+    @Test
+    void a_scale_somebody_meant_is_still_refused()
+    {
+        assertFalse(GlbModel.isUnitScale(new float[] {1.4F, 1.4F, 1.4F}), "Slifer's root");
+        assertFalse(GlbModel.isUnitScale(new float[] {2F, 2F, 2F}), "Obelisk's root");
+        assertFalse(GlbModel.isUnitScale(new float[] {10F, 10F, 10F}), "Ra's joints");
+        assertFalse(GlbModel.isUnitScale(new float[] {1F, 0.5F, 1F}), "one axis is enough");
+    }
+
+    /** There is a lot of room between the noise and anything deliberate. */
+    @Test
+    void the_tolerance_sits_well_clear_of_both()
+    {
+        assertTrue(GlbModel.isUnitScale(new float[] {1.0009F, 1F, 1F}), "inside");
+        assertFalse(GlbModel.isUnitScale(new float[] {1.002F, 1F, 1F}), "outside");
+    }
+
+    static boolean godsPresent()
+    {
+        return GlbFixtures.godsPresent();
+    }
+
+    /**
+     * The three that were failing, loaded for real.
+     * <p>
+     * The tolerance test above proves the arithmetic; this proves there was
+     * nothing else wrong with them. A loader that rejects on the FIRST thing it
+     * dislikes cannot tell you about the second, so widening one check and
+     * declaring the model loadable is a guess until the file goes through.
+     */
+    @Test
+    @EnabledIf("godsPresent")
+    void the_falsebound_rips_load() throws IOException
+    {
+        for(String name : new String[] {"slifer_the_sky_dragon", "obelisk_the_tormentor",
+            "the_winged_dragon_of_ra"})
+        {
+            GlbModel model = GlbModel.load(Files.readAllBytes(GlbFixtures.god(name)));
+            assertEquals(1, model.primitives().size(), name);
+            assertNotNull(model.skin(), name);
+            assertTrue(model.modelHeight() > 0F, name + " has no height");
+            assertTrue(model.animations().size() >= 4, name + " lost its animations");
+        }
     }
 }

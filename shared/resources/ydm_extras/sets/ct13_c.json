@@ -1,0 +1,80 @@
+{
+  "code": "CT13_C",
+  "type": "Sub-Set",
+  "pull_type": "distribution",
+  "distribution": "mega_tin_promos_2016",
+  "cards": [
+    {
+      "id": 10000020,
+      "code": "CT13-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10000000,
+      "code": "CT13-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 46986420,
+      "code": "CT13-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85551711,
+      "code": "CT13-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74583607,
+      "code": "CT13-EN005",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92870717,
+      "code": "CT13-EN006",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 47075569,
+      "code": "CT13-EN007",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89631139,
+      "code": "CT13-EN008",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59822133,
+      "code": "CT13-EN009",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 987311,
+      "code": "CT13-EN010",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 28865322,
+      "code": "CT13-EN011",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59438930,
+      "code": "CT13-EN012",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

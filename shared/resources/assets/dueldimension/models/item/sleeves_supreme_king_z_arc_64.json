@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_supreme_king_z_arc",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_supreme_king_z_arc"
+  }
+}

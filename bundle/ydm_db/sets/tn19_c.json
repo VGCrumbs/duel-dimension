@@ -1,0 +1,92 @@
+{
+  "code": "TN19_C",
+  "type": "Sub-Set",
+  "pull_type": "distribution",
+  "distribution": "mega_tin_promos_2019",
+  "cards": [
+    {
+      "id": 43228023,
+      "code": "TN19-EN001",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79613121,
+      "code": "TN19-EN002",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 5008836,
+      "code": "TN19-EN003",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 42006475,
+      "code": "TN19-EN004",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 18491580,
+      "code": "TN19-EN005",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 45885288,
+      "code": "TN19-EN006",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10000000,
+      "code": "TN19-EN007",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10000020,
+      "code": "TN19-EN008",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10000010,
+      "code": "TN19-EN009",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 12580477,
+      "code": "TN19-EN010",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 83764719,
+      "code": "TN19-EN011",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 91800273,
+      "code": "TN19-EN012",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 27204311,
+      "code": "TN19-EN013",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54693926,
+      "code": "TN19-EN014",
+      "rarity": "Prismatic Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

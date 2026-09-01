@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_hecahands_jauzah",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_hecahands_jauzah"
+  }
+}

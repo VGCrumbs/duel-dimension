@@ -558,6 +558,17 @@ public final class CardImageManager
                 // it, which is EDOPro's texture->drop() at :397 -- also on the
                 // render thread. Only ABANDONED images go to the clear thread.
                 client.getTextureManager().register(loaded.id(), texture);
+                // BILINEAR, not nearest. Card art arrives at 512 or 256 and
+                // is drawn at whatever size a strip or a grid gives it, which
+                // is almost never a whole-number ratio -- so nearest sampling
+                // drops whole rows of pixels out of the rules text and the
+                // name, and a card that is perfectly legible in the file comes
+                // out crunched. These are photographs of printed cards, not
+                // Minecraft's own texel art, and the mod already makes the same
+                // choice for monster model skins (HologramSettings.ps2).
+                // Mipmaps stay off: these are uploaded at one level and a
+                // mipmapped sampler with no levels to read is a blank draw.
+                texture.setFilter(true, false);
             }
             catch(RuntimeException gpu)
             {

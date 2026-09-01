@@ -1,0 +1,68 @@
+{
+  "code": "TN23_C",
+  "type": "Sub-Set",
+  "pull_type": "distribution",
+  "distribution": "mega_tin_promos_25th",
+  "cards": [
+    {
+      "id": 33396948,
+      "code": "TN23-EN002",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74677427,
+      "code": "TN23-EN003",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 79856792,
+      "code": "TN23-EN004",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 70095154,
+      "code": "TN23-EN005",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 9608555,
+      "code": "TN23-EN007",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59123194,
+      "code": "TN23-EN010",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 16178683,
+      "code": "TN23-EN011",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 93717133,
+      "code": "TN23-EN012",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 73580471,
+      "code": "TN23-EN014",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69031175,
+      "code": "TN23-EN015",
+      "rarity": "Quarter Century Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

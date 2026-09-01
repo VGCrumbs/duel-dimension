@@ -18,7 +18,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
  *                     built in the world between the two duellists
  */
 public record MatchConfig(String banlistId, int lifePoints, Format format, int turnSeconds,
-    Presentation presentation)
+    Presentation presentation, boolean destinyDraw)
 {
     /**
      * Where the duel is played. Both are the same duel -- the same engine, the
@@ -85,8 +85,21 @@ public record MatchConfig(String banlistId, int lifePoints, Format format, int t
      * starts the duel on the screen when it does. So this reads "on the ground
      * where there is room for it", not "on the ground or not at all".
      */
+    /**
+     * Destiny Draw is OFF here, and that is a decision rather than an oversight.
+     * <p>
+     * It is a real change to the rules -- it puts a chosen card on top of a
+     * deck -- and this mod's whole premise is that it plays actual Yu-Gi-Oh!
+     * through the actual engine. A rule from a PSP spin-off is a thing to opt
+     * into, not something to find in a duel you did not ask for it in. The same
+     * reasoning turned the monster holograms off by default: a feature everyone
+     * pays for by default should be the one everyone expects.
+     * <p>
+     * One word to change if that turns out to be the wrong call.
+     */
     public static final MatchConfig DEFAULT =
-        new MatchConfig(Banlist.NO_BANLIST_ID, 8000, Format.SINGLE, 180, Presentation.OVERWORLD);
+        new MatchConfig(Banlist.NO_BANLIST_ID, 8000, Format.SINGLE, 180, Presentation.OVERWORLD,
+            false);
 
     /**
      * Clamps a client-proposed configuration to something legal. A packet is
@@ -103,7 +116,10 @@ public record MatchConfig(String banlistId, int lifePoints, Format format, int t
             // board. A packet that omits this must land where a lobby nobody
             // touched would have landed, or the default is only a default for
             // clients that bother to state it.
-            presentation == null ? DEFAULT.presentation() : presentation);
+            presentation == null ? DEFAULT.presentation() : presentation,
+            // A boolean needs no clamping: both values are legal, and absent
+            // decodes as false, which is the default anyway.
+            destinyDraw);
     }
 
     // One wither per field, so a caller changing one setting cannot silently
@@ -113,27 +129,41 @@ public record MatchConfig(String banlistId, int lifePoints, Format format, int t
 
     public MatchConfig withBanlist(String id)
     {
-        return new MatchConfig(id, lifePoints, format, turnSeconds, presentation);
+        return new MatchConfig(id, lifePoints, format, turnSeconds, presentation, destinyDraw);
     }
 
     public MatchConfig withLifePoints(int points)
     {
-        return new MatchConfig(banlistId, points, format, turnSeconds, presentation);
+        return new MatchConfig(banlistId, points, format, turnSeconds, presentation, destinyDraw);
     }
 
     public MatchConfig withFormat(Format value)
     {
-        return new MatchConfig(banlistId, lifePoints, value, turnSeconds, presentation);
+        return new MatchConfig(banlistId, lifePoints, value, turnSeconds, presentation, destinyDraw);
     }
 
     public MatchConfig withTurnSeconds(int seconds)
     {
-        return new MatchConfig(banlistId, lifePoints, format, seconds, presentation);
+        return new MatchConfig(banlistId, lifePoints, format, seconds, presentation, destinyDraw);
     }
 
     public MatchConfig withPresentation(Presentation value)
     {
-        return new MatchConfig(banlistId, lifePoints, format, turnSeconds, value);
+        return new MatchConfig(banlistId, lifePoints, format, turnSeconds, value, destinyDraw);
+    }
+
+    /**
+     * Whether a duellist in a pinch may draw a card they nominated.
+     * <p>
+     * Settled when the duel is arranged and not afterwards, which is the rule
+     * Tag Force itself has: it can be switched on or off, but never during a
+     * duel that has already started. Here that falls out of the design rather
+     * than needing enforcing -- the rule is registered into the engine before
+     * the first turn, and there is no way to register one later.
+     */
+    public MatchConfig withDestinyDraw(boolean value)
+    {
+        return new MatchConfig(banlistId, lifePoints, format, turnSeconds, presentation, value);
     }
 
     /** Is this duel meant to be played on a board in the world? */
@@ -159,6 +189,62 @@ public record MatchConfig(String banlistId, int lifePoints, Format format, int t
         return turnSeconds > 0;
     }
 
+    /**
+     * For remembering a player's last-arranged match on their profile.
+     * <p>
+     * Every field optional and defaulting to {@link #DEFAULT}'s, so a profile
+     * saved before a challenger's settings were remembered loads as one that
+     * has never arranged a duel -- which is exactly what it is. Run through
+     * {@link #sanitised} on the way out of the profile rather than trusted, for
+     * the same reason a packet is: a hand-edited save is data too.
+     */
+    public static final com.mojang.serialization.Codec<MatchConfig> CODEC =
+        com.mojang.serialization.codecs.RecordCodecBuilder.create(instance ->
+            instance.group(
+                com.mojang.serialization.Codec.STRING
+                    .optionalFieldOf("Banlist", DEFAULT.banlistId())
+                    .forGetter(MatchConfig::banlistId),
+                com.mojang.serialization.Codec.INT
+                    .optionalFieldOf("LifePoints", DEFAULT.lifePoints())
+                    .forGetter(MatchConfig::lifePoints),
+                com.mojang.serialization.Codec.STRING
+                    .optionalFieldOf("Format", DEFAULT.format().name())
+                    .forGetter(config -> config.format().name()),
+                com.mojang.serialization.Codec.INT
+                    .optionalFieldOf("TurnSeconds", DEFAULT.turnSeconds())
+                    .forGetter(MatchConfig::turnSeconds),
+                com.mojang.serialization.Codec.STRING
+                    .optionalFieldOf("Presentation", DEFAULT.presentation().name())
+                    .forGetter(config -> config.presentation().name()),
+                com.mojang.serialization.Codec.BOOL
+                    .optionalFieldOf("DestinyDraw", DEFAULT.destinyDraw())
+                    .forGetter(MatchConfig::destinyDraw)
+            ).apply(instance, MatchConfig::fromNames));
+
+    /**
+     * Enum names rather than the enums themselves, so a value this build no
+     * longer has loads as the default instead of refusing the whole profile.
+     */
+    private static MatchConfig fromNames(String banlistId, int lifePoints, String format,
+        int turnSeconds, String presentation, boolean destinyDraw)
+    {
+        return new MatchConfig(banlistId, lifePoints, named(Format.class, format, DEFAULT.format()),
+            turnSeconds, named(Presentation.class, presentation, DEFAULT.presentation()),
+            destinyDraw).sanitised();
+    }
+
+    private static <E extends Enum<E>> E named(Class<E> type, String name, E fallback)
+    {
+        for(E candidate : type.getEnumConstants())
+        {
+            if(candidate.name().equals(name))
+            {
+                return candidate;
+            }
+        }
+        return fallback;
+    }
+
     public void write(RegistryFriendlyByteBuf buffer)
     {
         buffer.writeUtf(banlistId);
@@ -166,12 +252,13 @@ public record MatchConfig(String banlistId, int lifePoints, Format format, int t
         buffer.writeEnum(format);
         buffer.writeVarInt(turnSeconds);
         buffer.writeEnum(presentation);
+        buffer.writeBoolean(destinyDraw);
     }
 
     public static MatchConfig read(RegistryFriendlyByteBuf buffer)
     {
         return new MatchConfig(buffer.readUtf(), buffer.readVarInt(),
             buffer.readEnum(Format.class), buffer.readVarInt(),
-            buffer.readEnum(Presentation.class));
+            buffer.readEnum(Presentation.class), buffer.readBoolean());
     }
 }

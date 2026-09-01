@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_firewall_dragon_singularity",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_firewall_dragon_singularity"
+  }
+}

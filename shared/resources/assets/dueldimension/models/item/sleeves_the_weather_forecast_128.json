@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_the_weather_forecast",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_the_weather_forecast"
+  }
+}

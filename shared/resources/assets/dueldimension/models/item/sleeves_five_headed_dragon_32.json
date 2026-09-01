@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_five_headed_dragon",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_five_headed_dragon"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_materiactor_exagard",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_materiactor_exagard"
+  }
+}

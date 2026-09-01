@@ -69,6 +69,13 @@ public final class DdItems
         register("duelist_placer",
             de.cas_ual_ty.dueldimension.duel.npc.DuelistPlacerItem::new);
 
+    /**
+     * The Duel Bot, carried. One item is one bot: placing it puts that bot down
+     * and picking it up gives this back, program and all.
+     */
+    public static final de.cas_ual_ty.dueldimension.duel.npc.DuelBotItem DUEL_BOT =
+        register("duel_bot", de.cas_ual_ty.dueldimension.duel.npc.DuelBotItem::new);
+
     public static final DeckBoxItem DECK_BOX = register("deck_box",
         properties -> new DeckBoxItem(properties.stacksTo(1)));
     public static final PatreonDeckBoxItem PATREON_DECK_BOX = register("patreon_deck_box",

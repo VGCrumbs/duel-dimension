@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_the_chronicles_the_fallen_the_virtuous",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_the_chronicles_the_fallen_the_virtuous"
+  }
+}

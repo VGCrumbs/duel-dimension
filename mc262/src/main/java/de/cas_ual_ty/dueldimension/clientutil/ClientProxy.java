@@ -123,6 +123,14 @@ public class ClientProxy implements ISidedProxy
     public static void loadConfig()
     {
         clientConfig = ClientConfig.load();
+        // The menu palette, read here because this is the one client-side load
+        // that already runs before any screen can open.
+        MenuThemeSettings.load();
+        // The overhead view's placement, shipped and then locally overridden.
+        DuelCamera.load();
+        ChainSettings.load();
+        de.cas_ual_ty.dueldimension.clientutil.character.ItemAnchor.load();
+        de.cas_ual_ty.dueldimension.clientutil.character.RideAnchor.load();
         activeCardInfoImageSize = clientConfig.activeCardInfoImageSize.get();
         activeCardItemImageSize = clientConfig.activeCardItemImageSize.get();
         activeCardMainImageSize = clientConfig.activeCardMainImageSize.get();
@@ -457,6 +465,14 @@ public class ClientProxy implements ISidedProxy
     }
 
     @Override
+    public void offerBotProgram(
+        de.cas_ual_ty.dueldimension.duel.npc.DuelBotMessages.OfferProgram offer)
+    {
+        getMinecraft().setScreenAndShow(
+            new de.cas_ual_ty.dueldimension.clientutil.hub.ChooseProgramScreen(offer));
+    }
+
+    @Override
     public void showSpectatorBoard(
         de.cas_ual_ty.dueldimension.duel.overworld.OverworldPayloads.SpectatorBoard board)
     {
@@ -591,6 +607,50 @@ public class ClientProxy implements ISidedProxy
      * the stock is what is actually for sale.
      */
     @Override
+    public void openPlayerMenu(java.util.UUID target, String name)
+    {
+        getMinecraft().gui.setScreen(
+            new de.cas_ual_ty.dueldimension.clientutil.hub.PlayerActionScreen(target, name));
+    }
+
+    /**
+     * Shows the table, or closes it.
+     * <p>
+     * Updated in place when the screen is already up, rather than replaced: a
+     * new screen every time the other side moved a card would take the focus
+     * off the points field on every keystroke they made.
+     */
+    @Override
+    public void updateTrade(de.cas_ual_ty.dueldimension.duel.trade.TradeMessages.State state)
+    {
+        net.minecraft.client.gui.screens.Screen open = getMinecraft().gui.screen();
+        if(!state.open())
+        {
+            if(open instanceof de.cas_ual_ty.dueldimension.clientutil.hub.TradeScreen)
+            {
+                getMinecraft().gui.setScreen(null);
+            }
+            return;
+        }
+        if(open instanceof de.cas_ual_ty.dueldimension.clientutil.hub.TradeScreen table)
+        {
+            table.update(state);
+            return;
+        }
+        // The picker is opened FROM the table and goes back to it, so an update
+        // arriving while it is up belongs to the table underneath. Replacing
+        // the screen here would shut the picker the moment the other side moved
+        // a card -- which is most of the time a player spends choosing one.
+        if(open instanceof de.cas_ual_ty.dueldimension.clientutil.hub.TradePickScreen picker)
+        {
+            picker.table().update(state);
+            return;
+        }
+        getMinecraft().gui.setScreen(
+            new de.cas_ual_ty.dueldimension.clientutil.hub.TradeScreen(state));
+    }
+
+    @Override
     public void openCardShop(int points,
         java.util.List<de.cas_ual_ty.dueldimension.shop.ShopStock.Pack> packs)
     {
@@ -608,13 +668,14 @@ public class ClientProxy implements ISidedProxy
     /** The pack-opening reveal, over whatever screen asked for the packs. */
     @Override
     public void openPackReveal(String setName, java.util.List<Integer> codes,
-        java.util.List<String> rarities)
+        java.util.List<String> rarities, java.util.List<Boolean> fresh,
+        java.util.List<String> sources)
     {
         // The screen that asked for the packs, so closing the reveal returns
         // there rather than dumping the player back into the world.
         getMinecraft().gui.setScreen(
             new de.cas_ual_ty.dueldimension.clientutil.hub.PackOpeningScreen(
-                getMinecraft().gui.screen(), setName, codes, rarities));
+                getMinecraft().gui.screen(), setName, codes, rarities, fresh, sources));
     }
 
     @Override

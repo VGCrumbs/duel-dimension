@@ -120,7 +120,7 @@ public class CoinTossScreen extends Screen
 
         String title = "Coin Toss";
         extractor.text(font, title, x + (panelW() - font.width(title)) / 2, y + 10,
-            0xFFF4D089, true);
+            MenuInk.title(), MenuInk.shadow());
 
         String result = "You won the toss";
         extractor.text(font, result, x + (panelW() - font.width(result)) / 2, y + 30,
@@ -131,7 +131,7 @@ public class CoinTossScreen extends Screen
         // anybody. The other one is told in chat and left free to walk.
         String line = answered ? "Starting the duel..." : "Who takes the first turn?";
         extractor.text(font, line, x + (panelW() - font.width(line)) / 2, y + 46,
-            0xFFC2C9D6, true);
+            MenuInk.body(), MenuInk.shadow());
 
         // LAST, and it was missing entirely. Retained mode draws what it is
         // described, in the order it is described: without this the two buttons

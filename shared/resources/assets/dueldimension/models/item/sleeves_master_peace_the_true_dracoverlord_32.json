@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_master_peace_the_true_dracoverlord",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_master_peace_the_true_dracoverlord"
+  }
+}

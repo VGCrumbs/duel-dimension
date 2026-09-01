@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_number_41_bagooska_the_terribly_tired_tapir",
+  "textures": {
+    "layer0": "dueldimension:item/512/sleeves_number_41_bagooska_the_terribly_tired_tapir"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_mayhem_fur_hire",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_mayhem_fur_hire"
+  }
+}

@@ -1,5 +1,6 @@
 package de.cas_ual_ty.dueldimension.clientutil;
 
+import de.cas_ual_ty.dueldimension.clientutil.hub.MenuInk;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -706,7 +707,62 @@ public class EngineDuelScreen extends Screen
      */
     private boolean pickerOpen()
     {
-        return picker != null && shownPrompt != null && !answered;
+        // The Destiny Draw draws its own prompt; see renderDestiny. Excluded
+        // here rather than left to chance, because the card picker would
+        // otherwise try to show a chain option whose effect has no card.
+        return picker != null && shownPrompt != null && !answered && !destinyOpen();
+    }
+
+    /** Whether the engine is offering this player their Destiny Draw. */
+    private boolean destinyOpen()
+    {
+        return shownPrompt != null && !answered
+            && shownPrompt.kind() == EnginePrompt.Kind.DESTINY;
+    }
+
+    /**
+     * The Destiny Draw offer, over a dimmed board.
+     * <p>
+     * The panel itself is {@link de.cas_ual_ty.dueldimension.clientutil.DestinyPrompt},
+     * shared with the 3D duel so the same question looks the same in both. The
+     * dim stays here because it is this screen's: only the board darkens, and
+     * the sidebar beside it stays readable.
+     */
+    private void renderDestiny(GuiGraphicsExtractor poseStack, int mouseX, int mouseY)
+    {
+        if(!destinyOpen())
+        {
+            return;
+        }
+        dimBoard(poseStack, 0xB0000000);
+        de.cas_ual_ty.dueldimension.clientutil.DestinyPrompt.render(poseStack, font,
+            width, height, mouseX, mouseY);
+    }
+
+    /**
+     * @return true when the click was one of the two choices
+     */
+    private boolean clickDestiny(double mouseX, double mouseY)
+    {
+        if(!destinyOpen())
+        {
+            return false;
+        }
+        int choice = de.cas_ual_ty.dueldimension.clientutil.DestinyPrompt.clicked(
+            width, height, mouseX, mouseY);
+        if(choice >= 0)
+        {
+            // A yes/no: index 0 is yes and index 1 is no, which is exactly what
+            // toResponse already maps for every SelectYesNo. Sent as the index
+            // rather than as an empty "cancel", because this prompt cannot be
+            // cancelled -- the draw happens either way and the only question is
+            // which card it takes.
+            answer(new int[] {choice}, 0);
+            return true;
+        }
+        // Anywhere else on the panel is neither, and must not fall through to
+        // the board underneath it.
+        return true;
     }
 
     /**
@@ -735,7 +791,7 @@ public class EngineDuelScreen extends Screen
         String title = pileChoicesLabel != null ? pileChoicesLabel
             : prompt.title() == null || prompt.title().isBlank()
             ? "Select a card" : prompt.title();
-        poseStack.text(font, title, at.x() + PICKER_PAD, at.y() + 5, 0xFFF4D089, true);
+        poseStack.text(font, title, at.x() + PICKER_PAD, at.y() + 5, MenuInk.title(), MenuInk.shadow());
 
         for(int cell = 0; cell < perPage; cell++)
         {
@@ -794,7 +850,7 @@ public class EngineDuelScreen extends Screen
             // Whole pixels: the extractor's text takes ints, where the Forge
             // font took a float and rounded it itself.
             poseStack.text(font, shown, cardX + (at.cardW() - font.width(shown)) / 2,
-                cardY + at.cardH() + 2, picked ? 0xFFFFE9B0 : 0xFFC2C9D6, true);
+                cardY + at.cardH() + 2, picked ? 0xFFFFE9B0 : MenuInk.body(), MenuInk.shadow());
 
             drawPickerBadge(poseStack, prompt, picker.get(index), cardX, cardY, at);
         }
@@ -837,14 +893,14 @@ public class EngineDuelScreen extends Screen
                 !button.enabled() ? 2 : over ? 1 : 0, 3);
             poseStack.text(font, button.label(),
                 button.x() + (FOOTER_W - font.width(button.label())) / 2, button.y() + 5,
-                button.enabled() ? 0xFFE6EAF2 : 0xFF6A7080, true);
+                button.enabled() ? MenuInk.label() : MenuInk.dim(), MenuInk.shadow());
         }
         if(maxScroll > 0)
         {
             String more = "scroll  " + Math.min(picker.size(),
                 (pickerScroll + at.rows()) * at.columns()) + " / " + picker.size();
             poseStack.text(font, more,
-                at.x() + at.width() - PICKER_PAD - font.width(more), footerY, 0xFF7A8090, true);
+                at.x() + at.width() - PICKER_PAD - font.width(more), footerY, MenuInk.dim(), MenuInk.shadow());
         }
     }
 
@@ -1628,7 +1684,7 @@ public class EngineDuelScreen extends Screen
         if(descriptionMaxScroll > 0)
         {
             descriptionScroll = Math.clamp(
-                descriptionScroll - (int)Math.signum(delta) * DESCRIPTION_SCROLL_STEP,
+                descriptionScroll - (int)Math.signum(delta),
                 0, descriptionMaxScroll);
             return true;
         }
@@ -1642,6 +1698,13 @@ public class EngineDuelScreen extends Screen
         double mouseX = event.x();
         double mouseY = event.y();
         int button = event.button();
+        // The Destiny Draw prompt is modal: it covers the board and it is the
+        // only thing the engine is waiting on, so it takes the click before
+        // anything underneath can.
+        if(button == 0 && clickDestiny(mouseX, mouseY))
+        {
+            return true;
+        }
         // The scroll bar first: it sits over the sidebar, which the board hit
         // test would otherwise happily claim.
         if(button == 0 && grabDescriptionBar(mouseX, mouseY))
@@ -2000,6 +2063,23 @@ public class EngineDuelScreen extends Screen
         {
             renderSelectionMarks(poseStack);
         }
+        // EVERYTHING BELOW IS AN OVERLAY, AND HAS TO SAY SO.
+        //
+        // Here that is cheap -- this GUI is retained-mode and call order is
+        // draw order -- but it is said anyway, because 1.21.1 is where the same
+        // sentence has to do real work. Its GuiGraphics resolves one buffer per
+        // render type, so a panel drawn after a label does not cover that
+        // label, and the whole reported class of bug is that one fact: prompt
+        // panels with the sidebar's text showing through, and a VICTORY band
+        // with the log written across it. Keeping the two files saying the same
+        // thing is what lets a fix to either be applied to the other.
+        //
+        // The seam goes in before the context menu's plate rather than after
+        // it, because the plate and the buttons standing on it are drawn by two
+        // different people -- the plate here, the buttons inside the super call
+        // -- and they have to clear the instruments together while keeping
+        // their own order relative to each other.
+        Layering.above(poseStack);
         if(!menuButtons.isEmpty())
         {
             Button first = menuButtons.get(0);
@@ -2008,14 +2088,21 @@ public class EngineDuelScreen extends Screen
         }
 
         super.extractRenderState(poseStack, mouseX, mouseY, partialTick);
-        renderPicker(poseStack, mouseX, mouseY);
-        renderWaiting(poseStack);
-        renderResult(poseStack);
 
+        // Each of these is self-contained and stacks over the last, so each one
+        // states it. The ORDER is the fix as much as the layering is.
+        Layering.foreground(poseStack, () -> renderPicker(poseStack, mouseX, mouseY));
+        Layering.foreground(poseStack, () -> renderDestiny(poseStack, mouseX, mouseY));
+        Layering.foreground(poseStack, () -> renderWaiting(poseStack));
         if(pileView != null)
         {
-            renderPileView(poseStack, mouseX, mouseY);
+            Layering.foreground(poseStack, () -> renderPileView(poseStack, mouseX, mouseY));
         }
+        // Last, and so highest. The result used to be drawn BEFORE the pile
+        // view, which meant a graveyard left open when the last card resolved
+        // covered the VICTORY band that ended the duel -- the one thing on the
+        // screen that must never be covered by anything except a tooltip.
+        Layering.foreground(poseStack, () -> renderResult(poseStack));
         if(hovered != null && hovered.isPile())
         {
             // A tooltip belongs to the frame now rather than to whoever drew
@@ -2366,7 +2453,7 @@ public class EngineDuelScreen extends Screen
         int left = SIDEBAR_W + (width - SIDEBAR_W - boxW) / 2;
         int top = TOP_BAR_H + 6;
         poseStack.fill(left, top, left + boxW, top + 16, 0xA0101014);
-        poseStack.text(font, text, left + 8, top + 4, 0xFFC2C9D6, true);
+        poseStack.text(font, text, left + 8, top + 4, MenuInk.body(), MenuInk.shadow());
     }
 
     private void renderResult(GuiGraphicsExtractor poseStack)
@@ -2381,7 +2468,7 @@ public class EngineDuelScreen extends Screen
         boolean won = outcome.equalsIgnoreCase("Victory");
         boolean drew = outcome.equalsIgnoreCase("Draw");
         String headline = won ? "VICTORY" : drew ? "DRAW" : "DEFEAT";
-        int colour = won ? 0xFFD700 : drew ? 0xFFC2C9D6 : 0xFF4C4C;
+        int colour = won ? 0xFFD700 : drew ? MenuInk.body() : 0xFF4C4C;
         int bandH = 60;
         int bandTop = height / 2 - bandH / 2;
 
@@ -2776,79 +2863,14 @@ public class EngineDuelScreen extends Screen
             DuelTextures.CARD_U0, DuelTextures.CARD_V0,
             DuelTextures.CARD_U1, DuelTextures.CARD_V1, DdBlitUtil.NO_TINT);
 
-        // The name sits on its own plate under the art, the type line on an
-        // accent chip, and the effect text in a bordered well -- the reference
-        // layout's structure, drawn from scratch.
+        // The card, written out by the one thing that knows how: the same panel
+        // the pack opening, the deck editor and the 3D duel all draw. Compacted
+        // into the sidebar's column rather than given a window of its own,
+        // which is the only thing that makes this caller different.
         int y = SIDEBAR_PAD + imageH + 4;
-        List<net.minecraft.util.FormattedCharSequence> nameLines =
-            font.split(Component.literal(card.getName()), textWidth - 4);
-        int plateH = nameLines.size() * 9 + 4;
-        poseStack.fill(SIDEBAR_PAD - 2, y - 2, SIDEBAR_W - SIDEBAR_PAD + 2, y + plateH - 2, 0xFF14161A);
-        poseStack.fill(SIDEBAR_PAD - 2, y + plateH - 2, SIDEBAR_W - SIDEBAR_PAD + 2, y + plateH - 1,
-            0xFFB08A2A);
-        for(var line : nameLines)
-        {
-            poseStack.text(font, line, SIDEBAR_PAD + 2, y, 0xFFFFD700, false);
-            y += 9;
-        }
-        y += 4;
-
         int descriptionBottom = logTop() - 4;
+        int panelW = SIDEBAR_W - SIDEBAR_PAD * 2;
 
-        List<Component> header = sidebarHeader(card, previewRace);
-        poseStack.pose().pushMatrix();
-        poseStack.pose().scale(0.75F, 0.75F);
-        int scaledX = Math.round(SIDEBAR_PAD / 0.75F);
-        int scaledY = Math.round(y / 0.75F) + 2;
-        // The text spans the SIDEBAR, not the card image above it. It used to be
-        // imageW, and imageW is only 70% of the column -- the preview is
-        // deliberately small to give its height back to the description -- so
-        // the words stopped a third of the way short of the panel edge and wrapped
-        // far more than they needed to. The +2 border is what the well draws
-        // outside this, so the span leaves room for it.
-        int scaledW = Math.round((SIDEBAR_W - SIDEBAR_PAD) / 0.75F) - scaledX - 2;
-        int limit = Math.round(descriptionBottom / 0.75F);
-
-        boolean typeChip = true;
-        for(Component component : header)
-        {
-            for(var line : font.split(component, scaledW - 8))
-            {
-                if(scaledY > limit)
-                {
-                    break;
-                }
-                if(typeChip)
-                {
-                    // The [Type / Race] row reads as a chip, like the bracket
-                    // bar of the reference layout.
-                    poseStack.fill(scaledX - 2, scaledY - 2, scaledX + scaledW + 2, scaledY + 8,
-                        0xFF1B222B);
-                    poseStack.text(font, line, scaledX + 2, scaledY, 0xFFFFC864, false);
-                }
-                else
-                {
-                    poseStack.text(font, line, scaledX + 2, scaledY, 0xFFB0B0B0, false);
-                }
-                scaledY += 10;
-            }
-            typeChip = false;
-        }
-        scaledY += 2;
-        // The effect text in its own well.
-        int wellTop = scaledY - 3;
-        poseStack.fill(scaledX - 2, wellTop, scaledX + scaledW + 2, limit + 3, 0xC0101318);
-        poseStack.fill(scaledX - 2, wellTop, scaledX + scaledW + 2, wellTop + 1, 0x33FFFFFF);
-
-        // The well scrolls, because a duel sidebar is not tall enough for the
-        // cards that need reading most. It used to stop at the bottom of the
-        // band and drop the rest, so a long effect ended mid-sentence with no
-        // way to see the clause that decides whether you can play it.
-        List<net.minecraft.util.FormattedCharSequence> textLines =
-            font.split(Component.literal(card.getText()), scaledW - 8);
-        int viewH = Math.max(DESCRIPTION_LINE_H, limit + DESCRIPTION_LINE_H - scaledY);
-        descriptionMaxScroll =
-            Math.max(0, textLines.size() * DESCRIPTION_LINE_H - viewH);
         if(previewCode != scrolledCode)
         {
             // A different card starts at the top rather than inheriting the
@@ -2856,61 +2878,21 @@ public class EngineDuelScreen extends Screen
             scrolledCode = previewCode;
             descriptionScroll = 0;
         }
+        de.cas_ual_ty.dueldimension.clientutil.hub.CardInfoPanel.Layout at =
+            de.cas_ual_ty.dueldimension.clientutil.hub.CardInfoPanel.draw(poseStack, font, card,
+            SIDEBAR_PAD, y, panelW, Math.max(40, descriptionBottom - y),
+            descriptionScroll, -1, true);
+        // In LINES now, not pixels: the panel scrolls by line and the wheel
+        // handler simply passes its offset through. DESCRIPTION_SCROLL_STEP is
+        // 1 for the same reason.
+        descriptionMaxScroll = at.maxScroll();
         descriptionScroll = Math.min(descriptionScroll, descriptionMaxScroll);
-
-        // Where the wheel has to be for this to be the thing that scrolls.
-        // The pose is scaled, the mouse is not, so this is the one place the
-        // two spaces have to be reconciled by hand.
-        descriptionX0 = Math.round((scaledX - 2) * 0.75F);
-        descriptionY0 = Math.round(wellTop * 0.75F);
-        descriptionX1 = Math.round((scaledX + scaledW + 2) * 0.75F);
-        descriptionY1 = Math.round((limit + 3) * 0.75F);
-
-        // Clipped rather than line-skipped, so a partly visible line at either
-        // edge is cut off cleanly and the text reads as one moving column.
-        // enableScissor transforms by the current pose itself, so these are
-        // the same coordinates everything else here is drawn in.
-        poseStack.enableScissor(scaledX - 2, wellTop + 1, scaledX + scaledW + 2, limit + 3);
-        int textY = scaledY - descriptionScroll;
-        for(var line : textLines)
-        {
-            if(textY + DESCRIPTION_LINE_H > wellTop && textY < limit + DESCRIPTION_LINE_H)
-            {
-                poseStack.text(font, line, scaledX + 2, textY, 0xFFA8AEB4, false);
-            }
-            textY += DESCRIPTION_LINE_H;
-        }
-        poseStack.disableScissor();
-
-        // A thumb, and only when there is somewhere to scroll to -- otherwise
-        // every short card grows a scrollbar that does nothing.
-        if(descriptionMaxScroll > 0)
-        {
-            int trackX = scaledX + scaledW;
-            int trackTop = wellTop + 1;
-            int trackH = limit + 3 - trackTop;
-            int thumbH = Math.max(6, Math.round(
-                trackH * (float)viewH / (textLines.size() * DESCRIPTION_LINE_H)));
-            int thumbY = trackTop + Math.round((trackH - thumbH)
-                * (descriptionScroll / (float)descriptionMaxScroll));
-            // Wide enough to hit. Two pixels inside a 0.75 scale is a pixel and
-            // a half on screen, which is a bar you can see but not catch.
-            poseStack.fill(trackX, trackTop, trackX + BAR_W, trackTop + trackH, 0x50000000);
-            poseStack.fill(trackX, thumbY, trackX + BAR_W, thumbY + thumbH, 0xFFB08A2A);
-
-            // In GUI coordinates for the mouse, which does not live in the
-            // 0.75 pose everything above is drawn in.
-            barX0 = Math.round(trackX * 0.75F);
-            barY0 = Math.round(trackTop * 0.75F);
-            barX1 = Math.round((trackX + BAR_W) * 0.75F);
-            barY1 = Math.round((trackTop + trackH) * 0.75F);
-            barThumbH = Math.max(1, Math.round(thumbH * 0.75F));
-        }
-        else
-        {
-            barY1 = barY0;   // nothing to grab
-        }
-        poseStack.pose().popMatrix();
+        // The draggable thumb is gone with the layout it belonged to. The panel
+        // draws an indicator, the wheel scrolls it from anywhere on the screen,
+        // and no other card panel in the mod has ever had a bar to grab -- so
+        // this is one less thing that behaves differently here than everywhere
+        // else, which is the whole point of the shared panel.
+        barY1 = barY0;
     }
 
     /**

@@ -7,3 +7,9 @@ crash-reports/
 *.log.gz
 __pycache__/
 libs/*.jar
+
+# Rust build output for the sprite baker: 3.6 GB of intermediates.
+tools/spritebaker/target/
+
+# Timestamped local sleeve backups, not source.
+tools/backup/

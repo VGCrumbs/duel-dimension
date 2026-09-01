@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_hu_li_the_jewel_mikanko",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_hu_li_the_jewel_mikanko"
+  }
+}

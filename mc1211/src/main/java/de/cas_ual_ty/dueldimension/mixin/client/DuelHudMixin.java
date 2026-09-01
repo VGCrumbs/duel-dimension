@@ -85,6 +85,37 @@ public class DuelHudMixin
     }
 
     /**
+     * The crosshair, while a duel is being played rather than looked around.
+     * <p>
+     * A duellist points at zones with the board pointer, not down the middle of
+     * the screen, so the reticle sits over the mat saying nothing. It comes back
+     * while the freelook key is held, because that IS the mode where the player
+     * is aiming the view by hand and the one thing a crosshair is for.
+     * <p>
+     * {@link de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds#freelook()}
+     * rather than a second read of the key: that field is written by the one
+     * place that decides whether the duel is letting freelook work, so the
+     * crosshair and the pointer cannot come to different conclusions about
+     * whether the player is looking around.
+     * <p>
+     * 26.2 has carried this since it was written; 1.21.1 did not, and the
+     * reticle sat on the board for the whole port. The method is
+     * {@code renderCrosshair} here against {@code extractCrosshair} there, which
+     * is the same rename every other draw call in this class took.
+     */
+    @Inject(method = "renderCrosshair(Lnet/minecraft/client/gui/GuiGraphics;"
+        + "Lnet/minecraft/client/DeltaTracker;)V", at = @At("HEAD"), cancellable = true)
+    private void dueldimension$hideCrosshair(GuiGraphics graphics,
+        net.minecraft.client.DeltaTracker delta, CallbackInfo callback)
+    {
+        if(DuelSuppression.inDuel()
+            && !de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds.freelook())
+        {
+            callback.cancel();
+        }
+    }
+
+    /**
      * The experience bar, through the game's own answer for not having one.
      * <p>
      * There is no method to cancel: the bar is drawn inline among the hotbar and

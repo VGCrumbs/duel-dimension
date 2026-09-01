@@ -59,7 +59,7 @@ public class CardSetSpecialRenderer implements SpecialModelRenderer<CardSet>
         if(set != null && set != CardSet.DUMMY)
         {
             ResourceLocation art = CardImageManager.getTextureCard(
-                set.getInfoImageResourceLocation(), ClientProxy.activeSetInfoImageSize);
+                DuelTextures.setIconSmooth(set), ClientProxy.activeSetInfoImageSize);
             front = art == null || art == DuelTextures.UNKNOWN ? back : art;
         }
 

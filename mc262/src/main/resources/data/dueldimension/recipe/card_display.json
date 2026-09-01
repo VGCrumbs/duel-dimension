@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "GGG",
+    "IPI",
+    "III"
+  ],
+  "key": {
+    "G": "minecraft:glass",
+    "I": "minecraft:iron_ingot",
+    "P": "minecraft:paper"
+  },
+  "result": {
+    "id": "dueldimension:card_display"
+  }
+}

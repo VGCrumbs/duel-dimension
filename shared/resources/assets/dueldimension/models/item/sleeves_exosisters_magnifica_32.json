@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_exosisters_magnifica",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_exosisters_magnifica"
+  }
+}

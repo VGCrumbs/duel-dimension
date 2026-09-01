@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_imsety_glory_of_horus",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_imsety_glory_of_horus"
+  }
+}

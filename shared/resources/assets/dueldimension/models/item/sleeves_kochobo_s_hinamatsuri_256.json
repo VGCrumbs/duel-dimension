@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_kochobo_s_hinamatsuri",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_kochobo_s_hinamatsuri"
+  }
+}

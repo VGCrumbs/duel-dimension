@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_ragnaraika_stag_sovereign",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_ragnaraika_stag_sovereign"
+  }
+}

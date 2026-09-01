@@ -5,6 +5,7 @@ import com.mojang.math.Axis;
 import de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -66,9 +67,20 @@ public final class ModelHologram
         Vec3 feet, float height, ModelMesh mesh, Direction look, int tint, String animation,
         float elevation, float turn, float offsetX, float offsetZ, float seconds)
     {
-        submit(poseStack, collector, camera, feet, height, mesh, look.toYRot(), tint, animation,
-            elevation, turn, offsetX, offsetZ, seconds);
+        submit(poseStack, collector, camera, feet, height, mesh, look, tint, animation,
+            elevation, turn, offsetX, offsetZ, seconds, null);
     }
+
+    /** The same, lit by the world around it. */
+    public static void submit(PoseStack poseStack, SubmitNodeCollector collector, Vec3 camera,
+        Vec3 feet, float height, ModelMesh mesh, Direction look, int tint, String animation,
+        float elevation, float turn, float offsetX, float offsetZ, float seconds,
+        ModelLight light)
+    {
+        submit(poseStack, collector, camera, feet, height, mesh, look.toYRot(), tint,
+            animation, elevation, turn, offsetX, offsetZ, seconds, light);
+    }
+
 
     /** The looping form, for anything with no battle to be part of. */
     public static void submit(PoseStack poseStack, SubmitNodeCollector collector, Vec3 camera,
@@ -105,12 +117,252 @@ public final class ModelHologram
         Vec3 feet, float height, ModelMesh mesh, float yaw, int tint, String animation,
         float elevation, float turn, float offsetX, float offsetZ, float seconds)
     {
+        submit(poseStack, collector, camera, feet, height, mesh, yaw, tint, animation,
+            elevation, turn, offsetX, offsetZ, seconds, null);
+    }
+
+    /**
+     * @param light the world's light around this monster, or null to draw it
+     *              at full brightness as a hologram used to be. Built during
+     *              extraction, because that is where a renderer may look at
+     *              the world -- see ModelLight.
+     */
+    public static void submit(PoseStack poseStack, SubmitNodeCollector collector, Vec3 camera,
+        Vec3 feet, float height, ModelMesh mesh, float yaw, int tint, String animation,
+        float elevation, float turn, float offsetX, float offsetZ, float seconds,
+        ModelLight light)
+    {
+        submit(poseStack, collector, camera, feet, height, mesh, yaw, tint, animation,
+            elevation, turn, offsetX, offsetZ, seconds, light, null, null);
+    }
+
+    /**
+     * @param skin which parts to draw and what to draw them with: given a part's
+     *             index it returns the texture to use, or null to skip that part
+     *             entirely. Null for the whole thing painted as it was exported,
+     *             which is what a monster wants.
+     *             <p>
+     *             This exists for the player characters, where one model file
+     *             holds every body, hairstyle, face and duel disk on a shared
+     *             skeleton and a character is four of them wearing colours
+     *             chosen at runtime. Selecting and re-skinning here rather than
+     *             in a renderer of its own keeps ONE skinning loop: the
+     *             alternative was a second copy of the vertex path, which is the
+     *             part of this file that is least safe to have two of.
+     */
+    public static void submit(PoseStack poseStack, SubmitNodeCollector collector, Vec3 camera,
+        Vec3 feet, float height, ModelMesh mesh, float yaw, int tint, String animation,
+        float elevation, float turn, float offsetX, float offsetZ, float seconds,
+        ModelLight light, java.util.function.IntFunction<ResourceLocation> skin)
+    {
+        submit(poseStack, collector, camera, feet, height, mesh, yaw, tint, animation,
+            elevation, turn, offsetX, offsetZ, seconds, light, skin, null, null);
+    }
+
+    /**
+     * @param head one joint turned on top of the animation, or null. For a
+     *             player character's neck, which follows where its player is
+     *             looking while the clip underneath carries on walking.
+     */
+    public static void submit(PoseStack poseStack, SubmitNodeCollector collector, Vec3 camera,
+        Vec3 feet, float height, ModelMesh mesh, float yaw, int tint, String animation,
+        float elevation, float turn, float offsetX, float offsetZ, float seconds,
+        ModelLight light, java.util.function.IntFunction<ResourceLocation> skin,
+        ModelSkeleton.Turn head)
+    {
+        submit(poseStack, collector, camera, feet, height, mesh, yaw, tint, animation,
+            elevation, turn, offsetX, offsetZ, seconds, light, skin, null,
+            head == null ? null : new ModelSkeleton.Turn[] {head}, null);
+    }
+
+    /**
+     * @param under the clip a ONE-SHOT leans out of and settles back into, or
+     *              null for the model's idle.
+     *              <p>
+     *              A monster has one thing it does when it is not swinging, so
+     *              the idle is the right answer and the parameter is not needed.
+     *              A player character has three -- standing, walking, running --
+     *              and blending a punch out of the idle while its legs are in
+     *              the middle of a stride is a visible jolt in both directions.
+     */
+    public static void submit(PoseStack poseStack, SubmitNodeCollector collector, Vec3 camera,
+        Vec3 feet, float height, ModelMesh mesh, float yaw, int tint, String animation,
+        float elevation, float turn, float offsetX, float offsetZ, float seconds,
+        ModelLight light, java.util.function.IntFunction<ResourceLocation> skin,
+        ModelSkeleton.Turn head, String under)
+    {
+        submit(poseStack, collector, camera, feet, height, mesh, yaw, tint, animation,
+            elevation, turn, offsetX, offsetZ, seconds, light, skin, under,
+            head == null ? null : new ModelSkeleton.Turn[] {head}, null, false);
+    }
+
+    /**
+     * @param turns joints turned on top of the pose, in order; null for none
+     * @param limb  which branch a ONE-SHOT is confined to, by the name of the
+     *              node it hangs from -- null for the whole body.
+     *              <p>
+     *              A monster's attack is its whole self, so a monster passes
+     *              null and nothing here applies. A duellist throwing a punch is
+     *              doing one thing with an arm and another with their legs, and
+     *              a full-body cross-fade cannot express that: the punch's own
+     *              legs are standing still, so blending it in stops the walk
+     *              dead for a third of a second and then starts it again.
+     */
+    public static void submit(PoseStack poseStack, SubmitNodeCollector collector, Vec3 camera,
+        Vec3 feet, float height, ModelMesh mesh, float yaw, int tint, String animation,
+        float elevation, float turn, float offsetX, float offsetZ, float seconds,
+        ModelLight light, java.util.function.IntFunction<ResourceLocation> skin, String under,
+        ModelSkeleton.Turn[] turns, String limb)
+    {
+        submit(poseStack, collector, camera, feet, height, mesh, yaw, tint, animation,
+            elevation, turn, offsetX, offsetZ, seconds, light, skin, under, turns, limb,
+            false, null);
+    }
+
+    /**
+     * @param backwards run the LOOPING clip from its end towards its start.
+     *                  <p>
+     *                  A walk cycle played forwards while its owner is going the
+     *                  other way is the moonwalk, and it reads as one. The DS has
+     *                  no backwards walk and never needed one -- its duellists
+     *                  are driven by a d-pad and turn to face wherever they are
+     *                  going. Minecraft's do not: strafing and walking backwards
+     *                  keep the body facing forwards, so the same cycle has to
+     *                  serve both directions, and the honest way to make it do
+     *                  that is to run it the other way round.
+     *                  <p>
+     *                  Only the looping path. A one-shot has a beginning and an
+     *                  end that mean something.
+     */
+    public static void submit(PoseStack poseStack, SubmitNodeCollector collector, Vec3 camera,
+        Vec3 feet, float height, ModelMesh mesh, float yaw, int tint, String animation,
+        float elevation, float turn, float offsetX, float offsetZ, float seconds,
+        ModelLight light, java.util.function.IntFunction<ResourceLocation> skin, String under,
+        ModelSkeleton.Turn[] turns, String limb, boolean backwards)
+    {
+        submit(poseStack, collector, camera, feet, height, mesh, yaw, tint, animation,
+            elevation, turn, offsetX, offsetZ, seconds, light, skin, under, turns, limb,
+            backwards, null, null);
+    }
+
+    /**
+     * Something hung off a bone: a sword in a hand, and nothing else so far.
+     * <p>
+     * Called from INSIDE, with the pose stack already carrying everything that
+     * puts the model where it is -- the position, the facing, the scale and the
+     * lift onto its own feet. A caller cannot rebuild that frame from outside
+     * without repeating all four, and repeating them is how the two drift.
+     */
+    public interface Attached
+    {
+        void draw(PoseStack pose, ModelSkeleton skeleton, float[] bones);
+    }
+
+    /** @param attached drawn in the model's own frame once it is posed */
+    public static void submit(PoseStack poseStack, SubmitNodeCollector collector, Vec3 camera,
+        Vec3 feet, float height, ModelMesh mesh, float yaw, int tint, String animation,
+        float elevation, float turn, float offsetX, float offsetZ, float seconds,
+        ModelLight light, java.util.function.IntFunction<ResourceLocation> skin, String under,
+        ModelSkeleton.Turn[] turns, String limb, boolean backwards, Attached attached)
+    {
+        submit(poseStack, collector, camera, feet, height, mesh, yaw, tint, animation,
+            elevation, turn, offsetX, offsetZ, seconds, light, skin, under, turns, limb,
+            backwards, attached, null, 1F);
+    }
+
+    /**
+     * Leaving one looping clip for another.
+     *
+     * @param clip the clip being left, still running on its own clock
+     * @param mix  0 at the moment of the change, 1 once the new one has it
+     */
+    public record Fade(String clip, float mix)
+    {
+    }
+
+    /**
+     * @param fade a cross-fade out of the clip that was playing, or null to cut.
+     *             <p>
+     *             A monster changes what it is doing when something happens to
+     *             it, and the one-shot path below already eases those. A player
+     *             changes constantly -- every step started and every step
+     *             stopped -- and cutting between a run and a stand is a visible
+     *             snap several times a minute.
+     */
+    public static void submit(PoseStack poseStack, SubmitNodeCollector collector, Vec3 camera,
+        Vec3 feet, float height, ModelMesh mesh, float yaw, int tint, String animation,
+        float elevation, float turn, float offsetX, float offsetZ, float seconds,
+        ModelLight light, java.util.function.IntFunction<ResourceLocation> skin, String under,
+        ModelSkeleton.Turn[] turns, String limb, boolean backwards, Attached attached,
+        Fade fade)
+    {
+        submit(poseStack, collector, camera, feet, height, mesh, yaw, tint, animation,
+            elevation, turn, offsetX, offsetZ, seconds, light, skin, under, turns, limb,
+            backwards, attached, fade, 1F);
+    }
+
+    /**
+     * @param reach how far into the limb clip the overlay is allowed to go, 1
+     *              being all the way. Only meaningful with {@code limb} -- it
+     *              scales the mask's blend, so a lighter swing is the same
+     *              motion arrested rather than a different one.
+     */
+    public static void submit(PoseStack poseStack, SubmitNodeCollector collector, Vec3 camera,
+        Vec3 feet, float height, ModelMesh mesh, float yaw, int tint, String animation,
+        float elevation, float turn, float offsetX, float offsetZ, float seconds,
+        ModelLight light, java.util.function.IntFunction<ResourceLocation> skin, String under,
+        ModelSkeleton.Turn[] turns, String limb, boolean backwards, Attached attached,
+        Fade fade, float reach)
+    {
+        submit(poseStack, collector, camera, feet, height, mesh, yaw, tint, animation,
+            elevation, turn, offsetX, offsetZ, seconds, light, skin, under, turns, limb,
+            backwards, attached, fade, reach, 1F);
+    }
+
+    /**
+     * @param rate how fast a LOOPING clip runs, 1 being its authored speed.
+     *             <p>
+     *             For a cycle that has to keep company with something outside
+     *             itself. A monster breathes at whatever rate it was drawn at
+     *             and wants 1; a duellist's walk has to land its steps near
+     *             where Minecraft's own limb swing lands them, and the DS
+     *             authored that cycle for a character who moves at the DS's
+     *             speed rather than at 4.317 blocks a second.
+     *             <p>
+     *             Ignored on the one-shot path, which is driven by an explicit
+     *             {@code seconds} and has a beginning to be measured from.
+     */
+    public static void submit(PoseStack poseStack, SubmitNodeCollector collector, Vec3 camera,
+        Vec3 feet, float height, ModelMesh mesh, float yaw, int tint, String animation,
+        float elevation, float turn, float offsetX, float offsetZ, float seconds,
+        ModelLight light, java.util.function.IntFunction<ResourceLocation> skin, String under,
+        ModelSkeleton.Turn[] turns, String limb, boolean backwards, Attached attached,
+        Fade fade, float reach, float rate)
+    {
         if(mesh == null || mesh.modelHeight() <= 0F)
         {
             return;
         }
-        float scale = height / mesh.modelHeight();
-        float[] foot = mesh.footOffset();
+        // A NEGATIVE HEIGHT MEANS "AS AUTHORED", and it is the player
+        // characters that need it.
+        //
+        // Everything else here is a monster: a rip in whatever units its artist
+        // used, so it is measured and scaled to fit. That measurement is the
+        // WHOLE mesh, which for a monster is the monster. A character file is
+        // sixty parts -- fifteen bodies, fifteen hairstyles, fifteen faces,
+        // fifteen duel disks, all in one file on one skeleton -- so its union
+        // spans y = -1.01 to 2.00 and measuring it scales the duellist to two
+        // thirds of their size and lifts them two thirds of a block off the
+        // ground. Which is exactly what it did.
+        //
+        // The exporter already put them in metres, feet at the origin, two
+        // blocks tall (see export_glb.py, PLAYER_HEIGHT). So the fixed frame
+        // this needs is the one it was exported in, and it also settles the
+        // rule that a hat must not resize the wearer: the frame does not depend
+        // on which four of the sixty are being drawn.
+        boolean authored = height < 0F;
+        float scale = authored ? 1F : height / mesh.modelHeight();
+        float[] foot = authored ? new float[] {0F, 0F, 0F} : mesh.footOffset();
 
         // Posed once for the whole model, not once per part: every part is
         // driven by the same skeleton at the same instant, and posing per part
@@ -139,14 +391,68 @@ public final class ModelHologram
         float[] posed = null;
         if(skeleton != null)
         {
-            int idle = skeleton.idleIndex();
-            float idleAt = timeIn(skeleton, idle, feet);
+            int idle = under == null ? skeleton.idleIndex() : skeleton.indexOf(under);
+            if(idle < 0)
+            {
+                idle = skeleton.idleIndex();
+            }
+            // feet MINUS camera, not feet: the phase key must not change
+            // between frames, and this is the position the caller measured in
+            // the frame they measured it in. A board zone is fixed relative to
+            // the board, so monsters keep their stagger; a player character
+            // passes the camera for both and so gets zero, which is the only
+            // stable answer for something that moves.
+            Vec3 phase = feet.subtract(camera);
+            float idleAt = timeIn(skeleton, idle, phase);
             int at = index;
-            float when = once ? seconds : idleAt;
+            // A LOOPING CLIP RUNS ON ITS OWN LENGTH, not on the idle's.
+            //
+            // This was `idleAt`, and for a monster it was invisibly right: the
+            // looping path only ever reaches here with `index` already fallen
+            // back to the idle, so the two were the same number. A player
+            // character loops a walk and a run as well, and those have their own
+            // durations -- and it has no `slot_0` at all, so its "idle" is
+            // whichever clip happens to be first in the file. So a two-second
+            // idle was being sampled on a two-thirds-of-a-second clock: a third
+            // of the animation, on repeat, with a jump where the rest should
+            // have been.
+            //
+            // `idleAt` is still what the one-shot blends lean out of and back
+            // into below, which is the case it was written for.
+            float when = once ? seconds : timeIn(skeleton, index, phase, rate);
+            if(backwards && !once && index >= 0 && index < skeleton.animations().size())
+            {
+                // Mirrored about the clip's length rather than negated, so it
+                // stays inside the samplers' range and the loop still closes on
+                // the duplicate final key the exporter writes.
+                float span = skeleton.animations().get(index).duration();
+                if(span > 0F)
+                {
+                    when = span - when;
+                }
+            }
             int from = -1;
             float fromWhen = 0F;
             float mix = 1F;
-            if(once)
+            int[] only = null;
+            if(once && limb != null)
+            {
+                // Laid OVER the base clip rather than cross-faded with it: `at`
+                // is the punch, `from` is whatever the legs are already doing,
+                // and the mask keeps the punch off them. The ramp is only there
+                // so the arm arrives and leaves rather than snapping.
+                float clip = skeleton.animations().get(index).duration();
+                only = skeleton.branch(limb);
+                at = index;
+                when = seconds;
+                from = idle;
+                fromWhen = idleAt;
+                mix = seconds < ModelSkeleton.BLEND_SECONDS
+                    ? seconds / ModelSkeleton.BLEND_SECONDS
+                    : Math.clamp(1F - (seconds - clip) / ModelSkeleton.BLEND_SECONDS, 0F, 1F);
+                mix *= Math.clamp(reach, 0F, 1F);
+            }
+            else if(once)
             {
                 float clip = skeleton.animations().get(index).duration();
                 if(seconds > clip)
@@ -171,7 +477,22 @@ public final class ModelHologram
                     mix = seconds / ModelSkeleton.BLEND_SECONDS;
                 }
             }
-            posed = ModelSkeleton.flatten(skeleton.pose(at, when, from, fromWhen, mix));
+            if(!once && fade != null && fade.mix() < 1F)
+            {
+                // Leaving one loop for another. Both keep their own clocks --
+                // the walk carries on stepping while it fades out, which is
+                // what stops the legs from freezing mid-stride and then
+                // sliding to a stand.
+                int leaving = skeleton.indexOf(fade.clip());
+                if(leaving >= 0 && leaving != at)
+                {
+                    from = leaving;
+                    fromWhen = timeIn(skeleton, leaving, phase);
+                    mix = Math.clamp(fade.mix(), 0F, 1F);
+                }
+            }
+            posed = ModelSkeleton.flatten(
+                skeleton.pose(at, when, from, fromWhen, mix, only, turns));
         }
         // Settled into a final local: the geometry lambdas below capture it, and
         // a variable written inside a branch is not one they may close over.
@@ -220,9 +541,11 @@ public final class ModelHologram
         // the models apart, and the depth write it depended on is the same
         // thing that was hiding the duelist standing behind the monster.
         boolean blend = (tint >>> 24) < 0xFF;
-        for(ModelMesh.Part part : mesh.parts())
+        for(int slot = 0; slot < mesh.parts().size(); slot++)
         {
-            if(part.texture() == null)
+            ModelMesh.Part part = mesh.parts().get(slot);
+            ResourceLocation painted = skin == null ? part.texture() : skin.apply(slot);
+            if(painted == null)
             {
                 continue;
             }
@@ -255,8 +578,7 @@ public final class ModelHologram
             // pixel. Only the half-there ones take the hologram type, which
             // writes no depth and so hides nothing.
             collector.submitCustomGeometry(poseStack,
-                blend ? ModelMesh.hologram(part.texture())
-                    : ModelMesh.typeFor(part.texture(), false),
+                blend ? ModelMesh.hologram(painted) : ModelMesh.typeFor(painted, false),
                 (unused, buffer) ->
                 {
                     // Skinned straight into the vertex, with no posed copy of the
@@ -269,35 +591,55 @@ public final class ModelHologram
                     //
                     // The mesh is de-indexed triangles: three vertices per face,
                     // one after another. Every stock entity render type here is
-                    // VertexFormat.Mode.QUADS, so a flat loop handing it one
-                    // vertex at a time has it stitch corners 0-3 into a quad --
-                    // which spans the whole of the first triangle and one corner
-                    // of the second. The result is not a slightly wrong monster,
-                    // it is polygon soup, and that is exactly what it drew.
+                    // Three vertices per triangle, because the render type is
+                    // TRIANGLES now.
                     //
-                    // So each triangle is emitted as a DEGENERATE quad, its last
-                    // corner repeated: 0, 1, 2, 2. The fourth vertex has zero
-                    // area and rasterises to nothing.
-                    //
-                    // This is the cost 26.2 avoids by building its own TRIANGLES
-                    // pipeline, and the class note above already spells out what
-                    // it buys: under Iris, one face normal is computed per group
-                    // of four vertices and written over all four, so an artist's
-                    // smooth per-vertex normals are flattened and the creature
-                    // renders faceted. Without Iris, vanilla reads the supplied
-                    // normals and the shading is as exported. Faceted under a
-                    // shaderpack is a real loss; soup was not a trade.
+                    // This used to emit a DEGENERATE quad -- 0, 1, 2, 2 -- since
+                    // every vanilla entity type is QUADS and feeding it triangles
+                    // one vertex at a time stitched corners across two of them
+                    // into polygon soup. The repeat avoided that and cost the
+                    // shading: under Iris one face normal is computed per group
+                    // of four vertices and written over all four, so the smooth
+                    // per-vertex normals were flattened and every polygon shaded
+                    // as a facet. ModelMesh.typeFor now builds a triangle-topology
+                    // type, so neither the soup nor the flattening applies.
                     for(int triangle = 0; triangle + 2 < vertices; triangle += 3)
                     {
-                        for(int corner = 0; corner < 4; corner++)
+                        for(int corner = 0; corner < 3; corner++)
                         {
-                            emit(buffer, pose, triangle + Math.min(corner, 2),
+                            emit(buffer, pose, triangle + corner,
                                 positions, normals, uvs, joints, weights, bones,
-                                tint, point, direction);
+                                tint, point, direction, light, camera, false);
+                        }
+                        // AND THE SAME TRIANGLE BACKWARDS, with its normal
+                        // turned round.
+                        //
+                        // These models are rips: a cape or a fin is one sheet
+                        // of triangles with nothing behind it, so culling
+                        // leaves a hole and NOT culling shows the sheet's back
+                        // -- which vanilla lights with the normal it was given,
+                        // pointing away from the viewer, so the surface goes
+                        // dark from one side only. Neither is right on its own.
+                        //
+                        // Drawing the reverse face explicitly gives every sheet
+                        // a correctly-lit front from either side, which is what
+                        // "double-sided" has to mean when the shader will not
+                        // flip a normal for you. Culling is back on, so a
+                        // closed solid still discards the copy it cannot see.
+                        for(int corner = 2; corner >= 0; corner--)
+                        {
+                            emit(buffer, pose, triangle + corner,
+                                positions, normals, uvs, joints, weights, bones,
+                                tint, point, direction, light, camera, true);
                         }
                     }
                 });
         }
+        if(attached != null && skeleton != null && bones != null)
+        {
+            attached.draw(poseStack, skeleton, bones);
+        }
+
         poseStack.popPose();
     }
 
@@ -312,7 +654,7 @@ public final class ModelHologram
     private static void emit(com.mojang.blaze3d.vertex.VertexConsumer buffer,
         PoseStack.Pose pose, int i, float[] positions, float[] normals, float[] uvs,
         int[] joints, float[] weights, float[] bones, int tint,
-        float[] point, float[] direction)
+        float[] point, float[] direction, ModelLight light, Vec3 camera, boolean flip)
     {
                         float px = positions[i * 3];
                         float py = positions[i * 3 + 1];
@@ -336,13 +678,65 @@ public final class ModelHologram
                             ny = direction[1];
                             nz = direction[2];
                         }
+                        // A DEGENERATE NORMAL IS NOT RARE HERE, and it does not
+                        // fail quietly -- it fails as NaN.
+                        //
+                        // Across the 686 models installed, 87,090 normals are
+                        // exactly zero, in 676 of them. Handed on, the pose's
+                        // transformNormal normalises by 1/sqrt(0), so every
+                        // component becomes NaN; Java then converts NaN to 0
+                        // packing the byte normal, and a zero normal takes no
+                        // diffuse light at all. The vertex shades black and the
+                        // rasteriser spreads that across every triangle using
+                        // it, which reads as blotches on a surface that should
+                        // have been smooth.
+                        //
+                        // Up, because it has to be SOMETHING finite and a zero
+                        // normal carries no direction to recover. The blend can
+                        // also cancel to nothing when a vertex is shared by
+                        // bones facing opposite ways, so this is checked after
+                        // skinning rather than on the source.
+                        if(nx * nx + ny * ny + nz * nz < 1.0e-12F)
+                        {
+                            nx = 0F;
+                            ny = 1F;
+                            nz = 0F;
+                        }
+                        if(flip)
+                        {
+                            // The back copy of this triangle. Its winding is
+                            // reversed by the caller so it faces the other way;
+                            // the normal has to turn with it or the surface
+                            // would be lit as though seen from the front while
+                            // showing its back.
+                            nx = -nx;
+                            ny = -ny;
+                            nz = -nz;
+                        }
                         float u = uvs[i * 2];
                         float v = uvs[i * 2 + 1];
                         buffer.addVertex(pose, px, py, pz)
                             .setColor(tint)
                             .setUv(u, v)
                             .setOverlay(OverlayTexture.NO_OVERLAY)
-                            .setLight(FULL_BRIGHT)
+                            // Per vertex, from the world's own light around
+                            // this monster. The vertex is in the model's posed
+                            // local space here, so it goes back through the
+                            // pose to find where in the WORLD it actually is --
+                            // which is the whole point: a dragon's near side and
+                            // far side are metres apart and can be lit
+                            // differently.
+                            .setLight(light == null ? FULL_BRIGHT
+                                : light.at(
+                                    pose.pose().m00() * px + pose.pose().m10() * py
+                                        + pose.pose().m20() * pz + pose.pose().m30()
+                                        + camera.x,
+                                    pose.pose().m01() * px + pose.pose().m11() * py
+                                        + pose.pose().m21() * pz + pose.pose().m31()
+                                        + camera.y,
+                                    pose.pose().m02() * px + pose.pose().m12() * py
+                                        + pose.pose().m22() * pz + pose.pose().m32()
+                                        + camera.z))
                             .setNormal(pose, nx, ny, nz);
     }
 
@@ -359,6 +753,42 @@ public final class ModelHologram
      * clock is shared; the phase is not. See {@link #offsetAt}.
      */
     private static float timeIn(ModelSkeleton skeleton, int index, Vec3 at)
+    {
+        return timeIn(skeleton, index, at, 1F);
+    }
+
+    /**
+     * How far into a looping clip a PLAYER CHARACTER is, right now.
+     * <p>
+     * The same number the renderer poses with, exposed because something other
+     * than the renderer needs it: a footstep has to be played when the foot
+     * lands, and the sound is not drawn. Sharing the function rather than
+     * reproducing the arithmetic is the whole point -- two clocks that agree
+     * today would be one refactor away from the sound drifting off the picture,
+     * and a few milliseconds of that is audible where the same error in a
+     * monster's breathing would not be.
+     * <p>
+     * A character's phase offset is zero by construction: {@code offsetAt} is
+     * fed {@code feet - camera}, and a player passes the same vector for both.
+     * See the note there.
+     */
+    public static float loopPhase(ModelSkeleton skeleton, int index, float rate)
+    {
+        return skeleton == null ? 0F : timeIn(skeleton, index, Vec3.ZERO, rate);
+    }
+
+    /**
+     * The same, run faster or slower than the clip was authored at.
+     * <p>
+     * <b>The SPAN is scaled, not the clock.</b> Multiplying the nanosecond
+     * count by the rate is the obvious way and it throws precision away: the
+     * clock is already around 1e18 and a double carries 53 bits, so the product
+     * is quantised to hundreds of nanoseconds and the wrap stops being exact.
+     * Shortening the period instead keeps the modulo in whole nanoseconds --
+     * which is the thing the note below went to some trouble to get right --
+     * and the result is scaled back into the clip's real range afterwards.
+     */
+    private static float timeIn(ModelSkeleton skeleton, int index, Vec3 at, float rate)
     {
         if(index < 0 || index >= skeleton.animations().size())
         {
@@ -386,13 +816,17 @@ public final class ModelHologram
         // The modulo is integer, so it stays exact however long the machine has
         // been up — reducing first and dividing after keeps the answer inside
         // the range where a float still has resolution to spare.
-        long span = (long)(duration * 1.0e9D);
+        float speed = rate > 0F ? rate : 1F;
+        long span = (long)(duration / speed * 1.0e9D);
         if(span <= 0L)
         {
             return 0F;
         }
+        // Back into the clip's own range: the phase was measured against a
+        // period shortened by `speed`, so multiplying by it undoes exactly that
+        // and lands inside [0, duration) whatever the rate is.
         return (float)(((net.minecraft.Util.getNanos() + offsetAt(at, span)) % span)
-            / 1.0e9D);
+            / 1.0e9D * speed);
     }
 
     /**

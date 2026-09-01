@@ -102,7 +102,8 @@ public class SleevePickerScreen extends Screen
      * Every sleeve ships all seven, so the same list serves them all; see
      * {@link #textureSizeFor}.
      */
-    private static final int[] SIZES = { 16, 32, 64, 128, 256, 512, 1024 };
+    // Stops at CardSleevesType.MAX_SIZE, which is what the catalogue ships.
+    private static final int[] SIZES = { 16, 32, 64, 128, 256, 512 };
 
     private final Screen parent;
 
@@ -226,7 +227,7 @@ public class SleevePickerScreen extends Screen
         // Which deck is being dressed, because the picker is opened from an
         // editor that is on one deck of several.
         String title = font.plainSubstrByWidth(deck.name(), panelW - PAD * 2 - 100);
-        poseStack.text(font, title, left + PAD, top + PAD, 0xFFF4D089, true);
+        poseStack.text(font, title, left + PAD, top + PAD, MenuInk.title(), MenuInk.shadow());
 
         // Counted against what a player can actually end up holding, not against
         // every constant in the enum. Three sleeves are supporters' rewards that
@@ -246,7 +247,7 @@ public class SleevePickerScreen extends Screen
         int owned = held.size();
         String count = owned + " / " + obtainable + " owned";
         poseStack.text(font, count, left + panelW - PAD - font.width(count), top + PAD,
-            0xFFC2C9D6, true);
+            MenuInk.body(), MenuInk.shadow());
 
         // One recess behind the whole grid rather than a frame per empty cell,
         // as the editor's own grids do.
@@ -299,7 +300,7 @@ public class SleevePickerScreen extends Screen
         poseStack.text(font, font.plainSubstrByWidth("Wearing:  " + nameOf(worn).getString(),
                 left + panelW - PAD - wearingX),
             wearingX, top + panelH - PAD - 20 + (20 - font.lineHeight) / 2 + 1,
-            0xFFC2C9D6, true);
+            MenuInk.body(), MenuInk.shadow());
 
         super.extractRenderState(poseStack, mouseX, mouseY, partialTick);
 

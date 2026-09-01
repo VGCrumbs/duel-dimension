@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_pumpking_the_king_of_grave_ghosts",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_pumpking_the_king_of_grave_ghosts"
+  }
+}

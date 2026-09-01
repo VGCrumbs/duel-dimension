@@ -1,5 +1,6 @@
 package de.cas_ual_ty.dueldimension.clientutil;
 
+import de.cas_ual_ty.dueldimension.clientutil.hub.MenuInk;
 import com.mojang.blaze3d.vertex.PoseStack;
 import de.cas_ual_ty.dueldimension.DdDatabase;
 import de.cas_ual_ty.dueldimension.DdSounds;
@@ -63,6 +64,27 @@ public class DuelAnimations
     /** MSG_SET has no wait in the reference: sound, then the slide arrives. */
     private static final long SET_MS = frames(5);
     private static final long SUMMON_MS = frames(11 + 30);
+    /**
+     * A flip summon, at HALF the reference's pace, and the deviation is the
+     * point rather than an oversight.
+     * <p>
+     * EDOPro holds MSG_FLIPSUMMONING for the same 11 + 30 frames as
+     * MSG_SUMMONING, which is why this shared {@link #SUMMON_MS} until now. The
+     * two numbers were never paying for the same thing, though: there a summon
+     * spends those frames on a CARD SPLASH -- the announce art thrown up over
+     * the board -- and this mod has no splash, so a summon's 683ms is a pause
+     * with a sound in it while a flip's is a card physically turning over.
+     * <p>
+     * A turn-over reads in half that. It is one {@code |cos|} narrow-and-open
+     * with a quarter turn on top ({@code renderFlips}), and the eye has finished
+     * with it well before the clock is; the rest was the board sitting still
+     * with nothing left to show. Anything that WAITS on the animation -- the
+     * queue behind it, most of all -- gets that time back.
+     * <p>
+     * Derived from SUMMON_MS rather than written as {@code frames(20)}, so it
+     * stays half of whatever the reference number is if that ever moves.
+     */
+    private static final long FLIP_MS = SUMMON_MS / 2;
     private static final long DRAW_MS = frames(5);
     /**
      * NUM_RED is a 496 ms LP-counting clip. Damage owns this rounded half
@@ -159,6 +181,15 @@ public class DuelAnimations
     private final List<Playing> tosses = new ArrayList<>();
     /** Cards breaking apart where they were destroyed. */
     private final List<Playing> shatters = new ArrayList<>();
+
+    /**
+     * Tributes in flight, kept apart from {@link #shatters}.
+     * <p>
+     * A separate list rather than a flag on the shatter, because the two share
+     * nothing but their timing: one breaks a card into pieces of itself, the
+     * other lifts it away as light.
+     */
+    private final List<Playing> releases = new ArrayList<>();
 
     /**
      * One entry in the playback queue: either an event to animate, or a commit
@@ -258,7 +289,7 @@ public class DuelAnimations
             0, y - 18, screenWidth, y - 18, screenWidth, y + cardH + 8, 0, y + cardH + 8),
             0x88000000);
         text(poseStack, collector, caption, screenWidth / 2F - font.width(caption) / 2F,
-            y - 14, 0xFFF4D089, true);
+            y - 14, MenuInk.title(), MenuInk.shadow());
 
         for(Playing playing : reveals)
         {
@@ -465,8 +496,14 @@ public class DuelAnimations
             case SET -> SET_MS;
             // MSG_POS_CHANGE holds 11 frames in duelclient.cpp.
             case POSITION -> POSITION_MS;
-            case SUMMON, SPECIAL_SUMMON, FLIP -> SUMMON_MS;
+            case SUMMON, SPECIAL_SUMMON -> SUMMON_MS;
+            // Split off from the summons above; see FLIP_MS.
+            case FLIP -> FLIP_MS;
             case DESTROY -> SHATTER_MS;
+            // The same span as a shatter: it replaces one in the sequence, and
+            // a different length would change the pacing of every summon that
+            // follows a tribute.
+            case TRIBUTE -> SHATTER_MS;
             case DRAW -> DRAW_MS;
             case ACTIVATE, CHAINING -> CHAIN_MS;
             case BECOME_TARGET -> TARGET_MS;
@@ -534,6 +571,7 @@ public class DuelAnimations
         switch(event.kind())
         {
             case DESTROY -> shatters.add(new Playing(event, now, duration));
+            case TRIBUTE -> releases.add(new Playing(event, now, duration));
             // A set is announced, not slid: MSG_SET has no wait in the
             // reference and the MSG_MOVE that follows carries the card into
             // its zone. Giving SET a slide of its own drew the same card
@@ -576,6 +614,7 @@ public class DuelAnimations
             case DAMAGE -> DdSounds.DAMAGE;
             case RECOVER -> DdSounds.GAIN_LP;
             case DESTROY -> DdSounds.DESTROYED;
+            case TRIBUTE -> DdSounds.TRIBUTE;
             case DRAW -> DdSounds.DRAW;
             case FLIP, POSITION -> DdSounds.FLIP;
             case CHAINING -> DdSounds.ACTIVATE;
@@ -628,6 +667,7 @@ public class DuelAnimations
         battles.removeIf(animation -> animation.done(now));
         overlays.removeIf(animation -> animation.done(now));
         shatters.removeIf(animation -> animation.done(now));
+        releases.removeIf(animation -> animation.done(now));
         tosses.removeIf(animation -> animation.done(now));
         flips.removeIf(animation -> animation.done(now));
 
@@ -1541,6 +1581,29 @@ public class DuelAnimations
     }
 
     /** Every card currently breaking, with how far through it is. */
+    /**
+     * Tributes in flight, reported in the same shape a shatter is.
+     * <p>
+     * The same record on purpose: the board draws the two differently but needs
+     * exactly the same facts to do it -- which card, which zone it left, and
+     * how far through it is.
+     */
+    public java.util.List<ShatterView> releasesInFlight(long now)
+    {
+        java.util.List<ShatterView> views = new ArrayList<>(releases.size());
+        for(Playing animation : releases)
+        {
+            DuelEvent event = animation.event();
+            Identifier texture = artFor(event.code());
+            boolean edoproArt = isEdoproArt(texture);
+            views.add(new ShatterView(event.code(), event.fromZone(), animation.progress(now),
+                texture,
+                edoproArt ? 0F : DuelTextures.CARD_U0, edoproArt ? 0F : DuelTextures.CARD_V0,
+                edoproArt ? 1F : DuelTextures.CARD_U1, edoproArt ? 1F : DuelTextures.CARD_V1));
+        }
+        return views;
+    }
+
     public java.util.List<ShatterView> shattersInFlight(long now)
     {
         java.util.List<ShatterView> views = new ArrayList<>(shatters.size());
@@ -1636,6 +1699,7 @@ public class DuelAnimations
         battles.clear();
         overlays.clear();
         shatters.clear();
+        releases.clear();
         nextStart = 0;
     }
 
@@ -1643,7 +1707,7 @@ public class DuelAnimations
     public boolean isBusy()
     {
         return !playing.isEmpty() || !attacks.isEmpty() || !overlays.isEmpty()
-            || !shatters.isEmpty() || !tosses.isEmpty() || !flips.isEmpty() || !queue.isEmpty();
+            || !shatters.isEmpty() || !releases.isEmpty() || !tosses.isEmpty() || !flips.isEmpty() || !queue.isEmpty();
     }
 
     /**

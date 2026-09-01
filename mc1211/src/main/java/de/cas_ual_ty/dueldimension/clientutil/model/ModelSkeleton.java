@@ -98,6 +98,213 @@ public final class ModelSkeleton
         }
     }
 
+    /**
+     * A joint turned about itself, on top of whatever the animation is doing.
+     * <p>
+     * For a head that follows where its player is looking. The angles are in
+     * MODEL space rather than the joint's own, because a joint's local axes are
+     * whatever the DS artist left them as -- so "yaw" here means about the
+     * model's up, and "pitch" about its side, whichever way the neck bone
+     * happens to be oriented underneath.
+     *
+     * @param joint the joint to turn, by name; it and everything below it move
+     * @param yaw   degrees, the same sense as Minecraft's: positive turns the
+     *              way an increasing yaw faces
+     * @param pitch degrees, the same sense as Minecraft's: POSITIVE IS DOWN
+     * @param drop  blocks to sink the joint and everything under it, AFTER the
+     *              turn. For crouching, which is a fold and a sink rather than
+     *              only a fold -- vanilla pitches the body and lowers it, and
+     *              doing only the first leaves a duellist bowing rather than
+     *              ducking.
+     */
+    public record Turn(String joint, float yaw, float pitch, float drop, boolean absolute)
+    {
+        public Turn(String joint, float yaw, float pitch)
+        {
+            this(joint, yaw, pitch, 0F, false);
+        }
+
+        public Turn(String joint, float yaw, float pitch, float drop)
+        {
+            this(joint, yaw, pitch, drop, false);
+        }
+
+        /**
+         * A turn that SETS the joint's orientation rather than adding to it.
+         * <p>
+         * The difference matters for anything that has to point where it is
+         * told regardless of what the body underneath is doing. A head is the
+         * example: it hangs off the spine, so a crouch's fold reaches it, and
+         * every one of the DS's own clips drives the neck as well -- so a
+         * relative turn is added to whatever the walk cycle had already decided
+         * the head was doing, and the look barely shows through.
+         * <p>
+         * Vanilla has no such problem and no such subtlety: its head is not
+         * animated at all, it is simply assigned the pitch and yaw the player is
+         * holding. This is that, for a rig where the head is not a free-standing
+         * part.
+         */
+        public static Turn looking(String joint, float yaw, float pitch)
+        {
+            return new Turn(joint, yaw, pitch, 0F, true);
+        }
+    }
+
+    /**
+     * A node and everything hanging below it, by name.
+     * <p>
+     * For laying one animation over part of another: a punch belongs to an arm,
+     * and an arm is a node and its descendants.
+     *
+     * @return node indices, or an empty array if the name is not a node
+     */
+    public int[] branch(String root)
+    {
+        int at = nodeIndex(root);
+        if(at < 0)
+        {
+            return new int[0];
+        }
+        java.util.List<Integer> found = new java.util.ArrayList<>();
+        for(int i = 0; i < nodes.size(); i++)
+        {
+            if(i == at || under(i, at))
+            {
+                found.add(i);
+            }
+        }
+        int[] out = new int[found.size()];
+        for(int i = 0; i < out.length; i++)
+        {
+            out[i] = found.get(i);
+        }
+        return out;
+    }
+
+    /** Which node carries a name, or -1. Nodes, not joints: a turn is a node. */
+    public int nodeIndex(String name)
+    {
+        for(int i = 0; i < nodes.size(); i++)
+        {
+            if(nodes.get(i).name().equals(name))
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Where a node sits in the BIND pose, in the model's own units.
+     * <p>
+     * Built from the node hierarchy rather than from {@link #pose}'s scratch,
+     * which belongs to whatever was drawn last. Callers want this to measure the
+     * skeleton -- how long a thigh is, how far the ankle is below the hip -- and
+     * a measurement taken off a walking pose would be a different number every
+     * frame.
+     *
+     * @return {x, y, z}, or null if there is no such node
+     */
+    public float[] restPosition(String name)
+    {
+        int at = nodeIndex(name);
+        if(at < 0)
+        {
+            return null;
+        }
+        Matrix4f out = restPose(at);
+        return new float[] {out.m30(), out.m31(), out.m32()};
+    }
+
+    /** The same, as the whole transform rather than just where it lands. */
+    private Matrix4f restPose(int at)
+    {
+        Matrix4f out = new Matrix4f();
+        for(int i = at; i >= 0; i = parent[i])
+        {
+            GlbModel.Node node = nodes.get(i);
+            out = new Matrix4f()
+                .translate(node.translation()[0], node.translation()[1], node.translation()[2])
+                .rotate(new Quaternionf(node.rotation()[0], node.rotation()[1],
+                    node.rotation()[2], node.rotation()[3]))
+                .mul(out);
+        }
+        return out;
+    }
+
+    /**
+     * Where a named joint has ended up, in the model's own frame.
+     * <p>
+     * The skinning matrices are {@code global * inverseBind} -- how far a bone
+     * has MOVED -- which is what a vertex wants and the opposite of what an
+     * attachment wants. Something being placed IN a hand wants the hand's
+     * position and facing, and that is {@code global}, recovered by undoing the
+     * inverse bind with the bind pose this class can already rebuild:
+     * <pre>
+     *     joint = global * bind^-1      =>      global = joint * bind
+     * </pre>
+     *
+     * @param bones the flattened matrices {@link #flatten} produced for this
+     *              frame, since the scratch has moved on by the time anything
+     *              draws
+     * @return the joint's transform, or null if there is no such joint
+     */
+    public Matrix4f posedAt(String name, float[] bones)
+    {
+        int node = nodeIndex(name);
+        if(node < 0 || bones == null || skin == null)
+        {
+            return null;
+        }
+        int joint = -1;
+        for(int i = 0; i < skin.joints().length; i++)
+        {
+            if(skin.joints()[i] == node)
+            {
+                joint = i;
+                break;
+            }
+        }
+        if(joint < 0 || (joint + 1) * 16 > bones.length)
+        {
+            return null;
+        }
+        return new Matrix4f().set(bones, joint * 16).mul(restPose(node));
+    }
+
+    /**
+     * How far a bone has MOVED since the bind pose, by name.
+     * <p>
+     * The skinning matrix itself -- {@code global * inverseBind} -- which is
+     * what {@link #flatten} already holds, unpacked here so a caller can name a
+     * joint instead of hunting an index.
+     * <p>
+     * The difference from {@link #posedAt} is the whole of how an attachment
+     * behaves. {@code posedAt} gives the bone's FRAME, so anything placed in it
+     * inherits the bone's own axes -- which for a DS rig are whatever the artist
+     * left them as. This gives the bone's CHANGE, so anything placed at the
+     * bone's rest position and then moved by this is carried rigidly while still
+     * having been authored in the model's own axes.
+     *
+     * @param bones the flattened matrices {@link #flatten} produced this frame
+     */
+    public Matrix4f movedAt(String name, float[] bones)
+    {
+        int node = nodeIndex(name);
+        if(node < 0 || bones == null || skin == null)
+        {
+            return null;
+        }
+        for(int i = 0; i < skin.joints().length; i++)
+        {
+            if(skin.joints()[i] == node && (i + 1) * 16 <= bones.length)
+            {
+                return new Matrix4f().set(bones, i * 16);
+            }
+        }
+        return null;
+    }
+
     public int jointCount()
     {
         return joints.length;
@@ -229,9 +436,35 @@ public final class ModelSkeleton
     public Matrix4f[] pose(int animation, float seconds, int previous, float previousSeconds,
         float mix)
     {
-        if(previous < 0 || previous >= animations.size() || mix >= 1F)
+        return pose(animation, seconds, previous, previousSeconds, mix, null);
+    }
+
+    /** The same, with joints turned afterwards. See {@link Turn}. */
+    public Matrix4f[] pose(int animation, float seconds, int previous, float previousSeconds,
+        float mix, Turn... turns)
+    {
+        return pose(animation, seconds, previous, previousSeconds, mix, null, turns);
+    }
+
+    /**
+     * Two clips at once, the second only where {@code only} says.
+     *
+     * @param only which nodes take {@code animation}; everything else keeps
+     *             {@code previous} whatever {@code mix} says. Null for the whole
+     *             body, which is what a cross-fade between two clips wants.
+     *             <p>
+     *             This is what lets a duellist throw a punch WHILE walking. A
+     *             full-body cross-fade cannot: the punch's own legs are standing
+     *             still, so blending it in stops the walk dead for a third of a
+     *             second and then starts it again. Masked to the arm, the legs
+     *             never hear about it.
+     */
+    public Matrix4f[] pose(int animation, float seconds, int previous, float previousSeconds,
+        float mix, int[] only, Turn... turns)
+    {
+        if(previous < 0 || previous >= animations.size() || (mix >= 1F && only == null))
         {
-            return pose(animation, seconds);
+            return pose(animation, seconds, turns);
         }
         // The outgoing pose first, into its own buffers.
         rest();
@@ -249,26 +482,39 @@ public final class ModelSkeleton
         }
 
         float towards = Math.clamp(mix, 0F, 1F);
+        boolean[] takes = null;
+        if(only != null)
+        {
+            takes = new boolean[nodes.size()];
+            for(int node : only)
+            {
+                if(node >= 0 && node < takes.length)
+                {
+                    takes[node] = true;
+                }
+            }
+        }
         Quaternionf from = new Quaternionf();
         Quaternionf to = new Quaternionf();
         for(int i = 0; i < nodes.size(); i++)
         {
+            float here = takes == null || takes[i] ? towards : 0F;
             for(int c = 0; c < 3; c++)
             {
                 float was = wasTranslation[i * 3 + c];
-                translation[i * 3 + c] = was + (translation[i * 3 + c] - was) * towards;
+                translation[i * 3 + c] = was + (translation[i * 3 + c] - was) * here;
             }
             from.set(wasRotation[i * 4], wasRotation[i * 4 + 1], wasRotation[i * 4 + 2],
                 wasRotation[i * 4 + 3]);
             to.set(rotation[i * 4], rotation[i * 4 + 1], rotation[i * 4 + 2],
                 rotation[i * 4 + 3]);
-            from.slerp(to, towards);
+            from.slerp(to, here);
             rotation[i * 4] = from.x;
             rotation[i * 4 + 1] = from.y;
             rotation[i * 4 + 2] = from.z;
             rotation[i * 4 + 3] = from.w;
         }
-        return resolveInto();
+        return resolveInto(turns);
     }
 
     /**
@@ -285,12 +531,25 @@ public final class ModelSkeleton
      */
     public Matrix4f[] pose(int animation, float seconds)
     {
+        return pose(animation, seconds, null);
+    }
+
+    /**
+     * The same, with one joint turned afterwards.
+     * <p>
+     * AFTERWARDS, not blended in: a head that follows the camera is not another
+     * animation, it is a correction applied on top of whichever one is running.
+     * A walk still swings the shoulders while the head stays on what it is
+     * looking at, which is what it would do.
+     */
+    public Matrix4f[] pose(int animation, float seconds, Turn... turns)
+    {
         rest();
         if(animation >= 0 && animation < animations.size())
         {
             sample(animations.get(animation), seconds);
         }
-        return resolveInto();
+        return resolveInto(turns);
     }
 
     /**
@@ -315,7 +574,7 @@ public final class ModelSkeleton
     }
 
     /** Walks the hierarchy over whatever is in the TRS buffers, and skins. */
-    private Matrix4f[] resolveInto()
+    private Matrix4f[] resolveInto(Turn... turns)
     {
         for(int i = 0; i < nodes.size(); i++)
         {
@@ -328,6 +587,17 @@ public final class ModelSkeleton
         for(int i = 0; i < nodes.size(); i++)
         {
             resolve(i);
+        }
+
+        if(turns != null)
+        {
+            // In the order given, because they compose: a neck turn taken after
+            // a crouch pivots about where the crouch put the neck, which is the
+            // whole point of doing both.
+            for(Turn turn : turns)
+            {
+                turnInto(turn);
+            }
         }
 
         for(int i = 0; i < joints.length; i++)
@@ -442,6 +712,95 @@ public final class ModelSkeleton
                 out[2] /= length;
             }
         }
+    }
+
+    /**
+     * One joint turned about its own position, in model space, after posing.
+     * <p>
+     * <b>Applied to the resolved globals, not to a local TRS.</b> Turning the
+     * neck's own rotation would turn it about the neck's LOCAL axes, and those
+     * are whatever the model's artist left them as -- for this skeleton, not
+     * remotely up and sideways. Conjugating by the joint's world position
+     * instead means the axes are the model's, which are the ones the caller can
+     * actually name.
+     * <p>
+     * Everything below the joint comes with it, because that is what a neck
+     * does to a head: the hair and the face hang off {@code sys_h} and
+     * {@code sys_f}, two joints further down, and a head that turned without
+     * them would be a face left behind.
+     */
+    private void turnInto(Turn turn)
+    {
+        if(turn == null || (!turn.absolute()
+            && turn.yaw() == 0F && turn.pitch() == 0F && turn.drop() == 0F))
+        {
+            return;
+        }
+        int at = nodeIndex(turn.joint());
+        if(at < 0)
+        {
+            return;
+        }
+        Matrix4f pivot = global[at];
+        float px = pivot.m30();
+        float py = pivot.m31();
+        float pz = pivot.m32();
+        // Yaw about the model's up, then pitch about the side the yaw left the
+        // head facing along -- so looking down while looking left tips the head
+        // towards the shoulder it is over, not towards the one in front.
+        //
+        // Negative yaw, for the same reason ModelHologram turns the whole model
+        // by -yaw: a glTF asset faces +Z, and Minecraft's yaw counts the other
+        // way round about +Y.
+        Matrix4f spin = new Matrix4f()
+            .rotateY((float) Math.toRadians(-turn.yaw()))
+            .rotateX((float) Math.toRadians(turn.pitch()));
+        if(turn.absolute())
+        {
+            // SET, not add. The joint has already been turned by its parents and
+            // by the clip's own channel for it; what is wanted is that the
+            // finished orientation be exactly `spin` away from the bind pose,
+            // whatever those two did. So take out the change that is already
+            // there and put this one in its place:
+            //
+            //     want = delta * change      =>      delta = want * change^-1
+            //
+            // with change = now * bind^-1, both read as rotations only -- the
+            // joint stays where the body put it, and only its facing is
+            // decided here.
+            org.joml.Matrix3f bind = new org.joml.Matrix3f(restPose(at));
+            org.joml.Matrix3f now = new org.joml.Matrix3f(pivot);
+            org.joml.Matrix3f change = new org.joml.Matrix3f(now).mul(bind.invert());
+            spin = new Matrix4f(new org.joml.Matrix3f(spin).mul(change.invert()));
+        }
+        Matrix4f delta = new Matrix4f()
+            // The sink first in the written order, which puts it OUTSIDE the
+            // rotation: it is a drop in the model's own frame, not one along
+            // whatever direction the joint ended up pointing.
+            .translate(0F, turn.drop(), 0F)
+            .translate(px, py, pz)
+            .mul(spin)
+            .translate(-px, -py, -pz);
+        for(int i = 0; i < global.length; i++)
+        {
+            if(i == at || under(i, at))
+            {
+                global[i].set(new Matrix4f(delta).mul(global[i]));
+            }
+        }
+    }
+
+    /** Whether {@code node} hangs below {@code root}, however far down. */
+    private boolean under(int node, int root)
+    {
+        for(int up = parent[node]; up >= 0; up = parent[up])
+        {
+            if(up == root)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

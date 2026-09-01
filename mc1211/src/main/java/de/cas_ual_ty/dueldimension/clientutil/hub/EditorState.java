@@ -39,7 +39,16 @@ public final class EditorState
      */
     private static boolean synced;
     private static int current;
-    private static Banlist banlist = Banlist.none();
+    /**
+     * Every list the server offers. Empty until the profile syncs.
+     * <p>
+     * This replaced a single {@code Banlist} field that nothing ever assigned:
+     * {@code setBanlist} had no callers, so the editor's copy limits were
+     * checked against {@link Banlist#none()} forever and a deck could hold three
+     * of anything regardless of the list it was meant for. The catalogue and the
+     * per-deck id together are what make the answer a real one.
+     */
+    private static java.util.List<Banlist> banlists = java.util.List.of();
     private static CardQuery<Properties> query;
     private static List<Properties> visible = new ArrayList<>();
     /**
@@ -89,7 +98,11 @@ public final class EditorState
         @Override
         public String text(Properties card)
         {
-            return card.getText();
+            // What CardQuery matches against, and so the deck editor's search
+            // box. getSearchText rather than getText: the preview beside the
+            // box shows a Pendulum Effect, and a box that cannot find what the
+            // panel next to it is displaying reads as broken.
+            return card.getSearchText();
         }
 
         @Override
@@ -668,6 +681,10 @@ public final class EditorState
             send(new ProfilePayloads.SetDeckSleeve(name,
                 de.cas_ual_ty.dueldimension.duel.profile.Sleeves.nameOf(copy.sleeve())));
             send(new ProfilePayloads.SetDeckBox(name, copy.deckBox().name()));
+            // And the list it was built to, for the same reason: SaveDeck reads
+            // its carry-over off the blank deck CreateDeck just made, so without
+            // this a duplicate of a TCG-legal deck comes back unrestricted.
+            send(new ProfilePayloads.SetDeckBanlist(name, copy.banlistId()));
         }
         return copy;
     }
@@ -787,14 +804,118 @@ public final class EditorState
         return null;
     }
 
+    /**
+     * The list the OPEN DECK is built to.
+     *
+     * <h2>Resolved every time, not stored</h2>
+     * The deck holds an id and the catalogue holds the lists, so the object is
+     * derived from those two rather than kept beside them. That is what makes
+     * switching decks work without anything having to remember to update a
+     * cached list -- and it is why a catalogue arriving after the editor is
+     * already open takes effect on the next frame instead of needing the screen
+     * reopened.
+     * <p>
+     * An id this server does not offer falls back to no list, the same way
+     * {@code Banlists.byId} does on the server: a deck built on another server
+     * is still a deck, and refusing to open it would be worse than opening it
+     * unrestricted and saying so on the button.
+     */
     public static Banlist banlist()
     {
-        return banlist;
+        return banlistById(deck().banlistId());
     }
 
-    public static void setBanlist(Banlist value)
+    /** A list by id out of what the server offered, or none. */
+    public static Banlist banlistById(String id)
     {
-        banlist = value;
+        if(id == null || Banlist.NO_BANLIST_ID.equals(id))
+        {
+            return Banlist.none();
+        }
+        if(Banlist.DEFAULT_ID.equals(id))
+        {
+            // Resolved with Banlist.mostRecentTcg -- the same call the server
+            // makes in Banlists.current, against the same lists. The rule lives
+            // in common precisely so these two cannot drift: the editor draws
+            // its badges from this answer and the server enforces from that one.
+            Banlist tcg = Banlist.mostRecentTcg(banlists());
+            return tcg == null ? Banlist.none() : tcg;
+        }
+        for(Banlist list : banlists)
+        {
+            if(list.id().equals(id))
+            {
+                return list;
+            }
+        }
+        return Banlist.none();
+    }
+
+    /**
+     * Every list this server offers, "No Banlist" first.
+     * <p>
+     * Empty until the profile syncs. The editor treats that as "only no list",
+     * which is honest: before the server has said, the client genuinely does not
+     * know of any.
+     */
+    public static java.util.List<Banlist> banlists()
+    {
+        return banlists.isEmpty() ? java.util.List.of(Banlist.none()) : banlists;
+    }
+
+    /** The server's catalogue, as it arrives. See ProfilePayloads.BanlistCatalogue. */
+    public static void setBanlists(java.util.List<Banlist> lists)
+    {
+        banlists = lists == null || lists.isEmpty()
+            ? java.util.List.of(Banlist.none()) : java.util.List.copyOf(lists);
+        // Copy limits and the dimming that follows from them are computed off
+        // this, and the visible collection is cached. Without the invalidation
+        // an editor open when the catalogue lands keeps showing the limits it
+        // had -- which, before any catalogue, means none.
+        invalidate();
+    }
+
+    /**
+     * Builds the open deck to a list, and tells the server.
+     * <p>
+     * Applied locally first, as every other edit in this screen is: the server
+     * re-checks it and syncs the whole profile back if it refuses, so an
+     * optimistic apply cannot leave the two disagreeing for longer than the
+     * round trip. See {@code ProfilePayloads.answer}.
+     */
+    public static void setDeckBanlist(String id)
+    {
+        DeckList open = deck();
+        open.setBanlistId(id);
+        send(new ProfilePayloads.SetDeckBanlist(open.name(), open.banlistId()));
+        invalidate();
+    }
+
+    /**
+     * Steps the open deck to the next list the server offers, wrapping.
+     * <p>
+     * The same gesture the duel lobby's banlist control uses, and for the same
+     * reason: a handful of lists is a cycle, not a menu.
+     */
+    public static void cycleDeckBanlist(int direction)
+    {
+        java.util.List<Banlist> lists = banlists();
+        if(lists.size() < 2)
+        {
+            return;
+        }
+        int index = 0;
+        String current = deck().banlistId();
+        for(int i = 0; i < lists.size(); i++)
+        {
+            if(lists.get(i).id().equals(current))
+            {
+                index = i;
+                break;
+            }
+        }
+        int next = Math.floorMod(index + direction, lists.size());
+        setDeckBanlist(lists.get(next).id());
     }
 
     public static CardQuery<Properties> query()
@@ -1004,6 +1125,10 @@ public final class EditorState
      */
     private static String contentsOf(DeckList deck)
     {
+        // The Destiny flags are deliberately NOT part of this. They travel on
+        // their own message, so a flag change must not look like a contents
+        // change -- that would make flush() send a SaveDeck that says nothing
+        // new, on every single flag.
         return deck.name() + "|" + deck.main() + deck.extra() + deck.side()
             + de.cas_ual_ty.dueldimension.duel.profile.DeckEdits.canonicalArts(deck.main(),
                 deck.mainArts())
@@ -1013,9 +1138,162 @@ public final class EditorState
                 deck.sideArts());
     }
 
+    /**
+     * DE and the win/loss record, as the server last stated them.
+     * <p>
+     * Held here rather than on the profile because they change at the end of
+     * every duel and the profile travels whole; see
+     * {@code StatsMessages}. Zero until the first sync, which is
+     * indistinguishable from a new player -- {@link #statsKnown} is what tells
+     * the panel which it is looking at.
+     */
+    private static int duelEnergy;
+    private static int duelWins;
+    private static int duelLosses;
+    private static int npcWins;
+    private static int npcLosses;
+    private static boolean statsKnown;
+
+    /**
+     * Which record the profile panel is showing.
+     * <p>
+     * A view, not a preference: it lives here rather than in a settings file
+     * because it is a way of looking at one screen and costs nothing to set
+     * again. Player first, because that is the record the split exists to stop
+     * the bots diluting.
+     */
+    private static boolean showingNpcRecord;
+
+    public static void setStats(int gp, int wins, int losses, int npcWon, int npcLost)
+    {
+        duelEnergy = gp;
+        duelWins = wins;
+        duelLosses = losses;
+        npcWins = npcWon;
+        npcLosses = npcLost;
+        statsKnown = true;
+    }
+
+    public static int npcWins()
+    {
+        return npcWins;
+    }
+
+    public static int npcLosses()
+    {
+        return npcLosses;
+    }
+
+    /** True while the panel is showing the NPC record rather than the player one. */
+    public static boolean showingNpcRecord()
+    {
+        return showingNpcRecord;
+    }
+
+    public static void toggleRecord()
+    {
+        showingNpcRecord = !showingNpcRecord;
+    }
+
+    /** Whichever record is on show: {@code {won, lost}}. */
+    public static int[] shownRecord()
+    {
+        return showingNpcRecord ? new int[] {npcWins, npcLosses}
+            : new int[] {duelWins, duelLosses};
+    }
+
+    public static int duelEnergy()
+    {
+        return duelEnergy;
+    }
+
+    public static int duelWins()
+    {
+        return duelWins;
+    }
+
+    public static int duelLosses()
+    {
+        return duelLosses;
+    }
+
+    public static boolean statsKnown()
+    {
+        return statsKnown;
+    }
+
     public static boolean isFavourite(int passcode)
     {
         return profile.isFavourite(passcode);
+    }
+
+    /** Whether this card in the open deck is flagged as a Destiny Card. */
+    public static boolean isDestiny(int passcode)
+    {
+        return deck().isDestiny(passcode);
+    }
+
+    /**
+     * Flags or unflags a card, and tells the server at once.
+     * <p>
+     * Sent immediately rather than left to {@link #flush}, because flush only
+     * sends when the deck's CONTENTS changed and a flag changes none of them --
+     * so a flag left to flush would be applied on screen, agree with itself,
+     * and never reach the server. The same reasoning {@code toggleFavouritePack}
+     * spells out: applied here as well as sent, since an accepted edit is
+     * expected to be already applied on this side.
+     */
+    public static void toggleDestiny(int passcode)
+    {
+        DeckList open = deck();
+        if(open == PLACEHOLDER || !open.main().contains(passcode))
+        {
+            // Main deck only -- the Extra Deck is never drawn from.
+            //
+            // SAID OUT LOUD, because this return is the one way a click on
+            // "Destiny Card" can do nothing at all: the row is only offered for
+            // a main-deck card, so reaching it means the card the menu was
+            // opened on is not the card the open deck holds, and a mark that
+            // silently fails to happen is indistinguishable from the feature
+            // being broken further down.
+            de.cas_ual_ty.dueldimension.DuelDimension.log("Destiny mark REFUSED for "
+                + passcode + ": " + (open == PLACEHOLDER ? "no deck open"
+                    : "not in the main deck of \"" + open.name() + "\""));
+            return;
+        }
+        boolean now = !open.isDestiny(passcode);
+        open.setDestiny(passcode, now);
+        de.cas_ual_ty.dueldimension.DuelDimension.log("Destiny mark " + (now ? "SET" : "CLEARED")
+            + " for " + passcode + " in \"" + open.name() + "\"; sending "
+            + open.destiny().size() + " flag(s)");
+        send(new ProfilePayloads.SetDeckDestiny(open.name(),
+            new ArrayList<>(open.destiny())));
+    }
+
+    public static boolean isFavouritePack(String code)
+    {
+        return code != null && profile.isFavouritePack(code);
+    }
+
+    /**
+     * Stars a sealed product, or unstars it.
+     * <p>
+     * <b>Applied here as well as sent</b>, which is the half that was missing.
+     * {@code ProfilePayloads.answer} syncs the authoritative profile back only
+     * when an edit is REFUSED -- an accepted one is expected to be already
+     * applied on this side. A shop star that merely sent the message therefore
+     * changed nothing on screen and looked broken, because the answer it was
+     * waiting for is one the server deliberately never sends.
+     */
+    public static void toggleFavouritePack(String code)
+    {
+        if(code == null || code.isEmpty())
+        {
+            return;
+        }
+        profile.toggleFavouritePack(code);
+        dirty = true;
+        send(new ProfilePayloads.ToggleFavouritePack(code));
     }
 
     /** Stars a card, or unstars it. Applied here and asked for over the wire. */

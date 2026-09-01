@@ -177,6 +177,18 @@ public final class PromptOptions
         {
             return false;
         }
+        // THE DESTINY DRAW, stated rather than derived.
+        //
+        // Its two options name no card, no zone and no phase, so every test
+        // below reads it as a question with nothing to point at and hands it to
+        // the flat screen -- which is what yanked a duellist off the board to
+        // answer it. That reasoning was right before the board had a panel for
+        // it and is wrong now that it does: see DestinyPrompt, which both duel
+        // views draw from.
+        if(de.cas_ual_ty.dueldimension.clientutil.DestinyPrompt.isOffered(prompt))
+        {
+            return true;
+        }
         // isSingleChoice is the engine's own test for "one option, sent as one
         // index", and it is what the duel screen already trusts for exactly
         // this question -- a MULTI with a maximum of one is a CHOOSE wearing a

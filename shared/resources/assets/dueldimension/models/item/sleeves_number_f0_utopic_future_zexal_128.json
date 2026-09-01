@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_number_f0_utopic_future_zexal",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_number_f0_utopic_future_zexal"
+  }
+}

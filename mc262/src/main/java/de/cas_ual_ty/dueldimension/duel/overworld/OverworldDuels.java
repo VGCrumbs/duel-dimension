@@ -164,6 +164,86 @@ public final class OverworldDuels
     }
 
     /**
+     * How far outside a board the world is still the duel's, in blocks.
+     * <p>
+     * Two, which is a mob's width plus a little. It has to cover the STANDS as
+     * well as the mat -- a skeleton shooting from the block a duellist is
+     * standing on is not kept out by a rule about the board -- so the forward
+     * bound below adds the one block the stands sit beyond the field before
+     * this is applied on top.
+     */
+    public static final int KEEP_OUT = 2;
+
+    /** How far above the board's floor the keep-out reaches, in blocks. */
+    private static final int KEEP_OUT_HEIGHT = 3;
+
+    /**
+     * Is anybody duelling in the world right now?
+     * <p>
+     * Asked first by everything below, because the answer is almost always no
+     * and the callers are hot: pathfinding asks per node, per path, per mob. A
+     * ConcurrentHashMap's isEmpty is a single volatile read of a counter, so
+     * the no case costs that and a branch.
+     */
+    public static boolean anyBoards()
+    {
+        return !BOARDS.isEmpty();
+    }
+
+    /**
+     * Is this block inside a live duel's keep-out volume?
+     *
+     * <h2>Not {@link FieldSiting#contains}</h2>
+     * That one answers a different question -- "has somebody built in the
+     * field", which is why it stops at the clearance and deliberately EXCLUDES
+     * the stand blocks, since a duellist standing on their own mark would
+     * otherwise abandon the duel the moment it began. Reusing it here would
+     * leave a corridor a mob could path down: straight through the two blocks
+     * the players are standing on.
+     * <p>
+     * So this is its own volume, and a larger one on every axis: the mat plus
+     * the stands plus {@link #KEEP_OUT}, and tall enough that a mob cannot walk
+     * over the board on a bridge one block up.
+     */
+    public static boolean keepOut(ResourceKey<Level> level, int x, int y, int z)
+    {
+        if(BOARDS.isEmpty())
+        {
+            return false;
+        }
+        // Both players key the same Board, so this sees each duel twice. That
+        // is cheaper than building a deduplicated view per call, and the answer
+        // for the second look is the same as for the first.
+        for(Board board : BOARDS.values())
+        {
+            if(!board.level().equals(level))
+            {
+                continue;
+            }
+            FieldSiting siting = board.siting();
+            BlockPos anchor = siting.anchor();
+            int dy = y - anchor.getY();
+            if(dy < -1 || dy > KEEP_OUT_HEIGHT)
+            {
+                continue;
+            }
+            FieldSpec spec = siting.spec();
+            Direction facing = siting.facing();
+            // +1 for the stands, which sit one block beyond the field's own
+            // depth -- separation() is areaDepth + 1, and that block is a place
+            // a player is, so it is the most important block to keep clear.
+            int along = FieldFootprint.forwardOffset(anchor, facing, x, z);
+            int across = FieldFootprint.lateralOffset(anchor, facing, x, z);
+            if(Math.abs(along) <= spec.halfDepth() + 1 + KEEP_OUT
+                && Math.abs(across) <= spec.halfWidth() + KEEP_OUT)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Site a duel and either start it now or after both players have walked to
      * their marks.
      *
@@ -720,8 +800,41 @@ public final class OverworldDuels
         Board board = new Board(first.getUUID(), second.getUUID(), level.dimension(), siting);
         BOARDS.put(first.getUUID(), board);
         BOARDS.put(second.getUUID(), board);
+        keepThePeace(level, first, second);
         show(first, siting, 0, true);
         show(second, siting, 1, true);
+    }
+
+    /** How far out a grudge is dropped when a duel starts, in blocks. */
+    private static final double FORGET_RADIUS = 48D;
+
+    /**
+     * Makes every mob nearby forget it was hunting these two.
+     *
+     * <h2>Why the mixin alone is not enough</h2>
+     * {@code DuelTargetMixin} refuses to let a mob TAKE a duellist as its
+     * target, which stops every grudge that would be formed from now on and
+     * none of the ones already held. A creeper that had been chasing somebody
+     * across a field for the last ten seconds when they accepted a challenge is
+     * exactly the case the feature is for, and it is the one case a refusal at
+     * the setter cannot reach: nothing sets a target it already has.
+     * <p>
+     * So the two halves are deliberate. This clears what exists at the moment
+     * the board opens; the mixin keeps it clear for as long as the duel runs.
+     * One scan of one radius, once per duel, on the tick the duel starts.
+     */
+    private static void keepThePeace(ServerLevel level, ServerPlayer... duellists)
+    {
+        for(ServerPlayer player : duellists)
+        {
+            for(net.minecraft.world.entity.Mob mob : level.getEntitiesOfClass(
+                net.minecraft.world.entity.Mob.class,
+                player.getBoundingBox().inflate(FORGET_RADIUS),
+                hunter -> hunter.getTarget() == player))
+            {
+                mob.setTarget(null);
+            }
+        }
     }
 
     /**

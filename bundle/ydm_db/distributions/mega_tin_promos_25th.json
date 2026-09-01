@@ -1,0 +1,16 @@
+{
+  "name": "mega_tin_promos_25th",
+  "pulls": [
+    {
+      "weight": 1,
+      "entries": [
+        {
+          "count": 3,
+          "rarities": [
+            "Quarter Century Secret Rare"
+          ]
+        }
+      ]
+    }
+  ]
+}

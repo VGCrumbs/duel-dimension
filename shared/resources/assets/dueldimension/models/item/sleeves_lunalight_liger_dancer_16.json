@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_lunalight_liger_dancer",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_lunalight_liger_dancer"
+  }
+}

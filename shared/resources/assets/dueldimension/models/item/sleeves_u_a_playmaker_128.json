@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_u_a_playmaker",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_u_a_playmaker"
+  }
+}

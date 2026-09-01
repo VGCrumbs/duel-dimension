@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_mermail_abyssmegalo",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_mermail_abyssmegalo"
+  }
+}

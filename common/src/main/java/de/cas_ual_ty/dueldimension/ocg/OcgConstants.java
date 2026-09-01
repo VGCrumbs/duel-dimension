@@ -156,6 +156,27 @@ public final class OcgConstants
     public static final int QUERY_DEFENSE = 0x200;
     public static final int QUERY_BASE_ATTACK = 0x400;
     public static final int QUERY_BASE_DEFENSE = 0x800;
+    /**
+     * Why a card moved, as {@code MSG_MOVE}'s fourth field.
+     * <p>
+     * Taken from EDOPro's own {@code script/constant.lua}, which is where the
+     * card scripts read them from and therefore the definition the engine and
+     * every card agree on. Only the ones this mod actually asks about are here;
+     * the file has twenty or so more.
+     * <p>
+     * These are FLAGS and arrive combined -- a monster tributed for a summon
+     * carries {@code REASON_RELEASE | REASON_SUMMON | REASON_COST} -- so they
+     * are tested with a mask and never compared for equality.
+     */
+    public static final int REASON_DESTROY = 0x1;
+    /** A tribute. The card was released, not destroyed. */
+    public static final int REASON_RELEASE = 0x2;
+    public static final int REASON_MATERIAL = 0x8;
+    public static final int REASON_SUMMON = 0x10;
+    public static final int REASON_BATTLE = 0x20;
+    public static final int REASON_EFFECT = 0x40;
+    public static final int REASON_COST = 0x80;
+
     public static final int QUERY_REASON = 0x1000;
     public static final int QUERY_REASON_CARD = 0x2000;
     public static final int QUERY_EQUIP_CARD = 0x4000;

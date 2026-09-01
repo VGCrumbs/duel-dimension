@@ -1,8 +1,0 @@
-{
-    "variants": {
-        "facing=north": { "model": "dueldimension:block/duel_playmat" },
-        "facing=south": { "model": "dueldimension:block/duel_playmat", "y": 180 },
-        "facing=west":  { "model": "dueldimension:block/duel_playmat", "y": 270 },
-        "facing=east":  { "model": "dueldimension:block/duel_playmat", "y": 90 }
-    }
-}

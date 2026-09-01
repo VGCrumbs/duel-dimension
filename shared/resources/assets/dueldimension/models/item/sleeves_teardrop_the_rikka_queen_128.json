@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_teardrop_the_rikka_queen",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_teardrop_the_rikka_queen"
+  }
+}

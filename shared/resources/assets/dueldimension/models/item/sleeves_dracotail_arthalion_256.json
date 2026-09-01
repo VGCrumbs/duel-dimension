@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_dracotail_arthalion",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_dracotail_arthalion"
+  }
+}

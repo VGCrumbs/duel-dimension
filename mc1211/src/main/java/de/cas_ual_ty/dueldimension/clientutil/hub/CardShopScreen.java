@@ -1,5 +1,7 @@
 package de.cas_ual_ty.dueldimension.clientutil.hub;
 
+import de.cas_ual_ty.dueldimension.clientutil.Layering;
+
 import de.cas_ual_ty.dueldimension.clientutil.CardImageManager;
 import de.cas_ual_ty.dueldimension.clientutil.ClientProxy;
 import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
@@ -445,6 +447,75 @@ public class CardShopScreen extends Screen
         return layout().i("grid.gap", 4);
     }
 
+    /**
+     * The three places this screen draws text below full size.
+     *
+     * <h2>Why any of it is smaller</h2>
+     * Every string here used to be drawn at the font's own size, on a screen
+     * whose furniture is measured in the same units -- a 16-tall button row, a
+     * 12-tall fact row -- and a 9-tall glyph in a 12-tall row leaves three units
+     * of air. That is the cramping: not that the panels are too small, but that
+     * the text in them was the only thing on the screen not scaled to fit.
+     * <p>
+     * DeckEditorScreen had already settled this, with {@code preview.textScale}
+     * and {@code trunk.countScale} in its own layout file. These are the same
+     * idea under the same convention, so the two screens now read as one mod:
+     * the facts, the blurb and the count are supporting text and are drawn as
+     * supporting text.
+     *
+     * <h2>Through crispScale, always</h2>
+     * The wanted value is a request, not the scale used. {@link
+     * MenuText#crispScale} snaps it to whole device pixels -- 0.5 becomes 2/3 at
+     * GUI scale 3 -- because half-size bitmap text on an odd GUI scale samples
+     * between texels and smears. Slightly larger and sharp beats exactly half
+     * and blurred, and every measurement below reads the SNAPPED value, so the
+     * boxes are sized to the text that will actually be drawn.
+     */
+    private float detailScale()
+    {
+        return MenuText.crispScale(layout().f("detail.textScale", 0.5F));
+    }
+
+    private float blurbScale()
+    {
+        return MenuText.crispScale(layout().f("description.textScale", 0.5F));
+    }
+
+    private float captionScale()
+    {
+        return MenuText.crispScale(layout().f("caption.textScale", 0.5F));
+    }
+
+    /** A line of text's height at one of those scales. */
+    private int textH(float scale)
+    {
+        return Math.max(1, Math.round(font.lineHeight * scale));
+    }
+
+    /** A string's width at one of them, for placing things beside it. */
+    private int textW(float scale, String s)
+    {
+        return Math.round(font.width(s) * scale);
+    }
+
+    /**
+     * One string, drawn at one of those scales.
+     * <p>
+     * The matrix is scaled and the coordinates divided by the same number, which
+     * is the only way to draw a bitmap font at a size it does not have. Kept in
+     * one method because the alternative -- push, scale, divide, draw, pop at
+     * each of five call sites -- is five chances to forget the pop.
+     */
+    private void small(GuiGraphicsExtractor poseStack, float scale, String text,
+        int x, int y, int colour, boolean shadow)
+    {
+        poseStack.pose().pushMatrix();
+        poseStack.pose().scale(scale, scale);
+        poseStack.text(font, text, Math.round(x / scale), Math.round(y / scale),
+            colour, shadow);
+        poseStack.pose().popMatrix();
+    }
+
     /** ONE height for the whole top row: buttons, search frame, balance plate. */
     private int rowH()
     {
@@ -453,7 +524,7 @@ public class CardShopScreen extends Screen
 
     private int captionH()
     {
-        return font.lineHeight + 2;
+        return textH(captionScale()) + 2;
     }
 
     /**
@@ -798,13 +869,26 @@ public class CardShopScreen extends Screen
      */
     private int barHeight(int lines)
     {
-        return 22 + Math.max(0, lines) * (font.lineHeight + 1) + 6;
+        return 22 + Math.max(0, lines) * blurbPitch() + 6;
+    }
+
+    /**
+     * One line of blurb, top to top.
+     * <p>
+     * Read by the height, by the line budget and by the draw, so a change of
+     * scale moves all three together. When they disagreed the box held two lines
+     * and the draw wrote three, which is the clipping barHeight() was written to
+     * end; a second pitch would have brought it straight back.
+     */
+    private int blurbPitch()
+    {
+        return Math.max(1, Math.round((font.lineHeight + 1) * blurbScale()));
     }
 
     /** How many description lines the bar was actually granted. */
     private int barLines()
     {
-        return Math.max(1, (geom().barH() - 28) / (font.lineHeight + 1));
+        return Math.max(1, (geom().barH() - 28) / blurbPitch());
     }
 
     private int barTop()
@@ -858,8 +942,18 @@ public class CardShopScreen extends Screen
         return barLines();
     }
 
-    /** One row of the preview's fact list. */
-    private static final int DETAIL_ROW_H = 12;
+    /**
+     * One row of the preview's fact list.
+     * <p>
+     * Measured from the text rather than fixed at 12. That constant was chosen
+     * for a full-size glyph and the rows are now smaller, so leaving it would
+     * have spent the saving on white space instead of giving it to the pack art
+     * -- which is the one thing on this screen anybody is looking at.
+     */
+    private int detailRowH()
+    {
+        return textH(detailScale()) + 3;
+    }
 
     /**
      * How many facts the preview lists — a CONSTANT four.
@@ -871,18 +965,18 @@ public class CardShopScreen extends Screen
      * button — and the Buy button is placed in init() while the panel is drawn
      * per frame.
      */
-    private static final int DETAIL_ROWS = 4;
+    private static final int DETAIL_ROWS = 3;
 
     /** The fact list's box: a row each, plus the inset's own padding. */
-    private static int detailBoxHeight()
+    private int detailBoxHeight()
     {
-        return DETAIL_ROWS * DETAIL_ROW_H + 7;
+        return DETAIL_ROWS * detailRowH() + 7;
     }
 
     /** Guard only: a retuned panel cannot push half a row through its border. */
     private int detailRowsShown()
     {
-        return clamp(0, DETAIL_ROWS, (previewHeight() - 23) / DETAIL_ROW_H);
+        return clamp(0, DETAIL_ROWS, (previewHeight() - 23) / detailRowH());
     }
 
     /** How much room the left column HAS, once the Buy row is reserved. */
@@ -958,7 +1052,14 @@ public class CardShopScreen extends Screen
         // Right-anchored unconditionally, so the pair has one anchor rather
         // than two and can never be subtracted leftward under the category
         // button on a narrow window.
-        int dirX = rowRight() - dirWidth();
+        // Right-anchored in a chain: star, then direction, then sort. Both the
+        // star and the direction are SQUARE icons now -- the direction used to
+        // be the word "DESC", which is four characters for something a triangle
+        // says in a box the row's own height. That is where the star's room
+        // came from; the row is no wider than it was.
+        int iconW = rowH;
+        int starX = rowRight() - iconW;
+        int dirX = starX - 2 - iconW;
         int sortX = dirX - 2 - sortWidth();
 
         // Category, search, sort and direction share the control row while
@@ -1000,14 +1101,21 @@ public class CardShopScreen extends Screen
             refresh();
             rebuild();
         }));
-        addRenderableWidget(new HubWidgets.TextureButton(dirX, sortY, dirWidth(), rowH,
-            Component.literal(descending ? "DESC" : "ASC"), pressed ->
+        // The arrow reads DOWN the list: ascending means values increase as you
+        // read downward, so ascending is the DOWN arrow. The narration is still
+        // the word, because a screen reader cannot read a triangle.
+        addRenderableWidget(new HubWidgets.IconButton(dirX, sortY, iconW, rowH,
+            descending ? HubTextures.SORT_UP : HubTextures.SORT_DOWN,
+            Component.literal(descending ? "Descending" : "Ascending"), pressed ->
         {
             descending = !descending;
             scroll = 0;
             refresh();
             rebuild();
         }));
+        // The favourites filter, as the same star the tiles are marked with, so
+        // the button and the mark it filters on are visibly one idea.
+        addRenderableWidget(new StarFilterButton(starX, sortY, iconW, rowH));
 
         // The open list, added after the row it belongs to so it is extracted
         // after it and therefore drawn over it. Nothing it covers on the grid
@@ -1101,6 +1209,191 @@ public class CardShopScreen extends Screen
      * selected should still have it selected after typing, not whatever has
      * taken its place.
      */
+    /**
+     * Whether the shelf is narrowed to starred products.
+     * <p>
+     * A filter on the screen rather than a category: a starred product keeps
+     * whatever category it is in, and folding "favourites" into the category
+     * dropdown would have made it a place a pack can BE instead of a mark a
+     * pack can carry.
+     */
+    private boolean favouritesOnly;
+
+    /** The product the context menu is open on, and where, or null. */
+    private ShopStock.Pack menuPack;
+    private int menuX;
+    private int menuY;
+
+    /** Row geometry, the deck editor's own, so the two menus look like one. */
+    private static final int MENU_ROW = 14;
+    private static final int MENU_PAD = 7;
+    private static final int MENU_EDGE = 5;
+
+    private static boolean isFavourite(ShopStock.Pack pack)
+    {
+        return pack != null && EditorState.profile().isFavouritePack(pack.code());
+    }
+
+    /**
+     * Stars a product, or unstars it.
+     * <p>
+     * Sent, not applied. The profile is the server's; this asks, and the star
+     * appears when the answer syncs back -- the same round trip a card's star
+     * takes, and the reason a click does not need to guess at the new state.
+     */
+    private void toggleFavourite(ShopStock.Pack pack)
+    {
+        if(pack == null)
+        {
+            return;
+        }
+        EditorState.toggleFavouritePack(pack.code());
+    }
+
+
+    /** The menu's own width, from the longest thing it can say. */
+    private int menuWidth()
+    {
+        int widest = 0;
+        for(String label : menuLabels())
+        {
+            widest = Math.max(widest, font.width(label));
+        }
+        return widest + MENU_PAD * 2;
+    }
+
+    private java.util.List<String> menuLabels()
+    {
+        java.util.List<String> labels = new java.util.ArrayList<>();
+        labels.add(isFavourite(menuPack) ? "Unfavourite" : "Favourite");
+        labels.add("Look up online");
+        // Only in a source checkout. See DevIcons for why these are not simply
+        // hidden but refused: they write into the mod's own resources.
+        if(DevIcons.available())
+        {
+            labels.add("Save icon...");
+            labels.add("Replace icon...");
+        }
+        return labels;
+    }
+
+    /**
+     * Acts on a click inside the menu, or reports that it missed.
+     *
+     * @return true if the click was the menu's
+     */
+    private boolean clickMenu(double mouseX, double mouseY)
+    {
+        java.util.List<String> labels = menuLabels();
+        int w = menuWidth();
+        int h = labels.size() * MENU_ROW + MENU_EDGE * 2;
+        int x = Math.min(menuX, width - w - 2);
+        int y = Math.min(menuY, height - h - 2);
+        if(mouseX < x || mouseX >= x + w || mouseY < y || mouseY >= y + h)
+        {
+            return false;
+        }
+        int row = (int)((mouseY - y - MENU_EDGE) / MENU_ROW);
+        ShopStock.Pack pack = menuPack;
+        menuPack = null;
+        if(row == 0)
+        {
+            toggleFavourite(pack);
+        }
+        else if(row >= 2 && DevIcons.available() && pack != null)
+        {
+            de.cas_ual_ty.dueldimension.set.CardSet set = ShopStock.setOf(pack.code());
+            if(set == null)
+            {
+                notice = "That product has no set behind it.";
+                return true;
+            }
+            String said = row == 2 ? DevIcons.save(set) : DevIcons.replace(set);
+            if(!said.isEmpty())
+            {
+                notice = said;
+            }
+            return true;
+        }
+        else if(row == 1 && pack != null)
+        {
+            // Through ConfirmLinkScreen, as everywhere else here: vanilla shows
+            // the address and asks before following a link, and a card database
+            // is no reason to be the exception.
+            String query = java.net.URLEncoder.encode(
+                pack.name(), java.nio.charset.StandardCharsets.UTF_8);
+            net.minecraft.client.gui.screens.ConfirmLinkScreen.confirmLinkNow(this,
+                java.net.URI.create(
+                    "https://ygoprodeck.com/card-database/?&cardset=" + query));
+        }
+        return true;
+    }
+
+    /** The menu itself, drawn last so nothing is over it. */
+    private void drawMenu(GuiGraphicsExtractor poseStack, int mouseX, int mouseY)
+    {
+        if(menuPack == null)
+        {
+            return;
+        }
+        java.util.List<String> labels = menuLabels();
+        int w = menuWidth();
+        int h = labels.size() * MENU_ROW + MENU_EDGE * 2;
+        int x = Math.min(menuX, width - w - 2);
+        int y = Math.min(menuY, height - h - 2);
+        NineSlice.draw(poseStack, HubTextures.PANEL, x, y, w, h);
+        for(int i = 0; i < labels.size(); i++)
+        {
+            int rowY = y + MENU_EDGE + i * MENU_ROW;
+            boolean over = mouseX >= x && mouseX < x + w
+                && mouseY >= rowY && mouseY < rowY + MENU_ROW;
+            if(over)
+            {
+                DdBlitUtil.fullBlit(poseStack, DuelTextures.WHITE, x + 2, rowY, w - 4, MENU_ROW,
+                    DdBlitUtil.tint(1F, 1F, 1F, 0.10F));
+            }
+            poseStack.text(font, labels.get(i), x + MENU_PAD, rowY + 3,
+                over ? 0xFFFFE9B0 : MenuInk.body(), MenuInk.shadow());
+        }
+    }
+
+
+    /**
+     * The favourites filter: the grids' own star, lit when it is on.
+     * <p>
+     * Its own class rather than an IconButton so it can tint itself by state.
+     * An IconButton draws its icon in the label colour, and the label colour is
+     * decided by hover and enablement -- neither of which is "is this filter
+     * active", which is the one thing this button has to say.
+     */
+    private class StarFilterButton extends HubWidgets.TextureButton
+    {
+        StarFilterButton(int x, int y, int width, int height)
+        {
+            // The action goes in the constructor argument rather than in an
+            // override: TextureButton takes its OnPress that way and does not
+            // expose one to override. The lambda reaches the OUTER screen's
+            // fields, which is what this needs to flip.
+            super(x, y, width, height, Component.literal("Favourites"), pressed ->
+            {
+                favouritesOnly = !favouritesOnly;
+                scroll = 0;
+                refresh();
+                rebuild();
+            });
+        }
+
+        @Override
+        void drawLabel(GuiGraphicsExtractor poseStack, int colour)
+        {
+            int size = Math.round(Math.min(getWidth(), getHeight()) * 0.62F);
+            DdBlitUtil.fullBlit(poseStack, HubTextures.STAR,
+                getX() + (getWidth() - size) / 2, getY() + (getHeight() - size) / 2,
+                size, size,
+                favouritesOnly ? DdBlitUtil.NO_TINT : DdBlitUtil.alpha(0.35F));
+        }
+    }
+
     private void refresh()
     {
         String selectedCode = current() == null ? null : current().code();
@@ -1120,6 +1413,14 @@ public class CardShopScreen extends Screen
             // Counted here, in the pass that is already running, so the caption
             // can say how big the shelf is rather than how big the catalogue is.
             total++;
+            // The star narrows LAST, after the tab and the search, so the
+            // caption above still counts the tab rather than the starred subset
+            // of it -- "3 of 41" reads as a filter, "3 of 3" reads as an empty
+            // shop.
+            if(favouritesOnly && !isFavourite(pack))
+            {
+                continue;
+            }
             if(needle.isEmpty() || matches(pack, needle))
             {
                 matching.add(pack);
@@ -1243,11 +1544,33 @@ public class CardShopScreen extends Screen
         {
             return true;
         }
+        // An open menu takes the next click, wherever it lands: it is drawn
+        // over the grid, so letting a click through would act on whatever tile
+        // happens to be under the option being aimed at.
+        if(menuPack != null)
+        {
+            if(clickMenu(mouseX, mouseY))
+            {
+                return true;
+            }
+            menuPack = null;
+            return true;
+        }
+
         int index = packAt(mouseX, mouseY);
         if(index >= 0)
         {
             selected = index;
             notice = "";
+            if(button == 1)
+            {
+                // Right-click opens the menu ON the pack it was aimed at, which
+                // is also now the selection -- so the menu and the left panel
+                // are talking about the same product.
+                menuPack = shown.get(index);
+                menuX = (int)mouseX;
+                menuY = (int)mouseY;
+            }
             // No rebuild: the Buy label is set on the widget every frame, and
             // rebuilding here stole the focus from the search field.
             return true;
@@ -1415,6 +1738,11 @@ public class CardShopScreen extends Screen
         renderControls(poseStack);
         renderPreview(poseStack);
         renderGrid(poseStack, mouseX, mouseY);
+        // In front of the screen rather than merely after part of it. Being
+        // called last is not enough on 1.21.1 -- see
+        // GuiGraphicsExtractor.foreground -- and it was not even last: three
+        // more passes and super.render follow this line.
+        Layering.foreground(poseStack, () -> drawMenu(poseStack, mouseX, mouseY));
         renderDetails(poseStack, mouseX, mouseY);
         renderNotice(poseStack);
         renderBalance(poseStack);
@@ -1489,27 +1817,27 @@ public class CardShopScreen extends Screen
 
         int rows = detailRowsShown();
         int rowY = boxY + 5;
+        // No "Contents" row. It said "1 PACK" or "1 DECK" on a screen whose
+        // every product is one of those two, and which says which of them in
+        // the details bar along the bottom -- so it spent a row of the tallest
+        // panel here restating a fact already on screen. The row it gives back
+        // goes to the artwork, which is the thing a player is actually looking
+        // at.
         if(rows > 0)
-        {
-            detail(poseStack, boxX, boxW, rowY, "Contents", pack.deck() ? "1 DECK" : "1 PACK",
-                0xFFC2C9D6);
-            rowY += DETAIL_ROW_H;
-        }
-        if(rows > 1)
         {
             // How many cards actually come out, which is what the price is per.
             detail(poseStack, boxX, boxW, rowY, "Cards",
-                Integer.toString(pack.cardsPerPack()), 0xFFC2C9D6);
-            rowY += DETAIL_ROW_H;
+                Integer.toString(pack.cardsPerPack()), MenuInk.body());
+            rowY += detailRowH();
         }
-        if(rows > 2)
+        if(rows > 1)
         {
             detail(poseStack, boxX, boxW, rowY, "Price",
                 isCreative() ? "FREE" : pack.price() + " DP",
-                isCreative() ? 0xFF7CE38B : 0xFFF4D089);
-            rowY += DETAIL_ROW_H;
+                isCreative() ? 0xFF7CE38B : MenuInk.title());
+            rowY += detailRowH();
         }
-        if(rows > 3)
+        if(rows > 2)
         {
             // The grid runs newest first, so the date is what tells a player
             // where in the run of sets they are looking. A set without one
@@ -1533,9 +1861,13 @@ public class CardShopScreen extends Screen
     private void detail(GuiGraphicsExtractor poseStack, int x, int width, int y, String label,
         String value, int colour)
     {
-        poseStack.text(font, label, x + 6, y, 0xFF6E7686, true);
-        String shown = shorten(value, width - 12 - font.width(label) - 6);
-        poseStack.text(font, shown, x + width - 6 - font.width(shown), y, colour, true);
+        float scale = detailScale();
+        small(poseStack, scale, label, x + 6, y, 0xFF6E7686, true);
+        // The room is measured at the scale the value is DRAWN at. Measuring it
+        // full size is what shortened "Sep 2019" to "...019" in a column that
+        // had room for all of it.
+        String shown = shorten(scale, value, width - 12 - textW(scale, label) - 6);
+        small(poseStack, scale, shown, x + width - 6 - textW(scale, shown), y, colour, true);
     }
 
     /**
@@ -1545,14 +1877,14 @@ public class CardShopScreen extends Screen
      * recognisable from its tail, but "12000 DP" quietly shortened to "000 DP"
      * reads as a smaller number rather than as a truncation.
      */
-    private String shorten(String value, int room)
+    private String shorten(float scale, String value, int room)
     {
-        if(font.width(value) <= room)
+        if(textW(scale, value) <= room)
         {
             return value;
         }
         String shown = value;
-        while(font.width("..." + shown) > room && shown.length() > 1)
+        while(textW(scale, "..." + shown) > room && shown.length() > 1)
         {
             shown = shown.substring(1);
         }
@@ -1616,7 +1948,8 @@ public class CardShopScreen extends Screen
         String count = countCaption();
         if(notice.isEmpty() || !noticeCoversCount(count))
         {
-            poseStack.text(font, count, gridLeft(), captionTop(), 0xFF7A8090, true);
+            small(poseStack, captionScale(), count, gridLeft(), captionTop(),
+                MenuInk.dim(), MenuInk.shadow());
         }
 
         // The thumb's length reports how much of the catalogue is on screen and
@@ -1634,7 +1967,8 @@ public class CardShopScreen extends Screen
     private boolean noticeCoversCount(String count)
     {
         int right = closeLeft() - layout().i("close.gap", 4);
-        return right - 8 - font.width(notice) < gridLeft() + font.width(count) + 8;
+        float scale = captionScale();
+        return right - 8 - textW(scale, notice) < gridLeft() + textW(scale, count) + 8;
     }
 
     /** Centre: every pack, the highlighted one ringed. */
@@ -1671,6 +2005,14 @@ public class CardShopScreen extends Screen
                 int x = left + column * (cellW + gap);
                 int y = top + row * (cellH + gap);
                 drawPackArt(poseStack, shown.get(index), x, y, cellW, cellH);
+                if(isFavourite(shown.get(index)))
+                {
+                    // The same mark the card grids use, in the same corner, so
+                    // a starred product and a starred card read as one idea.
+                    int star = Math.max(7, cellW / 5);
+                    DdBlitUtil.fullBlit(poseStack, HubTextures.STAR,
+                        x + cellW - star - 2, y + 2, star, star);
+                }
                 if(index == selected)
                 {
                     // The reference marks focus with a blue ring rather than a
@@ -1728,9 +2070,9 @@ public class CardShopScreen extends Screen
         String kind = pack.deck() ? "DECK" : "PACK";
         String name = font.plainSubstrByWidth(pack.name(),
             Math.max(0, glyphX - 6 - (pad + 12) - font.width(kind)));
-        poseStack.text(font, name, pad + 8, textY, 0xFFE6EAF2, true);
+        poseStack.text(font, name, pad + 8, textY, MenuInk.label(), MenuInk.shadow());
         poseStack.text(font, kind, pad + 12 + font.width(name), textY,
-            pack.deck() ? 0xFF9FD4FF : 0xFF7A8090, true);
+            pack.deck() ? 0xFF9FD4FF : MenuInk.dim(), MenuInk.shadow());
 
         poseStack.text(font, complete, completeX, textY, 0xFF9FD4FF, true);
         // A percentage says how close you are and not how far there is to go.
@@ -1739,8 +2081,8 @@ public class CardShopScreen extends Screen
         boolean overCompletion = mouseX >= completeX && mouseX < completeX + font.width(complete)
             && mouseY >= textY - 2 && mouseY < textY + 10;
         String ratio = overCompletion ? owned + " of " + total : null;
-        poseStack.text(font, price, priceX, textY, isCreative() ? 0xFF7CE38B : 0xFFF4D089, true);
-        poseStack.text(font, cards, cardsX, textY, 0xFFC2C9D6, true);
+        poseStack.text(font, price, priceX, textY, isCreative() ? 0xFF7CE38B : MenuInk.title(), MenuInk.shadow());
+        poseStack.text(font, cards, cardsX, textY, MenuInk.body(), MenuInk.shadow());
         // A card glyph before the count, standing in for the reference's icon.
         NineSlice.image(poseStack, DuelTextures.COVER, glyphX, textY - 1, 5, 8);
 
@@ -1765,24 +2107,34 @@ public class CardShopScreen extends Screen
         // Buy widgets, and gridRows() measures from the bar, so the grid would
         // re-flow under the cursor as the player typed.
         int maxLines = descriptionLines();
-        int pitch = font.lineHeight + 1;
+        int pitch = blurbPitch();
+        float scale = blurbScale();
+        // Wrapped in the TEXT's own units, which is the whole benefit: the box
+        // is exactly as wide as it was and now holds half again as many words,
+        // so a blurb that used to run out of lines and end in an ellipsis fits.
+        int textWrap = Math.max(1, Math.round(wrap / scale));
         List<net.minecraft.util.FormattedCharSequence> lines =
-            font.split(Component.literal(pack.description()), wrap);
+            font.split(Component.literal(pack.description()), textWrap);
+        poseStack.pose().pushMatrix();
+        poseStack.pose().scale(scale, scale);
         for(int i = 0; i < Math.min(maxLines, lines.size()); i++)
         {
             net.minecraft.util.FormattedCharSequence line = lines.get(i);
-            poseStack.text(font, line, descriptionX + 6, descriptionY, 0xFFC2C9D6);
+            int lineX = Math.round((descriptionX + 6) / scale);
+            int lineY = Math.round(descriptionY / scale);
+            poseStack.text(font, line, lineX, lineY, MenuInk.body());
             if(i == maxLines - 1 && lines.size() > maxLines)
             {
                 // Marked, the way detail() marks a shortened value, so a
                 // truncation reads as one. Held inside the wrap width, since
                 // the line it follows may already fill it.
                 int mark = font.width("…");
-                poseStack.text(font, "…", Math.min(descriptionX + 6 + font.width(line),
-                    descriptionX + 6 + wrap - mark), descriptionY, 0xFFC2C9D6, true);
+                poseStack.text(font, "…", Math.min(lineX + font.width(line),
+                    lineX + textWrap - mark), lineY, MenuInk.body(), MenuInk.shadow());
             }
             descriptionY += pitch;
         }
+        poseStack.pose().popMatrix();
 
         // Last, so it is over the blurb it is standing on rather than under it.
         if(ratio != null)
@@ -1822,8 +2174,10 @@ public class CardShopScreen extends Screen
         // so the two are not written over each other -- and when even that
         // floor cannot hold them apart, renderControls has already dropped the
         // count for this frame and the notice takes the whole row.
-        int floor = noticeCoversCount(count) ? gridLeft() : gridLeft() + font.width(count) + 8;
-        poseStack.text(font, notice, Math.max(floor, right - 8 - font.width(notice)),
+        float scale = captionScale();
+        int floor = noticeCoversCount(count) ? gridLeft()
+            : gridLeft() + textW(scale, count) + 8;
+        small(poseStack, scale, notice, Math.max(floor, right - 8 - textW(scale, notice)),
             captionTop(), 0xFFFF8A80, true);
     }
 
@@ -1840,10 +2194,11 @@ public class CardShopScreen extends Screen
         int textY = y + (h - 8) / 2;
         // Gold letters, white figure: the same split the section headers use,
         // so the label reads as a label and the balance as the number.
-        poseStack.text(font, "DP", x + 6, textY, 0xFFF4D089, true);
+        poseStack.text(font, "DP", x + 6, textY, MenuInk.title(), MenuInk.shadow());
         // Right-aligned in a plate sized for a fixed digit budget, and
         // shortened from the front past it the way detail() does.
-        String value = shorten(Integer.toString(points), w - 12 - font.width("DP") - 6);
+        // Full size: the balance is a headline number, not supporting text.
+        String value = shorten(1F, Integer.toString(points), w - 12 - font.width("DP") - 6);
         poseStack.text(font, value, x + w - 6 - font.width(value), textY, 0xFFFFFFFF, true);
     }
 
@@ -1907,7 +2262,7 @@ public class CardShopScreen extends Screen
         // alternates between its face and the card back as the gate flips
         // frame to frame -- which reads as flickering.
         ResourceLocation art = set == null ? null : CardImageManager.peekTextureCard(
-            set.getInfoImageResourceLocation(), ClientProxy.activeSetInfoImageSize, loadImages);
+            DuelTextures.setIconSmooth(set), ClientProxy.activeSetInfoImageSize, loadImages);
         // Still decoding, the pack wears the card back for a frame and is asked
         // again on the next one, so it resolves within a frame or two. Nothing
         // is remembered about that: a stored refusal would never be retried and
@@ -1935,4 +2290,23 @@ public class CardShopScreen extends Screen
     {
         return false;
     }
+    /**
+     * The hub screen this was opened from, or null. See {@link HubReturn}.
+     * <p>
+     * Read at construction, because that is the one moment the screen it is
+     * replacing is still on show.
+     */
+    private final net.minecraft.client.gui.screens.Screen dueldimension$parent =
+        HubReturn.parent();
+
+    /** Back to the hub if that is where this came from, otherwise to the world. */
+    @Override
+    public void onClose()
+    {
+        if(!HubReturn.back(dueldimension$parent))
+        {
+            super.onClose();
+        }
+    }
 }
+

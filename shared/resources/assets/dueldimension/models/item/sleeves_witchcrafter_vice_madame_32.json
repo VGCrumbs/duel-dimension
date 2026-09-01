@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_witchcrafter_vice_madame",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_witchcrafter_vice_madame"
+  }
+}

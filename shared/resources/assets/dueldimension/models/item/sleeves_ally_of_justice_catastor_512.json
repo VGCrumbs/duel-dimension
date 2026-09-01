@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_ally_of_justice_catastor",
+  "textures": {
+    "layer0": "dueldimension:item/512/sleeves_ally_of_justice_catastor"
+  }
+}

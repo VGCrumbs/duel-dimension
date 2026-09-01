@@ -1,5 +1,6 @@
 package de.cas_ual_ty.dueldimension.clientutil;
 
+import de.cas_ual_ty.dueldimension.clientutil.hub.MenuInk;
 import de.cas_ual_ty.dueldimension.DuelDimension;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -82,7 +83,7 @@ public class FoilTestScreen extends Screen
         int quadX = left + size + GAP;
         int quadY = top + size + GAP * 2;
         graphics.text(font, "4. trapezoid (tapered, not a box)", quadX, quadY - 12,
-            0xFFC2C9D6, true);
+            MenuInk.body(), MenuInk.shadow());
         BoardPip.draw(graphics, quadX, quadY, quadX + size, quadY + size,
             (poseStack, collector) -> FieldQuad.draw(poseStack, collector, CARD,
                 new FieldQuad.Corners(
@@ -95,7 +96,7 @@ public class FoilTestScreen extends Screen
     private void panel(GuiGraphicsExtractor graphics, int x, int y, int SIZE, String label,
         int mouseX, int mouseY, boolean withMask, boolean additive)
     {
-        graphics.text(font, label, x, y - 12, 0xFFC2C9D6, true);
+        graphics.text(font, label, x, y - 12, MenuInk.body(), MenuInk.shadow());
 
         // The card underneath, drawn normally.
         DdBlitUtil.fullBlit(graphics, CARD, x, y, SIZE, SIZE);

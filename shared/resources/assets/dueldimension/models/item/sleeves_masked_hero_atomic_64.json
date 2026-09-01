@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_masked_hero_atomic",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_masked_hero_atomic"
+  }
+}

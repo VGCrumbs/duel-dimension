@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_teller_of_fairy_tails",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_teller_of_fairy_tails"
+  }
+}

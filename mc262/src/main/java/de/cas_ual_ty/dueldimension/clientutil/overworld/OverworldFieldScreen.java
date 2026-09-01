@@ -1,5 +1,6 @@
 package de.cas_ual_ty.dueldimension.clientutil.overworld;
 
+import de.cas_ual_ty.dueldimension.clientutil.hub.MenuInk;
 import de.cas_ual_ty.dueldimension.duel.overworld.FieldSpec;
 import de.cas_ual_ty.dueldimension.duel.overworld.OverworldSettings;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -279,7 +280,7 @@ public class OverworldFieldScreen extends Screen
         // size is not a length and the person adjusting this wants a length.
         String board = String.format("Board: %.1f x %.1f blocks, cards %.2f wide",
             spec.matWidth(), spec.matDepth(), 0.7F * spec.matScale());
-        extractor.centeredText(font, board, width / 2, top - 16, 0xFFC2C9D6);
+        extractor.centeredText(font, board, width / 2, top - 16, MenuInk.body());
 
         String duellists = "Duellists stand " + spec.separation() + " blocks apart";
         extractor.centeredText(font, duellists, width / 2,

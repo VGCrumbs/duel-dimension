@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_kurikara_divincarnate",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_kurikara_divincarnate"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_fiendsmith",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_fiendsmith"
+  }
+}

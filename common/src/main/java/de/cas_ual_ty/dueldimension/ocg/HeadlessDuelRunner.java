@@ -38,30 +38,65 @@ public class HeadlessDuelRunner
      * @param extraArts  the same for {@code extra}.
      */
     public record Deck(List<Integer> main, List<Integer> extra, int guaranteed,
-        List<Integer> mainArts, List<Integer> extraArts)
+        List<Integer> mainArts, List<Integer> extraArts, List<Integer> destiny)
     {
+        /**
+         * Never null, and deduplicated.
+         * <p>
+         * A Destiny Card is flagged by PASSCODE, not by deck slot: flagging one
+         * of three copies flags the card, and the engine picks at random from
+         * whichever copies are still in the deck. A slot number would be
+         * meaningless the moment anything shuffled.
+         */
+        public Deck
+        {
+            destiny = destiny == null ? List.of()
+                : List.copyOf(new java.util.LinkedHashSet<>(destiny));
+        }
+
         /** A deck that promises nothing, which is nearly all of them. */
         public Deck(List<Integer> main, List<Integer> extra)
         {
-            this(main, extra, 0, List.of(), List.of());
+            this(main, extra, 0, List.of(), List.of(), List.of());
         }
 
         /** A deck with a promise but no chosen artwork. */
         public Deck(List<Integer> main, List<Integer> extra, int guaranteed)
         {
-            this(main, extra, guaranteed, List.of(), List.of());
+            this(main, extra, guaranteed, List.of(), List.of(), List.of());
+        }
+
+        /** The four-part deck built before Destiny Draw existed. */
+        public Deck(List<Integer> main, List<Integer> extra, int guaranteed,
+            List<Integer> mainArts, List<Integer> extraArts)
+        {
+            this(main, extra, guaranteed, mainArts, extraArts, List.of());
         }
 
         /** The same deck, promising to draw this card. */
         public Deck guaranteeing(int passcode)
         {
-            return new Deck(main, extra, passcode, mainArts, extraArts);
+            return new Deck(main, extra, passcode, mainArts, extraArts, destiny);
         }
 
         /** The same deck, with each copy's chosen artwork attached. */
         public Deck wearing(List<Integer> mainArts, List<Integer> extraArts)
         {
-            return new Deck(main, extra, guaranteed, mainArts, extraArts);
+            return new Deck(main, extra, guaranteed, mainArts, extraArts, destiny);
+        }
+
+        /**
+         * The same deck, with these passcodes reachable by a Destiny Draw.
+         * <p>
+         * Carried by the DECK rather than by the duel's builder, for the same
+         * reason {@code guaranteed} and the artwork are: it is per-seat data
+         * that every path already threads through, so putting it here means no
+         * caller between the deck file and the engine grows a parameter.
+         */
+        public Deck flagging(java.util.Collection<Integer> codes)
+        {
+            return new Deck(main, extra, guaranteed, mainArts, extraArts,
+                codes == null ? List.of() : List.copyOf(codes));
         }
 
         /**
@@ -139,6 +174,16 @@ public class HeadlessDuelRunner
          */
         private OcgDuel.LogSink log = HeadlessDuelRunner::logFromCore;
         private final Deck[] decks = {Deck.EMPTY, Deck.EMPTY};
+        /**
+         * Extra Lua to load once the decks exist, by name.
+         * <p>
+         * The same door AltArtScript and DestinyDrawScript go through, opened
+         * for anything else that needs it -- chiefly a test that wants to ask
+         * the engine what it makes of a chunk without going through whatever
+         * generates the real one.
+         */
+        private final java.util.Map<String, String> extraScripts =
+            new java.util.LinkedHashMap<>();
         private final ResponseSource[] responders = new ResponseSource[2];
         private boolean stopOnWin = true;
 
@@ -187,6 +232,15 @@ public class HeadlessDuelRunner
         public Builder deck(int player, Deck deck)
         {
             decks[player] = deck;
+            return this;
+        }
+
+        public Builder extraScript(String name, String chunk)
+        {
+            if(chunk != null && !chunk.isBlank())
+            {
+                extraScripts.put(name, chunk);
+            }
             return this;
         }
 
@@ -574,6 +628,24 @@ public class HeadlessDuelRunner
             {
                 dress(duel, player, main, mainArts, extra, deck.extraArts());
             }
+            // After the cards exist, because the effect's condition asks about
+            // this player's deck -- and before the duel starts, because
+            // registering a rule mid-duel is the one thing OCG_LoadScript
+            // cannot do. See DestinyDrawScript for why registration is all this
+            // is allowed to attempt.
+            registerDestiny(duel, player, deck.destiny());
+            if(player == 1)
+            {
+                // After BOTH seats, so a chunk may look at either deck.
+                config.extraScripts.forEach((name, chunk) ->
+                {
+                    if(!duel.loadScript(name,
+                        chunk.getBytes(java.nio.charset.StandardCharsets.UTF_8)))
+                    {
+                        System.err.println("extra script refused by the core: " + name);
+                    }
+                });
+            }
         }
     }
 
@@ -612,6 +684,28 @@ public class HeadlessDuelRunner
      * copy in it wears its printed artwork — an honest fallback, where a
      * confident wrong artwork would not be.
      */
+    /**
+     * Registers this seat's Destiny Draw, if it has one.
+     * <p>
+     * A failure is logged, not thrown. The chunk is generated rather than
+     * authored, so a fault in it is a bug of ours -- but a duel that refuses to
+     * start is a worse outcome than a duel without a comeback mechanic, and the
+     * player can still play.
+     */
+    private static void registerDestiny(OcgDuel duel, int player, List<Integer> codes)
+    {
+        String chunk = DestinyDrawScript.chunk(player, codes);
+        if(chunk == null)
+        {
+            return;
+        }
+        if(!duel.loadScript("dd_destiny_" + player + ".lua",
+            chunk.getBytes(java.nio.charset.StandardCharsets.UTF_8)))
+        {
+            System.err.println("Destiny Draw could not be registered for player " + player);
+        }
+    }
+
     private static void dress(OcgDuel duel, int player, List<Integer> main, List<Integer> mainArts,
         List<Integer> extra, List<Integer> extraArts)
     {

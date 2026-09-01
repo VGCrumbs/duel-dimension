@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_fusion_destiny",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_fusion_destiny"
+  }
+}

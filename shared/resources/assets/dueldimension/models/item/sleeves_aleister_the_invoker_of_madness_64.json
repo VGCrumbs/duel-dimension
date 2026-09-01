@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_aleister_the_invoker_of_madness",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_aleister_the_invoker_of_madness"
+  }
+}

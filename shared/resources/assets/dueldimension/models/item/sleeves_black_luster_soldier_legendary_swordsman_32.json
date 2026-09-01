@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_black_luster_soldier_legendary_swordsman",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_black_luster_soldier_legendary_swordsman"
+  }
+}

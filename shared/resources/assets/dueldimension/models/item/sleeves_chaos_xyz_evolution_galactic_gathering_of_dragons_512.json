@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_chaos_xyz_evolution_galactic_gathering_of_dragons",
+  "textures": {
+    "layer0": "dueldimension:item/512/sleeves_chaos_xyz_evolution_galactic_gathering_of_dragons"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_crusadia_maximus",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_crusadia_maximus"
+  }
+}

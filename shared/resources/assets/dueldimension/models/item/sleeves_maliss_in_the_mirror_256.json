@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_maliss_in_the_mirror",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_maliss_in_the_mirror"
+  }
+}

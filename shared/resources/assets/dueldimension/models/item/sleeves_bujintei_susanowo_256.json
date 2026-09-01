@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_bujintei_susanowo",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_bujintei_susanowo"
+  }
+}

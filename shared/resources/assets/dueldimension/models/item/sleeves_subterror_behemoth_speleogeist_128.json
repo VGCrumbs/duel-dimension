@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_subterror_behemoth_speleogeist",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_subterror_behemoth_speleogeist"
+  }
+}

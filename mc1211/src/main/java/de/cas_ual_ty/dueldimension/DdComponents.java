@@ -113,6 +113,28 @@ public final class DdComponents
         .build();
 
     /**
+     * Which set each card in an opened pack came out of, parallel to
+     * {@link #CARD_INVENTORY}.
+     * <p>
+     * A tin is several real booster packs in a box, and the reveal shows its
+     * cards under the pack each came from. The pull that knows this happens
+     * when the pack is UNSEALED, and the cards then sit on the stack until the
+     * player opens the screen — so the answer has to be written down at the
+     * same moment the cards are, or it is gone. A card carries no record of the
+     * pack it was in, and the client cannot reconstruct one.
+     * <p>
+     * Absent on every pack rolled before this existed, and on every ordinary
+     * pack, where it would only repeat the product's own code. The reveal reads
+     * a missing or short list as "the product itself", which is the ungrouped
+     * layout it always had.
+     */
+    public static final DataComponentType<java.util.List<String>> PACK_SOURCES =
+        DataComponentType.<java.util.List<String>>builder()
+            .persistent(Codec.STRING.listOf())
+            .networkSynchronized(ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()))
+            .build();
+
+    /**
      * A card binder's id.
      * <p>
      * The binder's cards are a server-side collection keyed by this id — never
@@ -162,14 +184,45 @@ public final class DdComponents
      * initialiser runs, so a component is registered by calling
      * {@link Registry#register} and that is the whole of it.
      */
+    /**
+     * Which program a picked-up Duel Bot was running, and which deck within it.
+     * <p>
+     * Two plain strings, in the shape {@link #SET_CODE} already uses. They live
+     * on the stack so that picking a bot up and putting it down again is not a
+     * reset: a bot set to a particular structure deck, pocketed and placed in
+     * another room is still running that deck.
+     * <p>
+     * A custom deck is stored by NAME rather than by its cards. The deck belongs
+     * to a player and they may edit it between duels; a copy taken at pickup
+     * would be a deck that silently stopped matching the one in their editor.
+     */
+    public static final DataComponentType<String> BOT_PROGRAM =
+        DataComponentType.<String>builder()
+            .persistent(Codec.STRING)
+            .networkSynchronized(ByteBufCodecs.STRING_UTF8.cast())
+            .build();
+
+    public static final DataComponentType<String> BOT_DECK =
+        DataComponentType.<String>builder()
+            .persistent(Codec.STRING)
+            .networkSynchronized(ByteBufCodecs.STRING_UTF8.cast())
+            .build();
+
     public static void register()
     {
         Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE,
             ResourceLocation.fromNamespaceAndPath(DuelDimension.MOD_ID, "card"), CARD);
         Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE,
+            ResourceLocation.fromNamespaceAndPath(DuelDimension.MOD_ID, "bot_program"),
+            BOT_PROGRAM);
+        Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE,
+            ResourceLocation.fromNamespaceAndPath(DuelDimension.MOD_ID, "bot_deck"), BOT_DECK);
+        Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE,
             ResourceLocation.fromNamespaceAndPath(DuelDimension.MOD_ID, "card_inventory"), CARD_INVENTORY);
         Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE,
             ResourceLocation.fromNamespaceAndPath(DuelDimension.MOD_ID, "set_code"), SET_CODE);
+        Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE,
+            ResourceLocation.fromNamespaceAndPath(DuelDimension.MOD_ID, "pack_sources"), PACK_SOURCES);
         Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE,
             ResourceLocation.fromNamespaceAndPath(DuelDimension.MOD_ID, "binder_uuid"), BINDER_UUID);
         Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE,

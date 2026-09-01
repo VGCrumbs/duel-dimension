@@ -1,5 +1,6 @@
 package de.cas_ual_ty.dueldimension.clientutil.hub;
 
+import de.cas_ual_ty.dueldimension.clientutil.Layering;
 import de.cas_ual_ty.dueldimension.shop.DuelReward;
 import de.cas_ual_ty.dueldimension.shop.DuelRewardMessages;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -16,30 +17,15 @@ public final class DuelResultScreen extends Screen
     private static final int ROWS_PER_PAGE = 7;
 
     /**
-     * How long the result stands before it takes itself away.
+     * This screen does NOT take itself away.
      * <p>
-     * A duel that has just ended should hand the player back their controls, not
-     * wait to be dismissed. The board has already held the outcome and faded it
-     * (HOLD_MS then FADE_MS) before this screen ever opens, so by the time it is
-     * up the player has been told who won; this is the payout, and five seconds
-     * is long enough to read a line of it.
+     * It used to close on a five-second timer, on the reasoning that a finished
+     * duel should hand back control without a keypress. That was wrong: the
+     * payout is the thing the player came for, and a screen that walks off while
+     * it is being read is worse than one more click. The result stands until it
+     * is dismissed -- {@code Done} or Escape, both the player's own doing.
      */
-    private static final long AUTO_CLOSE_MS = 5000L;
-
     private final DuelRewardMessages.Result reward;
-
-    /** When this was put in front of somebody, for {@link #AUTO_CLOSE_MS}. */
-    private final long shownAt = System.currentTimeMillis();
-
-    /**
-     * Set the moment the player does anything with this screen.
-     * <p>
-     * Reading the bonus breakdown takes longer than five seconds, and a screen
-     * that closed while somebody was paging through it would be worse than one
-     * that waited to be dismissed. Any interaction stops the clock for good --
-     * from then on it closes when they say so.
-     */
-    private boolean engaged;
     /** 0 is the summary; 1 and above are pages of line items. */
     private int page;
 
@@ -102,44 +88,8 @@ public final class DuelResultScreen extends Screen
             Component.literal("Done"), button -> onClose()));
     }
 
-    /**
-     * Closes itself once the result has been up long enough.
-     * <p>
-     * The whole point is that finishing a duel returns control without a
-     * keypress. {@code Done} and Escape both still work and are still the way
-     * out for anyone who has started reading.
-     */
-    @Override
-    public void tick()
-    {
-        super.tick();
-        if(!engaged && System.currentTimeMillis() - shownAt >= AUTO_CLOSE_MS)
-        {
-            onClose();
-        }
-    }
-
-    /**
-     * Any click means somebody is using this, so stop the clock.
-     * <p>
-     * Checked BEFORE the click is dispatched: a click on Done closes the screen
-     * anyway, and a click on a page button needs the timer already stopped, so
-     * asking afterwards would be a frame late in one case and pointless in the
-     * other.
-     */
-    @Override
-    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
-        boolean doubled)
-    {
-        engaged = true;
-        return super.mouseClicked(event, doubled);
-    }
-
     private void setPage(int value)
     {
-        // Reached from the buttons, and also the honest place to stop the clock
-        // for anything that changes what is being read.
-        engaged = true;
         page = Math.max(0, Math.min(detailPages(), value));
         rebuildWidgets();
     }
@@ -157,11 +107,26 @@ public final class DuelResultScreen extends Screen
         int h = panelHeight();
         NineSlice.draw(graphics, HubTextures.PANEL, x, y, w, h);
 
+        // THIS SCREEN ALTERNATES PLATES AND WRITING, WHICH IS THE ONE THING
+        // 1.21.1 CANNOT ORDER BY ITSELF.
+        //
+        // A nine-slice is a texture and a heading is a glyph, and GuiGraphics
+        // resolves one buffer per type in whatever order it iterates them -- so
+        // "panel, then the words on the panel" is not what gets drawn. It is a
+        // coin toss per type, settled once per frame, which is why a result
+        // screen either looks right or looks like the panel ate its headings,
+        // consistently, until something else on the screen changes.
+        //
+        // Every plate-to-writing boundary below therefore says which side it is
+        // on. Four seams on a modal screen costs nothing measurable; getting
+        // the DUEL RESULT heading eaten by its own panel costs the screen.
+        Layering.above(graphics);
+
         String title = "DUEL RESULT";
-        graphics.text(font, title, x + 14, y + 13, 0xFFF4D089, true);
+        graphics.text(font, title, x + 14, y + 13, MenuInk.title(), MenuInk.shadow());
         String outcome = reward.outcome().label();
         int outcomeColour = reward.outcome() == DuelReward.Outcome.WIN ? 0xFF7CE38B
-            : reward.outcome() == DuelReward.Outcome.LOSS ? 0xFFFF8A80 : 0xFFE6EAF2;
+            : reward.outcome() == DuelReward.Outcome.LOSS ? 0xFFFF8A80 : MenuInk.label();
         graphics.text(font, outcome, x + w - 14 - font.width(outcome), y + 13,
             outcomeColour, true);
 
@@ -169,7 +134,9 @@ public final class DuelResultScreen extends Screen
         int bodyY = y + 35;
         int bodyW = w - 24;
         int bodyH = h - 72;
+        Layering.above(graphics);
         NineSlice.draw(graphics, HubTextures.PANEL_INSET, bodyX, bodyY, bodyW, bodyH);
+        Layering.above(graphics);
         if(page == 0)
         {
             renderSummary(graphics, bodyX, bodyY, bodyW);
@@ -179,6 +146,10 @@ public final class DuelResultScreen extends Screen
             renderDetails(graphics, bodyX, bodyY, bodyW);
         }
 
+        // The buttons are plates with writing on them too, and they are the
+        // last word on this screen: Continue has to be clickable-looking over
+        // whatever the body just wrote near it.
+        Layering.above(graphics);
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
 
@@ -187,18 +158,24 @@ public final class DuelResultScreen extends Screen
         String contest = reward.npcDuel() ? "Duelist duel"
             : reward.games() > 1 ? "Match  " + reward.myWins() + " - " + reward.theirWins()
             : "Player duel";
-        labelValue(graphics, x, y + 12, width, "Contest", contest, 0xFFC2C9D6);
+        labelValue(graphics, x, y + 12, width, "Contest", contest, MenuInk.body());
         labelValue(graphics, x, y + 35, width, "Reward",
-            "+" + reward.total() + " DP", 0xFFF4D089);
-        labelValue(graphics, x, y + 58, width, "Bonuses",
-            Integer.toString(reward.lines().size()), 0xFFE6EAF2);
+            "+" + reward.total() + " DP", MenuInk.title());
+        // DE on its own row rather than folded into the DP total. They are not
+        // the same currency and they are not earned the same way: DP scales with
+        // how the duel went, DE is a flat rate for having played one. Adding
+        // them together would suggest a exchange rate that does not exist.
+        labelValue(graphics, x, y + 58, width, "Energy",
+            "+" + reward.duelEnergy() + " DE", 0xFFB6E3A8);
+        labelValue(graphics, x, y + 81, width, "Bonuses",
+            Integer.toString(reward.lines().size()), MenuInk.label());
 
-        NineSlice.draw(graphics, HubTextures.PANEL, x + 10, y + 80, width - 20, 54);
-        graphics.text(font, "DP BALANCE", x + 20, y + 90, 0xFF8791A3, true);
+        NineSlice.draw(graphics, HubTextures.PANEL, x + 10, y + 103, width - 20, 54);
+        graphics.text(font, "DP BALANCE", x + 20, y + 113, 0xFF8791A3, true);
         String balance = reward.previousBalance() + "  +  " + reward.total()
             + "  =  " + reward.newBalance() + " DP";
         graphics.text(font, balance, x + (width - font.width(balance)) / 2,
-            y + 111, 0xFFF4D089, true);
+            y + 134, MenuInk.title(), MenuInk.shadow());
     }
 
     private void renderDetails(GuiGraphicsExtractor graphics, int x, int y, int width)
@@ -213,10 +190,10 @@ public final class DuelResultScreen extends Screen
         for(int i = first; i < last; i++)
         {
             DuelReward.Line line = reward.lines().get(i);
-            graphics.text(font, line.label(), x + 10, rowY, 0xFFE6EAF2, true);
+            graphics.text(font, line.label(), x + 10, rowY, MenuInk.label(), MenuInk.shadow());
             String amount = "+" + line.amount() + " DP";
             graphics.text(font, amount, x + width - 10 - font.width(amount), rowY,
-                0xFFF4D089, true);
+                MenuInk.title(), MenuInk.shadow());
             rowY += 17;
         }
         if(reward.lines().isEmpty())

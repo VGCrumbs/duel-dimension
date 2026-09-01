@@ -50,6 +50,16 @@ public class SubmitNodeCollector
     }
 
     /**
+     * The buffer source underneath, for the one thing that cannot go through
+     * this shim: an ItemStack, which 1.21.1 renders with its own renderer and
+     * its own choice of render types.
+     */
+    public MultiBufferSource buffers()
+    {
+        return buffers;
+    }
+
+    /**
      * The layer a submission belongs to, which 1.21.1 does not need.
      * <p>
      * Returns {@code this} so the fluent call sites read unchanged. The ordering

@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_assault_mode_activate",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_assault_mode_activate"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "pad": 8,
+  "left.width": 116,
+  "bottom.height": 46,
+  "grid.maxColumns": 12,
+  "grid.cellWidth": 28,
+  "grid.gap": 4,
+  "grid.top": 22,
+  "close.width": 70,
+  "close.gap": 4
+}

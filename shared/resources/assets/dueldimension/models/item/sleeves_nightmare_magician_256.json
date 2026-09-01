@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_nightmare_magician",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_nightmare_magician"
+  }
+}

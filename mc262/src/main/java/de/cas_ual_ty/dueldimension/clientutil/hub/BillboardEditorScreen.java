@@ -166,24 +166,31 @@ public class BillboardEditorScreen extends Screen
     /** Which of the model's animations to play, by name; blank for none. */
     private String modelAnimation = "";
     /**
-     * How far off the card the model floats, and which way it faces.
+     * How far off the card the monster floats, and which way a model faces.
      * <p>
-     * Both are about a model rather than about a sprite, so they live here
-     * rather than beside the sheet's own numbers. Elevation exists because
-     * standing a monster on the card is right for the ones with feet; a great
-     * many of them hover. Turn exists because a model has an authored forward
-     * and nothing guarantees it is the one this mod assumes.
+     * Elevation exists because standing a monster on the card is right for the
+     * ones with feet; a great many of them hover. It applies to a SPRITE as
+     * much as to a model, and always should have -- a sprite whose art has air
+     * under its feet hovers for exactly the same reason, and until
+     * {@code MonsterBillboard.stand} existed the only cure was to re-bake the
+     * sheet.
+     * <p>
+     * Turn is the one that really is a model's alone: a model has an authored
+     * forward and nothing guarantees it is the one this mod assumes, while a
+     * sprite turns to face whoever is looking. It still frames the offsets
+     * below for both, so that "forward" means one thing.
      */
     private float elevation;
     private float turn;
     /**
-     * Sideways and forward, in the model's own frame.
+     * Sideways and forward, in the monster's own frame.
      * <p>
-     * The third and fourth ways a model can be moved, after how tall it stands
-     * and which way it looks. A monster whose origin is not over its own feet —
-     * and plenty are not, these being rips rather than assets authored for a
+     * The third and fourth ways a monster can be moved, after how tall it
+     * stands and which way it looks. One whose origin is not over its own feet
+     * — and plenty are not, these being rips rather than assets authored for a
      * card — otherwise stands beside its card rather than on it, with nothing
-     * to be done about it.
+     * to be done about it. True of a sheet baked slightly off-centre as much as
+     * of a model, which is why these are no longer model-only.
      */
     private float offsetX;
     private float offsetZ;
@@ -589,7 +596,22 @@ public class BillboardEditorScreen extends Screen
                 }
                 else
                 {
+                    // The pictures AND the numbers that read them. This used to
+                    // re-scan the folder only, which is half a reload: a sheet
+                    // baked with a different frame count came back with its new
+                    // pixels and its old grid, so it played the wrong cells and
+                    // looked like the baker had exported it wrongly.
+                    //
+                    // Settings first, then the images, then the sizes those
+                    // images were measured at -- a definition naming a sheet has
+                    // to find it registered, and a cached measurement of the old
+                    // picture outlives the picture itself.
                     MonsterSheets.reload();
+                    MonsterSprites.load();
+                    MonsterSprites.clearMeasurements();
+                    // Whatever this screen is holding came from the definition
+                    // that has just been replaced underneath it.
+                    read();
                 }
                 rebuildWidgets();
             }).bounds(left() + (quarter + GAP) * 2, sheets, quarter, 18).build());
@@ -796,10 +818,20 @@ public class BillboardEditorScreen extends Screen
 
         wide(filePicker());
 
-        // The two adjustable factors a model has. Height is shared with the
-        // sprite deliberately: it means the same thing for both -- how tall the
-        // monster stands -- and a monster that changed size when it changed
-        // representation would be a worse answer than one number.
+        // SIZE AND PLACEMENT APPLY TO BOTH REPRESENTATIONS, and live on this
+        // tab because it is where there is room for them, not because they are
+        // a model's business. Size always did -- it means the same thing for
+        // both, how tall the monster stands, and a monster that changed size
+        // when it changed representation would be a worse answer than one
+        // number. Lift, Off x and Off z now do too: they used to reach
+        // ModelHologram and stop, so a monster with a model could be placed and
+        // the same monster as a sprite could not, with nothing on screen saying
+        // why. See MonsterBillboard.stand.
+        //
+        // Turn is the exception and remains a model's alone: a sprite turns to
+        // face whoever is looking, because a flat picture seen edge-on is
+        // nothing. It still frames the offsets for both, so that "forward"
+        // means one thing.
         pair(amount("Size", 0.1F, 4F, 1F, () -> scale, value -> scale = value),
             animationPicker());
         // How high and which way, beside each other because they are the two
@@ -1037,7 +1069,7 @@ public class BillboardEditorScreen extends Screen
 
         Properties card = DdDatabase.PROPERTIES_LIST.get(code);
         String name = card == null ? Long.toString(code) : card.getName();
-        extractor.text(font, font.plainSubstrByWidth(name, full()), left(), 7, 0xFFF4D089, true);
+        extractor.text(font, font.plainSubstrByWidth(name, full()), left(), 7, MenuInk.title(), MenuInk.shadow());
         extractor.text(font, notice != null ? notice
                 : MonsterSprites.has(code) ? "editing" : "no billboard yet",
             left(), 17,
@@ -1049,7 +1081,7 @@ public class BillboardEditorScreen extends Screen
     }
 
     /** The sheet's own accent, and the wings' -- blue, as asked for. */
-    private static final int BODY_LINE = 0xFFF4D089;
+    private static final int BODY_LINE = MenuInk.title();
     private static final int BODY_FILL = 0x33F4D089;
     private static final int WING_LINE = 0xFF63C8FF;
     private static final int WING_FILL = 0x3363C8FF;

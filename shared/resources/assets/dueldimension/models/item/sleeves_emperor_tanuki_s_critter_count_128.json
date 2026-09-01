@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_emperor_tanuki_s_critter_count",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_emperor_tanuki_s_critter_count"
+  }
+}

@@ -543,6 +543,23 @@ public final class CardImageManager
             try
             {
                 SimpleTexture texture = new SimpleTexture(loaded.id());
+                // BILINEAR, not nearest. Card art arrives at 512 or 256 and
+                // is drawn at whatever size a strip or a grid gives it, which
+                // is almost never a whole-number ratio -- so nearest sampling
+                // drops whole rows of pixels out of the rules text and the
+                // name, and a card that is perfectly legible in the file comes
+                // out crunched. These are photographs of printed cards, not
+                // Minecraft's own texel art, and the mod already makes the same
+                // choice for monster model skins (HologramSettings.ps2).
+                // 26.2 carries the choice on the CONTENTS rather than on the
+                // texture -- there is no setBlurMipmap here -- so the image is
+                // re-wrapped with metadata that asks for it.
+                net.minecraft.client.resources.metadata.texture.TextureMetadataSection meta =
+                    contents.metadata();
+                contents = new net.minecraft.client.renderer.texture.TextureContents(
+                    contents.image(),
+                    new net.minecraft.client.resources.metadata.texture.TextureMetadataSection(
+                        true, meta.clamp(), meta.mipmapStrategy(), meta.alphaCutoffBias()));
                 // apply() closes the NativeImage itself once doLoad has copied
                 // it, which is EDOPro's texture->drop() at :397 -- also on the
                 // render thread. Only ABANDONED images go to the clear thread.

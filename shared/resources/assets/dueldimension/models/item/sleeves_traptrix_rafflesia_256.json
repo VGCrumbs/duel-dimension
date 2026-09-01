@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_traptrix_rafflesia",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_traptrix_rafflesia"
+  }
+}

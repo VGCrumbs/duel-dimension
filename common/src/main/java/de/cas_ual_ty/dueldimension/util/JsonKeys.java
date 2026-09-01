@@ -63,6 +63,15 @@ public class JsonKeys
     public static final String CARDS = "cards";
     public static final String DISTRIBUTION = "distribution";
     public static final String SUB_SETS = "sub_sets";
+    /**
+     * Opens a composition's sub-sets instead of handing them over sealed.
+     * <p>
+     * Absent or false keeps the original rule, where a sub-set that is a
+     * product in its own right arrives as a sealed pack item. A tin sets it,
+     * because a tin's booster packs ARE the product; a deck-in-a-box does not,
+     * because there the boxed deck should still arrive as a deck.
+     */
+    public static final String OPEN_SUB_SETS = "open_sub_sets";
     
     // distribution
     

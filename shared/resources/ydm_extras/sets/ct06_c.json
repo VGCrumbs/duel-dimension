@@ -1,0 +1,56 @@
+{
+  "code": "CT06_C",
+  "type": "Sub-Set",
+  "pull_type": "distribution",
+  "distribution": "collectible_tin_promo",
+  "cards": [
+    {
+      "id": 2403771,
+      "code": "CT06-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 25862681,
+      "code": "CT06-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7841112,
+      "code": "CT06-EN003",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 41181774,
+      "code": "CT06-EN004",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 11613567,
+      "code": "CT06-ENS01",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10875327,
+      "code": "CT06-ENS02",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 69931927,
+      "code": "CT06-ENS03",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 52352005,
+      "code": "CT06-ENS04",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    }
+  ]
+}

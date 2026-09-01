@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_live_twin_lil_la_treat",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_live_twin_lil_la_treat"
+  }
+}

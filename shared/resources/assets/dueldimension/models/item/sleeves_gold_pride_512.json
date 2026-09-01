@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_gold_pride",
+  "textures": {
+    "layer0": "dueldimension:item/512/sleeves_gold_pride"
+  }
+}

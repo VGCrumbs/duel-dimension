@@ -80,15 +80,19 @@ public final class DdBlocks
     public static final ArenaMarkerBlock ARENA_POINT = registerMarker("arena_point");
 
     /**
-     * A pedestal holding one card, for looking at. A builder's block like the
-     * markers above, so it is placed the same way -- creative only, at the
-     * moment of placing.
+     * A pedestal holding one card, for looking at.
+     * <p>
+     * Unlike the markers above it is CRAFTED, so it drops itself when broken --
+     * which is why noLootTable() is gone. That flag says "this block has no
+     * loot table and the missing-table warning is expected"; leaving it on a
+     * craftable block would mean the block vanished every time it was mined,
+     * and the recipe would be a way of turning iron into nothing.
      */
     public static final de.cas_ual_ty.dueldimension.duel.overworld.display.CardDisplayBlock
         CARD_DISPLAY = register("card_display",
             key -> new de.cas_ual_ty.dueldimension.duel.overworld.display.CardDisplayBlock(
                 BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(5.0F, 6.0F)
-                    .sound(SoundType.METAL).noLootTable()));
+                    .sound(SoundType.METAL)));
 
     private DdBlocks()
     {

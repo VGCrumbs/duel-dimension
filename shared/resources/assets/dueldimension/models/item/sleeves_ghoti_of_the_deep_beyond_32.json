@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_ghoti_of_the_deep_beyond",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_ghoti_of_the_deep_beyond"
+  }
+}

@@ -58,8 +58,10 @@ public class CardSetSpecialRenderer implements SpecialModelRenderer<CardSet>
         Identifier front = back;
         if(set != null && set != CardSet.DUMMY)
         {
+            // Smooth for the same reason the shop shelf is: this is the same
+            // icon at item size, which is the steepest reduction it gets.
             Identifier art = CardImageManager.getTextureCard(
-                set.getInfoImageResourceLocation(), ClientProxy.activeSetInfoImageSize);
+                DuelTextures.setIconSmooth(set), ClientProxy.activeSetInfoImageSize);
             front = art == null || art == DuelTextures.UNKNOWN ? back : art;
         }
 

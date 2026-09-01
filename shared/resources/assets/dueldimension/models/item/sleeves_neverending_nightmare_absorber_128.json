@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_neverending_nightmare_absorber",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_neverending_nightmare_absorber"
+  }
+}

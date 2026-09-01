@@ -108,16 +108,35 @@ public final class FieldFootprint
     /** How far {@code pos} is from the field's centre line, in blocks, across the facing. */
     public static int lateralOffset(BlockPos anchor, Direction facing, BlockPos pos)
     {
-        Direction right = facing.getClockWise();
-        return (pos.getX() - anchor.getX()) * right.getStepX()
-            + (pos.getZ() - anchor.getZ()) * right.getStepZ();
+        return lateralOffset(anchor, facing, pos.getX(), pos.getZ());
     }
 
     /** How far {@code pos} is along the facing from the anchor, in blocks. */
     public static int forwardOffset(BlockPos anchor, Direction facing, BlockPos pos)
     {
-        return (pos.getX() - anchor.getX()) * facing.getStepX()
-            + (pos.getZ() - anchor.getZ()) * facing.getStepZ();
+        return forwardOffset(anchor, facing, pos.getX(), pos.getZ());
+    }
+
+    /**
+     * The same two projections without a {@link BlockPos} to allocate.
+     * <p>
+     * Pathfinding asks about a node as three loose ints, thousands of times per
+     * path, and wrapping each one in a BlockPos to answer "is this inside a
+     * duel" would allocate for every node of every path every mob walks --
+     * including all the ones nowhere near a duel. The BlockPos overloads above
+     * delegate here so the projection itself is still written once.
+     */
+    public static int lateralOffset(BlockPos anchor, Direction facing, int x, int z)
+    {
+        Direction right = facing.getClockWise();
+        return (x - anchor.getX()) * right.getStepX()
+            + (z - anchor.getZ()) * right.getStepZ();
+    }
+
+    public static int forwardOffset(BlockPos anchor, Direction facing, int x, int z)
+    {
+        return (x - anchor.getX()) * facing.getStepX()
+            + (z - anchor.getZ()) * facing.getStepZ();
     }
 
     private static BlockPos cell(BlockPos anchor, Direction facing, Direction right, int w, int d)

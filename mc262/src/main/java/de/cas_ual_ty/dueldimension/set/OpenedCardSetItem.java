@@ -125,7 +125,12 @@ public class OpenedCardSetItem extends CardSetBaseItem
 
     public ItemStack createItemForSet(CardSet set)
     {
-        List<ItemStack> cards = set.open(new Random());
+        // Where each card came from, captured HERE because here is the only
+        // place that knows. The pull is what splits a tin into its boosters,
+        // and once these stacks are on the item the answer is unrecoverable --
+        // a card records its printing, not the pack it was in.
+        List<String> sources = new java.util.ArrayList<>();
+        List<ItemStack> cards = set.open(new Random(), sources);
         NonNullList<ItemStack> items;
 
         if(cards == null)
@@ -137,7 +142,22 @@ public class OpenedCardSetItem extends CardSetBaseItem
             items = NonNullList.of(ItemStack.EMPTY, cards.toArray(ItemStack[]::new));
         }
 
-        return createItemForSet(set, items);
+        ItemStack opened = createItemForSet(set, items);
+        opened.set(de.cas_ual_ty.dueldimension.DdComponents.PACK_SOURCES, List.copyOf(sources));
+        return opened;
+    }
+
+    /**
+     * Which set each card in this opened pack came out of, parallel to
+     * {@link #contentsOf}.
+     * <p>
+     * Empty for a pack opened before this was recorded, and for one whose
+     * contents are all its own -- both of which the reveal reads as ungrouped.
+     */
+    public static List<String> sourcesOf(ItemStack openedStack)
+    {
+        return openedStack.getOrDefault(
+            de.cas_ual_ty.dueldimension.DdComponents.PACK_SOURCES, List.of());
     }
 
     public ItemStack createItemForSet(CardSet set, NonNullList<ItemStack> items)

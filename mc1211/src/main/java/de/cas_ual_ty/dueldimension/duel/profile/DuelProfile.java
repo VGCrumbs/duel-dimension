@@ -1,6 +1,7 @@
 package de.cas_ual_ty.dueldimension.duel.profile;
 
 import com.mojang.serialization.Codec;
+import de.cas_ual_ty.dueldimension.character.CharacterText;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import de.cas_ual_ty.dueldimension.card.CardSleevesType;
 
@@ -34,6 +35,16 @@ public final class DuelProfile
      * nothing to anyone.
      */
     private final Set<Integer> favourites = new LinkedHashSet<>();
+    /**
+     * Sealed products the player has starred, by set CODE.
+     * <p>
+     * A separate set from {@link #favourites} rather than a shared one: a
+     * card is keyed by passcode and a product by set code, and the two
+     * namespaces have no reason to agree. Keyed by CODE and not by name
+     * because the code is what the shop's stock carries and what survives a
+     * set being retitled.
+     */
+    private final Set<String> favouritePacks = new LinkedHashSet<>();
     /**
      * Sleeves this player has bought or been given.
      * <p>
@@ -69,6 +80,27 @@ public final class DuelProfile
      * beside the disk it refers to is the whole slot.
      */
     private boolean diskWorn;
+
+    /**
+     * The created character, and whether it is being worn.
+     * <p>
+     * Saved here so it survives a restart with everything else this duellist
+     * owns. An "Outfit" string used to live in this profile and was dropped; a
+     * character is what it became, and it is a record rather than a name
+     * because there is nothing to look up -- the models are in the jar and the
+     * eight numbers ARE the character.
+     */
+    private de.cas_ual_ty.dueldimension.character.CharacterLook characterLook =
+        de.cas_ual_ty.dueldimension.character.CharacterLook.DEFAULT;
+
+    /**
+     * Whether the custom model replaces the vanilla one.
+     * <p>
+     * Separate from having made one on purpose: a duellist may build a
+     * character and still walk around as themselves, and turning it off must
+     * not throw the character away.
+     */
+    private boolean characterShown;
     private String activeDeck = "";
 
     public Trunk trunk()
@@ -140,6 +172,35 @@ public final class DuelProfile
     public boolean isFavourite(int passcode)
     {
         return favourites.contains(passcode);
+    }
+
+    public Set<String> favouritePacks()
+    {
+        return Collections.unmodifiableSet(favouritePacks);
+    }
+
+    public boolean isFavouritePack(String code)
+    {
+        return code != null && favouritePacks.contains(code);
+    }
+
+    /**
+     * Stars a sealed product, or unstars one already starred.
+     *
+     * @return true if it is now a favourite
+     */
+    public boolean toggleFavouritePack(String code)
+    {
+        if(code == null || code.isEmpty())
+        {
+            return false;
+        }
+        if(favouritePacks.remove(code))
+        {
+            return false;
+        }
+        favouritePacks.add(code);
+        return true;
     }
 
     /**
@@ -258,6 +319,27 @@ public final class DuelProfile
     public boolean diskWorn()
     {
         return diskWorn;
+    }
+
+    public de.cas_ual_ty.dueldimension.character.CharacterLook characterLook()
+    {
+        return characterLook;
+    }
+
+    /** Whether this player is drawn as their character rather than themselves. */
+    public boolean characterShown()
+    {
+        return characterShown;
+    }
+
+    public void setCharacter(de.cas_ual_ty.dueldimension.character.CharacterLook look,
+        boolean shown)
+    {
+        // Never null: a profile with no character still answers, with the one
+        // the creator opens on.
+        characterLook = look == null
+            ? de.cas_ual_ty.dueldimension.character.CharacterLook.DEFAULT : look;
+        characterShown = shown;
     }
 
     public void setDiskWorn(boolean worn)
@@ -389,6 +471,29 @@ public final class DuelProfile
      * added above belongs in here too. A deck's own sleeve rides along inside
      * {@link DeckList#copy}.
      */
+    /**
+     * The last match this player ARRANGED, so the next one they arrange starts
+     * from it rather than from the built-in default.
+     * <p>
+     * Remembered for the host, because the host is the one who chooses: a
+     * guest never sets anything, so there would be nothing of theirs to
+     * remember. Kept on the profile rather than on the lobby because a lobby
+     * lasts one challenge and the point is to outlive it.
+     */
+    private de.cas_ual_ty.dueldimension.duel.match.MatchConfig matchConfig =
+        de.cas_ual_ty.dueldimension.duel.match.MatchConfig.DEFAULT;
+
+    public de.cas_ual_ty.dueldimension.duel.match.MatchConfig matchConfig()
+    {
+        return matchConfig;
+    }
+
+    public void rememberMatchConfig(de.cas_ual_ty.dueldimension.duel.match.MatchConfig config)
+    {
+        matchConfig = config == null
+            ? de.cas_ual_ty.dueldimension.duel.match.MatchConfig.DEFAULT : config.sanitised();
+    }
+
     public DuelProfile snapshot()
     {
         DuelProfile copy = new DuelProfile();
@@ -407,6 +512,7 @@ public final class DuelProfile
         }
         copy.unlockedStructures.addAll(unlockedStructures);
         copy.favourites.addAll(favourites);
+        copy.favouritePacks.addAll(favouritePacks);
         copy.sleeves.addAll(sleeves);
         copy.deckBoxes.addAll(deckBoxes);
         // Copied for the same reason as the sleeves beside them: a field left
@@ -414,7 +520,12 @@ public final class DuelProfile
         copy.disks.addAll(disks);
         copy.activeDisk = activeDisk;
         copy.diskWorn = diskWorn;
+        copy.characterLook = characterLook;
+        copy.characterShown = characterShown;
         copy.activeDeck = activeDeck;
+        // Carried for the reason spelled out above the disks: snapshot() is
+        // what persists, so a field left out here is lost on every save.
+        copy.matchConfig = matchConfig;
         return copy;
     }
 
@@ -530,6 +641,10 @@ public final class DuelProfile
                 .forGetter(profile -> List.copyOf(profile.unlockedStructures)),
             Codec.INT.listOf().optionalFieldOf("Favourites", List.of())
                 .forGetter(profile -> List.copyOf(profile.favourites)),
+            // Optional and empty by default, so every profile saved before
+            // products could be starred loads with none.
+            Codec.STRING.listOf().optionalFieldOf("FavouritePacks", List.of())
+                .forGetter(profile -> List.copyOf(profile.favouritePacks)),
             Sleeves.CODEC.listOf().optionalFieldOf("Sleeves", List.of())
                 .forGetter(profile -> List.copyOf(profile.sleeves)),
             DeckBoxStyle.CODEC.listOf().optionalFieldOf("DeckBoxes", List.of())
@@ -547,12 +662,28 @@ public final class DuelProfile
             // refused -- so every profile saved with one still loads, and
             // whatever each player last wore is still in their save file if
             // outfits come back.
-            Codec.STRING.optionalFieldOf("Active", "").forGetter(DuelProfile::activeDeck)
+            Codec.STRING.optionalFieldOf("Active", "").forGetter(DuelProfile::activeDeck),
+            // The character, as the one string that describes it. Optional and
+            // empty by default, so every profile saved before characters
+            // existed loads with none and the creator opens on its default.
+            Codec.STRING.optionalFieldOf("Character", "")
+                .forGetter(profile -> CharacterText.write(profile.characterLook)),
+            Codec.BOOL.optionalFieldOf("CharacterShown", false)
+                .forGetter(profile -> profile.characterShown),
+            // Optional and defaulting to the built-in match, so a profile saved
+            // before this loads as a player who has never arranged one.
+            de.cas_ual_ty.dueldimension.duel.match.MatchConfig.CODEC
+                .optionalFieldOf("LastMatch",
+                    de.cas_ual_ty.dueldimension.duel.match.MatchConfig.DEFAULT)
+                .forGetter(DuelProfile::matchConfig)
         ).apply(instance, DuelProfile::of));
 
     private static DuelProfile of(Trunk trunk, List<DeckList> decks, List<String> structures,
-        List<Integer> favourites, List<CardSleevesType> sleeves, List<DeckBoxStyle> deckBoxes,
-        List<String> disks, String activeDisk, boolean diskWorn, String activeDeck)
+        List<Integer> favourites, List<String> favouritePacks,
+        List<CardSleevesType> sleeves, List<DeckBoxStyle> deckBoxes,
+        List<String> disks, String activeDisk, boolean diskWorn, String activeDeck,
+        String character, boolean characterShown,
+        de.cas_ual_ty.dueldimension.duel.match.MatchConfig matchConfig)
     {
         DuelProfile profile = new DuelProfile();
         // Copied rather than kept: the optionalFieldOf default above is a single
@@ -565,6 +696,7 @@ public final class DuelProfile
         profile.decks.addAll(decks);
         profile.unlockedStructures.addAll(structures);
         profile.favourites.addAll(favourites);
+        profile.favouritePacks.addAll(favouritePacks);
         // Through grantSleeve rather than into the set, so the two things it
         // refuses are refused on the way in as well: a free sleeve saved by an
         // older rule is dropped rather than kept as a stale grant, and an id
@@ -577,6 +709,9 @@ public final class DuelProfile
         disks.forEach(profile::grantDisk);
         profile.activeDisk = activeDisk;
         profile.diskWorn = diskWorn;
+        profile.characterLook = CharacterText.read(character);
+        profile.characterShown = characterShown;
+        profile.rememberMatchConfig(matchConfig);
         profile.activeDeck = activeDeck;
         return profile;
     }

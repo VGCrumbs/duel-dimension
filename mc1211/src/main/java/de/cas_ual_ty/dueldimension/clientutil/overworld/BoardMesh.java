@@ -43,9 +43,21 @@ public final class BoardMesh
      *                one duellist and should stand the right way up for them.
      *                Zero for everything symmetrical, which is most of a board
      */
-    public record Piece(FieldLayout.Rect rect, ResourceLocation texture, double lift, int turns)
+    /**
+     * @param controller whose PLAYMAT this piece is, or -1 for anything that is
+     *                   not one -- a zone square, a label, a marker. Only the
+     *                   playmats take a duellist's chosen colour; tinting the
+     *                   zone squares with it would dye the lines on the table.
+     */
+    public record Piece(FieldLayout.Rect rect, ResourceLocation texture, double lift, int turns,
+        int controller)
     {
         /** A piece with nothing to orient, which is the ordinary case. */
+        public Piece(FieldLayout.Rect rect, ResourceLocation texture, double lift, int turns)
+        {
+            this(rect, texture, lift, turns, -1);
+        }
+
         public Piece(FieldLayout.Rect rect, ResourceLocation texture, double lift)
         {
             this(rect, texture, lift, 0);
@@ -105,7 +117,8 @@ public final class BoardMesh
             PlayMats mat = mats[controller] == null ? PlayMats.CLASSIC : mats[controller];
             // The world copy, whose black backing has been cut out: in the
             // world the ground is already the table.
-            pieces.add(new Piece(FieldLayout.zoneBand(controller), mat.worldTexture(), 0D));
+            pieces.add(new Piece(FieldLayout.zoneBand(controller), mat.worldTexture(), 0D, 0,
+                controller));
         }
 
         for(int controller = 0; controller <= 1; controller++)

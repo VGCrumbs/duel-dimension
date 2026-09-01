@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_emperor_charles_the_great",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_emperor_charles_the_great"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_mystical_space_typhoon",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_mystical_space_typhoon"
+  }
+}

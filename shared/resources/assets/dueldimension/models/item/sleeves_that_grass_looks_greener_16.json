@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_that_grass_looks_greener",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_that_grass_looks_greener"
+  }
+}

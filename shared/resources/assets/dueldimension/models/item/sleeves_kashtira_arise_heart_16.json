@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_kashtira_arise_heart",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_kashtira_arise_heart"
+  }
+}

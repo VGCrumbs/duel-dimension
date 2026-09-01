@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_crimson_dragon",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_crimson_dragon"
+  }
+}

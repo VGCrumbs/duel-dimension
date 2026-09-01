@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_junk_warrior_extreme",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_junk_warrior_extreme"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_dark_supremacy",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_dark_supremacy"
+  }
+}

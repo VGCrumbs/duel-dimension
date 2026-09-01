@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_pendulum_green",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_pendulum_green"
+  }
+}

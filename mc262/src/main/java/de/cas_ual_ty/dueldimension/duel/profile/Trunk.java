@@ -167,6 +167,33 @@ public final class Trunk
         return Collections.unmodifiableMap(byRarity);
     }
 
+    /** One printing the player actually holds, and how many of it. */
+    public record Held(int passcode, String rarity, int art, int count)
+    {
+    }
+
+    /**
+     * Every distinct printing of this card the player holds.
+     * <p>
+     * The finest view of the collection there is, and the only one a
+     * <b>trade</b> can use: {@link #printingsOf} collapses over the artwork and
+     * {@link #artsOwned} collapses over the rarity, so neither can name a
+     * single printing to hand over. A trade has to say exactly which copy is
+     * being offered, because that is the copy the other side is being shown.
+     */
+    public List<Held> heldPrintings(int passcode)
+    {
+        Map<Printing, Integer> printings = owned.get(passcode);
+        if(printings == null)
+        {
+            return List.of();
+        }
+        List<Held> held = new ArrayList<>(printings.size());
+        printings.forEach((printing, count) ->
+            held.add(new Held(passcode, printing.rarity(), printing.art(), count)));
+        return List.copyOf(held);
+    }
+
     /**
      * The artwork of every copy of this card the player owns, one entry per
      * copy, fanciest first.
@@ -352,6 +379,51 @@ public final class Trunk
                 printings.put(printing, have - take);
             }
             taken += take;
+        }
+        if(printings.isEmpty())
+        {
+            owned.remove(passcode);
+        }
+        return taken;
+    }
+
+    /**
+     * Removes copies of ONE exact printing, and no other.
+     * <p>
+     * {@link #remove(int, int)} deliberately takes the vaguest record first,
+     * because a player losing a card should lose the least specific record of
+     * it. That is right for a cost and wrong for a <b>trade</b>: a player who
+     * offered their Ultra Rare must hand over that Ultra Rare, not whichever
+     * copy the collection would rather part with, and the other side must
+     * receive what it was shown. This is the only caller that knows exactly
+     * which printing is meant, so it is the only one that asks by name.
+     *
+     * @return how many were actually removed, which is zero if the player does
+     *         not hold this printing -- the caller is expected to treat that as
+     *         a refusal rather than a partial trade
+     */
+    public int remove(int passcode, String rarity, int art, int copies)
+    {
+        Map<Printing, Integer> printings = owned.get(passcode);
+        if(printings == null || copies <= 0)
+        {
+            return 0;
+        }
+        Printing exact = new Printing(rarity == null ? UNKNOWN_RARITY : rarity,
+            Math.max(0, art));
+        int have = printings.getOrDefault(exact, 0);
+        int taken = Math.min(copies, have);
+        if(taken <= 0)
+        {
+            return 0;
+        }
+        if(have - taken <= 0)
+        {
+            printings.remove(exact);
+        }
+        else
+        {
+            printings.put(exact, have - taken);
         }
         if(printings.isEmpty())
         {

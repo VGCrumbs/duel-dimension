@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_d_d_d_d_dimensional_king_arc_crisis",
+  "textures": {
+    "layer0": "dueldimension:item/512/sleeves_d_d_d_d_dimensional_king_arc_crisis"
+  }
+}

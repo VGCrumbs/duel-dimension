@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_poseidra_the_atlantean_dragon",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_poseidra_the_atlantean_dragon"
+  }
+}

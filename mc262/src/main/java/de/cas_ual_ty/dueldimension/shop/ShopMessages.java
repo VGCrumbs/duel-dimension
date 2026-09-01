@@ -262,10 +262,15 @@ public final class ShopMessages
             // Every pack rolled separately, so ten packs are ten independent
             // pulls rather than one pull shown ten times.
             List<ItemStack> pulled = new ArrayList<>();
+            // Which set each pulled card actually came out of, parallel to
+            // `pulled`. For everything but a tin that is the product's own code
+            // repeated; for a tin it is the booster the card was in, which is
+            // what lets the reveal group the cards under their packs.
+            List<String> pulledFrom = new ArrayList<>();
             Random random = new Random();
             for(int i = 0; i < count; i++)
             {
-                List<ItemStack> one = set.open(random);
+                List<ItemStack> one = set.open(random, pulledFrom);
                 if(one != null)
                 {
                     pulled.addAll(one);
@@ -289,8 +294,15 @@ public final class ShopMessages
             List<Integer> codes = new ArrayList<>();
             List<String> rarities = new ArrayList<>();
             List<Integer> arts = new ArrayList<>();
-            for(ItemStack card : pulled)
+            // Parallel to `codes`, not to `pulled`: this loop SKIPS anything
+            // that is not a card, so the source has to be picked up by index
+            // here rather than carried across whole. A tin that handed over a
+            // sealed pack would otherwise shift every later card's source by
+            // one and file cards under the wrong booster.
+            List<String> sources = new ArrayList<>();
+            for(int pulledIndex = 0; pulledIndex < pulled.size(); pulledIndex++)
             {
+                ItemStack card = pulled.get(pulledIndex);
                 if(card.isEmpty() || !(card.getItem() instanceof de.cas_ual_ty.dueldimension.card.CardItem item))
                 {
                     continue;
@@ -301,6 +313,8 @@ public final class ShopMessages
                     continue;
                 }
                 codes.add((int)holder.getCard().getId());
+                sources.add(pulledIndex < pulledFrom.size()
+                    ? pulledFrom.get(pulledIndex) : set.code);
                 rarities.add(holder.getRarity() == null ? "" : holder.getRarity());
                 // The artwork this printing specifies, off the same holder as
                 // the rarity and gathered in the same pass so the three lists
@@ -321,6 +335,7 @@ public final class ShopMessages
             // image 2 rather than as a generic Obelisk.
             de.cas_ual_ty.dueldimension.duel.profile.Trunk trunk =
                 DuelProfiles.get(player).trunk();
+            java.util.List<Boolean> fresh = freshAmong(trunk, codes);
             for(int i = 0; i < codes.size(); i++)
             {
                 trunk.add(codes.get(i), rarities.get(i), arts.get(i), 1);
@@ -340,11 +355,12 @@ public final class ShopMessages
             DuelProfiles.saveAndSync(player);
 
             net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, new SyncPoints(DuelPoints.get(player)));
+            StatsMessages.sync(player);
             if(!codes.isEmpty())
             {
                 // The same reveal a physical pack uses, so buying and opening
                 // look the same rather than being two different ceremonies.
-                net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, new PackMessages.OpenPack(set.name, codes, rarities));
+                net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, new PackMessages.OpenPack(set.name, codes, rarities, fresh, sources));
             }
         }
     }
@@ -618,5 +634,23 @@ public final class ShopMessages
             net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
                 new SyncPoints(DuelPoints.get(player)));
         }
+    }
+
+    /**
+     * Which of these codes the trunk does not already hold.
+     * <p>
+     * Asked BEFORE anything is added, and each code counted once: the second
+     * copy of a card in one payout is not new, even though the first was.
+     */
+    private static java.util.List<Boolean> freshAmong(
+        de.cas_ual_ty.dueldimension.duel.profile.Trunk trunk, java.util.List<Integer> codes)
+    {
+        java.util.Set<Integer> seen = new java.util.HashSet<>();
+        java.util.List<Boolean> fresh = new java.util.ArrayList<>(codes.size());
+        for(int code : codes)
+        {
+            fresh.add(!trunk.has(code) && seen.add(code));
+        }
+        return fresh;
     }
 }

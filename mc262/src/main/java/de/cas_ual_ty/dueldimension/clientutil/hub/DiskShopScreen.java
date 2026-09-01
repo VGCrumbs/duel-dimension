@@ -185,7 +185,7 @@ public class DiskShopScreen extends Screen
         addRenderableWidget(action);
 
         addRenderableWidget(new HubWidgets.TextureButton(x + buttonW + PAD, buttonsY, buttonW, 20,
-            Component.literal("Back"), pressed -> minecraft.setScreenAndShow(new DuelHubScreen())));
+            Component.literal("Back"), pressed -> onClose()));
         addRenderableWidget(new HubWidgets.TextureButton(
             panelX() + panelW() - buttonW, buttonsY, buttonW, 20,
             Component.literal("Close"), pressed -> onClose()));
@@ -248,11 +248,11 @@ public class DiskShopScreen extends Screen
         extractor.fillGradient(0, 0, width, height, 0xC0101010, 0xD0101010);
 
         String title = "Duel Disks";
-        extractor.text(font, title, (width - font.width(title)) / 2, PAD, 0xFFF4D089, true);
+        extractor.text(font, title, (width - font.width(title)) / 2, PAD, MenuInk.title(), MenuInk.shadow());
 
         String balance = "DP  " + shop.points();
-        extractor.text(font, balance, panelX() + panelW() - font.width(balance), PAD, 0xFFF4D089,
-            true);
+        extractor.text(font, balance, panelX() + panelW() - font.width(balance), PAD, MenuInk.title(),
+            MenuInk.shadow());
 
         NineSlice.draw(extractor, HubTextures.PANEL, panelX(), panelTop(), panelW(), panelH());
 
@@ -316,7 +316,7 @@ public class DiskShopScreen extends Screen
         {
             String price = Integer.toString(offer.price());
             extractor.text(font, price, x + cell - font.width(price) - 3,
-                y + cell - font.lineHeight - 2, 0xFFF4D089, true);
+                y + cell - font.lineHeight - 2, MenuInk.title(), MenuInk.shadow());
         }
     }
 
@@ -355,4 +355,23 @@ public class DiskShopScreen extends Screen
     {
         return false;
     }
+    /**
+     * The hub screen this was opened from, or null. See {@link HubReturn}.
+     * <p>
+     * Read at construction, because that is the one moment the screen it is
+     * replacing is still on show.
+     */
+    private final net.minecraft.client.gui.screens.Screen dueldimension$parent =
+        HubReturn.parent();
+
+    /** Back to the hub if that is where this came from, otherwise to the world. */
+    @Override
+    public void onClose()
+    {
+        if(!HubReturn.back(dueldimension$parent))
+        {
+            super.onClose();
+        }
+    }
 }
+

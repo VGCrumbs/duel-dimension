@@ -1,0 +1,16 @@
+{
+  "name": "duelist_pack_collection_tin_2011",
+  "pulls": [
+    {
+      "weight": 1,
+      "entries": [
+        {
+          "count": 3,
+          "rarities": [
+            "Super Rare"
+          ]
+        }
+      ]
+    }
+  ]
+}

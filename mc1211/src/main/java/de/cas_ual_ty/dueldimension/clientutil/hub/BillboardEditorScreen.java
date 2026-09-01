@@ -593,7 +593,22 @@ public class BillboardEditorScreen extends Screen
                 }
                 else
                 {
+                    // The pictures AND the numbers that read them. This used to
+                    // re-scan the folder only, which is half a reload: a sheet
+                    // baked with a different frame count came back with its new
+                    // pixels and its old grid, so it played the wrong cells and
+                    // looked like the baker had exported it wrongly.
+                    //
+                    // Settings first, then the images, then the sizes those
+                    // images were measured at -- a definition naming a sheet has
+                    // to find it registered, and a cached measurement of the old
+                    // picture outlives the picture itself.
                     MonsterSheets.reload();
+                    MonsterSprites.load();
+                    MonsterSprites.clearMeasurements();
+                    // Whatever this screen is holding came from the definition
+                    // that has just been replaced underneath it.
+                    read();
                 }
                 rebuildWidgets();
             }).bounds(left() + (quarter + GAP) * 2, sheets, quarter, 18).build());
@@ -1045,7 +1060,7 @@ public class BillboardEditorScreen extends Screen
 
         Properties card = DdDatabase.PROPERTIES_LIST.get(code);
         String name = card == null ? Long.toString(code) : card.getName();
-        extractor.text(font, font.plainSubstrByWidth(name, full()), left(), 7, 0xFFF4D089, true);
+        extractor.text(font, font.plainSubstrByWidth(name, full()), left(), 7, MenuInk.title(), MenuInk.shadow());
         extractor.text(font, notice != null ? notice
                 : MonsterSprites.has(code) ? "editing" : "no billboard yet",
             left(), 17,
@@ -1057,7 +1072,7 @@ public class BillboardEditorScreen extends Screen
     }
 
     /** The sheet's own accent, and the wings' -- blue, as asked for. */
-    private static final int BODY_LINE = 0xFFF4D089;
+    private static final int BODY_LINE = MenuInk.title();
     private static final int BODY_FILL = 0x33F4D089;
     private static final int WING_LINE = 0xFF63C8FF;
     private static final int WING_FILL = 0x3363C8FF;

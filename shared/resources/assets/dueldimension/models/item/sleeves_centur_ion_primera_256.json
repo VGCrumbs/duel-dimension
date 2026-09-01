@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_centur_ion_primera",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_centur_ion_primera"
+  }
+}

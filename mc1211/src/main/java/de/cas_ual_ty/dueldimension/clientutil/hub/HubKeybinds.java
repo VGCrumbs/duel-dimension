@@ -51,6 +51,7 @@ public final class HubKeybinds
     {
         if(!de.cas_ual_ty.dueldimension.clientutil.overworld.ClientDuelField.locked())
         {
+            freelook = false;
             return;
         }
         boolean camera = com.mojang.blaze3d.platform.InputConstants.isKeyDown(
@@ -67,6 +68,8 @@ public final class HubKeybinds
             // thing that can answer, and it needs a cursor to be answered with.
             && !de.cas_ual_ty.dueldimension.clientutil.PromptOptions.needsPicker(
                 de.cas_ual_ty.dueldimension.clientutil.DuelClientState.prompt);
+
+        freelook = camera;
 
         if(minecraft.screen
             instanceof de.cas_ual_ty.dueldimension.clientutil.overworld.BoardPointerScreen open)
@@ -145,6 +148,34 @@ public final class HubKeybinds
         CATEGORY));
 
     /**
+     * Shows the coin and the die, for looking at the ported motion.
+     * <p>
+     * Development only, on right bracket. Both props came from Master Duel with
+     * animation of their own, and a clip that converted wrongly does not throw
+     * -- it plays a toss that turns the wrong way. Watching it is the check.
+     */
+    public static final KeyMapping TOSS_TEST = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        "key.dueldimension.toss_test",
+        InputConstants.Type.KEYSYM,
+        GLFW.GLFW_KEY_RIGHT_BRACKET,
+        CATEGORY));
+
+    /**
+     * Opens a trade against a stand-in, for looking at the interface.
+     * <p>
+     * Development only -- the server refuses the message outside a dev
+     * environment -- and bound to backslash, which nothing else in the game
+     * uses. A trade needs two sides to be worth looking at and a second player
+     * is not always to hand, so the stand-in offers one card and is always
+     * ready: every state the screen can reach is reachable by one person.
+     */
+    public static final KeyMapping TRADE_TEST = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+        "key.dueldimension.trade_test",
+        InputConstants.Type.KEYSYM,
+        GLFW.GLFW_KEY_BACKSLASH,
+        CATEGORY));
+
+    /**
      * Puts the active duel disk on, or takes it off.
      * <p>
      * The disk is worn in the off-hand, which is where every other part of the
@@ -159,8 +190,167 @@ public final class HubKeybinds
         GLFW.GLFW_KEY_LEFT_ALT,
         CATEGORY));
 
+    /**
+     * The overhead view of the board, on {@code V}.
+     * <p>
+     * A duel is read off a board that a standing player sees edge on. This puts
+     * the camera where the flat duel screen has always put it -- straight down,
+     * square on, the whole mat in frame -- without leaving the world for a
+     * screen. See {@code DuelCamera}, which owns the placement.
+     */
+    public static final KeyMapping OVERHEAD_VIEW = KeyBindingHelper.registerKeyBinding(
+        new KeyMapping(
+            "key.dueldimension.overhead_view",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_V,
+            CATEGORY));
+
+    /**
+     * Whether the freelook key is down and the duel is letting it work.
+     * <p>
+     * Written by {@link #cameraHeld} rather than asked for again, so the
+     * crosshair and the pointer cannot disagree about whether the player is
+     * looking around -- they were two reads of the same key with two sets of
+     * conditions, which is one refactor away from drifting apart.
+     */
+    private static boolean freelook;
+
+    public static boolean freelook()
+    {
+        return freelook;
+    }
+
     private HubKeybinds()
     {
+    }
+
+    /** Whether the overhead key was down last tick, so a hold is not a repeat. */
+    private static boolean overheadWasDown;
+
+    /**
+     * The overhead toggle, POLLED rather than consumed.
+     *
+     * <h2>Why a keybind does not work here</h2>
+     * Minecraft only feeds key presses to {@link KeyMapping} while no screen is
+     * open, and a duel is played with the board pointer open almost all of the
+     * time -- so {@code consumeClick} never returned true and the key did
+     * nothing at all. That is not a new discovery: {@link #cameraHeld} polls the
+     * window directly for exactly this reason, and this is the same answer to
+     * the same problem.
+     * <p>
+     * The mapping still exists, so the key is rebindable in the controls screen
+     * and is read from wherever the player moved it. What is dropped is only
+     * Minecraft's delivery of it.
+     *
+     * <h2>Edge, not level</h2>
+     * A held key would toggle sixty times a second. The previous state is kept
+     * and cleared whenever the duel is not on, so a key held through the end of
+     * one duel cannot fire into the next.
+     */
+    private static void overheadKey(net.minecraft.client.Minecraft minecraft)
+    {
+        boolean locked = de.cas_ual_ty.dueldimension.clientutil.overworld
+            .ClientDuelField.locked();
+        if(!locked)
+        {
+            overheadWasDown = false;
+            duelWasOn = false;
+            de.cas_ual_ty.dueldimension.clientutil.DuelCamera.off();
+            return;
+        }
+        // The duel just started, so it opens in whichever view was asked for in
+        // the settings. On the RISING edge only: doing it every tick would
+        // undo the key half a frame after it was pressed.
+        if(!duelWasOn)
+        {
+            duelWasOn = true;
+            de.cas_ual_ty.dueldimension.clientutil.DuelCamera.beginDuel();
+        }
+        // Not while something is being typed into. The board pointer and the
+        // camera's own editor are the two screens a duellist has open while
+        // still watching the board; anything else -- chat above all -- wants
+        // the letter V and not a camera.
+        net.minecraft.client.gui.screens.Screen open = minecraft.screen;
+        boolean typing = open != null
+            && !(open instanceof de.cas_ual_ty.dueldimension.clientutil.overworld
+                .BoardPointerScreen)
+            && !(open instanceof DuelCameraScreen);
+        boolean down = !typing && com.mojang.blaze3d.platform.InputConstants.isKeyDown(
+            minecraft.getWindow().getWindow(),
+            ((de.cas_ual_ty.dueldimension.mixin.client.KeyMappingAccessor)
+                (Object)OVERHEAD_VIEW).dueldimension$key().getValue());
+        if(down && !overheadWasDown)
+        {
+            de.cas_ual_ty.dueldimension.clientutil.DuelCamera.toggle();
+        }
+        overheadWasDown = down;
+
+        // Backslash opens the editor, polled for the same reason and only from
+        // the view it edits.
+        boolean editor = !typing
+            && de.cas_ual_ty.dueldimension.clientutil.DuelCamera.active()
+            && com.mojang.blaze3d.platform.InputConstants.isKeyDown(
+                minecraft.getWindow().getWindow(),
+                org.lwjgl.glfw.GLFW.GLFW_KEY_BACKSLASH);
+        if(editor && !editorWasDown)
+        {
+            minecraft.setScreen(new DuelCameraScreen());
+        }
+        editorWasDown = editor;
+    }
+
+    private static boolean editorWasDown;
+
+    /** Whether a duel was on last tick, so its start can be noticed. */
+    private static boolean duelWasOn;
+
+    /** Whether the anchor key was down last tick, so a hold is not a repeat. */
+    private static boolean anchorWasDown;
+
+    /**
+     * The item anchor editor, on the numpad's decimal point.
+     * <p>
+     * POLLED rather than consumed, for the reason {@link #overheadKey} is: a
+     * mapping is not delivered while a screen is open, and this screen is one of
+     * the things it has to close. Not bound to a {@code KeyMapping} at all --
+     * unlike the overhead view it is a development tool, and a rebindable key in
+     * the controls list for placing a sword in a hand would be a control nobody
+     * wants and everybody has to scroll past.
+     * <p>
+     * Only while a character is actually being worn, so on a vanilla body the
+     * key does nothing and the numpad is left alone.
+     */
+    /**
+     * Which anchor editor this key opens, which depends on what you are doing.
+     * <p>
+     * Riding opens the seat, everything else opens the grip. One key rather than
+     * two because the editors are the same idea pointed at different numbers,
+     * and the thing being tuned is always the thing on screen -- a duellist in a
+     * saddle has no item grip to look at, and a duellist on foot has no seat.
+     */
+    private static net.minecraft.client.gui.screens.Screen anchorEditor(net.minecraft.client.Minecraft minecraft)
+    {
+        return minecraft.player != null && minecraft.player.isPassenger()
+            ? new RideAnchorScreen() : new ItemAnchorScreen();
+    }
+
+    private static void anchorKey(net.minecraft.client.Minecraft minecraft)
+    {
+        boolean typing = minecraft.screen != null
+            && !(minecraft.screen instanceof ItemAnchorScreen)
+            && !(minecraft.screen instanceof RideAnchorScreen);
+        boolean down = !typing
+            && de.cas_ual_ty.dueldimension.clientutil.character.CharacterEdits.worn()
+            && com.mojang.blaze3d.platform.InputConstants.isKeyDown(
+                minecraft.getWindow().getWindow(),
+                org.lwjgl.glfw.GLFW.GLFW_KEY_KP_DECIMAL);
+        if(down && !anchorWasDown)
+        {
+            boolean open = minecraft.screen instanceof ItemAnchorScreen
+                || minecraft.screen instanceof RideAnchorScreen;
+            minecraft.setScreen(open ? null : anchorEditor(minecraft));
+        }
+        anchorWasDown = down;
     }
 
     /** Called once from the client initialiser. */
@@ -200,6 +390,10 @@ public final class HubKeybinds
         }
         cameraHeld(minecraft);
 
+        overheadKey(minecraft);
+
+        anchorKey(minecraft);
+
         boolean foil = false;
         while(FOIL_TEST.consumeClick())
         {
@@ -209,6 +403,31 @@ public final class HubKeybinds
         {
             minecraft.setScreen(
                 new de.cas_ual_ty.dueldimension.clientutil.FoilTestScreen());
+        }
+
+        boolean toss = false;
+        while(TOSS_TEST.consumeClick())
+        {
+            toss = true;
+        }
+        if(toss)
+        {
+            minecraft.setScreen(
+                new de.cas_ual_ty.dueldimension.clientutil.hub.TossTestScreen());
+        }
+
+        boolean trade = false;
+        while(TRADE_TEST.consumeClick())
+        {
+            trade = true;
+        }
+        if(trade && minecraft.getConnection() != null)
+        {
+            // Asked for, not opened: the table is the server's, so the screen
+            // appears when it answers with one -- the same path a real trade
+            // takes, which is what makes this worth testing with.
+            net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+                new de.cas_ual_ty.dueldimension.duel.trade.TradeMessages.OpenDebug());
         }
     }
 }

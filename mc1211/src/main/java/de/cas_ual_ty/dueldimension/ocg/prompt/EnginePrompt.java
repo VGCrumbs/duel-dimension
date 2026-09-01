@@ -58,7 +58,17 @@ public record EnginePrompt(Kind kind, String title, List<Option> options, int mi
          * nothing highlights the board for this prompt, and the drawing needs
          * to know which way up to show the card.
          */
-        POSITION
+        POSITION,
+        /**
+         * The Destiny Draw offer: take a nominated card, or draw normally.
+         * <p>
+         * It arrives as an ordinary chain window, because that is exactly what
+         * it is -- an optional trigger the engine is offering. The kind exists
+         * so the screen can DRAW it differently; the options are left in the
+         * engine's own order so the answer still maps straight back to a chain
+         * index, and declining is still declining a chain.
+         */
+        DESTINY
     }
 
     /**

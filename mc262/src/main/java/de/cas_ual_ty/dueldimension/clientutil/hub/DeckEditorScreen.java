@@ -159,6 +159,20 @@ public class DeckEditorScreen extends Screen
      * the cursor until the next click. Both gestures work, which is what a
      * Minecraft player expects of an inventory.
      */
+    /**
+     * A press that landed on a card and has not yet become a drag.
+     * <p>
+     * "Armed": something would be picked up if the cursor moved, and nothing has
+     * been picked up yet. {@link #arm} sets these, {@link #beginDrag} spends
+     * them and {@link #disarm} forgets them.
+     * <p>
+     * One of {@link #pendingPart} and {@link #pendingTrunk} is set and the other
+     * is null -- a press is in a deck grid or in the collection, never both.
+     */
+    private DeckList.Part pendingPart;
+    private int pendingIndex = -1;
+    private Properties pendingTrunk;
+
     private boolean pressedOnCard;
     private double pressX;
     private double pressY;
@@ -319,13 +333,17 @@ public class DeckEditorScreen extends Screen
             EditorState.invalidate();
             rebuildControls();
         }));
+        // The arrow reads DOWN the list: ascending means the values increase
+        // as you read downward, so ascending is the DOWN arrow. It pointed the
+        // other way and looked backwards on screen.
+        //
         // An arrow, not the word. ASC and DESC were four and five characters in
         // a thirty-unit button on the one row with nothing to spare; the arrow
         // says it in a square of the row's own height. The narration is still
         // the word, because a screen reader cannot read a triangle.
         boolean descending = EditorState.query().descending();
         addRenderableWidget(new HubWidgets.IconButton(rightX + rightW - pad - dirW, panelTop + pad,
-            dirW, 16, descending ? HubTextures.SORT_DOWN : HubTextures.SORT_UP,
+            dirW, 16, descending ? HubTextures.SORT_UP : HubTextures.SORT_DOWN,
             Component.literal(descending ? "Descending" : "Ascending"), pressed ->
         {
             EditorState.query().setDescending(!EditorState.query().descending());
@@ -427,6 +445,35 @@ public class DeckEditorScreen extends Screen
             refusal = result.message();
         }));
 
+        // Which forbidden/limited list the deck is being BUILT to, beside the
+        // things that act on the deck rather than on the collection. It belongs
+        // here for the same reason the sleeve does: it is stored on the deck and
+        // travels with it, so it is chosen where the deck is worked on.
+        //
+        // Not the same setting as the duel lobby's. That one decides what a
+        // ROOM plays under; this one decides what the editor checks against, so
+        // a deck can be built to a list long before it meets one.
+        HubWidgets.TextureButton banlist = new HubWidgets.TextureButton(
+            rowLeft + deckRow.x()[3],
+            deckRowTop + deckRow.line()[3] * (BUTTON_ROW_H + 2), deckRow.width()[3],
+            BUTTON_ROW_H, BANLIST_LABEL, pressed ->
+        {
+            // Written out on the way, as the sleeve and deck box routes are: the
+            // tick that normally autosaves does not run while another screen is
+            // up.
+            EditorState.flush();
+            if(minecraft != null)
+            {
+                minecraft.setScreenAndShow(new BanlistPickerScreen(this));
+            }
+        });
+        // Read fresh every frame rather than baked in at build time, so the list
+        // named here follows a choice made in the picker -- or a server refusal
+        // undoing one -- without the row having to be rebuilt.
+        banlist.setTooltipLines(java.util.List.of("Building to: "
+            + EditorState.banlist().displayName()));
+        addRenderableWidget(banlist);
+
         // What the deck is printed on, on the row that acts on the deck. A
         // sleeve belongs to a DECK exactly as its cards do -- it is stored on
         // the deck and travels with it -- so it is chosen where the deck is
@@ -435,13 +482,13 @@ public class DeckEditorScreen extends Screen
         //
         // No label: the swatch IS the label. It already shows what the deck is
         // wearing, and the word beside it only repeated what the picture said.
-        addRenderableWidget(new SleeveButton(rowLeft + deckRow.x()[3],
-            deckRowTop + deckRow.line()[3] * (BUTTON_ROW_H + 2), deckRow.width()[3],
+        addRenderableWidget(new SleeveButton(rowLeft + deckRow.x()[4],
+            deckRowTop + deckRow.line()[4] * (BUTTON_ROW_H + 2), deckRow.width()[4],
             BUTTON_ROW_H, Component.empty()));
 
         // The case is the deck-level cosmetic immediately beside its sleeves.
-        addRenderableWidget(new DeckBoxButton(rowLeft + deckRow.x()[4],
-            deckRowTop + deckRow.line()[4] * (BUTTON_ROW_H + 2), deckRow.width()[4],
+        addRenderableWidget(new DeckBoxButton(rowLeft + deckRow.x()[5],
+            deckRowTop + deckRow.line()[5] * (BUTTON_ROW_H + 2), deckRow.width()[5],
             BUTTON_ROW_H, Component.empty()));
 
         // Named for what it does rather than for being finished with: the deck
@@ -1642,11 +1689,24 @@ public class DeckEditorScreen extends Screen
     private static final Component SORT_DECK_LABEL = Component.literal("Sort");
     private static final Component IMPORT_LABEL = Component.literal("Import");
     private static final Component EXPORT_LABEL = Component.literal("Export");
+    /**
+     * The banlist control, labelled for what it opens rather than for what is
+     * chosen.
+     * <p>
+     * A button showing the current list would be the more informative one and it
+     * cannot be had here: the row is packed from its labels, so a label that
+     * changes on every press would re-measure the row and shuffle Sort, Import
+     * and Export sideways underneath the cursor that had just pressed one of
+     * them. The list in force is on the button's tooltip and across the top of
+     * the picker instead, and neither of those moves anything.
+     */
+    private static final Component BANLIST_LABEL = Component.literal("Banlist");
 
     private int[] deckRowWidths()
     {
         return new int[] {buttonWidth(SORT_DECK_LABEL), buttonWidth(IMPORT_LABEL),
-            buttonWidth(EXPORT_LABEL), swatchWidth(), swatchWidth()};
+            buttonWidth(EXPORT_LABEL), buttonWidth(BANLIST_LABEL),
+            swatchWidth(), swatchWidth()};
     }
 
     private int[] deckRowFloors()
@@ -2202,6 +2262,13 @@ public class DeckEditorScreen extends Screen
             List<Integer> cards = EditorState.deck().partFor(part);
             if(carried != null)
             {
+                // A RECOVERY PATH, not the normal route. A drop is resolved on
+                // release now, so nothing should still be carried by the time
+                // the next press arrives -- unless a release was swallowed, as
+                // one is when the artwork picker opens over a drag in progress.
+                // Left in so a card that got stranded on the cursor can still be
+                // put down, rather than being stuck there until the screen is
+                // closed.
                 place(part);
                 return true;
             }
@@ -2217,16 +2284,8 @@ public class DeckEditorScreen extends Screen
                     EditorState.removeCard(part, index);
                     return true;
                 }
-                int code = cards.get(index);
-                // Read before the removal, and carried on the cursor: this copy
-                // may be wearing an artwork, and it keeps it wherever it lands.
-                carriedArt = EditorState.removeCard(part, index);
-                carried = card(code);
-                carriedFrom = part;
-                carriedIndex = index;
-                pressedOnCard = true;
-                pressX = mouseX;
-                pressY = mouseY;
+                // ARMED, NOT LIFTED. The card is not touched here -- see arm().
+                arm(part, index, null, mouseX, mouseY);
                 return true;
             }
             return true;
@@ -2247,17 +2306,8 @@ public class DeckEditorScreen extends Screen
                 }
                 else
                 {
-                    carried = picked;
-                    carriedFrom = null;
-                    carriedIndex = -1;
-                    // A card taken out of the collection is a new copy, so it
-                    // wears the printing the player owns -- decided here, at the
-                    // moment it comes into existence, rather than where it lands,
-                    // because the cursor has to be drawn in it on the way there.
-                    carriedArt = EditorState.defaultArtFor((int)picked.getId());
-                    pressedOnCard = true;
-                    pressX = mouseX;
-                    pressY = mouseY;
+                    // ARMED, NOT LIFTED. See arm().
+                    arm(null, -1, picked, mouseX, mouseY);
                 }
                 return true;
             }
@@ -2265,12 +2315,124 @@ public class DeckEditorScreen extends Screen
 
         if(carried != null)
         {
-            // Dropped on nothing: put it back where it came from rather than
-            // losing it.
+            // The same recovery path as above: a stranded card, clicked away
+            // from any grid, goes back where it came from rather than being lost.
             returnCarried();
             return true;
         }
         return super.mouseClicked(event, false);
+    }
+
+    /**
+     * Remembers what a press landed on, without disturbing it.
+     *
+     * <h2>Why a press no longer picks a card up</h2>
+     * It used to, and the pickup was a REMOVAL: pressing a card in the deck
+     * called {@code EditorState.removeCard} there and then, so the card left the
+     * grid the instant the button went down and a plain click carried it on the
+     * cursor until somewhere was clicked to put it down.
+     * <p>
+     * That made the two gestures a player has -- click and drag -- into one, and
+     * the harmless one into the destructive one. A misplaced click on a built
+     * deck silently took a card out of it and attached it to the pointer; the
+     * only way to find out was to notice the grid had closed up behind it.
+     * <p>
+     * So a press only <b>arms</b> a pickup now. Nothing is removed, nothing is
+     * carried, and the card stays exactly where it is drawn. Moving the cursor
+     * past {@link #DRAG_SLOP} while the button is down is what lifts it, in
+     * {@link #beginDrag}; releasing without moving that far does nothing at all,
+     * which is what a click on a card ought to do.
+     * <p>
+     * The threshold is what keeps it usable rather than fussy: a few pixels of
+     * travel is what separates a click from a drag on any pointing device, and
+     * it is measured from the press rather than per-frame so a slow drag crosses
+     * it just as surely as a fast one.
+     *
+     * @param part  the deck grid pressed in, or null for the collection
+     * @param index which copy in that grid; ignored when {@code part} is null
+     * @param trunk the collection card pressed, or null when {@code part} is not
+     */
+    private void arm(DeckList.Part part, int index, Properties trunk,
+        double mouseX, double mouseY)
+    {
+        pendingPart = part;
+        pendingIndex = index;
+        pendingTrunk = trunk;
+        pressedOnCard = true;
+        pressX = mouseX;
+        pressY = mouseY;
+    }
+
+    /** Forgets an armed pickup. Does not touch anything already carried. */
+    private void disarm()
+    {
+        pendingPart = null;
+        pendingIndex = -1;
+        pendingTrunk = null;
+        pressedOnCard = false;
+    }
+
+    /**
+     * Lifts the armed card once the cursor has travelled far enough.
+     * <p>
+     * This is where the removal that used to happen on press happens instead, so
+     * the deck is only disturbed by a gesture that was actually a drag.
+     * <p>
+     * <b>The index is re-checked rather than trusted.</b> It was read when the
+     * button went down and the deck can have changed since -- a filter applied,
+     * a card added from a keybind -- and lifting by a stale index would take a
+     * different card than the one under the cursor, or throw.
+     *
+     * @return true once something is being carried
+     */
+    private boolean beginDrag(double mouseX, double mouseY)
+    {
+        if(carried != null || !pressedOnCard)
+        {
+            return carried != null;
+        }
+        if(Math.abs(mouseX - pressX) <= DRAG_SLOP && Math.abs(mouseY - pressY) <= DRAG_SLOP)
+        {
+            return false;
+        }
+        if(pendingPart != null)
+        {
+            List<Integer> cards = EditorState.deck().partFor(pendingPart);
+            if(pendingIndex < 0 || pendingIndex >= cards.size())
+            {
+                disarm();
+                return false;
+            }
+            int code = cards.get(pendingIndex);
+            // Read before the removal, and carried on the cursor: this copy may
+            // be wearing an artwork, and it keeps it wherever it lands.
+            carriedArt = EditorState.removeCard(pendingPart, pendingIndex);
+            carried = card(code);
+            carriedFrom = pendingPart;
+            carriedIndex = pendingIndex;
+        }
+        else if(pendingTrunk != null)
+        {
+            carried = pendingTrunk;
+            carriedFrom = null;
+            carriedIndex = -1;
+            // A card taken out of the collection is a new copy, so it wears the
+            // printing the player owns -- decided here, at the moment it comes
+            // into existence, rather than where it lands, because the cursor has
+            // to be drawn in it on the way there.
+            carriedArt = EditorState.defaultArtFor((int)pendingTrunk.getId());
+        }
+        else
+        {
+            disarm();
+            return false;
+        }
+        // The arming is spent, but the press is not: mouseReleased still has to
+        // resolve the drop, and it asks whether something is carried.
+        pendingPart = null;
+        pendingIndex = -1;
+        pendingTrunk = null;
+        return true;
     }
 
     private void place(DeckList.Part part)
@@ -2390,12 +2552,24 @@ public class DeckEditorScreen extends Screen
             {
                 labels.add(ALT_ARTS);
             }
+            // Main deck only: a Destiny Draw puts a card on TOP OF THE DECK to
+            // be drawn, and the Extra Deck is never drawn from -- so an entry
+            // on an Extra card would be an entry that could not do anything.
+            if(menuPart == DeckList.Part.MAIN)
+            {
+                labels.add(EditorState.isDestiny((int)menuCard.getId())
+                    ? CLEAR_DESTINY : SET_DESTINY);
+            }
         }
         return labels;
     }
 
     /** The one label the artwork picker is opened from. */
     private static final String ALT_ARTS = "Alt Arts";
+
+    /** The two faces of the Destiny Card entry; one row, and its label says which way it goes. */
+    private static final String SET_DESTINY = "Destiny Card";
+    private static final String CLEAR_DESTINY = "Clear Destiny";
 
     /**
      * Whether a card was printed with more than one artwork.
@@ -2482,6 +2656,13 @@ public class DeckEditorScreen extends Screen
         return rowOf(ALT_ARTS);
     }
 
+    /** Only present for a copy in the MAIN deck; -1 everywhere else. */
+    private int destinyRow()
+    {
+        int set = rowOf(SET_DESTINY);
+        return set >= 0 ? set : rowOf(CLEAR_DESTINY);
+    }
+
     private boolean handleMenuClick(double mouseX, double mouseY)
     {
         int rows = menuRows();
@@ -2502,6 +2683,7 @@ public class DeckEditorScreen extends Screen
         int add = addRow();
         int remove = removeRow();
         int altArts = altArtsRow();
+        int destiny = destinyRow();
         Properties target = menuCard;
         DeckList.Part part = menuPart;
         int index = menuIndex;
@@ -2529,6 +2711,11 @@ public class DeckEditorScreen extends Screen
             DeckList.Part destination = part != null ? part
                 : target.getIsInExtraDeck() ? DeckList.Part.EXTRA : DeckList.Part.MAIN;
             add(target, destination);
+            return true;
+        }
+        if(row == destiny && destiny >= 0)
+        {
+            EditorState.toggleDestiny((int)target.getId());
             return true;
         }
         if(row == altArts && part != null && index >= 0)
@@ -2568,15 +2755,15 @@ public class DeckEditorScreen extends Screen
             int colour;
             if(i == addRow() && !verdict.allowed())
             {
-                colour = 0xFF6A7080;
+                colour = MenuInk.dim();
             }
             else if("-1".equals(label))
             {
-                colour = over ? 0xFFFFB0A8 : 0xFFE6EAF2;
+                colour = over ? 0xFFFFB0A8 : MenuInk.label();
             }
             else
             {
-                colour = over ? 0xFFFFE9B0 : 0xFFE6EAF2;
+                colour = over ? 0xFFFFE9B0 : MenuInk.label();
             }
             poseStack.text(font, label, (int)(menuX + MENU_PAD), (int)(rowY + (MENU_ROW - font.lineHeight) / 2F + 1), colour, true);
         }
@@ -2750,10 +2937,10 @@ public class DeckEditorScreen extends Screen
         String title = font.plainSubstrByWidth(
             altCard.getName() == null ? "" : altCard.getName(),
             altPanelW - ALT_PAD * 2 - font.width(count) - 12);
-        poseStack.text(font, title, altLeft + ALT_PAD, altTop + ALT_PAD, 0xFFF4D089, true);
+        poseStack.text(font, title, altLeft + ALT_PAD, altTop + ALT_PAD, MenuInk.title(), MenuInk.shadow());
 
         poseStack.text(font, count, altLeft + altPanelW - ALT_PAD - font.width(count),
-            altTop + ALT_PAD, 0xFFC2C9D6, true);
+            altTop + ALT_PAD, MenuInk.body(), MenuInk.shadow());
 
         // One recess behind the whole row rather than a frame per cell, as the
         // deck grids and the sleeve picker both do.
@@ -2787,7 +2974,7 @@ public class DeckEditorScreen extends Screen
             // 144 / 0.602 = 240 across; the 128 icon is visibly soft at that
             // size and the hover preview already caches the 512.
             DdBlitUtil.blit(poseStack,
-                DuelTextures.card(altCard, (byte)index, DuelTextures.PREVIEW_CARD_SIZE),
+                DuelTextures.cardSmooth(altCard, (byte)index, DuelTextures.PREVIEW_CARD_SIZE),
                 x, y, ALT_TILE_W, altTileH,
                 DuelTextures.CARD_U0, DuelTextures.CARD_V0,
                 DuelTextures.CARD_U1, DuelTextures.CARD_V1, DdBlitUtil.NO_TINT);
@@ -2924,10 +3111,16 @@ public class DeckEditorScreen extends Screen
     }
 
     /**
-     * Releasing the button drops the carried card where the cursor is, but only
-     * if the mouse actually travelled. Without the distance test a plain click
-     * would pick a card up and immediately put it back down, so click-to-carry
-     * would be impossible.
+     * Releasing the button drops the carried card where the cursor is.
+     * <p>
+     * <b>No distance test any more.</b> There used to be one, and it existed to
+     * tell a drag from a click when the press had already picked the card up:
+     * without it a plain click would have lifted a card and put it straight back
+     * down, so click-to-carry could not have worked. Both halves of that are
+     * gone -- a press no longer picks anything up, and click-to-carry is no
+     * longer a gesture. Anything being carried when the button is released got
+     * there by travelling past {@link #DRAG_SLOP} in {@link #beginDrag}, so the
+     * question this test asked has already been answered.
      */
     @Override
     public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event)
@@ -2943,34 +3136,31 @@ public class DeckEditorScreen extends Screen
         double mouseX = event.x();
         double mouseY = event.y();
         int button = event.button();
-        if(carried != null && pressedOnCard)
+        if(carried != null)
         {
-            boolean dragged = Math.abs(mouseX - pressX) > DRAG_SLOP
-                || Math.abs(mouseY - pressY) > DRAG_SLOP;
-            pressedOnCard = false;
-            if(dragged)
+            disarm();
+            DeckList.Part part = partAt(mouseX, mouseY);
+            if(part != null)
             {
-                DeckList.Part part = partAt(mouseX, mouseY);
-                if(part != null)
-                {
-                    place(part);
-                }
-                else if(trunkIndexAt(mouseX, mouseY) >= 0)
-                {
-                    // Dropped back on the trunk: the deck simply loses it, and
-                    // the trunk never lost it in the first place.
-                    carried = null;
-                    carriedFrom = null;
-                    carriedIndex = -1;
-                }
-                else
-                {
-                    returnCarried();
-                }
-                return true;
+                place(part);
             }
+            else if(trunkIndexAt(mouseX, mouseY) >= 0)
+            {
+                // Dropped back on the trunk: the deck simply loses it, and the
+                // trunk never lost it in the first place.
+                carried = null;
+                carriedFrom = null;
+                carriedIndex = -1;
+            }
+            else
+            {
+                returnCarried();
+            }
+            return true;
         }
-        pressedOnCard = false;
+        // A press that never travelled. Nothing was lifted, so there is nothing
+        // to put back -- forgetting the arming is the whole of it.
+        disarm();
         return super.mouseReleased(event);
     }
 
@@ -3153,7 +3343,13 @@ public class DeckEditorScreen extends Screen
         }
         if(filtersOpen)
         {
-            renderOpenList(poseStack, mouseX, mouseY);
+            // IN FRONT, and it has to say so. The filter rows underneath are
+            // mostly glyphs and this list is mostly plate, and on 1.21.1 those
+            // are different render types resolved in whatever order the buffer
+            // source iterates them -- so an open dropdown had "Numbers",
+            // "Level" and "Traps" printed straight through it.
+            de.cas_ual_ty.dueldimension.clientutil.Layering.foreground(poseStack,
+                () -> renderOpenList(poseStack, mouseX, mouseY));
         }
         if(rename != null)
         {
@@ -3200,22 +3396,15 @@ public class DeckEditorScreen extends Screen
                 // drawn EARLIER can otherwise appear on top of a panel drawn
                 // later -- which is why the deck headings were showing through
                 // the preview. Vanilla tooltips solve it the same way.
-                poseStack.pose().pushMatrix();
-        // The Z translate that lifted this above a later panel is gone:
-        // retained mode draws in the order described, so ordering the
-        // calls is what layering means now.
-                drawPreview(poseStack, hovered, mouseX, mouseY, artAt(mouseX, mouseY));
-                poseStack.pose().popMatrix();
+                Properties card = hovered;
+                de.cas_ual_ty.dueldimension.clientutil.Layering.foreground(poseStack, () ->
+                    drawPreview(poseStack, card, mouseX, mouseY, artAt(mouseX, mouseY)));
             }
         }
         if(menuCard != null)
         {
-            poseStack.pose().pushMatrix();
-        // The Z translate that lifted this above a later panel is gone:
-        // retained mode draws in the order described, so ordering the
-        // calls is what layering means now.
-            drawMenu(poseStack, mouseX, mouseY);
-            poseStack.pose().popMatrix();
+            de.cas_ual_ty.dueldimension.clientutil.Layering.foreground(poseStack, () ->
+                drawMenu(poseStack, mouseX, mouseY));
         }
 
         // The carried card rides the cursor, as an inventory stack does, in
@@ -3461,15 +3650,7 @@ public class DeckEditorScreen extends Screen
      */
     private float crispScale(float wanted)
     {
-        double gui = net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScale();
-        if(gui <= 0D)
-        {
-            return wanted;
-        }
-        // The device pixels one GUI pixel of text would occupy, rounded to a
-        // whole number and floored at 1 -- 0 would make the text vanish.
-        long steps = Math.max(1L, Math.round(wanted * gui));
-        return (float)(steps / gui);
+        return MenuText.crispScale(wanted);
     }
 
     private boolean previewAllowed()
@@ -3492,27 +3673,29 @@ public class DeckEditorScreen extends Screen
         int mouseY, int art)
     {
         Layout layout = Layout.of(LAYOUT);
-        int inner = 5;
         // Bounded by the window before anything is measured against it, so a
         // small window narrows the panel rather than hanging it off the side.
-        int panelW = Math.min(Math.max(32, width - 8),
-            Math.max(layout.i("preview.width", 78), layout.i("preview.textWidth", 132))
-                + inner * 2);
+        // THE WINDOW IS THE ONLY CAP.
+        //
+        // The layout's textWidth used to be one as well, so a name wider than
+        // its 132 pixels had nowhere to go but smaller -- which is the wrong
+        // trade when there is empty screen either side of the panel. The box
+        // grows to whatever the name and the plates need and is clamped to the
+        // window when it is placed, a few lines below.
+        int panelW = Math.max(
+            CardInfoPanel.preferredWidth(font, card, Math.max(32, width - 8), true),
+            // Never below the artwork Shift reveals, which is the one thing in
+            // here that cannot reflow.
+            layout.i("preview.width", 78) + 10);
+
         // The ART is what Shift reveals; the name, facts and effect text are
         // always shown. Hidden art contributes no height, so the panel closes
         // up around the text rather than leaving a hole where a card was.
         boolean showArt = previewAllowed();
-        int artW = Math.min(layout.i("preview.width", 78), panelW - inner * 2);
+        int artW = Math.min(layout.i("preview.width", 78), panelW - 10);
         int artH = showArt
             ? Math.round(artW / layout.f("card.aspect", DuelTextures.CARD_ASPECT))
             : 0;
-        int textW = panelW - inner * 2;
-
-        // Text is drawn at half size, so it is wrapped to twice the width and
-        // its line height is halved to match.
-        float scale = crispScale(layout.f("preview.textScale", 0.5F));
-        int wrapW = Math.round(textW / scale);
-        int lineH = Math.max(1, Math.round(9 * scale));
 
         if(previewCard != card.getId())
         {
@@ -3521,34 +3704,10 @@ public class DeckEditorScreen extends Screen
             previewScroll = 0;
         }
 
-        // The card's facts, not its tooltip header: the header starts with the
-        // name (drawn separately below) and leaves a monster's species out.
-        java.util.List<Component> header = new java.util.ArrayList<>();
-        CardPresentation.addFacts(card, header);
-        java.util.List<net.minecraft.util.FormattedCharSequence> headerLines =
-            new java.util.ArrayList<>();
-        for(Component component : header)
-        {
-            headerLines.addAll(font.split(component, wrapW));
-        }
-        java.util.List<net.minecraft.util.FormattedCharSequence> nameLines =
-            font.split(Component.literal(card.getName() == null ? "" : card.getName()), wrapW);
-        java.util.List<net.minecraft.util.FormattedCharSequence> textLines =
-            font.split(Component.literal(card.getText() == null ? "" : card.getText()), wrapW);
-
-        // Everything the panel must show whatever happens, so the description
-        // is given what is LEFT rather than a fixed count of lines. Only the
-        // position used to be clamped, so once the content passed height - 8 the
-        // panel simply ran off the bottom of the screen.
-        int fixed = inner * 2 + artH + (showArt ? 4 : 0) + nameLines.size() * lineH + 2
-            + headerLines.size() * lineH + 3;
-        int maxLines = clamp(1, layout.i("preview.maxLines", 10),
-            (height - 8 - fixed - lineH - 2) / Math.max(1, lineH));
-        int maxScroll = Math.max(0, textLines.size() - maxLines);
-        previewScroll = Math.min(previewScroll, maxScroll);
-        int shownLines = Math.max(0, Math.min(textLines.size() - previewScroll, maxLines));
-
-        int panelH = fixed + shownLines * lineH + (maxScroll > 0 ? lineH + 2 : 0);
+        // Measured before it is placed, because the panel follows the cursor and
+        // a panel cannot be centred on a height it does not know yet.
+        int maxHeight = height - 8;
+        int panelH = CardInfoPanel.height(font, card, panelW, maxHeight, artH, true);
 
         int x = mouseX + 14;
         if(x + panelW > width - 4)
@@ -3558,60 +3717,24 @@ public class DeckEditorScreen extends Screen
         x = Math.max(4, Math.min(x, width - panelW - 4));
         int y = Math.max(4, Math.min(mouseY - panelH / 2, height - panelH - 4));
 
-        // Half transparent, so the board behind stays readable while pointing.
-        // The alpha argument was dropped in the port, so this panel has been
-        // fully opaque; Forge passed layout's preview.opacity here.
-        NineSlice.draw(poseStack, HubTextures.PANEL, x, y, panelW, panelH,
-            NineSlice.IDLE, 1, layout.f("preview.opacity", 0.65F));
+        // Only asked for when it is drawn: a 512px decode per card hovered is
+        // the most expensive thing the image pipeline does, and asking for one
+        // the panel is not going to show is the worst version of it.
+        net.minecraft.resources.Identifier face = showArt
+            ? DuelTextures.cardSmooth(card, (byte)Math.clamp(art, 0, Byte.MAX_VALUE),
+                DuelTextures.PREVIEW_CARD_SIZE)
+            : null;
 
-        // The hovered COPY's artwork, so pointing at a dressed card shows what
-        // that card looks like rather than what its first printing did.
-        if(showArt)
-        {
-            // Only asked for when it is drawn: a 512px decode per card hovered
-            // is the most expensive thing the image pipeline does, and asking
-            // for one the panel is not going to show is the worst version of it.
-            DdBlitUtil.blit(poseStack,
-                DuelTextures.card(card, (byte)Math.clamp(art, 0, Byte.MAX_VALUE),
-                    DuelTextures.PREVIEW_CARD_SIZE),
-                x + (panelW - artW) / 2, y + inner, artW, artH,
-                DuelTextures.CARD_U0, DuelTextures.CARD_V0,
-                DuelTextures.CARD_U1, DuelTextures.CARD_V1, DdBlitUtil.NO_TINT);
-        }
-
-        // Everything below is half size. Coordinates are divided by the scale
-        // so the text still lands where the panel arithmetic put it.
-        poseStack.pose().pushMatrix();
-        poseStack.pose().scale(scale, scale);
-        float sx = (x + inner) / scale;
-        float sy = (y + inner + artH + (showArt ? 4 : 0)) / scale;
-        float step = 9F;
-
-        for(net.minecraft.util.FormattedCharSequence line : nameLines)
-        {
-            poseStack.text(font, line, (int)(sx), (int)(sy), 0xFFF4D089, true);
-            sy += step;
-        }
-        sy += 2F / scale;
-        for(net.minecraft.util.FormattedCharSequence line : headerLines)
-        {
-            poseStack.text(font, line, (int)(sx), (int)(sy), 0xFF9FD4FF, false);
-            sy += step;
-        }
-        sy += 3F / scale;
-        for(int i = 0; i < shownLines; i++)
-        {
-            poseStack.text(font, textLines.get(previewScroll + i), (int)(sx), (int)(sy), 0xFFC2C9D6, false);
-            sy += step;
-        }
-        if(maxScroll > 0)
-        {
-            // Names the key, because the plain wheel scrolls the grid and a
-            // binding nobody is told about is a binding nobody uses.
-            poseStack.text(font, "shift+scroll  " + (previewScroll + shownLines)
-                + "/" + textLines.size(), (int)(sx), (int)(sy + 2F / scale), 0xFF7A8090, true);
-        }
-        poseStack.pose().popMatrix();
+        // Half transparent, so the cards behind stay readable while pointing.
+        CardInfoPanel.Layout at = CardInfoPanel.draw(poseStack, font, card, x, y, panelW,
+            maxHeight, previewScroll, -1, face, artW, artH,
+            // OPAQUE. It was drawn at preview.opacity so the cards behind
+            // stayed readable while pointing -- which made sense when the panel
+            // was a name and two lines. It now carries the card's whole text,
+            // and a paragraph with the deck grid and the Save button showing
+            // through it is the panel that is unreadable.
+            1F, true);
+        previewScroll = Math.min(previewScroll, at.maxScroll());
     }
 
     private void renderDeckSide(GuiGraphicsExtractor poseStack, int mouseX, int mouseY)
@@ -3638,18 +3761,25 @@ public class DeckEditorScreen extends Screen
         {
             int top = partTop(part);
             List<Integer> cards = deck.partFor(part);
-            String heading = switch(part)
-            {
-                case MAIN -> "Main Deck";
-                case EXTRA -> "Extra Deck";
-                case SIDE -> "Side Deck";
-            };
+            // The word is a plate, not a caption. It also no longer says "Deck":
+            // all three sections did, inside a deck editor, on a screen whose
+            // other half is the trunk -- the word was carrying nothing.
+            int plateW = HubTextures.partLabelWidth(part.name());
+            int plateY = top - headerH + Math.max(0, (headerH - HubTextures.PART_LABEL_H) / 2);
+            DdBlitUtil.fullBlit(poseStack, HubTextures.partLabel(part.name()),
+                leftX + pad, plateY, plateW, HubTextures.PART_LABEL_H);
+
             // The count doubles as the legality hint: a main deck under 40 is
-            // not playable, so the number is the thing to watch.
+            // not playable, so the number is the thing to watch. It stays text,
+            // because it is the one part of the heading that changes.
             boolean ok = part != DeckList.Part.MAIN
                 || (cards.size() >= 40 && cards.size() <= 60);
-            poseStack.text(font, heading + "  " + cards.size() + " / " + part.capacity(),
-                leftX + pad, top - headerH + 3, ok ? 0xFFC2C9D6 : 0xFFFF8A80, true);
+            String count = cards.size() + " / " + part.capacity();
+            // Centred against the plate rather than the band: the plate is what
+            // the eye lines the number up with.
+            poseStack.text(font, count, leftX + pad + plateW + 6,
+                plateY + (HubTextures.PART_LABEL_H - 8) / 2,
+                ok ? MenuInk.body() : 0xFFFF8A80, true);
 
             int columns = partColumns(part);
             int cellW = deckCardW + gap;
@@ -3776,7 +3906,7 @@ public class DeckEditorScreen extends Screen
         {
             NineSlice.draw(poseStack, HubTextures.PANEL, section.x(), section.y(),
                 section.width(), section.height());
-            poseStack.text(font, section.heading(), (int)(section.x() + 5), (int)(section.y() + 2), 0xFFF4D089, true);
+            poseStack.text(font, section.heading(), (int)(section.x() + 5), (int)(section.y() + 2), MenuInk.title(), MenuInk.shadow());
         }
 
         // The bands read as "Level  [min] [max]", so the captions sit against
@@ -4010,6 +4140,13 @@ public class DeckEditorScreen extends Screen
             dragFilterBar(event.y());
             return true;
         }
+        // THE PICKUP HAPPENS HERE, not on the press. A press over a card only
+        // arms one; this is the first moment the gesture is known to be a drag
+        // rather than a click. See arm().
+        if(event.button() == 0 && beginDrag(event.x(), event.y()))
+        {
+            return true;
+        }
         return super.mouseDragged(event, dragX, dragY);
     }
 
@@ -4060,10 +4197,10 @@ public class DeckEditorScreen extends Screen
             return;
         }
         int boxW = min.getWidth() + 4;
-        poseStack.text(font, caption, (int)(min.getX() - 2 - font.width(caption) - 4), (int)(y + 4), 0xFFC2C9D6, true);
+        poseStack.text(font, caption, (int)(min.getX() - 2 - font.width(caption) - 4), (int)(y + 4), MenuInk.body(), MenuInk.shadow());
         NineSlice.draw(poseStack, HubTextures.SEARCH_FIELD, min.getX() - 2, y, boxW, 16);
         NineSlice.draw(poseStack, HubTextures.SEARCH_FIELD, max.getX() - 2, y, boxW, 16);
-        poseStack.text(font, "-", (int)(min.getX() - 2 + boxW + 1), (int)(y + 4), 0xFF7A8090, true);
+        poseStack.text(font, "-", (int)(min.getX() - 2 + boxW + 1), (int)(y + 4), MenuInk.dim(), MenuInk.shadow());
     }
 
     private void renderTrunkSide(GuiGraphicsExtractor poseStack, int mouseX, int mouseY)
@@ -4079,7 +4216,7 @@ public class DeckEditorScreen extends Screen
             // land on the drawer's bar, which shares its x.
             trunkBarH = 0;
             renderFilterDrawer(poseStack);
-            poseStack.text(font, EditorState.visible().size() + " cards", (int)(rightX + pad), (int)trunkCountY(), 0xFF7A8090, true);
+            poseStack.text(font, EditorState.visible().size() + " cards", (int)(rightX + pad), (int)trunkCountY(), MenuInk.dim(), MenuInk.shadow());
             return;
         }
 
@@ -4143,7 +4280,7 @@ public class DeckEditorScreen extends Screen
                     // Reddened once every copy owned is already in the deck,
                     // which is the moment the number stops meaning "spare".
                     outlined(poseStack, count,
-                        inDeck >= Math.min(owned, max) ? 0xFFFF8A80 : 0xFFF4D089);
+                        inDeck >= Math.min(owned, max) ? 0xFFFF8A80 : MenuInk.title());
                     poseStack.pose().popMatrix();
                 }
             }
@@ -4155,7 +4292,7 @@ public class DeckEditorScreen extends Screen
         scrollbar(poseStack, rightX + rightW - pad - 2, gridTop,
             visibleRows * (trunkCardH + gap), rows, visibleRows, trunkScroll);
 
-        poseStack.text(font, shown.size() + " cards", (int)(rightX + pad), (int)trunkCountY(), 0xFF7A8090, true);
+        poseStack.text(font, shown.size() + " cards", (int)(rightX + pad), (int)trunkCountY(), MenuInk.dim(), MenuInk.shadow());
     }
 
     /**
@@ -4294,6 +4431,59 @@ public class DeckEditorScreen extends Screen
             DdBlitUtil.blit(poseStack, HubTextures.STAR, x + w - mark - 1, y + 1, mark, mark,
                 0F, 0F, 1F, 1F, DdBlitUtil.NO_TINT);
         }
+        if(EditorState.isDestiny((int)card.getId()))
+        {
+            // Bottom RIGHT. The other three corners are taken: top left is the
+            // [A], top right is the star, and the limit badge below claims the
+            // bottom left.
+            DdBlitUtil.blit(poseStack, HubTextures.DESTINY_CARD,
+                x + w - mark - 1, y + h - mark - 1, mark, mark,
+                0F, 0F, 1F, 1F, DdBlitUtil.NO_TINT);
+        }
+        drawLimitBadge(poseStack, card, x, y, w, h, mark, alpha);
+    }
+
+    /**
+     * The forbidden/limited mark, in EDOPro's own symbols.
+     *
+     * <h2>What decides it</h2>
+     * The list the OPEN DECK is built to, and nothing else -- not what the
+     * player owns, and not how many copies are already in the deck. Those two
+     * are already said elsewhere on the tile: the copy count in the corner and
+     * the dimming of a card at its limit. This says what the LIST says, which is
+     * a fact about the card rather than about this deck's progress, so it is the
+     * same mark on a card in the collection and on the copy of it in the deck.
+     * <p>
+     * A deck built to no list gets no marks at all, which is the honest picture:
+     * nothing is forbidden under no list.
+     *
+     * <h2>Bottom left</h2>
+     * Because the other three corners are taken -- {@code [A]} top left, the
+     * favourite star top right, the collection's copy count bottom right -- and
+     * a badge over another badge says neither.
+     * <p>
+     * EDOPro puts this one top left, and that is not available here. Moving the
+     * {@code [A]} to make room was the alternative and it is the worse trade:
+     * the alt-art marker means "this copy can be re-dressed", which is a thing
+     * to click, and moving a click target to make room for a label that is only
+     * read would be the wrong way round.
+     */
+    private void drawLimitBadge(GuiGraphicsExtractor poseStack, Properties card,
+        int x, int y, int w, int h, int mark, float alpha)
+    {
+        float[] cell = DuelTextures.limitCell(
+            EditorState.banlist().limitFor((int)card.getId()));
+        if(cell == null)
+        {
+            return;
+        }
+        // Carrying the card's own alpha, so the badge fades with the tile it is
+        // on rather than staying solid over a card dimmed to 0.35 for being at
+        // its limit -- which is exactly the card most likely to have one.
+        DdBlitUtil.blit(poseStack, DuelTextures.LIMIT_BADGES,
+            x + 1, y + h - mark - 1, mark, mark,
+            cell[0], cell[1], cell[2], cell[3],
+            DdBlitUtil.tint(1F, 1F, 1F, alpha));
     }
 
     @Override
@@ -4408,7 +4598,7 @@ public class DeckEditorScreen extends Screen
             String shown = font.width(chosen) > getWidth() - font.width(caption) - 14
                 ? font.plainSubstrByWidth(chosen, getWidth() - font.width(caption) - 18) + "."
                 : chosen;
-            poseStack.text(font, shown, (int)(getX() + getWidth() - 4 - font.width(shown)), (int)(getY() + (getHeight() - 8) / 2), any ? 0xFF6A7080 : 0xFFFFE9B0, true);
+            poseStack.text(font, shown, (int)(getX() + getWidth() - 4 - font.width(shown)), (int)(getY() + (getHeight() - 8) / 2), any ? MenuInk.dim() : 0xFFFFE9B0, true);
         }
     }
 
@@ -4447,7 +4637,7 @@ public class DeckEditorScreen extends Screen
             boolean hovered = mouseX >= listX && mouseX < listX + listW
                 && mouseY >= rowY && mouseY < rowY + rowH;
             poseStack.text(font, label, (int)(listX + 5), (int)(rowY + 2),
-                hovered ? 0xFFFFE9B0 : 0xFFC2C9D6, true);
+                hovered ? 0xFFFFE9B0 : MenuInk.body(), MenuInk.shadow());
         }
         pixelScrollbar(poseStack, listX + listW - 5, listY + 2, shown * rowH,
             (values.size() + 1) * rowH, openListScroll * rowH);
@@ -4669,7 +4859,7 @@ public class DeckEditorScreen extends Screen
             int row = lit.getAsBoolean() ? NineSlice.SELECTED
                 : isHoveredOrFocused() ? NineSlice.HOVER : NineSlice.IDLE;
             NineSlice.draw(poseStack, HubTextures.CHIP, getX(), getY(), getWidth(), getHeight(), row, 3);
-            drawLabel(poseStack, lit.getAsBoolean() ? 0xFFFFE9B0 : 0xFFC2C9D6);
+            drawLabel(poseStack, lit.getAsBoolean() ? 0xFFFFE9B0 : MenuInk.body());
         }
     }
 }

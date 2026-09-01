@@ -187,6 +187,40 @@ public record GlbModel(List<Primitive> primitives, List<Node> nodes, Skin skin,
     }
 
     /**
+     * Whether a node's scale is 1 to within what float32 can promise.
+     * <p>
+     * <b>The tolerance was 1e-6, and that is tighter than the data can be.</b>
+     * A scale reaching a {@code .glb} has usually been through a matrix
+     * decomposition -- Blender normalises basis vectors and takes square
+     * roots to get there -- and float32 carries about seven decimal digits,
+     * so a scale MEANT to be exactly 1 arrives as 1.0000329. Every Falsebound
+     * Kingdom rip was rejected on that basis: Slifer, Obelisk and Ra all
+     * failed to load with "apply scale before exporting" applied to a scale
+     * nobody had applied.
+     * <p>
+     * 1e-3 is chosen with both failure modes in view. The largest deviation
+     * measured across those models is 3.3e-5, so this leaves thirty times
+     * that in headroom; and the smallest scale anybody authors deliberately
+     * is nothing like this close to 1 -- the scales these very models carry
+     * on their skeletons are 1.4, 2 and 10. There is no scale a person means
+     * that this admits, and no rounding error it turns away.
+     * <p>
+     * What gets ignored at this tolerance is at most a 0.1% size error on a
+     * monster about two blocks tall: a fifth of a millimetre.
+     */
+    static boolean isUnitScale(float[] scale)
+    {
+        for(float axis : scale)
+        {
+            if(Math.abs(axis - 1F) > 1.0e-3F)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * The offset arithmetic, kept in one place.
      * <p>
      * Every read goes through {@link #floats} or {@link #ints} so that
@@ -357,13 +391,10 @@ public record GlbModel(List<Primitive> primitives, List<Node> nodes, Skin skin,
                 // composes translation and rotation only. Rejected rather than
                 // dropped, on the same rule as node matrices above.
                 float[] scale = vector(node, "scale", new float[] {1F, 1F, 1F});
-                for(float axis : scale)
+                if(!isUnitScale(scale))
                 {
-                    if(Math.abs(axis - 1F) > 1.0e-6F)
-                    {
-                        throw new IllegalArgumentException("node scale is not supported;"
-                            + " apply scale before exporting");
-                    }
+                    throw new IllegalArgumentException("node scale is not supported;"
+                        + " apply scale before exporting");
                 }
 
                 // A mesh hung on a node that MOVES it is placed by that node.

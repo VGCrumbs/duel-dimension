@@ -88,6 +88,28 @@ public final class DeckList
     private DeckBoxStyle deckBox = DeckBoxStyle.BLUE;
 
     /**
+     * The forbidden/limited list this deck is built to, by id.
+     * <p>
+     * On the deck for the same reason the sleeve is: it is a property of the
+     * BUILD, not of the player. A duellist keeps a deck legal for the current
+     * TCG list beside a Goat-format pile beside something with no list at all,
+     * and one setting per player would make choosing a deck also mean choosing
+     * a list again.
+     * <p>
+     * <b>It does not decide what a duel is played under.</b> That is the room's
+     * to decide, and {@link de.cas_ual_ty.dueldimension.duel.match.MatchConfig}
+     * carries it. This says which list the deck EDITOR checks copy limits and
+     * legality against, so a deck can be built to a list before it meets one.
+     * <p>
+     * Held as the id rather than as a {@code Banlist}, because a deck outlives
+     * the lists a server offers: an id that no longer resolves falls back to
+     * "no list" when it is looked up, where a dangling object reference would
+     * have to be repaired on load.
+     */
+    private String banlistId =
+        de.cas_ual_ty.dueldimension.duel.match.Banlist.DEFAULT_ID;
+
+    /**
      * Which artwork each copy wears, one entry per position in the list beside
      * it. 0 is the printed art, which is what an absent or short list means.
      * <p>
@@ -102,6 +124,20 @@ public final class DeckList
      * indices would land on the wrong copies. Arts have to travel WITH the lists
      * that give them meaning.
      */
+    /**
+     * The passcodes in this deck a Destiny Draw may reach.
+     * <p>
+     * Passcodes and not deck positions, because a flag belongs to the CARD:
+     * flagging one of three copies flags all three, and the engine picks at
+     * random from whichever are still in the deck when the moment comes. A
+     * position would be meaningless after the first shuffle.
+     * <p>
+     * On the DECK rather than on the player, for the same reason the sleeve and
+     * the banlist are: it is a property of this deck, and a player with six
+     * decks is making six separate bets.
+     */
+    private final List<Integer> destiny = new ArrayList<>();
+
     private final List<Integer> mainArts = new ArrayList<>();
     private final List<Integer> extraArts = new ArrayList<>();
     private final List<Integer> sideArts = new ArrayList<>();
@@ -125,6 +161,47 @@ public final class DeckList
             return sideArts;
         }
         return mainArts;
+    }
+
+    /** The flagged passcodes, in the order they were flagged. */
+    public List<Integer> destiny()
+    {
+        return destiny;
+    }
+
+    public boolean isDestiny(int code)
+    {
+        return destiny.contains(code);
+    }
+
+    /**
+     * Turns one card's flag on or off.
+     *
+     * @return whether anything changed, so a caller can skip a save
+     */
+    public boolean setDestiny(int code, boolean flagged)
+    {
+        if(flagged)
+        {
+            return !destiny.contains(code) && destiny.add(code);
+        }
+        return destiny.remove(Integer.valueOf(code));
+    }
+
+    /** Replaces the whole set, deduplicating. */
+    public void setDestiny(List<Integer> codes)
+    {
+        destiny.clear();
+        if(codes != null)
+        {
+            for(Integer code : codes)
+            {
+                if(code != null && !destiny.contains(code))
+                {
+                    destiny.add(code);
+                }
+            }
+        }
     }
 
     public List<Integer> mainArts()
@@ -235,6 +312,30 @@ public final class DeckList
         deckBox = newDeckBox == null ? DeckBoxStyle.BLUE : newDeckBox;
     }
 
+    public String banlistId()
+    {
+        return banlistId;
+    }
+
+    /**
+     * Builds this deck to a list.
+     * <p>
+     * Takes the id unvalidated, exactly as {@link #setSleeve} takes the sleeve:
+     * a deck knows nothing about which lists a server has, and a check written
+     * here would be one a caller could walk around. {@code DeckEdits} is where a
+     * client's request is vetted.
+     */
+    public void setBanlistId(String newBanlistId)
+    {
+        // Blank means "nothing was said", which is the DEFAULT rather than a
+        // deliberate no-list. Those two are different answers -- see
+        // Banlist.DEFAULT_ID -- and collapsing them here would make every deck
+        // that has never been asked look like one that was asked and said no.
+        banlistId = newBanlistId == null || newBanlistId.isBlank()
+            ? de.cas_ual_ty.dueldimension.duel.match.Banlist.DEFAULT_ID
+            : newBanlistId;
+    }
+
     public List<Integer> main()
     {
         return main;
@@ -337,6 +438,12 @@ public final class DeckList
         DeckList copy = new DeckList(newName, newOrigin, main, extra, side);
         copy.sleeve = sleeve;
         copy.deckBox = deckBox;
+        copy.banlistId = banlistId;
+        // Copied for the reason spelled out below about the artworks, which
+        // applies word for word here: snapshot() saves a COPY, so a field left
+        // out of this method is not lost when a deck is duplicated, it is lost
+        // on every single save.
+        copy.setDestiny(destiny);
         // The artworks come too, and this line is load-bearing far beyond
         // duplicating a deck: DuelProfile.snapshot() copies every deck through
         // here, and the SNAPSHOT is what gets persisted. Leaving arts out did
@@ -376,23 +483,39 @@ public final class DeckList
             Sleeves.CODEC.optionalFieldOf("Sleeve", Sleeves.DEFAULT).forGetter(DeckList::sleeve),
             DeckBoxStyle.CODEC.optionalFieldOf("DeckBox", DeckBoxStyle.BLUE)
                 .forGetter(DeckList::deckBox),
+            // Optional, and defaulting to the SENTINEL rather than to a real
+            // id. A deck saved before this field existed has never been asked
+            // which list it is for, so it loads as "whatever is standard" and
+            // follows the server -- which is what a default is. It cannot
+            // default to a resolved id here: this codec runs on the client too,
+            // and a client has no lists to resolve against.
+            Codec.STRING.optionalFieldOf("Banlist",
+                de.cas_ual_ty.dueldimension.duel.match.Banlist.DEFAULT_ID)
+                .forGetter(DeckList::banlistId),
             // Optional and empty-by-default, so every deck saved before this
             // existed loads with every copy on its printed art.
             Codec.INT.listOf().optionalFieldOf("MainArts", List.of()).forGetter(DeckList::mainArts),
             Codec.INT.listOf().optionalFieldOf("ExtraArts", List.of()).forGetter(DeckList::extraArts),
-            Codec.INT.listOf().optionalFieldOf("SideArts", List.of()).forGetter(DeckList::sideArts)
+            Codec.INT.listOf().optionalFieldOf("SideArts", List.of()).forGetter(DeckList::sideArts),
+            // Optional and empty by default, so a deck saved before Destiny
+            // Draw existed loads with nothing flagged -- which is exactly what
+            // it meant.
+            Codec.INT.listOf().optionalFieldOf("Destiny", List.of()).forGetter(DeckList::destiny)
         ).apply(instance, DeckList::of));
 
     private static DeckList of(String name, Origin origin, boolean published,
         List<Integer> main, List<Integer> extra, List<Integer> side, CardSleevesType sleeve,
-        DeckBoxStyle deckBox,
-        List<Integer> mainArts, List<Integer> extraArts, List<Integer> sideArts)
+        DeckBoxStyle deckBox, String banlistId,
+        List<Integer> mainArts, List<Integer> extraArts, List<Integer> sideArts,
+        List<Integer> destiny)
     {
         DeckList deck = new DeckList(name, origin, main, extra, side);
         deck.published = published;
         deck.sleeve = sleeve;
         deck.deckBox = deckBox;
+        deck.setBanlistId(banlistId);
         deck.setArts(mainArts, extraArts, sideArts);
+        deck.setDestiny(destiny);
         return deck;
     }
 

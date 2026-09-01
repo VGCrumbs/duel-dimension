@@ -229,7 +229,7 @@ public class CardInfoScreen extends Screen
             return;
         }
         DeckLimits.Verdict verdict = DeckEditorScreen.roomFor(card);
-        addButton.setLabelColour(verdict.allowed() ? 0xFFE6EAF2 : 0xFF6A7080);
+        addButton.setLabelColour(verdict.allowed() ? MenuInk.label() : MenuInk.dim());
         addButton.setTooltipLines(verdict.allowed()
             ? List.of("Adds one copy to the deck")
             : List.of(verdict.reason()));
@@ -329,7 +329,9 @@ public class CardInfoScreen extends Screen
             {
                 names.add(card.getName().toLowerCase(Locale.ROOT));
             }
-            String text = card.getText();
+            // getSearchText, so a name quoted only in a Pendulum Effect
+            // still registers as an archetype mention.
+            String text = card.getSearchText();
             if(text == null)
             {
                 continue;
@@ -367,7 +369,8 @@ public class CardInfoScreen extends Screen
     private static Set<String> archetypesOf(Properties card)
     {
         String name = card.getName() == null ? "" : card.getName().toLowerCase(Locale.ROOT);
-        String text = card.getText() == null ? "" : card.getText().toLowerCase(Locale.ROOT);
+        String text = card.getSearchText() == null ? ""
+            : card.getSearchText().toLowerCase(Locale.ROOT);
         Set<String> mine = new LinkedHashSet<>();
         for(String term : vocabulary())
         {
@@ -409,7 +412,7 @@ public class CardInfoScreen extends Screen
                 continue;
             }
             String otherName = other.getName();
-            String otherText = other.getText();
+            String otherText = other.getSearchText();
             if(!needle.isEmpty()
                 && ((otherName != null && otherName.toLowerCase(Locale.ROOT).contains(needle))
                     || (otherText != null && otherText.toLowerCase(Locale.ROOT).contains(needle))))
@@ -611,7 +614,7 @@ public class CardInfoScreen extends Screen
         int artX = pad() + 4;
         int artY = pad() + 24;
         DdBlitUtil.blit(poseStack,
-            DuelTextures.card(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE),
+            DuelTextures.cardSmooth(card, (byte)0, DuelTextures.PREVIEW_CARD_SIZE),
             artX, artY, artW(), artH(),
             DuelTextures.CARD_U0, DuelTextures.CARD_V0,
             DuelTextures.CARD_U1, DuelTextures.CARD_V1, DdBlitUtil.NO_TINT);
@@ -630,7 +633,7 @@ public class CardInfoScreen extends Screen
             if(countX > pad() + (parent instanceof CardInfoScreen ? 132 : 66))
             {
                 poseStack.text(font, count, countX, pad() + 5,
-                    copies > 0 ? 0xFFF4D089 : 0xFF8A93A3, true);
+                    copies > 0 ? MenuInk.title() : 0xFF8A93A3, true);
             }
             // Rechecked every frame: the deck can also change under this page,
             // by the player walking back to the editor and returning.
@@ -724,7 +727,7 @@ public class CardInfoScreen extends Screen
             {
                 continue;
             }
-            poseStack.text(font, text, x, line, i == 0 ? 0xFFF4D089 : 0xFFC2C9D6, true);
+            poseStack.text(font, text, x, line, i == 0 ? MenuInk.title() : MenuInk.body(), MenuInk.shadow());
             line += i == 0 ? 14 : 11;
         }
 
@@ -736,14 +739,13 @@ public class CardInfoScreen extends Screen
         // against it left a band of empty panel between the two halves.
         int boxH = Math.max(30, sourcesTop() - 20 - boxY);
         NineSlice.draw(poseStack, HubTextures.PANEL_INSET, x - 3, boxY - 3, usableW + 6, boxH);
-        textLines = font.split(Component.literal(card.getText() == null ? "" : card.getText()),
-            usableW - 6);
+        textLines = de.cas_ual_ty.dueldimension.clientutil.CardPresentation.bodyLines(font, card, usableW - 6);
         int rows = Math.max(1, (boxH - 8) / 10);
         textRowsShown = rows;
         textScroll = Math.max(0, Math.min(textScroll, Math.max(0, textLines.size() - rows)));
         for(int i = 0; i < rows && i + textScroll < textLines.size(); i++)
         {
-            poseStack.text(font, textLines.get(i + textScroll), x, boxY + i * 10, 0xFFC2C9D6, false);
+            poseStack.text(font, textLines.get(i + textScroll), x, boxY + i * 10, MenuInk.body(), false);
         }
         if(textLines.size() > rows)
         {
@@ -759,7 +761,7 @@ public class CardInfoScreen extends Screen
         int x = pad() + 4;
         int y = sourcesTop();
         int w = width / 2 - x - pad();
-        poseStack.text(font, "Obtained from  (" + sources.size() + ")", x, y - 13, 0xFFF4D089, true);
+        poseStack.text(font, "Obtained from  (" + sources.size() + ")", x, y - 13, MenuInk.title(), MenuInk.shadow());
         int rows = sourceRows();
         NineSlice.draw(poseStack, HubTextures.PANEL_INSET, x - 3, y - 3, w + 6, rows * 11 + 6);
 
@@ -776,7 +778,7 @@ public class CardInfoScreen extends Screen
             CardSet set = sources.get(i + sourceScroll);
             String label = set.code + "   " + set.name;
             poseStack.text(font, font.plainSubstrByWidth(label, w - 4), x + 2,
-                y + 1 + i * 11, 0xFFC2C9D6, true);
+                y + 1 + i * 11, MenuInk.body(), MenuInk.shadow());
         }
         if(sources.size() > rows)
         {
@@ -790,7 +792,7 @@ public class CardInfoScreen extends Screen
         int x = width / 2 + pad();
         int y = sourcesTop();
         List<Properties> shown = shownRelated();
-        poseStack.text(font, "Related  (" + shown.size() + ")", x, y - 13, 0xFFF4D089, true);
+        poseStack.text(font, "Related  (" + shown.size() + ")", x, y - 13, MenuInk.title(), MenuInk.shadow());
         if(shown.isEmpty())
         {
             poseStack.text(font, related.isEmpty()

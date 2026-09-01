@@ -277,6 +277,63 @@ public final class CardTextureCache
         }
     }
 
+    /**
+     * Drops one image, so the next draw reloads it from disk.
+     * <p>
+     * For a file that changed under the running game — which is only
+     * {@link de.cas_ual_ty.dueldimension.clientutil.hub.DevIcons} replacing an
+     * icon. The texture is already on the GPU and the status map already says
+     * LOADED, so rewriting the bytes changes nothing on screen; this is what
+     * makes the new file the one that gets read.
+     * <p>
+     * The release and the {@code forget} are the same pairing {@link #sweep} and
+     * {@link #clear} keep, for the same reason stated there. Two differences,
+     * both deliberate:
+     * <ul>
+     * <li><b>Every size class is visited, resident or not.</b> A card that was
+     *     never resident can still hold a status — and FAILED is exactly the
+     *     state an icon that had no file at all is stuck in. {@code
+     *     getTextureCard} returns the placeholder for FAILED and never asks
+     *     again, so a set with no art would keep its blank for the whole session
+     *     no matter what was written to disk. Forgetting unconditionally is what
+     *     lets a missing icon be given one.</li>
+     * <li><b>No LRU protection.</b> {@code sweep} skips what is on screen this
+     *     frame, because evicting that costs a reload every frame. Here being on
+     *     screen is the whole point: the icon being looked at is the one that
+     *     has to change.</li>
+     * </ul>
+     * Render thread — {@code release} disposes a GPU object.
+     */
+    public static void drop(ResourceLocation id)
+    {
+        if(id == null)
+        {
+            return;
+        }
+        Minecraft client = Minecraft.getInstance();
+        for(int index = 0; index < CardImageManager.CLASSES; index++)
+        {
+            Map<ResourceLocation, Integer> resident = RESIDENT[index];
+            synchronized(resident)
+            {
+                Integer bytes = resident.remove(id);
+                if(bytes != null)
+                {
+                    residentBytes[index] -= bytes;
+                }
+                if(client != null && client.getTextureManager() != null)
+                {
+                    client.getTextureManager().release(id);
+                }
+                CardImageManager.forget(id, index);
+            }
+            synchronized(TOUCHED_AT[index])
+            {
+                TOUCHED_AT[index].remove(id);
+            }
+        }
+    }
+
     /** Leaving a world does not free these, so a disconnect should. */
     public static void clear()
     {

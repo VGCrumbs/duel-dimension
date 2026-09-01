@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_the_bystial_lubellion",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_the_bystial_lubellion"
+  }
+}

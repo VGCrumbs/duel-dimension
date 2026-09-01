@@ -34,6 +34,16 @@ public class ItemInHandRendererMixin
                 + "Lnet/minecraft/world/item/ItemStack;"))
     private ItemStack dueldimension$offHandItem(LocalPlayer player)
     {
+        // Not while wearing a character. Its arm has a duel disk modelled onto
+        // it, and the item one would be a second disk -- in first person that
+        // reads as a vanilla arm holding a disk beside the one you are already
+        // wearing. The third-person path skips it for the same reason; see
+        // CharacterRendererMixin.
+        if(de.cas_ual_ty.dueldimension.clientutil.character.ClientCharacters
+            .isWearing(player.getUUID()))
+        {
+            return player.getOffhandItem();
+        }
         ItemStack disk = de.cas_ual_ty.dueldimension.clientutil.ClientWornDisks
             .worn(player.getUUID());
         return disk.isEmpty() ? player.getOffhandItem() : disk;

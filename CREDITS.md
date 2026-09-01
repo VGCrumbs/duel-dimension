@@ -180,7 +180,7 @@ EDOPro's own textures, with per-file copyright preserved verbatim in
 Icematoro, NaimSantos, LogicalNonsense and Argon Sun each hold copyright on part
 of it, under AGPL-3.0-or-later or GPL-2.0.
 
-Argon Sun's nine Fluorohydride textures in that set are **GPL-2.0**, not AGPL,
+Argon Sun's ten Fluorohydride textures in that set are **GPL-2.0**, not AGPL,
 and `fabric.mod.json` declares `GPL-2.0-only` for them — the notice says
 `GNU GPLv2` without "or later", so the narrower id is the one that claims
 nothing extra.
@@ -188,6 +188,21 @@ nothing extra.
 The card backs under `textures/duel/backs/` and the sleeve art under
 `textures/item/*/sleeves_*.png` are **not** EDOPro's and are not covered by that
 licence.
+
+## The card-action buttons
+
+`textures/gui/duel/cmd/` — eleven icons for Summon, Set, Activate, Attack and
+the rest, **extracted from a Nintendo DS cartridge**: *Yu-Gi-Oh! 5D's World
+Championship 2011 — Over the Nexus*, Konami, game code `BYYP`, out of
+`Data_arc_pac/duel2d.pac`.
+
+Konami's, with no licence. The file `CREDITS.md` beside them states the position
+in full and `NOTICE.md` lists them among the exceptions. They replaced EDOPro's
+text menu, which is preserved in `backup/context-menu` and can be restored
+without touching the layout.
+
+The extraction is `NexusDecomp/scripts/duel_buttons.py`; the format is written
+up there and in that project's `FINDINGS.md`.
 
 ## The card backs
 
@@ -204,26 +219,39 @@ why those two no longer appear above and no longer exist in the tree.
 required permission to be confirmed with each author before public distribution;
 the project author states that permission has been obtained. See
 `textures/entity/duelist/CREDITS.md` and `textures/entity/outfit/credits.nfo`,
-which carry the author names and source links. For the sleeves that is settled — see the section below. For the two
-card backs it is not: they are on the unresolved list.
+which carry the author names and source links. The two card backs are on the
+unresolved list; the sleeves are Konami's — see the section below.
 
-## Sleeve art and the Patreon card art
+## Sleeve art and deck box art — Konami
+
+`textures/item/*/sleeves_*.png` (260 designs across six size tiers) and
+`textures/gui/hub/deck_box_*.png` are **extracted from Yu-Gi-Oh! Master Duel**
+and are **Konami's**. They are the game's `Protector` and `DeckCase` assets,
+named from its own item table, converted by `tools/import_sleeves.py` and
+`tools/import_deck_boxes.py`.
+
+No grant covers them. They are here on the same footing as the card artwork this
+project already ships — see the Konami paragraph above — and they carry the same
+unresolved question, which is stated rather than answered. Anyone distributing
+this build should read that paragraph as covering these too.
+
+**What this replaced.** The 37 sleeves that used to sit here were CAS_ual_TY's,
+inherited with the fork and settled by hashing: 32 of them, 224 files across
+seven size tiers and 22,954,631 bytes, were byte-identical to `YgoDuelingMod`
+and covered by its GPL-3.0, and the five `sleeves_millenium_*` designs were on
+the unresolved list. **None of them ships any more.** The catalogue was replaced
+wholesale; `tools/backup/sleeves-*.zip` holds what was removed, including three
+Patreon thank-you sleeves (`p_1`, `p_2`, `p_3`) credited to Lucifer and
+LuisRavenFlame1, which went with them.
+
+## The Patreon card art
 
 **YgoDuelingMod** — CAS_ual_TY, **GPL-3.0**, whole repository, assets included.
 
-This used to be recorded only as what it is *not*. It has now been settled by
-hashing every file against that repository:
-
-- **32 of the 37 sleeve designs** — 224 files across all seven size tiers,
-  22,954,631 bytes — are **byte-identical** to `YgoDuelingMod` and are therefore
-  covered by its GPL-3.0, the same inheritance this project's code already
-  relies on.
-- **All 77 files of the eleven Patreon card arts** (`1_0.png`…`11_0.png`,
-  18,035,288 bytes) are likewise byte-identical and likewise covered. Their size
-  in the jar is a size question; it is not a rights question.
-
-The five `sleeves_millenium_*` designs are the exception and are listed below as
-unresolved.
+**All 77 files of the eleven Patreon card arts** (`1_0.png`…`11_0.png`,
+18,035,288 bytes) are byte-identical to that repository and covered by its
+GPL-3.0, the same inheritance this project's code already relies on. Their size
+in the jar is a size question; it is not a rights question.
 
 - https://github.com/CAS-ual-TY/YgoDuelingMod
 

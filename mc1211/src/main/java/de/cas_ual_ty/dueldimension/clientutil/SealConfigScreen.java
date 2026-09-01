@@ -42,7 +42,7 @@ public class SealConfigScreen extends Screen
         // at height/2 + 68 while Done spanned +60 to +80, so the line was drawn
         // straight through the button. Every row below is derived, so adding one
         // moves everything that follows instead of landing on top of it.
-        int rows = 6;
+        int rows = 8;
         int block = rows * (ROW_H + GAP) + GAP + ROW_H;
         top = height / 2 - block / 2;
         row = 0;
@@ -57,6 +57,21 @@ public class SealConfigScreen extends Screen
         {
             HoverPreviewSettings.setNeedsShift(!HoverPreviewSettings.needsShift());
             button.setMessage(hoverLabel());
+        }).bounds(width / 2 - WIDE / 2, rowY(), WIDE, ROW_H).build());
+
+        // Which of the two card-action menus a duel uses. Cycles rather than
+        // toggles for the same reason the hologram row does -- it is a choice
+        // between named things, not an on/off.
+        addRenderableWidget(Button.builder(headLabel(), button ->
+        {
+            HeadTrackingSettings.setEnabled(!HeadTrackingSettings.enabled());
+            button.setMessage(headLabel());
+        }).bounds(width / 2 - WIDE / 2, rowY(), WIDE, ROW_H).build());
+
+        addRenderableWidget(Button.builder(contextLabel(), button ->
+        {
+            ContextButtonSettings.setStyle(ContextButtonSettings.style().next());
+            button.setMessage(contextLabel());
         }).bounds(width / 2 - WIDE / 2, rowY(), WIDE, ROW_H).build());
 
         // Cycles rather than toggles: three positions, and the useful one is the
@@ -129,6 +144,18 @@ public class SealConfigScreen extends Screen
     {
         return Component.literal("Monster holograms in duels: "
             + HologramSettings.mode().label());
+    }
+
+    private static Component headLabel()
+    {
+        return Component.literal("Duellist head follows the camera: "
+            + (HeadTrackingSettings.enabled() ? "ON" : "OFF"));
+    }
+
+    private static Component contextLabel()
+    {
+        return Component.literal("Card action buttons: "
+            + ContextButtonSettings.style().label());
     }
 
     private static Component hoverLabel()

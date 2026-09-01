@@ -323,7 +323,7 @@ public class CardDisplayScreen extends Screen
         String heading = title.getString()
             + (current == null ? " - empty" : " - " + current.getName());
         extractor.text(font, font.plainSubstrByWidth(heading, panelW - PAD * 2),
-            panelX + PAD, panelY + 5, 0xFFF4D089, true);
+            panelX + PAD, panelY + 5, MenuInk.title(), MenuInk.shadow());
 
         for(int cell = 0; cell < columns * rows; cell++)
         {
@@ -354,7 +354,7 @@ public class CardDisplayScreen extends Screen
 
             String name = font.plainSubstrByWidth(card.getName(), cardW);
             extractor.text(font, name, x + (cardW - font.width(name)) / 2, y + cardH + 1,
-                chosen ? 0xFFFFE9B0 : 0xFFC2C9D6, true);
+                chosen ? 0xFFFFE9B0 : MenuInk.body(), MenuInk.shadow());
         }
 
         if(results.isEmpty())
@@ -367,7 +367,7 @@ public class CardDisplayScreen extends Screen
         {
             String more = (scroll + 1) + " / " + (maxScroll() + 1);
             extractor.text(font, more, panelX + panelW - PAD - font.width(more),
-                panelY + panelH - FOOTER - 9, 0xFF7A8090, true);
+                panelY + panelH - FOOTER - 9, MenuInk.dim(), MenuInk.shadow());
         }
 
         super.extractRenderState(extractor, mouseX, mouseY, partialTick);
@@ -385,4 +385,23 @@ public class CardDisplayScreen extends Screen
     {
         return false;
     }
+    /**
+     * The hub screen this was opened from, or null. See {@link HubReturn}.
+     * <p>
+     * Read at construction, because that is the one moment the screen it is
+     * replacing is still on show.
+     */
+    private final net.minecraft.client.gui.screens.Screen dueldimension$parent =
+        HubReturn.parent();
+
+    /** Back to the hub if that is where this came from, otherwise to the world. */
+    @Override
+    public void onClose()
+    {
+        if(!HubReturn.back(dueldimension$parent))
+        {
+            super.onClose();
+        }
+    }
 }
+

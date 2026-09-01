@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_pot_of_extravagance",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_pot_of_extravagance"
+  }
+}

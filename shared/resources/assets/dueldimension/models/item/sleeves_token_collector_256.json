@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_token_collector",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_token_collector"
+  }
+}

@@ -84,6 +84,10 @@ public class DuelDimensionFabricClient implements ClientModInitializer
         {
             de.cas_ual_ty.dueldimension.clientutil.DuelClientState.tickPlayback();
             de.cas_ual_ty.dueldimension.clientutil.DuelClientState.tickSkip();
+            // A footstep when the foot lands, in place of the one
+            // StepSoundMixin cancels. On the tick rather than the frame: see
+            // StepSounds.
+            de.cas_ual_ty.dueldimension.clientutil.character.StepSounds.tick(client);
             // Finishes an install on the thread that draws: the worker cannot
             // touch the model cache, because baking what replaces it reaches for
             // the graphics device.
@@ -156,7 +160,28 @@ public class DuelDimensionFabricClient implements ClientModInitializer
         // Sheets dropped into the config folder, read before the list that
         // names them -- a definition pointing at an imported sheet has to find
         // it already registered.
-        de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSheets.load();
+        //
+        // DEFERRED, AND IT HAS TO BE. `onInitializeClient` runs inside
+        // Minecraft's constructor, where there is no OpenGL context yet, and on
+        // 1.21.1 `new DynamicTexture(image)` calls glGenTextures() from its
+        // constructor. Without a current context that is not an exception this
+        // code could catch -- it is an EXCEPTION_ACCESS_VIOLATION inside
+        // lwjgl_opengl.dll that takes the whole JVM down before the title
+        // screen, with a hs_err file instead of a crash report.
+        //
+        // 26.2 makes the identical call at the identical point and is fine,
+        // because its DynamicTexture takes a label supplier and defers the
+        // upload. Same line, same place, different Minecraft: exactly the kind
+        // of difference compileJava cannot see and only launching finds.
+        //
+        // CLIENT_STARTED is the first moment a context exists. Both loads move
+        // together and keep their order, for the reason above.
+        net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents
+            .CLIENT_STARTED.register(client ->
+        {
+            de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSheets.load();
+            de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSprites.load();
+        });
 
         // NO LAUNCH-TIME OFFER. There was one: a title-screen notice asking
         // whether to download the monster models, with "not now" and "don't ask
@@ -171,7 +196,11 @@ public class DuelDimensionFabricClient implements ClientModInitializer
         // edited on top of it. Read here rather than from a static block --
         // that one first ran in the middle of drawing a frame, which is fine
         // for a constant and no place to be opening files.
-        de.cas_ual_ty.dueldimension.clientutil.overworld.MonsterSprites.load();
+        //
+        // Moved up into the CLIENT_STARTED block above, so that it still runs
+        // AFTER the sheets it may name. Left as a comment rather than deleted
+        // because the order is the point, and a reader looking for this call
+        // should find out where it went.
 
         // The card on a display pedestal, and the monster standing on it.
         net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry.register(
@@ -284,6 +313,12 @@ public class DuelDimensionFabricClient implements ClientModInitializer
             .register((handler, client) ->
             {
                 de.cas_ual_ty.dueldimension.clientutil.ClientWornDisks.clear();
+                de.cas_ual_ty.dueldimension.clientutil.character.ClientCharacters.clear();
+                // And the editor's working copy, which is not in that map: it
+                // is what this client is BUILDING rather than what anyone is
+                // wearing, so nothing else empties it and a second server would
+                // otherwise open the creator on the first server's character.
+                de.cas_ual_ty.dueldimension.clientutil.character.CharacterEdits.clear();
                 de.cas_ual_ty.dueldimension.clientutil.OrichalcosRenderer.clear();
                 // Both halves of EDOPro's ClearTexture (image_manager.cpp:339-367):
                 // bump the epoch so everything in flight is abandoned and freed
@@ -302,6 +337,11 @@ public class DuelDimensionFabricClient implements ClientModInitializer
         // fired once per entity type; Fabric takes them directly.
         net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(
             de.cas_ual_ty.dueldimension.DdEntityTypes.DUELIST,
+            de.cas_ual_ty.dueldimension.duel.npc.DuelistRenderer::new);
+        // The bot wears a duelist skin and is drawn by the duelist renderer --
+        // it is a DuelistEntity, so the same renderer already fits it.
+        net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(
+            de.cas_ual_ty.dueldimension.DdEntityTypes.DUEL_BOT,
             de.cas_ual_ty.dueldimension.duel.npc.DuelistRenderer::new);
         net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(
             de.cas_ual_ty.dueldimension.DdEntityTypes.DUEL,

@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_chef_s_special_recipe",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_chef_s_special_recipe"
+  }
+}

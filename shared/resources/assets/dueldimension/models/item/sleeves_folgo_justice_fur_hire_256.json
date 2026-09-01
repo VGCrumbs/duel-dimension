@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_folgo_justice_fur_hire",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_folgo_justice_fur_hire"
+  }
+}

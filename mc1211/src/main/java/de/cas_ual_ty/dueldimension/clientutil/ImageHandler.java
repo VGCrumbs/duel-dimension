@@ -174,7 +174,16 @@ public class ImageHandler
         String imageName = s.getImageName();
         String imagePathName = ImageHandler.tagImage(imageName, imageSize);
         
-        if(s.getIsHardcoded())
+        // A set the mod ships art for, either by declaring itself hardcoded or by
+        // simply HAVING the texture. The second is what lets an icon be replaced
+        // and shipped: without it the resource is never consulted, because a
+        // plain CardSet always answers false to getIsHardcoded(), so every set
+        // goes down the download path.
+        //
+        // It is also the only way the sets whose data carries no image URL can
+        // show anything at all. There are 31 of those and they are blank for
+        // good otherwise -- there is nothing to download.
+        if(s.getIsHardcoded() || ImageHandler.hasBundledImage(imagePathName))
         {
             return imagePathName;
         }
@@ -532,6 +541,63 @@ public class ImageHandler
         return ImageHandler.getSetImageFile(ImageHandler.tagImage(imageName, size));
     }
     
+    /**
+     * Whether {@code textures/item/<imagePathName>.png} SHIPS in the mod.
+     * <p>
+     * <b>Asked of the classpath, and not of the resource manager.</b> The
+     * obvious version of this asks
+     * {@code Minecraft.getResourceManager().getResource(...)} — and that
+     * answers true for a DOWNLOADED image as well, because
+     * {@link DdCardResourcePack} is one of the packs in that manager and serves
+     * the image cache under exactly this path. So every icon a player had ever
+     * downloaded reported itself as shipped.
+     * <p>
+     * That is not a small mistake. This predicate decides two things:
+     * {@link #getReplacementImage(de.cas_ual_ty.dueldimension.set.CardSet, int)}
+     * returns early on it, so a downloaded icon skipped the download
+     * bookkeeping entirely; and
+     * {@link DuelTextures#setIconSmooth} reads it to choose between the plain
+     * path and the bilinear one — a shipped icon carries its own {@code
+     * .mcmeta} while a downloaded one has none and needs the {@code
+     * item_smooth} prefix to be given any. Answering "shipped" for a downloaded
+     * icon sent it down the path with no sampling metadata, which is why pack
+     * previews were point-sampled however much filtering was added elsewhere.
+     * <p>
+     * The classpath holds the mod's own assets and nothing else, which is the
+     * actual question. Cached, because a shop tile asks every frame it draws;
+     * {@link #forgetBundledImages()} clears it when a dev replaces an icon.
+     */
+    public static boolean hasBundledImage(String imagePathName)
+    {
+        Boolean known = BUNDLED_IMAGES.get(imagePathName);
+        if(known != null)
+        {
+            return known;
+        }
+        boolean present;
+        try
+        {
+            present = DuelDimension.class.getClassLoader().getResource(
+                "assets/" + DuelDimension.MOD_ID + "/textures/item/"
+                    + imagePathName + ".png") != null;
+        }
+        catch(Throwable ignored)
+        {
+            return false;
+        }
+        BUNDLED_IMAGES.put(imagePathName, present);
+        return present;
+    }
+
+    /** Drops what {@link #hasBundledImage} remembers, for a reload or a replace. */
+    public static void forgetBundledImages()
+    {
+        BUNDLED_IMAGES.clear();
+    }
+
+    private static final java.util.Map<String, Boolean> BUNDLED_IMAGES =
+        new java.util.concurrent.ConcurrentHashMap<>();
+
     public static String tagImage(String imageName, int size)
     {
         return size + "/" + imageName;

@@ -73,7 +73,43 @@ public final class NineSlice
     public static void draw(GuiGraphicsExtractor graphics, ResourceLocation texture,
         int x, int y, int width, int height, int row, int rows, float alpha)
     {
-        int tint = DdBlitUtil.alpha(alpha);
+        tintedPanel(graphics, texture, x, y, width, height, row, rows,
+            DdBlitUtil.alpha(alpha));
+    }
+
+    /**
+     * The same panel in a colour of its own.
+     * <p>
+     * tintedPanel and not tinted: the one below is a single stretched image for
+     * the playmat, this is the nine-slice frame. Same idea, different geometry,
+     * and one name for both would have been a coin toss at every call site.
+     *
+     * <h2>Why a tint and not a fill</h2>
+     * Because the rule is that every UI element in this mod is a PNG and only
+     * text uses the font -- so a coloured box is this artwork multiplied by a
+     * colour, not a rectangle drawn in code that happens to look like a panel.
+     * It keeps the border, the bevel and the theme; only the hue changes, and
+     * a themed replacement texture is tinted along with the original.
+     *
+     * @param tint packed ARGB, multiplied into the texture
+     */
+    public static void tintedPanel(GuiGraphicsExtractor graphics, ResourceLocation texture,
+        int x, int y, int width, int height, int tint)
+    {
+        tintedPanel(graphics, texture, x, y, width, height, 0, 1, tint);
+    }
+
+    public static void tintedPanel(GuiGraphicsExtractor graphics, ResourceLocation texture,
+        int x, int y, int width, int height, int row, int rows, int tint)
+    {
+        // THE ONE PLACE A THEME HAS TO BE ASKED ABOUT.
+        //
+        // Every panel, button, tab, slot, scrollbar and chip in the mod is
+        // drawn by this method -- checked, not assumed -- so resolving here
+        // themes the whole interface without a single screen knowing that
+        // themes exist. A texture that is not an indexed master comes back
+        // unchanged, which is most of them.
+        texture = MenuThemes.resolve(texture);
         int fileHeight = TILE * rows;
         int v0 = row * TILE;
 

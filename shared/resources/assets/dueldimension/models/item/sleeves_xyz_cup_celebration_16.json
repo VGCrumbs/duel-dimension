@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_xyz_cup_celebration",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_xyz_cup_celebration"
+  }
+}

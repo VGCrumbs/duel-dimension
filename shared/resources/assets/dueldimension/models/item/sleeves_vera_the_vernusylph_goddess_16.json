@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_vera_the_vernusylph_goddess",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_vera_the_vernusylph_goddess"
+  }
+}

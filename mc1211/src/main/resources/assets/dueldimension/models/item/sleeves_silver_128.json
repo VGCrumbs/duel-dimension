@@ -1,6 +1,0 @@
-{
-  "parent": "dueldimension:item/sleeves_silver",
-  "textures": {
-    "layer0": "dueldimension:item/128/sleeves_silver"
-  }
-}

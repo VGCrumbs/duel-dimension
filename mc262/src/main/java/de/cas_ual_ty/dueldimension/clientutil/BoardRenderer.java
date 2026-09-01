@@ -146,6 +146,29 @@ public class BoardRenderer
     }
 
     /**
+     * How far a card's highlight stands clear of the card, in field units.
+     * <p>
+     * <b>Not zero, and it cannot be.</b> The world board draws its outline OVER
+     * the card, so an outline exactly the card's size is the whole effect there.
+     * Here the highlight goes down BEFORE the card art and is a filled box, so a
+     * card-sized one would be entirely behind the card and show nothing at all.
+     * What is seen is exactly this margin, which is therefore what has to be
+     * chosen rather than inherited.
+     * <p>
+     * At the ~122 screen pixels per field unit the board is laid out at, this is
+     * about five pixels of halo -- a quarter of what the zone box gave it on the
+     * left and right, and even on all four sides, which the zone never was.
+     */
+    private static final float GLOW_SPILL = 0.04F;
+
+    /** {@link #GLOW_SPILL} on every side of a rect. */
+    private static FieldLayout.Rect spilled(FieldLayout.Rect rect)
+    {
+        return new FieldLayout.Rect(rect.x() - GLOW_SPILL, rect.y() - GLOW_SPILL,
+            rect.w() + GLOW_SPILL * 2F, rect.h() + GLOW_SPILL * 2F);
+    }
+
+    /**
      * A soft glow: three nested shells widening by a pixel and a half each,
      * fading as they go, so the edge feathers out instead of cutting off.
      */
@@ -1244,6 +1267,24 @@ public class BoardRenderer
         boolean zoneLit = hit.zoneRef() >= 0 && zoneHighlights.contains(hit.zoneRef());
         boolean canAct = actionable.test(hit);
 
+        // What a highlight is drawn AROUND: the card, when the zone holds one.
+        //
+        // A zone is 1.1 x 1.2 and a card is 0.7 x 1.0, so a highlight at the
+        // zone stood a fifth of a unit clear of the card to left and right and
+        // only a tenth of one above and below it -- a lopsided box half again
+        // as wide as the thing it was pointing at, reading as a lit CELL rather
+        // than a lit card. The world board has always drawn this at the card's
+        // own placement, so the two presentations disagreed about what was
+        // glowing while agreeing about everything else.
+        //
+        // zoneLit keeps the zone, and that is the distinction rather than an
+        // exception: it means the core is offering the SPACE -- somewhere to
+        // summon TO -- and the space is the whole cell. Everything below it is
+        // the core offering a CARD.
+        boolean occupied = zone.cardRect() != null;
+        FieldLayout.Rect litRect = occupied ? spilled(zone.cardRect()) : rect;
+        int litTurns = occupied ? zone.cardTurns() : turnsFor(hit.controller(), false);
+
         // Every zone keeps a box so the rows and columns read at a glance, and
         // gains a stronger one when the core is actually offering it.
         if(zoneLit)
@@ -1259,12 +1300,13 @@ public class BoardRenderer
                 // a chain window that is the set of responses open to you --
                 // coloured by the kind of card doing the offering.
                 float pulse = 0.5F + 0.3F * (float)Math.sin(System.currentTimeMillis() / 190D);
-                drawFeatheredGlow(poseStack, collector, hit.corners(), glowTint(slot.code()), pulse);
+                drawFeatheredGlow(poseStack, collector, projection.quad(litRect),
+                    glowTint(slot.code()), pulse);
             }
             else
             {
-                FieldQuad.drawProjected(poseStack, collector, DuelTextures.SLOT_ACTIVE, projection, rect, 2,
-                    turnsFor(hit.controller(), false), 0F, 0F, 1F, 1F);
+                FieldQuad.drawProjected(poseStack, collector, DuelTextures.SLOT_ACTIVE, projection,
+                    litRect, 2, litTurns, 0F, 0F, 1F, 1F);
             }
         }
         // The idle box is already down from the grid pass; only the states that

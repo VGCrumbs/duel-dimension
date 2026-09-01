@@ -28,7 +28,7 @@ artefact. It now declares the set:
 | SPDX id | what it covers |
 | --- | --- |
 | `AGPL-3.0-or-later` | ocgcore, CardScripts, `cards.cdb`, `strings.conf`, most of EDOPro's field art, and the combined program |
-| `GPL-2.0-only` | nine of EDOPro's field textures — Argon Sun's Fluorohydride ones, 124,309 bytes; see below |
+| `GPL-2.0-only` | ten of EDOPro's field textures — Argon Sun's Fluorohydride ones, 57,843 bytes; see below |
 | `MIT` | inside `ocgcore.dll`: the Fluorohydride ancestor and Lua 5.4.8 |
 | `GPL-3.0-or-later` | this project's own source and assets, and the sleeve and card art inherited byte-for-byte from `YgoDuelingMod` |
 | `Unlicense` | the part of the bundled card database (`ydm_db`) that comes from `YDM2-DB`: 10,756 of the 13,862 card files, 357 of the 691 set files, and all 23 `rarity_images` PNGs. The rest is this project's own and falls under its own licence |
@@ -39,11 +39,25 @@ artefact. It now declares the set:
 
 `GPL-2.0-only` rather than `-or-later` because the notice this project received
 says only `licensed under GNU GPLv2` and does not say "or later"; the narrower
-id is the one that asserts nothing extra. The nine files are `attack.png`,
-`chain.png`, `chaintarget.png`, `equip.png`, `lpf.png`, `mask.png`,
+id is the one that asserts nothing extra. The ten files are `attack.png`,
+`chain.png`, `chaintarget.png`, `equip.png`, `lim.png`, `lpf.png`, `mask.png`,
 `negated.png`, `number.png` and `target.png` under
 `assets/dueldimension/textures/duel/`, and the copyright line is preserved
 verbatim in `EDOPRO_CREDITS.md` beside them.
+
+`lim.png` is the most recent of the ten. It is EDOPro's forbidden/limited badge
+sheet, added so the deck editor can mark a restricted card in the symbols a
+player already reads; it ships byte-for-byte as EDOPro distributes it, and it
+was already named in the verbatim notice in `EDOPRO_CREDITS.md` before it was
+shipped, because that file is EDOPro's list rather than ours.
+
+**The byte figure changed by more than that one file.** It read 124,309 for
+nine, and the nine as they actually ship measure 45,240 — the copies in this
+tree are re-encoded and smaller than EDOPro's originals, which come to 123,071
+for the same nine. Neither figure reproduces 124,309, so what it was measured
+against cannot now be established. The number above is the ten files as this
+tree ships them, measured, which is what a notice about the contents of this jar
+should have been saying.
 
 `MIT` is in the declaration because both MIT grants require their notice to
 travel in every copy, and the binary they are compiled into ships here.
@@ -57,8 +71,19 @@ single-string declaration was doing.
 
 ### The exceptions, named
 
-Fifty-two files, **10,203,781 bytes**, ship today with no attributable licence.
-`CREDITS.md` lists them in full with what is known about each. In summary:
+Sixty-three files, **10,216,120 bytes**, ship today with no attributable
+licence. `CREDITS.md` lists them in full with what is known about each. In
+summary:
+
+- **the eleven card-action button icons,
+  `textures/gui/duel/cmd/*.png`, 12,339 bytes.** These are not "origin
+  unrecorded" like everything below — their origin is recorded exactly, and it
+  is a commercial Konami cartridge: *Yu-Gi-Oh! 5D's World Championship 2011*,
+  `duel2d.pac`. Extracted deliberately, documented in the file beside them, and
+  carrying no grant of any kind. They are the clearest case in this list and the
+  first thing to revisit before any public release; `backup/context-menu`
+  preserves the EDOPro text menu they replaced, and nothing about the button
+  layout depends on these particular pixels;
 
 - **seven audio files, 5,529,237 bytes**, whose origin no commit records — two
   of them re-encoded and trimmed derivatives of unidentified `magic_buzz` and

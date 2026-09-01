@@ -104,9 +104,36 @@ public final class StarterDecks
     {
     }
 
+    /**
+     * The deck of that id, or a thrown exception.
+     * <p>
+     * Throwing is right where the id came from this class or from a screen that
+     * only offers these decks: there the absence is a bug and failing loudly
+     * beats duelling with something else. Use {@link #find} where the id came
+     * from anywhere else.
+     */
     public static Entry byId(String id)
     {
         return ALL.stream().filter(entry -> entry.id().equals(id)).findFirst()
             .orElseThrow(() -> new IllegalArgumentException("No starter deck with id " + id));
+    }
+
+    /**
+     * The deck of that id, or null.
+     * <p>
+     * Exists because a profile id is not a deck id. They were the same thing
+     * while every NPC was a starter-deck duelist, and {@link #byId} was called
+     * on a profile in several places on that assumption -- then the Duel Bot
+     * arrived with the profile {@code duel_bot}, which names a skin and no
+     * deck, and every one of those calls became a crash in the server tick
+     * loop. Anything holding an id that MIGHT not be a starter deck asks this.
+     */
+    public static Entry find(String id)
+    {
+        if(id == null || id.isBlank())
+        {
+            return null;
+        }
+        return ALL.stream().filter(entry -> entry.id().equals(id)).findFirst().orElse(null);
     }
 }

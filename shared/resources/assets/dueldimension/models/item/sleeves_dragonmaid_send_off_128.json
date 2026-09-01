@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_dragonmaid_send_off",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_dragonmaid_send_off"
+  }
+}

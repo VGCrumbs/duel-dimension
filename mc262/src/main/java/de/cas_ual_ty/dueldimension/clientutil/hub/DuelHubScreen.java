@@ -23,6 +23,17 @@ import net.minecraft.network.chat.Component;
  */
 public class DuelHubScreen extends Screen
 {
+    /**
+     * How tall a row of capitals and digits actually is, in pixels.
+     * <p>
+     * Seven, not the nine of {@code lineHeight} and not the eight of the glyph
+     * cell. The vanilla font's baseline sits at y+7 and a capital occupies rows
+     * y..y+6; the rest of the cell is the descender gap, which a label like
+     * "DE 0" never uses. Anything centring such a row against a container wants
+     * this number.
+     */
+    private static final int INK_HEIGHT = 7;
+
     /** The panel's size, and the tab strip's, straight from the Forge layout. */
     /**
      * The panel's AUTHORED size, and now only a ceiling.
@@ -94,8 +105,7 @@ public class DuelHubScreen extends Screen
         PROFILE("Profile", ""),
         DECKS("Decks", ""),
         SHOP("Shop", ""),
-        SETTINGS("Settings", ""),
-        MISC("Misc", "");
+        SETTINGS("Settings", "");
 
         private final String label;
         private final String waitingOn;
@@ -148,7 +158,9 @@ public class DuelHubScreen extends Screen
     {
         MAT("Duel Mat"),
         CARDS("Cards"),
-        AUDIO("Audio");
+        AUDIO("Audio"),
+        MENU("Menu"),
+        MISC("Misc");
 
         private final String label;
 
@@ -267,6 +279,21 @@ public class DuelHubScreen extends Screen
     /** The mat colour wheel, built only while the settings tab is open. */
     private MatColourPicker matPicker;
 
+    /**
+     * The menu palette view: the same wheel, pointed at the interface itself.
+     * <p>
+     * {@link #menuSurface} is the colour being CONSIDERED, which is not the one
+     * in force -- the wheel is dragged, and a theme that changed on every pixel
+     * of the drag would rebuild ten textures per frame. It survives the
+     * rebuilds a button press causes, and is dropped on leaving the view so
+     * coming back always opens on what is actually set.
+     */
+    private MatColourPicker menuPicker;
+
+    private int menuSurface = -1;
+
+    private int menuFont = MenuTheme.YELLOW;
+
     public DuelHubScreen()
     {
         super(Component.literal("Duel Hub"));
@@ -369,6 +396,28 @@ public class DuelHubScreen extends Screen
             refreshButton = null;
         }
 
+        if(section == Section.PROFILE)
+        {
+            // The character: made here, and worn or not here. Two buttons and
+            // not one, because a duellist may build somebody and still want to
+            // walk around as themselves -- turning the model off must not throw
+            // the character away.
+            int characterY = top + HEIGHT - 32;
+            addRenderableWidget(new HubWidgets.TextureButton(left + PAD + 4, characterY,
+                92, 20, Component.literal("Customize"), pressed ->
+                    minecraft.setScreenAndShow(new CharacterScreen(this))));
+            boolean shown = minecraft.player != null
+                && de.cas_ual_ty.dueldimension.clientutil.character
+                    .ClientCharacters.isWearing(minecraft.player.getUUID());
+            addRenderableWidget(new HubWidgets.TextureButton(left + PAD + 100, characterY,
+                108, 20, Component.literal(shown ? "Model: on" : "Model: off"), pressed ->
+                {
+                    de.cas_ual_ty.dueldimension.clientutil.character.CharacterEdits
+                        .wear(!shown);
+                    rebuild();
+                }));
+        }
+
         if(section == Section.SHOP)
         {
             int shopX = left + PAD + 8;
@@ -383,6 +432,25 @@ public class DuelHubScreen extends Screen
             addRenderableWidget(new HubWidgets.TextureButton(shopX + (shopW + 8) * 2, shopY,
                 shopW, 20, Component.literal("Deck Boxes"), pressed -> openShop(
                     de.cas_ual_ty.dueldimension.shop.DiskShopMessages.RequestShop.DECK_BOXES)));
+
+            // The Monuments. Not a test hook any more: this is where the god
+            // statues are reached from, and the only place -- they used to open
+            // themselves after a duel, which meant a reward arrived whether or
+            // not the player wanted to spend on one. Now a duel pays DE and the
+            // player comes here to spend it.
+            //
+            // On the shop tab because it IS a shop: five DE for five cards.
+            int monumentsY = shopY + 28;
+            addRenderableWidget(new HubWidgets.TextureButton(shopX, monumentsY, shopW, 20,
+                Component.literal("Monuments"), pressed ->
+            {
+                if(minecraft != null)
+                {
+                    minecraft.setScreenAndShow(new de.cas_ual_ty.dueldimension.clientutil
+                        .statue.StatueRewardScreen());
+                }
+            }));
+
         }
 
         // The Misc tab: collapsible CATEGORIES, and inside them rows of two.
@@ -399,7 +467,7 @@ public class DuelHubScreen extends Screen
         // another tab is a delete waiting to happen on a click meant for
         // something else.
         deleteArmed = false;
-        if(section == Section.MISC)
+        if(section == Section.SETTINGS && settingsView == SettingsView.MISC)
         {
             int miscX = left + PAD + 8;
             int miscW = WIDTH - PAD * 2 - 16;
@@ -407,7 +475,8 @@ public class DuelHubScreen extends Screen
             int itemW = miscW - 10;
             // Two columns, with a gap that matches the one between rows.
             int halfW = (itemW - 6) / 2;
-            int row = bodyTop + 24;
+            // Below the sub-tab strip, which owns bodyTop + 3 to + 19.
+            int row = bodyTop + 28;
 
             // ---- what is on disk ----
             addRenderableWidget(new HubWidgets.TextureButton(miscX, row, miscW, 18,
@@ -561,13 +630,53 @@ public class DuelHubScreen extends Screen
                 speed.active = de.cas_ual_ty.dueldimension.clientutil.model
                     .AnimationSettings.extras();
                 addRenderableWidget(speed);
+                row += 22;
+
+                // How a model's texture is FILTERED, which belongs with the
+                // models for the same reason the two above do. Only meaningful
+                // while models are being drawn at all, so it greys out with
+                // them -- the same decision as Speed beside Attacks.
+                HubWidgets.TextureButton filtering = new HubWidgets.TextureButton(
+                    itemX, row, halfW, 18,
+                    Component.literal("Filtering: "
+                        + (de.cas_ual_ty.dueldimension.clientutil.HologramSettings.ps2()
+                            ? "PS2" : "SHARP")), pressed ->
+                    {
+                        de.cas_ual_ty.dueldimension.clientutil.HologramSettings.setPs2(
+                            !de.cas_ual_ty.dueldimension.clientutil.HologramSettings.ps2());
+                        rebuildWidgets();
+                    });
+                filtering.active =
+                    de.cas_ual_ty.dueldimension.clientutil.HologramSettings.models();
+                addRenderableWidget(filtering);
             }
+
+            // ---- getting along with other mods ----
+            // Full width, because the name is the explanation: it is somebody
+            // else's mod being named, and abbreviating it would leave a toggle
+            // nobody could match to the thing it affects.
+            row += 4;
+            addRenderableWidget(new HubWidgets.TextureButton(miscX, row, miscW, 18,
+                Component.literal("Customizable Player Models Fix: "
+                    + (de.cas_ual_ty.dueldimension.clientutil.CpmSettings.fix()
+                        ? "ON" : "OFF")), pressed ->
+                {
+                    de.cas_ual_ty.dueldimension.clientutil.CpmSettings.setFix(
+                        !de.cas_ual_ty.dueldimension.clientutil.CpmSettings.fix());
+                    rebuildWidgets();
+                }));
+            row += 22;
         }
 
         // The mat picker is rebuilt with the tab rather than kept, so it always
         // opens showing the colour actually in force. Nulled on every other tab
         // because render and the mouse handlers all key off it being non-null.
         matPicker = null;
+        if(section != Section.SETTINGS || settingsView != SettingsView.MENU)
+        {
+            menuPicker = null;
+            menuSurface = -1;
+        }
         if(section == Section.SETTINGS)
         {
             int viewX = left + PAD + 4;
@@ -594,11 +703,81 @@ public class DuelHubScreen extends Screen
             // music and card-back views offered an Apply that applied nothing.
             addRenderableWidget(new HubWidgets.TextureButton(left + PAD + 6, top + HEIGHT - 32,
                 96, 20, Component.literal("Apply"), pressed -> applyMat()));
+            // Which view a duel opens in. On this tab because it is the one
+            // about how a duel LOOKS, and beside the mat because the mat is the
+            // thing the overhead view exists to show.
+            addRenderableWidget(new HubWidgets.TextureButton(left + PAD + 210,
+                top + HEIGHT - 32, 150, 20,
+                Component.literal("Duel view: "
+                    + (de.cas_ual_ty.dueldimension.clientutil.DuelCamera.defaultOverhead()
+                        ? "Overhead" : "First person")), pressed ->
+            {
+                de.cas_ual_ty.dueldimension.clientutil.DuelCamera.setDefaultOverhead(
+                    !de.cas_ual_ty.dueldimension.clientutil.DuelCamera.defaultOverhead());
+                de.cas_ual_ty.dueldimension.clientutil.DuelCamera.save();
+                rebuild();
+            }));
             addRenderableWidget(new HubWidgets.TextureButton(left + PAD + 108, top + HEIGHT - 32,
                 96, 20, Component.literal("Reset"), pressed ->
             {
                 matPicker.setColour(de.cas_ual_ty.dueldimension.clientutil.DuelClientState.DEFAULT_MAT_COLOUR);
                 applyMat();
+            }));
+        }
+        if(section == Section.SETTINGS && settingsView == SettingsView.MENU)
+        {
+            if(menuSurface < 0)
+            {
+                menuSurface = MenuThemes.chosen().surface();
+                menuFont = MenuThemes.chosen().text();
+            }
+            MenuLayout menu = menuLayout();
+            menuPicker = new MatColourPicker(left + PAD + 6, top + menu.previewY(),
+                menu.wheel(), MAT_SLIDER_W, menuSurface);
+
+            // The five presets, on one row. Each applies immediately: a preset
+            // is a single choice and is its own confirmation, which is the same
+            // reason the music rows below do not wait on an Apply either.
+            int presetX = left + PAD + 6;
+            for(MenuTheme preset : MenuTheme.PRESETS)
+            {
+                MenuTheme target = preset;
+                addRenderableWidget(new HubWidgets.TextureButton(presetX,
+                    top + menu.presetY(), menu.presetW(), 18,
+                    Component.literal(preset.label()), pressed ->
+                {
+                    de.cas_ual_ty.dueldimension.clientutil.MenuThemeSettings.apply(target);
+                    menuSurface = -1;
+                    rebuild();
+                }));
+                presetX += menu.presetStride();
+            }
+
+            // White, Black or Yellow -- the three the font is legible in at six
+            // pixels over a gradient, and the three a theme may state.
+            addRenderableWidget(new HubWidgets.TextureButton(left + PAD + 6,
+                top + HEIGHT - 32, 116, 20,
+                Component.literal("Font: " + MenuTheme.fontName(menuFont)), pressed ->
+            {
+                // Read back before the rebuild, or a drag is lost to a click on
+                // an unrelated button.
+                menuSurface = menuPicker.colour();
+                menuFont = MenuTheme.nextFont(menuFont);
+                // APPLIED, not just remembered. It used to change only the
+                // pending custom theme, so pressing it while a preset was in
+                // force relabelled the button and left the menu alone -- which
+                // reads as a control that is not wired to anything.
+                de.cas_ual_ty.dueldimension.clientutil.MenuThemeSettings.apply(
+                    MenuThemes.chosen().withText(menuFont));
+                rebuild();
+            }));
+            addRenderableWidget(new HubWidgets.TextureButton(left + PAD + 128,
+                top + HEIGHT - 32, 96, 20, Component.literal("Use colour"), pressed ->
+            {
+                menuSurface = menuPicker.colour();
+                de.cas_ual_ty.dueldimension.clientutil.MenuThemeSettings.apply(
+                    MenuTheme.custom(menuSurface, menuFont));
+                rebuild();
             }));
         }
         if(section == Section.SETTINGS && settingsView == SettingsView.AUDIO)
@@ -640,7 +819,7 @@ public class DuelHubScreen extends Screen
                 de.cas_ual_ty.dueldimension.clientutil.DuelMusic.toggleMuted();
                 rebuild();
             });
-            muteButton.setLabelColour(quiet ? 0xFF8A93A3 : 0xFFF4D089);
+            muteButton.setLabelColour(quiet ? 0xFF8A93A3 : MenuInk.title());
             // If the game's own sliders are down, "On" is a lie by omission --
             // so it says which slider, rather than leaving the player to
             // wonder why an unmuted track makes no sound.
@@ -807,7 +986,6 @@ public class DuelHubScreen extends Screen
             // SHOP is three buttons and a line of explanation; the buttons are
             // widgets, added in init(), so there is nothing to paint under them.
             case SHOP -> shopPanel(graphics, bodyTop);
-            case MISC -> miscPanel(graphics, bodyTop);
             default -> waiting(graphics, bodyTop);
         }
 
@@ -911,6 +1089,80 @@ public class DuelHubScreen extends Screen
         return new MatLayout(wheel, x, matTop, w, h, matTop + h + 4, bodyBottom);
     }
 
+    /**
+     * The Menu view's geometry, relative to the panel's own top left.
+     *
+     * @param presetY      the row of preset buttons
+     * @param presetW      each button, five across the body's width
+     * @param presetStride from one button's left to the next
+     * @param wheel        the colour wheel, square, BELOW the presets
+     * @param previewX     left of the live preview, right of wheel and slider
+     * @param previewY     its top, level with the wheel
+     * @param hexY         the hex and font name, under the preview
+     * @param bodyBottom   the line none of the above may cross
+     */
+    record MenuLayout(int presetY, int presetW, int presetStride, int wheel,
+        int previewX, int previewY, int previewW, int previewH, int hexY, int bodyBottom)
+    {
+    }
+
+    /**
+     * Sizes the Menu view to the panel it is in.
+     *
+     * <b>The row of presets is the whole reason this is not {@link #matLayout}.</b>
+     * That one starts its wheel at {@code bodyTop + 48}, and the first version
+     * of this view put five preset buttons at exactly that height -- so the
+     * wheel, the preview and its heading were all drawn underneath them. The
+     * controls here begin below the row instead, and the room left over is what
+     * the wheel and the preview divide between them.
+     *
+     * A static function of the panel so it can be TESTED, the same as the mat's,
+     * and for the same reason: these are the offsets that quietly stop being
+     * right when the panel is a different size.
+     *
+     * @param lineHeight the font's, so the hex line reserves what it needs
+     */
+    static MenuLayout menuLayout(int panelW, int panelH, int lineHeight)
+    {
+        int bodyTop = PAD + TAB_H + 8;
+        int bodyBottom = bodyTop + panelH - (PAD + TAB_H + 8) - 40;
+        int presetH = 18;
+        int gap = 4;
+        // Five across whatever the body has, rather than a written-down width:
+        // 72 each fits the authored panel and runs off a narrower one.
+        int inner = Math.max(5, panelW - PAD * 2 - 12);
+        int presetW = Math.max(16, (inner - gap * 4) / 5);
+
+        // The row is pulled UP when the body is too short to hold everything
+        // below it. MenuLayoutTest found this at 260x150: the row sat at its
+        // written offset, the controls started under it as they should, and the
+        // hex line was then past the bottom of the inset. Everything downstream
+        // is derived from this one clamp, so nothing can cross.
+        int presetY = Math.max(bodyTop,
+            Math.min(bodyTop + 42, bodyBottom - lineHeight - presetH - 13));
+        int controlsTop = presetY + presetH + 8;
+
+        // What is left for the wheel, the preview and the line under them. It
+        // TAKES the room rather than insisting on a minimum -- the same choice
+        // matLayout makes, and for the same reason: no floor can conjure space
+        // that is not there, and a control clipped through the bottom of its
+        // own inset is worse than a small one.
+        int room = Math.max(1, bodyBottom - lineHeight - 4 - controlsTop);
+        int wheel = Math.min(112, room);
+        // wheel + 10 + slider is MatColourPicker's own geometry, then a gap.
+        int x = PAD + 6 + wheel + 10 + MAT_SLIDER_W + 18;
+        int previewH = Math.max(1, Math.min(room, 112));
+        int previewW = Math.max(1, panelW - PAD - 6 - x);
+        int hexY = Math.min(controlsTop + previewH + 4, bodyBottom - lineHeight);
+        return new MenuLayout(presetY, presetW, presetW + gap, wheel, x, controlsTop,
+            previewW, previewH, hexY, bodyBottom);
+    }
+
+    private MenuLayout menuLayout()
+    {
+        return menuLayout(WIDTH, HEIGHT, font.lineHeight);
+    }
+
     private MatLayout matLayout()
     {
         return matLayout(WIDTH, HEIGHT, font.lineHeight);
@@ -929,11 +1181,52 @@ public class DuelHubScreen extends Screen
 
     private void settingsPanel(GuiGraphicsExtractor graphics, int bodyTop)
     {
+        if(settingsView == SettingsView.MISC)
+        {
+            miscPanel(graphics, bodyTop);
+            return;
+        }
         // Everything below the sub-tab row, which occupies bodyTop + 3 to + 19.
         int headingY = bodyTop + 32;
+        if(settingsView == SettingsView.MENU && menuPicker != null)
+        {
+            graphics.text(font, "Menu Palette", left + PAD + 6, headingY,
+                MenuInk.title(), MenuInk.shadow());
+            menuPicker.render(graphics);
+
+            // The preview is the real furniture under the theme being
+            // considered, drawn by pinning that theme for three calls -- so it
+            // is not a mock-up of the result, it IS the result.
+            MenuTheme pending = MenuTheme.custom(menuPicker.colour(), menuFont);
+            MenuLayout menu = menuLayout();
+            int px = left + menu.previewX();
+            int py = top + menu.previewY();
+            int pw = menu.previewW();
+            int ph = menu.previewH();
+            MenuThemes.pin(pending);
+            try
+            {
+                NineSlice.draw(graphics, HubTextures.PANEL, px, py, pw, ph);
+                NineSlice.draw(graphics, HubTextures.BUTTON, px + 8, py + ph - 30,
+                    pw - 16, 20, NineSlice.IDLE, 3);
+                graphics.text(font, "Preview", px + 10, py + 10, MenuInk.title(), MenuInk.shadow());
+                graphics.text(font, "Sample text", px + 10, py + 24, MenuInk.body(), MenuInk.shadow());
+                graphics.text(font, "Button", px + 8 + (pw - 16
+                    - font.width("Button")) / 2, py + ph - 24, MenuInk.label(), MenuInk.shadow());
+            }
+            finally
+            {
+                MenuThemes.unpin();
+            }
+
+            String hex = String.format("#%06X", menuPicker.colour() & 0xFFFFFF);
+            graphics.text(font, hex + "   " + MenuTheme.fontName(menuFont),
+                left + menu.previewX(), top + menu.hexY(), MenuInk.body(), MenuInk.shadow());
+            return;
+        }
         if(settingsView == SettingsView.MAT && matPicker != null)
         {
-            graphics.text(font, "Duel Mat", left + PAD + 6, headingY, 0xFFF4D089, true);
+            graphics.text(font, "Duel Mat", left + PAD + 6, headingY, MenuInk.title(), MenuInk.shadow());
             matPicker.render(graphics);
             // The preview is the real mat texture under the chosen tint, so
             // what is shown here is exactly what reaches the table. Measured
@@ -947,14 +1240,14 @@ public class DuelHubScreen extends Screen
             // was measured against a panel of one size and put the hex under
             // the Apply row at every other.
             graphics.text(font, hex, left + mat.previewX(), top + mat.hexY(),
-                0xFFC2C9D6, true);
+                MenuInk.body(), MenuInk.shadow());
             return;
         }
         if(settingsView == SettingsView.AUDIO)
         {
             // Drawn here rather than built as a widget because it is a label,
             // and this panel draws its own.
-            graphics.text(font, "Duel Music", left + PAD + 6, headingY, 0xFFF4D089, true);
+            graphics.text(font, "Duel Music", left + PAD + 6, headingY, MenuInk.title(), MenuInk.shadow());
             return;
         }
 
@@ -962,7 +1255,7 @@ public class DuelHubScreen extends Screen
         // Only the words: each tile paints its own back, because this runs
         // before the widgets and would otherwise be covered by them. The names
         // are safe here -- they sit below the tiles rather than inside them.
-        graphics.text(font, "Card Back", backStripX(), headingY, 0xFFF4D089, true);
+        graphics.text(font, "Card Back", backStripX(), headingY, MenuInk.title(), MenuInk.shadow());
         java.util.List<CardBacks.Back> backs = CardBacks.ALL;
         for(int slot = 0; slot < BACK_TILES && slot + backScroll < backs.size(); slot++)
         {
@@ -971,14 +1264,14 @@ public class DuelHubScreen extends Screen
             String name = font.plainSubstrByWidth(back.label(), BACK_PITCH - 4);
             graphics.text(font, name,
                 backStripX() + slot * BACK_PITCH + (BACK_W - font.width(name)) / 2,
-                bodyTop + 48 + BACK_H + 4, on ? 0xFFF4D089 : 0xFFC2C9D6, true);
+                bodyTop + 48 + BACK_H + 4, on ? MenuInk.title() : MenuInk.body(), MenuInk.shadow());
         }
         if(backs.size() > BACK_TILES)
         {
             graphics.text(font, (backScroll + 1) + "-"
                     + Math.min(backs.size(), backScroll + BACK_TILES)
                     + " of " + backs.size(),
-                backStripX(), bodyTop + 48 + BACK_H + 18, 0xFF7A8090, true);
+                backStripX(), bodyTop + 48 + BACK_H + 18, MenuInk.dim(), MenuInk.shadow());
         }
     }
 
@@ -1003,6 +1296,14 @@ public class DuelHubScreen extends Screen
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event,
         boolean doubled)
     {
+
+        // The record heading, before the deck grid underneath it: the profile
+        // panel is drawn over that column, so the grid's own hit test would
+        // otherwise swallow the click.
+        if(event.button() == 0 && clickRecord(event.x(), event.y()))
+        {
+            return true;
+        }
         if(contextDeck != null)
         {
             if(event.button() == 0)
@@ -1049,6 +1350,10 @@ public class DuelHubScreen extends Screen
                 return true;
             }
         }
+        if(menuPicker != null && menuPicker.mouseClicked(event.x(), event.y()))
+        {
+            return true;
+        }
         if(matPicker != null && matPicker.mouseClicked(event.x(), event.y()))
         {
             return true;
@@ -1075,6 +1380,10 @@ public class DuelHubScreen extends Screen
                     deckHitAt(event.x(), event.y());
                 dragTarget = over == draggingDeck ? null : over;
             }
+            return true;
+        }
+        if(menuPicker != null && menuPicker.mouseDragged(event.x(), event.y()))
+        {
             return true;
         }
         if(matPicker != null && matPicker.mouseDragged(event.x(), event.y()))
@@ -1112,6 +1421,10 @@ public class DuelHubScreen extends Screen
                 }
             }
             return true;
+        }
+        if(menuPicker != null)
+        {
+            menuPicker.mouseReleased();
         }
         if(matPicker != null)
         {
@@ -1167,7 +1480,7 @@ public class DuelHubScreen extends Screen
     {
         // No caption: two labelled buttons say what this is, and a sentence
         // explaining them was a sentence to read every time.
-        graphics.text(font, "Shop", left + PAD + 8, bodyTop + 8, 0xFFF4D089, true);
+        graphics.text(font, "Shop", left + PAD + 8, bodyTop + 8, MenuInk.title(), MenuInk.shadow());
     }
 
     /**
@@ -1184,8 +1497,9 @@ public class DuelHubScreen extends Screen
      */
     private void miscPanel(GuiGraphicsExtractor graphics, int bodyTop)
     {
-        graphics.text(font, "Misc", left + PAD + 8, bodyTop + 8, 0xFFF4D089, true);
-
+        // No heading. It is reached through a sub-tab that says Misc, and a
+        // second Misc under the first one is the panel telling the player
+        // where they already know they are.
         if(!modelsOpen)
         {
             return;
@@ -1199,7 +1513,7 @@ public class DuelHubScreen extends Screen
         // trace: the button changes back to "Download", and a button that has
         // changed is not the same as being told what happened.
         graphics.text(font, deleteReport != null ? deleteReport : status,
-            left + PAD + 18, bodyTop + 50, 0xFFC2C9D6, true);
+            left + PAD + 18, bodyTop + 54, MenuInk.body(), MenuInk.shadow());
     }
 
     /**
@@ -1223,42 +1537,209 @@ public class DuelHubScreen extends Screen
 
     private void waiting(GuiGraphicsExtractor graphics, int bodyTop)
     {
-        graphics.text(font, section.label, left + PAD + 8, bodyTop + 8, 0xFFF4D089, true);
+        graphics.text(font, section.label, left + PAD + 8, bodyTop + 8, MenuInk.title(), MenuInk.shadow());
         graphics.text(font, "Not ported yet:", left + PAD + 8, bodyTop + 24, 0xFF8A93A3, true);
-        graphics.text(font, section.waitingOn, left + PAD + 8, bodyTop + 36, 0xFFC2C9D6, true);
+        graphics.text(font, section.waitingOn, left + PAD + 8, bodyTop + 36, MenuInk.body(), MenuInk.shadow());
     }
 
+    /**
+     * The profile tab: who you are, what you have won, and what you own.
+     *
+     * <h2>Why it is laid out and not listed</h2>
+     * It used to be a column of "Label: value" lines, which reads as a settings
+     * page -- and the three numbers a duelist actually opens this tab for were
+     * buried among the ones they do not. Now the currencies and the win count
+     * are a scoreboard across the top, and everything else is grouped under a
+     * heading so the eye can skip the group it does not want.
+     * <p>
+     * Every measurement is off {@link #WIDTH}, which the hub resizes with the
+     * window, rather than off a constant -- an earlier row of fixed 96-pixel
+     * cells sat in the left third of a wide panel and off the edge of a narrow
+     * one.
+     */
     private void profilePanel(GuiGraphicsExtractor graphics, int bodyTop)
     {
         int x = left + PAD + 10;
-        int y = bodyTop + 10;
-        graphics.text(font, "Profile", x, y, 0xFFF4D089, true);
-        y += 16;
+        int inner = WIDTH - (PAD + 10) * 2;
+        int y = bodyTop + 8;
+
+        // ---- who ----
         String name = minecraft != null && minecraft.player != null
             ? minecraft.player.getGameProfile().name() : "-";
-        graphics.text(font, "Duelist: " + name, x, y, 0xFFE6EAF2, true);
-        y += 12;
-
+        graphics.text(font, name, x, y, MenuInk.title(), MenuInk.shadow());
         String active = EditorState.profile().activeDeck();
-        graphics.text(font, "Active deck: " + (active.isEmpty() ? "none chosen" : active),
-            x, y, 0xFFC2C9D6, true);
-        y += 18;
+        String deck = "Deck: " + (active.isEmpty() ? "none chosen" : active);
+        graphics.text(font, deck, x + inner - font.width(deck), y, 0xFF8791A3, true);
+        y += 14;
 
-        // What the server has actually told us. Before the sync arrives these
-        // would all read zero, which is indistinguishable from a new player, so
-        // it says which it is.
+        // Before the sync arrives every number below would read zero, which is
+        // indistinguishable from a new player -- so it says which it is instead
+        // of showing a scoreboard of lies.
         if(!EditorState.isSynced())
         {
-            graphics.text(font, "Waiting for the server...", x, y, 0xFF7A8090, true);
+            // No panel drawn means no heading to click. See clickRecord.
+            recordBounds = null;
+            graphics.text(font, "Waiting for the server...", x, y + 6, MenuInk.dim(), MenuInk.shadow());
             return;
         }
-        graphics.text(font, "Cards owned: " + EditorState.trunk().totalCards()
-            + "  (" + EditorState.trunk().distinctCards() + " distinct)", x, y, 0xFFC2C9D6, true);
-        y += 12;
-        graphics.text(font, "Decks: " + EditorState.ownDecks().size(), x, y, 0xFFC2C9D6, true);
-        y += 12;
-        graphics.text(font, "Free mode: "
-            + (EditorState.freeMode() ? "on" : "off"), x, y, 0xFFC2C9D6, true);
+
+        // ---- the scoreboard ----
+        int gap = 6;
+        int cellW = (inner - gap * 2) / 3;
+        int cellH = 16;
+        // The headline is the PLAYER record whichever way the panel below is
+        // switched: the top row is "how am I doing", and the answer to that is
+        // not supposed to move because somebody looked at their bot record.
+        statCell(graphics, x, y, cellW, cellH, "WINS",
+            Integer.toString(EditorState.duelWins()), MenuInk.label());
+        statCell(graphics, x + cellW + gap, y, cellW, cellH, "DP",
+            Integer.toString(CardShopScreen.points()), MenuInk.title());
+        // DE has its own sync, so it can be unknown while DP is not.
+        statCell(graphics, x + (cellW + gap) * 2, y, cellW, cellH, "DE",
+            EditorState.statsKnown() ? Integer.toString(EditorState.duelEnergy()) : "-",
+            0xFFB6E3A8);
+        y += cellH + 8;
+
+        // ---- the categories, two abreast ----
+        int columnW = (inner - gap) / 2;
+        // WHICHEVER RECORD IS ON SHOW. Player by default; the heading says which
+        // and clicking it swaps. Two separate panels would be the obvious
+        // alternative and would double the height of the busiest column on this
+        // screen to show a number most players look at once.
+        int[] record = EditorState.shownRecord();
+        int played = record[0] + record[1];
+        String rate = played == 0 ? "-" : Math.round(record[0] * 100F / played) + "%";
+        recordHeading = EditorState.showingNpcRecord() ? "RECORD  vs NPC" : "RECORD  vs PLAYERS";
+        recordBounds = new int[] {x, y, columnW};
+        int recordH = category(graphics, x, y, columnW, recordHeading, new String[][] {
+            {"Won", Integer.toString(record[0])},
+            {"Lost", Integer.toString(record[1])},
+            {"Win rate", rate},
+        });
+        int collectionH = category(graphics, x + columnW + gap, y, columnW, "COLLECTION",
+            new String[][] {
+                {"Cards", Integer.toString(EditorState.trunk().totalCards())},
+                {"Distinct", Integer.toString(EditorState.trunk().distinctCards())},
+                {"Decks", Integer.toString(EditorState.ownDecks().size())},
+            });
+        y += Math.max(recordH, collectionH) + 8;
+
+        // ---- and the one setting worth surfacing here ----
+        category(graphics, x, y, inner, "SESSION", new String[][] {
+            {"Free mode", EditorState.freeMode() ? "on" : "off"},
+        });
+    }
+
+    /**
+     * One big number under a small label, in its own inset.
+     * <p>
+     * The value is centred and the label is not: the labels are short and of
+     * similar length, so left-aligning them makes a tidy row, while the numbers
+     * vary from one digit to five and only look deliberate centred.
+     */
+    /**
+     * One label and its number on a single line.
+     * <p>
+     * Stacked over two lines to begin with, which made three cells nearly forty
+     * pixels tall for two short strings and pushed everything under them down
+     * the panel. Side by side, the plate is as tall as the text needs and the
+     * groups below it get the room back -- and it reads the same way the card
+     * shop's balance plate does, which is the other place a number sits in a
+     * box in this hub.
+     */
+    /**
+     * Where the RECORD heading is, so a click on it can be caught.
+     * <p>
+     * Recorded while drawing rather than computed again in the click handler:
+     * the panel's layout depends on the window and on how much sits above it,
+     * and a second copy of that arithmetic is a second thing to keep in step.
+     * {@code {x, y, width}}; null before the panel has been drawn once.
+     */
+    private int[] recordBounds;
+
+    /** What that heading currently says, for the hit test's own height. */
+    private String recordHeading = "RECORD";
+
+    /**
+     * Swaps the record panel between the player and NPC columns.
+     *
+     * @return true when the click was the heading's
+     */
+    private boolean clickRecord(double mouseX, double mouseY)
+    {
+        // THE PANEL HAS TO BE THE ONE ON SCREEN.
+        //
+        // `recordBounds` is written while the profile panel draws and describes
+        // where that panel put its heading. Nothing clears it when the tab
+        // changes, so on any other tab it is a live rectangle over a panel that
+        // is no longer there -- and this runs BEFORE the widgets, so a click
+        // landing inside it was swallowed and the button under it never fired.
+        // The hub opens on Profile, so the stale rectangle exists from the first
+        // frame; the Shop tab's buttons sit in the same band, which is why
+        // "sometimes the shop does not open" was the symptom.
+        //
+        // Cleared below as well, so the bounds cannot outlive their panel even
+        // if a future tab reuses this test. Both, because either alone would
+        // leave the other reading as unnecessary.
+        if(section != Section.PROFILE || recordBounds == null || !EditorState.isSynced())
+        {
+            return false;
+        }
+        // The heading strip only, not the whole category: the rows under it are
+        // numbers to read, and making them a button too would mean every stray
+        // click in the panel silently changed what was being read.
+        int headingH = 14;
+        if(mouseX >= recordBounds[0] && mouseX < recordBounds[0] + recordBounds[2]
+            && mouseY >= recordBounds[1] && mouseY < recordBounds[1] + headingH)
+        {
+            EditorState.toggleRecord();
+            return true;
+        }
+        return false;
+    }
+
+    private void statCell(GuiGraphicsExtractor graphics, int x, int y, int w, int h,
+        String label, String value, int colour)
+    {
+        NineSlice.draw(graphics, HubTextures.PANEL_INSET, x, y, w, h);
+        // CENTRED ON THE INK, AND ROUNDED THE RIGHT WAY.
+        //
+        // This was `(h - 8) / 2`, which is wrong twice over. The vanilla font
+        // puts its baseline at y+7 and its capitals and digits occupy rows
+        // y..y+6 -- SEVEN rows of ink, not eight; the eighth is the descender
+        // gap, which "DE 0" has nothing in. Centring an eight-tall block
+        // therefore biases everything up by half a pixel.
+        //
+        // And the integer divide rounded that half-pixel up rather than down:
+        // on a 22-tall plate the true centre is y+7.5, `(22-8)/2` gives 7, and
+        // the row sat a whole pixel high with the gap visibly larger underneath.
+        // Rounding to nearest gives 8, which is the pixel the eye wants.
+        int textY = y + Math.round((h - INK_HEIGHT) / 2F);
+        graphics.text(font, label, x + 7, textY, 0xFF8791A3, true);
+        graphics.text(font, value, x + w - 7 - font.width(value), textY, colour, true);
+    }
+
+    /**
+     * A headed group of label/value rows.
+     *
+     * @return the height it drew, so the caller can put something under it
+     *         without knowing how many rows went in
+     */
+    private int category(GuiGraphicsExtractor graphics, int x, int y, int w,
+        String title, String[][] rows)
+    {
+        int rowH = 11;
+        int h = 20 + rows.length * rowH + 4;
+        NineSlice.draw(graphics, HubTextures.PANEL_INSET, x, y, w, h);
+        graphics.text(font, title, x + 7, y + 6, 0xFF8791A3, true);
+        for(int i = 0; i < rows.length; i++)
+        {
+            int rowY = y + 19 + i * rowH;
+            graphics.text(font, rows[i][0], x + 7, rowY, MenuInk.body(), MenuInk.shadow());
+            graphics.text(font, rows[i][1], x + w - 7 - font.width(rows[i][1]), rowY,
+                MenuInk.label(), MenuInk.shadow());
+        }
+        return h;
     }
 
     /** The deck panel's non-widget half: counters, notice, and the dialogs. */
@@ -1267,7 +1748,7 @@ public class DuelHubScreen extends Screen
         if(!EditorState.isSynced())
         {
             graphics.text(font, "Waiting for the server...", left + PAD + 10, bodyTop + 10,
-                0xFF7A8090, true);
+                MenuInk.dim(), MenuInk.shadow());
             return;
         }
         if(confirmDelete != null)
@@ -1286,7 +1767,7 @@ public class DuelHubScreen extends Screen
         {
             graphics.text(font, (deckScroll + 1) + "-"
                 + Math.min(count, deckScroll + visible) + " of " + count,
-                left + PAD + 150, top + HEIGHT - 26, 0xFF7A8090, true);
+                left + PAD + 150, top + HEIGHT - 26, MenuInk.dim(), MenuInk.shadow());
         }
         if(!notice.isEmpty())
         {
@@ -1506,7 +1987,7 @@ public class DuelHubScreen extends Screen
                 EditorState.publish(deck, !deck.published());
                 rebuild();
             });
-            recipe.setLabelColour(deck.published() ? 0xFFF4D089 : 0xFF8A93A3);
+            recipe.setLabelColour(deck.published() ? MenuInk.title() : 0xFF8A93A3);
             recipe.setTooltipLines(deck.published()
                 ? java.util.List.of("Shown in the recipe list", "Click to withdraw it")
                 : java.util.List.of("Not offered as a recipe", "Click to add it to the list"));
@@ -1625,7 +2106,7 @@ public class DuelHubScreen extends Screen
         int y = Math.clamp(mouseY + 7, top + PAD, top + HEIGHT - PAD - 16);
         NineSlice.draw(graphics, HubTextures.BUTTON, x, y, w, 16, NineSlice.HOVER, 3);
         graphics.text(font, label, x + (w - font.width(label)) / 2, y + 4,
-            0xFFF4D089, true);
+            MenuInk.title(), MenuInk.shadow());
     }
 
     private de.cas_ual_ty.dueldimension.duel.profile.DeckList deckHitAt(
@@ -1696,7 +2177,7 @@ public class DuelHubScreen extends Screen
                 CONTEXT_W - 4, CONTEXT_ITEM_H, row, 3);
             String label = CONTEXT_ACTIONS[action];
             int colour = contextActionEnabled(action)
-                ? over ? 0xFFF4D089 : 0xFFE6EAF2 : 0xFF6A7080;
+                ? over ? MenuInk.title() : MenuInk.label() : MenuInk.dim();
             graphics.text(font, label, contextX + (CONTEXT_W - font.width(label)) / 2,
                 y + (CONTEXT_ITEM_H - 8) / 2, colour, true);
         }
@@ -1989,11 +2470,11 @@ public class DuelHubScreen extends Screen
         // answer buttons are widgets, described after this, so they sit on top.
         graphics.fill(left, top, left + WIDTH, top + HEIGHT, 0xC0000000);
         NineSlice.draw(graphics, HubTextures.PANEL, boxX, boxY, boxW, boxH);
-        graphics.text(font, "Delete this deck?", boxX + 12, boxY + 10, 0xFFF4D089, true);
+        graphics.text(font, "Delete this deck?", boxX + 12, boxY + 10, MenuInk.title(), MenuInk.shadow());
         String named = "\"" + confirmDelete.name() + "\"  ("
             + confirmDelete.main().size() + " cards)";
         graphics.text(font, font.plainSubstrByWidth(named, boxW - 24),
-            boxX + 12, boxY + 24, 0xFFE6EAF2, true);
+            boxX + 12, boxY + 24, MenuInk.label(), MenuInk.shadow());
         graphics.text(font, "This cannot be undone.", boxX + 12, boxY + 36, 0xFFFF6B6B, true);
     }
 
@@ -2011,10 +2492,10 @@ public class DuelHubScreen extends Screen
             NineSlice.draw(graphics, HubTextures.PANEL_INSET,
                 x - 2, bodyTop - 2, columnW + 4, bubbleH);
             graphics.text(font, font.plainSubstrByWidth(group.heading(), columnW),
-                x + RECIPE_INSET, bodyTop + 2, 0xFFF4D089, true);
+                x + RECIPE_INSET, bodyTop + 2, MenuInk.title(), MenuInk.shadow());
             if(group.decks().isEmpty())
             {
-                graphics.text(font, "(none)", x + RECIPE_INSET, bodyTop + 18, 0xFF7A8090, true);
+                graphics.text(font, "(none)", x + RECIPE_INSET, bodyTop + 18, MenuInk.dim(), MenuInk.shadow());
                 scrollbar(graphics, x + columnW - BAR_W - 2, bodyTop + 14,
                     visible * ROW_H, 0, visible, 0);
                 continue;
@@ -2026,7 +2507,7 @@ public class DuelHubScreen extends Screen
                 graphics.text(font, (recipeScroll[column] + 1) + "-"
                         + Math.min(group.decks().size(), recipeScroll[column] + visible)
                         + " of " + group.decks().size(),
-                    x + RECIPE_INSET, bodyTop + 14 + visible * ROW_H + 2, 0xFF7A8090, true);
+                    x + RECIPE_INSET, bodyTop + 14 + visible * ROW_H + 2, MenuInk.dim(), MenuInk.shadow());
             }
         }
     }
@@ -2141,4 +2622,5 @@ public class DuelHubScreen extends Screen
     {
         return false;
     }
+
 }

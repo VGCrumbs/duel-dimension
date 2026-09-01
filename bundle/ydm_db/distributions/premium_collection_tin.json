@@ -1,0 +1,22 @@
+{
+  "name": "premium_collection_tin",
+  "pulls": [
+    {
+      "weight": 1,
+      "entries": [
+        {
+          "count": 6,
+          "rarities": [
+            "Secret Rare"
+          ]
+        },
+        {
+          "count": 8,
+          "rarities": [
+            "Super Rare"
+          ]
+        }
+      ]
+    }
+  ]
+}

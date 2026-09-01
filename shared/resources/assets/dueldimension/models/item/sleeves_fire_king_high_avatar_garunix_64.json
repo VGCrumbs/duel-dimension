@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_fire_king_high_avatar_garunix",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_fire_king_high_avatar_garunix"
+  }
+}

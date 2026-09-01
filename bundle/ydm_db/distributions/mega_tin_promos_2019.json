@@ -1,0 +1,16 @@
+{
+  "name": "mega_tin_promos_2019",
+  "pulls": [
+    {
+      "weight": 1,
+      "entries": [
+        {
+          "count": 3,
+          "rarities": [
+            "Prismatic Secret Rare"
+          ]
+        }
+      ]
+    }
+  ]
+}

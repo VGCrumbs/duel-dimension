@@ -11,6 +11,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.world.phys.Vec3;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -259,6 +260,57 @@ public final class MonsterSprites
         int span = layer.frames() * 2 - 2;
         int at = (int)Math.floorMod(step, span);
         return at < layer.frames() ? at : span - at;
+    }
+
+    /**
+     * Which rotation of a Doom-style sheet faces the viewer.
+     * <p>
+     * The monster still turns to face whoever is looking -- a flat picture seen
+     * edge-on is nothing, and that does not stop being true because there are
+     * eight of them. What changes is WHICH picture is on the quad: the angle
+     * between the viewer and the creature's own heading picks the row, so
+     * walking round a monster shows you its side and then its back while it
+     * carries on facing you.
+     * <p>
+     * Row 0 is the front, which is what the baker writes as Doom's rotation 1,
+     * and the rest step round from there. Rounded rather than floored, so each
+     * row covers the 45 degrees CENTRED on its own angle -- floor would show
+     * the front view only once the viewer had walked a full step past the front.
+     *
+     * @param heading which way the monster is facing, in Minecraft's convention
+     */
+    public static int directionAt(SpriteLayer layer, Vec3 eye, Vec3 feet, float heading)
+    {
+        if(layer == null || layer.directions() <= 1)
+        {
+            return 0;
+        }
+        // Minecraft's yaw: 0 is SOUTH (+Z) and it increases towards WEST, which
+        // is what atan2(-dx, dz) gives.
+        double dx = eye.x - feet.x;
+        double dz = eye.z - feet.z;
+        if(dx * dx + dz * dz < 1e-8D)
+        {
+            return 0;
+        }
+        double bearing = Math.toDegrees(Math.atan2(-dx, dz));
+        double step = 360D / layer.directions();
+        // HEADING MINUS BEARING, and the order is the whole of it.
+        //
+        // The baker steps its camera yaw UP for each row, and its camera sits
+        // at (sin yaw, ., cos yaw) -- so row numbers advance from +Z towards
+        // +X, which for a glTF model facing +Z is towards its own left.
+        // Minecraft's yaw maps to (-sin, cos), so it advances from +Z towards
+        // -X. The two conventions turn opposite ways, and subtracting them the
+        // other way round walks the rows backwards: the viewer steps left and
+        // the sprite shows them what is on its right.
+        //
+        // This is agreement with ANOTHER PROGRAM, so it cannot be derived from
+        // anything in this file -- which is why the test for it states the
+        // baker's convention rather than checking this against itself. The
+        // first version of that test passed while being exactly wrong, because
+        // the front (0) and the back (4) are both their own negation mod 8.
+        return Math.floorMod((int)Math.round((heading - bearing) / step), layer.directions());
     }
 
     /**
@@ -628,7 +680,8 @@ public final class MonsterSprites
             Math.max(0, optional(object, "trimX", 0)),
             Math.max(0, optional(object, "trimY", 0)),
             Math.max(0, optional(object, "bob", 0)),
-            readOffsets(object));
+            readOffsets(object),
+            Math.max(1, optional(object, "directions", 1)));
         // A file written while the bob was a kind of loop said so there, and
         // meant "hold the first cell and rise and fall over the frame count".
         // Said in the new terms that is a plain loop of one frame with a bob of
@@ -638,7 +691,8 @@ public final class MonsterSprites
         {
             return new SpriteLayer(read.sheet(), read.x(), read.y(), read.w(), read.h(),
                 read.columns(), read.rows(), read.first(), 1, read.ticks(), Loop.LOOP,
-                read.trimX(), read.trimY(), read.frames(), read.offsets());
+                read.trimX(), read.trimY(), read.frames(), read.offsets(),
+                read.directions());
         }
         return read;
     }
@@ -738,6 +792,13 @@ public final class MonsterSprites
         object.addProperty("trimX", layer.trimX());
         object.addProperty("trimY", layer.trimY());
         object.addProperty("bob", layer.bob());
+        // Only for a sheet that actually holds rotations. Writing
+        // "directions": 1 on every layer would put a word people have to
+        // look up into every entry in a file they read by hand.
+        if(layer.directions() > 1)
+        {
+            object.addProperty("directions", layer.directions());
+        }
         // Only when something is actually nudged. A list of zeroes on every
         // layer would be noise in a file people read.
         if(layer.offsets().stream().anyMatch(offset -> offset.x() != 0 || offset.y() != 0))

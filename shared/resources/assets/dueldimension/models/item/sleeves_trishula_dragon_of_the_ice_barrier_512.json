@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_trishula_dragon_of_the_ice_barrier",
+  "textures": {
+    "layer0": "dueldimension:item/512/sleeves_trishula_dragon_of_the_ice_barrier"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_here_there_be_dragons",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_here_there_be_dragons"
+  }
+}

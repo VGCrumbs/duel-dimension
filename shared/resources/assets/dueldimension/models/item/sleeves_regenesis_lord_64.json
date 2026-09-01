@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_regenesis_lord",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_regenesis_lord"
+  }
+}

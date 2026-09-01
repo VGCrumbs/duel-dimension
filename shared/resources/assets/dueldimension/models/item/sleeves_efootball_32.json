@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_efootball",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_efootball"
+  }
+}

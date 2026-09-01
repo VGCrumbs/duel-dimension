@@ -50,6 +50,10 @@ public class DuelDimensionFabricClient implements ClientModInitializer
         {
             de.cas_ual_ty.dueldimension.clientutil.DuelClientState.tickPlayback();
             de.cas_ual_ty.dueldimension.clientutil.DuelClientState.tickSkip();
+            // A footstep when the foot lands, in place of the one
+            // StepSoundMixin cancels. On the tick rather than the frame: see
+            // StepSounds.
+            de.cas_ual_ty.dueldimension.clientutil.character.StepSounds.tick(client);
             // Finishes an install on the thread that draws: the worker cannot
             // touch the model cache, because baking what replaces it reaches for
             // the graphics device.
@@ -258,6 +262,12 @@ public class DuelDimensionFabricClient implements ClientModInitializer
             .register((handler, client) ->
             {
                 de.cas_ual_ty.dueldimension.clientutil.ClientWornDisks.clear();
+                de.cas_ual_ty.dueldimension.clientutil.character.ClientCharacters.clear();
+                // And the editor's working copy, which is not in that map: it
+                // is what this client is BUILDING rather than what anyone is
+                // wearing, so nothing else empties it and a second server would
+                // otherwise open the creator on the first server's character.
+                de.cas_ual_ty.dueldimension.clientutil.character.CharacterEdits.clear();
                 de.cas_ual_ty.dueldimension.clientutil.OrichalcosRenderer.clear();
                 // Both halves of EDOPro's ClearTexture (image_manager.cpp:339-367):
                 // bump the epoch so everything in flight is abandoned and freed
@@ -276,6 +286,11 @@ public class DuelDimensionFabricClient implements ClientModInitializer
         // fired once per entity type; Fabric takes them directly.
         net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(
             de.cas_ual_ty.dueldimension.DdEntityTypes.DUELIST,
+            de.cas_ual_ty.dueldimension.duel.npc.DuelistRenderer::new);
+        // The bot wears a duelist skin and is drawn by the duelist renderer --
+        // it is a DuelistEntity, so the same renderer already fits it.
+        net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(
+            de.cas_ual_ty.dueldimension.DdEntityTypes.DUEL_BOT,
             de.cas_ual_ty.dueldimension.duel.npc.DuelistRenderer::new);
         net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry.register(
             de.cas_ual_ty.dueldimension.DdEntityTypes.DUEL,

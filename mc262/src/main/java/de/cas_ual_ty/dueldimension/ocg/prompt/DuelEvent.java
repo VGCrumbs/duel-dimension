@@ -89,6 +89,16 @@ public record DuelEvent(Kind kind, int code, int fromZone, int toZone, int amoun
         DAMAGE,
         RECOVER,
         DESTROY,
+        /**
+         * A card released as a tribute, which is NOT a destruction.
+         * <p>
+         * Both end up in the graveyard, and until now both were told apart by
+         * exactly that -- so a monster given up to summon a bigger one
+         * shattered like glass, which is the wrong story. The engine has always
+         * said which is which and nothing was reading it: MSG_MOVE carries a
+         * REASON, and a tribute sets {@code REASON_RELEASE}.
+         */
+        TRIBUTE,
         DRAW,
         SHUFFLE,
         /** A coin toss; amount packs one bit per coin, low bit first. */

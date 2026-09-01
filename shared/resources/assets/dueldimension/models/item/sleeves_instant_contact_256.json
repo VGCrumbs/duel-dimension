@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_instant_contact",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_instant_contact"
+  }
+}

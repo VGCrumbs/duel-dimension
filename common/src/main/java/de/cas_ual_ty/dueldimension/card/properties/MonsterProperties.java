@@ -174,8 +174,18 @@ public class MonsterProperties extends Properties
     @Override
     protected void addFactLines(List<CardLine> list)
     {
+        // A printed card's own order: the attribute and level are ABOVE the
+        // art, and the bracketed "Spellcaster / Normal" line sits under it with
+        // the stats after. Reading them in that order is what makes a preview
+        // scan like the card it describes.
+        //
+        // NOT addMonsterHeader(): that is header1 and header2 together, and the
+        // stats have to land after the species line rather than with the
+        // attribute. The two halves are called separately here for that reason,
+        // which is also why they are separate methods.
+        addMonsterHeader1(list);
         addMonsterTextHeader(list);
-        addMonsterHeader(list);
+        addMonsterHeader2(list);
     }
     
     @Override
@@ -191,6 +201,79 @@ public class MonsterProperties extends Properties
         super.addText(list);
     }
     
+    /**
+     * The Pendulum box, then the monster's own text.
+     * <p>
+     * A Pendulum monster is two cards printed on one, and the upper half was
+     * missing everywhere the body came from {@code getText()}. The scales and
+     * the Pendulum Effect go first, exactly as they are printed, then a blank
+     * line to stand in for the border between the two boxes, then the lower
+     * box that every other card has.
+     * <p>
+     * The species line {@link #addText} emits between them is deliberately NOT
+     * repeated here: a printed card carries it once, under the lower box, and
+     * a panel calling this has already shown it among the facts.
+     */
+    @Override
+    public void addPendulumBox(List<CardLine> list)
+    {
+        if(getIsPendulum())
+        {
+            addPendulumTextHeader(list);
+            list.add(CardLine.of(getPendulumText()));
+        }
+    }
+
+    /**
+     * Both boxes, so a search finds a Pendulum Effect as readily as it finds
+     * the text under it.
+     * <p>
+     * Joined with a newline rather than a space: nothing here is displayed, but
+     * a break stops the last word of one box and the first of the other from
+     * running together into a term that is on neither.
+     */
+    @Override
+    public String getSearchText()
+    {
+        String pendulum = getIsPendulum() ? getPendulumText() : null;
+        if(pendulum == null || pendulum.isEmpty())
+        {
+            return getText();
+        }
+        String lower = getText();
+        return lower == null || lower.isEmpty() ? pendulum : pendulum + "\n" + lower;
+    }
+
+    @Override
+    public String pendulumScaleText()
+    {
+        // The same six pieces addPendulumTextHeader lays out, as one string.
+        // Flattened rather than coloured, because the plate this is drawn on is
+        // what separates it now -- the arrows carried the colour when it was a
+        // bare line among other bare lines.
+        return getIsPendulum()
+            ? getPendulumScaleLeftBlue() + " \u25C0 / \u25B6 " + getPendulumScaleRightRed()
+            : null;
+    }
+
+    @Override
+    public String pendulumEffectText()
+    {
+        return getIsPendulum() ? getPendulumText() : null;
+    }
+
+    @Override
+    public int pendulumScaleLeft()
+    {
+        return getIsPendulum() ? getPendulumScaleLeftBlue() : -1;
+    }
+
+    @Override
+    public int pendulumScaleRight()
+    {
+        return getIsPendulum() ? getPendulumScaleRightRed() : -1;
+    }
+
     public void addPendulumTextHeader(List<CardLine> list)
     {
         // One line of six pieces, two of them coloured. This is the case that

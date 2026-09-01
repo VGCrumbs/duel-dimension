@@ -45,6 +45,39 @@ final class Ps2Texture extends DynamicTexture
         // smoothed, and no mip chain. Safe to call now because the superclass
         // constructor has already uploaded -- an upload sets these parameters
         // itself, so doing this first would be overwritten a line later.
-        setFilter(true, false);
+        //
+        // Read HERE and not per draw, because there is nowhere later to say
+        // it -- which is why turning the setting off has to forget the baked
+        // models. See HologramSettings.setPs2.
+        setFilter(de.cas_ual_ty.dueldimension.clientutil.HologramSettings.ps2(), false);
+    }
+
+    /**
+     * The render type asks for point sampling every frame. It does not get it.
+     * <p>
+     * <b>Setting the filter in the constructor is not enough on this version,
+     * and that is not obvious.</b> {@code RenderStateShard.TextureStateShard}
+     * calls {@code setFilter(blur, mipmap)} on the bound texture during
+     * {@code setupRenderState} -- every draw, not once -- and every render type
+     * a model goes through passes {@code false}: {@code entityCutout} and
+     * {@code entityTranslucentCull} hard-code it, and {@code hologram()} built
+     * its shard the same way. So the constructor set LINEAR and the very next
+     * frame set it back, which is exactly what was seen: models point-sampled
+     * into hard blocks no matter what the setting said.
+     * <p>
+     * Overriding here rather than building three custom render types, which was
+     * the other way. Those would each be a copy of a vanilla recipe kept in step
+     * by hand, and custom types are also the ones Iris has to be told about --
+     * see {@code IrisCompat}. This is one method, and it puts the decision on
+     * the texture, which is the thing the decision is actually about.
+     * <p>
+     * {@code mipmap} is passed through rather than forced: nothing asks these
+     * for mipmaps, and if something ever does, refusing it here would be a
+     * second surprise of exactly this kind.
+     */
+    @Override
+    public void setFilter(boolean blur, boolean mipmap)
+    {
+        super.setFilter(de.cas_ual_ty.dueldimension.clientutil.HologramSettings.ps2(), mipmap);
     }
 }

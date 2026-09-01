@@ -1,6 +1,0 @@
-{
-  "parent": "dueldimension:item/sleeves_p_3",
-  "textures": {
-    "layer0": "dueldimension:item/32/sleeves_p_3"
-  }
-}

@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_red_eyes_black_fullmetal_dragon",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_red_eyes_black_fullmetal_dragon"
+  }
+}

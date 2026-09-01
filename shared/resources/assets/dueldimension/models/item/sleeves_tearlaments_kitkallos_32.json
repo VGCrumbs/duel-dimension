@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_tearlaments_kitkallos",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_tearlaments_kitkallos"
+  }
+}

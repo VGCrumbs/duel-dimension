@@ -39,7 +39,23 @@ public class CardDisplayRenderer
         public byte art;
         public boolean defence;
         public boolean faceDown;
+        /**
+         * Which way the pedestal is turned.
+         * <p>
+         * FACING points from the block towards whoever placed it, exactly as a
+         * furnace's does, so it is also the way the card should be read from
+         * and the way a monster standing on it should look.
+         */
+        public net.minecraft.core.Direction facing;
         public long gameTime;
+        /**
+         * The world's light around the monster, read in extract.
+         * <p>
+         * Here rather than in submit because submit is handed what extract
+         * wrote down and may not look at the level itself -- the same rule
+         * gameTime above obeys, and for the same reason.
+         */
+        public de.cas_ual_ty.dueldimension.clientutil.model.ModelLight light;
     }
 
     public CardDisplayRenderer(BlockEntityRendererProvider.Context context)
@@ -60,11 +76,28 @@ public class CardDisplayRenderer
         state.code = display.code();
         state.art = display.art();
         state.defence = display.defence();
+        // Off the block state rather than the block entity: the facing is the
+        // BLOCK's, so it lives where the block's own data lives and needs no
+        // saving of its own.
+        net.minecraft.world.level.block.state.BlockState block = display.getBlockState();
+        state.facing = block.hasProperty(
+            de.cas_ual_ty.dueldimension.duel.overworld.display.CardDisplayBlock.FACING)
+            ? block.getValue(
+                de.cas_ual_ty.dueldimension.duel.overworld.display.CardDisplayBlock.FACING)
+            : net.minecraft.core.Direction.NORTH;
         state.faceDown = display.faceDown();
         // The LEVEL's clock, read here rather than in submit: extract is where
         // a renderer is allowed to look at the world, and submit is handed only
         // what extract wrote down.
         state.gameTime = display.getLevel() == null ? 0L : display.getLevel().getGameTime();
+        // Above the pedestal, never inside it -- see ModelLight.standing.
+        if(display.getLevel() != null)
+        {
+            net.minecraft.core.BlockPos at = display.getBlockPos();
+            state.light = de.cas_ual_ty.dueldimension.clientutil.model.ModelLight.standing(
+                display.getLevel(),
+                new Vec3(at.getX() + 0.5D, at.getY() + 1.0D, at.getZ() + 0.5D), 2.0D);
+        }
     }
 
     @Override
@@ -77,8 +110,31 @@ public class CardDisplayRenderer
             // empty, and an empty one is a bare pedestal.
             return;
         }
+        // TURNED TO FACE WHOEVER PLACED IT.
+        //
+        // The card is drawn in block-local coordinates around the block's own
+        // centre, so turning it is a rotation of the pose about that centre and
+        // nothing else -- which is why this wraps only the card. drawMonster
+        // below works in WORLD space, and a rotated pose would move it off the
+        // pedestal rather than turn it; it is given the heading as a number
+        // instead.
+        //
+        // -toYRot, and the sign is derived rather than guessed. DisplayCard
+        // winds its top face so that the texture's top edge lies along the
+        // NORTH edge and its left along the WEST -- which is a card the right
+        // way up to somebody standing to the SOUTH looking north. So the
+        // undrawn-rotation card already faces south, and what is wanted is the
+        // turn that takes south to FACING: 0 for south, 90 for east, 180 for
+        // north, 270 for west. That is -toYRot for all four, since toYRot is
+        // south 0, west 90, north 180, east 270.
+        float heading = state.facing == null ? 0F : -state.facing.toYRot();
+        poseStack.pushPose();
+        poseStack.translate(0.5F, 0F, 0.5F);
+        poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(heading));
+        poseStack.translate(-0.5F, 0F, -0.5F);
         DisplayCard.submit(poseStack, collector, (int)state.code, state.art, state.defence,
             state.faceDown, 0xFFFFFFFF);
+        poseStack.popPose();
         drawMonster(state, poseStack, collector, camera);
     }
 
@@ -89,6 +145,21 @@ public class CardDisplayRenderer
      * card nobody may identify, and a monster looming over one would announce
      * what it is to the whole room.
      */
+    /**
+     * The pedestal's heading in Minecraft's own yaw, for whatever stands on it.
+     * <p>
+     * {@code toYRot} straight through, with no sign flipped: yaw and FACING
+     * share a convention -- south 0, west 90, north 180, east 270 -- so a
+     * monster given the block's facing looks the way the block's front points,
+     * which is at whoever placed it. That is the OPPOSITE convention to the
+     * card's rotation a few lines up, and deliberately so: one is a heading, the
+     * other is a correction applied to art that already faced somewhere.
+     */
+    private static float blockYaw(State state)
+    {
+        return state.facing == null ? 0F : state.facing.toYRot();
+    }
+
     private static void drawMonster(State state, PoseStack poseStack,
         SubmitNodeCollector collector, CameraRenderState camera)
     {
@@ -128,14 +199,34 @@ public class CardDisplayRenderer
             // side. A dragon that pivots to keep facing you as you walk round it
             // is a dragon that never seems to be standing anywhere.
             //
-            // The block carries no facing of its own, so "fixed" means fixed at
-            // the definition's own Turn -- which is a number somebody sets once
-            // while looking at it, rather than one this has to guess.
+            // "Fixed" now means fixed at the BLOCK's heading, with the
+            // definition's own Turn on top of it. It used to mean fixed at the
+            // Turn alone, because the block had no facing to add -- and every
+            // display in a row therefore faced the same way however it had been
+            // placed. Now that the pedestal is turned when it is put down, the
+            // thing standing on it turns with it, and Turn goes back to being
+            // what it was written to be: a per-monster correction, not a
+            // heading.
             de.cas_ual_ty.dueldimension.clientutil.model.ModelHologram.submit(poseStack,
-                collector, block, feet, height, mesh, 0F, 0xFFFFFFFF,
+                collector, block, feet, height, mesh, blockYaw(state), 0xFFFFFFFF,
                 definition.animation(), definition.elevation(), definition.turn(),
-                definition.offsetX(), definition.offsetZ());
+                definition.offsetX(), definition.offsetZ(), Float.NaN, state.light);
             return;
+        }
+        // Lift, Off x and Off z, which a sprite now obeys as a model does. The
+        // yaw is the block's, for the same reason the model above takes it.
+        feet = MonsterBillboard.stand(feet, blockYaw(state), definition);
+        // As on the board: the block's heading plus the definition's Turn, which
+        // together decide which way a Doom sheet considers its front.
+        // definition can be null -- layerFor falls back to a bare sheet for a
+        // card nobody has authored -- and a null one simply has no Turn.
+        float turn = (definition == null ? 0F : definition.turn()) + blockYaw(state);
+        body = body.facing(MonsterSprites.directionAt(body, camera.pos, feet, turn));
+        if(wings != null)
+        {
+            wings = new Wings(wings.layer().facing(MonsterSprites.directionAt(
+                wings.layer(), camera.pos, feet, turn)),
+                wings.anchor(), wings.spacing(), wings.scale());
         }
         MonsterBillboard.submit(poseStack, collector, block, camera.pos, feet,
             height, body,

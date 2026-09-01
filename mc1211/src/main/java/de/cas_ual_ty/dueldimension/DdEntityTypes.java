@@ -21,6 +21,7 @@ public final class DdEntityTypes
 {
     public static final ResourceKey<EntityType<?>> DUELIST_KEY = key("duelist");
     public static final ResourceKey<EntityType<?>> DUEL_KEY = key("duel");
+    public static final ResourceKey<EntityType<?>> DUEL_BOT_KEY = key("duel_bot");
 
     /**
      * The duel itself, as an entity.
@@ -46,6 +47,19 @@ public final class DdEntityTypes
             .sized(0.6F, 1.8F)
             .build("duelist"));
 
+    /**
+     * A duelling opponent that is furniture: placed, picked up, and told which
+     * deck to play. Player-shaped like a duelist, because it wears a duelist
+     * skin and is drawn by the same renderer.
+     */
+    public static final EntityType<de.cas_ual_ty.dueldimension.duel.npc.DuelBotEntity> DUEL_BOT =
+        Registry.register(BuiltInRegistries.ENTITY_TYPE, DUEL_BOT_KEY,
+            EntityType.Builder.of(
+                    de.cas_ual_ty.dueldimension.duel.npc.DuelBotEntity::new,
+                    MobCategory.CREATURE)
+                .sized(0.6F, 1.8F)
+                .build("duel_bot"));
+
     private DdEntityTypes()
     {
     }
@@ -66,6 +80,9 @@ public final class DdEntityTypes
     public static void register()
     {
         FabricDefaultAttributeRegistry.register(DUELIST, DuelistEntity.createAttributes());
+        // One hit point and no movement speed -- see DuelBotEntity.
+        FabricDefaultAttributeRegistry.register(DUEL_BOT,
+            de.cas_ual_ty.dueldimension.duel.npc.DuelBotEntity.createBotAttributes());
     }
 
 }

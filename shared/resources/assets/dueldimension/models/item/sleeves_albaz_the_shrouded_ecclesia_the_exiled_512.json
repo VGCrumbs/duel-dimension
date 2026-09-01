@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_albaz_the_shrouded_ecclesia_the_exiled",
+  "textures": {
+    "layer0": "dueldimension:item/512/sleeves_albaz_the_shrouded_ecclesia_the_exiled"
+  }
+}

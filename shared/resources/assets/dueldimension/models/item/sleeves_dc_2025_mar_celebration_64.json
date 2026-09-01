@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_dc_2025_mar_celebration",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_dc_2025_mar_celebration"
+  }
+}

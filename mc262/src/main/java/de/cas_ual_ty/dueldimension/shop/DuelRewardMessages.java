@@ -19,7 +19,7 @@ public final class DuelRewardMessages
 
     public record Result(UUID rewardId, DuelReward.Outcome outcome, List<DuelReward.Line> lines,
         int total, int previousBalance, int newBalance, int games, int myWins, int theirWins,
-        boolean npcDuel) implements CustomPacketPayload
+        boolean npcDuel, int duelEnergy) implements CustomPacketPayload
     {
         public static final CustomPacketPayload.Type<Result> TYPE =
             DdNetwork.type("duel_reward_result");
@@ -35,6 +35,7 @@ public final class DuelRewardMessages
             previousBalance = Math.max(0, previousBalance);
             newBalance = Math.max(0, newBalance);
             games = Math.max(1, games);
+            duelEnergy = Math.max(0, duelEnergy);
         }
 
         @Override
@@ -61,6 +62,7 @@ public final class DuelRewardMessages
             buffer.writeVarInt(message.myWins());
             buffer.writeVarInt(message.theirWins());
             buffer.writeBoolean(message.npcDuel());
+            buffer.writeVarInt(message.duelEnergy());
         }
 
         private static Result decode(FriendlyByteBuf buffer)
@@ -76,7 +78,7 @@ public final class DuelRewardMessages
             }
             return new Result(id, outcome, lines, buffer.readVarInt(), buffer.readVarInt(),
                 buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(),
-                buffer.readVarInt(), buffer.readBoolean());
+                buffer.readVarInt(), buffer.readBoolean(), buffer.readVarInt());
         }
     }
 }

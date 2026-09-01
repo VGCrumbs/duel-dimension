@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_dragunity_knight_areus",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_dragunity_knight_areus"
+  }
+}

@@ -1,5 +1,6 @@
 package de.cas_ual_ty.dueldimension.clientutil.overworld;
 
+import de.cas_ual_ty.dueldimension.clientutil.hub.MenuInk;
 import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
 import de.cas_ual_ty.dueldimension.clientutil.DuelClientState;
 import de.cas_ual_ty.dueldimension.clientutil.DuelTextures;
@@ -58,13 +59,25 @@ public final class DuelHud
 
     /**
      * The life frame's own proportions, so it is never drawn at a shape it was
-     * not drawn at: 256 wide by 32 tall in the file.
+     * not drawn at.
+     * <p>
+     * <b>Measured from {@code lpf.png}, which is 200 by 20.</b> These said 256
+     * by 32 -- an 8:1 frame where the art is 10:1 -- so every bar was drawn a
+     * quarter taller than its own picture. The rounded end caps stretched, the
+     * raised border thickened, and the well the text sits in stopped being
+     * where the art puts it, which is what made a correctly centred line of
+     * type look wrong. The numbers were presumably right for a frame that has
+     * since been redrawn.
      */
-    private static final int BAR_W_BASE = 256;
-    private static final int BAR_H_BASE = 32;
-    /** The turn badge's edge, in the duel screen's own two colours. */
-    private static final int TURN_YOURS = 0x4CD964;
-    private static final int TURN_THEIRS = 0xFF453A;
+    private static final int BAR_W_BASE = 200;
+    private static final int BAR_H_BASE = 20;
+    /**
+     * The turn badge's two colours, kept here because this is where the
+     * duel screen's palette lives -- the board reads them off this class
+     * rather than writing a second copy of the same two numbers.
+     */
+    public static final int TURN_YOURS = 0x4CD964;
+    public static final int TURN_THEIRS = 0xFF453A;
     /**
      * The badge's own shape, from the duel screen: 34 across by 17 down, twice
      * as wide as it is tall, with the turn number filling it.
@@ -72,15 +85,26 @@ public final class DuelHud
     private static final int TURN_W_BASE = 34;
     private static final int TURN_H_BASE = 17;
 
-    /** How much of the window one life bar takes, at any window size. */
-    private static final float BAR_W_SHARE = 0.30F;
+    /**
+     * How much of the window one life bar takes, at any window size.
+     * <p>
+     * Raised when the frame's real 10:1 proportions replaced the 8:1 the code
+     * had assumed. Honouring the art made every bar a quarter shorter, and a
+     * life total is the one number on screen that is read from across the room
+     * -- so the height comes back through the WIDTH, at the shape the picture
+     * was actually drawn at, rather than by stretching it again.
+     */
+    private static final float BAR_W_SHARE = 0.36F;
     /** And never taller than this much of the window, whatever the width says. */
-    private static final float BAR_H_SHARE = 0.055F;
+    private static final float BAR_H_SHARE = 0.065F;
     /**
      * Narrow enough to keep out of the middle's way on any window, wide enough
      * that four digits and a name still land inside it.
      */
     private static final int MIN_BAR_W = 46;
+
+    /** The chain toggle's edge, before the chrome scale is applied. */
+    private static final int CHAIN_SIZE = 18;
 
     private static final int TOP = 4;
     /** The frame's raised border, which no text belongs on. */
@@ -89,6 +113,12 @@ public final class DuelHud
     private static final int EDGE = 6;
     /** Between a bar and the turn counter. */
     private static final int GAP = 4;
+    /** Between a duellist's name and their life total, inside the well. */
+    private static final int NAME_GAP = 6;
+
+    /** The first row of a glyph cell that carries any ink, and how many do. */
+    private static final int INK_TOP = 1;
+    private static final int INK_H = 7;
     private static final int PHASE_GAP = 3;
 
     /**
@@ -121,11 +151,30 @@ public final class DuelHud
             turnTop(screenW, screenH) + caseHeight(screenW, screenH)) + 8;
     }
 
-    /** The life frame's drawn height at this width, for anything measuring off it. */
+    /**
+     * The life frame's drawn height, for anything measuring off it.
+     *
+     * <h2>Not purely the art's proportions, and that is deliberate</h2>
+     * The frame is a 10:1 picture, and drawing it at 10:1 is what the art wants.
+     * But the width is not free -- {@code barWidth} is capped by the ROOM left
+     * either side of the phase case, which on a normal window is the binding
+     * limit -- so honouring the ratio exactly made the bar 19 units tall where
+     * it had been 24, and a life total is the number on this screen that is
+     * read from furthest away.
+     * <p>
+     * So it takes whichever is taller: the art's own ratio, or a share of the
+     * window. The frame stretches a little vertically when the second wins,
+     * which costs the end caps some roundness and buys back the height. A
+     * readable total is worth more than an exact rounding on a two-unit corner.
+     */
     public static int barHeight(int screenW, int screenH)
     {
-        return Math.max(9, Math.round(barWidth(screenW, screenH) * (float)BAR_H_BASE / BAR_W_BASE));
+        int byRatio = Math.round(barWidth(screenW, screenH) * (float)BAR_H_BASE / BAR_W_BASE);
+        return Math.max(9, Math.max(byRatio, Math.round(screenH * BAR_THICK)));
     }
+
+    /** The floor under {@link #barHeight}, as a share of the window. */
+    private static final float BAR_THICK = 0.058F;
 
     /**
      * A share of the width, not a cap on it.
@@ -200,7 +249,14 @@ public final class DuelHud
      */
     private static int clockRoom(int screenW, int screenH)
     {
-        return Math.round(CLOCK_BASE_W * clockScale(screenW, screenH)) + GAP;
+        // NOTHING. The clock moved out from beside the case and into the row
+        // beneath it, so the gap this used to hold open next to the phase bays
+        // is now empty space the life frames were being kept out of for no
+        // reason. Kept as a method rather than deleted because barWidth reads
+        // as an accounting of what the middle has taken, and a term that is
+        // zero says "and the clock takes none of it" where a missing one says
+        // nothing at all.
+        return 0;
     }
 
     /** The width of "10:00" in the default font, which is the longest it gets. */
@@ -263,6 +319,63 @@ public final class DuelHud
     }
 
     /**
+     * Where the chain toggle sits: bottom left, ABOVE the way out.
+     * <p>
+     * Stacked on the cancel button's row rather than beside it, and measured
+     * from that row's height whether or not the button is showing -- a toggle
+     * that jumped up and down as prompts came and went would be a toggle nobody
+     * could hit twice in the same place.
+     */
+    public static int[] chainBounds(int screenW, int screenH)
+    {
+        if(DuelClientState.over)
+        {
+            return null;
+        }
+        float scale = chromeScale(screenW, screenH);
+        int size = Math.round(CHAIN_SIZE * scale);
+        int cancelH = Math.round(CANCEL_H * scale);
+        return new int[] {EDGE, screenH - EDGE - cancelH - GAP - size, size, size};
+    }
+
+    /**
+     * The toggle, said with the symbol and its brightness rather than a word.
+     * <p>
+     * Lit gold while every chain is offered, dulled while they are passed
+     * unasked -- the state a player needs at a glance is "am I being asked",
+     * and a dim chain says no more directly than a label would.
+     */
+    public static void drawChainToggle(GuiGraphicsExtractor extractor, Font font, int mouseX,
+        int mouseY)
+    {
+        int[] at = chainBounds(extractor.guiWidth(), extractor.guiHeight());
+        if(at == null)
+        {
+            return;
+        }
+        boolean over = mouseX >= at[0] && mouseX < at[0] + at[2]
+            && mouseY >= at[1] && mouseY < at[1] + at[3];
+        boolean manual = de.cas_ual_ty.dueldimension.clientutil.ChainSettings.manual();
+        de.cas_ual_ty.dueldimension.clientutil.hub.NineSlice.draw(extractor,
+            de.cas_ual_ty.dueldimension.clientutil.hub.HubTextures.BUTTON,
+            at[0], at[1], at[2], at[3], over ? 1 : 0, 3);
+        int tint = manual
+            ? de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.tint(0.42F, 0.44F, 0.50F, 1F)
+            : de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.tint(0.96F, 0.82F, 0.54F, 1F);
+        int inset = Math.max(2, at[2] / 6);
+        de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.fullBlit(extractor,
+            DuelTextures.CHAIN_TOGGLE, at[0] + inset, at[1] + inset,
+            at[2] - inset * 2, at[3] - inset * 2, tint);
+        if(over)
+        {
+            String says = manual ? "Chains: manual (hold right-click to be asked)"
+                : "Chains: automatic (hold right-click to pass)";
+            extractor.text(font, says, at[0] + at[2] + 6,
+                at[1] + (at[3] - font.lineHeight) / 2 + 1, MenuInk.body(), MenuInk.shadow());
+        }
+    }
+
+    /**
      * Where "that is all of them" sits, or null when nothing is being counted.
      * <p>
      * Beside the way out rather than across the screen from it, because the two
@@ -309,7 +422,7 @@ public final class DuelHud
         String label = "Confirm " + de.cas_ual_ty.dueldimension.clientutil.DuelSelection.count()
             + "/" + DuelClientState.prompt.maxSelect();
         extractor.text(font, label, at[0] + (at[2] - font.width(label)) / 2,
-            at[1] + (at[3] - font.lineHeight) / 2 + 1, ready ? 0xFFE6EAF2 : 0xFF6A7080, true);
+            at[1] + (at[3] - font.lineHeight) / 2 + 1, ready ? MenuInk.label() : MenuInk.dim(), MenuInk.shadow());
     }
 
     /**
@@ -337,7 +450,7 @@ public final class DuelHud
             at[0], at[1], at[2], at[3], over ? 1 : 0, 3);
         String label = cancelLabel(menuOpen);
         extractor.text(font, label, at[0] + (at[2] - font.width(label)) / 2,
-            at[1] + (at[3] - font.lineHeight) / 2 + 1, 0xFFE6EAF2, true);
+            at[1] + (at[3] - font.lineHeight) / 2 + 1, MenuInk.label(), MenuInk.shadow());
     }
 
     /**
@@ -399,7 +512,6 @@ public final class DuelHud
             de.cas_ual_ty.dueldimension.clientutil.LifeBar.OVERFLOW_OPPONENT, true);
 
         drawPhaseBar(extractor, board, screenW, screenH);
-        drawTurn(extractor, font, board, screenW, screenH);
         drawClock(extractor, font, screenW, screenH);
         // Held upright over the cards they belong to, rather than lying on
         // them: see StatOverlay. Drawn from here so the cursor and the bare
@@ -565,7 +677,7 @@ public final class DuelHud
             : "Revealed " + shown.size() + " cards";
         NineSlice.draw(extractor, HubTextures.PANEL, left - 6, panelTop, width + 12, panelH);
         extractor.text(font, caption, (screenW - font.width(caption)) / 2, panelTop + 4,
-            0xFFF4D089, true);
+            MenuInk.title(), MenuInk.shadow());
 
         for(int i = 0; i < shown.size(); i++)
         {
@@ -614,7 +726,7 @@ public final class DuelHud
         boolean won = outcome.equalsIgnoreCase("Victory");
         boolean drew = outcome.equalsIgnoreCase("Draw");
         String headline = won ? "VICTORY" : drew ? "DRAW" : "DEFEAT";
-        int colour = won ? 0xFFD700 : drew ? 0xFFC2C9D6 : 0xFF4C4C;
+        int colour = won ? 0xFFD700 : drew ? MenuInk.body() : 0xFF4C4C;
         // And nothing under it. The duel screen used to carry a second line and
         // dropped it; repeating the engine's own wording beneath a word that
         // already says it is the line it dropped.
@@ -697,13 +809,31 @@ public final class DuelHud
         // name gives way to the number rather than growing under it.
         String value = Integer.toString(lifePoints);
         int valueW = font.width(value);
-        int room = barW - INSET * 2 - valueW - 4;
+        int room = barW - INSET * 2 - valueW - NAME_GAP;
         String shown = name;
         while(font.width(shown) > room && shown.length() > 1)
         {
             shown = shown.substring(0, shown.length() - 1);
         }
-        int textY = y + (barH - font.lineHeight) / 2 + 1;
+        // CENTRED ON THE GLYPHS, not on the font's line box.
+        //
+        // That box carries a descender's worth of empty space under every
+        // character, so centring it leaves the type sitting high in the well --
+        // the same trap drawClock has a note about a few methods down. The
+        // trailing "+ 1" here was half a correction for it, applied to the
+        // wrong measurement.
+        //
+        // Ends, not middle: the name says whose life this is and belongs with
+        // the frame's left edge, the total belongs with its right, and a long
+        // name gives way to the number rather than growing under it.
+        // THE SAME FORMULA EVERY OTHER LABEL IN THIS MOD USES.
+        //
+        // Vanilla centres a label in a box with (height - 8) / 2, and so does
+        // HubWidgets.drawLabel on every button in the hub -- which are the
+        // labels that look right. Three attempts here reasoned about the font's
+        // ink box instead and produced three different answers, none of them
+        // this one. Matching the thing that already works beats deriving it.
+        int textY = y + (barH - 8) / 2;
         extractor.text(font, shown, x + INSET, textY, 0xFFFFFFFF, false);
         extractor.text(font, value, x + barW - INSET - valueW, textY, 0xFFFFFFFF, false);
     }
@@ -722,46 +852,17 @@ public final class DuelHud
     }
 
     /**
-     * The turn number, in its own badge under the case.
+     * The turn number is NOT drawn here any more.
      * <p>
-     * It used to sit between the two life frames and take its height from
-     * them, which was the right thing when it was one of three pieces in one
-     * band. It is under the phase case now, so it takes its height from THAT
-     * -- the case and the badge are the stack a duellist reads down, and a
-     * badge sized against something it no longer touches is a shape nothing
-     * explains.
+     * It moved onto the board itself -- upright at the middle of the mat, in
+     * the colour of whoever holds the turn -- because that is where a duellist
+     * is already looking. See {@code OverworldBoardRenderer.drawTurnBadge}. The
+     * row it used to occupy now holds the answer clock, which was previously
+     * squeezed in beside the case and fighting the life frames for room.
      * <p>
-     * A badge and not a squashed life frame: that frame is a 256 by 32 picture
-     * of a long bar, and forcing it into a small square stretches its end caps
-     * across the whole thing. The duel screen draws a plain badge edged in the
-     * colour of whoever holds the turn, and so does this.
+     * {@link #turnTop} and {@link #TURN_W_BASE} stay: the row is still measured
+     * from them, and the clock is centred in it.
      */
-    private static void drawTurn(GuiGraphicsExtractor extractor, Font font, BoardSnapshot board,
-        int screenW, int screenH)
-    {
-        int turnH = caseHeight(screenW, screenH);
-        int turnW = Math.round(turnH * (TURN_W_BASE / (float)TURN_H_BASE));
-        float turnScale = Math.max(0.75F, turnH / (float)TURN_H_BASE);
-        int turnX = (screenW - turnW) / 2;
-        int turnY = turnTop(screenW, screenH);
-        int turnColour = board.turnPlayer() == 0 ? TURN_YOURS : TURN_THEIRS;
-        int edge = Math.max(1, Math.round(turnScale));
-
-        extractor.fill(turnX, turnY, turnX + turnW, turnY + turnH, 0xC0101014);
-        extractor.fill(turnX, turnY, turnX + turnW, turnY + edge, 0xC0000000 | turnColour);
-        extractor.fill(turnX, turnY + turnH - edge, turnX + turnW, turnY + turnH,
-            0xC0000000 | turnColour);
-        // Turn 0 is the engine mid-setup; the screen shows 1 there and so does
-        // this. Coloured rather than white, the same as the screen's badge:
-        // whose turn it is is said with colour and not with words.
-        extractor.pose().pushMatrix();
-        extractor.pose().scale(turnScale, turnScale);
-        extractor.centeredText(font, Integer.toString(Math.max(1, board.turn())),
-            Math.round((turnX + turnW / 2F) / turnScale),
-            Math.round((turnY + (turnH - font.lineHeight * turnScale) / 2F + 1) / turnScale),
-            0xFF000000 | turnColour);
-        extractor.pose().popMatrix();
-    }
 
     /**
      * The chrome case with its six bays, blue while the turn is yours and red
@@ -974,20 +1075,25 @@ public final class DuelHud
         long left = limit - (System.currentTimeMillis() - DuelClientState.promptShownAt);
         long seconds = Math.max(0, (left + 999) / 1000);
         String clock = seconds / 60 + ":" + (seconds % 60 < 10 ? "0" : "") + seconds % 60;
-        // Beside the case rather than under it, and drawn larger: it is a
-        // countdown to losing the turn, which is worth reading at a glance, and
-        // the space to the left of the case is the one part of the top row
-        // nothing else wants.
-        int colour = left <= CLOCK_WARN_MS ? 0xFFFF6B6B : 0xFFC2C9D6;
+        // UNDER the case, in the slot the turn badge used to hold.
+        //
+        // It sat to the left of the case, which is the space the life frame
+        // also grows into -- on a narrow window the countdown and the life
+        // total drew over each other. The turn number has moved onto the board
+        // itself, so the one place on the top row that nothing else wants is
+        // now the row beneath the phase bays, and a countdown to losing the
+        // turn is worth the middle of the screen.
+        int colour = left <= CLOCK_WARN_MS ? 0xFFFF6B6B : MenuInk.body();
         float scale = clockScale(screenW, screenH);
         int textW = Math.round(font.width(clock) * scale);
-        int x = barLeft(screenW, screenH) - padX(screenW, screenH) - GAP - textW;
-        // Centred on the case's own middle, against the digits' VISUAL height
+        int x = (screenW - textW) / 2;
+        // Centred in the badge's old row against the digits' VISUAL height
         // rather than the font's line box: that box carries a descender's worth
         // of empty space under every glyph, and centring the box leaves the
-        // digits sitting a pixel high against the bar beside them.
+        // digits sitting a pixel high.
         int digits = Math.round((font.lineHeight - 1) * scale);
-        int y = TOP + Math.round((caseHeight(screenW, screenH) - digits) / 2F);
+        int y = turnTop(screenW, screenH)
+            + Math.round((caseHeight(screenW, screenH) - digits) / 2F);
         extractor.pose().pushMatrix();
         extractor.pose().scale(scale, scale);
         extractor.text(font, clock, Math.round(x / scale), Math.round(y / scale), colour, true);

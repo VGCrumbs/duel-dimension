@@ -1,5 +1,6 @@
 package de.cas_ual_ty.dueldimension.cardbinder;
 
+import de.cas_ual_ty.dueldimension.clientutil.hub.MenuInk;
 import de.cas_ual_ty.dueldimension.DdDatabase;
 import de.cas_ual_ty.dueldimension.card.CardHolder;
 import de.cas_ual_ty.dueldimension.clientutil.DuelTextures;
@@ -171,12 +172,12 @@ public class CardPreviewScreen extends Screen
 
         String name = font.plainSubstrByWidth(card.getCard().getName(), PANEL_W - PAD * 2);
         poseStack.text(font, name, left + (PANEL_W - font.width(name)) / 2, top + PAD,
-            0xFFF4D089, true);
+            MenuInk.title(), MenuInk.shadow());
 
         String label = (rarity.isEmpty() ? "No rarity recorded" : rarity)
             + (held ? "" : "   — not yet pulled");
         poseStack.text(font, label, left + (PANEL_W - font.width(label)) / 2, top + PAD + 12,
-            held ? 0xFFC2C9D6 : 0xFF6A7080, true);
+            held ? MenuInk.body() : MenuInk.dim(), MenuInk.shadow());
 
         int viewTop = top + PAD + 28;
         int viewBottom = top + PANEL_H - PAD - 22;
@@ -186,7 +187,7 @@ public class CardPreviewScreen extends Screen
 
         String hint = "Drag to turn";
         poseStack.text(font, hint, left + (PANEL_W - font.width(hint)) / 2,
-            top + PANEL_H - PAD - 10, 0xFF7A8090, true);
+            top + PANEL_H - PAD - 10, MenuInk.dim(), MenuInk.shadow());
 
         super.extractRenderState(poseStack, mouseX, mouseY, partialTick);
     }

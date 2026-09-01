@@ -1,5 +1,6 @@
 package de.cas_ual_ty.dueldimension.clientutil;
 
+import de.cas_ual_ty.dueldimension.clientutil.hub.MenuInk;
 import de.cas_ual_ty.dueldimension.clientutil.hub.HubTextures;
 import de.cas_ual_ty.dueldimension.clientutil.hub.NineSlice;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
@@ -101,14 +102,14 @@ public final class PreloadHud implements HudRenderCallback
         if(sideBySide)
         {
             int textY = y - line - LABEL_GAP;
-            poseStack.text(client.font, left, x, textY, 0xFFE6EAF2, true);
+            poseStack.text(client.font, left, x, textY, MenuInk.label(), MenuInk.shadow());
             poseStack.text(client.font, right, x + BAR_W - rightW, textY, 0xFF9FA6B4, true);
         }
         else
         {
             // The phase goes on top, nearest the bar it describes; the storage
             // line sits above it, where it is still legible but secondary.
-            poseStack.text(client.font, left, x, y - line - LABEL_GAP, 0xFFE6EAF2, true);
+            poseStack.text(client.font, left, x, y - line - LABEL_GAP, MenuInk.label(), MenuInk.shadow());
             poseStack.text(client.font, right, x, y - line * 2 - LABEL_GAP * 2,
                 0xFF9FA6B4, true);
         }

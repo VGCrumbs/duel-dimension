@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_traptrix_sera",
+  "textures": {
+    "layer0": "dueldimension:item/512/sleeves_traptrix_sera"
+  }
+}

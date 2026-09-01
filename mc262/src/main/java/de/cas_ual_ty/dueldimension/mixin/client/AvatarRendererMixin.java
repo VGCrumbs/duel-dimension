@@ -40,7 +40,49 @@ public class AvatarRendererMixin
         if(entity instanceof AbstractClientPlayer player
             && state instanceof net.minecraft.client.renderer.entity.state.AvatarRenderState avatar)
         {
-            dueldimension$wearDisk(player, avatar);
+            // WRITTEN EVERY TIME, including when there is none. The renderer
+            // reuses one state per entity, so leaving the field alone would
+            // leave the last character on the next player who has none.
+            de.cas_ual_ty.dueldimension.character.CharacterLook look =
+                de.cas_ual_ty.dueldimension.clientutil.character.ClientCharacters
+                    .look(player.getUUID());
+            if(avatar instanceof de.cas_ual_ty.dueldimension.clientutil.character
+                .CharacterCarrier carrier)
+            {
+                carrier.dueldimension$setCharacter(look);
+                // Written every time, for the same reason: one state per
+                // entity, reused.
+                carrier.dueldimension$setSprinting(player.isSprinting());
+                // Where they MOVED against where they are POINTED; see
+                // CharacterRenderer for why the walk cycle needs it.
+                double dx = player.getX() - player.xOld;
+                double dz = player.getZ() - player.zOld;
+                double radians = Math.toRadians(avatar.bodyRot);
+                boolean moved = dx * dx + dz * dz >= 1.0E-6D;
+                carrier.dueldimension$setMoving(moved);
+                carrier.dueldimension$setRiding(player.isPassenger());
+                // Slippery ground AND coasting across it rather than walking
+                // on it; the renderer owns both halves. Asked here because both
+                // are questions about the player, who is about to go away.
+                carrier.dueldimension$setCoasting(de.cas_ual_ty.dueldimension
+                    .clientutil.character.CharacterRenderer.carried(player));
+                // Only a walk cycle has a direction to get wrong. Reversing
+                // the seated clip because the horse backed up would run the
+                // rider's idle sway backwards.
+                carrier.dueldimension$setBackwards(moved && !player.isPassenger()
+                    && dx * -Math.sin(radians) + dz * Math.cos(radians) < 0D);
+                carrier.dueldimension$setSwing(player.swinging
+                    ? (player.swingTime + partialTick) / 20F : -1F);
+                carrier.dueldimension$setEye(net.minecraft.client.Minecraft.getInstance()
+                    .gameRenderer.mainCamera().position());
+
+            }
+            // A character carries its own duel disk, modelled on its arm. The
+            // item one would be a second disk floating beside it.
+            if(look == null)
+            {
+                dueldimension$wearDisk(player, avatar);
+            }
         }
     }
 

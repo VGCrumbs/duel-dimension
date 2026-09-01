@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_sky_striker_conversion_flaming_wings_of_destruction"
+  }
+}

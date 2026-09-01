@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_fabled_leviathan",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_fabled_leviathan"
+  }
+}

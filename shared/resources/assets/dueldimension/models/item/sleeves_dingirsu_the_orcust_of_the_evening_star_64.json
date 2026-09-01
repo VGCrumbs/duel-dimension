@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_dingirsu_the_orcust_of_the_evening_star",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_dingirsu_the_orcust_of_the_evening_star"
+  }
+}

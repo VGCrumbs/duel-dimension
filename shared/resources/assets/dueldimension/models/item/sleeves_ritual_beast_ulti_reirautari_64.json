@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_ritual_beast_ulti_reirautari",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_ritual_beast_ulti_reirautari"
+  }
+}

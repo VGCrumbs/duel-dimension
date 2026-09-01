@@ -94,11 +94,20 @@ public final class UnownedPipelines
      * {@link #available()}: a model either draws or the pipeline failed, and
      * there is no dimmer fallback to fall back to.
      */
-    // ENTITY_CUTOUT_CULL, not ENTITY_CUTOUT. The suffix is the whole difference
-    // and it reads backwards from 1.21.1, where entityCutout culls and
-    // entityCutoutNoCull is the exception -- here the bare name is the one that
-    // does NOT cull. A monster is a closed solid; its far side has no business
-    // being visible through its near side.
+    // ENTITY_CUTOUT_CULL, and culling is right again -- but not for the reason
+    // it was first given.
+    //
+    // The original argument was "a monster is a closed solid". These are rips:
+    // capes, wings, fins and hair are single sheets with nothing behind them,
+    // so culling left holes in them. Turning culling OFF fixed the holes and
+    // bought a worse fault -- vanilla lights a back face with the normal it was
+    // handed, which points away from the viewer, so every sheet went dark from
+    // one side and only from one side.
+    //
+    // ModelHologram now emits each triangle twice, the second reversed with its
+    // normal turned round, so both sides present a correctly-lit front face.
+    // With that, culling is what discards the copy you cannot see rather than
+    // the surface you needed.
     public static final RenderPipeline MODEL = PipelineCopy.of(
         RenderPipelines.ENTITY_CUTOUT_CULL,
         "model_triangles", null, null, com.mojang.blaze3d.PrimitiveTopology.TRIANGLES);

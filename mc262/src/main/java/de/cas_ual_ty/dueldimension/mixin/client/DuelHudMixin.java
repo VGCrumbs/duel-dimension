@@ -72,4 +72,24 @@ public class DuelHudMixin
     {
         return mode.hasExperience() && !DuelSuppression.inDuel();
     }
+
+    /**
+     * The crosshair, which a duel has no use for.
+     * <p>
+     * A duellist points at zones with the board pointer, not down the middle of
+     * the screen, so the reticle sits over the mat saying nothing. It comes back
+     * while the freelook key is held, because that IS the mode where the player
+     * is aiming the view by hand and the one thing a crosshair is for.
+     */
+    @Inject(method = "extractCrosshair(Lnet/minecraft/client/gui/GuiGraphicsExtractor;"
+        + "Lnet/minecraft/client/DeltaTracker;)V", at = @At("HEAD"), cancellable = true)
+    private void dueldimension$hideCrosshair(GuiGraphicsExtractor extractor,
+        net.minecraft.client.DeltaTracker delta, CallbackInfo callback)
+    {
+        if(DuelSuppression.inDuel()
+            && !de.cas_ual_ty.dueldimension.clientutil.hub.HubKeybinds.freelook())
+        {
+            callback.cancel();
+        }
+    }
 }

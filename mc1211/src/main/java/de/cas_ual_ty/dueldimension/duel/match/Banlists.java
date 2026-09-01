@@ -90,8 +90,29 @@ public final class Banlists
         return known;
     }
 
+    /**
+     * The list {@link Banlist#DEFAULT_ID} means here: the most recent TCG one.
+     * <p>
+     * Falls back to no list when this server offers no TCG list at all, which is
+     * the case for an install with no reference files — the same fallback
+     * {@link #all} already makes, and for the same reason: a server without
+     * EDOPro still runs, it simply has nothing to enforce.
+     */
+    public static Banlist current()
+    {
+        Banlist tcg = Banlist.mostRecentTcg(all());
+        return tcg == null ? Banlist.none() : tcg;
+    }
+
     public static Banlist byId(String id)
     {
+        // The sentinel first: it is not a list's own id and would otherwise fall
+        // through the loop to the no-list fallback, which is the one answer it
+        // must never give. See Banlist.DEFAULT_ID.
+        if(Banlist.DEFAULT_ID.equals(id))
+        {
+            return current();
+        }
         for(Banlist list : all())
         {
             if(list.id().equals(id))

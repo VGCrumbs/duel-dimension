@@ -56,16 +56,67 @@ public final class WorldQuad
     {
         /** A card, a mat, a zone square: opaque, and writes depth. */
         SOLID,
+        /**
+         * The same things, part way through the end-of-duel fade: blended,
+         * and STILL writes depth.
+         * <p>
+         * A cutout cannot fade -- its alpha test keeps a texel or throws it
+         * away and never mixes -- so a fading board has to blend. The mistake
+         * was to reach for the glow type to do it, which put every card, mat
+         * and zone square on a render type that writes no depth, all in the
+         * same frame. That is the exact condition described above, and the
+         * board flickered for the whole five seconds of its own fade.
+         * <p>
+         * {@code entityTranslucent} blends like a glow and writes depth like a
+         * cutout, which is the combination a fading solid needs and the one
+         * neither of the other two offers.
+         */
+        FADING,
         /** A highlight or a beam: blended, and drawn over what it marks. */
-        GLOW
+        GLOW,
+        /**
+         * The board's own light: a second, UNLIT pass over a piece already
+         * drawn as {@link #SOLID}.
+         *
+         * <h2>Why not the type called emissive</h2>
+         * Because it is not one. {@code entityTranslucentEmissive} declares
+         * {@code PER_FACE_LIGHTING} -- the same two directional lights dotted
+         * with the face normal that {@code entityTranslucent} uses -- so it
+         * comes out just as dark. That was read off the pipeline bytecode
+         * rather than guessed, and it is written up beside the other three
+         * candidates in {@code FieldQuad}, which had to answer this question
+         * first.
+         * <p>
+         * {@code breezeWind} is the one entity type that is genuinely unlit:
+         * {@code NO_CARDINAL_LIGHTING}, so the vertex colour passes through
+         * untouched. {@link #GLOW} uses it too, for a different reason, and
+         * they are kept as separate names because they are separate intentions
+         * -- one is a halo over something, this is the something lighting up.
+         *
+         * <h2>Why a second pass and not a replacement</h2>
+         * It writes no depth. The board's pieces have to, or a card and the
+         * square under it have no defined winner and swap as the camera moves
+         * -- which is the flicker {@link #FADING} exists to explain. So the
+         * solid pass lays the depth down and this adds the light over it.
+         * <p>
+         * The lightmap was never what was dimming the board: every quad here
+         * already carries {@link #PROJECTED_LIGHT}. What a full lightmap cannot
+         * switch off is the directional diffuse term, and that is the whole of
+         * what this pass is for.
+         */
+        EMISSIVE
     }
 
     private static net.minecraft.client.renderer.RenderType typeFor(Kind kind,
         ResourceLocation texture)
     {
-        return kind == Kind.SOLID
-            ? net.minecraft.client.renderer.RenderType.entityCutout(texture)
-            : net.minecraft.client.renderer.RenderType.breezeWind(texture, 0F, 0F);
+        return switch(kind)
+        {
+            case SOLID -> net.minecraft.client.renderer.RenderType.entityCutout(texture);
+            case FADING -> net.minecraft.client.renderer.RenderType.entityTranslucent(texture);
+            case GLOW -> net.minecraft.client.renderer.RenderType.breezeWind(texture, 0F, 0F);
+            case EMISSIVE -> net.minecraft.client.renderer.RenderType.breezeWind(texture, 0F, 0F);
+        };
     }
 
     /**
@@ -92,12 +143,21 @@ public final class WorldQuad
      * <p>
      * Here rather than in each renderer, because three of them had to learn it
      * separately and the third one only after the first two had already been
-     * fixed. Anything short of opaque blends; blending writes no depth, which
-     * for flat pieces submitted in the order they are stacked is no loss.
+     * fixed.
+     * <p>
+     * <b>And the answer is {@link Kind#FADING}, not {@link Kind#GLOW}.</b> This
+     * used to say that blending writes no depth and that for flat pieces
+     * submitted in stacking order that was no loss. The first half is true of
+     * the glow type; the second half is not true of this board. Submission
+     * order is ZONE order -- across the mat and down it -- and has nothing to
+     * do with distance from a camera the player is free to walk around, so with
+     * depth writes off the far card and the near one had no defined winner and
+     * swapped as the view moved. Everything on the board did it at once,
+     * because the fade drops every tint below full alpha in the same frame.
      */
     public static Kind kindFor(int tint)
     {
-        return (tint >>> 24) >= 0xFF ? Kind.SOLID : Kind.GLOW;
+        return (tint >>> 24) >= 0xFF ? Kind.SOLID : Kind.FADING;
     }
 
     public static void submit(PoseStack poseStack, SubmitNodeCollector collector,

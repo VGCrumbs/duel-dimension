@@ -188,6 +188,26 @@ public class BoardPointerScreen extends Screen
     @Override
     public void tick()
     {
+        // THE DUEL IS OVER AND THE BOARD HAS GONE, so this goes with it.
+        //
+        // Nothing used to close this screen when a duel ended. `cameraHeld`
+        // REOPENS it every tick while the duel is locked and returns early the
+        // moment it is not -- which is correct for reopening and says nothing
+        // about the last one, so the pointer outlived the board it exists to
+        // point at. An open screen takes the keyboard, so the duellist stood
+        // there unable to walk away with a cursor over an empty field, and the
+        // only thing that dismissed it was escape.
+        //
+        // Asked here rather than anywhere the duel ends, because there are
+        // several of those -- surrender, defeat, a disconnect, the ten-second
+        // server backstop -- and this is the one place that is true for all of
+        // them: there is no board, so there is nothing to point at.
+        if(!ClientDuelField.locked())
+        {
+            onClose();
+            return;
+        }
+
         DuelSelection.sync(DuelClientState.prompt);
         // The pile viewer draws through the same grid and shares its scroll
         // position, so it counts as open for this: resetting under it would put
@@ -226,7 +246,8 @@ public class BoardPointerScreen extends Screen
                 CardChooser.reset();
             }
         }
-        if(open != null && open.chainWindow() && open.cancelable() && rightButtonHeld())
+        if(open != null && open.chainWindow() && open.cancelable()
+            && de.cas_ual_ty.dueldimension.clientutil.ChainSettings.manual() != rightButtonHeld())
         {
             decline();
             return;
@@ -292,8 +313,14 @@ public class BoardPointerScreen extends Screen
         {
             return "";
         }
-        return prompt.chainWindow() && prompt.cancelable()
-            ? prompt.title() + "   [hold right-click to pass]" : prompt.title();
+        if(!prompt.chainWindow() || !prompt.cancelable())
+        {
+            return prompt.title();
+        }
+        // In manual mode this window is only up because the button IS being
+        // held, so the thing worth saying is how to let go of it.
+        return prompt.title() + (de.cas_ual_ty.dueldimension.clientutil.ChainSettings.manual()
+            ? "   [release to pass]" : "   [hold right-click to pass]");
     }
 
     private void openQuestion(List<Integer> rows)
@@ -302,6 +329,14 @@ public class BoardPointerScreen extends Screen
         openChoices(rows, width / 2D, height / 2D);
         chosenAnchor = null;
         asking = true;
+        // A question is words by definition: there is no card under it and no
+        // icon for "Yes". openChoices decided this before `asking` was set.
+        iconBar = false;
+        choicesW = ROW_W_MIN;
+        for(int index : rows)
+        {
+            choicesW = Math.max(choicesW, font.width(label(index)) + ROW_LABEL_PAD);
+        }
         choicesX = (width - choicesW) / 2;
 
         // Wrapped, not cut. The caption exists to say what is being agreed to,
@@ -493,6 +528,38 @@ public class BoardPointerScreen extends Screen
 
     private void updateHover(double mouseX, double mouseY)
     {
+        // A panel that COVERS the board takes the pointer with it.
+        //
+        // Without this the cursor points at two cards at once: the one in the
+        // panel under it, and whatever zone happens to lie behind the panel.
+        // Both write their description on shift -- CardChooser.drawGrid for the
+        // grid, the CardBubble at the end of render() for the board -- and the
+        // two land on the same pixels, so a graveyard being read had a second
+        // card's text drawn straight through it, with the board's on top
+        // because it is submitted last.
+        //
+        // CLEARED rather than frozen, and that is the difference between these
+        // panels and the choices menu (whose caller skips this method instead).
+        // A menu is ANCHORED to the card it was opened on, so a frozen hover is
+        // exactly what keeps shift reading the card the menu is ABOUT. A pile
+        // viewer and the chooser are about their own contents; the board behind
+        // them is not part of the question.
+        //
+        // Clicks were already modal -- mouseClicked returns on both of these
+        // well before it reaches here -- so this is the pointer catching up with
+        // a rule the rest of the screen already kept.
+        if(!pileView.isEmpty() || CardChooser.open())
+        {
+            hovered = null;
+            // The hand's highlight goes too. HandHud draws BEHIND these panels,
+            // so a lit card under one is pointing at something nobody can see.
+            hoveredCard = -1;
+            // And the zone lit out on the world board, which is the same
+            // mistake made in three dimensions.
+            ClientDuelTargeting.point(null);
+            return;
+        }
+
         // The hand is drawn over the board, so a cursor on a card in hand is
         // pointing at that card and not at whatever zone is behind it.
         hoveredCard = -1;
@@ -529,6 +596,23 @@ public class BoardPointerScreen extends Screen
         MouseButtonEvent event = new MouseButtonEvent(vanillaX, vanillaY, vanillaButton);
         boolean doubled = false;
 
+        // Before every other target, including the confirm button. This question
+        // is modal -- the panel is drawn over the board and the duel is parked
+        // on the answer -- so a click that misses both choices is swallowed
+        // rather than passed to whatever is underneath it.
+        if(de.cas_ual_ty.dueldimension.clientutil.DestinyPrompt.isOffered(
+            DuelClientState.prompt))
+        {
+            int destiny = de.cas_ual_ty.dueldimension.clientutil.DestinyPrompt.clicked(
+                width, height, event.x(), event.y());
+            if(destiny >= 0)
+            {
+                DuelActionController.answer(new int[] {destiny}, 0);
+                dismiss();
+            }
+            return true;
+        }
+
         // Before everything, including an open menu. A way out that only worked
         // when no menu happened to be sitting over it is a way out a player
         // cannot trust -- and the menu is part of the action being backed out
@@ -543,6 +627,14 @@ public class BoardPointerScreen extends Screen
                 DuelSelection.clear();
                 dismiss();
             }
+            return true;
+        }
+
+        int[] chain = DuelHud.chainBounds(width, height);
+        if(chain != null && event.x() >= chain[0] && event.x() < chain[0] + chain[2]
+            && event.y() >= chain[1] && event.y() < chain[1] + chain[3])
+        {
+            de.cas_ual_ty.dueldimension.clientutil.ChainSettings.toggle();
             return true;
         }
 
@@ -599,9 +691,11 @@ public class BoardPointerScreen extends Screen
             // have activated the effect it meant to decline. And the cast
             // truncated towards zero, so the fifteen pixels ABOVE the list read
             // as row zero and picked "Yes" from empty board.
-            int row = Math.floorDiv((int)event.y() - choicesY, ROW_H);
-            if(event.button() == 0 && event.y() >= choicesY
-                && event.x() >= choicesX && event.x() < choicesX + choicesW
+            int row = iconBar ? iconAt(event.x(), event.y())
+                : Math.floorDiv((int)event.y() - choicesY, ROW_H);
+            if(event.button() == 0 && (iconBar ? row >= 0
+                : event.y() >= choicesY && event.x() >= choicesX
+                    && event.x() < choicesX + choicesW)
                 && row >= 0 && row < choices.size())
             {
                 if(pileGroups != null && row < pileGroups.size())
@@ -1079,6 +1173,7 @@ public class BoardPointerScreen extends Screen
         // is a promise the screen cannot keep.
         if(board != null && ClientDuelField.seat() >= 0)
         {
+            DuelHud.drawChainToggle(extractor, font, mouseX, mouseY);
             DuelHud.drawCancel(extractor, font, mouseX, mouseY, !choices.isEmpty());
             DuelHud.drawConfirm(extractor, font, mouseX, mouseY);
         }
@@ -1092,6 +1187,20 @@ public class BoardPointerScreen extends Screen
             CardBubble.draw(extractor, font, hovered.code(), mouseX, mouseY, width, height,
                 de.cas_ual_ty.dueldimension.clientutil.CardFacts.liveRace(hovered.controller(),
                     hovered.location(), hovered.sequence()));
+        }
+
+        // LAST, and over everything: the engine is waiting on this one, and the
+        // panel covers the board it is asking about. Drawn from the same class
+        // the 2D screen draws it from -- see DestinyPrompt for why it is not a
+        // second copy.
+        if(de.cas_ual_ty.dueldimension.clientutil.DestinyPrompt.isOffered(
+            DuelClientState.prompt))
+        {
+            // Full width here, where the duel screen dims only its board: this
+            // view has no sidebar to keep readable.
+            extractor.fill(0, 0, width, height, 0xB0000000);
+            de.cas_ual_ty.dueldimension.clientutil.DestinyPrompt.render(extractor, font,
+                width, height, mouseX, mouseY);
         }
 
         // No label and no strip. What a zone is called is written on the board
@@ -1133,12 +1242,18 @@ public class BoardPointerScreen extends Screen
         asking = false;
         choices = rows;
         chosenAnchor = hovered;
-        choicesW = ROW_W_MIN;
-        for(int index : rows)
+        // Asked ONCE, here, so the drawing and the hit test cannot disagree --
+        // the settings screen is reachable mid-duel.
+        iconBar = canDrawIcons(rows);
+        choicesW = iconBar ? iconBarWidth() : ROW_W_MIN;
+        if(!iconBar)
         {
-            choicesW = Math.max(choicesW, font.width(label(index)) + ROW_LABEL_PAD);
+            for(int index : rows)
+            {
+                choicesW = Math.max(choicesW, font.width(label(index)) + ROW_LABEL_PAD);
+            }
         }
-        int tall = rows.size() * ROW_H;
+        int tall = iconBar ? ICON_SIZE : rows.size() * ROW_H;
 
         // Anchored to the CARD, as the duel screen anchors it: above the thing
         // being acted on and centred over it, so the card stays visible while
@@ -1150,7 +1265,10 @@ public class BoardPointerScreen extends Screen
         int cardBottom = anchor[2];
 
         choicesX = Math.max(4, Math.min(cardX - choicesW / 2, width - choicesW - 4));
-        int above = cardTop - tall - 4;
+        // The bar rides closer to the card than a list does, because it IS the
+        // card's own label rather than a panel beside it -- and it leaves room
+        // above itself for the tooltip.
+        int above = cardTop - tall - (iconBar ? ICON_LIFT : 4);
         // No room above, so below instead -- the screen's own rule, and for the
         // same reason: a menu clipped by the top edge is a menu with rows that
         // cannot be clicked.
@@ -1159,8 +1277,132 @@ public class BoardPointerScreen extends Screen
         // bottom edge was still written across the player's own cards -- and
         // because an open list is hit-tested before the hand, the cards
         // underneath stopped answering too.
-        choicesY = Math.max(4, Math.min(choicesY,
+        choicesY = Math.max(iconBar ? 14 : 4, Math.min(choicesY,
             Math.max(4, HandLayout.topEdge(height) - 4 - tall)));
+    }
+
+
+    // ---- the icon bar ----
+
+    /**
+     * How the open menu is being drawn: a row of icons, or a list of words.
+     * <p>
+     * Decided when the menu OPENS, not when it is drawn. The layout and the hit
+     * test both have to agree about it, and a preference read twice could
+     * change between them -- the settings screen is reachable mid-duel.
+     */
+    private boolean iconBar;
+
+    /** One icon button, in GUI pixels. The art is 32x32 per state. */
+    private static final int ICON_SIZE = 26;
+    /** Between buttons. Enough that two icons do not read as one wide plate. */
+    private static final int ICON_GAP = 3;
+    /** Between the bar and the top edge of the card it belongs to. */
+    private static final int ICON_LIFT = 6;
+
+    /**
+     * Whether this menu can be drawn as icons.
+     * <p>
+     * Every row has to be a CARD ACTION with a picture: an option the engine
+     * offered, carrying a command, that {@code DuelTextures.commandIcon} has art
+     * for. The mod's own rows -- Close, View Deck, Music, Surrender -- have no
+     * icon and no equivalent in the original, and a bar with a gap in it would
+     * be worse than a list. A pile menu is excluded for the same reason: its
+     * rows stand for groups of cards, not for verbs.
+     */
+    private boolean canDrawIcons(List<Integer> rows)
+    {
+        if(!de.cas_ual_ty.dueldimension.clientutil.ContextButtonSettings.icons()
+            || rows.isEmpty() || pileGroups != null || asking)
+        {
+            return false;
+        }
+        EnginePrompt prompt = DuelClientState.prompt;
+        if(prompt == null)
+        {
+            return false;
+        }
+        for(int index : rows)
+        {
+            if(index < 0 || index >= prompt.options().size()
+                || prompt.options().get(index).command() == 0
+                || iconFor(index) == null)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** The bar's full width, for centring and for the hit test. */
+    private int iconBarWidth()
+    {
+        return choices.size() * ICON_SIZE + Math.max(0, choices.size() - 1) * ICON_GAP;
+    }
+
+    /** Which button is under the cursor, or -1. */
+    private int iconAt(double mouseX, double mouseY)
+    {
+        if(!iconBar || mouseY < choicesY || mouseY >= choicesY + ICON_SIZE)
+        {
+            return -1;
+        }
+        int offset = (int)(mouseX - choicesX);
+        if(offset < 0 || offset >= iconBarWidth())
+        {
+            return -1;
+        }
+        int slot = offset / (ICON_SIZE + ICON_GAP);
+        // The gap belongs to nothing: a click between two buttons should miss
+        // rather than land on whichever one it is nearer.
+        return offset - slot * (ICON_SIZE + ICON_GAP) < ICON_SIZE
+            && slot < choices.size() ? slot : -1;
+    }
+
+    /**
+     * The row of picture buttons, centred over the card, as the DS draws it.
+     * <p>
+     * Two states per file, idle over selected, and the selected one is used for
+     * the button under the cursor. That is the original's own hover: it does not
+     * tint or outline, it swaps to a second drawing with a colour-coded plate.
+     * <p>
+     * The label goes in a tooltip rather than under the icon. The original has
+     * no text here at all -- and a player who has not played it should still be
+     * able to find out what a sword means without guessing.
+     */
+    private void drawIconBar(GuiGraphicsExtractor extractor, int mouseX, int mouseY)
+    {
+        int over = iconAt(mouseX, mouseY);
+        for(int slot = 0; slot < choices.size(); slot++)
+        {
+            net.minecraft.resources.ResourceLocation icon = iconFor(choices.get(slot));
+            if(icon == null)
+            {
+                continue;
+            }
+            int x = choicesX + slot * (ICON_SIZE + ICON_GAP);
+            boolean lit = slot == over;
+            de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.blit(extractor, icon,
+                x, choicesY, ICON_SIZE, ICON_SIZE,
+                0F,
+                lit ? de.cas_ual_ty.dueldimension.clientutil.DuelTextures.COMMAND_ICON_SELECTED_V0
+                    : de.cas_ual_ty.dueldimension.clientutil.DuelTextures.COMMAND_ICON_IDLE_V0,
+                1F,
+                lit ? de.cas_ual_ty.dueldimension.clientutil.DuelTextures.COMMAND_ICON_SELECTED_V1
+                    : de.cas_ual_ty.dueldimension.clientutil.DuelTextures.COMMAND_ICON_IDLE_V1,
+                de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.NO_TINT);
+        }
+        if(over >= 0)
+        {
+            String text = label(choices.get(over));
+            int wide = font.width(text);
+            int x = Math.max(2, Math.min(choicesX + over * (ICON_SIZE + ICON_GAP)
+                + ICON_SIZE / 2 - wide / 2, width - wide - 2));
+            int y = choicesY - 11;
+            extractor.fill(x - 3, y - 2, x + wide + 3, y + 9, 0xE01A1A1E);
+            extractor.fill(x - 3, y - 2, x + wide + 3, y - 1, 0x60FFD700);
+            extractor.text(font, text, x, y, 0xFFFFE8A8, false);
+        }
     }
 
     /**
@@ -1247,6 +1489,11 @@ public class BoardPointerScreen extends Screen
         if(asking)
         {
             drawQuestion(extractor);
+        }
+        if(iconBar)
+        {
+            drawIconBar(extractor, mouseX, mouseY);
+            return;
         }
         for(int row = 0; row < choices.size(); row++)
         {

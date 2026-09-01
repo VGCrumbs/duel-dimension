@@ -1,5 +1,6 @@
 package de.cas_ual_ty.dueldimension.clientutil.overworld;
 
+import de.cas_ual_ty.dueldimension.clientutil.hub.MenuInk;
 import de.cas_ual_ty.dueldimension.DdDatabase;
 import de.cas_ual_ty.dueldimension.card.properties.Properties;
 import de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil;
@@ -318,7 +319,7 @@ public final class CardChooser
                 + " / " + faces.size();
         }
         extractor.text(font, heading, layout.x() + (layout.width() - font.width(heading)) / 2,
-            layout.y() + 5, 0xFFF4D089, true);
+            layout.y() + 5, MenuInk.title(), MenuInk.shadow());
 
         // Clamped here rather than only where the wheel turns: the pile behind
         // this panel can shrink under it -- a graveyard is banished, a card is
@@ -393,8 +394,8 @@ public final class CardChooser
         int width = font.width(name);
         if(width <= room)
         {
-            extractor.text(font, name, x + (room - width) / 2, y, over ? 0xFFFFE9B0 : 0xFFC2C9D6,
-                true);
+            extractor.text(font, name, x + (room - width) / 2, y, over ? 0xFFFFE9B0 : MenuInk.body(),
+                MenuInk.shadow());
             return;
         }
         int offset = over ? scrolled(width - room, now - marqueeSince) : 0;
@@ -420,7 +421,7 @@ public final class CardChooser
 
         extractor.enableScissor(x, y - 1, x + room, y + NAME_LINE);
         extractor.text(font, shown, x - (offset - skipped), y,
-            over ? 0xFFFFE9B0 : 0xFFC2C9D6, true);
+            over ? 0xFFFFE9B0 : MenuInk.body(), MenuInk.shadow());
         extractor.disableScissor();
     }
 

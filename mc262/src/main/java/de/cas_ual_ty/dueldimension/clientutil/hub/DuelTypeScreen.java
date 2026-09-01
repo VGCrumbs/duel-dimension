@@ -91,10 +91,10 @@ public class DuelTypeScreen extends Screen
 
         String title = "Duel " + duelistName;
         extractor.text(font, title, x + (panelW() - font.width(title)) / 2, y + 12,
-            0xFFF4D089, true);
+            MenuInk.title(), MenuInk.shadow());
         String hint = "Where would you like to play?";
         extractor.text(font, hint, x + (panelW() - font.width(hint)) / 2, y + 26,
-            0xFFC2C9D6, true);
+            MenuInk.body(), MenuInk.shadow());
 
         super.extractRenderState(extractor, mouseX, mouseY, partialTick);
     }

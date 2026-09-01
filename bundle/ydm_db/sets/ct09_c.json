@@ -1,0 +1,146 @@
+{
+  "code": "CT09_C",
+  "type": "Sub-Set",
+  "pull_type": "distribution",
+  "distribution": "collectible_tin_promos_2010",
+  "cards": [
+    {
+      "id": 42752141,
+      "code": "CT09-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 60645181,
+      "code": "CT09-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95027497,
+      "code": "CT09-EN003",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 64332231,
+      "code": "CT09-EN004",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 19182751,
+      "code": "CT09-EN005",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 76774528,
+      "code": "CT09-EN006",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 75326861,
+      "code": "CT09-EN007",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 78156759,
+      "code": "CT09-EN008",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 28348537,
+      "code": "CT09-EN009",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 42874792,
+      "code": "CT09-EN010",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 74294676,
+      "code": "CT09-EN011",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23434538,
+      "code": "CT09-EN012",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 10802915,
+      "code": "CT09-EN013",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54719828,
+      "code": "CT09-EN014",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 85138716,
+      "code": "CT09-EN015",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37115575,
+      "code": "CT09-EN016",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 63612442,
+      "code": "CT09-EN017",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 95992081,
+      "code": "CT09-EN018",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 56174248,
+      "code": "CT09-EN019",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 7845138,
+      "code": "CT09-EN020",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37926346,
+      "code": "CT09-EN021",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 92661479,
+      "code": "CT09-EN022",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 9059700,
+      "code": "CT09-EN023",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

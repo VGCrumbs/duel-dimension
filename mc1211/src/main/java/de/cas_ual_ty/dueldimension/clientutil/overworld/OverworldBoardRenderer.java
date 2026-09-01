@@ -110,14 +110,26 @@ public final class OverworldBoardRenderer
         PoseStack poseStack = context.matrixStack();
         SubmitNodeCollector collector = new de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector(context.consumers());
 
+        // THE PLAYMAT TAKES ITS OWNER'S CHOSEN COLOUR, as it does on the 2D
+        // board. It was drawn flat white out here, which left the custom mat --
+        // a GREYSCALE texture whose whole design is to be multiplied by the
+        // colour picked in the settings -- rendering as the grey it is stored
+        // as. A colour chosen in the hub simply did nothing in an overworld
+        // duel. Everything that is not a playmat stays white: the zone squares
+        // and labels are lines on a table, not part of the mat.
         int matTint = fade(0xFFFFFFFF);
+        int[] matColours = matColoursByController();
         for(BoardMesh.Piece piece : BoardMesh.pieces(matsByController()))
         {
+            int tint = piece.controller() < 0 ? matTint
+                : fade(0xFF000000 | matColours[piece.controller()]);
             Vec3[] corners = transform.corners(piece.rect(), SURFACE_LIFT + piece.lift());
             if(piece.turns() == 0)
             {
-                WorldQuad.submit(poseStack, collector, kindFor(matTint), piece.texture(), camera,
-                    corners, matTint);
+                WorldQuad.submit(poseStack, collector, kindFor(tint), piece.texture(), camera,
+                    corners, tint);
+                emissive(poseStack, collector, piece.texture(), camera, corners, tint,
+                    0F, 0F, 1F, 1F);
                 continue;
             }
             // A mark that belongs to one duellist, stood the right way up for
@@ -125,8 +137,10 @@ public final class OverworldBoardRenderer
             // a gem and the card that covers it cannot disagree about which
             // way the board is facing.
             float[][] uv = CardRenderer.turned(false, 0F, 0F, 1F, 1F, piece.turns());
-            WorldQuad.submit(poseStack, collector, kindFor(matTint), piece.texture(), camera,
-                corners, matTint, uv[0], uv[1]);
+            WorldQuad.submit(poseStack, collector, kindFor(tint), piece.texture(), camera,
+                corners, tint, uv[0], uv[1]);
+            WorldQuad.submit(poseStack, collector, WorldQuad.Kind.EMISSIVE, piece.texture(),
+                camera, corners, emissiveTint(tint), uv[0], uv[1]);
         }
 
         // The zone being looked at, lit with the same square the 2D board
@@ -150,6 +164,7 @@ public final class OverworldBoardRenderer
             }
         }
 
+        drawTurnBadge(poseStack, collector, transform, camera);
         drawPlacements(poseStack, collector, transform, camera);
         drawCards(poseStack, collector, transform, camera);
         drawEquipLinks(poseStack, collector, transform, camera);
@@ -158,6 +173,7 @@ public final class OverworldBoardRenderer
         drawMoves(poseStack, collector, transform, camera);
         drawAttacks(poseStack, collector, transform, camera);
         drawShatters(poseStack, collector, transform, camera);
+        drawReleases(poseStack, collector, transform, camera);
 
         // THE MONSTERS, LAST OF EVERYTHING. See HOLOGRAMS.
         //
@@ -883,6 +899,8 @@ public final class OverworldBoardRenderer
     private static final int LINK_TINT = 0xD9FFD14D;
     /** Half the link's thickness, in field units. */
     private static final float LINK_HALF = 0.035F;
+    /** The equip badge's side, as a share of the zone it is centred in. */
+    private static final float EQUIP_BADGE = 0.5F;
 
     private static void drawLink(PoseStack poseStack, SubmitNodeCollector collector,
         FieldTransform transform, Vec3 camera, FieldLayout.Rect from, FieldLayout.Rect to)
@@ -909,8 +927,15 @@ public final class OverworldBoardRenderer
                 transform.at(x1 - rightX, y1 - rightY, lift)}, fade(LINK_TINT));
         }
 
-        // vSymbol is a square the width of a card, centred on the partner.
-        float half = to.w() / 2F;
+        // vSymbol is a square centred on the partner, at half the zone's width.
+        //
+        // It was the FULL width -- what drawing.cpp does, where tEquip is
+        // composited onto the card image itself and is therefore bounded by the
+        // card. Out here it is a quad floating above the mat with nothing to
+        // bound it, so at that size it covered the monster it was marking:
+        // the badge became the card. Half leaves the art underneath legible and
+        // still reads as a mark ON that card rather than one lying beside it.
+        float half = to.w() * EQUIP_BADGE / 2F;
         WorldQuad.submit(poseStack, collector, DuelTextures.EQUIP, camera,
             transform.corners(new FieldLayout.Rect(x2 - half, y2 - half, half * 2F, half * 2F),
                 lift + 0.01D * transform.scale()),
@@ -1140,6 +1165,78 @@ public final class OverworldBoardRenderer
     }
 
     /**
+     * The turn number, standing at the middle of the board.
+     *
+     * <h2>On the mat rather than on the screen</h2>
+     * It used to be a badge under the phase case, in the corner of the eye of a
+     * player who is looking at the board. Whose turn it is decides whether you
+     * may do anything at all, and the middle of the table is where a duellist
+     * is already looking -- so it is drawn there, in the same green and red the
+     * duel screen's badge used, and the row it vacated now holds the clock.
+     *
+     * <h2>Flat, where the pile counts stand up</h2>
+     * The counts have to turn because they are read across the table and would
+     * foreshorten to nothing. This does not: it is a marking on the mat, at the
+     * spot the player's eye is already on, and standing it up made it a
+     * signpost planted in the middle of the table. Different jobs, different
+     * answers, which is why {@link #drawFlatDigits} exists beside
+     * {@link #drawDigits} rather than instead of it.
+     */
+    private static void drawTurnBadge(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera)
+    {
+        BoardSnapshot board = DuelClientState.board;
+        if(board == null)
+        {
+            return;
+        }
+        FieldLayout.Rect mat = FieldTransform.mat();
+        float tallField = mat.h() * TURN_BADGE_SCALE;
+        float wideField = tallField * TURN_BADGE_ASPECT;
+        FieldLayout.Rect plate = new FieldLayout.Rect(
+            FieldTransform.CENTRE_X - wideField / 2F,
+            FieldTransform.CENTRE_Y - tallField / 2F, wideField, tallField);
+
+        int tint = fade(0xFF000000
+            | (board.turnPlayer() == 0 ? DuelHud.TURN_YOURS : DuelHud.TURN_THEIRS));
+        WorldQuad.submit(poseStack, collector, WorldQuad.kindFor(tint), DuelTextures.TURN_BADGE,
+            camera, transform.corners(plate,
+                (cardLift(transform) + TURN_BADGE_RUNG) * transform.scale()),
+            tint, 0F, 0F, 1F, 1F);
+
+        // Turn 0 is the engine mid-setup; the screen showed 1 there and so does
+        // this.
+        //
+        // A RUNG ABOVE THE PLATE, which is why the number was missing rather
+        // than merely hard to see: coplanar with it, the digits lost the depth
+        // test against a plate that had just written depth at exactly the same
+        // distance, and were discarded every frame. The board's other marks are
+        // stacked the same way -- see MARK_RUNG and COUNT_RUNG.
+        drawFlatDigits(poseStack, collector, transform, camera, plate,
+            (cardLift(transform) + TURN_DIGIT_RUNG) * transform.scale(),
+            Integer.toString(Math.max(1, board.turn())),
+            tallField * (float)TURN_DIGIT_SHARE, 0F, tint);
+    }
+
+    /** How much of the board's depth the plate stands: read at a glance, not read over. */
+    private static final float TURN_BADGE_SCALE = 0.085F;
+    /** The art is 48 by 40, and forcing it to any other shape rounds its corners wrong. */
+    private static final float TURN_BADGE_ASPECT = 48F / 40F;
+    /**
+     * Just clear of the mat, like a zone square -- NOT above the cards.
+     * <p>
+     * It stood upright in the middle of the board for one build, which read as
+     * a signpost planted in the table rather than as part of it. Flat is what
+     * the middle zones do and flat is what this does.
+     */
+    private static final float TURN_BADGE_RUNG = 0.008F;
+
+    /** And the number one rung above the plate, or the two z-fight. */
+    private static final float TURN_DIGIT_RUNG = 0.016F;
+    /** The digit's height inside the plate, leaving the rim clear. */
+    private static final double TURN_DIGIT_SHARE = 0.62D;
+
+    /**
      * A number laid flat on the board, spelled out of the digit atlas.
      * <p>
      * The atlas rather than the font, and not for want of a font: everything a
@@ -1151,6 +1248,18 @@ public final class OverworldBoardRenderer
      * counts shrink with their half of the table exactly as their cards do --
      * the flat board learned that the hard way and the note is still on it.
      *
+     * <h2>Standing up, not lying down</h2>
+     * These used to be laid flat on the card, in the plane of the mat. That is
+     * fine on your own half and unreadable on the other one: a two digit count
+     * across the table is seen at a glancing angle, foreshortened to a couple
+     * of pixels of smear. They now stand upright on the card and turn to face
+     * the viewer, about the vertical axis only -- a fully billboarded number
+     * would tip onto its back as the player looks down, which is the same
+     * reason {@link MonsterBillboard} keeps its sprites upright.
+     * <p>
+     * Still a PNG atlas and not the font, for the reason below: it is the one
+     * rule that has not changed. What changed is which way the quad points.
+     *
      * @param over the rectangle to centre the number on, in field units
      * @param lift how far above the mat, already multiplied by the transform
      */
@@ -1159,10 +1268,49 @@ public final class OverworldBoardRenderer
         float height, float bias, int tint)
     {
         String text = Integer.toString(value);
-        float digitH = height;
-        float digitW = digitH * DIGIT_ASPECT;
+        float digitW = height * DIGIT_ASPECT;
+
+        // Where the number stands: the middle of the rectangle it belongs to,
+        // nudged by whatever the caller asked for.
+        Vec3 foot = transform.at(over.x() + over.w() / 2F + bias,
+            over.y() + over.h() / 2F, lift);
+
+        // Towards the viewer, FLATTENED. Taking only x and z is what keeps the
+        // digits upright -- the height of the eye is exactly the part of the
+        // direction that must not reach the geometry, or the number leans over
+        // as the player looks down at the board. Same reasoning, and the same
+        // axis, as MonsterBillboard: see screenAxis for the one thing about it
+        // everybody gets wrong.
+        double dx = camera.x - foot.x;
+        double dz = camera.z - foot.z;
+        double flat = Math.sqrt(dx * dx + dz * dz);
+        if(flat < 1e-4D)
+        {
+            // Directly overhead, where "which way is the camera" has no answer.
+            dx = 0D;
+            dz = 1D;
+            flat = 1D;
+        }
+        double[] axis = MonsterBillboard.screenAxis(dx / flat, dz / flat);
+        drawDigits(poseStack, collector, camera, foot, axis, text,
+            digitW * transform.scale(), height * transform.scale(), tint);
+    }
+
+    /**
+     * Digits lying flat in the plane of the mat.
+     * <p>
+     * The counterpart to {@link #drawDigits}, which stands them up to face the
+     * viewer. Both exist because the board wants both: a pile count is read
+     * across the table and has to turn, while the turn badge is a marking ON
+     * the mat and would look like a signpost if it stood up.
+     */
+    private static void drawFlatDigits(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera, FieldLayout.Rect over, double lift, String text,
+        float height, float bias, int tint)
+    {
+        float digitW = height * DIGIT_ASPECT;
         float left = over.x() + over.w() / 2F - text.length() * digitW / 2F + bias;
-        float top = over.y() + over.h() / 2F - digitH / 2F;
+        float top = over.y() + over.h() / 2F - height / 2F;
         for(int at = 0; at < text.length(); at++)
         {
             int digit = text.charAt(at) - '0';
@@ -1170,10 +1318,55 @@ public final class OverworldBoardRenderer
             {
                 continue;
             }
-            WorldQuad.submit(poseStack, collector, DuelTextures.DIGITS, camera,
-                transform.corners(new FieldLayout.Rect(left + at * digitW, top, digitW, digitH),
-                    lift),
+            WorldQuad.submit(poseStack, collector, WorldQuad.kindFor(tint), DuelTextures.DIGITS,
+                camera, transform.corners(
+                    new FieldLayout.Rect(left + at * digitW, top, digitW, height), lift),
                 tint, digit / 10F, 0F, (digit + 1) / 10F, 1F);
+        }
+    }
+
+    /**
+     * A row of digits standing on {@code foot}, turned along {@code axis}.
+     * <p>
+     * Split out because the turn badge needs the same row on a plate of its own
+     * and the alternative was a second copy of the winding, which is the part
+     * of this that is easy to get backwards and impossible to see wrong on the
+     * digits 0, 1 and 8.
+     */
+    private static void drawDigits(PoseStack poseStack, SubmitNodeCollector collector,
+        Vec3 camera, Vec3 foot, double[] axis, String text, double wide, double tall, int tint)
+    {
+        double half = text.length() * wide / 2D;
+        for(int at = 0; at < text.length(); at++)
+        {
+            int digit = text.charAt(at) - '0';
+            if(digit < 0 || digit > 9)
+            {
+                continue;
+            }
+            // The FIRST character goes furthest along the axis, because that
+            // axis points at the viewer's left -- so a two digit count reads
+            // left to right from where the player is standing and not from
+            // where the mat happens to be pointing.
+            double along = half - (at + 0.5D) * wide;
+            Vec3 middle = foot.add(axis[0] * along, 0D, axis[1] * along);
+            Vec3 top = middle.add(0D, tall, 0D);
+            double outX = axis[0] * wide / 2D;
+            double outZ = axis[1] * wide / 2D;
+            Vec3[] corners = new Vec3[] {
+                middle.add(-outX, 0D, -outZ),
+                top.add(-outX, 0D, -outZ),
+                top.add(outX, 0D, outZ),
+                middle.add(outX, 0D, outZ)};
+            // The cell's LEFT edge belongs on the viewer's left, which is the
+            // plus side of the axis -- so the u ends go on in the order that
+            // puts the higher u at the minus end. Getting this backwards
+            // mirrors every glyph, which on 0, 1 and 8 does not show.
+            float u0 = digit / 10F;
+            float u1 = (digit + 1) / 10F;
+            WorldQuad.submit(poseStack, collector, WorldQuad.kindFor(tint),
+                DuelTextures.DIGITS, camera, corners, tint,
+                new float[] {u1, u1, u0, u0}, new float[] {1F, 0F, 0F, 1F});
         }
     }
 
@@ -1310,7 +1503,8 @@ public final class OverworldBoardRenderer
             // shatter draws the same card coming apart on top of it, and a
             // destroyed monster reads as two of itself -- one whole and one in
             // pieces -- for as long as the animation lasts.
-            if(shattering(asked, location, sequence))
+            if(shattering(asked, location, sequence)
+                || releasing(asked, location, sequence))
             {
                 continue;
             }
@@ -1557,6 +1751,108 @@ public final class OverworldBoardRenderer
     }
 
     /**
+     * How much of the way through a tribute the card whitens before it lifts.
+     * <p>
+     * The same shape as the shatter's own prelude, and for the same reason: a
+     * card that starts moving the instant it is named has not been seen to be
+     * chosen. What differs is what happens next.
+     */
+    private static final float RELEASE_WHITEN = 0.30F;
+
+    /** How far it rises, in field units, over the rest of the animation. */
+    private static final float RELEASE_RISE = 0.55F;
+
+    /**
+     * A tributed card: drawn UP as light, not broken.
+     *
+     * <h2>Why not the shatter</h2>
+     * A shatter is a card being destroyed -- it whitens along its fractures and
+     * bursts into pieces of its own face. A tribute is a card being GIVEN, and
+     * the pieces read as the wrong story: the monster was not beaten, it was
+     * spent. Master Duel draws the released monsters up into light and the
+     * summon comes out of it, so this lifts, narrows and fades the card into a
+     * glow instead of breaking it.
+     *
+     * <h2>Narrowing as it goes</h2>
+     * Rising alone reads as floating away. Drawn in about its own middle at the
+     * same time, it reads as being pulled into something -- which is what a
+     * tribute is, and what the summon that follows comes out of.
+     */
+    private static void drawReleases(PoseStack poseStack, SubmitNodeCollector collector,
+        FieldTransform transform, Vec3 camera)
+    {
+        List<de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.ShatterView> given =
+            DuelClientState.animations.releasesInFlight(System.currentTimeMillis());
+        if(given.isEmpty())
+        {
+            return;
+        }
+        int seat = Math.max(0, ClientDuelField.seat());
+        for(de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.ShatterView release : given)
+        {
+            // A tributed card goes to the graveyard, so where it left is where
+            // it came FROM -- the same reading a shatter makes of its zone.
+            FieldLayout.Rect zone = zoneOfRef(release.fromZone(), seat);
+            if(zone == null)
+            {
+                continue;
+            }
+            FieldLayout.Rect card = CardMesh.placement(zone, false);
+            int controller = (release.fromZone() & 16) != 0
+                ? FieldTransform.controllerFor(seat, false)
+                : FieldTransform.controllerFor(seat, true);
+            float t = release.progress();
+            float[][] uv = CardRenderer.turned(false, release.u0(), release.v0(), release.u1(),
+                release.v1(), CardRenderer.turnsFor(controller, false));
+
+            float lifting = Math.max(0F, (t - RELEASE_WHITEN) / (1F - RELEASE_WHITEN));
+            // Eased, so it leaves slowly and goes quickly: a linear rise reads
+            // as the card being moved rather than being taken.
+            float eased = lifting * lifting;
+            double lift = (cardLift(transform) + CardMesh.THICKNESS + 0.02F
+                + RELEASE_RISE * eased) * transform.scale();
+            float shrink = 1F - 0.35F * eased;
+            FieldLayout.Rect rising = new FieldLayout.Rect(
+                card.x() + card.w() * (1F - shrink) / 2F,
+                card.y() + card.h() * (1F - shrink) / 2F,
+                card.w() * shrink, card.h() * shrink);
+
+            int alpha = Math.max(0, Math.round((1F - eased) * 255F));
+            int faceTint = fade(alpha << 24 | 0xFFFFFF);
+            WorldQuad.submit(poseStack, collector, WorldQuad.Kind.FADING, release.texture(),
+                camera, transform.corners(rising, lift), faceTint, uv[0], uv[1]);
+
+            // The light it becomes, over the card rather than in its tint --
+            // a tint can only take colour away and this has to add it.
+            float glow = t < RELEASE_WHITEN ? t / RELEASE_WHITEN : 1F - eased;
+            WorldQuad.submit(poseStack, collector, DuelTextures.WHITE, camera,
+                transform.corners(rising, lift + 0.004D * transform.scale()),
+                fade(Math.round(glow * 210F) << 24 | 0xFFF6D8));
+        }
+    }
+
+    /** Is this zone's card being tributed right now? */
+    private static boolean releasing(int asked, int location, int sequence)
+    {
+        List<de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.ShatterView> given =
+            DuelClientState.animations.releasesInFlight(System.currentTimeMillis());
+        if(given.isEmpty())
+        {
+            return false;
+        }
+        int ref = de.cas_ual_ty.dueldimension.ocg.prompt.EnginePrompt.zoneRef(asked == 1,
+            location == OcgConstants.LOCATION_MZONE, sequence);
+        for(de.cas_ual_ty.dueldimension.clientutil.DuelAnimations.ShatterView release : given)
+        {
+            if(release.fromZone() == ref)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Is this zone's card mid-turn, and therefore the flip's to draw?
      * <p>
      * The same shape as {@link #shattering}, against the same zone reference.
@@ -1711,12 +2007,37 @@ public final class OverworldBoardRenderer
                 collector, camera, feet, height, mesh,
                 transform.siting().look(controller), fade(solidity(solid)),
                 animation, definition.elevation(), definition.turn(),
-                definition.offsetX(), definition.offsetZ(), phase);
+                definition.offsetX(), definition.offsetZ(), phase,
+                // Lit by the room it stands in. A world render event may read
+                // the level directly; the extract/submit split the pedestal
+                // obeys is a block entity renderer's rule and this is not one.
+                net.minecraft.client.Minecraft.getInstance().level == null ? null
+                    : de.cas_ual_ty.dueldimension.clientutil.model.ModelLight.standing(
+                        net.minecraft.client.Minecraft.getInstance().level, feet, height));
             return;
         }
         // Straight up in world space, which is the axis the sprite stands on
         // however the field beneath it is turned.
         feet = feet.add(0D, MonsterSprites.bobAt(body, (long)ticks()) * height, 0D);
+        // Lift, Off x and Off z. Given the CONTROLLER's heading -- the same one
+        // the model branch above hands to ModelHologram -- so that "forward" is
+        // the creature's forward on both sides of the board, and one definition
+        // places its monster identically whichever way it is being drawn.
+        feet = MonsterBillboard.stand(feet,
+            transform.siting().look(controller).toYRot(), definition);
+        // Which of a Doom sheet's eight views is pointing at the camera. The
+        // creature still turns to face the viewer -- see MonsterBillboard --
+        // so this changes the PICTURE on the quad, not the quad. Measured
+        // against the same heading the placement used, so a monster shows its
+        // back to whoever it has its back to.
+        float heading = transform.siting().look(controller).toYRot();
+        body = body.facing(MonsterSprites.directionAt(body, camera, feet, heading));
+        if(wings != null)
+        {
+            wings = new Wings(wings.layer().facing(MonsterSprites.directionAt(
+                wings.layer(), camera, feet, heading)),
+                wings.anchor(), wings.spacing(), wings.scale());
+        }
         MonsterBillboard.submit(poseStack, collector, camera, camera, feet, height, body,
             MonsterSprites.frameAt(body, (long)ticks()), wings,
             wings == null ? 0 : MonsterSprites.frameAt(wings.layer(), (long)ticks()),
@@ -1836,6 +2157,59 @@ public final class OverworldBoardRenderer
      * seat 0's screen. {@link FieldTransform#controllerFor} is where that
      * translation lives, and this is its one caller for the mats.
      */
+    /**
+     * Each duellist's chosen mat colour, in controller order.
+     * <p>
+     * The same pair the 2D board builds, and seated the same way -- the colour
+     * has to follow the mat it tints, and which controller is "you" depends on
+     * the seat.
+     */
+
+    /**
+     * How much of its own colour a board piece adds back as light.
+     * <p>
+     * Under one, because this is a SECOND pass over a piece that is already
+     * fully drawn: at full strength the board doubles its own brightness and the
+     * mat's artwork washes out to the flat colour it is tinted with. A third is
+     * enough to lift the board off unlit ground and keep the printing readable.
+     */
+    private static final float EMISSIVE_STRENGTH = 0.34F;
+
+    /** The piece's own colour at {@link #EMISSIVE_STRENGTH}, fade included. */
+    private static int emissiveTint(int tint)
+    {
+        int alpha = Math.round(((tint >>> 24) & 0xFF) * EMISSIVE_STRENGTH);
+        return (alpha << 24) | (tint & 0x00FFFFFF);
+    }
+
+    /**
+     * The unlit pass that makes the board read as its own light source.
+     * <p>
+     * Skipped entirely once the tint has faded to nothing, so the end-of-duel
+     * fade takes the light with it rather than leaving a glowing board behind.
+     */
+    private static void emissive(PoseStack poseStack, SubmitNodeCollector collector,
+        ResourceLocation texture, Vec3 camera, Vec3[] corners, int tint,
+        float u0, float v0, float u1, float v1)
+    {
+        int lit = emissiveTint(tint);
+        if((lit >>> 24) == 0)
+        {
+            return;
+        }
+        WorldQuad.submit(poseStack, collector, WorldQuad.Kind.EMISSIVE, texture, camera,
+            corners, lit, u0, v0, u1, v1);
+    }
+
+    private static int[] matColoursByController()
+    {
+        int seat = Math.max(0, ClientDuelField.seat());
+        int[] colours = new int[2];
+        colours[FieldTransform.controllerFor(seat, true)] = DuelClientState.matColour();
+        colours[FieldTransform.controllerFor(seat, false)] = DuelClientState.opponentMatColour;
+        return colours;
+    }
+
     private static PlayMats[] matsByController()
     {
         int seat = Math.max(0, ClientDuelField.seat());

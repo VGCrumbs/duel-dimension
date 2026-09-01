@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_flower_cardian_cherry_blossom_with_curtain",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_flower_cardian_cherry_blossom_with_curtain"
+  }
+}

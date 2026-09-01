@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_longirsu_the_orcust_orchestrator",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_longirsu_the_orcust_orchestrator"
+  }
+}

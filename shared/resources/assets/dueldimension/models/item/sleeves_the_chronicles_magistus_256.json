@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_the_chronicles_magistus",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_the_chronicles_magistus"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_therion_king_regulus",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_therion_king_regulus"
+  }
+}

@@ -51,7 +51,10 @@ public class DuelDimensionFabric implements ModInitializer
         // DISCARDED, with a single "Found unknown attachment type" warning. That
         // is how a whole card collection went missing once.
         de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.register();
+        de.cas_ual_ty.dueldimension.duel.trade.TradeNetwork.register();
         de.cas_ual_ty.dueldimension.shop.DuelPoints.register();
+        de.cas_ual_ty.dueldimension.shop.DuelEnergy.register();
+        de.cas_ual_ty.dueldimension.shop.DuelRecord.register();
         de.cas_ual_ty.dueldimension.util.Cooldowns.register();
 
         // Every message is declared before anything can send one, and the
@@ -66,12 +69,22 @@ public class DuelDimensionFabric implements ModInitializer
         {
             net.minecraft.server.level.ServerPlayer player = handler.getPlayer();
             de.cas_ual_ty.dueldimension.net.ProfilePayloads.sync(player);
+            // DE and the win/loss record. On JOIN rather than on first use,
+            // because the profile panel shows them the moment the hub opens and
+            // an unsynced zero is indistinguishable from a real one.
+            de.cas_ual_ty.dueldimension.shop.StatsMessages.sync(player);
+            net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
+                new de.cas_ual_ty.dueldimension.shop.ShopMessages.SyncPoints(
+                    de.cas_ual_ty.dueldimension.shop.DuelPoints.get(player)));
 
             // An arriving client has to be told what everyone is wearing, and
             // everyone told about them: the client render map is intentionally
             // cleared on every disconnect, so the persisted choice is
             // re-announced on join rather than assumed to have survived.
             de.cas_ual_ty.dueldimension.duel.dueldisk.WornDisks.announce(player);
+            // And who everybody is, so an arriving player sees the room as it
+            // is rather than as a crowd of default skins.
+            de.cas_ual_ty.dueldimension.character.WornCharacters.announce(player);
 
             // Said once, on arrival, rather than only when a duel is refused.
             // The engine is not ours -- this mod embeds ocgcore and plays
@@ -229,17 +242,14 @@ public class DuelDimensionFabric implements ModInitializer
                     return net.minecraft.world.InteractionResult.PASS;
                 }
 
-                boolean accepting = de.cas_ual_ty.dueldimension.duel.match.DuelInvites
-                    .hasInviteFrom(me, them);
-                String error = accepting
-                    ? de.cas_ual_ty.dueldimension.duel.match.DuelInvites
-                        .accept(me, them.getGameProfile().name())
-                    : de.cas_ual_ty.dueldimension.duel.match.DuelInvites.invite(me, them);
-                if(error != null)
-                {
-                    me.sendSystemMessage(net.minecraft.network.chat.Component.literal(error)
-                        .withStyle(net.minecraft.ChatFormatting.RED));
-                }
+                // Asks rather than challenges. There are two things one player
+                // can now do to another, so the click offers both -- and the
+                // menu is opened by the SERVER, because whether these two may
+                // duel or trade at all is the server's answer and a menu that
+                // offered a refused option would be a menu that lies.
+                net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(me,
+                    new de.cas_ual_ty.dueldimension.duel.trade.TradeMessages.OfferMenu(
+                        them.getUUID(), them.getGameProfile().name()));
                 // Consumed either way: the click was aimed at a player while
                 // wearing a disk, so letting it fall through to whatever else
                 // right-clicking a player does would be a surprise.
@@ -250,6 +260,14 @@ public class DuelDimensionFabric implements ModInitializer
         // returns immediately unless a toss is actually outstanding.
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(
             de.cas_ual_ty.dueldimension.duel.match.DuelLobby::tickPending);
+
+        // The trade countdown, and the state it can reach at the end of it.
+        // Cheap: it returns immediately unless somebody is actually trading.
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(
+            de.cas_ual_ty.dueldimension.duel.trade.Trades::tick);
+        net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register(
+            (handler, server) ->
+                de.cas_ual_ty.dueldimension.duel.trade.Trades.forget(handler.getPlayer()));
 
         // The overworld field's size, which is editable in game and read here
         // so a server picks up whatever was last set rather than the built-in.
@@ -266,6 +284,34 @@ public class DuelDimensionFabric implements ModInitializer
         // return when nobody is duelling on a board, which is nearly always.
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(
             de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels::tick);
+
+        // A duellist takes no damage, from anything, for as long as the duel
+        // lasts.
+        //
+        // The duel IS the fight, and a player pinned to a mark with their hands
+        // on a board cannot run, block, eat or fight back -- so every source is
+        // refused rather than just the mobs the targeting rule turns away. A
+        // duel lost because a creeper that was already lit walked into the
+        // field, or because the sun came up on a skeleton fifty blocks away
+        // with a bow, is not a duel anybody agreed to.
+        //
+        // ALLOW_DAMAGE and not a hurt() mixin: it is a server-side event that
+        // fires for every source before any of them applies, and it is the same
+        // event on both Minecraft versions, where the method it would have to
+        // hook is not. Returning false cancels the damage and everything that
+        // follows from it -- no knockback, no hurt animation, no death.
+        net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.ALLOW_DAMAGE.register(
+            (entity, source, amount) ->
+            {
+                if(!(entity instanceof net.minecraft.server.level.ServerPlayer player))
+                {
+                    return true;
+                }
+                return !de.cas_ual_ty.dueldimension.duel.overworld.OverworldDuels
+                    .isEngaged(player.getUUID())
+                    && !de.cas_ual_ty.dueldimension.duel.npc.DuelistDuels
+                        .isSeated(player.getUUID());
+            });
 
         // Nothing a duellist standing at a board does with a block should reach
         // the block. They are pinned in place with their hands on a duel, and

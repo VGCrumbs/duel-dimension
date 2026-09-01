@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_neymar",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_neymar"
+  }
+}

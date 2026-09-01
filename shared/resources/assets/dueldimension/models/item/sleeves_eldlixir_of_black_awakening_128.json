@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_eldlixir_of_black_awakening",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_eldlixir_of_black_awakening"
+  }
+}

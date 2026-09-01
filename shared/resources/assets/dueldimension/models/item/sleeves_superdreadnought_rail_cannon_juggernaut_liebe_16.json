@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_superdreadnought_rail_cannon_juggernaut_liebe",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_superdreadnought_rail_cannon_juggernaut_liebe"
+  }
+}

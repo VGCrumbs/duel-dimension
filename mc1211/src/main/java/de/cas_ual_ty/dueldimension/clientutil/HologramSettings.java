@@ -12,9 +12,20 @@ import java.nio.file.Path;
  * Whether monsters stand on their cards during an actual duel, and on whose
  * side of the board.
  * <p>
- * {@link Mode#BOTH} by default: a monster looming over its card is most of the
- * reason to play on a board in the world rather than on a screen, and a
- * duellist who wanted the flat version has the flat version one click away.
+ * {@link Mode#OFF} by default.
+ * <p>
+ * That is a reversal. This used to default to {@link Mode#BOTH}, on the
+ * reasoning that a monster looming over its card is most of the reason to play
+ * on a board in the world rather than on a screen -- which is still true of what
+ * a hologram IS, and was the wrong thing to decide a default on. A monster
+ * standing on the board is also the single most expensive thing the duel draws
+ * and the thing most likely to be in front of a zone that has to be read and
+ * clicked, and both of those are paid on every duel by every player, including
+ * the ones who never wanted it.
+ * <p>
+ * So the flat board is what a duel starts as, and the holograms are one click
+ * away in the duel hub's settings rather than one click away from being turned
+ * off. The three modes are unchanged; only which of them is the starting one.
  * <p>
  * <b>Three states rather than two, because the board is not symmetrical.</b> A
  * board is stood at rather than looked down on, so your own monsters are the
@@ -69,7 +80,7 @@ public final class HologramSettings
         }
     }
 
-    private static Mode mode = Mode.BOTH;
+    private static Mode mode = Mode.OFF;
 
     /**
      * Whether a monster with a 3D model is drawn as one at all.
@@ -82,6 +93,22 @@ public final class HologramSettings
      * nothing, and models off with holograms on shows sprites.
      */
     private static boolean models = true;
+
+    /**
+     * Whether a model's texture is filtered the way the console that drew it
+     * filtered, which is bilinearly.
+     * <p>
+     * On by default because it is the accurate answer, not the prettier one:
+     * these skins are 64 and 128 pixels stretched over a whole dragon, and the
+     * PlayStation 2's Graphics Synthesizer smoothed them. Point-sampled at the
+     * size a Minecraft monster is drawn they read as a mosaic of hard squares
+     * that the artist never saw.
+     * <p>
+     * Off is a real preference rather than a fallback, which is why it is a
+     * setting: Minecraft is a game of hard texels, and a duellist who wants the
+     * holograms to match everything else around them is not wrong.
+     */
+    private static boolean ps2 = true;
 
     private HologramSettings()
     {
@@ -113,6 +140,33 @@ public final class HologramSettings
         {
             mode = value;
             save();
+        }
+    }
+
+    /** Whether model textures are filtered bilinearly, as the PS2 did. */
+    public static boolean ps2()
+    {
+        return ps2;
+    }
+
+    /**
+     * Changing this FORGETS EVERY BAKED MODEL, and has to.
+     * <p>
+     * The sampler is chosen when a texture is registered, because Minecraft
+     * builds it in a private method and offers no say in it afterwards -- see
+     * {@code Ps2Texture}. So a model already on the board keeps whatever
+     * filtering it was born with, and the toggle would appear to do nothing
+     * until something else happened to reload it. Dropping the cache makes the
+     * next frame rebuild them, which is the same thing the editor's Reload
+     * button does and costs a few milliseconds once.
+     */
+    public static void setPs2(boolean use)
+    {
+        if(ps2 != use)
+        {
+            ps2 = use;
+            save();
+            de.cas_ual_ty.dueldimension.clientutil.model.MonsterModels.clear();
         }
     }
 
@@ -150,7 +204,7 @@ public final class HologramSettings
             // Two values on one line, the mode first, so a file written by an
             // older build still parses -- parse() reads the first token and
             // ignores what it does not recognise.
-            Files.writeString(file(), mode.name() + " models=" + models,
+            Files.writeString(file(), mode.name() + " models=" + models + " ps2=" + ps2,
                 StandardCharsets.UTF_8);
         }
         catch(IOException unwritable)
@@ -205,6 +259,9 @@ public final class HologramSettings
                 // Absent means ON, which is what every existing file says by
                 // saying nothing: the models were not optional before this.
                 models = !saved.contains("models=false");
+                // Same rule: absent reads as ON, because it was not optional
+                // before this and every existing file says nothing about it.
+                ps2 = !saved.contains("ps2=false");
             }
         }
         catch(IOException unreadable)

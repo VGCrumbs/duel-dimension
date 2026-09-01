@@ -81,6 +81,12 @@ public final class DuelLobby
     public static void open(ServerPlayer host, ServerPlayer guest, MatchStateMachine machine)
     {
         Room room = new Room(host.getUUID(), guest.getUUID(), machine);
+        // Opened on whatever the HOST last arranged, not on the built-in
+        // default. Somebody who plays 4000 life with a timer off should not
+        // have to say so again on every challenge -- and the host is the only
+        // one who can change it, so the host's is the only answer to restore.
+        room.config = de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.get(host)
+            .matchConfig();
         ROOMS.put(host.getUUID(), room);
         ROOMS.put(guest.getUUID(), room);
         sendTo(host, room);
@@ -101,6 +107,11 @@ public final class DuelLobby
         // Sanitised rather than trusted: a packet is data, and the offered
         // choices are the only legal ones.
         room.config = proposed.sanitised();
+        // Remembered as it is set rather than when the duel starts, so a
+        // challenge that is arranged and then called off still teaches the
+        // lobby what this player prefers.
+        de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.get(player)
+            .rememberMatchConfig(room.config);
         room.hostReady = false;
         room.guestReady = false;
         broadcast(player.level().getServer(), room);

@@ -1,0 +1,68 @@
+{
+  "code": "CT15_C",
+  "type": "Sub-Set",
+  "pull_type": "distribution",
+  "distribution": "mega_tin_promos_2018",
+  "cards": [
+    {
+      "id": 40080312,
+      "code": "CT15-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 77075360,
+      "code": "CT15-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 45195443,
+      "code": "CT15-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 48048590,
+      "code": "CT15-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 54757758,
+      "code": "CT15-EN005",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 64454614,
+      "code": "CT15-EN006",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 58242947,
+      "code": "CT15-EN007",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 97792247,
+      "code": "CT15-EN008",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 81846453,
+      "code": "CT15-EN009",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 37337327,
+      "code": "CT15-EN010",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 package de.cas_ual_ty.dueldimension.cardbinder;
 
+import de.cas_ual_ty.dueldimension.clientutil.hub.MenuInk;
 import de.cas_ual_ty.dueldimension.clientutil.hub.EditorState;
 import de.cas_ual_ty.dueldimension.clientutil.hub.HubTextures;
 import de.cas_ual_ty.dueldimension.clientutil.hub.NineSlice;
@@ -147,20 +148,20 @@ public class BinderScreen extends Screen
         NineSlice.draw(poseStack, HubTextures.PANEL, left, top, WIDTH, HEIGHT);
 
         int y = top + PAD;
-        poseStack.text(font, "Collection", left + PAD, y, 0xFFF4D089, true);
+        poseStack.text(font, "Collection", left + PAD, y, MenuInk.title(), MenuInk.shadow());
 
         // The total, on its own line at the top, because it is the one number a
         // player wants without reading anything else.
         String total = summary.held() + " / " + summary.total() + " printings   "
             + percent(summary.fraction());
-        poseStack.text(font, total, left + WIDTH - PAD - font.width(total), y, 0xFFC2C9D6, true);
+        poseStack.text(font, total, left + WIDTH - PAD - font.width(total), y, MenuInk.body(), MenuInk.shadow());
         y += 12;
         bar(poseStack, left + PAD, y, WIDTH - PAD * 2, summary.fraction());
         y += BAR_H + 6;
 
         String counted = summary.packCount() + " packs   (fixed decks are not counted: "
             + "there is nothing random to collect)";
-        poseStack.text(font, counted, left + PAD, y, 0xFF7A8090, true);
+        poseStack.text(font, counted, left + PAD, y, MenuInk.dim(), MenuInk.shadow());
         y += 12;
 
         int listTop = y;
@@ -184,8 +185,8 @@ public class BinderScreen extends Screen
                 poseStack.fill(left + PAD - 2, rowY - 2, left + WIDTH - PAD, rowY + ROW_H - 3,
                     0x30FFFFFF);
             }
-            poseStack.text(font, label, labelX, rowY, row.heading() ? 0xFFF4D089
-                : row.complete() ? 0xFF8AD98A : 0xFFC2C9D6, true);
+            poseStack.text(font, label, labelX, rowY, row.heading() ? MenuInk.title()
+                : row.complete() ? 0xFF8AD98A : MenuInk.body(), MenuInk.shadow());
 
             String pct = percent(row.fraction());
             poseStack.text(font, pct, barX - font.width(pct) - 6, rowY,

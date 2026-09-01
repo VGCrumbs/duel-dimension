@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_magicians_of_bonds_and_unity",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_magicians_of_bonds_and_unity"
+  }
+}

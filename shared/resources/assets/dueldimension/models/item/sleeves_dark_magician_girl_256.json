@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_dark_magician_girl",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_dark_magician_girl"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_el_shaddoll_construct",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_el_shaddoll_construct"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_r_b_the_brute_blues",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_r_b_the_brute_blues"
+  }
+}

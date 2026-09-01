@@ -280,6 +280,117 @@ public class Properties
     {
         list.add(CardLine.of(getText()));
     }
+
+    /**
+     * The card's own words, for a panel that is ALREADY showing {@link
+     * #addFacts}.
+     *
+     * <h2>Why this is not addText</h2>
+     * {@link #addText} is the tooltip's body and repeats the species line,
+     * because a tooltip has no separate facts block to have said it in. A
+     * preview panel does, so calling addText there prints "Beast / Pendulum /
+     * Normal" twice.
+     * <p>
+     * The old way round the duplication was to take the body from {@code
+     * getText()} instead -- a plain string, no CardLines involved -- and that
+     * is the bug this exists to close. {@code getText()} is the LOWER box of a
+     * card and nothing else, so a Pendulum monster showed its flavour text and
+     * silently dropped its scales and its Pendulum Effect: on Ghost Beef,
+     * everything except one line about Christmas dinner.
+     * <p>
+     * It is the same mistake {@link #addFacts} was written to end, one layer
+     * down. Facts come from a method that knows what kind of card this is;
+     * so must the body.
+     */
+    public void addBodyText(List<CardLine> list)
+    {
+        // Measured, not "is the list empty": a caller may have put lines in
+        // before handing it over, and the blank belongs after a Pendulum box
+        // that was actually added rather than after anything at all.
+        int before = list.size();
+        addPendulumBox(list);
+        if(list.size() > before)
+        {
+            list.add(CardLine.blank());
+        }
+        list.add(CardLine.of(getText()));
+    }
+
+    /**
+     * The upper box of a Pendulum card — its scales and its Pendulum Effect —
+     * or nothing at all for the cards that do not have one, which is nearly all
+     * of them.
+     * <p>
+     * Split out of {@link #addBodyText} so that a caller can ASK HOW TALL IT IS
+     * without re-deriving what goes in it. A printed Pendulum card draws that
+     * half inside its own bordered box, and a panel that wants to do the same
+     * needs to know where the box ends -- which is a question only this can
+     * answer, and would otherwise be answered by counting lines and hoping.
+     * <p>
+     * No trailing blank. The separator between the two boxes belongs to whoever
+     * is stacking them, not to the box itself, and a box that carried its own
+     * gap would draw its border around one.
+     */
+    public void addPendulumBox(List<CardLine> list)
+    {
+    }
+
+    /**
+     * The Pendulum scales as they are printed -- "3 (blue) / (red) 3" -- or
+     * null for a card that has none.
+     * <p>
+     * Separate from {@link #addPendulumBox} because a panel may want to draw
+     * them as their own thing rather than as a line of the body. The box method
+     * still emits them, so nothing that was using it changes.
+     */
+    public String pendulumScaleText()
+    {
+        return null;
+    }
+
+    /** The Pendulum Effect on its own, or null for a card without one. */
+    public String pendulumEffectText()
+    {
+        return null;
+    }
+
+    /**
+     * The two Pendulum scales, or -1 for a card that has none.
+     * <p>
+     * Separate numbers rather than the formatted string, because the arrows
+     * between them are COLOURED -- blue on the left, red on the right, as they
+     * are printed -- and a caller cannot colour half of a string it was handed
+     * whole. {@link #pendulumScaleText} is still there for the places that only
+     * want to read it.
+     */
+    public int pendulumScaleLeft()
+    {
+        return -1;
+    }
+
+    public int pendulumScaleRight()
+    {
+        return -1;
+    }
+
+    /**
+     * Everything on the card a search should look inside.
+     *
+     * <h2>The reading half of addBodyText</h2>
+     * {@link #addBodyText} decides what a player is SHOWN; this decides what
+     * they can FIND. They have to agree, or the screens develop the specific
+     * cruelty of displaying a line and then refusing to match it: a player who
+     * has just read "increase this card's Pendulum Scale" on Ghost Beef types
+     * it into the box and is told there is no such card.
+     * <p>
+     * A string rather than CardLines, because that is what a search wants. No
+     * headings, no scales, no ordering that matters -- only the words, so that
+     * {@code contains} over it means "this card says that somewhere".
+     */
+    public String getSearchText()
+    {
+        return getText();
+    }
     
     public void addCardType(List<CardLine> list)
     {

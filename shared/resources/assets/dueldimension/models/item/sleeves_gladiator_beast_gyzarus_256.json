@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_gladiator_beast_gyzarus",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_gladiator_beast_gyzarus"
+  }
+}

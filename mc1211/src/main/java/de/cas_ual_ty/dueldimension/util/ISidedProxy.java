@@ -199,7 +199,20 @@ public interface ISidedProxy
      * show, so it is a no-op there rather than a side check at the call site.
      */
     default void openPackReveal(String setName, java.util.List<Integer> codes,
-        java.util.List<String> rarities)
+        java.util.List<String> rarities, java.util.List<Boolean> fresh,
+        java.util.List<String> sources)
+    {
+    }
+
+    /**
+     * Offers the Duel/Trade menu for a right-clicked player. Client only.
+     */
+    default void openPlayerMenu(java.util.UUID target, String name)
+    {
+    }
+
+    /** Shows or updates the trade table, or closes it. Client only. */
+    default void updateTrade(de.cas_ual_ty.dueldimension.duel.trade.TradeMessages.State state)
     {
     }
 
@@ -272,6 +285,12 @@ public interface ISidedProxy
     /** Asks which way to play a duelist that has just been clicked. Client only. */
     default void offerDuelType(
         de.cas_ual_ty.dueldimension.duel.npc.DuelistChallengeMessages.OfferDuel offer)
+    {
+    }
+
+    /** Asks which deck a Duel Bot that has just been clicked should play. Client only. */
+    default void offerBotProgram(
+        de.cas_ual_ty.dueldimension.duel.npc.DuelBotMessages.OfferProgram offer)
     {
     }
 

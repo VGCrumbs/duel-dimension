@@ -76,15 +76,62 @@ public final class BoardPip
      * The painter gets the screen's own pose and buffer source, with the origin
      * at {@code (x0, y0)}, clipped to the rectangle, and z pointing away.
      */
+    /**
+     * How far in front of the screen the pip's contents sit, in GUI depth units.
+     * <p>
+     * Comfortably past the deepest thing any caller draws -- the statue scene is
+     * the deepest at 51 -- and comfortably inside the GUI's own ortho range, so
+     * there is room either side to be wrong in.
+     */
+    private static final float FORWARD = 200F;
+
     public static void draw(GuiGraphicsExtractor graphics, int x0, int y0, int x1, int y1,
         BiConsumer<PoseStack, SubmitNodeCollector> painter)
     {
         GuiGraphics vanilla = graphics.vanilla();
         PoseStack pose = vanilla.pose();
 
+        // EVERYTHING ALREADY ASKED FOR, ONTO THE SCREEN, BEFORE ANY OF THIS.
+        //
+        // GuiGraphics does not draw when it is told to; it fills a buffer per
+        // render type and the whole lot comes out at the next flush, in TYPE
+        // order. So a screen that blits a backdrop and then calls this has both
+        // in the same batch, and which of them lands on top is decided by the
+        // order the buffer source happens to iterate its types -- not by the
+        // order they were asked for.
+        //
+        // That is what hid the god statues: the reward screen draws a backdrop,
+        // a shimmer and a vignette and THEN the models, and the backdrop came
+        // out last and covered them. It also made the backdrop itself look
+        // wrong, because its three layers were being resolved against each
+        // other rather than stacked.
+        //
+        // Flushing here settles everything before it, so what this paints is
+        // painted over it. The flush at the end does the same for what comes
+        // after. Two flushes and the pip is an ordered island in a batched
+        // world, which is the same bargain submitCustomGeometry strikes.
+        vanilla.flush();
+
         vanilla.enableScissor(x0, y0, x1, y1);
         pose.pushPose();
-        pose.translate(x0, y0, 0F);
+        // FORWARD, BEFORE THE FLIP, OR THE DEPTH BUFFER EATS IT.
+        //
+        // Flushing settles draw ORDER; it says nothing about the depth test,
+        // and these are different problems. StatueRenderer emits real depth in
+        // a band of 1..51 pose-space units, chosen against 26.2's
+        // picture-in-picture, which owns its own ortho of [-1000, 1000] and its
+        // own cleared depth buffer. Here there is no such private pass: the pip
+        // draws into the screen's depth buffer, alongside a backdrop that has
+        // already written to it -- so after the z flip below that band sits
+        // BEHIND the backdrop and every statue fails the test. Nothing is
+        // reported; they are simply not there.
+        //
+        // Pushed forward by more than the band is deep, so the whole scene is
+        // in front of anything the screen drew first. Relative depth within the
+        // pip is untouched, which is the part that has to keep working -- a
+        // crown sunk into a podium still needs the podium to win where they
+        // interpenetrate.
+        pose.translate(x0, y0, FORWARD);
         pose.scale(1F, 1F, -1F);
 
         painter.accept(pose, new SubmitNodeCollector(vanilla.bufferSource()));

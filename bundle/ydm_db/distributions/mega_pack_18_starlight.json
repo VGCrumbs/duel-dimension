@@ -1,0 +1,61 @@
+{
+  "name": "mega_pack_18_starlight",
+  "pulls": [
+    {
+      "weight": 47,
+      "entries": [
+        {
+          "count": 12,
+          "rarities": [
+            "Common",
+            "Short Print",
+            "Super Short Print"
+          ]
+        },
+        {
+          "count": 4,
+          "rarities": [
+            "Ultra Rare"
+          ]
+        },
+        {
+          "count": 2,
+          "rarities": [
+            "Prismatic Secret Rare"
+          ]
+        }
+      ]
+    },
+    {
+      "weight": 1,
+      "entries": [
+        {
+          "count": 12,
+          "rarities": [
+            "Common",
+            "Short Print",
+            "Super Short Print"
+          ]
+        },
+        {
+          "count": 4,
+          "rarities": [
+            "Ultra Rare"
+          ]
+        },
+        {
+          "count": 1,
+          "rarities": [
+            "Prismatic Secret Rare"
+          ]
+        },
+        {
+          "count": 1,
+          "rarities": [
+            "Starlight Rare"
+          ]
+        }
+      ]
+    }
+  ]
+}

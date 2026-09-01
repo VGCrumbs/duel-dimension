@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_pumpking_the_king_of_grave_ghosts"
+  }
+}

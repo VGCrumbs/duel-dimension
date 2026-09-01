@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_mamonaka_the_vaylantz_united",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_mamonaka_the_vaylantz_united"
+  }
+}

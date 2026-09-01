@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_albion_the_sanctifire_dragon",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_albion_the_sanctifire_dragon"
+  }
+}

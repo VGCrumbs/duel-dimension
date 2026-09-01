@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_draco_masters_of_the_tenyi",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_draco_masters_of_the_tenyi"
+  }
+}

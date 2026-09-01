@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_blue_eyes_white_dragon",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_blue_eyes_white_dragon"
+  }
+}

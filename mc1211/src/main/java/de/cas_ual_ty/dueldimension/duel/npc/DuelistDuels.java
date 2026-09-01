@@ -239,19 +239,29 @@ public final class DuelistDuels
             return;
         }
 
-        StarterDecks.Entry npcDeck = StarterDecks.byId(duelist.getProfileId());
+        // The PROFILE deck, which is only used to pick the challenger's
+        // fallback. What the NPC actually plays is asked of the entity below,
+        // because a Duel Bot's deck is not its profile -- see
+        // DuelistEntity.npcDeck. Null for an NPC whose profile is not a starter
+        // deck at all, which the comparison below tolerates.
+        StarterDecks.Entry npcProfile = StarterDecks.find(duelist.getProfileId());
         // The challenger plays their own chosen deck. The fallback, for a
         // player who has not chosen one or whose choice will not do, is a
         // starter deck that is not the one the NPC is already using.
+        // A duel bot carries the answer it was given when its program was
+        // chosen; any other duelist in the world has no way to have been asked,
+        // so it plays the ordinary rules.
+        boolean botDestiny = duelist instanceof DuelBotEntity bot && bot.destinyDraw();
         ChosenDeck playerDeck = deckFor(serverPlayer,
-            npcDeck == StarterDecks.YUGI ? StarterDecks.KAIBA : StarterDecks.YUGI,
-            de.cas_ual_ty.dueldimension.duel.match.Banlist.none());
+            npcProfile == StarterDecks.YUGI ? StarterDecks.KAIBA : StarterDecks.YUGI,
+            de.cas_ual_ty.dueldimension.duel.match.Banlist.none(), botDestiny);
 
         long seed = serverPlayer.level().getGameTime() ^ serverPlayer.getUUID().getLeastSignificantBits();
         long[] seeds = {seed | 1, seed * 31 + 7, seed * 131 + 17, ~seed};
 
         HeadlessDuelRunner.Deck deck0 = withChaosDiskPromise(serverPlayer, playerDeck.cards());
-        HeadlessDuelRunner.Deck deck1 = npcDeck.load().toRunnerDeck();
+        HeadlessDuelRunner.Deck deck1 = duelist.npcDeck(serverPlayer);
+        reportDestiny(serverPlayer, botDestiny, deck0, playerDeck.displayName());
 
         // The challenger plays seat 0 themselves; the NPC plays seat 1.
         // The prompt callback runs on the duel thread. It used to channel.send
@@ -299,7 +309,8 @@ public final class DuelistDuels
             .withStyle(ChatFormatting.GOLD)
             .append(Component.literal(playerDeck.displayName()).withStyle(ChatFormatting.AQUA))
             .append(Component.literal(" vs "))
-            .append(Component.literal(npcDeck.displayName()).withStyle(ChatFormatting.LIGHT_PURPLE)));
+            .append(Component.literal(duelist.npcDeckName(serverPlayer))
+                .withStyle(ChatFormatting.LIGHT_PURPLE)));
         serverPlayer.sendSystemMessage(Component.literal("You are playing; prompts will open as the duel needs them.")
             .withStyle(ChatFormatting.DARK_GRAY));
         net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(serverPlayer,
@@ -360,10 +371,12 @@ public final class DuelistDuels
         // mirror match neither asked for.
         de.cas_ual_ty.dueldimension.duel.match.Banlist banlist =
             de.cas_ual_ty.dueldimension.duel.match.Banlists.byId(config.banlistId());
-        ChosenDeck deckA = deckFor(first, StarterDecks.YUGI, banlist);
-        ChosenDeck deckB = deckFor(second, StarterDecks.KAIBA, banlist);
+        ChosenDeck deckA = deckFor(first, StarterDecks.YUGI, banlist, config.destinyDraw());
+        ChosenDeck deckB = deckFor(second, StarterDecks.KAIBA, banlist, config.destinyDraw());
         HeadlessDuelRunner.Deck deck0 = withChaosDiskPromise(first, deckA.cards());
         HeadlessDuelRunner.Deck deck1 = withChaosDiskPromise(second, deckB.cards());
+        reportDestiny(first, config.destinyDraw(), deck0, deckA.displayName());
+        reportDestiny(second, config.destinyDraw(), deck1, deckB.displayName());
 
         long seed = first.level().getGameTime()
             ^ first.getUUID().getLeastSignificantBits()
@@ -780,8 +793,17 @@ public final class DuelistDuels
     {
     }
 
+    /**
+     * @param destinyDraw whether this duel was arranged with Destiny Draw on.
+     *                    When it is off the deck's flags are dropped here, at
+     *                    the one point the deck is handed to the engine -- so
+     *                    the rule is simply never registered, rather than
+     *                    registered and then suppressed. That is also what
+     *                    makes "not during a duel already in progress" true
+     *                    without anything enforcing it.
+     */
     private static ChosenDeck deckFor(ServerPlayer player, StarterDecks.Entry fallback,
-        de.cas_ual_ty.dueldimension.duel.match.Banlist banlist)
+        de.cas_ual_ty.dueldimension.duel.match.Banlist banlist, boolean destinyDraw)
     {
         de.cas_ual_ty.dueldimension.duel.profile.DuelProfile profile =
             de.cas_ual_ty.dueldimension.duel.profile.DuelProfiles.get(player);
@@ -809,7 +831,11 @@ public final class DuelistDuels
                 logDeckSplit(player, chosen);
                 return new ChosenDeck(
                     new HeadlessDuelRunner.Deck(chosen.main(), chosen.extra())
-                        .wearing(chosen.artsFor(chosen.main()), chosen.artsFor(chosen.extra())),
+                        .wearing(chosen.artsFor(chosen.main()), chosen.artsFor(chosen.extra()))
+                        // The player's Destiny Cards go with their deck; the
+                        // engine registers the rule only if there are any, and
+                        // only if this duel was arranged with it switched on.
+                        .flagging(destinyDraw ? chosen.destiny() : java.util.List.of()),
                     chosen.name(), chosen.sleeve());
             }
             if(chosen != null)
@@ -1338,12 +1364,22 @@ public final class DuelistDuels
             int before = de.cas_ual_ty.dueldimension.shop.DuelPoints.get(player);
             de.cas_ual_ty.dueldimension.shop.DuelPoints.award(player, reward.total());
             int after = de.cas_ual_ty.dueldimension.shop.DuelPoints.get(player);
+            // DE, the Monuments' currency. Flat, and NOT scaled by the NPC
+            // discount that applies to DP above: the whole point of a second
+            // currency is that it is priced in duels played rather than in how
+            // well they went, and a bot duel is still a duel played.
+            int duelEnergy = de.cas_ual_ty.dueldimension.shop.DuelEnergy.awardFor(outcome);
+            de.cas_ual_ty.dueldimension.shop.DuelEnergy.award(player, duelEnergy);
+            de.cas_ual_ty.dueldimension.shop.DuelRecord.record(player, outcome,
+                duel.isTwoPlayer());
+            de.cas_ual_ty.dueldimension.shop.StatsMessages.sync(player);
             net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
                 new de.cas_ual_ty.dueldimension.shop.ShopMessages.SyncPoints(after));
             net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player,
                 new de.cas_ual_ty.dueldimension.shop.DuelRewardMessages.Result(
                     duel.rewardId, outcome, reward.lines(), reward.total(), before, after,
-                    duel.gameNumber, duel.wins[seat], duel.wins[1 - seat], !duel.isTwoPlayer()));
+                    duel.gameNumber, duel.wins[seat], duel.wins[1 - seat], !duel.isTwoPlayer(),
+                    duelEnergy));
             // Said out loud, because until this line a duel ending left no trace
             // at all: three duels in a session log showed three starts and not
             // one word about how any of them finished. A result that never
@@ -1430,6 +1466,44 @@ public final class DuelistDuels
             + player.getGameProfile().getName() + " \"" + deck.name() + "\": main="
             + deck.main().size() + " extra=" + deck.extra().size()
             + (strays.isEmpty() ? " (no strays)" : " STRAYS IN MAIN: " + strays));
+    }
+
+    /**
+     * Says so when a duel is arranged with Destiny Draw on and the deck has
+     * nothing nominated.
+     *
+     * <h2>Why this exists</h2>
+     * A deck with no Destiny Cards registers no rule at all -- {@code
+     * DestinyDrawScript.chunk} returns null for an empty list, deliberately, so
+     * a duel nobody nominated anything for costs the engine nothing. The
+     * trouble was that this looked identical to the feature being broken: the
+     * bot's menu said Destiny Draws were on, the duellist dropped below 4000
+     * with no monster to answer the board, and nothing happened, because there
+     * was nothing that COULD happen. Nowhere in the game said so.
+     * <p>
+     * It is not an error and it is not stopped -- the duel plays perfectly well
+     * under ordinary rules. It is a mismatch between what was switched on and
+     * what the deck can do, and the player is the only one who can fix it.
+     */
+    private static void reportDestiny(ServerPlayer player, boolean on,
+        HeadlessDuelRunner.Deck deck, String deckName)
+    {
+        if(player == null || deck == null || !on)
+        {
+            return;
+        }
+        if(deck.destiny().isEmpty())
+        {
+            player.sendSystemMessage(Component.literal("Destiny Draw is on, but no cards in \""
+                + deckName + "\" are marked as Destiny Cards, so there is nothing for it to"
+                + " draw. Mark some in the deck editor."));
+            return;
+        }
+        // And the other half of the same problem: a report of "it never fired"
+        // could not be told from "it was never registered" without this line.
+        de.cas_ual_ty.dueldimension.DuelDimension.log("Destiny Draw: "
+            + player.getName().getString() + " nominated " + deck.destiny().size()
+            + " card(s) in \"" + deckName + "\"");
     }
 
     private static HeadlessDuelRunner.Deck withChaosDiskPromise(ServerPlayer player,

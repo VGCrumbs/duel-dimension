@@ -68,6 +68,9 @@ public final class ShopStock
         catalogue = null;
         PACK_SIZES.clear();
         CARD_IDS.clear();
+        // A composition's contents are its sub-sets', so a rebuilt database can
+        // change them without this set's own file changing at all.
+        CONTENTS.clear();
     }
 
     /**
@@ -303,6 +306,26 @@ public final class ShopStock
                 offers.add(new DeckBoxOffer(style.name(), priceOfDeckBox(style)));
             }
         }
+        // By the Master Duel texture id, not by enum order. The enum is already
+        // declared in that order, but an insertion in the wrong place would
+        // silently unsort the shelf and nothing would fail -- so the order is
+        // stated where it is relied on rather than assumed from the declaration.
+        offers.sort(java.util.Comparator.comparing(offer ->
+        {
+            de.cas_ual_ty.dueldimension.duel.profile.DeckBoxStyle style =
+                de.cas_ual_ty.dueldimension.duel.profile.DeckBoxStyle.known(offer.deckBox());
+            return style == null ? "" : style.deckCaseId();
+        }));
+        // By the Master Duel texture id, not by enum order. The enum is already
+        // declared in that order, but an insertion in the wrong place would
+        // silently unsort the shelf and nothing would fail -- so the order is
+        // stated where it is relied on rather than assumed from the declaration.
+        offers.sort(java.util.Comparator.comparing(offer ->
+        {
+            de.cas_ual_ty.dueldimension.duel.profile.DeckBoxStyle style =
+                de.cas_ual_ty.dueldimension.duel.profile.DeckBoxStyle.known(offer.deckBox());
+            return style == null ? "" : style.deckCaseId();
+        }));
         known = List.copyOf(offers);
         deckBoxCatalogue = known;
         return known;
@@ -334,7 +357,10 @@ public final class ShopStock
             {
                 continue;
             }
-            if(set.pull == null || set.cards == null || set.cards.isEmpty())
+            // Asked of the CONTENTS, not of the set's own card list: a
+            // composition -- a tin, a box, a movie pack -- carries none of its
+            // own and would be skipped here for being empty when it is not.
+            if(set.pull == null || contentsOf(set).isEmpty())
             {
                 continue;
             }
@@ -430,10 +456,43 @@ public final class ShopStock
     }
 
     /** Distinct cards in the set, which is the denominator of the completion figure. */
+    /**
+     * Every card this product can yield, its sub-sets' cards included.
+     * <p>
+     * <b>A composition holds no cards of its own.</b> Its contents are whatever
+     * its sub-sets contain -- a tin's cards live in the five boosters it lists,
+     * and {@code MVP1_SE_B} has never had a {@code cards} array either. Four
+     * things here read {@code set.cards} directly and so saw every one of those
+     * products as empty: the shelf skipped them entirely, and had they got
+     * past, the blurb would have named nothing and completion would have read
+     * zero out of zero.
+     * <p>
+     * Cached by code, because the shelf asks once per set when it builds and
+     * the completion figure asks every frame for the selected one; the union
+     * walks each sub-set in turn and is not something to do sixty times a
+     * second.
+     */
+    public static List<CardHolder> contentsOf(CardSet set)
+    {
+        if(set == null || set.code == null)
+        {
+            return List.of();
+        }
+        if(!(set.pull instanceof de.cas_ual_ty.dueldimension.set.CompositionCardPuller))
+        {
+            return set.cards == null ? List.of() : set.cards;
+        }
+        return CONTENTS.computeIfAbsent(set.code,
+            code -> List.copyOf(set.getAllCardEntries()));
+    }
+
+    private static final java.util.Map<String, List<CardHolder>> CONTENTS =
+        new java.util.concurrent.ConcurrentHashMap<>();
+
     public static int distinctCards(CardSet set)
     {
         Set<Long> ids = new LinkedHashSet<>();
-        for(CardHolder card : set.cards)
+        for(CardHolder card : contentsOf(set))
         {
             if(card != null && card.getCard() != null)
             {
@@ -446,7 +505,7 @@ public final class ShopStock
     /** Every distinct card id in the set, for measuring collection completeness. */
     public static List<Integer> cardIds(CardSet set)
     {
-        if(set == null || set.code == null || set.cards == null)
+        if(set == null || set.code == null)
         {
             return List.of();
         }
@@ -455,7 +514,7 @@ public final class ShopStock
         return CARD_IDS.computeIfAbsent(set.code, code ->
         {
             Set<Integer> ids = new LinkedHashSet<>();
-            for(CardHolder card : set.cards)
+            for(CardHolder card : contentsOf(set))
             {
                 if(card != null && card.getCard() != null)
                 {
@@ -474,7 +533,7 @@ public final class ShopStock
     private static String describe(CardSet set)
     {
         List<String> headliners = new ArrayList<>();
-        for(CardHolder card : set.cards)
+        for(CardHolder card : contentsOf(set))
         {
             if(card == null || card.getCard() == null)
             {

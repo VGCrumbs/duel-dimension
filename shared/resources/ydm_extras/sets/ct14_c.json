@@ -1,0 +1,56 @@
+{
+  "code": "CT14_C",
+  "type": "Sub-Set",
+  "pull_type": "distribution",
+  "distribution": "mega_tin_promos_2017",
+  "cards": [
+    {
+      "id": 46986420,
+      "code": "CT14-EN001",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 89631139,
+      "code": "CT14-EN002",
+      "rarity": "Secret Rare",
+      "image_index": 0
+    },
+    {
+      "id": 22862454,
+      "code": "CT14-EN003",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 35261759,
+      "code": "CT14-EN004",
+      "rarity": "Ultra Rare",
+      "image_index": 0
+    },
+    {
+      "id": 59479050,
+      "code": "CT14-EN005",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 26920296,
+      "code": "CT14-EN006",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 23085002,
+      "code": "CT14-EN008",
+      "rarity": "Super Rare",
+      "image_index": 0
+    },
+    {
+      "id": 80532587,
+      "code": "CT14-EN009",
+      "rarity": "Super Rare",
+      "image_index": 0
+    }
+  ]
+}

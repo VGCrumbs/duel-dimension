@@ -229,6 +229,22 @@ public final class DuelMusic
      * old one — which is what makes changing track mid-duel a crossfade rather
      * than a gap.
      */
+    /**
+     * Whether the mod currently owns the music.
+     * <p>
+     * Asked by {@code VanillaMusicMixin} once a tick to decide whether
+     * Minecraft's own background music may play. It covers every track the mod
+     * starts, not just this class's -- the reward screen runs its own loop, and
+     * a player standing in it should not hear the overworld either.
+     * <p>
+     * Deliberately NOT gated on {@link #muted()}: see the mixin's note.
+     */
+    public static boolean modMusicActive()
+    {
+        return playing != null
+            || de.cas_ual_ty.dueldimension.clientutil.statue.StatueMusic.isPlaying();
+    }
+
     public static void stop()
     {
         if(playing == null)

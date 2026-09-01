@@ -1,9 +1,12 @@
 package de.cas_ual_ty.dueldimension.clientutil.overworld;
 
+import de.cas_ual_ty.dueldimension.clientutil.hub.MenuInk;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import de.cas_ual_ty.dueldimension.clientutil.DuelTextures;
 import de.cas_ual_ty.dueldimension.compat.SubmitNodeCollector;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3f;
 
 /**
  * A monster standing on its card, turned to face whoever is looking, with its
@@ -37,6 +40,43 @@ public final class MonsterBillboard
     }
 
     /**
+     * Where a sprite actually stands, once its definition has had its say.
+     * <p>
+     * <b>The same three numbers a model obeys, obeyed the same way.</b> Lift,
+     * Off x and Off z reached {@code ModelHologram} and stopped there, so a
+     * monster drawn as a model could be placed and the identical monster drawn
+     * as a sprite could not -- and nothing on screen said why. Height is
+     * already shared between the two representations on the stated grounds that
+     * it means the same thing for both; so does where the thing is standing.
+     * <p>
+     * The rotation is {@link Axis#YP}{@code .rotationDegrees(-yaw + turn)},
+     * which is not a re-derivation of the model's -- it is the same call on the
+     * same axis, so the two cannot drift apart. That frame is the monster's
+     * own, not the world's: the two duellists' monsters face opposite ways, and
+     * an offset applied in world space would push one towards its owner and the
+     * other away, the same number reading as two corrections depending on which
+     * seat you are in.
+     * <p>
+     * The lift is added to {@code feet} unscaled, matching the model, where it
+     * lands before {@code scale} -- half a block is half a block whether the
+     * monster is drawn as a hatchling or as a dragon.
+     *
+     * @param yaw the heading the monster faces, in Minecraft's convention; a
+     *            pedestal has no facing of its own and passes 0, exactly as it
+     *            does for a model
+     */
+    public static Vec3 stand(Vec3 feet, float yaw, MonsterSprites.Definition definition)
+    {
+        if(definition == null)
+        {
+            return feet;
+        }
+        Vector3f nudge = new Vector3f(definition.offsetX(), 0F, definition.offsetZ());
+        nudge.rotate(Axis.YP.rotationDegrees(-yaw + definition.turn()));
+        return feet.add(nudge.x, definition.elevation(), nudge.z);
+    }
+
+    /**
      * How far behind the body the wings sit, in blocks.
      * <p>
      * Small, and it exists for the depth buffer rather than for the eye. Two
@@ -58,7 +98,7 @@ public final class MonsterBillboard
     private static final double FRONT = 0.05D;
 
     /** The editor's own gold and blue, so the box and the sheet grid agree. */
-    private static final int BODY_LINE = 0xFFF4D089;
+    private static final int BODY_LINE = MenuInk.title();
     private static final int BODY_FAINT = 0x50F4D089;
     private static final int WING_LINE = 0xFF63C8FF;
     private static final int WING_FAINT = 0x5063C8FF;
@@ -107,8 +147,11 @@ public final class MonsterBillboard
         double faceZ = dz / flat;
         // Perpendicular in the ground plane, which with the upright axis makes
         // a basis whose normal points back along the facing -- at the viewer.
-        double rightX = -faceZ;
-        double rightZ = faceX;
+        // It points to the viewer's LEFT; see screenAxis, which is where the
+        // one thing anybody gets wrong about this is written down.
+        double[] axis = screenAxis(faceX, faceZ);
+        double rightX = axis[0];
+        double rightZ = axis[1];
 
         boolean outlined = BillboardOutline.wants(code);
 
@@ -215,6 +258,48 @@ public final class MonsterBillboard
     }
 
     /**
+     * The quad's horizontal axis, from the direction the sprite is turning to
+     * face. <b>It points to the viewer's LEFT, not their right.</b>
+     * <p>
+     * A viewer looking at the sprite has forward {@code -face} and up {@code +Y},
+     * so their right hand is {@code cross(forward, up) = (faceZ, -faceX)}. This
+     * returns the negation of that, and the corner winding in {@link #quad} is
+     * built around it that way so the quad's normal comes back at the viewer.
+     * <p>
+     * Named for what it does rather than for a hand, because calling it "right"
+     * is what hid a mirror in every sprite in the game for as long as this
+     * existed: the picture's left edge was placed on this axis's negative side,
+     * which is the viewer's right. See {@link #uEnds}.
+     */
+    static double[] screenAxis(double faceX, double faceZ)
+    {
+        return new double[] {-faceZ, faceX};
+    }
+
+    /**
+     * Which end of the cell goes on which side, as {@code {atMinus, atPlus}} of
+     * {@link #screenAxis}.
+     * <p>
+     * <b>The cell's left edge belongs on the viewer's left</b>, and the axis
+     * above points that way, so unmirrored art puts {@code uv[0]} on the PLUS
+     * side. It used to put it on the minus side, which is the viewer's right,
+     * and every sprite in the world came out as its own reflection -- readable
+     * on anything roughly symmetrical, which most monsters are, and obvious the
+     * moment one of them carried a sword in one hand.
+     * <p>
+     * Corrected here rather than by negating the axis. The corners are wound so
+     * the quad's normal points at the viewer, and reversing them to mirror the
+     * picture would turn the normal round and get the sprite culled as a back
+     * face -- and reversing the corner ORDER as well would simply undo the
+     * mirror again, since the v run is a palindrome. Swapping which end of the
+     * cell is read costs nothing and cannot do either.
+     */
+    static float[] uEnds(float[] uv, boolean mirror)
+    {
+        return mirror ? new float[] {uv[0], uv[2]} : new float[] {uv[2], uv[0]};
+    }
+
+    /**
      * One upright quad standing on a point.
      *
      * @param centre  the middle of its bottom edge
@@ -231,8 +316,9 @@ public final class MonsterBillboard
             top.add(rightX * half, 0D, rightZ * half),
             centre.add(rightX * half, 0D, rightZ * half)};
 
-        float u0 = mirror ? uv[2] : uv[0];
-        float u1 = mirror ? uv[0] : uv[2];
+        float[] ends = uEnds(uv, mirror);
+        float u0 = ends[0];
+        float u1 = ends[1];
         // Corner order is bottom-left, top-left, top-right, bottom-right, so v
         // runs from the cell's bottom at the feet to its top at the head.
         float[] us = {u0, u0, u1, u1};

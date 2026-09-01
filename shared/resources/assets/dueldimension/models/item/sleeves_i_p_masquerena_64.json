@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_i_p_masquerena",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_i_p_masquerena"
+  }
+}

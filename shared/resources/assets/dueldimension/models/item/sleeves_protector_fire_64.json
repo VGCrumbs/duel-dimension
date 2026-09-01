@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_protector_fire",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_protector_fire"
+  }
+}

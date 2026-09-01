@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_eldlixir_of_the_glorious_golden_land",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_eldlixir_of_the_glorious_golden_land"
+  }
+}

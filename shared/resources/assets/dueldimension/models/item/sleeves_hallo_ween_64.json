@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_hallo_ween",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_hallo_ween"
+  }
+}

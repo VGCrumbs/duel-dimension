@@ -105,12 +105,28 @@ class MixinTargetsTest
                     + injection.target());
                 continue;
             }
-            if(!declares(target, injection.method()) && findDeclaringSupertype(target,
-                injection.method()) == null)
+            if(!declares(target, injection.method()))
             {
+                // Inheriting the method is NOT enough, and this is the failure
+                // that costs a launch. Mixin rewrites the bytecode of the class
+                // it is given; a method that class does not declare is not in
+                // there to rewrite, and the game dies at load with "could not
+                // find target method" — after compiling cleanly.
+                //
+                // This test used to accept a supertype declaring it, which let
+                // exactly that through: a mixin aimed at AvatarRenderer.submit
+                // passed here, because LivingEntityRenderer declares submit and
+                // AvatarRenderer merely inherits it.
+                String declaring = findDeclaringSupertype(target, injection.method());
                 wrong.add(injection.file().getFileName() + ": @Inject(method = \""
-                    + injection.method() + "\") names a method no supertype of "
-                    + target.getSimpleName() + " declares — is the name right?");
+                    + injection.method() + "\") targets " + target.getSimpleName()
+                    + ", which does not DECLARE that method"
+                    + (declaring == null
+                        ? " — and neither does any supertype. Is the name right?"
+                        : " — it inherits it from " + declaring
+                            + ". Mixin cannot inject into a method the target does not"
+                            + " declare; target " + declaring
+                            + " instead and narrow it in the body."));
                 continue;
             }
 

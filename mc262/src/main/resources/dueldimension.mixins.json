@@ -4,12 +4,17 @@
   "package": "de.cas_ual_ty.dueldimension.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "DuelPushMixin"
+    "DuelPathMixin",
+    "DuelPushMixin",
+    "DuelTargetMixin"
   ],
   "client": [
     "client.AbstractClientPlayerMixin",
+    "client.AvatarRenderStateMixin",
     "client.AvatarRendererMixin",
+    "client.CharacterRendererMixin",
     "client.BlockOutlineMixin",
+    "client.DuelCameraMixin",
     "client.DuelHudMixin",
     "client.DuelMovementMixin",
     "client.GameRendererMixin",
@@ -20,8 +25,12 @@
     "client.LocalDuelPushMixin",
     "client.MinecraftDuelClickMixin",
     "client.MinecraftPackMixin",
+    "client.OverheadHidesHandMixin",
+    "client.OverheadHidesPlayerMixin",
     "client.NameTagMixin",
     "client.SlotWrapperAccessor",
+    "client.StepSoundMixin",
+    "client.VanillaMusicMixin",
     "client.XaeroHudMixin"
   ],
   "injectors": {

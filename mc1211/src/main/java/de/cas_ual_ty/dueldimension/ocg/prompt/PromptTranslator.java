@@ -254,6 +254,23 @@ public class PromptTranslator
 
         if(message instanceof DuelMessage.SelectYesNo yesNo)
         {
+            // THE DESTINY DRAW ARRIVES HERE, as a yes/no rather than a chain.
+            //
+            // Its effect is CONTINUOUS -- see DestinyDrawScript for why a
+            // trigger could never be collected -- so the engine never offers it
+            // as a chain. The choice is the SelectYesNo its operation asks, and
+            // the description is the value the script set so this line can tell
+            // it from every other yes/no in the game.
+            if(yesNo.description() == de.cas_ual_ty.dueldimension.ocg
+                .DestinyDrawScript.DESCRIPTION)
+            {
+                return new EnginePrompt(EnginePrompt.Kind.DESTINY, "Destiny Draw",
+                    List.of(new EnginePrompt.Option("Destiny Draw",
+                            "Draw one of the cards you nominated", 0),
+                        new EnginePrompt.Option("Normal Draw",
+                            "Draw whatever is on top", 0)),
+                    1, 1, false, field);
+            }
             return new EnginePrompt(EnginePrompt.Kind.CHOOSE, text.describe(yesNo.description()),
                 List.of(new EnginePrompt.Option("Yes"), new EnginePrompt.Option("No")), 1, 1, false, field);
         }

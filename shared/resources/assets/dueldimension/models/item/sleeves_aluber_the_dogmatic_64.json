@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_aluber_the_dogmatic",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_aluber_the_dogmatic"
+  }
+}

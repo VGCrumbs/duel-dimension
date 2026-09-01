@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_exodia_the_forbidden_one_wcs2025",
+  "textures": {
+    "layer0": "dueldimension:item/64/sleeves_exodia_the_forbidden_one_wcs2025"
+  }
+}

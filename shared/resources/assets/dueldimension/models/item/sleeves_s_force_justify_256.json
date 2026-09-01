@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_s_force_justify",
+  "textures": {
+    "layer0": "dueldimension:item/256/sleeves_s_force_justify"
+  }
+}

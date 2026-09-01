@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_ghostrick_alucard",
+  "textures": {
+    "layer0": "dueldimension:item/128/sleeves_ghostrick_alucard"
+  }
+}

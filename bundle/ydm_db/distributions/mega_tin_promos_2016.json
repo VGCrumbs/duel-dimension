@@ -1,0 +1,28 @@
+{
+  "name": "mega_tin_promos_2016",
+  "pulls": [
+    {
+      "weight": 1,
+      "entries": [
+        {
+          "count": 3,
+          "rarities": [
+            "Super Rare"
+          ]
+        },
+        {
+          "count": 2,
+          "rarities": [
+            "Ultra Rare"
+          ]
+        },
+        {
+          "count": 1,
+          "rarities": [
+            "Secret Rare"
+          ]
+        }
+      ]
+    }
+  ]
+}

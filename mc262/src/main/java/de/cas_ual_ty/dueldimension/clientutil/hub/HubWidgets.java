@@ -3,6 +3,7 @@ package de.cas_ual_ty.dueldimension.clientutil.hub;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 
 /**
  * Buttons and tabs drawn from the hub's own textures.
@@ -95,7 +96,8 @@ public final class HubWidgets
             NineSlice.draw(graphics, HubTextures.BUTTON, getX(), getY(), getWidth(), getHeight(),
                 row, 3);
             int colour = labelColour != null ? labelColour
-                : active ? isHoveredOrFocused() ? 0xFFF4D089 : 0xFFE6EAF2 : 0xFF6A7080;
+                : active ? isHoveredOrFocused() ? MenuInk.title() : MenuInk.label()
+                    : MenuInk.dim();
             drawLabel(graphics, colour);
         }
 
@@ -104,7 +106,63 @@ public final class HubWidgets
             net.minecraft.client.gui.Font font = net.minecraft.client.Minecraft.getInstance().font;
             String text = getMessage().getString();
             graphics.text(font, text, getX() + (getWidth() - font.width(text)) / 2,
-                getY() + (getHeight() - 8) / 2, colour, true);
+                getY() + (getHeight() - 8) / 2, colour, MenuInk.shadow());
+        }
+    }
+
+    /**
+     * A tick box: a small square that is either ticked or not, and a label
+     * beside it.
+     *
+     * <h2>Why not a button that says ON</h2>
+     * A button is a thing you press to make something happen. A setting is a
+     * state that is either set or not, and reading it off the end of a label --
+     * "Destiny Draws: ON" -- means reading a sentence to answer a yes/no. The
+     * box answers it before the words are read, and the words then say what the
+     * answer is about.
+     * <p>
+     * The state is a SUPPLIER rather than a stored flag, so a box whose setting
+     * is changed from somewhere else is right on the next frame instead of on
+     * the next rebuild.
+     */
+    public static class CheckBox extends TextureButton
+    {
+        private final java.util.function.BooleanSupplier ticked;
+
+        public CheckBox(int x, int y, int width, int height, Component label,
+            java.util.function.BooleanSupplier ticked, OnPress onPress)
+        {
+            super(x, y, width, height, label, onPress);
+            this.ticked = ticked;
+        }
+
+        @Override
+        protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY,
+            float partialTick)
+        {
+            
+            int box = Math.min(getHeight(), 14);
+            int boxY = getY() + (getHeight() - box) / 2;
+            NineSlice.draw(graphics, HubTextures.SLOT, getX(), boxY, box, box);
+            if(ticked.getAsBoolean())
+            {
+                // CHECK is white art meant to be tinted; green is the same
+                // "yes, this one" the shops mark a collected tile with.
+                int tick = box - 4;
+                de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.fullBlit(graphics,
+                    HubTextures.CHECK, getX() + 2, boxY + 2, tick, tick,
+                    de.cas_ual_ty.dueldimension.clientutil.DdBlitUtil.tint(
+                        0.49F, 0.89F, 0.55F, 1F));
+            }
+            // Beside the box and LEFT aligned, not centred in the row: a label
+            // that centred itself would drift as the word changed length and
+            // would sometimes sit under its own tick.
+            net.minecraft.client.gui.Font font = net.minecraft.client.Minecraft.getInstance().font;
+            String text = getMessage().getString();
+            graphics.text(font, text, getX() + box + 6, getY() + (getHeight() - 8) / 2,
+                !active ? MenuInk.dim()
+                    : isHoveredOrFocused() ? MenuInk.title() : MenuInk.label(),
+                MenuInk.shadow());
         }
     }
 
@@ -170,7 +228,7 @@ public final class HubWidgets
                 : isHoveredOrFocused() ? NineSlice.HOVER : NineSlice.IDLE;
             NineSlice.draw(graphics, HubTextures.TAB, getX(), getY(), getWidth(), getHeight(),
                 row, 3);
-            drawLabel(graphics, on ? 0xFFF4D089 : 0xFFC2C9D6);
+            drawLabel(graphics, on ? MenuInk.title() : MenuInk.body());
         }
     }
 
@@ -324,11 +382,14 @@ public final class HubWidgets
                 // budget handed to plainSubstrByWidth is in TEXT pixels, so it
                 // has to be divided by the scale or a name would still be cut
                 // at the width it used to be and then drawn half as wide.
+                // And by the SNAPPED scale, the one tinyText will draw at:
+                // dividing by the wanted 0.5 while drawing at 2/3 would fit a
+                // name to a width a third wider than the tile.
                 String name = font.plainSubstrByWidth(getMessage().getString(),
-                    Math.round((getWidth() - 8) / NAME_SCALE));
+                    Math.round((getWidth() - 8) / MenuText.crispScale(NAME_SCALE)));
                 tinyText(graphics, name, getX() + getWidth() / 2F,
                     getY() + getHeight() - nameBandH(), NAME_SCALE,
-                    labelColourOr(selected ? 0xFFF4D089 : 0xFFE8E8E8));
+                    labelColourOr(selected ? MenuInk.title() : MenuInk.label()));
             }
 
             int frameRow = selected ? 2 : isHoveredOrFocused() ? 1 : 0;
@@ -349,8 +410,12 @@ public final class HubWidgets
          */
         private static int nameBandH()
         {
+            // Asked at the scale the name is actually DRAWN at, which snapping
+            // makes slightly larger than NAME_SCALE -- 2/3 rather than 1/2 at a
+            // GUI scale of 3. Reserving the unsnapped height would leave the
+            // band a pixel short of its own text.
             return Math.round(net.minecraft.client.Minecraft.getInstance().font.lineHeight
-                * NAME_SCALE) + NAME_CLEARANCE;
+                * MenuText.crispScale(NAME_SCALE)) + NAME_CLEARANCE;
         }
 
         /**
@@ -363,15 +428,28 @@ public final class HubWidgets
          * itself.
          */
         private static void tinyText(GuiGraphicsExtractor graphics, String text, float centreX,
-            float y, float scale, int colour)
+            float y, float wantedScale, int colour)
         {
+            // SNAPPED TO THE DEVICE PIXEL GRID BEFORE ANYTHING IS MEASURED.
+            //
+            // A deck's name is the smallest text in the mod and it was the only
+            // small text still drawn at a raw fraction: 0.5 of a GUI scale of 3
+            // is 1.5 device pixels per GUI pixel, so every glyph straddled a
+            // pixel and the whole deck list read as slightly out of focus. The
+            // deck editor's card counts and its preview already went through
+            // this; the list of decks did not.
+            //
+            // Snapped FIRST, because the scale is divided into the coordinates
+            // below -- snapping afterwards would place the text for one size and
+            // draw it at another.
+            float scale = MenuText.crispScale(wantedScale);
             net.minecraft.client.gui.Font font = net.minecraft.client.Minecraft
                 .getInstance().font;
             graphics.pose().pushMatrix();
             graphics.pose().scale(scale, scale);
             graphics.text(font, text,
                 Math.round(centreX / scale - font.width(text) / 2F),
-                Math.round(y / scale), colour, true);
+                Math.round(y / scale), colour, MenuInk.shadow());
             graphics.pose().popMatrix();
         }
 
@@ -380,13 +458,13 @@ public final class HubWidgets
         {
             net.minecraft.client.gui.Font font = net.minecraft.client.Minecraft
                 .getInstance().font;
+            float scale = MenuText.crispScale(BADGE_TEXT_SCALE);
             float centreX = x + width / 2F;
-            float textX = centreX / BADGE_TEXT_SCALE - font.width(text) / 2F;
-            float textY = (y + (height - font.lineHeight * BADGE_TEXT_SCALE) / 2F)
-                / BADGE_TEXT_SCALE;
+            float textX = centreX / scale - font.width(text) / 2F;
+            float textY = (y + (height - font.lineHeight * scale) / 2F) / scale;
             graphics.pose().pushMatrix();
-            graphics.pose().scale(BADGE_TEXT_SCALE, BADGE_TEXT_SCALE);
-            graphics.text(font, text, Math.round(textX), Math.round(textY), colour, true);
+            graphics.pose().scale(scale, scale);
+            graphics.text(font, text, Math.round(textX), Math.round(textY), colour, MenuInk.shadow());
             graphics.pose().popMatrix();
         }
     }

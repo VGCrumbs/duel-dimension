@@ -186,6 +186,12 @@ public class CardSet
     {
         return pull.open(random);
     }
+
+    /** As {@link #open(Random)}, recording which set each card came out of. */
+    public List<ItemStack> open(Random random, List<String> sourcesOut)
+    {
+        return pull.open(random, sourcesOut);
+    }
     
     public SortedArraySet<CardHolder> getAllCardEntries()
     {

@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_traptantalizing_tune",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_traptantalizing_tune"
+  }
+}

@@ -35,6 +35,13 @@ final class Ps2Texture extends DynamicTexture
         // builds its own sampler in a private method and offers no say in it.
         // The cache hands back a shared object per combination, so every model
         // texture in the game shares this one.
-        sampler = RenderSystem.getSamplerCache().getRepeat(FilterMode.LINEAR);
+        //
+        // Read HERE and not per draw, for the same reason: there is nowhere
+        // later to say it. That is why turning the setting off has to forget
+        // the baked models -- see HologramSettings.setPs2.
+        sampler = RenderSystem.getSamplerCache().getRepeat(
+            de.cas_ual_ty.dueldimension.clientutil.HologramSettings.ps2()
+                ? FilterMode.LINEAR
+                : FilterMode.NEAREST);
     }
 }

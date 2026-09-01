@@ -1,0 +1,28 @@
+{
+  "name": "zexal_collection_tin",
+  "pulls": [
+    {
+      "weight": 1,
+      "entries": [
+        {
+          "count": 3,
+          "rarities": [
+            "Ultimate Rare"
+          ]
+        },
+        {
+          "count": 4,
+          "rarities": [
+            "Ultra Rare"
+          ]
+        },
+        {
+          "count": 7,
+          "rarities": [
+            "Super Rare"
+          ]
+        }
+      ]
+    }
+  ]
+}

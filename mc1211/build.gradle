@@ -270,6 +270,20 @@ tasks.register('engineBundleStamp') {
 sourceSets {
     main {
         resources {
+            // The shared asset tree.
+            //
+            // mc262 and mc1211 are separate BUILDS -- two Minecraft versions cannot share
+            // one -- and until now they each carried a full copy of every texture, model
+            // and sound. That is 1,322 identical files duplicated, and it showed: a pass
+            // that compressed the textures in one tree left the other jar 22 MB larger,
+            // because the two are not the same files on disk.
+            //
+            // Only what genuinely differs between versions stays in each module's own
+            // src/main/resources: the item models (the model JSON format changed), one
+            // recipe, and the three build descriptors. Gradle merges the two directories at
+            // processResources, so a module can still override a shared file simply by
+            // keeping its own copy -- the manifest of what moved is shared/SHARED_FILES.txt.
+            srcDir file('../shared/resources')
             srcDir file('../bundle/payload')
             srcDir engineBundleOut
         }

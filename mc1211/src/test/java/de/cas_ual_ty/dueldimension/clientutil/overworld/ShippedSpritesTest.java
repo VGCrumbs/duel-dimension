@@ -32,10 +32,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class ShippedSpritesTest
 {
-    private static final Path LIST =
-        Path.of("src/main/resources/assets/dueldimension/monster_sprites.json");
+    /**
+     * Resolved against the module's own resources first and the shared tree
+     * second, which is the order Gradle merges them in.
+     * <p>
+     * Assets that both modules ship now live in {@code shared/resources} rather
+     * than being duplicated per module, so a test that only knew the module path
+     * saw an empty directory and reported every sprite missing.
+     */
+    private static Path resource(String path)
+    {
+        Path own = Path.of("src/main/resources", path);
+        return Files.exists(own) ? own : Path.of("../shared/resources", path);
+    }
+
+    private static final Path LIST = resource("assets/dueldimension/monster_sprites.json");
     private static final Path SHEETS =
-        Path.of("src/main/resources/assets/dueldimension/textures/duel/monsters");
+        resource("assets/dueldimension/textures/duel/monsters");
 
     private static JsonArray shipped() throws Exception
     {

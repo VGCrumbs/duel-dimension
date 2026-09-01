@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_d_d_d_d_dimensional_king_arc_crisis"
+  }
+}

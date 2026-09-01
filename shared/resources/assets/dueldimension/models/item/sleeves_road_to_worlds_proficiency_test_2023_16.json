@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_road_to_worlds_proficiency_test_2023",
+  "textures": {
+    "layer0": "dueldimension:item/16/sleeves_road_to_worlds_proficiency_test_2023"
+  }
+}

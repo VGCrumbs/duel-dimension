@@ -1,0 +1,6 @@
+{
+  "parent": "dueldimension:item/sleeves_six_samurai_united",
+  "textures": {
+    "layer0": "dueldimension:item/32/sleeves_six_samurai_united"
+  }
+}

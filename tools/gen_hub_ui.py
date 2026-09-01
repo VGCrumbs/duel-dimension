@@ -12,7 +12,13 @@ import os
 
 from PIL import Image, ImageDraw, ImageFilter
 
-OUT = 'src/main/resources/assets/dueldimension/textures/gui'
+# The composite build keeps every shared asset in shared/resources; this used to
+# say src/main/resources, which stopped existing when the tree became three
+# builds and would have written a whole new directory at the repo root.
+OUT = 'shared/resources/assets/dueldimension/textures/gui'
+
+# Set by --only, so a run can regenerate one file without rewriting the rest.
+ONLY = None
 
 # Nine-slice corner size. Every panel and button below is 3x3 cells of this, so
 # the Java side can slice any of them with the same constant.
@@ -45,11 +51,18 @@ def vgrad(draw, box, top, bottom):
                   fill=tuple(round(top[i] + (bottom[i] - top[i]) * f) for i in range(3)) + (255,))
 
 
-def panel(top, bottom, edge, accent=None, inset=False):
-    """One nine-slice tile: a bevelled frame around a vertical gradient."""
+def panel(top, bottom, edge, accent=None, inset=False, ink=None, opacity=1.0):
+    """One nine-slice tile: a bevelled frame around a vertical gradient.
+
+    @param ink     the case behind the gradient, for a panel that is not the
+                   hub's own near-black
+    @param opacity scales the finished tile's alpha, for a surface meant to be
+                   seen through
+    """
     im = Image.new('RGBA', (CELL, CELL), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
-    d.rounded_rectangle([0, 0, CELL - 1, CELL - 1], radius=BORDER - 2, fill=INK + (255,))
+    d.rounded_rectangle([0, 0, CELL - 1, CELL - 1], radius=BORDER - 2,
+                        fill=(ink or INK) + (255,))
     vgrad(d, (2, 2, CELL - 2, CELL - 2), top, bottom)
     # Two rims: a light one inside a dark one reads as a raised edge, and the
     # order is swapped for an inset so it reads as a recess instead.
@@ -59,10 +72,14 @@ def panel(top, bottom, edge, accent=None, inset=False):
                         outline=inner + (120,), width=1)
     if accent:
         d.line([(BORDER, 2), (CELL - BORDER, 2)], fill=accent + (200,), width=1)
+    if opacity < 1.0:
+        im.putalpha(im.getchannel('A').point(lambda a: round(a * opacity)))
     return im
 
 
 def write(im, path, name):
+    if ONLY and ONLY not in '%s/%s' % (path, name):
+        return
     ensure(path)
     im.save(os.path.join(OUT, path, name))
     print('  %s/%s %s' % (path, name, im.size))
@@ -114,6 +131,72 @@ def slot():
     As a nine-slice its corners keep their size at any slot dimensions.
     """
     return panel((26, 28, 35), (18, 20, 25), (64, 70, 82), inset=True)
+
+
+# ---------------------------------------------------------------------------
+# Indexed masters
+# ---------------------------------------------------------------------------
+# Every surface above is drawn in ONE colour family plus a gold accent, at a
+# range of shades: the ink behind it, the gradient across it, the dark rim
+# outside and the light rim inside. That is what makes a palette swap possible
+# at all -- the shapes carry the shading, and the hue is the only thing a theme
+# has to supply.
+#
+# So each element is also written to `indexed/`, where a pixel is not a colour
+# but an INSTRUCTION:
+#
+#     R  the role -- 0 for the menu surface, 255 for the accent
+#     G  where it sits on that role's ramp, black at 0 through the role's own
+#        colour at 128 to white at 255
+#     B  unused
+#     A  the alpha it was drawn with
+#
+# The client rebuilds a real texture from one of these and a palette, so five
+# presets and any colour the player picks all come off the same six files
+# rather than off five copies of every PNG. See MenuThemes on the Java side.
+#
+# The role is read from the pixel's own hue and not from a list of coordinates.
+# Every surface shade in this file is blue-biased (b > r) and every gold one is
+# red-biased (r > b), which `to_indexed` asserts rather than assumes -- a new
+# colour that is neither would otherwise be silently filed as a surface.
+SURFACE_BASE = (44, 48, 58)
+
+
+def ramp_position(colour, base):
+    """Where `colour` sits on black -> base -> white, as 0..255."""
+    c = sum(colour) / 3.0
+    b = sum(base) / 3.0
+    if b <= 0:
+        return 0
+    if c <= b:
+        return max(0, min(128, round(128 * c / b)))
+    return max(128, min(255, round(128 + 127 * (c - b) / (255 - b))))
+
+
+def to_indexed(im, name='?'):
+    """Re-encodes a finished tile as role + ramp position + alpha."""
+    im = im.convert('RGBA')
+    out = Image.new('RGBA', im.size, (0, 0, 0, 0))
+    src = im.load()
+    dst = out.load()
+    accents = 0
+    for y in range(im.height):
+        for x in range(im.width):
+            r, g, b, a = src[x, y]
+            if a == 0:
+                continue
+            # Neutral counts as surface: black and grey are the ink and the
+            # rims, which follow the menu colour rather than the accent.
+            if r > b:
+                dst[x, y] = (255, ramp_position((r, g, b), GOLD), 0, a)
+                accents += 1
+            else:
+                dst[x, y] = (0, ramp_position((r, g, b), SURFACE_BASE), 0, a)
+    return out
+
+
+def indexed(builder, path, name):
+    write(to_indexed(builder, name), path, name)
 
 
 def colour_wheel(size=192):
@@ -190,6 +273,8 @@ def greyscale_mat(source, out_name):
     towards it. Luminance-weighted rather than a flat average, so the printed
     zone borders keep the contrast they were drawn with.
     """
+    if ONLY and ONLY not in out_name:
+        return
     im = Image.open(source).convert('RGBA')
     pixels = im.load()
     for y in range(im.height):
@@ -479,6 +564,14 @@ def standard_badge(width=76, height=38):
 
 
 if __name__ == '__main__':
+    import sys
+
+    for arg in sys.argv[1:]:
+        if arg.startswith('--only='):
+            ONLY = arg.split('=', 1)[1]
+    if ONLY:
+        print('only: %s' % ONLY)
+
     print('common/')
     write(panel((44, 48, 58), (28, 31, 39), EDGE_LIGHT), 'common', 'panel.png')
     write(panel(INSET_TOP, INSET_BOT, (72, 78, 90), inset=True), 'common', 'panel_inset.png')
@@ -488,6 +581,19 @@ if __name__ == '__main__':
     write(check(), 'common', 'check.png')
     write(sort_arrow(True), 'common', 'sort_up.png')
     write(sort_arrow(False), 'common', 'sort_down.png')
+
+    print('indexed/')
+    indexed(panel((44, 48, 58), (28, 31, 39), EDGE_LIGHT), 'indexed', 'panel.png')
+    indexed(panel(INSET_TOP, INSET_BOT, (72, 78, 90), inset=True),
+            'indexed', 'panel_inset.png')
+    indexed(states(button_state), 'indexed', 'button.png')
+    indexed(states(tab_state), 'indexed', 'tab.png')
+    indexed(slot(), 'indexed', 'slot.png')
+    indexed(scrollbar(), 'indexed', 'scrollbar.png')
+    indexed(states(chip_state), 'indexed', 'chip.png')
+    indexed(header_bar(), 'indexed', 'header.png')
+    indexed(title_ribbon(), 'indexed', 'title_ribbon.png')
+    indexed(search_field(), 'indexed', 'search_field.png')
 
 
     print('settings/')
@@ -511,5 +617,5 @@ if __name__ == '__main__':
     write(standard_badge(), 'hub', 'standard_badge.png')
 
     print('mats/')
-    greyscale_mat('src/main/resources/assets/dueldimension/textures/duel/mats/classic.png',
-                  'src/main/resources/assets/dueldimension/textures/duel/mats/custom.png')
+    greyscale_mat('shared/resources/assets/dueldimension/textures/duel/mats/classic.png',
+                  'shared/resources/assets/dueldimension/textures/duel/mats/custom.png')
